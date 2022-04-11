@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,8 +20,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type eventNotifier struct {
@@ -56,7 +57,7 @@ func (en *eventNotifier) waitNext(lastSequence int64) error {
 	seq = en.latestSequence
 	en.cond.L.Unlock()
 	if closed {
-		return i18n.NewError(en.ctx, i18n.MsgEventListenerClosing)
+		return i18n.NewError(en.ctx, coremsgs.MsgEventListenerClosing)
 	}
 	log.L(en.ctx).Tracef("Detected new %s (%d)", en.desc, seq)
 	return nil

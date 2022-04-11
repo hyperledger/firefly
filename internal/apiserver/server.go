@@ -30,6 +30,8 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/oapiffi"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -37,15 +39,15 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/websockets"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type orchestratorContextKey struct{}
@@ -83,12 +85,12 @@ func InitConfig() {
 
 func NewAPIServer() Server {
 	return &apiServer{
-		defaultFilterLimit: uint64(config.GetUint(config.APIDefaultFilterLimit)),
-		maxFilterLimit:     uint64(config.GetUint(config.APIMaxFilterLimit)),
-		maxFilterSkip:      uint64(config.GetUint(config.APIMaxFilterSkip)),
-		apiTimeout:         config.GetDuration(config.APIRequestTimeout),
-		apiMaxTimeout:      config.GetDuration(config.APIRequestMaxTimeout),
-		metricsEnabled:     config.GetBool(config.MetricsEnabled),
+		defaultFilterLimit: uint64(config.GetUint(coreconfig.APIDefaultFilterLimit)),
+		maxFilterLimit:     uint64(config.GetUint(coreconfig.APIMaxFilterLimit)),
+		maxFilterSkip:      uint64(config.GetUint(coreconfig.APIMaxFilterSkip)),
+		apiTimeout:         config.GetDuration(coreconfig.APIRequestTimeout),
+		apiMaxTimeout:      config.GetDuration(coreconfig.APIRequestMaxTimeout),
+		metricsEnabled:     config.GetBool(coreconfig.MetricsEnabled),
 		ffiSwaggerGen:      oapiffi.NewFFISwaggerGen(),
 	}
 }
@@ -111,7 +113,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 		go apiHTTPServer.serveHTTP(ctx)
 	}
 
-	if config.GetBool(config.AdminEnabled) {
+	if config.GetBool(coreconfig.AdminEnabled) {
 		adminHTTPServer, err := newHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix)
 		if err != nil {
 			return err
@@ -155,12 +157,12 @@ func (as *apiServer) getFilePart(req *http.Request) (*multipartState, error) {
 	l := log.L(ctx)
 	mpr, err := req.MultipartReader()
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgMultiPartFormReadError)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgMultiPartFormReadError)
 	}
 	for {
 		part, err := mpr.NextPart()
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgMultiPartFormReadError)
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgMultiPartFormReadError)
 		}
 		if part.FileName() == "" {
 			value, _ := ioutil.ReadAll(part)
@@ -232,7 +234,7 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string
 					err = json.NewDecoder(req.Body).Decode(&jsonInput)
 				}
 			default:
-				return 415, i18n.NewError(req.Context(), i18n.MsgInvalidContentType)
+				return 415, i18n.NewError(req.Context(), coremsgs.MsgInvalidContentType)
 			}
 		}
 
@@ -278,7 +280,7 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string
 			// to hold everything in memory.
 			trailing, expectEOF := multipart.mpr.NextPart()
 			if expectEOF == nil {
-				err = i18n.NewError(req.Context(), i18n.MsgFieldsAfterFile, trailing.FormName())
+				err = i18n.NewError(req.Context(), coremsgs.MsgFieldsAfterFile, trailing.FormName())
 			}
 		}
 		if err == nil {
@@ -302,7 +304,7 @@ func (as *apiServer) handleOutput(ctx context.Context, res http.ResponseWriter, 
 	switch {
 	case isNil:
 		if status != 204 {
-			return 404, i18n.NewError(ctx, i18n.Msg404NoResult)
+			return 404, i18n.NewError(ctx, coremsgs.Msg404NoResult)
 		}
 		res.WriteHeader(204)
 	case reader != nil:
@@ -316,7 +318,7 @@ func (as *apiServer) handleOutput(ctx context.Context, res http.ResponseWriter, 
 		marshalErr = json.NewEncoder(res).Encode(output)
 	}
 	if marshalErr != nil {
-		err := i18n.WrapError(ctx, marshalErr, i18n.MsgResponseMarshalError)
+		err := i18n.WrapError(ctx, marshalErr, coremsgs.MsgResponseMarshalError)
 		log.L(ctx).Errorf(err.Error())
 		return 500, err
 	}
@@ -379,7 +381,7 @@ func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.
 				case <-ctx.Done():
 					l.Errorf("Request failed and context is closed. Returning %d (overriding %d): %s", http.StatusRequestTimeout, status, err)
 					status = http.StatusRequestTimeout
-					err = i18n.WrapError(ctx, err, i18n.MsgRequestTimeout, httpReqID, durationMS)
+					err = i18n.WrapError(ctx, err, coremsgs.MsgRequestTimeout, httpReqID, durationMS)
 				default:
 				}
 			}
@@ -402,7 +404,7 @@ func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.
 
 func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
 	res.Header().Add("Content-Type", "application/json")
-	return 404, i18n.NewError(req.Context(), i18n.Msg404NotFound)
+	return 404, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
 }
 
 func (as *apiServer) swaggerUIHandler(url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
@@ -433,7 +435,7 @@ func (as *apiServer) swaggerGenConf(apiBaseURL string) *oapispec.SwaggerGenConfi
 		BaseURL:                   apiBaseURL,
 		Title:                     "FireFly",
 		Version:                   "1.0",
-		PanicOnMissingDescription: config.GetBool(config.APIOASPanicOnMissingDescription),
+		PanicOnMissingDescription: config.GetBool(coreconfig.APIOASPanicOnMissingDescription),
 	}
 }
 
@@ -471,7 +473,7 @@ func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBa
 		if err != nil {
 			return nil, err
 		} else if api == nil || api.Interface == nil {
-			return nil, i18n.NewError(req.Context(), i18n.Msg404NoResult)
+			return nil, i18n.NewError(req.Context(), coremsgs.Msg404NoResult)
 		}
 
 		ffi, err := cm.GetFFIByIDWithChildren(req.Context(), api.Interface.ID)
@@ -514,8 +516,8 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")
 	r.HandleFunc(`/ws`, ws.(*websockets.WebSockets).ServeHTTP)
 
-	uiPath := config.GetString(config.UIPath)
-	if uiPath != "" && config.GetBool(config.UIEnabled) {
+	uiPath := config.GetString(coreconfig.UIPath)
+	if uiPath != "" && config.GetBool(coreconfig.UIEnabled) {
 		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
 	}
 
@@ -547,7 +549,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 func (as *apiServer) createMetricsMuxRouter() *mux.Router {
 	r := mux.NewRouter()
 
-	r.Path(config.GetString(config.MetricsPath)).Handler(promhttp.InstrumentMetricHandler(metrics.Registry(),
+	r.Path(config.GetString(coreconfig.MetricsPath)).Handler(promhttp.InstrumentMetricHandler(metrics.Registry(),
 		promhttp.HandlerFor(metrics.Registry(), promhttp.HandlerOpts{})))
 
 	return r

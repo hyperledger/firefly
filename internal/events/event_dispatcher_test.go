@@ -22,16 +22,17 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -47,7 +48,7 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 	return newEventDispatcher(ctx, mei, mdi, mdm, msh, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx), txHelper), func() {
 		cancel()
-		config.Reset()
+		coreconfig.Reset()
 	}
 }
 
@@ -84,7 +85,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 }
 
 func TestMaxReadAhead(t *testing.T) {
-	config.Set(config.SubscriptionDefaultsReadAhead, 65537)
+	config.Set(coreconfig.SubscriptionDefaultsReadAhead, 65537)
 	ed, cancel := newTestEventDispatcher(&subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{

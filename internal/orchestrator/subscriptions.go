@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,10 +19,11 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/system"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
@@ -45,7 +46,7 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, ns string,
 		return nil, err
 	}
 	if subDef.Transport == system.SystemEventsTransport {
-		return nil, i18n.NewError(ctx, i18n.MsgSystemTransportInternal)
+		return nil, i18n.NewError(ctx, coremsgs.MsgSystemTransportInternal)
 	}
 
 	return subDef, or.events.CreateUpdateDurableSubscription(ctx, subDef, mustNew)
@@ -61,7 +62,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) e
 		return err
 	}
 	if sub == nil || sub.Namespace != ns {
-		return i18n.NewError(ctx, i18n.Msg404NotFound)
+		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return or.events.DeleteDurableSubscription(ctx, sub)
 }

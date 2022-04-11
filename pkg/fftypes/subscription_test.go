@@ -88,10 +88,10 @@ func TestSubscriptionOptionsDatabaseSerialization(t *testing.T) {
 
 	// Out of luck with anything else
 	err = sub2.Options.Scan(false)
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 
 	err = sub2.Filter.Scan(false)
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 }
 
 func TestSubscriptionUnMarshalFail(t *testing.T) {

@@ -25,14 +25,13 @@ import (
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/system"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
@@ -40,9 +39,12 @@ import (
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/karlseguin/ccache"
@@ -110,7 +112,7 @@ type eventManager struct {
 
 func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
@@ -128,18 +130,18 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 		assets:         am,
 		sharedDownload: sd,
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
-			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.EventAggregatorRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
-		defaultTransport:      config.GetString(config.EventTransportsDefault),
-		opCorrelationRetries:  config.GetInt(config.EventAggregatorOpCorrelationRetries),
+		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
+		opCorrelationRetries:  config.GetInt(coreconfig.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
 		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
 		metrics:               mm,
-		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(config.EventListenerTopicCacheSize))),
-		chainListenerCacheTTL: config.GetDuration(config.EventListenerTopicCacheTTL),
+		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
+		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
 	}
 	ie, _ := eifactory.GetPlugin(ctx, system.SystemEventsTransport)
 	em.internalEvents = ie.(*system.Events)
@@ -194,7 +196,7 @@ func (em *eventManager) WaitStop() {
 
 func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) (err error) {
 	if subDef.Namespace == "" || subDef.Name == "" || subDef.ID == nil {
-		return i18n.NewError(ctx, i18n.MsgInvalidSubscription)
+		return i18n.NewError(ctx, coremsgs.MsgInvalidSubscription)
 	}
 
 	if subDef.Transport == "" {
@@ -210,7 +212,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	existing, _ := em.database.GetSubscriptionByName(ctx, subDef.Namespace, subDef.Name)
 	if existing != nil {
 		if mustNew {
-			return i18n.NewError(ctx, i18n.MsgAlreadyExists, "subscription", subDef.Namespace, subDef.Name)
+			return i18n.NewError(ctx, coremsgs.MsgAlreadyExists, "subscription", subDef.Namespace, subDef.Name)
 		}
 		// Copy over the generated fields, so we can do a compare
 		subDef.Created = existing.Created

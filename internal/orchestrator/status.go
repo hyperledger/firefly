@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
@@ -51,13 +52,13 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 	}
 	status = &fftypes.NodeStatus{
 		Node: fftypes.NodeStatusNode{
-			Name: config.GetString(config.NodeName),
+			Name: config.GetString(coreconfig.NodeName),
 		},
 		Org: fftypes.NodeStatusOrg{
-			Name: config.GetString(config.OrgName),
+			Name: config.GetString(coreconfig.OrgName),
 		},
 		Defaults: fftypes.NodeStatusDefaults{
-			Namespace: config.GetString(config.NamespacesDefault),
+			Namespace: config.GetString(coreconfig.NamespacesDefault),
 		},
 	}
 

@@ -26,20 +26,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...string) (ws *WebSockets, wsc wsclient.WSClient, cancel func()) {
-	config.Reset()
+	coreconfig.Reset()
 
 	ws = &WebSockets{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -579,7 +580,7 @@ func TestConnectionDispatchAfterClose(t *testing.T) {
 		ctx: ctx,
 	}
 	err := wsc.dispatch(&fftypes.EventDelivery{})
-	assert.Regexp(t, "FF10160", err)
+	assert.Regexp(t, "FF00147", err)
 }
 
 func TestWebsocketDispatchAfterClose(t *testing.T) {

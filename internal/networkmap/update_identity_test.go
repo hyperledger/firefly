@@ -114,7 +114,7 @@ func TestUpdateIdentityProfileBadProfile(t *testing.T) {
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
 	}, true)
-	assert.Regexp(t, "FF10188", err)
+	assert.Regexp(t, "FF00135", err)
 
 	mim.AssertExpectations(t)
 }
@@ -190,5 +190,5 @@ func TestUpdateIdentityProfileBadID(t *testing.T) {
 	defer cancel()
 
 	_, err := nm.UpdateIdentity(nm.ctx, "ns1", "badness", &fftypes.IdentityUpdateDTO{}, true)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }

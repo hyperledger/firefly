@@ -22,7 +22,8 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -133,8 +134,8 @@ func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
 
 func TestGetChartHistogramValidCollectionNameWithTypesAndCapped(t *testing.T) {
 	s, mock := newMockProvider().init()
-	config.Reset()
-	config.Set(config.DatabaseMaxChartRows, 10)
+	coreconfig.Reset()
+	config.Set(coreconfig.DatabaseMaxChartRows, 10)
 	for i := range validCollectionsWithTypes {
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"timestamp", "type"}).
 			AddRow(fftypes.UnixTime(1000000000), "typeA").

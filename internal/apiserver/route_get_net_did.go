@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -30,13 +30,13 @@ var getIdentityByDID = &oapispec.Route{
 	Path:   "network/identities/{did:.+}",
 	Method: http.MethodGet,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchverifiers", Example: "true", Description: i18n.MsgTBD, IsBool: true},
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
 	},
 	PathParams: []*oapispec.PathParam{
-		{Name: "did", Description: i18n.MsgTBD},
+		{Name: "did", Description: coremsgs.APIMessageTBD},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

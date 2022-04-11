@@ -22,8 +22,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 const (
@@ -161,6 +161,6 @@ func (h *JSONAny) Scan(src interface{}) error {
 	case string:
 		return h.UnmarshalJSON([]byte(src))
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, h)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, h)
 	}
 }

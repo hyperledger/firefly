@@ -24,9 +24,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ import (
 var utConfPrefix = config.NewPluginConfig("ipfs_unit_tests")
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	i := &IPFS{}
 	i.InitPrefix(utConfPrefix)
 }

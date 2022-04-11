@@ -126,7 +126,7 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
 	_, _, _, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil, []interface{}{"sequence"})
-	assert.Regexp(t, "FF10149.*namespace", err)
+	assert.Regexp(t, "FF00143.*namespace", err)
 }
 
 func TestSQLQueryFactoryBadOp(t *testing.T) {

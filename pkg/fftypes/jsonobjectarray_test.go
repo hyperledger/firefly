@@ -127,7 +127,7 @@ func TestJSONObjectArrayScanExtra(t *testing.T) {
 
 	var badJson JSONObjectArray = []JSONObject{{"not": map[bool]string{true: "json"}}}
 	hash, err = badJson.Hash("badStuff")
-	assert.Regexp(t, "FF10151.*badStuff", err)
+	assert.Regexp(t, "FF00127.*badStuff", err)
 	assert.Nil(t, hash)
 
 }

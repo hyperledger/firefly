@@ -74,7 +74,7 @@ func TestValidateFFIBadVersion(t *testing.T) {
 		Version:   "*(&!$%^)",
 	}
 	err := ffi.Validate(context.Background(), true)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestValidateFFIBadName(t *testing.T) {
@@ -84,7 +84,7 @@ func TestValidateFFIBadName(t *testing.T) {
 		Version:   "v1.0.0",
 	}
 	err := ffi.Validate(context.Background(), true)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestValidateFFIBadNamespace(t *testing.T) {
@@ -94,7 +94,7 @@ func TestValidateFFIBadNamespace(t *testing.T) {
 		Version:   "v1.0.0",
 	}
 	err := ffi.Validate(context.Background(), true)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestFFIParamsScan(t *testing.T) {
@@ -118,7 +118,7 @@ func TestFFIParamsScanNil(t *testing.T) {
 func TestFFIParamsScanError(t *testing.T) {
 	params := &FFIParams{}
 	err := params.Scan(map[string]interface{}{"type": "not supported for scanning FFIParams"})
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 }
 
 func TestFFIParamsValue(t *testing.T) {

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,9 +23,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type staticHandler struct {
@@ -67,7 +68,7 @@ func (h staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.L(r.Context()).Errorf("Failed to serve file: %s", err)
 		w.WriteHeader(500)
 		_ = json.NewEncoder(w).Encode(&fftypes.RESTError{
-			Error: i18n.ExpandWithCode(r.Context(), i18n.MsgAPIServerStaticFail),
+			Error: i18n.ExpandWithCode(r.Context(), i18n.MessageKey(coremsgs.MsgAPIServerStaticFail)),
 		})
 		return
 	}

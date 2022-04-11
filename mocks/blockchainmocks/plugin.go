@@ -3,8 +3,8 @@
 package blockchainmocks
 
 import (
-	config "github.com/hyperledger/firefly/internal/config"
 	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	context "context"
 

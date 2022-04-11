@@ -21,11 +21,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,7 +39,7 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mbi := &blockchainmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 
-	config.Reset()
+	coreconfig.Reset()
 
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
 
@@ -66,8 +67,8 @@ func TestResolveInputSigningIdentityNoOrgKey(t *testing.T) {
 func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgKey, "key123")
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgKey, "key123")
+	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -424,8 +425,8 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgKey, "key123")
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgKey, "key123")
+	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -465,8 +466,8 @@ func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgKey, "key123")
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgKey, "key123")
+	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -486,8 +487,8 @@ func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 func TestResolveInputSigningKeyOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgKey, "key123")
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgKey, "key123")
+	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -502,8 +503,8 @@ func TestResolveInputSigningKeyOk(t *testing.T) {
 func TestResolveInputSigningKeyFail(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgKey, "key123")
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgKey, "key123")
+	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
@@ -517,8 +518,8 @@ func TestResolveInputSigningKeyFail(t *testing.T) {
 func TestResolveInputSigningKeyBypass(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgKey, "key123")
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgKey, "key123")
+	config.Set(coreconfig.OrgName, "org1")
 
 	key, err := im.NormalizeSigningKey(ctx, "different-type-of-key", KeyNormalizationNone)
 	assert.NoError(t, err)
@@ -557,7 +558,7 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "key12345",
 	}
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgName, "org1")
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, "key12345").Return(nil, nil)
@@ -572,7 +573,7 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 func TestGetNodeOwnerBlockchainKeyDeprecatedKeyResolveFailed(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(config.OrgIdentityDeprecated, "0x12345")
+	config.Set(coreconfig.OrgIdentityDeprecated, "0x12345")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "0x12345").Return("", fmt.Errorf("pop"))
@@ -640,7 +641,7 @@ func TestGetNodeOwnerOrgMismatch(t *testing.T) {
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "fullkey123",
 	}
-	config.Set(config.OrgName, "org1")
+	config.Set(coreconfig.OrgName, "org1")
 
 	orgID := fftypes.NewUUID()
 	mdi := im.database.(*databasemocks.Plugin)
@@ -773,7 +774,7 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
-	assert.Regexp(t, "FF10220", err)
+	assert.Regexp(t, "FF00116", err)
 
 }
 
@@ -944,7 +945,7 @@ func TestVerifyIdentityInvalid(t *testing.T) {
 	}
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
-	assert.Regexp(t, "FF10203", err)
+	assert.Regexp(t, "FF00114", err)
 	assert.False(t, retryable)
 
 }
@@ -1151,7 +1152,7 @@ func TestValidateParentTypeInvalidType(t *testing.T) {
 	}
 
 	err := im.validateParentType(ctx, id2, id1)
-	assert.Regexp(t, "FF10362", err)
+	assert.Regexp(t, "FF00126", err)
 
 }
 

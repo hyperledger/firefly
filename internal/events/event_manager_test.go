@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -38,6 +38,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -61,9 +62,9 @@ func newTestEventManagerWithDBConcurrency(t *testing.T) (*eventManager, func()) 
 }
 
 func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*eventManager, func()) {
-	config.Reset()
-	config.Set(config.BlobReceiverWorkerCount, 1)
-	config.Set(config.BlobReceiverWorkerBatchTimeout, "1s")
+	coreconfig.Reset()
+	config.Set(coreconfig.BlobReceiverWorkerCount, 1)
+	config.Set(coreconfig.BlobReceiverWorkerBatchTimeout, "1s")
 	logrus.SetLevel(logrus.DebugLevel)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
@@ -130,8 +131,8 @@ func TestStartStopBadDependencies(t *testing.T) {
 }
 
 func TestStartStopBadTransports(t *testing.T) {
-	config.Set(config.EventTransportsEnabled, []string{"wrongun"})
-	defer config.Reset()
+	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
+	defer coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
