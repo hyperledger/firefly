@@ -41,7 +41,7 @@ type webSocket struct {
 	filter       fftypes.ChangeEventFilter
 	mux          sync.Mutex
 	closed       bool
-	blockedTime  *fftypes.FFTime
+	blocked      *fftypes.ChangeEvent
 	lastWarnTime *fftypes.FFTime
 }
 
@@ -121,6 +121,14 @@ func (wc *webSocket) sendLoop() {
 	for {
 		select {
 		case changeEvent := <-wc.events:
+			wc.mux.Lock()
+			blocked := wc.blocked
+			wc.blocked = nil
+			wc.mux.Unlock()
+			if blocked != nil {
+				l.Debugf("Notifying client it missed %d events since %s", blocked.DroppedCount, blocked.DroppedSince)
+				wc.writeObject(blocked)
+			}
 			if !wc.eventMatches(changeEvent) {
 				continue
 			}
@@ -168,15 +176,20 @@ func (wc *webSocket) dispatch(event *fftypes.ChangeEvent) {
 	// This function is called on the critical path of the commit for all database operations.
 	select {
 	case wc.events <- event:
-		if wc.blockedTime != nil {
-			wc.blockedTime = nil
-		}
 	default:
-		if wc.blockedTime == nil {
-			wc.blockedTime = fftypes.Now()
+		wc.mux.Lock()
+		var blocked *fftypes.ChangeEvent
+		if wc.blocked == nil {
+			wc.blocked = &fftypes.ChangeEvent{
+				Type:         fftypes.ChangeEventTypeDropped,
+				DroppedSince: fftypes.Now(),
+			}
 		}
+		blocked = wc.blocked
+		blocked.DroppedCount++
+		wc.mux.Unlock()
 		if wc.lastWarnTime == nil || time.Since(*wc.lastWarnTime.Time()) > wc.manager.blockedWarnInterval {
-			log.L(wc.ctx).Warnf("Change event listener is blocked an missing events (since %s)", wc.blockedTime)
+			log.L(wc.ctx).Warnf("Change event listener is blocked an missing %d events (since %s)", blocked.DroppedCount, blocked.DroppedSince)
 		}
 	}
 }

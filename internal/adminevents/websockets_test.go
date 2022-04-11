@@ -19,21 +19,15 @@ package adminevents
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWriteFail(t *testing.T) {
-	ae, _, cancel := newTestAdminEventsManager(t)
+	_, ws, _, cancel := newTestAdminEventsManager(t)
 	defer cancel()
-	var ws *webSocket
-	for ws == nil {
-		time.Sleep(1 * time.Microsecond)
-		if len(ae.dirtyReadList) > 0 {
-			ws = ae.dirtyReadList[0]
-		}
-	}
+
 	// Close socket that will break receiver loop, and wait for sender to exit
 	ws.wsConn.Close()
 	<-ws.senderDone
@@ -57,4 +51,35 @@ func TestBlockedDispatch(t *testing.T) {
 	<-ws.events
 	ws.dispatch(&fftypes.ChangeEvent{})
 	<-ws.events
+}
+
+func TestBlockedConsume(t *testing.T) {
+	_, ws, wsc, cancel := newTestAdminEventsManager(t)
+	defer cancel()
+
+	ws.mux.Lock()
+	ws.collections = []string{"collection1"}
+	ws.blocked = &fftypes.ChangeEvent{
+		Type:         fftypes.ChangeEventTypeDropped,
+		DroppedSince: fftypes.Now(),
+		DroppedCount: 1,
+	}
+	ws.mux.Unlock()
+
+	// Dispatch an event - will be successful as we faked the block
+	ws.dispatch(&fftypes.ChangeEvent{
+		Type:       fftypes.ChangeEventTypeCreated,
+		Collection: "collection1",
+		Namespace:  "ns1",
+		ID:         fftypes.NewUUID(),
+	})
+
+	msg1 := <-wsc.Receive()
+	event1 := unmarshalChangeEvent(t, msg1)
+	assert.Equal(t, fftypes.ChangeEventTypeDropped, event1.Type)
+	assert.Equal(t, int64(1), event1.DroppedCount)
+
+	msg2 := <-wsc.Receive()
+	event2 := unmarshalChangeEvent(t, msg2)
+	assert.Equal(t, fftypes.ChangeEventTypeCreated, event2.Type)
 }

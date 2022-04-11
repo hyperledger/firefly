@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, wsc wsclient.WSClient, cancel func()) {
+func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, ws *webSocket, wsc wsclient.WSClient, cancel func()) {
 	config.Reset()
 
 	ae = NewAdminEventManager(context.Background()).(*adminEventManager)
@@ -50,7 +50,14 @@ func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, wsc wsclien
 	err = wsc.Connect()
 	assert.NoError(t, err)
 
-	return ae, wsc, func() {
+	for ws == nil {
+		time.Sleep(1 * time.Microsecond)
+		if len(ae.dirtyReadList) > 0 {
+			ws = ae.dirtyReadList[0]
+		}
+	}
+
+	return ae, ws, wsc, func() {
 		ae.cancelCtx()
 		wsc.Close()
 		ae.WaitStop()
@@ -64,16 +71,20 @@ func toJSON(t *testing.T, obj interface{}) []byte {
 	return b
 }
 
+func unmarshalChangeEvent(t *testing.T, msgBytes []byte) *fftypes.ChangeEvent {
+	var event fftypes.ChangeEvent
+	err := json.Unmarshal(msgBytes, &event)
+	assert.NoError(t, err)
+	return &event
+}
+
 func TestAdminEventsE2E(t *testing.T) {
-	ae, wsc, cancel := newTestAdminEventsManager(t)
+	ae, _, wsc, cancel := newTestAdminEventsManager(t)
 
 	events := make(chan *fftypes.ChangeEvent)
 	go func() {
 		for msgBytes := range wsc.Receive() {
-			var event fftypes.ChangeEvent
-			err := json.Unmarshal(msgBytes, &event)
-			assert.NoError(t, err)
-			events <- &event
+			events <- unmarshalChangeEvent(t, msgBytes)
 		}
 	}()
 
