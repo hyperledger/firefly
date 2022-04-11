@@ -242,6 +242,13 @@ func beforeE2ETest(t *testing.T) *testState {
 		}
 	}
 
+	// If no namespace is set to run tests against, use the default namespace
+	if os.Getenv("NAMESPACE") != "" {
+		namespace := os.Getenv("NAMESPACE")
+		CreateNamespaces(ts.client1, namespace)
+		CreateNamespaces(ts.client2, namespace)
+	}
+
 	t.Logf("Client 1: " + ts.client1.HostURL)
 	t.Logf("Client 2: " + ts.client2.HostURL)
 	pollForUp(t, ts.client1)
