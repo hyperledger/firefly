@@ -37,7 +37,7 @@ var getContractInterfaces = &oapispec.Route{
 	FilterFactory:   database.FFIQueryFactory,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).Contracts().GetFFIs(r.Ctx, r.PP["ns"], r.Filter))

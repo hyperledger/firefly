@@ -26,20 +26,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractAPIs = &oapispec.Route{
-	Name:   "getContractAPIs",
-	Path:   "namespaces/{ns}/apis",
+var getContractAPIListeners = &oapispec.Route{
+	Name:   "getContractAPIListeners",
+	Path:   "namespaces/{ns}/apis/{apiName}/listeners/{eventPath}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "apiName", Description: coremsgs.APIMessageTBD},
+		{Name: "eventPath", Description: coremsgs.APIMessageTBD},
 	},
-	QueryParams:     nil,
-	FilterFactory:   database.ContractAPIQueryFactory,
+	QueryParams:     []*oapispec.QueryParam{},
+	FilterFactory:   database.ContractListenerQueryFactory,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.ContractAPI{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIListeners(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"], r.Filter))
 	},
 }

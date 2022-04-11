@@ -22,24 +22,25 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractAPIs = &oapispec.Route{
-	Name:   "getContractAPIs",
-	Path:   "namespaces/{ns}/apis",
-	Method: http.MethodGet,
+var postContractAPIListeners = &oapispec.Route{
+	Name:   "postContractAPIListeners",
+	Path:   "namespaces/{ns}/apis/{apiName}/listeners/{eventPath}",
+	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "apiName", Description: coremsgs.APIMessageTBD},
+		{Name: "eventPath", Description: coremsgs.APIMessageTBD},
 	},
-	QueryParams:     nil,
-	FilterFactory:   database.ContractAPIQueryFactory,
+	QueryParams:     []*oapispec.QueryParam{},
+	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.ContractAPI{} },
+	JSONInputValue:  func() interface{} { return &fftypes.ContractListener{} },
+	JSONOutputValue: func() interface{} { return &fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Filter))
+		return getOr(r.Ctx).Contracts().AddContractAPIListener(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"], r.Input.(*fftypes.ContractListener))
 	},
 }
