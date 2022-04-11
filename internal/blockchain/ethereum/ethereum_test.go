@@ -2398,3 +2398,39 @@ func TestGetFFIType(t *testing.T) {
 	assert.Equal(t, e.getFFIType("tuple"), "object")
 	assert.Equal(t, e.getFFIType("foobar"), "")
 }
+
+func TestGenerateEventSignature(t *testing.T) {
+	e, _ := newTestEthereum()
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "Changed(uint256,uint256)", signature)
+}
+
+func TestGenerateEventSignatureInvalid(t *testing.T) {
+	e, _ := newTestEthereum()
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"!bad": "bad"`),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "", signature)
+}

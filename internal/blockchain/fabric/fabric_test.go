@@ -1648,3 +1648,9 @@ func TestGenerateFFI(t *testing.T) {
 	})
 	assert.Regexp(t, "FF10347", err)
 }
+
+func TestGenerateEventSignature(t *testing.T) {
+	e, _ := newTestFabric()
+	signature := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	assert.Equal(t, "Changed", signature)
+}

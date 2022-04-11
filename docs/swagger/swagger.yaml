@@ -3039,12 +3039,27 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: location
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: signature
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: topic
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -3162,6 +3177,10 @@ paths:
                     protocolId:
                       description: An ID assigned by the blockchain connector to this
                         listener
+                      type: string
+                    signature:
+                      description: The stringified signature of the event, as computed
+                        by the blockchain plugin
                       type: string
                     topic:
                       description: A topic to set on the FireFly event that is emitted
@@ -3351,6 +3370,10 @@ paths:
                     description: An ID assigned by the blockchain connector to this
                       listener
                     type: string
+                  signature:
+                    description: The stringified signature of the event, as computed
+                      by the blockchain plugin
+                    type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
@@ -3497,6 +3520,10 @@ paths:
                   protocolId:
                     description: An ID assigned by the blockchain connector to this
                       listener
+                    type: string
+                  signature:
+                    description: The stringified signature of the event, as computed
+                      by the blockchain plugin
                     type: string
                   topic:
                     description: A topic to set on the FireFly event that is emitted

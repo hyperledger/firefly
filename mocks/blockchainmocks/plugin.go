@@ -64,6 +64,20 @@ func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *ffty
 	return r0
 }
 
+// GenerateEventSignature provides a mock function with given fields: ctx, event
+func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+	ret := _m.Called(ctx, event)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition) string); ok {
+		r0 = rf(ctx, event)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // GenerateFFI provides a mock function with given fields: ctx, generationRequest
 func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, generationRequest)

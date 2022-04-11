@@ -725,3 +725,7 @@ func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVali
 func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
+
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+	return event.Name
+}

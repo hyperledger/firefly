@@ -513,6 +513,8 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 				FFIEventDefinition: event.FFIEventDefinition,
 			}
 		}
+
+		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		return nil
 	})
 	if err != nil {

@@ -698,6 +698,26 @@ func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *fftypes.FFIMethod
 	return abiElement, nil
 }
 
+func ABIMethodToSignature(abi *ABIElementMarshaling) string {
+	result := abi.Name + "("
+	if len(abi.Inputs) > 0 {
+		for _, param := range abi.Inputs {
+			result += param.Type + ","
+		}
+		result = result[:len(result)-1]
+	}
+	result += ")"
+	return result
+}
+
+func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+	abi, err := e.FFIEventDefinitionToABI(ctx, event)
+	if err != nil {
+		return ""
+	}
+	return ABIMethodToSignature(&abi)
+}
+
 func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgumentMarshaling, params fftypes.FFIParams) error {
 	for i, param := range params {
 		c := fftypes.NewFFISchemaCompiler()

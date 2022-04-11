@@ -582,6 +582,7 @@ func TestAddContractListenerInline(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
@@ -629,6 +630,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(event, nil)
@@ -889,6 +891,7 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
 	assert.Regexp(t, "does not validate", err)
@@ -923,6 +926,7 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mbi.On("AddContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
@@ -958,6 +962,7 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
+	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
 
