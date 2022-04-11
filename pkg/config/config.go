@@ -525,35 +525,38 @@ func GenerateConfigMarkdown(ctx context.Context, keys []string) ([]byte, error) 
 	sort.Strings(configObjectNames)
 	for _, configObjectName := range configObjectNames {
 		b.WriteString(fmt.Sprintf("\n\n%s %s", strings.Repeat("#", rootKeyHeaderLevel), configObjectName))
-		b.WriteString("\n\n|Key|Default Value|Description|")
-		b.WriteString("\n|---|-------------|-----------|")
+		b.WriteString("\n\n|Key|Description|Type|Default Value|")
+		b.WriteString("\n|---|-----------|----|-------------|")
 		sort.Strings(configObjects[configObjectName])
 		for _, key := range configObjects[configObjectName] {
 			fullKey := fmt.Sprintf("%s.%s", configObjectName, key)
-			b.WriteString(fmt.Sprintf("\n|%s|`%v`|%s|", key, Get(RootKey(fullKey)), getDescriptionForConfigKey(ctx, fullKey)))
+			description, fieldType := getDescriptionForConfigKey(ctx, fullKey)
+			b.WriteString(fmt.Sprintf("\n|%s|%s|%s|`%v`", key, description, fieldType, Get(RootKey(fullKey))))
 		}
 	}
 	return b.Bytes(), nil
 }
 
-func getDescriptionForConfigKey(ctx context.Context, key string) string {
+func getDescriptionForConfigKey(ctx context.Context, key string) (string, string) {
 	configDescriptionKey := "config." + key
 	description := i18n.Expand(ctx, i18n.MessageKey(configDescriptionKey))
-	if description != configDescriptionKey {
-		return description
+	fieldType, ok := i18n.GetFieldType(configDescriptionKey)
+	if description != configDescriptionKey && ok {
+		return description, fieldType
 	}
 	return getGlobalDescriptionforConfigKey(ctx, key)
 }
 
-func getGlobalDescriptionforConfigKey(ctx context.Context, key string) string {
+func getGlobalDescriptionforConfigKey(ctx context.Context, key string) (string, string) {
 	// No specific description was found, look for a global
 	splitKey := strings.Split(key, ".")
 	// Walk through the key structure starting with the most specific key possible, working to the most generic
 	for i := 0; i < len(splitKey); i++ {
 		configDescriptionKey := "config.global." + strings.Join(splitKey[i:], ".")
 		description := i18n.Expand(ctx, i18n.MessageKey(configDescriptionKey))
-		if description != configDescriptionKey {
-			return description
+		fieldType, ok := i18n.GetFieldType(configDescriptionKey)
+		if description != configDescriptionKey && ok {
+			return description, fieldType
 		}
 	}
 	panic(fmt.Sprintf("Translation for config key '%s' was not found", key))

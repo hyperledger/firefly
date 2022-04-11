@@ -310,10 +310,10 @@ func TestGenerateConfigMarkdown(t *testing.T) {
 	key3 := AddRootKey("level1_1.level2_2.level3")
 	key4 := AddRootKey("level1_2.level2.level3")
 
-	i18n.FFM(fmt.Sprintf("config.%s", key1), "Description 1")
-	i18n.FFM(fmt.Sprintf("config.%s", key2), "Description 2")
-	i18n.FFM("config.global.level2_2.level3", "Description 3")
-	i18n.FFM(fmt.Sprintf("config.%s", key4), "Description 4")
+	i18n.FFC(fmt.Sprintf("config.%s", key1), "Description 1", "Type 1")
+	i18n.FFC(fmt.Sprintf("config.%s", key2), "Description 2", "Type 2")
+	i18n.FFC("config.global.level2_2.level3", "Description 3", "Type 3")
+	i18n.FFC(fmt.Sprintf("config.%s", key4), "Description 4", "Type 4")
 
 	RootConfigReset(func() {
 		viper.SetDefault(string(key1), "val1")
