@@ -33,7 +33,7 @@ var getStatusWebSockets = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.WebSocketStatus{} },
+	JSONOutputValue: func() interface{} { return &fftypes.WebSocketStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return getOr(r.Ctx).Events().GetWebSocketStatus(), nil

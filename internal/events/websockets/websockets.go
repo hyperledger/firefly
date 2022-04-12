@@ -146,7 +146,10 @@ func (ws *WebSockets) GetStatus() *fftypes.WebSocketStatus {
 	}
 
 	ws.connMux.Lock()
-	connections := ws.connections
+	connections := make([]*websocketConnection, 0, len(ws.connections))
+	for _, c := range ws.connections {
+		connections = append(connections, c)
+	}
 	ws.connMux.Unlock()
 
 	for _, wc := range connections {
