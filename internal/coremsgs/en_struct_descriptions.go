@@ -370,6 +370,7 @@ var (
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
 	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
 	NodeDefaults   = ffm("NodeStatus.defaults", "Information about defaults configured on this node that appplications might need to query on startup")
+	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
 
 	// NodeStatusNode field descriptions
 	NodeStatusNodeName       = ffm("NodeStatusNode.name", "The name of this node, as specified in the local configuration")
@@ -385,6 +386,19 @@ var (
 
 	// NodeStatusDefaults field descriptions
 	NodeStatusDefaultsNamespace = ffm("NodeStatusDefaults.namespace", "The default namespace on this node")
+
+	// NodeStatusPlugins field descriptions
+	NodeStatusPluginsBlockchain    = ffm("NodeStatusPlugins.blockchain", "The blockchain plugins on this node")
+	NodeStatusPluginsDatabase      = ffm("NodeStatusPlugins.database", "The database plugins on this node")
+	NodeStatusPluginsDataExchange  = ffm("NodeStatusPlugins.dataExchange", "The data exchange plugins on this node")
+	Events                         = ffm("NodeStatusPlugins.events", "The event plugins on this node")
+	NodeStatusPluginsIdentity      = ffm("NodeStatusPlugins.identity", "The identity plugins on this node")
+	NodeStatusPluginsSharedStorage = ffm("NodeStatusPlugins.sharedStorage", "The shared storage plugins on this node")
+	NodeStatusPluginsTokens        = ffm("NodeStatusPlugins.tokens", "The token plugins on this node")
+
+	// NodeStatusPlugin field descriptions
+	NodeStatusPluginName = ffm("NodeStatusPlugin.name", "The name of the plugin")
+	NodeStatusPluginType = ffm("NodeStatusPlugin.pluginType", "The type of the plugin")
 
 	// BatchManagerStatus field descriptions
 	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")
@@ -553,4 +567,19 @@ var (
 
 	// ContractCallResponse field descriptions
 	ContractCallResponseID = ffm("ContractCallResponse.id", "The UUID of the operation created to track the transaction submission through to completion")
+
+	// WebSocketStatus field descriptions
+	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")
+	WebSocketStatusConnections = ffm("WebSocketStatus.connections", "List of currently active websocket client connections")
+
+	// WSConnectionStatus field descriptions
+	WSConnectionStatusID            = ffm("WSConnectionStatus.id", "The unique ID assigned to this client connection")
+	WSConnectionStatusRemoteAddress = ffm("WSConnectionStatus.remoteAddress", "The remote address of the connected client (if available)")
+	WSConnectionStatusUserAgent     = ffm("WSConnectionStatus.userAgent", "The user agent of the connected client (if available)")
+	WSConnectionStatusSubscriptions = ffm("WSConnectionStatus.subscriptions", "List of subscriptions currently started by this client")
+
+	// WSSubscriptionStatus field descriptions
+	WSSubscriptionStatusEphemeral = ffm("WSSubscriptionStatus.ephemeral", "Indicates whether the subscription is ephemeral (vs durable)")
+	WSSubscriptionStatusNamespace = ffm("WSSubscriptionStatus.namespace", "The subscription namespace")
+	WSSubscriptionStatusName      = ffm("WSSubscriptionStatus.name", "The subscription name (for durable subscriptions only)")
 )

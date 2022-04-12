@@ -18,35 +18,24 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractInterfaceNameVersion = &oapispec.Route{
-	Name:   "getContractInterfaceByNameAndVersion",
-	Path:   "namespaces/{ns}/contracts/interfaces/{name}/{version}",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "name", Description: coremsgs.APIMessageTBD},
-		{Name: "version", Description: coremsgs.APIMessageTBD},
-	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
-	},
+var getStatusWebSockets = &oapispec.Route{
+	Name:            "getStatusWebSockets",
+	Path:            "status/websockets",
+	Method:          http.MethodGet,
+	PathParams:      nil,
+	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+	JSONOutputValue: func() interface{} { return &fftypes.WebSocketStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
-		}
-		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		return getOr(r.Ctx).Events().GetWebSocketStatus(), nil
 	},
 }

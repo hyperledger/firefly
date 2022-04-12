@@ -105,9 +105,6 @@ var (
 	PrivateMessagingBatchPayloadLimit = ffc("privatemessaging.batch.payloadLimit")
 	// PrivateMessagingBatchTimeout is the timeout to wait for a batch to fill, before sending
 	PrivateMessagingBatchTimeout = ffc("privatemessaging.batch.timeout")
-	// PrivateMessagingOpCorrelationRetries how many times to correlate an event for an operation (such as tx submission) back to an operation.
-	// Needed because the operation update might come back before we are finished persisting the ID of the request
-	PrivateMessagingOpCorrelationRetries = ffc("privatemessaging.opCorrelationRetries")
 	// PrivateMessagingRetryFactor the backoff factor to use for retry of database operations
 	PrivateMessagingRetryFactor = ffc("privatemessaging.retry.factor")
 	// PrivateMessagingRetryInitDelay the initial delay to use for retry of data base operations
@@ -132,8 +129,8 @@ var (
 	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	DatabaseType = ffc("database.type")
-	// DatabaseMaxChartRows the maximum rows to fetch for each histogram bucket
-	DatabaseMaxChartRows = ffc("database.maxChartRows")
+	// HistogramsMaxChartRows the maximum rows to fetch for each histogram bucket
+	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = ffc("tokens")
 	// DebugPort a HTTP port on which to enable the go debugger
@@ -148,9 +145,6 @@ var (
 	EventAggregatorBatchSize = ffc("event.aggregator.batchSize")
 	// EventAggregatorBatchTimeout how long to wait for new events to arrive before performing aggregation on a page of events
 	EventAggregatorBatchTimeout = ffc("event.aggregator.batchTimeout")
-	// EventAggregatorOpCorrelationRetries how many times to correlate an event for an operation (such as tx submission) back to an operation.
-	// Needed because the operation update might come back before we are finished persisting the ID of the request
-	EventAggregatorOpCorrelationRetries = ffc("event.aggregator.opCorrelationRetries")
 	// EventAggregatorPollTimeout the time to wait without a notification of new events, before trying a select on the table
 	EventAggregatorPollTimeout = ffc("event.aggregator.pollTimeout")
 	// EventAggregatorRewindTimeout the minimum time to wait for rewinds to accumulate before resolving them
@@ -317,7 +311,7 @@ func setDefaults() {
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "ffdx")
-	viper.SetDefault(string(DatabaseMaxChartRows), 100)
+	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
 	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)
@@ -333,7 +327,6 @@ func setDefaults() {
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")
-	viper.SetDefault(string(EventAggregatorOpCorrelationRetries), 3)
 	viper.SetDefault(string(EventDBEventsBufferSize), 100)
 	viper.SetDefault(string(EventDispatcherBufferLength), 5)
 	viper.SetDefault(string(EventDispatcherBatchTimeout), "250ms")
@@ -368,7 +361,6 @@ func setDefaults() {
 	viper.SetDefault(string(PrivateMessagingRetryFactor), 2.0)
 	viper.SetDefault(string(PrivateMessagingRetryInitDelay), "100ms")
 	viper.SetDefault(string(PrivateMessagingRetryMaxDelay), "30s")
-	viper.SetDefault(string(PrivateMessagingOpCorrelationRetries), 3)
 	viper.SetDefault(string(PrivateMessagingBatchAgentTimeout), "2m")
 	viper.SetDefault(string(PrivateMessagingBatchSize), 200)
 	viper.SetDefault(string(PrivateMessagingBatchTimeout), "1s")

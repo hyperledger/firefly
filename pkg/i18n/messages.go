@@ -32,6 +32,9 @@ type MessageKey string
 // ErrorMessageKey is a special lookup string conforming to FireFly's rules for error message registration
 type ErrorMessageKey MessageKey
 
+// ConfigMessageKey is a special lookup string conforming to FireFly's rules for configuration descriptions and types
+type ConfigMessageKey MessageKey
+
 // Expand for use in docs and logging - returns a translated message, translated the language of the context
 func Expand(ctx context.Context, key MessageKey, inserts ...interface{}) string {
 	return pFor(ctx).Sprintf(string(key), inserts...)
@@ -61,6 +64,7 @@ var serverLangs = []language.Tag{
 var langMatcher = language.NewMatcher(serverLangs)
 
 var statusHints = map[string]int{}
+var fieldTypes = map[string]string{}
 var msgIDUniq = map[string]bool{}
 
 // FFE is the translations helper to register an error message
@@ -92,6 +96,17 @@ func FFM(key, enTranslation string) MessageKey {
 	return MessageKey(key)
 }
 
+// FFC is the enTranslations helper to define a configuration key description and type
+func FFC(key, enTranslation string, fieldType string) ConfigMessageKey {
+	if _, exists := msgIDUniq[key]; exists {
+		panic(fmt.Sprintf("Config ID %s re-used", key))
+	}
+	msgIDUniq[key] = true
+	fieldTypes[key] = fieldType
+	_ = message.Set(enLang, key, catalog.String(enTranslation))
+	return ConfigMessageKey(key)
+}
+
 var defaultLangPrinter *message.Printer
 
 func pFor(ctx context.Context) *message.Printer {
@@ -116,4 +131,9 @@ func SetLang(lang string) {
 func GetStatusHint(code string) (int, bool) {
 	i, ok := statusHints[code]
 	return i, ok
+}
+
+func GetFieldType(code string) (string, bool) {
+	s, ok := fieldTypes[code]
+	return s, ok
 }

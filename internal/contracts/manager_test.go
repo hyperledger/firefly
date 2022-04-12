@@ -1119,6 +1119,25 @@ func TestGetFFI(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestGetFFIWithChildren(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	cid := fftypes.NewUUID()
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{ID: cid}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
+	}, nil, nil)
+
+	_, err := cm.GetFFIWithChildren(context.Background(), "ns1", "ffi", "v1.0.0")
+	assert.NoError(t, err)
+
+	mdb.AssertExpectations(t)
+}
+
 func TestGetFFIByID(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
@@ -1800,6 +1819,124 @@ func TestGetContractAPIs(t *testing.T) {
 	assert.Equal(t, 1, len(results))
 	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api/swagger.json", results[0].URLs.OpenAPI)
 	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api", results[0].URLs.UI)
+}
+
+func TestGetContractAPIInterface(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+	api := &fftypes.ContractAPI{
+		Namespace: "ns1",
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{ID: interfaceID},
+	}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIByID", mock.Anything, interfaceID).Return(&fftypes.FFI{}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
+		{ID: fftypes.NewUUID(), Name: "method1"},
+	}, nil, nil)
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
+	}, nil, nil)
+
+	result, err := cm.GetContractAPIInterface(context.Background(), "ns1", "banana")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPIInterfaceFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractAPIInterface(context.Background(), "ns1", "banana")
+
+	assert.EqualError(t, err, "pop")
+
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPIMethod(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+	api := &fftypes.ContractAPI{
+		Namespace: "ns1",
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{ID: interfaceID},
+	}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", interfaceID, "peel").Return(&fftypes.FFIMethod{
+		ID:   fftypes.NewUUID(),
+		Name: "peel",
+	}, nil)
+
+	result, err := cm.GetContractAPIMethod(context.Background(), "ns1", "banana", "peel")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPIMethodFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractAPIMethod(context.Background(), "ns1", "banana", "peel")
+
+	assert.EqualError(t, err, "pop")
+
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPIEvent(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	interfaceID := fftypes.NewUUID()
+	api := &fftypes.ContractAPI{
+		Namespace: "ns1",
+		Name:      "banana",
+		Interface: &fftypes.FFIReference{ID: interfaceID},
+	}
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
+	mdb.On("GetFFIEvent", mock.Anything, "ns1", interfaceID, "peeled").Return(&fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
+			Name: "peeled",
+		},
+	}, nil)
+
+	result, err := cm.GetContractAPIEvent(context.Background(), "ns1", "banana", "peeled")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+
+	mdb.AssertExpectations(t)
+}
+
+func TestGetContractAPIEventFail(t *testing.T) {
+	cm := newTestContractManager()
+	mdb := cm.database.(*databasemocks.Plugin)
+
+	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
+
+	_, err := cm.GetContractAPIEvent(context.Background(), "ns1", "banana", "peeled")
+
+	assert.EqualError(t, err, "pop")
+
+	mdb.AssertExpectations(t)
 }
 
 func TestBroadcastContractAPI(t *testing.T) {
