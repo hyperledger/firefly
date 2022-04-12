@@ -53,12 +53,6 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 		},
 	}
 	for _, method := range ffi.Methods {
-		routes = og.addMethodMetadata(routes, method)
-	}
-	for _, event := range ffi.Events {
-		routes = og.addEventMetadata(routes, event)
-	}
-	for _, method := range ffi.Methods {
 		routes = og.addMethod(routes, method, hasLocation)
 	}
 
@@ -68,28 +62,6 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 		Description: ffi.Description,
 		BaseURL:     baseURL,
 	})
-}
-
-func (og *ffiSwaggerGen) addMethodMetadata(routes []*oapispec.Route, method *fftypes.FFIMethod) []*oapispec.Route {
-	routes = append(routes, &oapispec.Route{
-		Name:            fmt.Sprintf("get_%s", method.Pathname),
-		Path:            fmt.Sprintf("interface/methods/%s", method.Pathname), // must match a route defined in apiserver routes!
-		Method:          http.MethodGet,
-		JSONOutputValue: func() interface{} { return &fftypes.FFIMethod{} },
-		JSONOutputCodes: []int{http.StatusOK},
-	})
-	return routes
-}
-
-func (og *ffiSwaggerGen) addEventMetadata(routes []*oapispec.Route, event *fftypes.FFIEvent) []*oapispec.Route {
-	routes = append(routes, &oapispec.Route{
-		Name:            fmt.Sprintf("get_%s", event.Pathname),
-		Path:            fmt.Sprintf("interface/events/%s", event.Pathname), // must match a route defined in apiserver routes!
-		Method:          http.MethodGet,
-		JSONOutputValue: func() interface{} { return &fftypes.FFIEvent{} },
-		JSONOutputCodes: []int{http.StatusOK},
-	})
-	return routes
 }
 
 func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFIMethod, hasLocation bool) []*oapispec.Route {

@@ -28,8 +28,6 @@ var routes = []*oapispec.Route{
 	getChartHistogram,
 	getContractAPIByName,
 	getContractAPIInterface,
-	getContractAPIMethod,
-	getContractAPIEvent,
 	getContractAPIs,
 	getContractInterface,
 	getContractInterfaceNameVersion,
