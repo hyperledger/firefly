@@ -29,7 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -531,7 +530,7 @@ func GenerateConfigMarkdown(ctx context.Context, keys []string) ([]byte, error) 
 		for _, key := range configObjects[configObjectName] {
 			fullKey := fmt.Sprintf("%s.%s", configObjectName, key)
 			description, fieldType := getDescriptionForConfigKey(ctx, fullKey)
-			if fieldType != coremsgs.IgnoredType {
+			if fieldType != i18n.IgnoredType {
 				row := fmt.Sprintf("\n|%s|%s|%s|`%v`", key, description, fieldType, Get(RootKey(fullKey)))
 				rowsInTable = append(rowsInTable, row)
 			}

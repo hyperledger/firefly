@@ -16,6 +16,16 @@
 
 package i18n
 
+var TimeDurationType = "[`time.Duration`](https://pkg.go.dev/time#Duration)"
+var ByteSizeType = "[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)"
+var GoTemplateType = "[Go Template](https://pkg.go.dev/text/template) `string`"
+var StringType = "`string`"
+var IntType = "`int`"
+var BooleanType = "`boolean`"
+var FloatType = "`boolean`"
+var MapStringStringType = "`map[string]string`"
+var IgnoredType = "IGNORE"
+
 //revive:disable
 var (
 	ConfigLang          = FFM("config.lang", "Default language for translation (API calls may support language override using headers)")
