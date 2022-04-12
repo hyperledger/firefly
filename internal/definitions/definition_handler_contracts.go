@@ -19,6 +19,7 @@ package definitions
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/log"
 )
@@ -54,15 +55,23 @@ func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) 
 func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftypes.ContractAPI) (valid bool, err error) {
 	existing, err := dh.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 	if err != nil {
-		return false, err
+		return false, err // retryable
 	}
 	if existing != nil {
 		if !api.LocationAndLedgerEquals(existing) {
-			return false, nil
+			return false, nil // not retryable
 		}
 	}
 	err = dh.database.UpsertContractAPI(ctx, api)
-	return err == nil, err
+	if err != nil {
+		if err == database.IDMismatch {
+			log.L(ctx).Errorf("Invalid contract API '%s'. ID mismatch with existing record", api.ID)
+			return false, nil // not retryable
+		}
+		log.L(ctx).Errorf("Failed to insert contract API '%s': %s", api.ID, err)
+		return false, err // retryable
+	}
+	return true, nil
 }
 
 func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error) {

@@ -24,6 +24,7 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -276,6 +277,17 @@ func TestPersistContractAPIUpsertFail(t *testing.T) {
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := dh.persistContractAPI(context.Background(), testContractAPI())
 	assert.Regexp(t, "pop", err)
+	mbi.AssertExpectations(t)
+}
+
+func TestPersistContractAPIIDMismatch(t *testing.T) {
+	dh, _ := newTestDefinitionHandlers(t)
+	mbi := dh.database.(*databasemocks.Plugin)
+	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(database.IDMismatch)
+	valid, err := dh.persistContractAPI(context.Background(), testContractAPI())
+	assert.False(t, valid)
+	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }
 
