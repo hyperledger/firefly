@@ -1782,15 +1782,28 @@ func TestNormalizeContractLocation(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	location := &Location{
-		Address: "0x12345",
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	result, err := e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.NoError(t, err)
+	assert.Equal(t, "0x3081d84fd367044f4ed453f2024709242470388c", result.JSONObject()["address"])
+}
+
+func TestNormalizeContractLocationInvalid(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "bad",
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
-	assert.NoError(t, err)
+	assert.Regexp(t, "FF10141", err)
 }
 
-func TestNormalizeContractLocationFail(t *testing.T) {
+func TestNormalizeContractLocationBlank(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	location := &Location{}

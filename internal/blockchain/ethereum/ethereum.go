@@ -621,7 +621,10 @@ func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *ffty
 	if err != nil {
 		return nil, err
 	}
-	parsed.Address = strings.ToLower(parsed.Address)
+	parsed.Address, err = validateEthAddress(ctx, parsed.Address)
+	if err != nil {
+		return nil, err
+	}
 	normalized, err := json.Marshal(parsed)
 	if err == nil {
 		result = fftypes.JSONAnyPtrBytes(normalized)
