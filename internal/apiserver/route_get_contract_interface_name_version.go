@@ -36,7 +36,7 @@ var getContractInterfaceNameVersion = &oapispec.Route{
 		{Name: "version", Description: coremsgs.APIParamsContractInterfaceVersion},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIParamsContractInterfaceFetchChildren, IsBool: true},
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetContractInterfaceNameVersion,

@@ -705,17 +705,17 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{apiName}/interface:
     get:
-      description: 'TODO: Description'
+      description: Gets a contract interface for a contract API
       operationId: getContractAPIInterface
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
@@ -2718,7 +2718,8 @@ paths:
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the full FireFly Interface document
+          including all methods, events, and parameters
         in: query
         name: fetchchildren
         schema:
@@ -8101,7 +8102,7 @@ paths:
           description: ""
   /namespaces/{ns}/operations/{opid}/retry:
     post:
-      description: Retry a failed operation
+      description: Retries a failed operation
       operationId: postOpRetry
       parameters:
       - description: The namespace which scopes this request
@@ -8427,7 +8428,7 @@ paths:
         default:
           description: ""
     post:
-      description: Create a new subscription for an application to receive events
+      description: Creates a new subscription for an application to receive events
         from FireFly
       operationId: postNewSubscription
       parameters:
@@ -9529,7 +9530,7 @@ paths:
         default:
           description: ""
     post:
-      description: Create a token approval
+      description: Creates a token approval
       operationId: postTokenApproval
       parameters:
       - description: The namespace which scopes this request
@@ -9885,7 +9886,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/burn:
     post:
-      description: Burn some tokens
+      description: Burns some tokens
       operationId: postTokenBurn
       parameters:
       - description: The namespace which scopes this request
@@ -10276,7 +10277,7 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/mint:
     post:
-      description: Mint some tokens
+      description: Mints some tokens
       operationId: postTokenMint
       parameters:
       - description: The namespace which scopes this request
@@ -10830,7 +10831,7 @@ paths:
         default:
           description: ""
     post:
-      description: Create a new token pool
+      description: Creates a new token pool
       operationId: postTokenPool
       parameters:
       - description: The namespace which scopes this request
@@ -11385,7 +11386,7 @@ paths:
         default:
           description: ""
     post:
-      description: Transfer some tokens
+      description: Transfers some tokens
       operationId: postTokenTransfer
       parameters:
       - description: The namespace which scopes this request
