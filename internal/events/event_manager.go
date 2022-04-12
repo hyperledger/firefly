@@ -100,7 +100,6 @@ type eventManager struct {
 	blobReceiver          *blobReceiver
 	newEventNotifier      *eventNotifier
 	newPinNotifier        *eventNotifier
-	opCorrelationRetries  int
 	defaultTransport      string
 	internalEvents        *system.Events
 	metrics               metrics.Manager
@@ -133,7 +132,6 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
-		opCorrelationRetries:  config.GetInt(coreconfig.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
 		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),

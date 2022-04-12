@@ -410,7 +410,6 @@ nav_order: 3
 |batchSize|The maximum number of records to read from the DB before performing an aggregation run|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 |batchTimeout|How long to wait for new events to arrive before performing aggregation on a page of events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |firstEvent|The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are `oldest` or `newest`|`string`|`<nil>`
-|opCorrelationRetries|How many times to correlate an event for an operation (such as tx submission) back to an operation. Needed because the operation update might come back before we are finished persisting the ID of the request|`int`|`<nil>`
 |pollTimeout|The time to wait without a notification of new events, before trying a select on the table|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |rewindQueueLength|The size of the queue into the rewind dispatcher|`int`|`<nil>`
 |rewindTimeout|The minimum time to wait for rewinds to accumulate before resolving them|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
@@ -602,12 +601,6 @@ nav_order: 3
 |identity|`DEPRECATED` Please use `org.key` instead|`string`|`<nil>`
 |key|The signing identity allocated to the organization (can be the same as the nodes)|`string`|`<nil>`
 |name|The name of the organization to which this FireFly node belongs|`string`|`<nil>`
-
-## privatemessaging
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|opCorrelationRetries|How many times to correlate an event for an operation (such as tx submission) back to an operation. Needed because the operation update might come back before we are finished persisting the ID of the request|`int`|`<nil>`
 
 ## privatemessaging.batch
 

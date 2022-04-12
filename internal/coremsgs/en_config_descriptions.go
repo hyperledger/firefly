@@ -170,13 +170,12 @@ var (
 	ConfigDownloadWorkerCount       = ffc("config.download.worker.count", "The number of download workers", i18n.IntType)
 	ConfigDownloadWorkerQueueLength = ffc("config.download.worker.queueLength", "The length of the work queue in the channel to the workers - defaults to 2x the worker count", i18n.IntType)
 
-	ConfigEventAggregatorBatchSize            = ffc("config.event.aggregator.batchSize", "The maximum number of records to read from the DB before performing an aggregation run", i18n.ByteSizeType)
-	ConfigEventAggregatorBatchTimeout         = ffc("config.event.aggregator.batchTimeout", "How long to wait for new events to arrive before performing aggregation on a page of events", i18n.TimeDurationType)
-	ConfigEventAggregatorFirstEvent           = ffc("config.event.aggregator.firstEvent", "The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are `oldest` or `newest`", i18n.StringType)
-	ConfigEventAggregatorOpCorrelationRetries = ffc("config.event.aggregator.opCorrelationRetries", "How many times to correlate an event for an operation (such as tx submission) back to an operation. Needed because the operation update might come back before we are finished persisting the ID of the request", i18n.IntType)
-	ConfigEventAggregatorPollTimeout          = ffc("config.event.aggregator.pollTimeout", "The time to wait without a notification of new events, before trying a select on the table", i18n.TimeDurationType)
-	ConfigEventAggregatorRewindQueueLength    = ffc("config.event.aggregator.rewindQueueLength", "The size of the queue into the rewind dispatcher", i18n.IntType)
-	ConfigEventAggregatorRewindTimout         = ffc("config.event.aggregator.rewindTimeout", "The minimum time to wait for rewinds to accumulate before resolving them", i18n.TimeDurationType)
+	ConfigEventAggregatorBatchSize         = ffc("config.event.aggregator.batchSize", "The maximum number of records to read from the DB before performing an aggregation run", i18n.ByteSizeType)
+	ConfigEventAggregatorBatchTimeout      = ffc("config.event.aggregator.batchTimeout", "How long to wait for new events to arrive before performing aggregation on a page of events", i18n.TimeDurationType)
+	ConfigEventAggregatorFirstEvent        = ffc("config.event.aggregator.firstEvent", "The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are `oldest` or `newest`", i18n.StringType)
+	ConfigEventAggregatorPollTimeout       = ffc("config.event.aggregator.pollTimeout", "The time to wait without a notification of new events, before trying a select on the table", i18n.TimeDurationType)
+	ConfigEventAggregatorRewindQueueLength = ffc("config.event.aggregator.rewindQueueLength", "The size of the queue into the rewind dispatcher", i18n.IntType)
+	ConfigEventAggregatorRewindTimout      = ffc("config.event.aggregator.rewindTimeout", "The minimum time to wait for rewinds to accumulate before resolving them", i18n.TimeDurationType)
 
 	ConfigEventDbeventsBufferSize = ffc("config.event.dbevents.bufferSize", "The size of the buffer of change events", i18n.ByteSizeType)
 
@@ -239,8 +238,6 @@ var (
 	ConfigOrgIdentity    = ffc("config.org.identity", "`DEPRECATED` Please use `org.key` instead", i18n.StringType)
 	ConfigOrgKey         = ffc("config.org.key", "The signing identity allocated to the organization (can be the same as the nodes)", i18n.StringType)
 	ConfigOrgName        = ffc("config.org.name", "The name of the organization to which this FireFly node belongs", i18n.StringType)
-
-	ConfigPrivatemessagingOpCorrelationRetries = ffc("config.privatemessaging.opCorrelationRetries", "How many times to correlate an event for an operation (such as tx submission) back to an operation. Needed because the operation update might come back before we are finished persisting the ID of the request", i18n.IntType)
 
 	ConfigPrivatemessagingBatchAgentTimeout = ffc("config.privatemessaging.batch.agentTimeout", "How long to keep around a batching agent for a sending identity before disposal", i18n.TimeDurationType)
 	ConfigPrivatemessagingBatchPayloadLimit = ffc("config.privatemessaging.batch.payloadLimit", "The maximum payload size of a private message Data Exchange payload", i18n.ByteSizeType)
