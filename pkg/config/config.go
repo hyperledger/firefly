@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -524,14 +525,24 @@ func GenerateConfigMarkdown(ctx context.Context, keys []string) ([]byte, error) 
 	}
 	sort.Strings(configObjectNames)
 	for _, configObjectName := range configObjectNames {
-		b.WriteString(fmt.Sprintf("\n\n%s %s", strings.Repeat("#", rootKeyHeaderLevel), configObjectName))
-		b.WriteString("\n\n|Key|Description|Type|Default Value|")
-		b.WriteString("\n|---|-----------|----|-------------|")
+		rowsInTable := []string{}
+
 		sort.Strings(configObjects[configObjectName])
 		for _, key := range configObjects[configObjectName] {
 			fullKey := fmt.Sprintf("%s.%s", configObjectName, key)
 			description, fieldType := getDescriptionForConfigKey(ctx, fullKey)
-			b.WriteString(fmt.Sprintf("\n|%s|%s|%s|`%v`", key, description, fieldType, Get(RootKey(fullKey))))
+			if fieldType != coremsgs.IgnoredType {
+				row := fmt.Sprintf("\n|%s|%s|%s|`%v`", key, description, fieldType, Get(RootKey(fullKey)))
+				rowsInTable = append(rowsInTable, row)
+			}
+		}
+		if len(rowsInTable) > 0 {
+			b.WriteString(fmt.Sprintf("\n\n%s %s", strings.Repeat("#", rootKeyHeaderLevel), configObjectName))
+			b.WriteString("\n\n|Key|Description|Type|Default Value|")
+			b.WriteString("\n|---|-----------|----|-------------|")
+			for _, row := range rowsInTable {
+				b.WriteString(row)
+			}
 		}
 	}
 	return b.Bytes(), nil

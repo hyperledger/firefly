@@ -29,6 +29,7 @@ var intType = "`int`"
 var booleanType = "`boolean`"
 var floatType = "`boolean`"
 var mapStringStringType = "`map[string]string`"
+var IgnoredType = "IGNORE"
 
 //revive:disable
 var (
@@ -40,7 +41,7 @@ var (
 	ConfigGlobalRetryInitDelay    = ffc("config.global.retry.initDelay", "The initial retry delay", timeDurationType)
 	ConfigGlobalRetryInitialDelay = ffc("config.global.retry.initialDelay", "The initial retry delay", timeDurationType)
 	ConfigGlobalRetryMaxDelay     = ffc("config.global.retry.maxDelay", "The maximum retry delay", timeDurationType)
-	ConfigGlobalRetryMaxAttempts  = ffc("config.global.retry.maxAttempts", "The maximum number attemptsConfigGlobalWsReadBufferSize", intType)
+	ConfigGlobalRetryMaxAttempts  = ffc("config.global.retry.maxAttempts", "The maximum number attempts", intType)
 	ConfigGlobalRetryCount        = ffc("config.global.retry.count", "The maximum number of times to retry", intType)
 	ConfigGlobalInitWaitTime      = ffc("config.global.retry.initWaitTime", "The initial retry delay", timeDurationType)
 	ConfigGlobalMaxWaitTime       = ffc("config.global.retry.maxWaitTime", "The maximum retry delay", timeDurationType)
@@ -60,12 +61,12 @@ var (
 	ConfigGlobalTLSCaFile           = ffc("config.global.tls.caFile", "The path to the CA file for TLS on this API", stringType)
 	ConfigGlobalTLSCertFile         = ffc("config.global.tls.certFile", "The path to the certificate file for TLS on this API", stringType)
 	ConfigGlobalTLSClientAuth       = ffc("config.global.tls.clientAuth", "Enables or disables client auth for TLS on this API", stringType)
-	ConfigGlobalTLSEnabled          = ffc("config.global.tls.enabled", "Enables or disables TLS on the admin API", booleanType)
+	ConfigGlobalTLSEnabled          = ffc("config.global.tls.enabled", "Enables or disables TLS on this API", booleanType)
 	ConfigGlobalTLSKeyFile          = ffc("config.global.tls.keyFile", "The path to the private key file for TLS on this API", stringType)
 	ConfigGlobalTLSHandshakeTimeout = ffc("config.global.tlsHandshakeTimeout", "The maximum amount of time to wait for a successful TLS handshake", timeDurationType)
 
 	ConfigGlobalBodyTemplate          = ffc("config.global.bodyTemplate", "The body go template string to use when making HTTP requests", goTemplateType)
-	ConfigGlobalCustomClient          = ffc("config.global.customClient", "Allows injection of a custom HTTP client. **Used only for testing.**", stringType)
+	ConfigGlobalCustomClient          = ffc("config.global.customClient", "Used for testing purposes only", IgnoredType)
 	ConfigGlobalExpectContinueTimeout = ffc("config.global.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", timeDurationType)
 	ConfigGlobalHeaders               = ffc("config.global.headers", "Adds custom headers to HTTP requests", mapStringStringType)
 	ConfigGlobalIdleTimeout           = ffc("config.global.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls", timeDurationType)
@@ -102,7 +103,7 @@ var (
 	ConfigBlockchainType = ffc("config.blockchain.type", "A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section.", stringType)
 
 	ConfigBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.blockchain.ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", goTemplateType)
-	ConfigBlockchainEthereumAddressResolverCustomClient          = ffc("config.blockchain.ethereum.addressResolver.customClient", "Allows injection of a custom HTTP client. **Used only for testing.**", stringType)
+	ConfigBlockchainEthereumAddressResolverCustomClient          = ffc("config.blockchain.ethereum.addressResolver.customClient", "Used for testing purposes only", IgnoredType)
 	ConfigBlockchainEthereumAddressResolverExpectContinueTimeout = ffc("config.blockchain.ethereum.addressResolver.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", timeDurationType)
 	ConfigBlockchainEthereumAddressResolverHeaders               = ffc("config.blockchain.ethereum.addressResolver.headers", "Adds custom headers to HTTP requests", stringType)
 	ConfigBlockchainEthereumAddressResolverIdleTimeout           = ffc("config.blockchain.ethereum.addressResolver.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls", timeDurationType)
@@ -279,7 +280,7 @@ var (
 	ConfigUIEnabled = ffc("config.ui.enabled", "Enables the web user interface", booleanType)
 	ConfigUIPath    = ffc("config.ui.path", "The file system path which contains the static HTML, CSS, and JavaScript files for the user interface", stringType)
 
-	ConfigAPIOASPanicOnMissingDescription = ffc("config.api.oas.panicOnMissingDescription", "Used when building FireFly to verify all structures and APIs have documentation. Primarily used for testing.", booleanType)
+	ConfigAPIOASPanicOnMissingDescription = ffc("config.api.oas.panicOnMissingDescription", "Used for testing purposes only", IgnoredType)
 
 	ConfigAdminWebSocketBlockedWarnInternal = ffc("config.admin.ws.blockedWarnInterval", "How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events", timeDurationType)
 	ConfigAdminWebSocketEventQueueLength    = ffc("config.admin.ws.eventQueueLength", "Server-side queue length for events waiting for delivery over an admin change event listener websocket", intType)
