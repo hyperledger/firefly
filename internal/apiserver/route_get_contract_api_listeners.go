@@ -22,31 +22,26 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postContractInterfaceQuery = &oapispec.Route{
-	Name:   "postContractInterfaceQuery",
-	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}/query/{methodPath}",
-	Method: http.MethodPost,
+var getContractAPIListeners = &oapispec.Route{
+	Name:   "getContractAPIListeners",
+	Path:   "namespaces/{ns}/apis/{apiName}/listeners/{eventPath}",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "interfaceId", Description: coremsgs.APIMessageTBD},
-		{Name: "methodPath", Description: coremsgs.APIMessageTBD},
+		{Name: "apiName", Description: coremsgs.APIMessageTBD},
+		{Name: "eventPath", Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams:     []*oapispec.QueryParam{},
-	FilterFactory:   nil,
+	FilterFactory:   database.ContractListenerQueryFactory,
 	Description:     coremsgs.APIMessageTBD,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
-	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []*fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		req := r.Input.(*fftypes.ContractCallRequest)
-		req.Type = fftypes.CallTypeQuery
-		if req.Interface, err = fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"]); err != nil {
-			return nil, err
-		}
-		req.Method = &fftypes.FFIMethod{Pathname: r.PP["methodPath"]}
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req)
+		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIListeners(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"], r.Filter))
 	},
 }

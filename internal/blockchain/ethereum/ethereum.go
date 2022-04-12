@@ -616,9 +616,20 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	return output, nil
 }
 
-func (e *Ethereum) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
-	_, err = parseContractLocation(ctx, location)
-	return
+func (e *Ethereum) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	parsed.Address, err = validateEthAddress(ctx, parsed.Address)
+	if err != nil {
+		return nil, err
+	}
+	normalized, err := json.Marshal(parsed)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -688,6 +699,39 @@ func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *fftypes.FFIMethod
 	}
 
 	return abiElement, nil
+}
+
+func ABIArgumentToTypeString(typeName string, components []ABIArgumentMarshaling) string {
+	if strings.HasPrefix(typeName, "tuple") {
+		suffix := typeName[5:]
+		children := make([]string, len(components))
+		for i, component := range components {
+			children[i] = ABIArgumentToTypeString(component.Type, nil)
+		}
+		return "(" + strings.Join(children, ",") + ")" + suffix
+	}
+	return typeName
+}
+
+func ABIMethodToSignature(abi *ABIElementMarshaling) string {
+	result := abi.Name + "("
+	if len(abi.Inputs) > 0 {
+		types := make([]string, len(abi.Inputs))
+		for i, param := range abi.Inputs {
+			types[i] = ABIArgumentToTypeString(param.Type, param.Components)
+		}
+		result += strings.Join(types, ",")
+	}
+	result += ")"
+	return result
+}
+
+func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+	abi, err := e.FFIEventDefinitionToABI(ctx, event)
+	if err != nil {
+		return ""
+	}
+	return ABIMethodToSignature(&abi)
 }
 
 func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgumentMarshaling, params fftypes.FFIParams) error {

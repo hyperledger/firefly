@@ -37,7 +37,7 @@ var getContractAPIs = &oapispec.Route{
 	FilterFactory:   database.ContractAPIQueryFactory,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Filter))

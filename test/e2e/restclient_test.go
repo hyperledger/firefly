@@ -622,6 +622,7 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
+			Topic: "firefly-e2e",
 		},
 	}
 	var sub fftypes.ContractListener
@@ -640,6 +641,7 @@ func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference 
 		ContractListener: fftypes.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
 			Interface: ffiReference,
+			Topic:     "firefly-e2e",
 		},
 		EventPath: eventPath,
 	}
@@ -717,30 +719,6 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func QueryFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/query/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 
