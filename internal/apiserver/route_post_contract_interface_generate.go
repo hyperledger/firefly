@@ -30,11 +30,11 @@ var postContractInterfaceGenerate = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/interfaces/generate",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPostContractInterfaceGenerate,
 	JSONInputValue:  func() interface{} { return &fftypes.FFIGenerationRequest{} },
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -30,11 +30,11 @@ var getNamespace = &oapispec.Route{
 	Path:   "namespaces/{ns}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetNamespace,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},

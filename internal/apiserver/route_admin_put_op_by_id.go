@@ -29,11 +29,11 @@ var adminPatchOpByID = &oapispec.Route{
 	Path:   "operations/{opid}",
 	Method: http.MethodPut,
 	PathParams: []*oapispec.PathParam{
-		{Name: "opid", Description: coremsgs.APIMessageTBD},
+		{Name: "opid", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
 	JSONInputValue:  func() interface{} { return &fftypes.Operation{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

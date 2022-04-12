@@ -31,11 +31,11 @@ var getTokenAccounts = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/accounts",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TokenAccountQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetTokenAccounts,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenAccount{} },
 	JSONOutputCodes: []int{http.StatusOK},

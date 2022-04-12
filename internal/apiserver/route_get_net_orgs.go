@@ -32,7 +32,7 @@ var getNetworkOrgs = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.IdentityQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetNetworkOrgs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

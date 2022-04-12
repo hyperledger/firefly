@@ -230,4 +230,5 @@ var (
 	MsgUnexpectedDXMessageType      = ffe("FF10380", "Unexpected websocket event type from DX plugin: %s", 500)
 	MsgFieldDescriptionMissing      = ffe("FF10381", "Field description missing for '%s' on route '%s'")
 	MsgFFStructTagMissing           = ffe("FF10382", "ffstruct tag is missing for '%s' on route '%s'")
+	MsgRouteDescriptionMissing      = ffe("FF10383", "API route description missing for route '%s'")
 )

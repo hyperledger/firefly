@@ -31,13 +31,13 @@ var getIdentityByID = &oapispec.Route{
 	Path:   "namespaces/{ns}/identities/{iid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "iid", Example: "id", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetIdentityByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

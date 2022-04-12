@@ -36,12 +36,12 @@ var testRoutes = []*Route{
 		Path:   "namespaces/{ns}/example1/{id}",
 		Method: http.MethodPost,
 		PathParams: []*PathParam{
-			{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-			{Name: "id", Description: coremsgs.APIMessageTBD},
+			{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+			{Name: "id", Description: coremsgs.APIParamsMessageID},
 		},
 		QueryParams:     nil,
 		FilterFactory:   nil,
-		Description:     coremsgs.APIMessageTBD,
+		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
 		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 		JSONOutputCodes: []int{http.StatusOK},
@@ -53,7 +53,7 @@ var testRoutes = []*Route{
 		PathParams:     nil,
 		QueryParams:    nil,
 		FilterFactory:  database.MessageQueryFactory,
-		Description:    coremsgs.APIMessageTBD,
+		Description:    coremsgs.APIEndpointsPostNewMessageBroadcast,
 		JSONInputValue: func() interface{} { return nil },
 		JSONInputSchema: func(ctx context.Context) string {
 			return `{
@@ -83,17 +83,17 @@ var testRoutes = []*Route{
 		Method:     http.MethodPut,
 		PathParams: nil,
 		QueryParams: []*QueryParam{
-			{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-			{Name: "id", Description: coremsgs.APIMessageTBD},
-			{Name: "myfield", Default: "val1", Description: coremsgs.APIMessageTBD},
+			{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+			{Name: "id", Description: coremsgs.APIParamsMessageID},
+			{Name: "myfield", Default: "val1", Description: coremsgs.APIParamsDataID},
 		},
 		FilterFactory:   nil,
-		Description:     coremsgs.APIMessageTBD,
+		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
 		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
 		FormParams: []*FormParam{
-			{Name: "metadata", Description: coremsgs.APIMessageTBD},
+			{Name: "metadata", Description: coremsgs.APIParamsMetadata},
 		},
 		FormUploadHandler: func(r *APIRequest) (output interface{}, err error) { return nil, nil },
 	},
@@ -102,11 +102,11 @@ var testRoutes = []*Route{
 		Path:   "example2/{id}",
 		Method: http.MethodDelete,
 		PathParams: []*PathParam{
-			{Name: "id", Description: coremsgs.APIMessageTBD},
+			{Name: "id", Description: coremsgs.APIParamsMessageID},
 		},
 		QueryParams:     nil,
 		FilterFactory:   nil,
-		Description:     coremsgs.APIMessageTBD,
+		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
@@ -118,7 +118,7 @@ var testRoutes = []*Route{
 		PathParams:      nil,
 		QueryParams:     nil,
 		FilterFactory:   nil,
-		Description:     coremsgs.APIMessageTBD,
+		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
 		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
 		JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 		JSONOutputCodes: []int{http.StatusOK},
@@ -297,6 +297,7 @@ func TestPanicOnMissingDescription(t *testing.T) {
 			Name:            "PostPanicOnMissingDescription",
 			Path:            "namespaces/{ns}/example1/test",
 			Method:          http.MethodPost,
+			Description:     "this is fine",
 			JSONInputValue:  func() interface{} { return &TestInOutType{} },
 			JSONOutputValue: func() interface{} { return &TestInOutType{} },
 			JSONOutputCodes: []int{http.StatusOK},
@@ -319,11 +320,33 @@ func TestPanicOnMissingFFStructTag(t *testing.T) {
 			Name:            "GetPanicOnMissingFFStructTag",
 			Path:            "namespaces/{ns}/example1/test",
 			Method:          http.MethodGet,
+			Description:     "this is fine",
 			JSONOutputValue: func() interface{} { return &TestNonTaggedType{} },
 			JSONOutputCodes: []int{http.StatusOK},
 		},
 	}
 	assert.PanicsWithValue(t, "invalid schema: FF10382: ffstruct tag is missing for 'noFFStructTag' on route 'GetPanicOnMissingFFStructTag'", func() {
+		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
+			Title:                     "UnitTest",
+			Version:                   "1.0",
+			BaseURL:                   "http://localhost:12345/api/v1",
+			PanicOnMissingDescription: true,
+		})
+	})
+}
+
+func TestPanicOnMissingRouteDescription(t *testing.T) {
+	coreconfig.Reset()
+	routes := []*Route{
+		{
+			Name:            "GetPanicOnMissingRouteDescription",
+			Path:            "namespaces/{ns}/example1/test",
+			Method:          http.MethodGet,
+			JSONOutputValue: func() interface{} { return &TestNonTaggedType{} },
+			JSONOutputCodes: []int{http.StatusOK},
+		},
+	}
+	assert.PanicsWithValue(t, "FF10383: API route description missing for route 'GetPanicOnMissingRouteDescription'", func() {
 		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
 			Title:                     "UnitTest",
 			Version:                   "1.0",

@@ -28,11 +28,11 @@ var adminDeleteConfigRecord = &oapispec.Route{
 	Path:   "config/records/{key}",
 	Method: http.MethodDelete,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: coremsgs.APIMessageTBD},
+		{Name: "key", Example: "database", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminDeleteConfigRecord,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},

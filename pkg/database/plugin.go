@@ -969,7 +969,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"type":            &StringField{},
 }
 
-var TokenApprovalQueryFacory = &queryFields{
+var TokenApprovalQueryFactory = &queryFields{
 	"localid":         &StringField{},
 	"pool":            &UUIDField{},
 	"connector":       &StringField{},

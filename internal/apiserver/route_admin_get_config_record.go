@@ -30,11 +30,11 @@ var adminGetConfigRecord = &oapispec.Route{
 	Path:   "config/records/{key}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: coremsgs.APIMessageTBD},
+		{Name: "key", Example: "database", Description: coremsgs.APIParamsConfigRecordKeyGet},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.ConfigRecordQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminGetConfigRecord,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputCodes: []int{http.StatusOK},

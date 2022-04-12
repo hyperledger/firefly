@@ -32,7 +32,7 @@ var getStatusPins = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.PinQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetStatusPins,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []fftypes.Pin{} },
 	JSONOutputCodes: []int{http.StatusOK},

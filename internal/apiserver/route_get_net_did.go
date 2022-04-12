@@ -30,13 +30,13 @@ var getIdentityByDID = &oapispec.Route{
 	Path:   "network/identities/{did:.+}",
 	Method: http.MethodGet,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
 	PathParams: []*oapispec.PathParam{
-		{Name: "did", Description: coremsgs.APIMessageTBD},
+		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetIdentityByDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

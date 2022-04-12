@@ -31,11 +31,11 @@ var getTxns = &oapispec.Route{
 	Path:   "namespaces/{ns}/transactions",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TransactionQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetTxns,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -31,13 +31,13 @@ var postTokenBurn = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/burn",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPostTokenBurn,
 	JSONInputValue:  func() interface{} { return &fftypes.TokenTransferInput{} },
 	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

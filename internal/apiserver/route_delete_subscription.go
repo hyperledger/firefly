@@ -29,12 +29,12 @@ var deleteSubscription = &oapispec.Route{
 	Path:   "namespaces/{ns}/subscriptions/{subid}",
 	Method: http.MethodDelete,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "subid", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsDeleteSubscription,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output

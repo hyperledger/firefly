@@ -31,13 +31,13 @@ var getTokenTransfers = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/transfers",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fromOrTo", Description: coremsgs.APIMessageTBD},
+		{Name: "fromOrTo", Description: coremsgs.APIParamsTokenTransferFromOrTo},
 	},
 	FilterFactory:   database.TokenTransferQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetTokenTransfers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},

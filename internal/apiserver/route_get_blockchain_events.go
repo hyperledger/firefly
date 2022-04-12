@@ -31,11 +31,11 @@ var getBlockchainEvents = &oapispec.Route{
 	Path:   "namespaces/{ns}/blockchainevents",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.BlockchainEventQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsListBlockchainEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},

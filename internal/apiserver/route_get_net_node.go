@@ -29,11 +29,11 @@ var getNetworkNode = &oapispec.Route{
 	Path:   "network/nodes/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "nameOrId", Description: coremsgs.APIMessageTBD},
+		{Name: "nameOrId", Description: coremsgs.APIParamsNodeNameOrID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetNetworkNode,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

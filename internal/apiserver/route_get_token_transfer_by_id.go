@@ -22,24 +22,25 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var deleteContractListener = &oapispec.Route{
-	Name:   "deleteContractListener",
-	Path:   "namespaces/{ns}/contracts/listeners/{nameOrId}",
-	Method: http.MethodDelete,
+var getTokenTransferByID = &oapispec.Route{
+	Name:   "getTokenTransferByID",
+	Path:   "namespaces/{ns}/tokens/transfers/{transferId}",
+	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "nameOrId", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "transferId", Description: coremsgs.APIParamsTokenTransferID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetTokenTransferByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: nil,
-	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
+	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).Contracts().DeleteContractListenerByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])
-		return nil, err
+		output, err = getOr(r.Ctx).Assets().GetTokenTransferByID(r.Ctx, r.PP["ns"], r.PP["transferId"])
+		return output, err
 	},
 }
