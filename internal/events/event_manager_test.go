@@ -405,3 +405,21 @@ func TestAddInternalListener(t *testing.T) {
 
 	cbs.AssertExpectations(t)
 }
+
+func TestGetPlugins(t *testing.T) {
+	em, _ := newTestEventManager(t)
+
+	expectedPlugins := []*fftypes.NodeStatusPlugin{
+		{
+			PluginType: "websockets",
+		},
+		{
+			PluginType: "webhooks",
+		},
+		{
+			PluginType: "system",
+		},
+	}
+
+	assert.ElementsMatch(t, em.GetPlugins(), expectedPlugins)
+}

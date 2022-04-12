@@ -77,6 +77,8 @@ type EventManager interface {
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
 	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 
+	GetPlugins() []*fftypes.NodeStatusPlugin
+
 	// Internal events
 	sysmessaging.SystemEvents
 }
@@ -240,4 +242,17 @@ func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *f
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {
 	return em.internalEvents.AddListener(ns, el)
+}
+
+func (em *eventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
+	eventsArray := make([]*fftypes.NodeStatusPlugin, 0)
+	plugins := em.subManager.transports
+
+	for _, plugin := range plugins {
+		eventsArray = append(eventsArray, &fftypes.NodeStatusPlugin{
+			PluginType: plugin.Name(),
+		})
+	}
+
+	return eventsArray
 }
