@@ -24,11 +24,23 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type FFISwaggerGen interface {
 	Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) *openapi3.T
+}
+
+type ContractListenerInput struct {
+	Name    string                           `ffstruct:"ContractListener" json:"name,omitempty"`
+	Topic   string                           `ffstruct:"ContractListener" json:"topic,omitempty"`
+	Options *fftypes.ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
+}
+
+type ContractListenerInputWithLocation struct {
+	ContractListenerInput
+	Location *fftypes.JSONAny `ffstruct:"ContractListener" json:"location,omitempty"`
 }
 
 // ffiSwaggerGen generates OpenAPI3 (Swagger) definitions for FFIs
@@ -45,6 +57,9 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 	routes := []*oapispec.Route{}
 	for _, method := range ffi.Methods {
 		routes = og.addMethod(routes, method, hasLocation)
+	}
+	for _, event := range ffi.Events {
+		routes = og.addEvent(routes, event, hasLocation)
 	}
 
 	return oapispec.SwaggerGen(ctx, routes, &oapispec.SwaggerGenConfig{
@@ -70,6 +85,32 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 		Method:           http.MethodPost,
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
+	})
+	return routes
+}
+
+func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEvent, hasLocation bool) []*oapispec.Route {
+	routes = append(routes, &oapispec.Route{
+		Name:   fmt.Sprintf("createlistener_%s", event.Pathname),
+		Path:   fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
+		Method: http.MethodPost,
+		JSONInputValue: func() interface{} {
+			if hasLocation {
+				return &ContractListenerInput{}
+			}
+			return &ContractListenerInputWithLocation{}
+		},
+		JSONOutputValue: func() interface{} { return &fftypes.ContractListener{} },
+		JSONOutputCodes: []int{http.StatusOK},
+	})
+	routes = append(routes, &oapispec.Route{
+		Name:            fmt.Sprintf("getlistener_%s", event.Pathname),
+		Path:            fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
+		Method:          http.MethodGet,
+		FilterFactory:   database.ContractListenerQueryFactory,
+		JSONInputValue:  nil,
+		JSONOutputValue: func() interface{} { return []*fftypes.ContractListener{} },
+		JSONOutputCodes: []int{http.StatusOK},
 	})
 	return routes
 }
