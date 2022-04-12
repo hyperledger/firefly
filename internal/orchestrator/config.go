@@ -19,7 +19,7 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )

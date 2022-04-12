@@ -19,9 +19,11 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
@@ -33,14 +35,14 @@ func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm 
 	}
 
 	orgRequest := &fftypes.IdentityCreateDTO{
-		Name: config.GetString(config.OrgName),
+		Name: config.GetString(coreconfig.OrgName),
 		IdentityProfile: fftypes.IdentityProfile{
-			Description: config.GetString(config.OrgDescription),
+			Description: config.GetString(coreconfig.OrgDescription),
 		},
 		Key: key.Value,
 	}
 	if orgRequest.Name == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeAndOrgIDMustBeSet)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeAndOrgIDMustBeSet)
 	}
 	return nm.RegisterOrganization(ctx, orgRequest, waitConfirm)
 }

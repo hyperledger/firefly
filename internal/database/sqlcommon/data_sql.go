@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -244,7 +245,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		data.Datatype = nil
 	}
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "data")
 	}
 	return &data, nil
 }
@@ -327,7 +328,7 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (me
 			&ref.Hash,
 		)
 		if err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "data")
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "data")
 		}
 		refs = append(refs, &ref)
 	}

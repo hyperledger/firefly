@@ -24,9 +24,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -35,7 +36,7 @@ import (
 var utConfPrefix = config.NewPluginConfig("ipfs_unit_tests")
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	i := &IPFS{}
 	i.InitPrefix(utConfPrefix)
 }
@@ -44,7 +45,7 @@ func TestInitMissingAPIURL(t *testing.T) {
 	i := &IPFS{}
 	resetConf()
 
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
@@ -53,7 +54,7 @@ func TestInitMissingGWURL(t *testing.T) {
 	i := &IPFS{}
 	resetConf()
 
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
@@ -61,8 +62,8 @@ func TestInitMissingGWURL(t *testing.T) {
 func TestInit(t *testing.T) {
 	i := &IPFS{}
 	resetConf()
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.Equal(t, "ipfs", i.Name())
@@ -78,9 +79,9 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.NoError(t, err)
@@ -105,9 +106,9 @@ func TestIPFSUploadFail(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.NoError(t, err)
@@ -129,9 +130,9 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.NoError(t, err)
@@ -158,9 +159,9 @@ func TestIPFSDownloadFail(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.NoError(t, err)
@@ -181,9 +182,9 @@ func TestIPFSDownloadError(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	resetConf()
-	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.SubPrefix(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utConfPrefix.SubPrefix(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
 	err := i.Init(context.Background(), utConfPrefix, &sharedstoragemocks.Callbacks{})
 	assert.NoError(t, err)

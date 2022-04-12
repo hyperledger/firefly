@@ -31,25 +31,25 @@ func TestFFStringArrayVerifyTooLong(t *testing.T) {
 		na[i] = fmt.Sprintf("item_%d", i)
 	}
 	err := na.Validate(context.Background(), "field1", true, FFStringNameItemsMax)
-	assert.Regexp(t, `FF10227.*field1`, err)
+	assert.Regexp(t, `FF00134.*field1`, err)
 }
 
 func TestFFStringArrayVerifyDuplicate(t *testing.T) {
 	na := FFStringArray{"value1", "value2", "value1"}
 	err := na.Validate(context.Background(), "field1", true, FFStringNameItemsMax)
-	assert.Regexp(t, `FF10228.*field1`, err)
+	assert.Regexp(t, `FF00133.*field1`, err)
 }
 
 func TestFFStringArrayVerifyBadName(t *testing.T) {
 	na := FFStringArray{"!valid"}
 	err := na.Validate(context.Background(), "field1", true, FFStringNameItemsMax)
-	assert.Regexp(t, `FF10131.*field1\[0\]`, err)
+	assert.Regexp(t, `FF00140.*field1\[0\]`, err)
 }
 
 func TestFFStringArrayVerifyBadNonName(t *testing.T) {
 	na := FFStringArray{"!valid"}
 	err := na.Validate(context.Background(), "field1", false, FFStringNameItemsMax)
-	assert.Regexp(t, `FF10335.*field1\[0\]`, err)
+	assert.Regexp(t, `FF00139.*field1\[0\]`, err)
 }
 
 func TestFFStringArrayVerifyTooLongTotal(t *testing.T) {
@@ -59,7 +59,7 @@ func TestFFStringArrayVerifyTooLongTotal(t *testing.T) {
 	}
 	na := FFStringArray{longstr.String()}
 	err := na.Validate(context.Background(), "field1", false, FFStringNameItemsMax)
-	assert.Regexp(t, `FF10188.*field1`, err)
+	assert.Regexp(t, `FF00135.*field1`, err)
 }
 
 func TestFFStringArrayScanValue(t *testing.T) {
@@ -101,7 +101,7 @@ func TestFFStringArrayScanValue(t *testing.T) {
 
 	var na6 FFStringArray
 	err = na6.Scan(42)
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 
 	var na7 FFStringArray
 	err = na7.Scan(FFStringArray{"test1", "test2"})

@@ -19,9 +19,10 @@ package ssfactory
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ipfs"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -38,7 +39,7 @@ func InitPrefix(prefix config.Prefix) {
 func GetPlugin(ctx context.Context, pluginType string) (sharedstorage.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownSharedStoragePlugin, pluginType)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownSharedStoragePlugin, pluginType)
 	}
 	return plugin(), nil
 }

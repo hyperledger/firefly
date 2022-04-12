@@ -1,17 +1,18 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package batch
 
 import (
@@ -21,8 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -70,7 +71,7 @@ func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
 
 func TestUnfilledBatch(t *testing.T) {
 	log.SetLevel("debug")
-	config.Reset()
+	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchState)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
@@ -115,7 +116,7 @@ func TestUnfilledBatch(t *testing.T) {
 
 func TestBatchSizeOverflow(t *testing.T) {
 	log.SetLevel("debug")
-	config.Reset()
+	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchState)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
@@ -389,7 +390,7 @@ func TestStartQuiesceNonBlocking(t *testing.T) {
 
 func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 	log.SetLevel("debug")
-	config.Reset()
+	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchState)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
@@ -437,7 +438,7 @@ func TestMarkMessageDispatchedUnpinnedOK(t *testing.T) {
 
 func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 	log.SetLevel("debug")
-	config.Reset()
+	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchState)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
@@ -497,7 +498,7 @@ func TestMaskContextsRetryAfterPinsAssigned(t *testing.T) {
 
 func TestMaskContextsUpdateMessageFail(t *testing.T) {
 	log.SetLevel("debug")
-	config.Reset()
+	coreconfig.Reset()
 
 	dispatched := make(chan *DispatchState)
 	cancel, mdi, bp := newTestBatchProcessor(t, func(c context.Context, state *DispatchState) error {
@@ -532,7 +533,7 @@ func TestMaskContextsUpdateMessageFail(t *testing.T) {
 
 func TestBigBatchEstimate(t *testing.T) {
 	log.SetLevel("debug")
-	config.Reset()
+	coreconfig.Reset()
 
 	bd := []byte(`{
 		"id": "37ba893b-fcfa-4cf9-8ce8-34cd8bc9bc72",

@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -36,25 +36,45 @@ var testRoutes = []*Route{
 		Path:   "namespaces/{ns}/example1/{id}",
 		Method: http.MethodPost,
 		PathParams: []*PathParam{
-			{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-			{Name: "id", Description: i18n.MsgTBD},
+			{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+			{Name: "id", Description: coremsgs.APIMessageTBD},
 		},
 		QueryParams:     nil,
 		FilterFactory:   nil,
-		Description:     i18n.MsgTBD,
+		Description:     coremsgs.APIMessageTBD,
 		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
-		Name:            "op2",
-		Path:            "example2",
-		Method:          http.MethodGet,
-		PathParams:      nil,
-		QueryParams:     nil,
-		FilterFactory:   database.MessageQueryFactory,
-		Description:     i18n.MsgTBD,
-		JSONInputValue:  func() interface{} { return nil },
+		Name:           "op2",
+		Path:           "example2",
+		Method:         http.MethodGet,
+		PathParams:     nil,
+		QueryParams:    nil,
+		FilterFactory:  database.MessageQueryFactory,
+		Description:    coremsgs.APIMessageTBD,
+		JSONInputValue: func() interface{} { return nil },
+		JSONInputSchema: func(ctx context.Context) string {
+			return `{
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string"
+				}
+			}
+		}`
+		},
+		JSONOutputSchema: func(ctx context.Context) string {
+			return `{
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string"
+				}
+			}
+		}`
+		},
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
@@ -63,17 +83,17 @@ var testRoutes = []*Route{
 		Method:     http.MethodPut,
 		PathParams: nil,
 		QueryParams: []*QueryParam{
-			{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-			{Name: "id", Description: i18n.MsgTBD},
-			{Name: "myfield", Default: "val1", Description: i18n.MsgTBD},
+			{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+			{Name: "id", Description: coremsgs.APIMessageTBD},
+			{Name: "myfield", Default: "val1", Description: coremsgs.APIMessageTBD},
 		},
 		FilterFactory:   nil,
-		Description:     i18n.MsgTBD,
+		Description:     coremsgs.APIMessageTBD,
 		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
 		FormParams: []*FormParam{
-			{Name: "metadata", Description: i18n.MsgTBD},
+			{Name: "metadata", Description: coremsgs.APIMessageTBD},
 		},
 		FormUploadHandler: func(r *APIRequest) (output interface{}, err error) { return nil, nil },
 	},
@@ -82,11 +102,11 @@ var testRoutes = []*Route{
 		Path:   "example2/{id}",
 		Method: http.MethodDelete,
 		PathParams: []*PathParam{
-			{Name: "id", Description: i18n.MsgTBD},
+			{Name: "id", Description: coremsgs.APIMessageTBD},
 		},
 		QueryParams:     nil,
 		FilterFactory:   nil,
-		Description:     i18n.MsgTBD,
+		Description:     coremsgs.APIMessageTBD,
 		JSONInputValue:  func() interface{} { return nil },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
@@ -98,7 +118,7 @@ var testRoutes = []*Route{
 		PathParams:      nil,
 		QueryParams:     nil,
 		FilterFactory:   nil,
-		Description:     i18n.MsgTBD,
+		Description:     coremsgs.APIMessageTBD,
 		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
 		JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 		JSONOutputCodes: []int{http.StatusOK},
@@ -120,8 +140,7 @@ type TestNonTaggedType struct {
 }
 
 func TestOpenAPI3SwaggerGen(t *testing.T) {
-
-	config.Reset()
+	coreconfig.Reset()
 
 	doc := SwaggerGen(context.Background(), testRoutes, &SwaggerGenConfig{
 		Title:   "UnitTest",
@@ -137,7 +156,7 @@ func TestOpenAPI3SwaggerGen(t *testing.T) {
 }
 
 func TestBadCustomInputSchema(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:             "op6",
@@ -160,7 +179,7 @@ func TestBadCustomInputSchema(t *testing.T) {
 }
 
 func TestBadCustomOutputSchema(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:            "op7",
@@ -195,7 +214,7 @@ func TestDuplicateOperationIDCheck(t *testing.T) {
 }
 
 func TestWildcards(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:            "op1",
@@ -214,7 +233,7 @@ func TestWildcards(t *testing.T) {
 }
 
 func TestFFExcludeTag(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:            "PostTagTest",
@@ -246,7 +265,7 @@ func TestFFExcludeTag(t *testing.T) {
 }
 
 func TestCustomSchema(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:   "PostCustomSchema",
@@ -272,7 +291,7 @@ func TestCustomSchema(t *testing.T) {
 }
 
 func TestPanicOnMissingDescription(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:            "PostPanicOnMissingDescription",
@@ -294,7 +313,7 @@ func TestPanicOnMissingDescription(t *testing.T) {
 }
 
 func TestPanicOnMissingFFStructTag(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	routes := []*Route{
 		{
 			Name:            "GetPanicOnMissingFFStructTag",

@@ -34,7 +34,7 @@ func TestDatabaseSerialization(t *testing.T) {
 	assert.Equal(t, "", u.String())
 
 	u, err = ParseUUID(context.Background(), "!not an id")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 	u, err = ParseUUID(context.Background(), "03D31DFB-9DBB-43F2-9E0B-84DD3D293499")
 	assert.NoError(t, err)
 	v, err = u.Value()

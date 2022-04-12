@@ -26,10 +26,11 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/hyperledger/firefly/pkg/wsclient"
@@ -50,14 +51,14 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	u.Scheme = "http"
 	httpURL = u.String()
 
-	config.Reset()
+	coreconfig.Reset()
 	h = &FFTokens{}
 	h.InitPrefix(utConfPrefix)
 
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfPrefix.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, httpURL)
-	utConfPrefix.AddKnownKey(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.AddKnownKey(ffresty.HTTPConfigURL, httpURL)
+	utConfPrefix.AddKnownKey(ffresty.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
 	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
@@ -72,25 +73,25 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 }
 
 func TestInitBadURL(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitPrefix(utConfPrefix)
 
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfPrefix.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, "::::////")
+	utConfPrefix.AddKnownKey(ffresty.HTTPConfigURL, "::::////")
 	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
-	assert.Regexp(t, "FF10162", err)
+	assert.Regexp(t, "FF00149", err)
 }
 
 func TestInitMissingURL(t *testing.T) {
-	config.Reset()
+	coreconfig.Reset()
 	h := &FFTokens{}
 	h.InitPrefix(utConfPrefix)
 
 	utConfPrefix.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfPrefix.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	utConfPrefix.AddKnownKey(restclient.HTTPConfigURL, "")
+	utConfPrefix.AddKnownKey(ffresty.HTTPConfigURL, "")
 	err := h.Init(context.Background(), "testtokens", utConfPrefix.ArrayEntry(0), &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
@@ -262,7 +263,7 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 
 	complete, err := h.CreateTokenPool(context.Background(), opID, pool)
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestActivateTokenPool(t *testing.T) {
@@ -425,7 +426,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 
 	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestMintTokens(t *testing.T) {

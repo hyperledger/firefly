@@ -19,10 +19,11 @@ package dxfactory
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/dataexchange/ffdx"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var (
@@ -43,7 +44,7 @@ func InitPrefix(prefix config.Prefix) {
 func GetPlugin(ctx context.Context, pluginType string) (dataexchange.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDataExchangePlugin, pluginType)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownDataExchangePlugin, pluginType)
 	}
 	return plugin(), nil
 }

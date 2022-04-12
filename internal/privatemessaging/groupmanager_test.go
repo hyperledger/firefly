@@ -358,7 +358,7 @@ func TestGetGroupByIDBadID(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 	_, err := pm.GetGroupByID(pm.ctx, "!wrong")
-	assert.Regexp(t, "FF10232", err)
+	assert.Regexp(t, "FF00107", err)
 }
 
 func TestGetGroupsOk(t *testing.T) {

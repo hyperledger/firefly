@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +33,8 @@ import (
 )
 
 func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
-	config.Reset()
-	config.Set(config.MessageWriterCount, 1)
+	coreconfig.Reset()
+	config.Set(coreconfig.MessageWriterCount, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{
@@ -69,7 +70,7 @@ func testNewMessage() (*fftypes.UUID, *fftypes.Bytes32, *NewMessage) {
 
 func TestValidateE2E(t *testing.T) {
 
-	config.Reset()
+	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -217,7 +218,7 @@ func TestInitBadDeps(t *testing.T) {
 
 func TestValidatorLookupCached(t *testing.T) {
 
-	config.Reset()
+	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -245,7 +246,7 @@ func TestValidatorLookupCached(t *testing.T) {
 
 func TestValidateBadHash(t *testing.T) {
 
-	config.Reset()
+	coreconfig.Reset()
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
@@ -517,7 +518,7 @@ func TestResolveInlineDataNilMsg(t *testing.T) {
 	defer cancel()
 
 	err := dm.ResolveInlineData(ctx, &NewMessage{})
-	assert.Regexp(t, "FF10368", err)
+	assert.Regexp(t, "FF00125", err)
 }
 
 func TestResolveInlineDataRefLookkupFail(t *testing.T) {
@@ -653,7 +654,7 @@ func TestValidateAndStoreLoadNilRef(t *testing.T) {
 		Validator: fftypes.ValidatorTypeJSON,
 		Datatype:  nil,
 	})
-	assert.Regexp(t, "FF10199", err)
+	assert.Regexp(t, "FF00109", err)
 }
 
 func TestValidateAndStoreLoadValidatorUnknown(t *testing.T) {
@@ -669,7 +670,7 @@ func TestValidateAndStoreLoadValidatorUnknown(t *testing.T) {
 			Version: "0.0.1",
 		},
 	})
-	assert.Regexp(t, "FF10200.*wrong", err)
+	assert.Regexp(t, "FF00108.*wrong", err)
 
 }
 
@@ -788,7 +789,7 @@ func TestVerifyNamespaceExistsInvalidFFName(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	err := dm.VerifyNamespaceExists(ctx, "!wrong")
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestVerifyNamespaceExistsLookupErr(t *testing.T) {
@@ -946,7 +947,7 @@ func TestHydrateBatchMsgBadManifest(t *testing.T) {
 	}
 
 	_, err := dm.HydrateBatch(ctx, bp)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestGetMessageWithDataOk(t *testing.T) {
@@ -1144,7 +1145,7 @@ func TestWriteNewMessageFailNil(t *testing.T) {
 	defer cancel()
 
 	err := dm.WriteNewMessage(ctx, &NewMessage{})
-	assert.Regexp(t, "FF10368", err)
+	assert.Regexp(t, "FF00125", err)
 }
 
 func TestWriteNewMessageFailClosed(t *testing.T) {

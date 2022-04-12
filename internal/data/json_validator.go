@@ -21,9 +21,10 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -53,11 +54,11 @@ func newJSONValidator(ctx context.Context, ns string, datatype *fftypes.Datatype
 	c.Draft = jsonschema.Draft2020
 	err := c.AddResource(datatype.Name, strings.NewReader(datatype.Value.String()))
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgSchemaLoadFailed, jv.datatype)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgSchemaLoadFailed, jv.datatype)
 	}
 	schema, err := c.Compile(datatype.Name)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgSchemaLoadFailed, jv.datatype)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgSchemaLoadFailed, jv.datatype)
 	}
 	jv.schema = schema
 	jv.size = int64(len(schemaBytes))
@@ -72,13 +73,13 @@ func (jv *jsonValidator) Validate(ctx context.Context, data *fftypes.Data) error
 
 func (jv *jsonValidator) ValidateValue(ctx context.Context, value *fftypes.JSONAny, expectedHash *fftypes.Bytes32) error {
 	if value == nil {
-		return i18n.NewError(ctx, i18n.MsgDataValueIsNull)
+		return i18n.NewError(ctx, coremsgs.MsgDataValueIsNull)
 	}
 
 	if expectedHash != nil {
 		hash := value.Hash()
 		if *hash != *expectedHash {
-			return i18n.NewError(ctx, i18n.MsgDataInvalidHash, hash, expectedHash)
+			return i18n.NewError(ctx, coremsgs.MsgDataInvalidHash, hash, expectedHash)
 		}
 	}
 
@@ -92,7 +93,7 @@ func (jv *jsonValidator) validateJSONString(ctx context.Context, input string) e
 	}
 	if err := jv.schema.Validate(inputValue); err != nil {
 		log.L(ctx).Warnf("JSON schema %s [%v] validation failed: %s", jv.datatype, jv.id, err)
-		return i18n.NewError(ctx, i18n.MsgJSONDataInvalidPerSchema, jv.datatype, err)
+		return i18n.NewError(ctx, coremsgs.MsgJSONDataInvalidPerSchema, jv.datatype, err)
 	}
 	return nil
 }

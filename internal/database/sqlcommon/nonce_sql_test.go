@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -165,7 +165,7 @@ func TestGetNonceBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NonceQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	_, _, err := s.GetNonces(context.Background(), f)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGetNonceReadMessageFail(t *testing.T) {

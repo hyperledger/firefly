@@ -24,9 +24,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -553,7 +553,7 @@ func TestGetMessagesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetMessages(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetMessagesQueryFail(t *testing.T) {
@@ -569,7 +569,7 @@ func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, _, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -627,7 +627,7 @@ func TestGetMessageIDsBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, err := s.GetMessageIDs(context.Background(), f)
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -636,7 +636,7 @@ func TestMessageUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestMessagesUpdateBuildFilterFail(t *testing.T) {
@@ -645,7 +645,7 @@ func TestMessagesUpdateBuildFilterFail(t *testing.T) {
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("type", fftypes.MessageTypeBroadcast)
 	err := s.UpdateMessages(context.Background(), f, u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestMessageUpdateFail(t *testing.T) {

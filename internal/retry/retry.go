@@ -20,8 +20,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 const (
@@ -67,7 +68,7 @@ func (r *Retry) Do(ctx context.Context, logDescription string, f func(attempt in
 		// Check the context isn't cancelled
 		select {
 		case <-ctx.Done():
-			return i18n.NewError(ctx, i18n.MsgContextCanceled)
+			return i18n.NewError(ctx, coremsgs.MsgContextCanceled)
 		default:
 		}
 

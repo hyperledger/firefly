@@ -19,18 +19,19 @@ package database
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var (
 	// HashMismatch sentinel error
-	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
+	HashMismatch = i18n.NewError(context.Background(), coremsgs.MsgHashMismatch)
 	// IDMismatch sentinel error
-	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	IDMismatch = i18n.NewError(context.Background(), coremsgs.MsgIDMismatch)
 	// DeleteRecordNotFound sentinel error
-	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
+	DeleteRecordNotFound = i18n.NewError(context.Background(), coremsgs.Msg404NotFound)
 )
 
 type UpsertOptimization int
@@ -619,7 +620,7 @@ const (
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
 	CollectionContractAPIs      UUIDCollectionNS = "contractapis"
-	CollectionContractListeners UUIDCollectionNS = "contractsubscriptions"
+	CollectionContractListeners UUIDCollectionNS = "contractlisteners"
 	CollectionIdentities        UUIDCollectionNS = "identities"
 )
 

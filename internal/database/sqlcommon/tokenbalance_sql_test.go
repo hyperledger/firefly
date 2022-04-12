@@ -223,7 +223,7 @@ func TestGetTokenBalancesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).Eq("pool", map[bool]bool{true: false})
 	_, _, err := s.GetTokenBalances(context.Background(), f)
-	assert.Regexp(t, "FF10149.*pool", err)
+	assert.Regexp(t, "FF00143.*pool", err)
 }
 
 func TestGetTokenBalancesScanFail(t *testing.T) {
@@ -248,7 +248,7 @@ func TestGetTokenAccountsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).Eq("pool", map[bool]bool{true: false})
 	_, _, err := s.GetTokenAccounts(context.Background(), f)
-	assert.Regexp(t, "FF10149.*pool", err)
+	assert.Regexp(t, "FF00143.*pool", err)
 }
 
 func TestGetTokenAccountsScanFail(t *testing.T) {
@@ -273,7 +273,7 @@ func TestGetTokenAccountPoolsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TokenBalanceQueryFactory.NewFilter(context.Background()).Eq("pool", map[bool]bool{true: false})
 	_, _, err := s.GetTokenAccountPools(context.Background(), "0x1", f)
-	assert.Regexp(t, "FF10149.*pool", err)
+	assert.Regexp(t, "FF00143.*pool", err)
 }
 
 func TestGetTokenAccountPoolsScanFail(t *testing.T) {

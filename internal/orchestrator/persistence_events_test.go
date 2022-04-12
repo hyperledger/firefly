@@ -17,101 +17,116 @@
 package orchestrator
 
 import (
-	"context"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestMessageCreated(t *testing.T) {
 	mb := &batchmocks.Manager{}
-	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		batch:  mb,
-		events: mem,
+		batch:       mb,
+		adminEvents: mae,
 	}
 	mb.On("NewMessages").Return((chan<- int64)(make(chan int64, 1)))
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	mae.On("Dispatch", mock.Anything).Return()
 	o.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, "ns1", fftypes.NewUUID(), 12345)
 	mb.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestPinCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		events: mem,
+		adminEvents: mae,
+		events:      mem,
 	}
+	mae.On("Dispatch", mock.Anything).Return()
 	mem.On("NewPins").Return((chan<- int64)(make(chan int64, 1)))
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
 	o.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, 12345)
 	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestEventCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		events: mem,
+		adminEvents: mae,
+		events:      mem,
 	}
+	mae.On("Dispatch", mock.Anything).Return()
 	mem.On("NewEvents").Return((chan<- int64)(make(chan int64, 1)))
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
 	o.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", fftypes.NewUUID(), 12345)
 	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestSubscriptionCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		events: mem,
+		adminEvents: mae,
+		events:      mem,
 	}
+	mae.On("Dispatch", mock.Anything).Return()
 	mem.On("NewSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
 	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, "ns1", fftypes.NewUUID())
 	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestSubscriptionUpdated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		events: mem,
+		adminEvents: mae,
+		events:      mem,
 	}
+	mae.On("Dispatch", mock.Anything).Return()
 	mem.On("SubscriptionUpdates").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
 	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, "ns1", fftypes.NewUUID())
 	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestSubscriptionDeleted(t *testing.T) {
 	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		events: mem,
+		adminEvents: mae,
+		events:      mem,
 	}
+	mae.On("Dispatch", mock.Anything).Return()
 	mem.On("DeletedSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
 	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", fftypes.NewUUID())
 	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestUUIDCollectionEventFull(t *testing.T) {
-	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		ctx:    context.Background(),
-		events: mem,
+		adminEvents: mae,
 	}
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 0)))
+	mae.On("Dispatch", mock.Anything).Return()
 	o.UUIDCollectionEvent(database.CollectionNamespaces, fftypes.ChangeEventTypeDeleted, fftypes.NewUUID())
-	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
 func TestHashCollectionNSEventOk(t *testing.T) {
-	mem := &eventmocks.EventManager{}
+	mae := &admineventsmocks.Manager{}
 	o := &orchestrator{
-		ctx:    context.Background(),
-		events: mem,
+		adminEvents: mae,
 	}
-	mem.On("ChangeEvents").Return((chan<- *fftypes.ChangeEvent)(make(chan *fftypes.ChangeEvent, 1)))
+	mae.On("Dispatch", mock.Anything).Return()
 	o.HashCollectionNSEvent(database.CollectionGroups, fftypes.ChangeEventTypeDeleted, "ns1", fftypes.NewRandB32())
-	mem.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }

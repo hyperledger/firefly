@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetConfigRecord(t *testing.T) {
+func TestAdminGetConfigRecord(t *testing.T) {
 	o, r := newTestAdminServer()
 	input := fftypes.ConfigRecord{}
 	var buf bytes.Buffer

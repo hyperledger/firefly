@@ -52,7 +52,7 @@ func TestJSONValidator(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = jv.validateJSONString(context.Background(), `{!bad json`)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 
 	assert.Equal(t, int64(len(schemaBinary)), jv.Size())
 
