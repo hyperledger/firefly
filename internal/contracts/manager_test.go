@@ -1362,41 +1362,20 @@ func TestInvokeContractTXFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestInvokeContractNoMethodSignature(t *testing.T) {
-	cm := newTestContractManager()
-	mim := cm.identity.(*identitymanagermocks.Manager)
-
-	req := &fftypes.ContractCallRequest{
-		Type:     fftypes.CallTypeInvoke,
-		Location: fftypes.JSONAnyPtr(""),
-		Method: &fftypes.FFIMethod{
-			Name: "sum",
-		},
-	}
-
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-
-	_, err := cm.InvokeContract(context.Background(), "ns1", req)
-
-	assert.Regexp(t, "FF10314", err)
-}
-
 func TestInvokeContractMethodNotFound(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	req := &fftypes.ContractCallRequest{
-		Type:      fftypes.CallTypeInvoke,
-		Interface: fftypes.NewUUID(),
-		Location:  fftypes.JSONAnyPtr(""),
-		Method: &fftypes.FFIMethod{
-			Name: "sum",
-		},
+		Type:       fftypes.CallTypeInvoke,
+		Interface:  fftypes.NewUUID(),
+		Location:   fftypes.JSONAnyPtr(""),
+		MethodPath: "set",
 	}
 
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
-	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.Method.Name).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req)
 
@@ -1709,7 +1688,8 @@ func TestInvokeContractAPI(t *testing.T) {
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
 		Method: &fftypes.FFIMethod{
-			ID: fftypes.NewUUID(),
+			ID:   fftypes.NewUUID(),
+			Name: "peel",
 		},
 	}
 
@@ -1722,7 +1702,6 @@ func TestInvokeContractAPI(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mdb.On("GetFFIMethod", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(&fftypes.FFIMethod{Name: "peel"}, nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", fftypes.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == fftypes.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"

@@ -204,7 +204,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 
 	var op *fftypes.Operation
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if req.Method, err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
+		if err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
 			return err
 		}
 		if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
@@ -242,36 +242,24 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	req.Interface = api.Interface.ID
-	req.Method = &fftypes.FFIMethod{
-		Pathname: methodPath,
-	}
+	req.MethodPath = methodPath
 	if api.Location != nil {
 		req.Location = api.Location
 	}
 	return cm.InvokeContract(ctx, ns, req)
 }
 
-func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (method *fftypes.FFIMethod, err error) {
+func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (err error) {
 	if req.Method == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgContractMethodNotSet)
-	}
-	method = req.Method
-
-	// We have a method name but no method signature - look up the method in the DB
-	if method.Pathname == "" {
-		method.Pathname = method.Name
-	}
-	if method.Pathname != "" && (method.Params == nil || method.Returns == nil) {
-		if req.Interface == nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgContractNoMethodSignature)
+		if req.MethodPath == "" || req.Interface == nil {
+			return i18n.NewError(ctx, coremsgs.MsgContractMethodNotSet)
 		}
-
-		method, err = cm.database.GetFFIMethod(ctx, ns, req.Interface, method.Pathname)
-		if err != nil || method == nil {
-			return nil, i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
+		req.Method, err = cm.database.GetFFIMethod(ctx, ns, req.Interface, req.MethodPath)
+		if err != nil || req.Method == nil {
+			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
 		}
 	}
-	return method, nil
+	return nil
 }
 
 func (cm *contractManager) addContractURLs(httpServerURL string, api *fftypes.ContractAPI) {

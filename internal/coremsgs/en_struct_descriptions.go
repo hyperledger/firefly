@@ -543,12 +543,13 @@ var (
 	TransactionStatusDetailsInfo      = ffm("TransactionStatusDetails.info", "Output details for this entry")
 
 	// ContractCallRequest field descriptions
-	ContractCallRequestType      = ffm("ContractCallRequest.type", "Invocations cause transactions on the blockchain. Whereas queries simply execute logic in your local node to query data at a given current/historical block")
-	ContractCallRequestInterface = ffm("ContractCallRequest.interface", "The UUID of a method within a pre-configured FireFly interface (FFI) definition for a smart contract. Required if the 'method' is omitted. Also see Contract APIs as a way to configure a dedicated API for your FFI, including all methods and an OpenAPI/Swagger interface")
-	ContractCallRequestLocation  = ffm("ContractCallRequest.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
-	ContractCallRequestKey       = ffm("ContractCallRequest.key", "The blockchain signing key that will sign the invocation. Defaults to the first signing key of the organization that operates the node")
-	ContractCallRequestMethod    = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
-	ContractCallRequestInput     = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
+	ContractCallRequestType       = ffm("ContractCallRequest.type", "Invocations cause transactions on the blockchain. Whereas queries simply execute logic in your local node to query data at a given current/historical block")
+	ContractCallRequestInterface  = ffm("ContractCallRequest.interface", "The UUID of a method within a pre-configured FireFly interface (FFI) definition for a smart contract. Required if the 'method' is omitted. Also see Contract APIs as a way to configure a dedicated API for your FFI, including all methods and an OpenAPI/Swagger interface")
+	ContractCallRequestLocation   = ffm("ContractCallRequest.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
+	ContractCallRequestKey        = ffm("ContractCallRequest.key", "The blockchain signing key that will sign the invocation. Defaults to the first signing key of the organization that operates the node")
+	ContractCallRequestMethod     = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
+	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
+	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
 
 	// ContractCallResponse field descriptions
 	ContractCallResponseID = ffm("ContractCallResponse.id", "The UUID of the operation created to track the transaction submission through to completion")

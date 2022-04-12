@@ -28,12 +28,13 @@ var (
 )
 
 type ContractCallRequest struct {
-	Type      ContractCallType       `ffstruct:"ContractCallRequest" json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
-	Interface *UUID                  `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery,postContractInterfaceInvoke,postContractInterfaceQuery"`
-	Location  *JSONAny               `ffstruct:"ContractCallRequest" json:"location,omitempty"`
-	Key       string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
-	Method    *FFIMethod             `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
-	Input     map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
+	Type       ContractCallType       `ffstruct:"ContractCallRequest" json:"type,omitempty" ffenum:"contractcalltype" ffexcludeinput:"true"`
+	Interface  *UUID                  `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Location   *JSONAny               `ffstruct:"ContractCallRequest" json:"location,omitempty"`
+	Key        string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
+	Method     *FFIMethod             `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	MethodPath string                 `ffstruct:"ContractCallRequest" json:"methodPath,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Input      map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
 }
 
 type ContractCallResponse struct {

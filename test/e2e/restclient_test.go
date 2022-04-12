@@ -722,30 +722,6 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	return res, err
 }
 
-func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func QueryFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/query/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
 func GetEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
 	var res interface{}
 	path := fmt.Sprintf("%s/%s", urlGetEvents, eventID)
