@@ -33,11 +33,11 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|caFile|The path to the CA file for the admin API|`string`|`<nil>`
-|certFile|The path to the certificate file for the admin API|`string`|`<nil>`
-|clientAuth|Enables or disables client auth for the admin API|`string`|`<nil>`
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on the admin API|`boolean`|`false`
-|keyFile|The path to the private key file for the admin API|`string`|`<nil>`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## admin.ws
 
@@ -53,7 +53,7 @@ nav_order: 3
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |defaultFilterLimit|The maximum number of rows to return if no limit is specified on an API request|`int`|`<nil>`
-|maxFilterLimit|The maximum number of rows to return if no limit is specified on an API request|`int`|`<nil>`
+|maxFilterLimit|The largest value of `limit` that an HTTP client can specify in a request|`int`|`<nil>`
 |requestMaxTimeout|The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
@@ -119,20 +119,20 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|bodyTemplate|The body go template string to use when making HTTP requests|Go template `string`|`<nil>`
+|bodyTemplate|The body go template string to use when making HTTP requests|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
 |headers|Adds custom headers to HTTP requests|`string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
-|method|The HTTP method to use when making requests to the address resolver|`string`|`GET`
+|method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |responseField|The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)|`string`|`address`
 |retainOriginal|When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address|`boolean`|`<nil>`
 |tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|url|The URL of the address resolver|`string`|`<nil>`
-|urlTemplate|The URL Go template string to use when calling the address resolver|Go template `string`|`<nil>`
+|url|The URL of the Address Resolver|`string`|`<nil>`
+|urlTemplate|The URL Go template string to use when calling the Address Resolver|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
 
 ## blockchain.ethereum.addressResolver.auth
 
@@ -152,7 +152,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL of the address resolver proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the Address Resolver|URL `string`|`<nil>`
 
 ## blockchain.ethereum.addressResolver.retry
 
@@ -167,12 +167,12 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|The maximum number of transactions to send in a single request to Ethconnect|`int`|`50`
-|batchTimeout|The maximum amount of time to wait for a batch to complete|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|batchSize|The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.|`int`|`50`
+|batchTimeout|How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream.|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
@@ -194,7 +194,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL of the Ethconnect proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to Ethconnect|URL `string`|`<nil>`
 
 ## blockchain.ethereum.ethconnect.retry
 
@@ -219,14 +219,14 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|The maximum number of transactions to send in a single request to Fabconnect|`int`|`50`
+|batchSize|The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.|`int`|`50`
 |batchTimeout|The maximum amount of time to wait for a batch to complete|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
 |chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions|`string`|`<nil>`
 |channel|The Fabric channel that FireFly will use for BatchPin transactions|`string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |prefixLong|The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect|`string`|`firefly`
@@ -248,7 +248,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL for the Fabconnect proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to Fabconnect|URL `string`|`<nil>`
 
 ## blockchain.fabric.fabconnect.retry
 
@@ -291,7 +291,7 @@ nav_order: 3
 |---|-----------|----|-------------|
 |credentials|CORS setting to control whether a browser allows credentials to be sent to this API|`boolean`|`<nil>`
 |debug|Whether debug is enabled for the CORS implementation|`boolean`|`<nil>`
-|enabled|Whether cors is enabled|`boolean`|`<nil>`
+|enabled|Whether CORS is enabled|`boolean`|`<nil>`
 |headers|CORS setting to control the allowed headers|`string`|`<nil>`
 |maxAge|The maximum age a browser should rely on CORS checks|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |methods| CORS setting to control the allowed methods|`string`|`<nil>`
@@ -351,7 +351,7 @@ nav_order: 3
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |initEnabled|Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector|`boolean`|`false`
 |manifestEnabled|Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector|`string`|`false`
@@ -371,7 +371,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL of the Data Exchange HTTP proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the Data Exchange|URL `string`|`<nil>`
 
 ## dataexchange.ffdx.retry
 
@@ -404,7 +404,7 @@ nav_order: 3
 |---|-----------|----|-------------|
 |factor|The retry backoff factor|`boolean`|`<nil>`
 |initialDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxAttempts|The maximum number of times to retry|`int`|`<nil>`
+|maxAttempts|The maximum number attemptsConfigGlobalWsReadBufferSize|`int`|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## download.worker
@@ -491,11 +491,11 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|caFile|The path to the CA file for the admin API|`string`|`<nil>`
-|certFile|The path to the certificate file for the admin API|`string`|`<nil>`
-|clientAuth|Enables or disables client auth for the admin API|`string`|`<nil>`
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on the admin API|`boolean`|`false`
-|keyFile|The path to the private key file for the admin API|`string`|`<nil>`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## identity
 
@@ -556,17 +556,17 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|caFile|The path to the CA file for the admin API|`string`|`<nil>`
-|certFile|The path to the certificate file for the admin API|`string`|`<nil>`
-|clientAuth|Enables or disables client auth for the admin API|`string`|`<nil>`
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on the admin API|`boolean`|`false`
-|keyFile|The path to the private key file for the admin API|`string`|`<nil>`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
 ## namespaces
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|default|The default namespace - must be in the predefines list|`string`|`<nil>`
+|default|The default namespace - must be in the predefined list|`string`|`<nil>`
 |predefined|A list of namespaces to ensure exists, without requiring a broadcast from the network|List `string`|`<nil>`
 
 ## node
@@ -619,7 +619,7 @@ nav_order: 3
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |agentTimeout|How long to keep around a batching agent for a sending identity before disposal|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|payloadLimit|The maximum payload size of a private message data exchange payload|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|payloadLimit|The maximum payload size of a private message Data Exchange payload|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 |size|The maximum number of messages in a batch for private messages|`int`|`<nil>`
 |timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
@@ -635,7 +635,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|type|**Deprecated** See `config.sharedstorage.type` instead.|`string`|`<nil>`
+|type|`DEPRECATED` Please use `config.sharedstorage.type` instead|`string`|`<nil>`
 
 ## publicstorage.ipfs.api
 
@@ -644,7 +644,7 @@ nav_order: 3
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -662,7 +662,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL for the IPFS proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the IPFS API|URL `string`|`<nil>`
 
 ## publicstorage.ipfs.api.retry
 
@@ -680,7 +680,7 @@ nav_order: 3
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -698,7 +698,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL for the IPFS Gateway proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the IPFS Gateway|URL `string`|`<nil>`
 
 ## publicstorage.ipfs.gateway.retry
 
@@ -722,7 +722,7 @@ nav_order: 3
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -740,7 +740,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL for the IPFS API proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the IPFS API|URL `string`|`<nil>`
 
 ## sharedstorage.ipfs.api.retry
 
@@ -758,7 +758,7 @@ nav_order: 3
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
@@ -776,7 +776,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL for the IPFS Proxy URL|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the IPFS Gateway|URL `string`|`<nil>`
 
 ## sharedstorage.ipfs.gateway.retry
 
@@ -815,7 +815,7 @@ nav_order: 3
 |connector|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
 |customClient|Allows injection of a custom HTTP client. **Used only for testing.**|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`<nil>`
 |name|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
@@ -835,7 +835,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|url|The URL of the Token Connector proxy|URL `string`|`<nil>`
+|url|Optional HTTP proxy server to use when connecting to the Token Connector|URL `string`|`<nil>`
 
 ## tokens[].retry
 

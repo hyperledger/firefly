@@ -23,10 +23,12 @@ import (
 var ffc = i18n.FFC
 var timeDurationType = "[`time.Duration`](https://pkg.go.dev/time#Duration)"
 var byteSizeType = "[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)"
+var goTemplateType = "[Go Template](https://pkg.go.dev/text/template) `string`"
 var stringType = "`string`"
 var intType = "`int`"
 var booleanType = "`boolean`"
 var floatType = "`boolean`"
+var mapStringStringType = "`map[string]string`"
 
 //revive:disable
 var (
@@ -38,7 +40,7 @@ var (
 	ConfigGlobalRetryInitDelay    = ffc("config.global.retry.initDelay", "The initial retry delay", timeDurationType)
 	ConfigGlobalRetryInitialDelay = ffc("config.global.retry.initialDelay", "The initial retry delay", timeDurationType)
 	ConfigGlobalRetryMaxDelay     = ffc("config.global.retry.maxDelay", "The maximum retry delay", timeDurationType)
-	ConfigGlobalRetryMaxAttempts  = ffc("config.global.retry.maxAttempts", "The maximum number of times to retry", intType)
+	ConfigGlobalRetryMaxAttempts  = ffc("config.global.retry.maxAttempts", "The maximum number attemptsConfigGlobalWsReadBufferSize", intType)
 	ConfigGlobalRetryCount        = ffc("config.global.retry.count", "The maximum number of times to retry", intType)
 	ConfigGlobalInitWaitTime      = ffc("config.global.retry.initWaitTime", "The initial retry delay", timeDurationType)
 	ConfigGlobalMaxWaitTime       = ffc("config.global.retry.maxWaitTime", "The maximum retry delay", timeDurationType)
@@ -55,20 +57,20 @@ var (
 	ConfigGlobalWsReadBufferSize         = ffc("config.global.ws.readBufferSize", "The size in bytes of the read buffer for the WebSocket connection", byteSizeType)
 	ConfigGlobalWsWriteBufferSize        = ffc("config.global.ws.writeBufferSize", "The size in bytes of the write buffer for the WebSocket connection", byteSizeType)
 
-	ConfigGlobalTLSCaFile           = ffc("config.global.tls.caFile", "The path to the CA file for the admin API", stringType)
-	ConfigGlobalTLSCertFile         = ffc("config.global.tls.certFile", "The path to the certificate file for the admin API", stringType)
-	ConfigGlobalTLSClientAuth       = ffc("config.global.tls.clientAuth", "Enables or disables client auth for the admin API", stringType)
+	ConfigGlobalTLSCaFile           = ffc("config.global.tls.caFile", "The path to the CA file for TLS on this API", stringType)
+	ConfigGlobalTLSCertFile         = ffc("config.global.tls.certFile", "The path to the certificate file for TLS on this API", stringType)
+	ConfigGlobalTLSClientAuth       = ffc("config.global.tls.clientAuth", "Enables or disables client auth for TLS on this API", stringType)
 	ConfigGlobalTLSEnabled          = ffc("config.global.tls.enabled", "Enables or disables TLS on the admin API", booleanType)
-	ConfigGlobalTLSKeyFile          = ffc("config.global.tls.keyFile", "The path to the private key file for the admin API", stringType)
+	ConfigGlobalTLSKeyFile          = ffc("config.global.tls.keyFile", "The path to the private key file for TLS on this API", stringType)
 	ConfigGlobalTLSHandshakeTimeout = ffc("config.global.tlsHandshakeTimeout", "The maximum amount of time to wait for a successful TLS handshake", timeDurationType)
 
-	ConfigGlobalBodyTemplate          = ffc("config.global.bodyTemplate", "The body go template string to use when making HTTP requests", "Go template "+stringType)
+	ConfigGlobalBodyTemplate          = ffc("config.global.bodyTemplate", "The body go template string to use when making HTTP requests", goTemplateType)
 	ConfigGlobalCustomClient          = ffc("config.global.customClient", "Allows injection of a custom HTTP client. **Used only for testing.**", stringType)
 	ConfigGlobalExpectContinueTimeout = ffc("config.global.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", timeDurationType)
-	ConfigGlobalHeaders               = ffc("config.global.headers", "Adds custom headers to HTTP requests", stringType)
+	ConfigGlobalHeaders               = ffc("config.global.headers", "Adds custom headers to HTTP requests", mapStringStringType)
 	ConfigGlobalIdleTimeout           = ffc("config.global.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls", timeDurationType)
 	ConfigGlobalMaxIdleConns          = ffc("config.global.maxIdleConns", "The max number of idle connections to hold pooled", intType)
-	ConfigGlobalMethod                = ffc("config.global.method", "The HTTP method to use when making requests to the address resolver", stringType)
+	ConfigGlobalMethod                = ffc("config.global.method", "The HTTP method to use when making requests to the Address Resolver", stringType)
 
 	ConfigGlobalMigrationsAuto      = ffc("config.global.migrations.auto", "Enables automatic database migrations", booleanType)
 	ConfigGlobalMigrationsDirectory = ffc("config.global.migrations.directory", "The directory containing the numerically ordered migration DDL files to apply to the database", stringType)
@@ -82,7 +84,7 @@ var (
 	ConfigAdminWriteTimeout = ffc("config.admin.writeTimeout", "The maximum time to wait when writing to an HTTP connection", timeDurationType)
 
 	ConfigAPIDefaultFilterLimit = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", intType)
-	ConfigAPIMaxFilterLimit     = ffc("config.api.maxFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", intType)
+	ConfigAPIMaxFilterLimit     = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", intType)
 	ConfigAPIRequestMaxTimeout  = ffc("config.api.requestMaxTimeout", "The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open", timeDurationType)
 
 	ConfigAPIShutdownTimeout = ffc("config.api.shutdownTimeout", "The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server", timeDurationType)
@@ -99,32 +101,32 @@ var (
 
 	ConfigBlockchainType = ffc("config.blockchain.type", "A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section.", stringType)
 
-	ConfigBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.blockchain.ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", "Go template "+stringType)
+	ConfigBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.blockchain.ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", goTemplateType)
 	ConfigBlockchainEthereumAddressResolverCustomClient          = ffc("config.blockchain.ethereum.addressResolver.customClient", "Allows injection of a custom HTTP client. **Used only for testing.**", stringType)
 	ConfigBlockchainEthereumAddressResolverExpectContinueTimeout = ffc("config.blockchain.ethereum.addressResolver.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", timeDurationType)
 	ConfigBlockchainEthereumAddressResolverHeaders               = ffc("config.blockchain.ethereum.addressResolver.headers", "Adds custom headers to HTTP requests", stringType)
 	ConfigBlockchainEthereumAddressResolverIdleTimeout           = ffc("config.blockchain.ethereum.addressResolver.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls", timeDurationType)
 	ConfigBlockchainEthereumAddressResolverMaxIdleConns          = ffc("config.blockchain.ethereum.addressResolver.maxIdleConns", "The max number of idle connections to hold pooled", intType)
-	ConfigBlockchainEthereumAddressResolverMethod                = ffc("config.blockchain.ethereum.addressResolver.method", "The HTTP method to use when making requests to the address resolver", stringType)
+	ConfigBlockchainEthereumAddressResolverMethod                = ffc("config.blockchain.ethereum.addressResolver.method", "The HTTP method to use when making requests to the Address Resolver", stringType)
 
 	ConfigBlockchainEthereumAddressResolverResponseField  = ffc("config.blockchain.ethereum.addressResolver.responseField", "The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)", stringType)
 	ConfigBlockchainEthereumAddressResolverRetainOriginal = ffc("config.blockchain.ethereum.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address", booleanType)
-	ConfigBlockchainEthereumAddressResolverURL            = ffc("config.blockchain.ethereum.addressResolver.url", "The URL of the address resolver", stringType)
-	ConfigBlockchainEthereumAddressResolverURLTemplate    = ffc("config.blockchain.ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the address resolver", "Go template "+stringType)
+	ConfigBlockchainEthereumAddressResolverURL            = ffc("config.blockchain.ethereum.addressResolver.url", "The URL of the Address Resolver", stringType)
+	ConfigBlockchainEthereumAddressResolverURLTemplate    = ffc("config.blockchain.ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver", goTemplateType)
 
-	ConfigBlockchainEthereumAddressResolverProxyURL = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "The URL of the address resolver proxy", "URL "+stringType)
+	ConfigBlockchainEthereumAddressResolverProxyURL = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+stringType)
 
-	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The maximum number of transactions to send in a single request to Ethconnect", intType)
-	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", timeDurationType)
+	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.", intType)
+	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream.", timeDurationType)
 	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+stringType)
 	ConfigBlockchainEthereumEthconnectPrefixLong   = ffc("config.blockchain.ethereum.ethconnect.prefixLong", "The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect", stringType)
 	ConfigBlockchainEthereumEthconnectPrefixShort  = ffc("config.blockchain.ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", stringType)
 	ConfigBlockchainEthereumEthconnectTopic        = ffc("config.blockchain.ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", stringType)
 	ConfigBlockchainEthereumEthconnectURL          = ffc("config.blockchain.ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+stringType)
 
-	ConfigBlockchainEthereumEthconnectProxyURL = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "The URL of the Ethconnect proxy", "URL "+stringType)
+	ConfigBlockchainEthereumEthconnectProxyURL = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+stringType)
 
-	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The maximum number of transactions to send in a single request to Fabconnect", intType)
+	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.", intType)
 	ConfigBlockchainFabricFabconnectBatchTimeout = ffc("config.blockchain.fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", timeDurationType)
 	ConfigBlockchainFabricFabconnectChaincode    = ffc("config.blockchain.fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", stringType)
 	ConfigBlockchainFabricFabconnectChannel      = ffc("config.blockchain.fabric.fabconnect.channel", "The Fabric channel that FireFly will use for BatchPin transactions", stringType)
@@ -134,7 +136,7 @@ var (
 	ConfigBlockchainFabricFabconnectTopic        = ffc("config.blockchain.fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", stringType)
 	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+stringType)
 
-	ConfigBlockchainFabricFabconnectProxyURL = ffc("config.blockchain.fabric.fabconnect.proxy.url", "The URL for the Fabconnect proxy", "URL "+stringType)
+	ConfigBlockchainFabricFabconnectProxyURL = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+stringType)
 
 	ConfigBroadcastBatchAgentTimeout = ffc("config.broadcast.batch.agentTimeout", "How long to keep around a batching agent for a sending identity before disposal", stringType)
 	ConfigBroadcastBatchPayloadLimit = ffc("config.broadcast.batch.payloadLimit", "The maximum payload size of a batch for broadcast messages", byteSizeType)
@@ -143,7 +145,7 @@ var (
 
 	ConfigCorsCredentials = ffc("config.cors.credentials", "CORS setting to control whether a browser allows credentials to be sent to this API", booleanType)
 	ConfigCorsDebug       = ffc("config.cors.debug", "Whether debug is enabled for the CORS implementation", booleanType)
-	ConfigCorsEnabled     = ffc("config.cors.enabled", "Whether cors is enabled", booleanType)
+	ConfigCorsEnabled     = ffc("config.cors.enabled", "Whether CORS is enabled", booleanType)
 	ConfigCorsHeaders     = ffc("config.cors.headers", "CORS setting to control the allowed headers", stringType)
 	ConfigCorsMaxAge      = ffc("config.cors.maxAge", "The maximum age a browser should rely on CORS checks", timeDurationType)
 	ConfigCorsMethods     = ffc("config.cors.methods", " CORS setting to control the allowed methods", stringType)
@@ -170,7 +172,7 @@ var (
 	ConfigDataexchangeFfdxManifestEnabled = ffc("config.dataexchange.ffdx.manifestEnabled", "Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector", stringType)
 	ConfigDataexchangeFfdxURL             = ffc("config.dataexchange.ffdx.url", "The URL of the Data Exchange instance", "URL "+stringType)
 
-	ConfigDataexchangeFfdxProxyURL = ffc("config.dataexchange.ffdx.proxy.url", "The URL of the Data Exchange HTTP proxy", "URL "+stringType)
+	ConfigDataexchangeFfdxProxyURL = ffc("config.dataexchange.ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+stringType)
 
 	ConfigDebugPort = ffc("config.debug.port", "An HTTP port on which to enable the go debugger", intType)
 
@@ -227,7 +229,7 @@ var (
 	ConfigMetricsReadTimeout  = ffc("config.metrics.readTimeout", "The maximum time to wait when reading from an HTTP connection", timeDurationType)
 	ConfigMetricsWriteTimeout = ffc("config.metrics.writeTimeout", "The maximum time to wait when writing to an HTTP connection", timeDurationType)
 
-	ConfigNamespacesDefault    = ffc("config.namespaces.default", "The default namespace - must be in the predefines list", stringType)
+	ConfigNamespacesDefault    = ffc("config.namespaces.default", "The default namespace - must be in the predefined list", stringType)
 	ConfigNamespacesPredefined = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+stringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", stringType)
@@ -248,21 +250,21 @@ var (
 	ConfigPrivatemessagingOpCorrelationRetries = ffc("config.privatemessaging.opCorrelationRetries", "How many times to correlate an event for an operation (such as tx submission) back to an operation. Needed because the operation update might come back before we are finished persisting the ID of the request", intType)
 
 	ConfigPrivatemessagingBatchAgentTimeout = ffc("config.privatemessaging.batch.agentTimeout", "How long to keep around a batching agent for a sending identity before disposal", timeDurationType)
-	ConfigPrivatemessagingBatchPayloadLimit = ffc("config.privatemessaging.batch.payloadLimit", "The maximum payload size of a private message data exchange payload", byteSizeType)
+	ConfigPrivatemessagingBatchPayloadLimit = ffc("config.privatemessaging.batch.payloadLimit", "The maximum payload size of a private message Data Exchange payload", byteSizeType)
 	ConfigPrivatemessagingBatchSize         = ffc("config.privatemessaging.batch.size", "The maximum number of messages in a batch for private messages", intType)
 	ConfigPrivatemessagingBatchTimeout      = ffc("config.privatemessaging.batch.timeout", "The timeout to wait for a batch to fill, before sending", timeDurationType)
 
-	ConfigPublicstorageType = ffc("config.publicstorage.type", "**Deprecated** See `config.sharedstorage.type` instead.", stringType)
+	ConfigPublicstorageType = ffc("config.publicstorage.type", "`DEPRECATED` Please use `config.sharedstorage.type` instead", stringType)
 
 	ConfigPublicstorageIpfsAPIURL          = ffc("config.publicstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+stringType)
-	ConfigPublicstorageIpfsAPIProxyURL     = ffc("config.publicstorage.ipfs.api.proxy.url", "The URL for the IPFS proxy", "URL "+stringType)
+	ConfigPublicstorageIpfsAPIProxyURL     = ffc("config.publicstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+stringType)
 	ConfigPublicstorageIpfsGatewayURL      = ffc("config.publicstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+stringType)
-	ConfigPublicstorageIpfsGatewayProxyURL = ffc("config.publicstorage.ipfs.gateway.proxy.url", "The URL for the IPFS Gateway proxy", "URL "+stringType)
+	ConfigPublicstorageIpfsGatewayProxyURL = ffc("config.publicstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+stringType)
 	ConfigSharedstorageType                = ffc("config.sharedstorage.type", "The Shared Storage plugin to use", stringType)
 	ConfigSharedstorageIpfsAPIURL          = ffc("config.sharedstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+stringType)
-	ConfigSharedstorageIpfsAPIProxyURL     = ffc("config.sharedstorage.ipfs.api.proxy.url", "The URL for the IPFS API proxy", "URL "+stringType)
+	ConfigSharedstorageIpfsAPIProxyURL     = ffc("config.sharedstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+stringType)
 	ConfigSharedstorageIpfsGatewayURL      = ffc("config.sharedstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+stringType)
-	ConfigSharedstorageIpfsGatewayProxyURL = ffc("config.sharedstorage.ipfs.gateway.proxy.url", "The URL for the IPFS Proxy URL", "URL "+stringType)
+	ConfigSharedstorageIpfsGatewayProxyURL = ffc("config.sharedstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+stringType)
 
 	ConfigSubscriptionMax               = ffc("config.subscription.max", "The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)", intType)
 	ConfigSubscriptionDefaultsBatchSize = ffc("config.subscription.defaults.batchSize", "Default read ahead to enable for subscriptions that do not explicitly configure readahead", intType)
@@ -272,7 +274,7 @@ var (
 	ConfigTokensPlugin    = ffc("config.tokens[].plugin", "The name of the Tokens Connector plugin to use", stringType)
 	ConfigTokensURL       = ffc("config.tokens[].url", "The URL of the Token Connector", "URL "+stringType)
 
-	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "The URL of the Token Connector proxy", "URL "+stringType)
+	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "Optional HTTP proxy server to use when connecting to the Token Connector", "URL "+stringType)
 
 	ConfigUIEnabled = ffc("config.ui.enabled", "Enables the web user interface", booleanType)
 	ConfigUIPath    = ffc("config.ui.path", "The file system path which contains the static HTML, CSS, and JavaScript files for the user interface", stringType)
