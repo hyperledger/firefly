@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) *fftypes.BlockchainEvent {

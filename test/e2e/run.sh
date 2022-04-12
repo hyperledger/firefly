@@ -63,7 +63,6 @@ fi
 cd $CWD
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI remove -f firefly-e2e  # TODO: remove
   $CLI remove -f $STACK_NAME
 fi
 
@@ -78,7 +77,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json
+  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3

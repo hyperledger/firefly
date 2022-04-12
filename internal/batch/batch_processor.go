@@ -27,13 +27,13 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type batchWork struct {
@@ -55,17 +55,17 @@ type batchProcessorConf struct {
 // FlushStatus is an object that can be returned on REST queries to understand the status
 // of the batch processor
 type FlushStatus struct {
-	LastFlushTime        *fftypes.FFTime `json:"lastFlushStartTime"`
-	Flushing             *fftypes.UUID   `json:"flushing,omitempty"`
-	Blocked              bool            `json:"blocked"`
-	LastFlushError       string          `json:"lastFlushError,omitempty"`
-	LastFlushErrorTime   *fftypes.FFTime `json:"lastFlushErrorTime,omitempty"`
-	AverageBatchBytes    int64           `json:"averageBatchBytes"`
-	AverageBatchMessages float64         `json:"averageBatchMessages"`
-	AverageBatchData     float64         `json:"averageBatchData"`
-	AverageFlushTimeMS   int64           `json:"averageFlushTimeMS"`
-	TotalBatches         int64           `json:"totalBatches"`
-	TotalErrors          int64           `json:"totalErrors"`
+	LastFlushTime        *fftypes.FFTime `ffstruct:"BatchFlushStatus" json:"lastFlushStartTime"`
+	Flushing             *fftypes.UUID   `ffstruct:"BatchFlushStatus" json:"flushing,omitempty"`
+	Blocked              bool            `ffstruct:"BatchFlushStatus" json:"blocked"`
+	LastFlushError       string          `ffstruct:"BatchFlushStatus" json:"lastFlushError,omitempty"`
+	LastFlushErrorTime   *fftypes.FFTime `ffstruct:"BatchFlushStatus" json:"lastFlushErrorTime,omitempty"`
+	AverageBatchBytes    int64           `ffstruct:"BatchFlushStatus" json:"averageBatchBytes"`
+	AverageBatchMessages float64         `ffstruct:"BatchFlushStatus" json:"averageBatchMessages"`
+	AverageBatchData     float64         `ffstruct:"BatchFlushStatus" json:"averageBatchData"`
+	AverageFlushTimeMS   int64           `ffstruct:"BatchFlushStatus" json:"averageFlushTimeMS"`
+	TotalBatches         int64           `ffstruct:"BatchFlushStatus" json:"totalBatches"`
+	TotalErrors          int64           `ffstruct:"BatchFlushStatus" json:"totalErrors"`
 
 	totalBytesFlushed    int64
 	totalMessagesFlushed int64
@@ -82,7 +82,7 @@ type batchProcessor struct {
 	txHelper           txcommon.Helper
 	cancelCtx          func()
 	done               chan struct{}
-	quescing           chan bool
+	quiescing          chan bool
 	newWork            chan *batchWork
 	assemblyID         *fftypes.UUID
 	assemblyQueue      []*batchWork
@@ -121,7 +121,7 @@ func newBatchProcessor(bm *batchManager, conf *batchProcessorConf, baseRetryConf
 		data:      bm.data,
 		txHelper:  txHelper,
 		newWork:   make(chan *batchWork, conf.BatchMaxSize),
-		quescing:  make(chan bool, 1),
+		quiescing: make(chan bool, 1),
 		done:      make(chan struct{}),
 		retry: &retry.Retry{
 			InitialDelay: baseRetryConf.InitialDelay,
@@ -263,7 +263,7 @@ func (bp *batchProcessor) startQuiesce() {
 	// ask them to close our channel before their next read.
 	// One more item of work might get through the pipe in an edge case here.
 	select {
-	case bp.quescing <- true:
+	case bp.quiescing <- true:
 	default:
 	}
 }

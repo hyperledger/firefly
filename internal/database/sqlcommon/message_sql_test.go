@@ -24,9 +24,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -165,7 +165,17 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, msg.Header.ID, &msgIDs[0].ID)
 	assert.Equal(t, msg.Sequence, msgIDs[0].Sequence)
 
-	// Check we can get it with a filter on only mesasges with a particular data ref
+	batchIDs, err := s.GetBatchIDsForMessages(ctx, []*fftypes.UUID{msg.Header.ID})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(batchIDs))
+	assert.Equal(t, *msgUpdated.BatchID, *batchIDs[0])
+
+	batchIDs, err = s.GetBatchIDsForDataAttachments(ctx, []*fftypes.UUID{dataID2})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(batchIDs))
+	assert.Equal(t, *msgUpdated.BatchID, *batchIDs[0])
+
+	// Check we can get it with a filter on only messages with a particular data ref
 	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
 	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(false))
@@ -311,7 +321,11 @@ func TestInsertMessagesMultiRowOK(t *testing.T) {
 		AddRow(int64(1004)),
 	)
 	mock.ExpectCommit()
-	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1, msg2})
+	hookCalled := make(chan struct{}, 1)
+	err := s.InsertMessages(context.Background(), []*fftypes.Message{msg1, msg2}, func() {
+		close(hookCalled)
+	})
+	<-hookCalled
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
@@ -539,7 +553,7 @@ func TestGetMessagesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetMessages(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetMessagesQueryFail(t *testing.T) {
@@ -555,7 +569,7 @@ func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, _, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -613,7 +627,7 @@ func TestGetMessageIDsBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
 	_, err := s.GetMessageIDs(context.Background(), f)
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -622,7 +636,7 @@ func TestMessageUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestMessagesUpdateBuildFilterFail(t *testing.T) {
@@ -631,7 +645,7 @@ func TestMessagesUpdateBuildFilterFail(t *testing.T) {
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("type", fftypes.MessageTypeBroadcast)
 	err := s.UpdateMessages(context.Background(), f, u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestMessageUpdateFail(t *testing.T) {
@@ -642,4 +656,22 @@ func TestMessageUpdateFail(t *testing.T) {
 	u := database.MessageQueryFactory.NewUpdate(context.Background()).Set("group", fftypes.NewRandB32())
 	err := s.UpdateMessage(context.Background(), fftypes.NewUUID(), u)
 	assert.Regexp(t, "FF10117", err)
+}
+
+func TestGetBatchIDsForMessagesSelectFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msgID := fftypes.NewUUID()
+	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
+	_, err := s.GetBatchIDsForMessages(context.Background(), []*fftypes.UUID{msgID})
+	assert.Regexp(t, "FF10115", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetBatchIDsForMessagesScanFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	msgID := fftypes.NewUUID()
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"batch_id"}).AddRow("not a UUID"))
+	_, err := s.GetBatchIDsForMessages(context.Background(), []*fftypes.UUID{msgID})
+	assert.Regexp(t, "FF10121", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }

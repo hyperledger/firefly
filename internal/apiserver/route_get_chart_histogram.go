@@ -20,11 +20,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var getChartHistogram = &oapispec.Route{
@@ -32,31 +33,31 @@ var getChartHistogram = &oapispec.Route{
 	Path:   "namespaces/{ns}/charts/histogram/{collection}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "collection", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "collection", Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "startTime", Description: i18n.MsgHistogramStartTimeParam, IsBool: false},
-		{Name: "endTime", Description: i18n.MsgHistogramEndTimeParam, IsBool: false},
-		{Name: "buckets", Description: i18n.MsgHistogramBucketsParam, IsBool: false},
+		{Name: "startTime", Description: coremsgs.APIHistogramStartTimeParam, IsBool: false},
+		{Name: "endTime", Description: coremsgs.APIHistogramEndTimeParam, IsBool: false},
+		{Name: "buckets", Description: coremsgs.APIHistogramBucketsParam, IsBool: false},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		startTime, err := fftypes.ParseTimeString(r.QP["startTime"])
 		if err != nil {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "startTime")
+			return nil, i18n.NewError(r.Ctx, coremsgs.MsgInvalidChartNumberParam, "startTime")
 		}
 		endTime, err := fftypes.ParseTimeString(r.QP["endTime"])
 		if err != nil {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "endTime")
+			return nil, i18n.NewError(r.Ctx, coremsgs.MsgInvalidChartNumberParam, "endTime")
 		}
 		buckets, err := strconv.ParseInt(r.QP["buckets"], 10, 64)
 		if err != nil {
-			return nil, i18n.NewError(r.Ctx, i18n.MsgInvalidChartNumberParam, "buckets")
+			return nil, i18n.NewError(r.Ctx, coremsgs.MsgInvalidChartNumberParam, "buckets")
 		}
 		return getOr(r.Ctx).GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
 	},

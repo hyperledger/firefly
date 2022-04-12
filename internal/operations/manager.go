@@ -20,12 +20,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type OperationHandler interface {
@@ -37,11 +38,12 @@ type OperationHandler interface {
 type Manager interface {
 	RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType)
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
 	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
+	ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error)
 	Start() error
 	WaitStop()
 }
@@ -61,7 +63,7 @@ type operationsManager struct {
 
 func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || txHelper == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	om := &operationsManager{
 		ctx:      ctx,
@@ -82,12 +84,12 @@ func (om *operationsManager) RegisterHandler(ctx context.Context, handler Operat
 func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error {
+func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
 	failState := fftypes.OpStatusFailed
 	for _, o := range options {
 		if o == RemainPendingOnFailure {
@@ -97,17 +99,18 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 	log.L(ctx).Infof("Executing %s operation %s via handler %s", op.Type, op.ID, handler.Name())
 	log.L(ctx).Tracef("Operation detail: %+v", op)
-	if outputs, complete, err := handler.RunOperation(ctx, op); err != nil {
+	outputs, complete, err := handler.RunOperation(ctx, op)
+	if err != nil {
 		om.writeOperationFailure(ctx, op.ID, outputs, err, failState)
-		return err
+		return nil, err
 	} else if complete {
 		om.writeOperationSuccess(ctx, op.ID, outputs)
 	}
-	return nil
+	return outputs, nil
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
@@ -153,7 +156,8 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 		return nil, err
 	}
 
-	return op, om.RunOperation(ctx, po)
+	_, err = om.RunOperation(ctx, po)
+	return op, err
 }
 
 func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {
@@ -202,6 +206,15 @@ func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *ff
 	if err := om.database.ResolveOperation(ctx, opID, newStatus, err.Error(), outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
+}
+
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	err = om.database.ResolveOperation(ctx, u, op.Status, op.Error, op.Output)
+	return op, err
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) {

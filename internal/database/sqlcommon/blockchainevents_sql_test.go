@@ -45,7 +45,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 		Timestamp:  fftypes.Now(),
 	}
 
-	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, "ns", event.ID, int64(1)).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, "ns", event.ID).Return()
 
 	err := s.InsertBlockchainEvent(ctx, event)
 	assert.NotNil(t, event.Timestamp)
@@ -138,7 +138,7 @@ func TestGetBlockchainEventsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BlockchainEventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetBlockchainEvents(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetBlockchainEventsScanFail(t *testing.T) {

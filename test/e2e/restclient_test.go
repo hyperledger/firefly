@@ -650,17 +650,13 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 	return &sub
 }
 
-func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventName string, location *fftypes.JSONObject) *fftypes.ContractListener {
+func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventPath string, location *fftypes.JSONObject) *fftypes.ContractListener {
 	body := fftypes.ContractListenerInput{
 		ContractListener: fftypes.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
 			Interface: ffiReference,
-			Event: &fftypes.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: eventName,
-				},
-			},
 		},
+		EventPath: eventPath,
 	}
 	var sub fftypes.ContractListener
 	path := urlContractListeners

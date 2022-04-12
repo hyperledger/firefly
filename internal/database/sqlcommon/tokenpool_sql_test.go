@@ -230,7 +230,7 @@ func TestGetTokenPoolsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TokenPoolQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetTokenPools(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetTokenPoolsScanFail(t *testing.T) {

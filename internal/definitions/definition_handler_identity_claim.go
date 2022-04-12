@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
@@ -136,7 +136,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	} else if err != nil {
 		// This cannot be processed as the parent does not exist (or similar).
 		// We treat this as a bad request, as nodes should not be broadcast until the parent identity is
-		// is already confirmed. (Note different processing for org/custom childs, where there's a parent
+		// is already confirmed. (Note different processing for org/custom child's, where there's a parent
 		// verification to coordinate).
 		l.Warnf("Unable to process identity claim %s: %s", msg.Header.ID, err)
 		return HandlerResult{Action: ActionReject}, nil
@@ -160,7 +160,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return HandlerResult{Action: ActionReject}, nil
 	}
 
-	// Check uniquness of verifier
+	// Check uniqueness of verifier
 	verifier := dh.getClaimVerifier(msg, identity)
 	existingVerifier, err := dh.database.GetVerifierByValue(ctx, verifier.Type, identity.Namespace, verifier.Value)
 	if err != nil {

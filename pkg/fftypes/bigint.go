@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"math/big"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 const MaxFFBigIntHexLength = 65
@@ -80,16 +80,30 @@ func (i *FFBigInt) Scan(src interface{}) error {
 		}
 		// Scan is different to JSON deserialization - always read as HEX (without any 0x prefix)
 		if _, ok := i.Int().SetString(src, 16); !ok {
-			return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, i)
+			return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, i)
 		}
 		return nil
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, i)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, i)
 	}
 }
 
 func (i *FFBigInt) Int() *big.Int {
 	return (*big.Int)(i)
+}
+
+func (i *FFBigInt) Int64() int64 {
+	if i == nil {
+		return 0
+	}
+	return (*big.Int)(i).Int64()
+}
+
+func (i *FFBigInt) Uint64() uint64 {
+	if i == nil || !(*big.Int)(i).IsUint64() {
+		return 0
+	}
+	return (*big.Int)(i).Uint64()
 }
 
 func (i *FFBigInt) Equals(i2 *FFBigInt) bool {

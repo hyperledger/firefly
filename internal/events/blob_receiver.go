@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type blobNotification struct {
@@ -64,14 +65,14 @@ func newBlobReceiver(ctx context.Context, ag *aggregator) *blobReceiver {
 		aggregator: ag,
 		database:   ag.database,
 		conf: blobReceiverConf{
-			workerCount:  config.GetInt(config.BlobReceiverWorkerCount),
-			batchTimeout: config.GetDuration(config.BlobReceiverWorkerBatchTimeout),
-			maxInserts:   config.GetInt(config.BlobReceiverWorkerBatchMaxInserts),
+			workerCount:  config.GetInt(coreconfig.BlobReceiverWorkerCount),
+			batchTimeout: config.GetDuration(coreconfig.BlobReceiverWorkerBatchTimeout),
+			maxInserts:   config.GetInt(coreconfig.BlobReceiverWorkerBatchMaxInserts),
 		},
 		retry: &retry.Retry{
-			InitialDelay: config.GetDuration(config.BlobReceiverRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.BlobReceiverRetryMaxDelay),
-			Factor:       config.GetFloat64(config.BlobReceiverRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.BlobReceiverRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.BlobReceiverRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.BlobReceiverRetryFactor),
 		},
 	}
 	br.ctx, br.cancelFunc = context.WithCancel(ctx)
@@ -164,9 +165,11 @@ func (br *blobReceiver) blobReceiverLoop(index int) {
 func (br *blobReceiver) handleBlobNotificationsRetry(ctx context.Context, notifications []*blobNotification) error {
 	// We process the event in a retry loop (which will break only if the context is closed), so that
 	// we only confirm consumption of the event to the plugin once we've processed it.
+	var newHashes []*fftypes.Bytes32
 	err := br.retry.Do(ctx, "blob reference insert", func(attempt int) (retry bool, err error) {
-		return true, br.database.RunAsGroup(ctx, func(ctx context.Context) error {
-			return br.handleBlobNotifications(ctx, notifications)
+		return true, br.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+			newHashes, err = br.insertNewBlobs(ctx, notifications)
+			return err
 		})
 	})
 	// We only get an error here if we're exiting
@@ -179,10 +182,14 @@ func (br *blobReceiver) handleBlobNotificationsRetry(ctx context.Context, notifi
 			notification.onComplete()
 		}
 	}
+	// Notify the aggregator for any rewinds
+	for _, hash := range newHashes {
+		br.aggregator.queueBlobRewind(hash)
+	}
 	return nil
 }
 
-func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blobNotification) ([]driver.Value, error) {
+func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blobNotification) ([]*fftypes.Bytes32, error) {
 
 	allHashes := make([]driver.Value, len(notifications))
 	for i, n := range notifications {
@@ -199,7 +206,7 @@ func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blo
 		return nil, err
 	}
 	newBlobs := make([]*fftypes.Blob, 0, len(existingBlobs))
-	newHashes := make([]driver.Value, 0, len(existingBlobs))
+	newHashes := make([]*fftypes.Bytes32, 0, len(existingBlobs))
 	for _, notification := range notifications {
 		foundExisting := false
 		// Check for duplicates in the DB
@@ -231,52 +238,4 @@ func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blo
 	}
 	return newHashes, nil
 
-}
-
-func (br *blobReceiver) handleBlobNotifications(ctx context.Context, notifications []*blobNotification) error {
-
-	l := log.L(br.ctx)
-
-	// Determine what blobs are new
-	newHashes, err := br.insertNewBlobs(ctx, notifications)
-	if err != nil {
-		return err
-	}
-	if len(newHashes) == 0 {
-		return nil
-	}
-
-	// We need to work out what pins potentially are unblocked by the arrival of this data
-	batchIDs := make(map[fftypes.UUID]bool)
-
-	// Find any data associated with this blob
-	var data []*fftypes.DataRef
-	filter := database.DataQueryFactory.NewFilter(ctx).In("blob.hash", newHashes)
-	data, _, err = br.database.GetDataRefs(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	// Find the messages assocated with that data
-	for _, data := range data {
-		fb := database.MessageQueryFactory.NewFilter(ctx)
-		filter := fb.And(fb.Eq("confirmed", nil))
-		messages, _, err := br.database.GetMessagesForData(ctx, data.ID, filter)
-		if err != nil {
-			return err
-		}
-		// Find the unique batch IDs for all the messages
-		for _, msg := range messages {
-			if msg.BatchID != nil {
-				l.Debugf("Message %s in batch %s contains data %s reference to blob", msg.Header.ID, msg.BatchID, data.ID)
-				batchIDs[*msg.BatchID] = true
-			}
-		}
-	}
-
-	// Initiate rewinds for all the batchIDs that are potentially completed by the arrival of this data
-	for batchID := range batchIDs {
-		br.aggregator.rewindBatches <- batchID
-	}
-	return nil
 }

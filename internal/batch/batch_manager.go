@@ -22,23 +22,25 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || dm == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	pCtx, cancelCtx := context.WithCancel(log.WithLogField(ctx, "role", "batchmgr"))
-	readPageSize := config.GetUint(config.BatchManagerReadPageSize)
+	readPageSize := config.GetUint(coreconfig.BatchManagerReadPageSize)
 	bm := &batchManager{
 		ctx:                        pCtx,
 		cancelCtx:                  cancelCtx,
@@ -48,9 +50,9 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		txHelper:                   txHelper,
 		readOffset:                 -1, // On restart we trawl for all ready messages
 		readPageSize:               uint64(readPageSize),
-		minimumPollDelay:           config.GetDuration(config.BatchManagerMinimumPollDelay),
-		messagePollTimeout:         config.GetDuration(config.BatchManagerReadPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
+		minimumPollDelay:           config.GetDuration(coreconfig.BatchManagerMinimumPollDelay),
+		messagePollTimeout:         config.GetDuration(coreconfig.BatchManagerReadPollTimeout),
+		startupOffsetRetryAttempts: config.GetInt(coreconfig.OrchestratorStartupAttempts),
 		dispatcherMap:              make(map[string]*dispatcher),
 		allDispatchers:             make([]*dispatcher, 0),
 		newMessages:                make(chan int64, readPageSize),
@@ -59,9 +61,9 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 		rewindOffset:               -1,
 		done:                       make(chan struct{}),
 		retry: &retry.Retry{
-			InitialDelay: config.GetDuration(config.BatchRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.BatchRetryMaxDelay),
-			Factor:       config.GetFloat64(config.BatchRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.BatchRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.BatchRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.BatchRetryFactor),
 		},
 	}
 	return bm, nil
@@ -77,13 +79,13 @@ type Manager interface {
 }
 
 type ManagerStatus struct {
-	Processors []*ProcessorStatus `json:"processors"`
+	Processors []*ProcessorStatus `ffstruct:"BatchManagerStatus" json:"processors"`
 }
 
 type ProcessorStatus struct {
-	Dispatcher string      `json:"dispatcher"`
-	Name       string      `json:"name"`
-	Status     FlushStatus `json:"status"`
+	Dispatcher string      `ffstruct:"BatchProcessorStatus" json:"dispatcher"`
+	Name       string      `ffstruct:"BatchProcessorStatus" json:"name"`
+	Status     FlushStatus `ffstruct:"BatchProcessorStatus" json:"status"`
 }
 
 type batchManager struct {
@@ -171,7 +173,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	dispatcherKey := bm.getDispatcherKey(txType, msgType)
 	dispatcher, ok := bm.dispatcherMap[dispatcherKey]
 	if !ok {
-		return nil, i18n.NewError(bm.ctx, i18n.MsgUnregisteredBatchType, dispatcherKey)
+		return nil, i18n.NewError(bm.ctx, coremsgs.MsgUnregisteredBatchType, dispatcherKey)
 	}
 	name := bm.getProcessorKey(namespace, signer, group)
 	processor, ok := dispatcher.processors[name]
@@ -208,7 +210,7 @@ func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Mess
 		return nil, nil, err
 	}
 	if !foundAll {
-		return nil, nil, i18n.NewError(bm.ctx, i18n.MsgDataNotFound, id)
+		return nil, nil, i18n.NewError(bm.ctx, coremsgs.MsgDataNotFound, id)
 	}
 	return msg, retData, nil
 }
@@ -246,7 +248,7 @@ func (bm *batchManager) filterFlushed(entries []*fftypes.IDAndSequence) []*fftyp
 	return unflushedEntries
 }
 
-// nofifyFlushed is called by a processor, when it's finished updating the database to record a set
+// notifyFlushed is called by a processor, when it's finished updating the database to record a set
 // of messages as sent. So it's safe to remove these sequences from the inflight map on the next
 // page read.
 func (bm *batchManager) notifyFlushed(sequences []int64) {
@@ -412,7 +414,7 @@ func (bm *batchManager) reapQuiescing() {
 	for _, d := range bm.allDispatchers {
 		for k, p := range d.processors {
 			select {
-			case <-p.quescing:
+			case <-p.quiescing:
 				// This is called on the goroutine where we dispatch the work, so it's safe to cleanup
 				delete(d.processors, k)
 				close(p.newWork)

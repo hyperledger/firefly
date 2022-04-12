@@ -20,10 +20,11 @@ import (
 	"context"
 	"database/sql/driver"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (org *fftypes.Identity, err error) {
@@ -39,7 +40,7 @@ func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, nameOrID st
 		return nil, err
 	}
 	if org == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	if org.Type != fftypes.IdentityTypeOrg {
 		log.L(ctx).Warnf("Identity '%s' (%s) is not an org identity", org.DID, org.ID)
@@ -71,7 +72,7 @@ func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, nameOrID string) (n
 		return nil, err
 	}
 	if node == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	if node.Type != fftypes.IdentityTypeNode {
 		log.L(ctx).Warnf("Identity '%s' (%s) is not a node identity", node.DID, node.ID)
@@ -96,7 +97,7 @@ func (nm *networkMap) GetIdentityByID(ctx context.Context, ns, id string) (*ffty
 		return nil, err
 	}
 	if identity == nil || identity.Namespace != ns {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return identity, nil
 }
@@ -226,7 +227,7 @@ func (nm *networkMap) GetVerifierByHash(ctx context.Context, ns, hash string) (*
 		return nil, err
 	}
 	if verifier == nil || verifier.Namespace != ns {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return verifier, nil
 }

@@ -67,22 +67,6 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return r0
 }
 
-// ChangeEvents provides a mock function with given fields:
-func (_m *EventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
-	ret := _m.Called()
-
-	var r0 chan<- *fftypes.ChangeEvent
-	if rf, ok := ret.Get(0).(func() chan<- *fftypes.ChangeEvent); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan<- *fftypes.ChangeEvent)
-		}
-	}
-
-	return r0
-}
-
 // CreateUpdateDurableSubscription provides a mock function with given fields: ctx, subDef, mustNew
 func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) error {
 	ret := _m.Called(ctx, subDef, mustNew)
@@ -126,6 +110,22 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chan<- *fftypes.UUID)
+		}
+	}
+
+	return r0
+}
+
+// GetPlugins provides a mock function with given fields:
+func (_m *EventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
+	ret := _m.Called()
+
+	var r0 []*fftypes.NodeStatusPlugin
+	if rf, ok := ret.Get(0).(func() []*fftypes.NodeStatusPlugin); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.NodeStatusPlugin)
 		}
 	}
 

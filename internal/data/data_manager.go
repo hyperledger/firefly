@@ -22,12 +22,14 @@ import (
 	"io"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/karlseguin/ccache"
 )
@@ -93,13 +95,13 @@ const (
 
 func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
 	if di == nil || pi == nil || dx == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	dm := &dataManager{
 		database:          di,
 		exchange:          dx,
-		validatorCacheTTL: config.GetDuration(config.ValidatorCacheTTL),
-		messageCacheTTL:   config.GetDuration(config.MessageCacheTTL),
+		validatorCacheTTL: config.GetDuration(coreconfig.ValidatorCacheTTL),
+		messageCacheTTL:   config.GetDuration(coreconfig.MessageCacheTTL),
 	}
 	dm.blobStore = blobStore{
 		dm:            dm,
@@ -110,17 +112,17 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 	dm.validatorCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.ValidatorCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.ValidatorCacheSize)),
 	)
 	dm.messageCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.MessageCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.MessageCacheSize)),
 	)
 	dm.messageWriter = newMessageWriter(ctx, di, &messageWriterConf{
-		workerCount:  config.GetInt(config.MessageWriterCount),
-		batchTimeout: config.GetDuration(config.MessageWriterBatchTimeout),
-		maxInserts:   config.GetInt(config.MessageWriterBatchMaxInserts),
+		workerCount:  config.GetInt(coreconfig.MessageWriterCount),
+		batchTimeout: config.GetDuration(coreconfig.MessageWriterBatchTimeout),
+		maxInserts:   config.GetInt(coreconfig.MessageWriterBatchMaxInserts),
 	})
 	dm.messageWriter.start()
 	return dm, nil
@@ -141,7 +143,7 @@ func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) err
 		return err
 	}
 	if namespace == nil {
-		return i18n.NewError(ctx, i18n.MsgNamespaceNotExist)
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceNotExist)
 	}
 	return nil
 }
@@ -356,7 +358,7 @@ func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *fftypes.BlobRef
 			return nil, err
 		}
 		if blob == nil {
-			return nil, i18n.NewError(ctx, i18n.MsgBlobNotFound, blobRef.Hash)
+			return nil, i18n.NewError(ctx, coremsgs.MsgBlobNotFound, blobRef.Hash)
 		}
 		return blob, nil
 	}
@@ -373,7 +375,7 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 	// If a datatype is specified, we need to verify the payload conforms
 	if datatype != nil && validator != fftypes.ValidatorTypeNone {
 		if datatype.Name == "" || datatype.Version == "" {
-			return i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
+			return i18n.NewError(ctx, coremsgs.MsgDatatypeNotFound, datatype)
 		}
 		if validator != fftypes.ValidatorTypeNone {
 			v, err := dm.getValidatorForDatatype(ctx, ns, validator, datatype)
@@ -381,7 +383,7 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 				return err
 			}
 			if v == nil {
-				return i18n.NewError(ctx, i18n.MsgDatatypeNotFound, datatype)
+				return i18n.NewError(ctx, coremsgs.MsgDatatypeNotFound, datatype)
 			}
 			err = v.ValidateValue(ctx, value, nil)
 			if err != nil {
@@ -457,7 +459,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 				return err
 			}
 			if d == nil {
-				return i18n.NewError(ctx, i18n.MsgDataReferenceUnresolvable, i)
+				return i18n.NewError(ctx, coremsgs.MsgDataReferenceUnresolvable, i)
 			}
 			if _, err = dm.resolveBlob(ctx, d.Blob); err != nil {
 				return err
@@ -470,7 +472,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 			newMessage.NewData = append(newMessage.NewData, d)
 		default:
 			// We have nothing - this must be a mistake
-			return i18n.NewError(ctx, i18n.MsgDataMissing, i)
+			return i18n.NewError(ctx, coremsgs.MsgDataMissing, i)
 		}
 		newMessage.AllData[i] = d
 
@@ -493,7 +495,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 	for i, mr := range manifest.Messages {
 		m, err := dm.database.GetMessageByID(ctx, mr.ID)
 		if err != nil || m == nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgFailedToRetrieve, "message", mr.ID)
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "message", mr.ID)
 		}
 		// BatchMessage removes any fields that could change after the batch was first assembled on the sender
 		batch.Payload.Messages[i] = m.BatchMessage()
@@ -501,7 +503,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *fftypes
 	for i, dr := range manifest.Data {
 		d, err := dm.database.GetDataByID(ctx, dr.ID, true)
 		if err != nil || d == nil {
-			return nil, i18n.WrapError(ctx, err, i18n.MsgFailedToRetrieve, "data", dr.ID)
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "data", dr.ID)
 		}
 		// BatchData removes any fields that could change after the batch was first assembled on the sender
 		batch.Payload.Data[i] = d.BatchData(persistedBatch.Type)

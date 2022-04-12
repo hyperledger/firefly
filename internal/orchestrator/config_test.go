@@ -21,7 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -82,7 +83,7 @@ func TestDeleteConfigRecord(t *testing.T) {
 
 func TestGetConfig(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Reset()
+	coreconfig.Reset()
 	config.Set(config.LogLevel, "trace")
 
 	conf := or.GetConfig(or.ctx)

@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
@@ -31,7 +31,7 @@ var getStatusBatchManager = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &batch.ManagerStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -20,7 +20,7 @@ import (
 	"context"
 	"crypto/sha256"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
@@ -38,12 +38,12 @@ var (
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	ID          *UUID         `json:"id"`
-	Message     *UUID         `json:"message,omitempty"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Type        NamespaceType `json:"type" ffenum:"namespacetype"`
-	Created     *FFTime       `json:"created"`
+	ID          *UUID         `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
+	Message     *UUID         `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
+	Name        string        `ffstruct:"Namespace" json:"name"`
+	Description string        `ffstruct:"Namespace" json:"description"`
+	Type        NamespaceType `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
+	Created     *FFTime       `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
 }
 
 func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {

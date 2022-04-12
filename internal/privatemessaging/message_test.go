@@ -183,7 +183,7 @@ func TestSendMessageBadGroup(t *testing.T) {
 		},
 		Group: &fftypes.InputGroup{},
 	}, true)
-	assert.Regexp(t, "FF10219", err)
+	assert.Regexp(t, "FF00115", err)
 
 	mim.AssertExpectations(t)
 
@@ -326,7 +326,7 @@ func TestSealFail(t *testing.T) {
 	})
 
 	err := message.(*messageSender).sendInternal(pm.ctx, methodSend)
-	assert.Regexp(t, "FF10145", err)
+	assert.Regexp(t, "FF00129", err)
 
 }
 
@@ -664,7 +664,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == fftypes.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: fftypes.BatchPersisted{
@@ -762,7 +762,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == fftypes.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{

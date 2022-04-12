@@ -20,21 +20,70 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+var (
+	pluginsResult = fftypes.NodeStatusPlugins{
+		Blockchain: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-bi",
+			},
+		},
+		Database: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-di",
+			},
+		},
+		DataExchange: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-dx",
+			},
+		},
+		Events: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-ei",
+			},
+		},
+		Identity: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-ii",
+			},
+		},
+		SharedStorage: []*fftypes.NodeStatusPlugin{
+			{
+				PluginType: "mock-ps",
+			},
+		},
+		Tokens: []*fftypes.NodeStatusPlugin{
+			{
+				Name:       "token",
+				PluginType: "mock-tk",
+			},
+		},
+	}
+
+	mockEventPlugins = []*fftypes.NodeStatusPlugin{
+		{
+			PluginType: "mock-ei",
+		},
+	}
+)
+
 func TestGetStatusRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -62,6 +111,9 @@ func TestGetStatusRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -77,6 +129,15 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.Equal(t, *nodeID, *status.Node.ID)
 	assert.Equal(t, "0x12345", status.Org.Verifiers[0].Value)
 
+	// Plugins
+	assert.ElementsMatch(t, pluginsResult.Blockchain, status.Plugins.Blockchain)
+	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
+	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
+	assert.ElementsMatch(t, pluginsResult.Events, status.Plugins.Events)
+	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
+	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
+	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
+
 	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID))
 	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID)) // cached
 
@@ -85,10 +146,10 @@ func TestGetStatusRegistered(t *testing.T) {
 func TestGetStatusVerifierLookupFail(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -111,6 +172,9 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	nmn := or.networkmap.(*networkmapmocks.Manager)
 	nmn.On("GetIdentityVerifiers", or.ctx, fftypes.SystemNamespace, orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	_, err := or.GetStatus(or.ctx)
 	assert.Regexp(t, "pop", err)
 
@@ -119,10 +183,10 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 func TestGetStatusWrongNodeOwner(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
@@ -150,6 +214,9 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 		}},
 	}, nil, nil)
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -169,13 +236,16 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 func TestGetStatusUnregistered(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
 
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
@@ -195,10 +265,10 @@ func TestGetStatusUnregistered(t *testing.T) {
 func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -219,6 +289,9 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
+
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
@@ -232,16 +305,25 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	assert.Equal(t, "node1", status.Node.Name)
 	assert.False(t, status.Node.Registered)
 
+	// Plugins
+	assert.ElementsMatch(t, pluginsResult.Blockchain, status.Plugins.Blockchain)
+	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
+	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
+	assert.ElementsMatch(t, pluginsResult.Events, status.Plugins.Events)
+	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
+	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
+	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
+
 	assert.Nil(t, or.GetNodeUUID(or.ctx))
 }
 
 func TestGetStatusNodeError(t *testing.T) {
 	or := newTestOrchestrator()
 
-	config.Reset()
-	config.Set(config.NamespacesDefault, "default")
-	config.Set(config.OrgName, "org1")
-	config.Set(config.NodeName, "node1")
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesDefault, "default")
+	config.Set(coreconfig.OrgName, "org1")
+	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
@@ -261,6 +343,9 @@ func TestGetStatusNodeError(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
+
+	mem := or.events.(*eventmocks.EventManager)
+	mem.On("GetPlugins").Return(mockEventPlugins)
 
 	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")

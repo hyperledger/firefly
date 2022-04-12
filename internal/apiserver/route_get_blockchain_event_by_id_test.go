@@ -27,25 +27,13 @@ import (
 
 func TestGetBlockchainEventByID(t *testing.T) {
 	o, r := newTestAPIServer()
-	id := fftypes.NewUUID()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/blockchainevents/"+id.String(), nil)
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/blockchainevents/id12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetBlockchainEventByID", mock.Anything, id).
+	o.On("GetBlockchainEventByID", mock.Anything, "mynamespace", "id12345").
 		Return(&fftypes.BlockchainEvent{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestGetBlockchainEventBadID(t *testing.T) {
-	_, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/blockchainevents/bad", nil)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 400, res.Result().StatusCode)
 }

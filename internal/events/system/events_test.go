@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ import (
 )
 
 func newTestEvents(t *testing.T) (se *Events, cancel func()) {
-	config.Reset()
+	coreconfig.Reset()
 
 	cbs := &eventsmocks.Callbacks{}
 	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)

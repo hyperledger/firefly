@@ -19,7 +19,7 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/oapispec"
 )
@@ -29,10 +29,10 @@ var getDIDDocByDID = &oapispec.Route{
 	Path:   "network/diddocs/{did:.+}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "did", Description: i18n.MsgTBD},
+		{Name: "did", Description: coremsgs.APIMessageTBD},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},

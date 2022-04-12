@@ -19,9 +19,10 @@ package tifactory
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/tokens/fftokens"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -42,7 +43,7 @@ func InitPrefix(prefix config.PrefixArray) {
 func GetPlugin(ctx context.Context, connectorName string) (tokens.Plugin, error) {
 	plugin, ok := pluginsByName[connectorName]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, connectorName)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownTokensPlugin, connectorName)
 	}
 	return plugin(), nil
 }

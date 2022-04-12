@@ -246,7 +246,7 @@ func TestGetEventsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetEvents(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGettEventsReadMessageFail(t *testing.T) {
@@ -271,7 +271,7 @@ func TestEventUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.EventQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateEvent(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestEventUpdateFail(t *testing.T) {

@@ -21,10 +21,10 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // Check data exchange peer the data came from, has been registered to the org listed in the batch.
@@ -124,8 +124,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *fftypes.Batch
 	}
 	// Poke the aggregator to do its stuff - after we have committed the transaction so the pins are visible
 	if batch.Payload.TX.Type == fftypes.TransactionTypeBatchPin {
-		log.L(em.ctx).Debugf("Rewinding for persisted private batch %s", batch.ID)
-		em.aggregator.rewindBatches <- *batch.ID
+		em.aggregator.queueBatchRewind(batch.ID)
 	}
 	return manifest, err
 }

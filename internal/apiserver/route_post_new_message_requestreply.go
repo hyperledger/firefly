@@ -17,11 +17,10 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -31,13 +30,12 @@ var postNewMessageRequestReply = &oapispec.Route{
 	Path:   "namespaces/{ns}/messages/requestreply",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-	JSONInputSchema: func(ctx context.Context) string { return privateSendSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

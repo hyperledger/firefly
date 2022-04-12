@@ -25,14 +25,15 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
@@ -164,18 +165,18 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		}
 	}
 
-	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
+	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
 
-	e.client = restclient.New(e.ctx, ethconnectConf)
+	e.client = ffresty.New(e.ctx, ethconnectConf)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
 
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
 	if e.instancePath == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
 	}
 
 	// Backwards compatibility from when instance path was not a contract address
@@ -196,7 +197,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
 	}
 
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
@@ -504,7 +505,7 @@ func validateEthAddress(ctx context.Context, key string) (string, error) {
 	if addressVerify.MatchString(keyNoHexPrefix) {
 		return "0x" + keyNoHexPrefix, nil
 	}
-	return "", i18n.NewError(ctx, i18n.MsgInvalidEthAddress)
+	return "", i18n.NewError(ctx, coremsgs.MsgInvalidEthAddress)
 }
 
 func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string, error) {
@@ -574,7 +575,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	}
 	res, err := e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return nil
 }
@@ -590,7 +591,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	}
 	res, err := e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return nil
 }
@@ -606,7 +607,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	}
 	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -623,10 +624,10 @@ func (e *Ethereum) ValidateContractLocation(ctx context.Context, location *fftyp
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	ethLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &ethLocation); err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, err)
 	}
 	if ethLocation.Address == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'address' not set")
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'address' not set")
 	}
 	return &ethLocation, nil
 }
@@ -638,7 +639,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *fftypes.Co
 	}
 	abi, err := e.FFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgContractParamInvalid)
+		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s", listener.ID)
@@ -769,7 +770,7 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 		SetContext(ctx).
 		Get(instancePath)
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, i18n.MsgEthconnectRESTErr)
+		return "", ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	var output map[string]string
 	if err = json.Unmarshal(res.Body(), &output); err != nil {
@@ -782,10 +783,10 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	var input FFIGenerationInput
 	err := json.Unmarshal(generationRequest.Input.Bytes(), &input)
 	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
+		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
 	if len(input.ABI) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationFailed, "ABI is empty")
+		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "ABI is empty")
 	}
 	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 	return ffi, nil

@@ -21,9 +21,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
 	"github.com/hyperledger/firefly/internal/blockchain/fabric"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var pluginsByName = map[string]func() blockchain.Plugin{
@@ -40,7 +41,7 @@ func InitPrefix(prefix config.Prefix) {
 func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownBlockchainPlugin, pluginType)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownBlockchainPlugin, pluginType)
 	}
 	return plugin(), nil
 }

@@ -81,7 +81,6 @@ func testContractAPI() *fftypes.ContractAPI {
 		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
-		Ledger:   fftypes.JSONAnyPtr(""),
 		Location: fftypes.JSONAnyPtr(""),
 	}
 }

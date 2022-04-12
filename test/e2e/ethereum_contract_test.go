@@ -160,16 +160,53 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
+// func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
+// 	defer suite.testState.done()
+
+// 	received1 := wsReader(suite.testState.ws1, true)
+
+// 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
+// 		"address": suite.contractAddress,
+// 	})
+
+// 	<-received1
+
+// 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+// 	assert.Equal(suite.T(), 1, len(listeners))
+// 	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
+
+// 	startTime := time.Now()
+// 	suite.T().Log(startTime.UTC().UnixNano())
+
+// 	invokeEthContract(suite.T(), suite.ethClient, suite.ethIdentity, suite.contractAddress, "set", &simpleStorageBody{
+// 		NewValue: "1",
+// 	})
+
+// 	match := map[string]interface{}{
+// 		"info": map[string]interface{}{
+// 			"address": suite.contractAddress,
+// 		},
+// 		"output": map[string]interface{}{
+// 			"_value": "1",
+// 			"_from":  suite.testState.org1key.Value,
+// 		},
+// 		"listener": listener.ID.String(),
+// 	}
+
+// 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
+// 	assert.NotNil(suite.T(), event)
+
+// 	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
+// }
+
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received1 := wsReader(suite.testState.ws1, true)
 
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
-
-	<-changes1 // only expect database change events
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
@@ -220,7 +257,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received1 := wsReader(suite.testState.ws1, true)
 
 	ffiReference := &fftypes.FFIReference{
 		ID: fftypes.MustParseUUID(suite.interfaceID),
@@ -229,8 +266,6 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "DataStored", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
-
-	<-changes1 // only expect database change events
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))

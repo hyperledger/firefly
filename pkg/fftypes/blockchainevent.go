@@ -17,15 +17,14 @@
 package fftypes
 
 type BlockchainEvent struct {
-	ID         *UUID          `json:"id,omitempty"`
-	Sequence   int64          `json:"sequence"`
-	Source     string         `json:"source,omitempty"`
-	Namespace  string         `json:"namespace,omitempty"`
-	Name       string         `json:"name,omitempty"`
-	Listener   *UUID          `json:"listener,omitempty"`
-	ProtocolID string         `json:"protocolId,omitempty"`
-	Output     JSONObject     `json:"output,omitempty"`
-	Info       JSONObject     `json:"info,omitempty"`
-	Timestamp  *FFTime        `json:"timestamp,omitempty"`
-	TX         TransactionRef `json:"tx"`
+	ID         *UUID          `ffstruct:"BlockchainEvent" json:"id,omitempty"`
+	Source     string         `ffstruct:"BlockchainEvent" json:"source,omitempty"`
+	Namespace  string         `ffstruct:"BlockchainEvent" json:"namespace,omitempty"`
+	Name       string         `ffstruct:"BlockchainEvent" json:"name,omitempty"`
+	Listener   *UUID          `ffstruct:"BlockchainEvent" json:"listener,omitempty"`
+	ProtocolID string         `ffstruct:"BlockchainEvent" json:"protocolId,omitempty"`
+	Output     JSONObject     `ffstruct:"BlockchainEvent" json:"output,omitempty"`
+	Info       JSONObject     `ffstruct:"BlockchainEvent" json:"info,omitempty"`
+	Timestamp  *FFTime        `ffstruct:"BlockchainEvent" json:"timestamp,omitempty"`
+	TX         TransactionRef `ffstruct:"BlockchainEvent" json:"tx"`
 }

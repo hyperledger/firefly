@@ -27,10 +27,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/firefly/internal/apiserver"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -59,6 +60,8 @@ var showConfigCommand = &cobra.Command{
 		_ = config.ReadConfig(cfgFile)
 
 		// Print it all out
+		fmt.Printf("%-64s %v\n", "Key", "Value")
+		fmt.Print("-----------------------------------------------------------------------------------\n")
 		for _, k := range config.GetKnownKeys() {
 			fmt.Printf("%-64s %v\n", k, config.Get(config.RootKey(k)))
 		}
@@ -90,13 +93,13 @@ func Execute() error {
 func run() error {
 
 	// Read the configuration
-	config.Reset()
+	coreconfig.Reset()
 	err := config.ReadConfig(cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	ctx = log.WithLogger(ctx, logrus.WithField("pid", fmt.Sprintf("%d", os.Getpid())))
-	ctx = log.WithLogger(ctx, logrus.WithField("prefix", config.GetString(config.NodeName)))
+	ctx = log.WithLogger(ctx, logrus.WithField("prefix", config.GetString(coreconfig.NodeName)))
 
 	config.SetupLogging(ctx)
 	log.L(ctx).Infof("Project Firefly")
@@ -127,7 +130,7 @@ func run() error {
 			log.L(ctx).Infof("Restarting due to configuration change")
 			o.WaitStop()
 			// Re-read the configuration
-			config.Reset()
+			coreconfig.Reset()
 			if err := config.ReadConfig(cfgFile); err != nil {
 				cancelCtx()
 				return err
@@ -142,7 +145,7 @@ func run() error {
 func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestrator.Orchestrator, as apiserver.Server, errChan chan error) {
 	var err error
 	// Start debug listener
-	debugPort := config.GetInt(config.DebugPort)
+	debugPort := config.GetInt(coreconfig.DebugPort)
 	if debugPort >= 0 {
 		r := mux.NewRouter()
 		r.PathPrefix("/debug/pprof/cmdline").HandlerFunc(pprof.Cmdline)

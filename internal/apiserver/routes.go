@@ -18,8 +18,6 @@ package apiserver
 
 import "github.com/hyperledger/firefly/internal/oapispec"
 
-const emptyObjectSchema = `{"type": "object"}`
-
 var routes = []*oapispec.Route{
 	deleteContractListener,
 	deleteSubscription,
@@ -29,6 +27,7 @@ var routes = []*oapispec.Route{
 	getBlockchainEvents,
 	getChartHistogram,
 	getContractAPIByName,
+	getContractAPIInterface,
 	getContractAPIs,
 	getContractInterface,
 	getContractInterfaceNameVersion,

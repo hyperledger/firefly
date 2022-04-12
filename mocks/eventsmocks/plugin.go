@@ -5,7 +5,7 @@ package eventsmocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/internal/config"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	events "github.com/hyperledger/firefly/pkg/events"
 

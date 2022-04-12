@@ -22,20 +22,20 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // SubscriptionFilter contains regular expressions to match against events. All must match for an event to be dispatched to a subscription
 type SubscriptionFilter struct {
-	Events           string                `json:"events,omitempty"`
-	Message          MessageFilter         `json:"message,omitempty"`
-	Transaction      TransactionFilter     `json:"transaction,omitempty"`
-	BlockchainEvent  BlockchainEventFilter `json:"blockchainevent,omitempty"`
-	Topic            string                `json:"topic,omitempty"`
-	DeprecatedTopics string                `json:"topics,omitempty"`
-	DeprecatedTag    string                `json:"tag,omitempty"`
-	DeprecatedGroup  string                `json:"group,omitempty"`
-	DeprecatedAuthor string                `json:"author,omitempty"`
+	Events           string                `ffstruct:"SubscriptionFilter" json:"events,omitempty"`
+	Message          MessageFilter         `ffstruct:"SubscriptionFilter" json:"message,omitempty"`
+	Transaction      TransactionFilter     `ffstruct:"SubscriptionFilter" json:"transaction,omitempty"`
+	BlockchainEvent  BlockchainEventFilter `ffstruct:"SubscriptionFilter" json:"blockchainevent,omitempty"`
+	Topic            string                `ffstruct:"SubscriptionFilter" json:"topic,omitempty"`
+	DeprecatedTopics string                `ffstruct:"SubscriptionFilter" json:"topics,omitempty"`
+	DeprecatedTag    string                `ffstruct:"SubscriptionFilter" json:"tag,omitempty"`
+	DeprecatedGroup  string                `ffstruct:"SubscriptionFilter" json:"group,omitempty"`
+	DeprecatedAuthor string                `ffstruct:"SubscriptionFilter" json:"author,omitempty"`
 }
 
 func NewSubscriptionFilterFromQuery(query url.Values) SubscriptionFilter {
@@ -62,18 +62,18 @@ func NewSubscriptionFilterFromQuery(query url.Values) SubscriptionFilter {
 }
 
 type MessageFilter struct {
-	Tag    string `json:"tag,omitempty"`
-	Group  string `json:"group,omitempty"`
-	Author string `json:"author,omitempty"`
+	Tag    string `ffstruct:"SubscriptionMessageFilter" json:"tag,omitempty"`
+	Group  string `ffstruct:"SubscriptionMessageFilter" json:"group,omitempty"`
+	Author string `ffstruct:"SubscriptionMessageFilter" json:"author,omitempty"`
 }
 
 type TransactionFilter struct {
-	Type string `json:"type,omitempty"`
+	Type string `ffstruct:"SubscriptionTransactionFilter" json:"type,omitempty"`
 }
 
 type BlockchainEventFilter struct {
-	Name     string `json:"name,omitempty"`
-	Listener string `json:"listener,omitempty"`
+	Name     string `ffstruct:"SubscriptionBlockchainEventFilter" json:"name,omitempty"`
+	Listener string `ffstruct:"SubscriptionBlockchainEventFilter" json:"listener,omitempty"`
 }
 
 // SubOptsFirstEvent picks the first event that should be dispatched on the subscription, and can be a string containing an exact sequence as well as one of the enum values
@@ -88,39 +88,36 @@ const (
 
 // SubscriptionCoreOptions are the core options that apply across all transports
 type SubscriptionCoreOptions struct {
-	FirstEvent *SubOptsFirstEvent `json:"firstEvent,omitempty"`
-	ReadAhead  *uint16            `json:"readAhead,omitempty"`
-	WithData   *bool              `json:"withData,omitempty"`
+	FirstEvent *SubOptsFirstEvent `ffstruct:"SubscriptionCoreOptions" json:"firstEvent,omitempty"`
+	ReadAhead  *uint16            `ffstruct:"SubscriptionCoreOptions" json:"readAhead,omitempty"`
+	WithData   *bool              `ffstruct:"SubscriptionCoreOptions" json:"withData,omitempty"`
 }
 
-// SubscriptionOptions cutomize the behavior of subscriptions
+// SubscriptionOptions customize the behavior of subscriptions
 type SubscriptionOptions struct {
 	SubscriptionCoreOptions
 
-	// Ephemeral subscriptions only can add this option to enable change events
-	ChangeEvents bool `json:"-"`
-
-	// Extenisble by the specific transport - so we serialize/de-serialize via map
+	// Extensible by the specific transport - so we serialize/de-serialize via map
 	additionalOptions JSONObject
 }
 
 // SubscriptionRef are the fields that can be used to refer to a subscription
 type SubscriptionRef struct {
-	ID        *UUID  `json:"id"`
-	Namespace string `json:"namespace"`
-	Name      string `json:"name"`
+	ID        *UUID  `ffstruct:"Subscription" json:"id" ffexcludeinput:"true"`
+	Namespace string `ffstruct:"Subscription" json:"namespace"`
+	Name      string `ffstruct:"Subscription" json:"name"`
 }
 
 // Subscription is a binding between the stream of events within a namespace, and an event interface - such as an application listening on websockets
 type Subscription struct {
 	SubscriptionRef
 
-	Transport string              `json:"transport"`
-	Filter    SubscriptionFilter  `json:"filter"`
-	Options   SubscriptionOptions `json:"options"`
-	Ephemeral bool                `json:"ephemeral,omitempty"`
-	Created   *FFTime             `json:"created"`
-	Updated   *FFTime             `json:"updated"`
+	Transport string              `ffstruct:"Subscription" json:"transport"`
+	Filter    SubscriptionFilter  `ffstruct:"Subscription" json:"filter"`
+	Options   SubscriptionOptions `ffstruct:"Subscription" json:"options"`
+	Ephemeral bool                `ffstruct:"Subscription" json:"ephemeral,omitempty" ffexcludeinput:"true"`
+	Created   *FFTime             `ffstruct:"Subscription" json:"created" ffexcludeinput:"true"`
+	Updated   *FFTime             `ffstruct:"Subscription" json:"updated" ffexcludeinput:"true"`
 }
 
 func (so *SubscriptionOptions) UnmarshalJSON(b []byte) error {
@@ -169,7 +166,7 @@ func (so *SubscriptionOptions) Scan(src interface{}) error {
 	case string:
 		return so.UnmarshalJSON([]byte(src))
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, so)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, so)
 	}
 }
 
@@ -197,6 +194,6 @@ func (sf *SubscriptionFilter) Scan(src interface{}) error {
 		return json.Unmarshal([]byte(src), &sf)
 
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, sf)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, sf)
 	}
 }

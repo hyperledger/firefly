@@ -19,7 +19,7 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -51,18 +51,6 @@ type Plugin interface {
 	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error
 }
 
-// ChangeEventListener is an optional interface for delivering database change events, only supported for ephemeral connections
-type ChangeEventListener interface {
-	// ChangeEvent delivers a change event - no ack for these
-	ChangeEvent(connID string, ce *fftypes.ChangeEvent)
-}
-
-// PluginAll is a combined interface for easy mocking, with all optional features
-type PluginAll interface {
-	Plugin
-	ChangeEventListener
-}
-
 type SubscriptionMatcher func(fftypes.SubscriptionRef) bool
 
 type Callbacks interface {
@@ -77,9 +65,9 @@ type Callbacks interface {
 	// EphemeralSubscription creates an ephemeral (non-durable) subscription, and associates it with a connection
 	EphemeralSubscription(connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error
 
-	// ConnnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
+	// ConnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
 	// Note the plugin must not crash if it receives PublishEvent calls on the connID after the ConnectionClosed event is fired
-	ConnnectionClosed(connID string)
+	ConnectionClosed(connID string)
 
 	// DeliveryResponse responds to a previous event delivery, to either:
 	// - Acknowledge it: the offset for the associated subscription can move forwards
@@ -90,7 +78,4 @@ type Callbacks interface {
 	DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse)
 }
 
-type Capabilities struct {
-	// ChangeEvents is whether change events are supported
-	ChangeEvents bool
-}
+type Capabilities struct{}

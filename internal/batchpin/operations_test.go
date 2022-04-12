@@ -1,17 +1,18 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package batchpin
 
 import (
@@ -45,7 +46,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 		fftypes.NewRandB32(),
 		fftypes.NewRandB32(),
 	}
-	addBatchPinInputs(op, batch.ID, contexts)
+	addBatchPinInputs(op, batch.ID, contexts, "payload1")
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
@@ -56,7 +57,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch, po.Data.(batchPinData).Batch)
 
-	_, complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts))
+	_, complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
@@ -82,7 +83,7 @@ func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
 	}
 
 	_, err := bp.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBatchPinBadContext(t *testing.T) {
@@ -97,7 +98,7 @@ func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 	}
 
 	_, err := bp.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10232", err)
+	assert.Regexp(t, "FF00107", err)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {

@@ -69,7 +69,7 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 	defer cancel()
 
 	_, err := am.GetTokenTransferByID(context.Background(), "ns1", "badUUID")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestMintTokensSuccess(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.NoError(t, err)
@@ -133,7 +133,7 @@ func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.NoError(t, err)
@@ -191,7 +191,7 @@ func TestMintTokenUnknownConnectorBadNamespace(t *testing.T) {
 	}
 
 	_, err := am.MintTokens(context.Background(), "", mint, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestMintTokenBadConnector(t *testing.T) {
@@ -253,7 +253,7 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == tokenPools[0] && data.Transfer == &mint.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.NoError(t, err)
@@ -342,7 +342,7 @@ func TestMintTokenUnknownPoolBadNamespace(t *testing.T) {
 	}
 
 	_, err := am.MintTokens(context.Background(), "", mint, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestMintTokensGetPoolsError(t *testing.T) {
@@ -432,7 +432,7 @@ func TestMintTokensFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
@@ -507,7 +507,7 @@ func TestMintTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, true)
 	assert.NoError(t, err)
@@ -543,7 +543,7 @@ func TestBurnTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
 	assert.NoError(t, err)
@@ -607,7 +607,7 @@ func TestBurnTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &burn.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.BurnTokens(context.Background(), "ns1", burn, true)
 	assert.NoError(t, err)
@@ -646,7 +646,7 @@ func TestTransferTokensSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
@@ -804,7 +804,7 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
@@ -960,7 +960,7 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.NoError(t, err)
@@ -1044,7 +1044,7 @@ func TestTransferTokensConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
 	assert.NoError(t, err)
@@ -1117,7 +1117,7 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(transferData)
 		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &transfer.TokenTransfer
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, true)
 	assert.NoError(t, err)

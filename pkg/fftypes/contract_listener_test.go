@@ -43,7 +43,7 @@ func TestFFISerializedEventScanString(t *testing.T) {
 func TestFFISerializedEventScanError(t *testing.T) {
 	params := &FFISerializedEvent{}
 	err := params.Scan(map[string]interface{}{"this is": "not a supported serialization of a FFISerializedEvent"})
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 }
 
 func TestFFISerializedEventValue(t *testing.T) {
@@ -83,7 +83,7 @@ func TestContractListenerOptionsScanString(t *testing.T) {
 func TestContractListenerOptionsScanError(t *testing.T) {
 	options := &ContractListenerOptions{}
 	err := options.Scan(false)
-	assert.Regexp(t, "FF10125", err)
+	assert.Regexp(t, "FF00105", err)
 }
 
 func TestContractListenerOptionsValue(t *testing.T) {

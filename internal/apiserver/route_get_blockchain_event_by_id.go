@@ -19,8 +19,8 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -30,21 +30,16 @@ var getBlockchainEventByID = &oapispec.Route{
 	Path:   "namespaces/{ns}/blockchainevents/{id}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "id", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "id", Description: coremsgs.APIMessageTBD},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		u, err := fftypes.ParseUUID(r.Ctx, r.PP["id"])
-		if err != nil {
-			return nil, err
-		}
-		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, u)
+		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, r.PP["ns"], r.PP["id"])
 	},
 }

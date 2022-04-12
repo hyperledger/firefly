@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -72,7 +72,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 			Name:      "group1",
 			Namespace: "ns1",
 			Members:   group.Members,
-			Ledger:    fftypes.NewUUID(),
 		},
 		Created: fftypes.Now(),
 		Message: fftypes.NewUUID(),
@@ -95,7 +94,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		fb.Eq("hash", groupUpdated.Hash),
 		fb.Eq("namespace", groupUpdated.Namespace),
 		fb.Eq("message", groupUpdated.Message),
-		fb.Eq("ledger", groupUpdated.Ledger),
 		fb.Gt("created", "0"),
 	)
 	groups, _, err := s.GetGroups(ctx, filter)
@@ -234,7 +232,7 @@ func TestUpdateMembersMissingOrg(t *testing.T) {
 			Members: fftypes.Members{{Node: fftypes.NewUUID()}},
 		},
 	}, false)
-	assert.Regexp(t, "FF10220", err)
+	assert.Regexp(t, "FF00116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -249,7 +247,7 @@ func TestUpdateMembersMissingNode(t *testing.T) {
 			Members: fftypes.Members{{Identity: "0x12345"}},
 		},
 	}, false)
-	assert.Regexp(t, "FF10221", err)
+	assert.Regexp(t, "FF00117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -343,7 +341,7 @@ func TestGetGroupByIDLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "name1", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "name1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetGroupByHash(context.Background(), groupID)
 	assert.Regexp(t, "FF10115", err)
@@ -354,7 +352,7 @@ func TestGetGroupsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	_, _, err := s.GetGroups(context.Background(), f)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGetGroupsQueryFail(t *testing.T) {
@@ -378,7 +376,7 @@ func TestGetGroupsReadGroupFail(t *testing.T) {
 func TestGetGroupsLoadMembersFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
-		AddRow(nil, "ns1", "group1", fftypes.NewUUID(), fftypes.NewRandB32(), fftypes.Now()))
+		AddRow(nil, "ns1", "group1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
 	_, _, err := s.GetGroups(context.Background(), f)
@@ -399,7 +397,7 @@ func TestGroupUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("hash", map[bool]bool{true: false})
 	err := s.UpdateGroup(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGroupsUpdateBuildFilterFail(t *testing.T) {
@@ -408,7 +406,7 @@ func TestGroupsUpdateBuildFilterFail(t *testing.T) {
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("description", "my desc")
 	err := s.UpdateGroups(context.Background(), f, u)
-	assert.Regexp(t, "FF10149.*hash", err)
+	assert.Regexp(t, "FF00143.*hash", err)
 }
 
 func TestGroupUpdateFail(t *testing.T) {

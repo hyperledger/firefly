@@ -19,18 +19,19 @@ package database
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var (
 	// HashMismatch sentinel error
-	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
+	HashMismatch = i18n.NewError(context.Background(), coremsgs.MsgHashMismatch)
 	// IDMismatch sentinel error
-	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	IDMismatch = i18n.NewError(context.Background(), coremsgs.MsgIDMismatch)
 	// DeleteRecordNotFound sentinel error
-	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
+	DeleteRecordNotFound = i18n.NewError(context.Background(), coremsgs.Msg404NotFound)
 )
 
 type UpsertOptimization int
@@ -81,7 +82,7 @@ type iMessageCollection interface {
 	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
 	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
-	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
+	InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...PostCompletionHook) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -104,6 +105,12 @@ type iMessageCollection interface {
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
+
+	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
+	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+
+	// GetBatchIDsForDataAttachments - an optimized query to retrieve any non-null batch IDs for a list of data IDs that might be attached to messages in batches
+	GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 }
 
 type iDataCollection interface {
@@ -584,9 +591,8 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages         OrderedUUIDCollectionNS = "messages"
-	CollectionEvents           OrderedUUIDCollectionNS = "events"
-	CollectionBlockchainEvents OrderedUUIDCollectionNS = "blockchainevents"
+	CollectionMessages OrderedUUIDCollectionNS = "messages"
+	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -603,6 +609,7 @@ type UUIDCollectionNS CollectionName
 
 const (
 	CollectionBatches           UUIDCollectionNS = "batches"
+	CollectionBlockchainEvents  UUIDCollectionNS = "blockchainevents"
 	CollectionData              UUIDCollectionNS = "data"
 	CollectionDataTypes         UUIDCollectionNS = "datatypes"
 	CollectionOperations        UUIDCollectionNS = "operations"
@@ -613,7 +620,7 @@ const (
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
 	CollectionContractAPIs      UUIDCollectionNS = "contractapis"
-	CollectionContractListeners UUIDCollectionNS = "contractsubscriptions"
+	CollectionContractListeners UUIDCollectionNS = "contractlisteners"
 	CollectionIdentities        UUIDCollectionNS = "identities"
 )
 

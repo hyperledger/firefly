@@ -20,10 +20,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type NewMessage struct {
@@ -98,7 +99,7 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 		select {
 		case mw.workQueue <- nmi:
 		case <-mw.ctx.Done():
-			return i18n.NewError(ctx, i18n.MsgContextCanceled)
+			return i18n.NewError(ctx, coremsgs.MsgContextCanceled)
 		}
 		return <-nmi.result
 	}
@@ -119,7 +120,7 @@ func (mw *messageWriter) WriteData(ctx context.Context, data *fftypes.Data) erro
 		select {
 		case mw.workQueue <- nmi:
 		case <-mw.ctx.Done():
-			return i18n.NewError(ctx, i18n.MsgContextCanceled)
+			return i18n.NewError(ctx, coremsgs.MsgContextCanceled)
 		}
 		return <-nmi.result
 	}

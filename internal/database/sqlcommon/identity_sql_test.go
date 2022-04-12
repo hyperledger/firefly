@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -257,7 +257,7 @@ func TestGetIdentityBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", map[bool]bool{true: false})
 	_, _, err := s.GetIdentities(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetIdentityReadMessageFail(t *testing.T) {
@@ -282,7 +282,7 @@ func TestIdentityUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", map[bool]bool{true: false})
 	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*did", err)
+	assert.Regexp(t, "FF00143.*did", err)
 }
 
 func TestIdentityUpdateFail(t *testing.T) {

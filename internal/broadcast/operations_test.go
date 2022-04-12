@@ -1,17 +1,18 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package broadcast
 
 import (
@@ -54,14 +55,6 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
 	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
-	mdi.On("UpdateBatch", context.Background(), bp.ID, mock.MatchedBy(func(update database.Update) bool {
-		info, _ := update.Finalize()
-		assert.Equal(t, 1, len(info.SetOperations))
-		assert.Equal(t, "payloadref", info.SetOperations[0].Field)
-		val, _ := info.SetOperations[0].Value.Value()
-		assert.Equal(t, "123", val)
-		return true
-	})).Return(nil)
 
 	po, err := bm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -71,7 +64,6 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 
 	assert.True(t, complete)
 	assert.NoError(t, err)
-	assert.Equal(t, "123", bp.PayloadRef)
 
 	mps.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -125,7 +117,7 @@ func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
 	}
 
 	_, err := bm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBatchBroadcastError(t *testing.T) {
@@ -227,14 +219,6 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
-	mdi.On("UpdateBatch", context.Background(), batch.ID, mock.MatchedBy(func(update database.Update) bool {
-		info, _ := update.Finalize()
-		assert.Equal(t, 1, len(info.SetOperations))
-		assert.Equal(t, "payloadref", info.SetOperations[0].Field)
-		val, _ := info.SetOperations[0].Value.Value()
-		assert.Equal(t, "123", val)
-		return true
-	})).Return(nil)
 
 	bp := &fftypes.BatchPersisted{}
 	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, bp))
@@ -242,7 +226,6 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 
 	assert.True(t, complete)
 	assert.NoError(t, err)
-	assert.Equal(t, "123", bp.PayloadRef)
 
 	mps.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -416,7 +399,7 @@ func TestPrepareUploadBlobGetDataBadID(t *testing.T) {
 	}
 
 	_, err := bm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 
 }
 

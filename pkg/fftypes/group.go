@@ -23,21 +23,20 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type GroupIdentity struct {
-	Ledger    *UUID   `json:"ledger,omitempty"`
-	Namespace string  `json:"namespace,omitempty"`
-	Name      string  `json:"name"`
-	Members   Members `json:"members"`
+	Namespace string  `ffstruct:"Group" json:"namespace,omitempty"`
+	Name      string  `ffstruct:"Group" json:"name"`
+	Members   Members `ffstruct:"Group" json:"members"`
 }
 
 type Group struct {
 	GroupIdentity
-	Message *UUID    `json:"message,omitempty"`
-	Hash    *Bytes32 `json:"hash,omitempty"`
-	Created *FFTime  `json:"created,omitempty"`
+	Message *UUID    `ffstruct:"Group" json:"message,omitempty"`
+	Hash    *Bytes32 `ffstruct:"Group" json:"hash,omitempty"`
+	Created *FFTime  `ffstruct:"Group" json:"created,omitempty"`
 }
 
 type Members []*Member
@@ -47,13 +46,13 @@ func (m Members) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
 func (m Members) Less(i, j int) bool { return m[i].Identity < m[j].Identity } // Note there's a dupcheck in validate
 
 type Member struct {
-	Identity string `json:"identity,omitempty"`
-	Node     *UUID  `json:"node,omitempty"`
+	Identity string `ffstruct:"Member" json:"identity,omitempty"`
+	Node     *UUID  `ffstruct:"Member" json:"node,omitempty"`
 }
 
 type MemberInput struct {
-	Identity string `json:"identity,omitempty"`
-	Node     string `json:"node,omitempty"`
+	Identity string `ffstruct:"MemberInput" json:"identity,omitempty"`
+	Node     string `ffstruct:"MemberInput" json:"node,omitempty"`
 }
 
 func (man *GroupIdentity) Hash() *Bytes32 {

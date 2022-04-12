@@ -5,7 +5,7 @@ package databasemocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/internal/config"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	database "github.com/hyperledger/firefly/pkg/database"
 
@@ -177,6 +177,52 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBatchIDsForDataAttachments provides a mock function with given fields: ctx, dataIDs
+func (_m *Plugin) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, dataIDs)
+
+	var r0 []*fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, dataIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, dataIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetBatchIDsForMessages provides a mock function with given fields: ctx, msgIDs
+func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) ([]*fftypes.UUID, error) {
+	ret := _m.Called(ctx, msgIDs)
+
+	var r0 []*fftypes.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.UUID) []*fftypes.UUID); ok {
+		r0 = rf(ctx, msgIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*fftypes.UUID) error); ok {
+		r1 = rf(ctx, msgIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2309,13 +2355,20 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 	return r0
 }
 
-// InsertMessages provides a mock function with given fields: ctx, messages
-func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message) error {
-	ret := _m.Called(ctx, messages)
+// InsertMessages provides a mock function with given fields: ctx, messages, hooks
+func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, messages)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message) error); ok {
-		r0 = rf(ctx, messages)
+	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, messages, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

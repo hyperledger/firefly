@@ -19,19 +19,20 @@ package batchpin
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type Submitter interface {
 	fftypes.Named
 
-	SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error
+	SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
@@ -48,7 +49,7 @@ type batchPinSubmitter struct {
 
 func NewBatchPinSubmitter(ctx context.Context, di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
 	if di == nil || im == nil || bi == nil || mm == nil || om == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	bp := &batchPinSubmitter{
 		database:   di,
@@ -67,14 +68,14 @@ func (bp *batchPinSubmitter) Name() string {
 	return "BatchPinSubmitter"
 }
 
-func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) error {
+func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
 	// The pending blockchain transaction
 	op := fftypes.NewOperation(
 		bp.blockchain,
 		batch.Namespace,
 		batch.TX.ID,
 		fftypes.OpTypeBlockchainPinBatch)
-	addBatchPinInputs(op, batch.ID, contexts)
+	addBatchPinInputs(op, batch.ID, contexts, payloadRef)
 	if err := bp.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
 	}
@@ -82,5 +83,6 @@ func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *fftyp
 	if bp.metrics.IsMetricsEnabled() {
 		bp.metrics.CountBatchPin()
 	}
-	return bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts))
+	_, err := bp.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, payloadRef))
+	return err
 }

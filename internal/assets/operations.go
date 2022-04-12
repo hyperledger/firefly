@@ -20,9 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type createPoolData struct {
@@ -62,7 +63,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opActivatePool(op, pool, blockchainInfo), nil
 
@@ -75,7 +76,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opTransfer(op, pool, transfer), nil
 
@@ -88,12 +89,12 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opApproval(op, pool, approval), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -139,7 +140,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 		return nil, false, plugin.TokensApproval(ctx, op.ID, data.Pool.ProtocolID, data.Approval)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

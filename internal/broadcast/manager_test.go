@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
@@ -42,7 +42,7 @@ import (
 )
 
 func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManager, func()) {
-	config.Reset()
+	coreconfig.Reset()
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
@@ -162,7 +162,7 @@ func TestBroadcastMessageBad(t *testing.T) {
 		msg: newMsg,
 	}
 	err := broadcast.sendInternal(context.Background(), methodSend)
-	assert.Regexp(t, "FF10144", err)
+	assert.Regexp(t, "FF00128", err)
 
 }
 
@@ -224,7 +224,7 @@ func TestDispatchBatchUploadFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
-	}), operations.RemainPendingOnFailure).Return(fmt.Errorf("pop"))
+	}), operations.RemainPendingOnFailure).Return(nil, fmt.Errorf("pop"))
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
@@ -249,11 +249,11 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
-	}), operations.RemainPendingOnFailure).Return(nil)
+	}), operations.RemainPendingOnFailure).Return(getUploadBatchOutputs("payload1"), nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.NoError(t, err)
@@ -281,11 +281,11 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	mbp := bm.batchpin.(*batchpinmocks.Submitter)
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
-	}), operations.RemainPendingOnFailure).Return(nil)
+	}), operations.RemainPendingOnFailure).Return(getUploadBatchOutputs("payload1"), nil)
 
 	err := bm.dispatchBatch(context.Background(), state)
 	assert.EqualError(t, err, "pop")
@@ -314,7 +314,7 @@ func TestUploadBlobsPublishFail(t *testing.T) {
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(uploadBlobData)
 		return op.Type == fftypes.OpTypeSharedStorageUploadBlob && data.Blob == blob
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := bm.uploadBlobs(ctx, fftypes.NewUUID(), fftypes.DataArray{
 		{
