@@ -144,15 +144,21 @@ func (ws *WebSockets) GetStatus() *fftypes.WebSocketStatus {
 		Enabled:     true,
 		Connections: make([]*fftypes.WSConnectionStatus, 0),
 	}
-	for _, c := range ws.connections {
+
+	ws.connMux.Lock()
+	connections := ws.connections
+	ws.connMux.Unlock()
+
+	for _, wc := range connections {
+		wc.mux.Lock()
 		conn := &fftypes.WSConnectionStatus{
-			ID:            c.connID,
-			RemoteAddress: c.remoteAddr,
-			UserAgent:     c.userAgent,
+			ID:            wc.connID,
+			RemoteAddress: wc.remoteAddr,
+			UserAgent:     wc.userAgent,
 			Subscriptions: make([]*fftypes.WSSubscriptionStatus, 0),
 		}
 		status.Connections = append(status.Connections, conn)
-		for _, s := range c.started {
+		for _, s := range wc.started {
 			sub := &fftypes.WSSubscriptionStatus{
 				Name:      s.name,
 				Namespace: s.namespace,
@@ -160,6 +166,7 @@ func (ws *WebSockets) GetStatus() *fftypes.WebSocketStatus {
 			}
 			conn.Subscriptions = append(conn.Subscriptions, sub)
 		}
+		wc.mux.Unlock()
 	}
 	return status
 }
