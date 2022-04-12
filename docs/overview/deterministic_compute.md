@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Deterministic compute
-parent: Key Concepts
-nav_order: 5
+parent: Understanding FireFly
+nav_order: 6
 ---
 
 # Deterministic compute

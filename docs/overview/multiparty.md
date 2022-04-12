@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Multi-party Systems
-parent: Key Concepts
-nav_order: 1
+parent: Understanding FireFly
+nav_order: 2
 ---
 
 # Enterprise multi-party systems

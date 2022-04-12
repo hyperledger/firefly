@@ -1,8 +1,8 @@
 ---
 layout: default
 title:  Multi-party process flow
-parent: Key Concepts
-nav_order: 8
+parent: Understanding FireFly
+nav_order: 9
 ---
 
 # Multi-party process flow

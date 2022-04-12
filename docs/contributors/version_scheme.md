@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Versioning Scheme
-parent: Maintainers
-nav_order: 1
+parent: Contributors
+nav_order: 7
 ---
 
 # Versioning Scheme
