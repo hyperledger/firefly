@@ -46,9 +46,9 @@ type Manager interface {
 	InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
-	GetContractAPIInterface(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.FFI, error)
-	GetContractAPIMethod(ctx context.Context, httpServerURL, ns, apiName, methodPath string) (*fftypes.FFIMethod, error)
-	GetContractAPIEvent(ctx context.Context, httpServerURL, ns, apiName, eventPath string) (*fftypes.FFIEvent, error)
+	GetContractAPIInterface(ctx context.Context, ns, apiName string) (*fftypes.FFI, error)
+	GetContractAPIMethod(ctx context.Context, ns, apiName, methodPath string) (*fftypes.FFIMethod, error)
+	GetContractAPIEvent(ctx context.Context, ns, apiName, eventPath string) (*fftypes.FFIEvent, error)
 	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 
@@ -151,14 +151,29 @@ func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string)
 
 func (cm *contractManager) GetFFIWithChildren(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
 	ffi, err := cm.GetFFI(ctx, ns, name, version)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		err = cm.getFFIChildren(ctx, ffi)
 	}
-	return cm.GetFFIByIDWithChildren(ctx, ffi.ID)
+	return ffi, err
 }
 
 func (cm *contractManager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	return cm.database.GetFFIByID(ctx, id)
+}
+
+func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI) (err error) {
+	mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
+	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, mfb.Eq("interface", ffi.ID))
+	if err != nil {
+		return err
+	}
+
+	efb := database.FFIEventQueryFactory.NewFilter(ctx)
+	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interface", ffi.ID))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (ffi *fftypes.FFI, err error) {
@@ -167,19 +182,7 @@ func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftyp
 		if err != nil || ffi == nil {
 			return err
 		}
-
-		mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
-		ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, mfb.Eq("interface", id))
-		if err != nil {
-			return err
-		}
-
-		efb := database.FFIEventQueryFactory.NewFilter(ctx)
-		ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interface", id))
-		if err != nil {
-			return err
-		}
-		return nil
+		return cm.getFFIChildren(ctx, ffi)
 	})
 	return ffi, err
 }
@@ -299,25 +302,25 @@ func (cm *contractManager) GetContractAPI(ctx context.Context, httpServerURL, ns
 	return api, err
 }
 
-func (cm *contractManager) GetContractAPIInterface(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.FFI, error) {
-	api, err := cm.GetContractAPI(ctx, httpServerURL, ns, apiName)
-	if err != nil {
+func (cm *contractManager) GetContractAPIInterface(ctx context.Context, ns, apiName string) (*fftypes.FFI, error) {
+	api, err := cm.GetContractAPI(ctx, "", ns, apiName)
+	if err != nil || api == nil {
 		return nil, err
 	}
 	return cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
 }
 
-func (cm *contractManager) GetContractAPIMethod(ctx context.Context, httpServerURL, ns, apiName, methodPath string) (*fftypes.FFIMethod, error) {
-	api, err := cm.GetContractAPI(ctx, httpServerURL, ns, apiName)
-	if err != nil {
+func (cm *contractManager) GetContractAPIMethod(ctx context.Context, ns, apiName, methodPath string) (*fftypes.FFIMethod, error) {
+	api, err := cm.GetContractAPI(ctx, "", ns, apiName)
+	if err != nil || api == nil {
 		return nil, err
 	}
 	return cm.database.GetFFIMethod(ctx, ns, api.Interface.ID, methodPath)
 }
 
-func (cm *contractManager) GetContractAPIEvent(ctx context.Context, httpServerURL, ns, apiName, eventPath string) (*fftypes.FFIEvent, error) {
-	api, err := cm.GetContractAPI(ctx, httpServerURL, ns, apiName)
-	if err != nil {
+func (cm *contractManager) GetContractAPIEvent(ctx context.Context, ns, apiName, eventPath string) (*fftypes.FFIEvent, error) {
+	api, err := cm.GetContractAPI(ctx, "", ns, apiName)
+	if err != nil || api == nil {
 		return nil, err
 	}
 	return cm.database.GetFFIEvent(ctx, ns, api.Interface.ID, eventPath)

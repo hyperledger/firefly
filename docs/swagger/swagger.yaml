@@ -741,14 +741,14 @@ paths:
                     items:
                       description: An array of smart contract event definitions
                       properties:
-                        contract:
-                          description: The UUID of the FFI smart contract definition
-                            that this event is part of
                         description:
                           description: A description of the smart contract event
                           type: string
                         id:
                           description: The UUID of the FFI event definition
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this event is part of
                         name:
                           description: The name of the event
                           type: string
@@ -792,14 +792,14 @@ paths:
                     items:
                       description: An array of smart contract method definitions
                       properties:
-                        contract:
-                          description: The UUID of the FFI smart contract definition
-                            that this method is part of
                         description:
                           description: A description of the smart contract method
                           type: string
                         id:
                           description: The UUID of the FFI method definition
+                        interface:
+                          description: The UUID of the FFI smart contract definition
+                            that this method is part of
                         name:
                           description: The name of the method
                           type: string
@@ -903,14 +903,14 @@ paths:
             application/json:
               schema:
                 properties:
-                  contract:
-                    description: The UUID of the FFI smart contract definition that
-                      this event is part of
                   description:
                     description: A description of the smart contract event
                     type: string
                   id:
                     description: The UUID of the FFI event definition
+                  interface:
+                    description: The UUID of the FFI smart contract definition that
+                      this event is part of
                   name:
                     description: The name of the event
                     type: string
@@ -982,14 +982,14 @@ paths:
             application/json:
               schema:
                 properties:
-                  contract:
-                    description: The UUID of the FFI smart contract definition that
-                      this method is part of
                   description:
                     description: A description of the smart contract method
                     type: string
                   id:
                     description: The UUID of the FFI method definition
+                  interface:
+                    description: The UUID of the FFI smart contract definition that
+                      this method is part of
                   name:
                     description: The name of the method
                     type: string

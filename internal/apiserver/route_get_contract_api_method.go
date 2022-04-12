@@ -41,6 +41,6 @@ var getContractAPIMethod = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFIMethod{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GetContractAPIMethod(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"])
+		return getOr(r.Ctx).Contracts().GetContractAPIMethod(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"])
 	},
 }

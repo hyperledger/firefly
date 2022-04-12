@@ -41,6 +41,6 @@ var getContractAPIEvent = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.FFIEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GetContractAPIEvent(r.Ctx, r.APIBaseURL, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"])
+		return getOr(r.Ctx).Contracts().GetContractAPIEvent(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"])
 	},
 }
