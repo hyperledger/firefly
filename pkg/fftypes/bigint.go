@@ -92,6 +92,20 @@ func (i *FFBigInt) Int() *big.Int {
 	return (*big.Int)(i)
 }
 
+func (i *FFBigInt) Int64() int64 {
+	if i == nil {
+		return 0
+	}
+	return (*big.Int)(i).Int64()
+}
+
+func (i *FFBigInt) Uint64() uint64 {
+	if i == nil || !(*big.Int)(i).IsUint64() {
+		return 0
+	}
+	return (*big.Int)(i).Uint64()
+}
+
 func (i *FFBigInt) Equals(i2 *FFBigInt) bool {
 	switch {
 	case i == nil && i2 == nil:

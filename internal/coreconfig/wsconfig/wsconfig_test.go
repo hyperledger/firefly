@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,14 +20,14 @@ func resetConf() {
 func TestWSConfigGeneration(t *testing.T) {
 	resetConf()
 
-	utConfPrefix.Set(restclient.HTTPConfigURL, "http://test:12345")
-	utConfPrefix.Set(restclient.HTTPConfigHeaders, map[string]interface{}{
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "http://test:12345")
+	utConfPrefix.Set(ffresty.HTTPConfigHeaders, map[string]interface{}{
 		"custom-header": "custom value",
 	})
-	utConfPrefix.Set(restclient.HTTPConfigAuthUsername, "user")
-	utConfPrefix.Set(restclient.HTTPConfigAuthPassword, "pass")
-	utConfPrefix.Set(restclient.HTTPConfigRetryInitDelay, 1)
-	utConfPrefix.Set(restclient.HTTPConfigRetryMaxDelay, 1)
+	utConfPrefix.Set(ffresty.HTTPConfigAuthUsername, "user")
+	utConfPrefix.Set(ffresty.HTTPConfigAuthPassword, "pass")
+	utConfPrefix.Set(ffresty.HTTPConfigRetryInitDelay, 1)
+	utConfPrefix.Set(ffresty.HTTPConfigRetryMaxDelay, 1)
 	utConfPrefix.Set(WSConfigKeyReadBufferSize, 1024)
 	utConfPrefix.Set(WSConfigKeyWriteBufferSize, 1024)
 	utConfPrefix.Set(WSConfigKeyInitialConnectAttempts, 1)
