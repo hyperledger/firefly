@@ -78,6 +78,8 @@ type EventManager interface {
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
 	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 
+	GetPlugins() []*fftypes.NodeStatusPlugin
+
 	// Internal events
 	sysmessaging.SystemEvents
 }
@@ -101,7 +103,6 @@ type eventManager struct {
 	blobReceiver          *blobReceiver
 	newEventNotifier      *eventNotifier
 	newPinNotifier        *eventNotifier
-	opCorrelationRetries  int
 	defaultTransport      string
 	internalEvents        *system.Events
 	metrics               metrics.Manager
@@ -134,7 +135,6 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
-		opCorrelationRetries:  config.GetInt(coreconfig.EventAggregatorOpCorrelationRetries),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
 		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
@@ -243,6 +243,19 @@ func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *f
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {
 	return em.internalEvents.AddListener(ns, el)
+}
+
+func (em *eventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
+	eventsArray := make([]*fftypes.NodeStatusPlugin, 0)
+	plugins := em.subManager.transports
+
+	for _, plugin := range plugins {
+		eventsArray = append(eventsArray, &fftypes.NodeStatusPlugin{
+			PluginType: plugin.Name(),
+		})
+	}
+
+	return eventsArray
 }
 
 func (em *eventManager) GetWebSocketStatus() *fftypes.WebSocketStatus {

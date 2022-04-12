@@ -116,6 +116,22 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
+// GetPlugins provides a mock function with given fields:
+func (_m *EventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
+	ret := _m.Called()
+
+	var r0 []*fftypes.NodeStatusPlugin
+	if rf, ok := ret.Get(0).(func() []*fftypes.NodeStatusPlugin); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.NodeStatusPlugin)
+		}
+	}
+
+	return r0
+}
+
 // GetWebSocketStatus provides a mock function with given fields:
 func (_m *EventManager) GetWebSocketStatus() *fftypes.WebSocketStatus {
 	ret := _m.Called()

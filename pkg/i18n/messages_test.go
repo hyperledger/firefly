@@ -25,9 +25,10 @@ import (
 )
 
 var (
-	TestError1 = FFE("FF99900", "Test error 1: %s")
-	TestError2 = FFE("FF99901", "Test error 2: %s")
-	TestError3 = FFE("FF99902", "Test error 3", 400)
+	TestError1  = FFE("FF99900", "Test error 1: %s")
+	TestError2  = FFE("FF99901", "Test error 2: %s")
+	TestError3  = FFE("FF99902", "Test error 3", 400)
+	TestConfig1 = FFC("config.something.1", "Test config field 1", "some type")
 )
 
 func TestExpand(t *testing.T) {
@@ -60,5 +61,25 @@ func TestDuplicateKey(t *testing.T) {
 func TestInvalidPrefixKey(t *testing.T) {
 	assert.Panics(t, func() {
 		FFE("ABCD1234", "test1")
+	})
+}
+
+func TestConfigMessageKey(t *testing.T) {
+	lang := language.Make("en")
+	ctx := WithLang(context.Background(), lang)
+	str := Expand(ctx, MessageKey(TestConfig1))
+	assert.Equal(t, "Test config field 1", str)
+}
+
+func TestGetFieldType(t *testing.T) {
+	fieldType, ok := GetFieldType(string(TestConfig1))
+	assert.True(t, ok)
+	assert.Equal(t, "some type", fieldType)
+}
+
+func TestDuplicateConfigKey(t *testing.T) {
+	FFC("config.test.2", "test2 description", "type")
+	assert.Panics(t, func() {
+		FFC("config.test.2", "test2 dupe", "dupe type")
 	})
 }

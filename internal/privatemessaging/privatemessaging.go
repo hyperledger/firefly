@@ -73,7 +73,6 @@ type privateMessaging struct {
 	retry                 retry.Retry
 	localNodeName         string
 	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
-	opCorrelationRetries  int
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
@@ -112,7 +111,6 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 			MaximumDelay: config.GetDuration(coreconfig.PrivateMessagingRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.PrivateMessagingRetryFactor),
 		},
-		opCorrelationRetries:  config.GetInt(coreconfig.PrivateMessagingOpCorrelationRetries),
 		maxBatchPayloadLength: config.GetByteSize(coreconfig.PrivateMessagingBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,

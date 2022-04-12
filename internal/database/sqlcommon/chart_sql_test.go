@@ -135,7 +135,7 @@ func TestGetChartHistogramValidCollectionNameWithTypes(t *testing.T) {
 func TestGetChartHistogramValidCollectionNameWithTypesAndCapped(t *testing.T) {
 	s, mock := newMockProvider().init()
 	coreconfig.Reset()
-	config.Set(coreconfig.DatabaseMaxChartRows, 10)
+	config.Set(coreconfig.HistogramsMaxChartRows, 10)
 	for i := range validCollectionsWithTypes {
 		mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"timestamp", "type"}).
 			AddRow(fftypes.UnixTime(1000000000), "typeA").
