@@ -53,7 +53,7 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent)
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("ffievents").
-			Where(sq.And{sq.Eq{"interface_id": event.Contract}, sq.Eq{"namespace": event.Namespace}, sq.Eq{"pathname": event.Pathname}}),
+			Where(sq.And{sq.Eq{"interface_id": event.Interface}, sq.Eq{"namespace": event.Namespace}, sq.Eq{"pathname": event.Pathname}}),
 	)
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent)
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("ffievents").
 				Set("params", event.Params).
-				Where(sq.And{sq.Eq{"interface_id": event.Contract}, sq.Eq{"namespace": event.Namespace}, sq.Eq{"pathname": event.Pathname}}),
+				Where(sq.And{sq.Eq{"interface_id": event.Interface}, sq.Eq{"namespace": event.Namespace}, sq.Eq{"pathname": event.Pathname}}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIEvents, fftypes.ChangeEventTypeUpdated, event.Namespace, event.ID)
 			},
@@ -78,7 +78,7 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent)
 				Columns(ffiEventsColumns...).
 				Values(
 					event.ID,
-					event.Contract,
+					event.Interface,
 					event.Namespace,
 					event.Name,
 					event.Pathname,
@@ -100,7 +100,7 @@ func (s *SQLCommon) ffiEventResult(ctx context.Context, row *sql.Rows) (*fftypes
 	event := fftypes.FFIEvent{}
 	err := row.Scan(
 		&event.ID,
-		&event.Contract,
+		&event.Interface,
 		&event.Namespace,
 		&event.Name,
 		&event.Pathname,

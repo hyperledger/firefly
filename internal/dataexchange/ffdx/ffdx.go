@@ -28,9 +28,9 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -116,13 +116,13 @@ func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.J
 
 	h.needsInit = prefix.GetBool(DataExchangeInitEnabled)
 
-	if prefix.GetString(restclient.HTTPConfigURL) == "" {
+	if prefix.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
 
 	h.nodes = nodes
 
-	h.client = restclient.New(h.ctx, prefix)
+	h.client = ffresty.New(h.ctx, prefix)
 	h.capabilities = &dataexchange.Capabilities{
 		Manifest: prefix.GetBool(DataExchangeManifestEnabled),
 	}
@@ -158,7 +158,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {
-			return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+			return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 		}
 		if status.Status != "ready" {
 			return fmt.Errorf("DX returned non-ready status: %s", status.Status)
@@ -187,7 +187,7 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, er
 		SetResult(&peer).
 		Get("/api/v1/id")
 	if err != nil || !res.IsSuccess() {
-		return peer, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		return peer, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	id := peer.GetString("id")
 	if id == "" {
@@ -207,7 +207,7 @@ func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error)
 		SetBody(peer).
 		Put(fmt.Sprintf("/api/v1/peers/%s", peer.GetString("id")))
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (h *FFDX) UploadBlob(ctx context.Context, ns string, id fftypes.UUID, conte
 		SetResult(&upload).
 		Put(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
-		err = restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		err = ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 		return "", nil, -1, err
 	}
 	if hash, err = fftypes.ParseBytes32(ctx, upload.Hash); err != nil {
@@ -237,7 +237,7 @@ func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.
 		if err == nil {
 			_ = res.RawBody().Close()
 		}
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return res.RawBody(), nil
 }
@@ -257,7 +257,7 @@ func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID strin
 		SetResult(&responseData).
 		Post("/api/v1/messages")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
 }
@@ -277,7 +277,7 @@ func (h *FFDX) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID, pay
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
 }
@@ -291,7 +291,7 @@ func (h *FFDX) CheckBlobReceived(ctx context.Context, peerID, ns string, id ffty
 		return nil, -1, nil
 	}
 	if err != nil || !res.IsSuccess() {
-		return nil, -1, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
+		return nil, -1, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	hashString := res.Header().Get(dxHTTPHeaderHash)
 	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {

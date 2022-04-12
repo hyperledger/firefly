@@ -40,10 +40,6 @@ var getBlockchainEventByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &fftypes.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		u, err := fftypes.ParseUUID(r.Ctx, r.PP["id"])
-		if err != nil {
-			return nil, err
-		}
-		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, u)
+		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, r.PP["ns"], r.PP["id"])
 	},
 }

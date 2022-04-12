@@ -33,7 +33,7 @@ jobs:
         test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
         blockchain-provider: [geth, fabric]
         token-provider: [none, erc1155, erc20_erc721]
-        database-type: [sqlite3]
+        database-type: [sqlite3, postgres]
         exclude:
           - blockchain-provider: geth
             test-suite: TestFabricE2ESuite

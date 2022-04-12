@@ -24,8 +24,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var postResetConfig = &oapispec.Route{
-	Name:            "postResetConfig",
+var adminPostResetConfig = &oapispec.Route{
+	Name:            "adminPostResetConfig",
 	Path:            "config/reset",
 	Method:          http.MethodPost,
 	PathParams:      nil,

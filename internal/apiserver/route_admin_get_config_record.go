@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getConfigRecord = &oapispec.Route{
-	Name:   "getConfigRecord",
+var adminGetConfigRecord = &oapispec.Route{
+	Name:   "adminGetConfigRecord",
 	Path:   "config/records/{key}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{

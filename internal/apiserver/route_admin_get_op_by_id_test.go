@@ -17,16 +17,23 @@
 package apiserver
 
 import (
-	"context"
+	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestServerCorsDisabled(t *testing.T) {
-	coreconfig.Reset()
-	config.Set(coreconfig.CorsEnabled, false)
-	assert.Nil(t, wrapCorsIfEnabled(context.Background(), nil))
+func TestAdminGetOperationByID(t *testing.T) {
+	o, r := newTestAdminServer()
+	req := httptest.NewRequest("GET", "/admin/api/v1/operations/abcd12345", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetOperationByID", mock.Anything, "abcd12345").
+		Return(&fftypes.Operation{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

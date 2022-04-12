@@ -24,8 +24,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var putConfigRecord = &oapispec.Route{
-	Name:   "putConfigRecord",
+var adminPutConfigRecord = &oapispec.Route{
+	Name:   "adminPutConfigRecord",
 	Path:   "config/records/{key}",
 	Method: http.MethodPut,
 	PathParams: []*oapispec.PathParam{

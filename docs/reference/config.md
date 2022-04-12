@@ -39,6 +39,15 @@ nav_order: 3
 |enabled|`false`|Enables or disables TLS on the admin API|
 |keyFile|`<nil>`|The path to the private key file for the admin API|
 
+## admin.ws
+
+|Key|Default Value|Description|
+|---|-------------|-----------|
+|blockedWarnInterval|`<nil>`|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|
+|eventQueueLength|`<nil>`|Server-side queue length for events waiting for delivery over an admin change event listener websocket|
+|readBufferSize|`<nil>`|The size in bytes of the read buffer for the WebSocket connection|
+|writeBufferSize|`<nil>`|The size in bytes of the write buffer for the WebSocket connection|
+
 ## api
 
 |Key|Default Value|Description|

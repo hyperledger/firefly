@@ -40,6 +40,6 @@ var getOps = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetOperations(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetOperationsNamespaced(r.Ctx, r.PP["ns"], r.Filter))
 	},
 }

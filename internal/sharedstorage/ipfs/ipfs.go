@@ -25,8 +25,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
@@ -56,15 +56,15 @@ func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks shareds
 	i.callbacks = callbacks
 
 	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
-	if apiPrefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, apiPrefix.Resolve(restclient.HTTPConfigURL), "ipfs")
+	if apiPrefix.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, apiPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.apiClient = restclient.New(i.ctx, apiPrefix)
+	i.apiClient = ffresty.New(i.ctx, apiPrefix)
 	gwPrefix := prefix.SubPrefix(IPFSConfGatewaySubconf)
-	if gwPrefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, gwPrefix.Resolve(restclient.HTTPConfigURL), "ipfs")
+	if gwPrefix.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, gwPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.gwClient = restclient.New(i.ctx, gwPrefix)
+	i.gwClient = ffresty.New(i.ctx, gwPrefix)
 	i.capabilities = &sharedstorage.Capabilities{}
 	return nil
 }
@@ -81,7 +81,7 @@ func (i *IPFS) UploadData(ctx context.Context, data io.Reader) (string, error) {
 		SetResult(&ipfsResponse).
 		Post("/api/v0/add")
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(i.ctx, res, err, coremsgs.MsgIPFSRESTErr)
+		return "", ffresty.WrapRestErr(i.ctx, res, err, coremsgs.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS published %s Size=%s", ipfsResponse.Hash, ipfsResponse.Size)
 	return ipfsResponse.Hash, err
@@ -92,12 +92,12 @@ func (i *IPFS) DownloadData(ctx context.Context, payloadRef string) (data io.Rea
 		SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(fmt.Sprintf("/ipfs/%s", payloadRef))
-	restclient.OnAfterResponse(i.gwClient, res) // required using SetDoNotParseResponse
+	ffresty.OnAfterResponse(i.gwClient, res) // required using SetDoNotParseResponse
 	if err != nil || !res.IsSuccess() {
 		if res != nil && res.RawBody() != nil {
 			_ = res.RawBody().Close()
 		}
-		return nil, restclient.WrapRestErr(i.ctx, res, err, coremsgs.MsgIPFSRESTErr)
+		return nil, ffresty.WrapRestErr(i.ctx, res, err, coremsgs.MsgIPFSRESTErr)
 	}
 	log.L(ctx).Infof("IPFS retrieved %s", payloadRef)
 	return res.RawBody(), nil

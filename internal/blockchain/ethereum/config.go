@@ -18,8 +18,8 @@ package ethereum
 
 import (
 	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 )
 
 const (
@@ -80,7 +80,7 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
 
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
-	restclient.InitPrefix(addressResolverConf)
+	ffresty.InitPrefix(addressResolverConf)
 	addressResolverConf.AddKnownKey(AddressResolverRetainOriginal)
 	addressResolverConf.AddKnownKey(AddressResolverMethod, defaultAddressResolverMethod)
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)

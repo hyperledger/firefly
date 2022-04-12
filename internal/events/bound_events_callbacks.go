@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -38,6 +38,6 @@ func (bc *boundCallbacks) DeliveryResponse(connID string, inflight *fftypes.Even
 	bc.sm.deliveryResponse(bc.ei, connID, inflight)
 }
 
-func (bc *boundCallbacks) ConnnectionClosed(connID string) {
-	bc.sm.connnectionClosed(bc.ei, connID)
+func (bc *boundCallbacks) ConnectionClosed(connID string) {
+	bc.sm.connectionClosed(bc.ei, connID)
 }

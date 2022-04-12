@@ -43,12 +43,10 @@ func (ws *WebSockets) Name() string { return "websockets" }
 
 func (ws *WebSockets) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) error {
 	*ws = WebSockets{
-		ctx:         ctx,
-		connections: make(map[string]*websocketConnection),
-		capabilities: &events.Capabilities{
-			ChangeEvents: true,
-		},
-		callbacks: callbacks,
+		ctx:          ctx,
+		connections:  make(map[string]*websocketConnection),
+		capabilities: &events.Capabilities{},
+		callbacks:    callbacks,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  int(prefix.GetByteSize(ReadBufferSize)),
 			WriteBufferSize: int(prefix.GetByteSize(WriteBufferSize)),
@@ -89,18 +87,6 @@ func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, 
 	return conn.dispatch(event)
 }
 
-func (ws *WebSockets) ChangeEvent(connID string, ce *fftypes.ChangeEvent) {
-	ws.connMux.Lock()
-	conn, ok := ws.connections[connID]
-	ws.connMux.Unlock()
-	if ok {
-		err := conn.dispatchChangeEvent(ce)
-		if err != nil {
-			log.L(ws.ctx).Errorf("WebSocket delivery of change notification failed: %s", err)
-		}
-	}
-}
-
 func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	wsConn, err := ws.upgrader.Upgrade(res, req, nil)
 	if err != nil {
@@ -138,7 +124,7 @@ func (ws *WebSockets) connClosed(connID string) {
 	delete(ws.connections, connID)
 	ws.connMux.Unlock()
 	// Drop lock before calling back
-	ws.callbacks.ConnnectionClosed(connID)
+	ws.callbacks.ConnectionClosed(connID)
 }
 
 func (ws *WebSockets) WaitClosed() {

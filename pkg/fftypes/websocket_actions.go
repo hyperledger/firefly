@@ -27,9 +27,6 @@ var (
 
 	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
 	WSProtocolErrorEventType = ffEnum("wstype", "protocol_error")
-
-	// WSClientActionChangeNotifcation a special event type that is a local database change event, and never requires an ack
-	WSClientActionChangeNotifcation = ffEnum("wstype", "change_notification")
 )
 
 // WSClientActionBase is the base fields of all client actions sent on the websocket
@@ -41,13 +38,12 @@ type WSClientActionBase struct {
 type WSClientActionStartPayload struct {
 	WSClientActionBase
 
-	AutoAck      *bool               `json:"autoack"`
-	Namespace    string              `json:"namespace"`
-	Name         string              `json:"name"`
-	Ephemeral    bool                `json:"ephemeral"`
-	Filter       SubscriptionFilter  `json:"filter"`
-	Options      SubscriptionOptions `json:"options"`
-	ChangeEvents string              `json:"changeEvents,omitempty"`
+	AutoAck   *bool               `json:"autoack"`
+	Namespace string              `json:"namespace"`
+	Name      string              `json:"name"`
+	Ephemeral bool                `json:"ephemeral"`
+	Filter    SubscriptionFilter  `json:"filter"`
+	Options   SubscriptionOptions `json:"options"`
 }
 
 // WSClientActionAckPayload acknowldges a received event (not applicable in AutoAck mode)
@@ -62,11 +58,4 @@ type WSClientActionAckPayload struct {
 type WSProtocolErrorPayload struct {
 	Type  WSClientPayloadType `json:"type" ffenum:"wstype"`
 	Error string              `json:"error"`
-}
-
-// WSChangeNotification is a special notification type for a change event, that does *not* require an ack
-type WSChangeNotification struct {
-	WSClientActionBase
-
-	ChangeEvent *ChangeEvent `json:"change"`
 }

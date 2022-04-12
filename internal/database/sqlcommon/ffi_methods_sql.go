@@ -54,7 +54,7 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMeth
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("ffimethods").
-			Where(sq.And{sq.Eq{"interface_id": method.Contract}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
+			Where(sq.And{sq.Eq{"interface_id": method.Interface}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
 	)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMeth
 			sq.Update("ffimethods").
 				Set("params", method.Params).
 				Set("returns", method.Returns).
-				Where(sq.And{sq.Eq{"interface_id": method.Contract}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
+				Where(sq.And{sq.Eq{"interface_id": method.Interface}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIMethods, fftypes.ChangeEventTypeUpdated, method.Namespace, method.ID)
 			},
@@ -80,7 +80,7 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMeth
 				Columns(ffiMethodsColumns...).
 				Values(
 					method.ID,
-					method.Contract,
+					method.Interface,
 					method.Namespace,
 					method.Name,
 					method.Pathname,
@@ -103,7 +103,7 @@ func (s *SQLCommon) ffiMethodResult(ctx context.Context, row *sql.Rows) (*fftype
 	method := fftypes.FFIMethod{}
 	err := row.Scan(
 		&method.ID,
-		&method.Contract,
+		&method.Interface,
 		&method.Namespace,
 		&method.Name,
 		&method.Pathname,

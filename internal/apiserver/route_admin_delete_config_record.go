@@ -23,8 +23,8 @@ import (
 	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var deleteConfigRecord = &oapispec.Route{
-	Name:   "deleteConfigRecord",
+var adminDeleteConfigRecord = &oapispec.Route{
+	Name:   "adminDeleteConfigRecord",
 	Path:   "config/records/{key}",
 	Method: http.MethodDelete,
 	PathParams: []*oapispec.PathParam{

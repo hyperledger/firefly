@@ -374,7 +374,7 @@ func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *
 
 	methodPathNames := map[string]bool{}
 	for _, method := range ffi.Methods {
-		method.Contract = ffi.ID
+		method.Interface = ffi.ID
 		method.Namespace = ffi.Namespace
 		method.Pathname = cm.uniquePathName(method.Name, methodPathNames)
 		if err := cm.validateFFIMethod(ctx, method); err != nil {
@@ -384,7 +384,7 @@ func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *
 
 	eventPathNames := map[string]bool{}
 	for _, event := range ffi.Events {
-		event.Contract = ffi.ID
+		event.Interface = ffi.ID
 		event.Namespace = ffi.Namespace
 		event.Pathname = cm.uniquePathName(event.Name, eventPathNames)
 		if err := cm.validateFFIEvent(ctx, &event.FFIEventDefinition); err != nil {
@@ -485,29 +485,16 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 		}
 
 		if listener.Event == nil {
-			if listener.EventID == nil {
+			if listener.EventPath == "" || listener.Interface == nil {
 				return i18n.NewError(ctx, coremsgs.MsgListenerNoEvent)
 			}
-
-			event, err := cm.database.GetFFIEventByID(ctx, listener.EventID)
+			event, err := cm.database.GetFFIEvent(ctx, ns, listener.Interface.ID, listener.EventPath)
 			if err != nil {
 				return err
-			}
-			if event == nil || event.Namespace != listener.Namespace {
-				return i18n.NewError(ctx, coremsgs.MsgListenerEventNotFound, listener.Namespace, listener.EventID)
+			} else if event == nil {
+				return i18n.NewError(ctx, coremsgs.MsgEventNotFound, listener.EventPath)
 			}
 			// Copy the event definition into the listener
-			listener.Event = &fftypes.FFISerializedEvent{
-				FFIEventDefinition: event.FFIEventDefinition,
-			}
-		} else if listener.Event.Name != "" && listener.Interface != nil {
-			event, err := cm.database.GetFFIEvent(ctx, ns, listener.Interface.ID, listener.Event.Name)
-			if err != nil {
-				return err
-			}
-			if event == nil {
-				return i18n.NewError(ctx, coremsgs.MsgEventNotFound, listener.Event.Name)
-			}
 			listener.Event = &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			}

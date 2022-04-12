@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDeleteConfigRecord(t *testing.T) {
+func TestAdminDeleteConfigRecord(t *testing.T) {
 	o, r := newTestAdminServer()
 	input := fftypes.ConfigRecord{}
 	var buf bytes.Buffer

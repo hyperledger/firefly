@@ -28,9 +28,9 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -165,11 +165,11 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		}
 	}
 
-	if ethconnectConf.GetString(restclient.HTTPConfigURL) == "" {
+	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
 	}
 
-	e.client = restclient.New(e.ctx, ethconnectConf)
+	e.client = ffresty.New(e.ctx, ethconnectConf)
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -575,7 +575,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	}
 	res, err := e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return nil
 }
@@ -591,7 +591,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	}
 	res, err := e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	return nil
 }
@@ -607,7 +607,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	}
 	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -770,7 +770,7 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 		SetContext(ctx).
 		Get(instancePath)
 	if err != nil || !res.IsSuccess() {
-		return "", restclient.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return "", ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
 	var output map[string]string
 	if err = json.Unmarshal(res.Body(), &output); err != nil {
