@@ -48,6 +48,7 @@ $(eval $(call makemock, pkg/dataexchange,          Callbacks,          dataexcha
 $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
 $(eval $(call makemock, pkg/wsclient,              WSClient,           wsmocks))
+$(eval $(call makemock, pkg/httpserver,            GoHTTPServer,       httpservermocks))
 $(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
 $(eval $(call makemock, internal/batchpin,         Submitter,          batchpinmocks))
@@ -70,7 +71,6 @@ $(eval $(call makemock, internal/adminevents,      Manager,            admineven
 $(eval $(call makemock, internal/oapiffi,          FFISwaggerGen,      oapiffimocks))
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
-$(eval $(call makemock, internal/apiserver,        IServer,            apiservermocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 
