@@ -23,8 +23,8 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
+	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
@@ -46,6 +46,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
@@ -78,6 +79,7 @@ type testOrchestrator struct {
 	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
+	mae *admineventsmocks.Manager
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -108,6 +110,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
+		mae: &admineventsmocks.Manager{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -128,6 +131,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
 	tor.orchestrator.sharedDownload = tor.msd
+	tor.orchestrator.adminEvents = tor.mae
 	tor.orchestrator.txHelper = tor.mth
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
@@ -453,7 +457,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	tifactory.InitPrefix(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
-	tokensConfig.AddKnownKey(restclient.HTTPConfigURL, "test")
+	tokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -510,6 +514,13 @@ func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or.sharedDownload = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitAdminEventsInit(t *testing.T) {
+	or := newTestOrchestrator()
+	or.adminEvents = nil
+	err := or.initComponents(context.Background())
+	assert.NoError(t, err)
 }
 
 func TestInitBatchComponentFail(t *testing.T) {
@@ -634,6 +645,7 @@ func TestStartStopOk(t *testing.T) {
 	or.mdm.On("WaitStop").Return(nil)
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
+	or.mae.On("WaitStop").Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -728,6 +740,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
 	assert.Equal(t, or.mom, or.Operations())
+	assert.Equal(t, or.mae, or.AdminEvents())
 }
 
 func TestInitDataExchangeGetNodesFail(t *testing.T) {

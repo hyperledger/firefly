@@ -27,11 +27,11 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
@@ -53,8 +53,8 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 
 	coreconfig.Reset()
 	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
-	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
 	utConfPrefix.Set(DataExchangeManifestEnabled, manifestEnabled)
 
 	h = &FFDX{initialized: true}
@@ -78,7 +78,7 @@ func TestInitBadURL(t *testing.T) {
 	h := &FFDX{}
 	nodes := make([]fftypes.JSONObject, 0)
 	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(restclient.HTTPConfigURL, "::::////")
+	utConfPrefix.Set(ffresty.HTTPConfigURL, "::::////")
 	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF00149", err)
 }
@@ -649,8 +649,8 @@ func TestWebsocketWithReinit(t *testing.T) {
 
 	coreconfig.Reset()
 	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(restclient.HTTPConfigURL, httpURL)
-	utConfPrefix.Set(restclient.HTTPCustomClient, mockedClient)
+	utConfPrefix.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
 	utConfPrefix.Set(DataExchangeInitEnabled, true)
 
 	count := 0

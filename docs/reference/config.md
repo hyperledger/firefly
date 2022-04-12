@@ -39,6 +39,15 @@ nav_order: 3
 |enabled|Enables or disables TLS on the admin API|`boolean`|`false`
 |keyFile|The path to the private key file for the admin API|`string`|`<nil>`
 
+## admin.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+
 ## api
 
 |Key|Description|Type|Default Value|

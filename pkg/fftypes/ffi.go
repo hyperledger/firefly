@@ -50,7 +50,7 @@ type FFI struct {
 
 type FFIMethod struct {
 	ID          *UUID     `ffstruct:"FFIMethod" json:"id,omitempty"`
-	Contract    *UUID     `ffstruct:"FFIMethod" json:"contract,omitempty"`
+	Interface   *UUID     `ffstruct:"FFIMethod" json:"interface,omitempty"`
 	Name        string    `ffstruct:"FFIMethod" json:"name"`
 	Namespace   string    `ffstruct:"FFIMethod" json:"namespace,omitempty"`
 	Pathname    string    `ffstruct:"FFIMethod" json:"pathname"`
@@ -67,7 +67,7 @@ type FFIEventDefinition struct {
 
 type FFIEvent struct {
 	ID        *UUID  `ffstruct:"FFIEvent" json:"id,omitempty"`
-	Contract  *UUID  `ffstruct:"FFIEvent" json:"contract,omitempty"`
+	Interface *UUID  `ffstruct:"FFIEvent" json:"interface,omitempty"`
 	Namespace string `ffstruct:"FFIEvent" json:"namespace,omitempty"`
 	Pathname  string `ffstruct:"FFIEvent" json:"pathname,omitempty"`
 	FFIEventDefinition

@@ -278,4 +278,7 @@ var (
 	ConfigUIPath    = ffc("config.ui.path", "The file system path which contains the static HTML, CSS, and JavaScript files for the user interface", stringType)
 
 	ConfigAPIOASPanicOnMissingDescription = ffc("config.api.oas.panicOnMissingDescription", "Used when building FireFly to verify all structures and APIs have documentation. Primarily used for testing.", booleanType)
+
+	ConfigAdminWebSocketBlockedWarnInternal = ffc("config.admin.ws.blockedWarnInterval", "How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events", timeDurationType)
+	ConfigAdminWebSocketEventQueueLength    = ffc("config.admin.ws.eventQueueLength", "Server-side queue length for events waiting for delivery over an admin change event listener websocket", intType)
 )

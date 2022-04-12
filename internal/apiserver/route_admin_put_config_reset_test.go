@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostResetConfig(t *testing.T) {
+func TestAdminPostResetConfig(t *testing.T) {
 	o, r := newTestAdminServer()
 	req := httptest.NewRequest("POST", "/admin/api/v1/config/reset", bytes.NewReader([]byte(`{}`)))
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")

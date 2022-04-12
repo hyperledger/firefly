@@ -39,7 +39,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	eventID := fftypes.NewUUID()
 	event := &fftypes.FFIEvent{
 		ID:        eventID,
-		Contract:  interfaceID,
+		Interface: interfaceID,
 		Namespace: "ns",
 		Pathname:  "Changed_1",
 		FFIEventDefinition: fftypes.FFIEventDefinition{

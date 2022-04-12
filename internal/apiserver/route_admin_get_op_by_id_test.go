@@ -14,35 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package events
+package apiserver
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func TestChangeEventListenerDispatch(t *testing.T) {
-	subID := fftypes.NewUUID()
-	sub := &subscription{
-		dispatcherElection: make(chan bool, 1),
-		definition: &fftypes.Subscription{
-			SubscriptionRef: fftypes.SubscriptionRef{
-				ID: subID, Namespace: "ns1", Name: "sub1",
-			},
-		},
-	}
+func TestAdminGetOperationByID(t *testing.T) {
+	o, r := newTestAdminServer()
+	req := httptest.NewRequest("GET", "/admin/api/v1/operations/abcd12345", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
 
-	ed, cancel := newTestEventDispatcher(sub)
-	defer cancel()
+	o.On("GetOperationByID", mock.Anything, "abcd12345").
+		Return(&fftypes.Operation{}, nil)
+	r.ServeHTTP(res, req)
 
-	ed.cel.addDispatcher(*subID, ed)
-
-	go ed.cel.changeEventListener()
-	ed.cel.changeEvents <- &fftypes.ChangeEvent{
-		Collection: "ut",
-	}
-	ce := <-ed.changeEvents
-	assert.Equal(t, "ut", ce.Collection)
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

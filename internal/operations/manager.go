@@ -43,6 +43,7 @@ type Manager interface {
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
 	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
+	ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error)
 	Start() error
 	WaitStop()
 }
@@ -205,6 +206,15 @@ func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *ff
 	if err := om.database.ResolveOperation(ctx, opID, newStatus, err.Error(), outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
+}
+
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	err = om.database.ResolveOperation(ctx, u, op.Status, op.Error, op.Output)
+	return op, err
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) {

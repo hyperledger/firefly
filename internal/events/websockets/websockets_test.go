@@ -28,10 +28,10 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
@@ -50,7 +50,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
 	assert.NotNil(t, ws.GetOptionsSchema(context.Background()))
-	cbs.On("ConnnectionClosed", mock.Anything).Return(nil).Maybe()
+	cbs.On("ConnectionClosed", mock.Anything).Return(nil).Maybe()
 
 	svr := httptest.NewServer(ws)
 
@@ -60,17 +60,13 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	if len(queryParams) > 0 {
 		qs = fmt.Sprintf("?%s", strings.Join(queryParams, "&"))
 	}
-	clientPrefix.Set(restclient.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
+	clientPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
 	wsConfig := wsconfig.GenerateConfigFromPrefix(clientPrefix)
 
 	wsc, err := wsclient.New(ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)
 	err = wsc.Connect()
 	assert.NoError(t, err)
-
-	var wsi interface{} = ws
-	_, ok := wsi.(events.PluginAll)
-	assert.True(t, ok)
 
 	return ws, wsc, func() {
 		cancelCtx()
@@ -110,7 +106,7 @@ func TestSendBadData(t *testing.T) {
 	_, wsc, cancel := newTestWebsockets(t, cbs)
 	defer cancel()
 
-	cbs.On("ConnnectionClosed", mock.Anything).Return(nil)
+	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
 
 	err := wsc.Send(context.Background(), []byte(`!json`))
 	assert.NoError(t, err)
@@ -126,7 +122,7 @@ func TestSendBadAction(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	_, wsc, cancel := newTestWebsockets(t, cbs)
 	defer cancel()
-	cbs.On("ConnnectionClosed", mock.Anything).Return(nil)
+	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
 
 	err := wsc.Send(context.Background(), []byte(`{"type":"lobster"}`))
 	assert.NoError(t, err)
@@ -142,7 +138,7 @@ func TestSendEmptyStartAction(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
 	_, wsc, cancel := newTestWebsockets(t, cbs)
 	defer cancel()
-	cbs.On("ConnnectionClosed", mock.Anything).Return(nil)
+	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
 
 	err := wsc.Send(context.Background(), []byte(`{"type":"start"}`))
 	assert.NoError(t, err)
@@ -370,105 +366,6 @@ func TestHandleStartFlippingAutoAck(t *testing.T) {
 		AutoAck: &no,
 	})
 	assert.Regexp(t, "FF10179", err)
-}
-
-func TestHandleStartWithChangeEvents(t *testing.T) {
-	mcb := &eventsmocks.Callbacks{}
-	wsc := &websocketConnection{
-		ctx:          context.Background(),
-		connID:       "conn1",
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
-		sendMessages: make(chan interface{}, 1),
-		ws: &WebSockets{
-			callbacks: mcb,
-		},
-	}
-	wsc.ws.connections = map[string]*websocketConnection{
-		"conn1": wsc,
-	}
-	mcb.On("EphemeralSubscription", "conn1", "ns1", mock.Anything, mock.MatchedBy(func(opts *fftypes.SubscriptionOptions) bool {
-		return opts.ChangeEvents // expect change events to be enabled
-	})).Return(nil)
-	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
-		Namespace:    "ns1",
-		Ephemeral:    true,
-		ChangeEvents: ".*",
-	})
-	assert.NoError(t, err)
-
-	wsc.ws.ChangeEvent("conn1", &fftypes.ChangeEvent{
-		Collection: "ut1",
-	})
-	wscn := (<-wsc.sendMessages).(*fftypes.WSChangeNotification)
-	assert.Equal(t, fftypes.WSClientActionChangeNotifcation, wscn.Type)
-	assert.Equal(t, "ut1", wscn.ChangeEvent.Collection)
-
-	mcb.AssertExpectations(t)
-}
-
-func TestHandleChangeEventsDispatchFail(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // already closed
-	mcb := &eventsmocks.Callbacks{}
-	wsc := &websocketConnection{
-		ctx:          ctx,
-		connID:       "conn1",
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
-		sendMessages: make(chan interface{}), // wil block
-		ws: &WebSockets{
-			ctx:       ctx,
-			callbacks: mcb,
-		},
-	}
-	wsc.ws.connections = map[string]*websocketConnection{
-		"conn1": wsc,
-	}
-	mcb.On("EphemeralSubscription", "conn1", "ns1", mock.Anything, mock.MatchedBy(func(opts *fftypes.SubscriptionOptions) bool {
-		return opts.ChangeEvents // expect change events to be enabled
-	})).Return(nil)
-	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
-		Namespace:    "ns1",
-		Ephemeral:    true,
-		ChangeEvents: ".*",
-	})
-	assert.NoError(t, err)
-
-	wsc.ws.ChangeEvent("conn1", &fftypes.ChangeEvent{
-		Collection: "ut1",
-	})
-	mcb.AssertExpectations(t)
-}
-
-func TestHandleStartWithBadChangeEventsRegex(t *testing.T) {
-	eventUUID := fftypes.NewUUID()
-	mcb := &eventsmocks.Callbacks{}
-	wsc := &websocketConnection{
-		ctx:          context.Background(),
-		connID:       "conn1",
-		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
-		sendMessages: make(chan interface{}, 1),
-		inflight: []*fftypes.EventDeliveryResponse{
-			{ID: eventUUID},
-		},
-		autoAck: true,
-		ws: &WebSockets{
-			callbacks: mcb,
-		},
-	}
-	mcb.On("EphemeralSubscription", "conn1", "ns1", mock.Anything, mock.MatchedBy(func(opts *fftypes.SubscriptionOptions) bool {
-		return !opts.ChangeEvents // expect change events to be disabled due to bad regex
-	})).Return(nil)
-	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
-		Namespace:    "ns1",
-		Ephemeral:    true,
-		ChangeEvents: "!!!!(not a regex",
-	})
-	assert.NoError(t, err)
-
-	// no-op
-	wsc.dispatchChangeEvent(&fftypes.ChangeEvent{})
-
-	mcb.AssertExpectations(t)
 }
 
 func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
