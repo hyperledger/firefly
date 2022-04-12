@@ -42,7 +42,16 @@ func NewFFISwaggerGen() FFISwaggerGen {
 func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T) {
 	hasLocation := !api.Location.IsNil()
 
-	routes := []*oapispec.Route{}
+	routes := []*oapispec.Route{
+		{
+			Name:            "interface",
+			Path:            "interface", // must match a route defined in apiserver routes!
+			Method:          http.MethodGet,
+			JSONInputValue:  nil,
+			JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+			JSONOutputCodes: []int{http.StatusOK},
+		},
+	}
 	for _, method := range ffi.Methods {
 		routes = og.addMethod(routes, method, hasLocation)
 	}

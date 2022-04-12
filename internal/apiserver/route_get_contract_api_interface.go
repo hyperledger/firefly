@@ -18,7 +18,6 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -26,27 +25,21 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var getContractInterfaceNameVersion = &oapispec.Route{
-	Name:   "getContractInterfaceByNameAndVersion",
-	Path:   "namespaces/{ns}/contracts/interfaces/{name}/{version}",
+var getContractAPIInterface = &oapispec.Route{
+	Name:   "getContractAPIInterface",
+	Path:   "namespaces/{ns}/apis/{apiName}/interface",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "name", Description: coremsgs.APIMessageTBD},
-		{Name: "version", Description: coremsgs.APIMessageTBD},
+		{Name: "apiName", Description: coremsgs.APIMessageTBD},
 	},
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
-	},
+	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
-		}
-		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		return getOr(r.Ctx).Contracts().GetContractAPIInterface(r.Ctx, r.PP["ns"], r.PP["apiName"])
 	},
 }
