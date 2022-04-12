@@ -701,13 +701,26 @@ func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *fftypes.FFIMethod
 	return abiElement, nil
 }
 
+func ABIArgumentToTypeString(typeName string, components []ABIArgumentMarshaling) string {
+	if strings.HasPrefix(typeName, "tuple") {
+		suffix := typeName[5:]
+		children := make([]string, len(components))
+		for i, component := range components {
+			children[i] = ABIArgumentToTypeString(component.Type, nil)
+		}
+		return "(" + strings.Join(children, ",") + ")" + suffix
+	}
+	return typeName
+}
+
 func ABIMethodToSignature(abi *ABIElementMarshaling) string {
 	result := abi.Name + "("
 	if len(abi.Inputs) > 0 {
-		for _, param := range abi.Inputs {
-			result += param.Type + ","
+		types := make([]string, len(abi.Inputs))
+		for i, param := range abi.Inputs {
+			types[i] = ABIArgumentToTypeString(param.Type, param.Components)
 		}
-		result = result[:len(result)-1]
+		result += strings.Join(types, ",")
 	}
 	result += ")"
 	return result

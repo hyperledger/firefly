@@ -2414,6 +2414,29 @@ func TestGetFFIType(t *testing.T) {
 
 func TestGenerateEventSignature(t *testing.T) {
 	e, _ := newTestEthereum()
+	complexParam := fftypes.JSONObject{
+		"type": "object",
+		"details": fftypes.JSONObject{
+			"type": "tuple",
+		},
+		"properties": fftypes.JSONObject{
+			"prop1": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 0,
+				},
+			},
+			"prop2": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 1,
+				},
+			},
+		},
+	}.String()
+
 	event := &fftypes.FFIEventDefinition{
 		Name: "Changed",
 		Params: []*fftypes.FFIParam{
@@ -2425,11 +2448,15 @@ func TestGenerateEventSignature(t *testing.T) {
 				Name:   "y",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
+			{
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(complexParam),
+			},
 		},
 	}
 
 	signature := e.GenerateEventSignature(context.Background(), event)
-	assert.Equal(t, "Changed(uint256,uint256)", signature)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256))", signature)
 }
 
 func TestGenerateEventSignatureInvalid(t *testing.T) {
