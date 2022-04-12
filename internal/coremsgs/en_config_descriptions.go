@@ -143,8 +143,7 @@ var (
 	ConfigCorsMethods     = ffc("config.cors.methods", " CORS setting to control the allowed methods", i18n.StringType)
 	ConfigCorsOrigins     = ffc("config.cors.origins", "CORS setting to control the allowed origins", i18n.StringType)
 
-	ConfigDatabaseMaxChartRows = ffc("config.database.maxChartRows", "The maximum rows to fetch for each histogram bucket", i18n.IntType)
-	ConfigDatabaseType         = ffc("config.database.type", "The type of the database interface plugin to use", i18n.IntType)
+	ConfigDatabaseType = ffc("config.database.type", "The type of the database interface plugin to use", i18n.IntType)
 
 	ConfigDatabasePostgresMaxConnIdleTime = ffc("config.database.postgres.maxConnIdleTime", "The maximum amount of time a database connection can be idle", i18n.TimeDurationType)
 	ConfigDatabasePostgresMaxConnLifetime = ffc("config.database.postgres.maxConnLifetime", "The maximum amount of time to keep a database connection open", i18n.TimeDurationType)
@@ -188,6 +187,8 @@ var (
 	ConfigEventTransportsDefault = ffc("config.event.transports.default", "The default event transport for new subscriptions", i18n.StringType)
 	ConfigEventTransportsEnabled = ffc("config.event.transports.enabled", "Which event interface plugins are enabled", i18n.BooleanType)
 
+	ConfigHistogramsMaxChartRows = ffc("config.histograms.maxChartRows", "The maximum rows to fetch for each histogram bucket", i18n.IntType)
+
 	ConfigHTTPAddress      = ffc("config.http.address", "The IP address on which the HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigHTTPPort         = ffc("config.http.port", "The port on which the HTTP API should listen", i18n.IntType)
 	ConfigHTTPPublicURL    = ffc("config.http.publicURL", "The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.", "URL "+i18n.StringType)
@@ -198,16 +199,16 @@ var (
 
 	ConfigIdentityManagerCacheLimit = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
 
-	ConfigLogCompress   = ffc("config.log.compress", "Sets whether to compress log backups", i18n.BooleanType)
-	ConfigLogFilename   = ffc("config.log.filename", "The filename to which logs will be written", i18n.StringType)
-	ConfigLogFilesize   = ffc("config.log.filesize", "The size at which to roll log files", i18n.ByteSizeType)
-	ConfigLogForceColor = ffc("config.log.forceColor", "Forces colored log output to be enabled, even if a TTY is not detected", i18n.BooleanType)
-	ConfigLogLevel      = ffc("config.log.level", "Sets the log level. Valid options are `ERROR`, `INFO`, `DEBUG`, `TRACE`", "Log level "+i18n.StringType)
-	ConfigLogMaxAge     = ffc("config.log.maxAge", "The maximum age at which log files will be rolled", i18n.TimeDurationType)
-	ConfigLogMaxBackups = ffc("config.log.maxBackups", "The maximum number of old log files to keep", i18n.IntType)
-	ConfigLogNoColor    = ffc("config.log.noColor", "Forces colored log output to be disabled, even if a TTY is detected", i18n.BooleanType)
-	ConfigLogTimeFormat = ffc("config.log.timeFormat", "A string format for timestamps", i18n.StringType)
-	ConfigLogUtc        = ffc("config.log.utc", "Sets log timestamps to the UTC timezone", i18n.BooleanType)
+	ConfigLogCompress   = ffc("config.log.compress", "Determines if the rotated log files should be compressed using gzip", i18n.BooleanType)
+	ConfigLogFilename   = ffc("config.log.filename", "Filename is the file to write logs to.  Backup log files will be retained in the same directory", i18n.StringType)
+	ConfigLogFilesize   = ffc("config.log.filesize", "MaxSize is the maximum size the log file before it gets rotated", i18n.ByteSizeType)
+	ConfigLogForceColor = ffc("config.log.forceColor", "Force color to be enabled, even when a non-TTY output is detected", i18n.BooleanType)
+	ConfigLogLevel      = ffc("config.log.level", "The log level - error, warn, info, debug, trace", i18n.StringType)
+	ConfigLogMaxAge     = ffc("config.log.maxAge", "The maximum time to retain old log files based on the timestamp encoded in their filename.", i18n.TimeDurationType)
+	ConfigLogMaxBackups = ffc("config.log.maxBackups", "Maximum number of old log files to retain", i18n.IntType)
+	ConfigLogNoColor    = ffc("config.log.noColor", "Force color to be disabled, event when TTY output is detected", i18n.BooleanType)
+	ConfigLogTimeFormat = ffc("config.log.timeFormat", "Custom time format for logs", i18n.TimeFormatType)
+	ConfigLogUtc        = ffc("config.log.utc", "Use UTC timestamps for logs", i18n.BooleanType)
 
 	ConfigMessageWriterBatchMaxInserts = ffc("config.message.writer.batchMaxInserts", "The maximum number of database inserts to include when writing a single batch of messages + data", i18n.IntType)
 	ConfigMessageWriterBatchTimeout    = ffc("config.message.writer.batchTimeout", "How long to wait for more messages to arrive before flushing the batch", i18n.TimeDurationType)

@@ -132,8 +132,8 @@ var (
 	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	DatabaseType = ffc("database.type")
-	// DatabaseMaxChartRows the maximum rows to fetch for each histogram bucket
-	DatabaseMaxChartRows = ffc("database.maxChartRows")
+	// HistogramsMaxChartRows the maximum rows to fetch for each histogram bucket
+	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = ffc("tokens")
 	// DebugPort a HTTP port on which to enable the go debugger
@@ -317,7 +317,7 @@ func setDefaults() {
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "ffdx")
-	viper.SetDefault(string(DatabaseMaxChartRows), 100)
+	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
 	viper.SetDefault(string(DownloadRetryMaxAttempts), 100)

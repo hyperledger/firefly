@@ -292,7 +292,6 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|maxChartRows|The maximum rows to fetch for each histogram bucket|`int`|`<nil>`
 |type|The type of the database interface plugin to use|`int`|`<nil>`
 
 ## database.postgres
@@ -467,6 +466,12 @@ nav_order: 3
 |size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 |ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
+## histograms
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|maxChartRows|The maximum rows to fetch for each histogram bucket|`int`|`<nil>`
+
 ## http
 
 |Key|Description|Type|Default Value|
@@ -504,16 +509,16 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|compress|Sets whether to compress log backups|`boolean`|`<nil>`
-|filename|The filename to which logs will be written|`string`|`<nil>`
-|filesize|The size at which to roll log files|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|forceColor|Forces colored log output to be enabled, even if a TTY is not detected|`boolean`|`<nil>`
-|level|Sets the log level. Valid options are `ERROR`, `INFO`, `DEBUG`, `TRACE`|Log level `string`|`<nil>`
-|maxAge|The maximum age at which log files will be rolled|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|maxBackups|The maximum number of old log files to keep|`int`|`<nil>`
-|noColor|Forces colored log output to be disabled, even if a TTY is detected|`boolean`|`<nil>`
-|timeFormat|A string format for timestamps|`string`|`<nil>`
-|utc|Sets log timestamps to the UTC timezone|`boolean`|`<nil>`
+|compress|Determines if the rotated log files should be compressed using gzip|`boolean`|`<nil>`
+|filename|Filename is the file to write logs to.  Backup log files will be retained in the same directory|`string`|`<nil>`
+|filesize|MaxSize is the maximum size the log file before it gets rotated|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|forceColor|Force color to be enabled, even when a non-TTY output is detected|`boolean`|`<nil>`
+|level|The log level - error, warn, info, debug, trace|`string`|`<nil>`
+|maxAge|The maximum time to retain old log files based on the timestamp encoded in their filename.|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxBackups|Maximum number of old log files to retain|`int`|`<nil>`
+|noColor|Force color to be disabled, event when TTY output is detected|`boolean`|`<nil>`
+|timeFormat|Custom time format for logs|[Time format](https://pkg.go.dev/time#pkg-constants) `string`|`<nil>`
+|utc|Use UTC timestamps for logs|`boolean`|`<nil>`
 
 ## message.cache
 

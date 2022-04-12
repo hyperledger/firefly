@@ -60,7 +60,7 @@ func (s *SQLCommon) getSelectStatements(ns string, tableName string, intervals [
 					sq.Eq{"namespace": ns},
 				}).
 			OrderBy(timestampKey).
-			Limit(uint64(config.GetInt(coreconfig.DatabaseMaxChartRows))))
+			Limit(uint64(config.GetInt(coreconfig.HistogramsMaxChartRows))))
 	}
 
 	return queries
@@ -145,7 +145,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 			Count:     total,
 			Timestamp: intervals[i].StartTime,
 			Types:     histTypes,
-			IsCapped:  total == config.GetString(coreconfig.DatabaseMaxChartRows),
+			IsCapped:  total == config.GetString(coreconfig.HistogramsMaxChartRows),
 		}
 
 		// If the bucket has types, add their counts
