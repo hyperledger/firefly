@@ -21,23 +21,21 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-var adminDeleteConfigRecord = &oapispec.Route{
-	Name:   "adminDeleteConfigRecord",
-	Path:   "config/records/{key}",
-	Method: http.MethodDelete,
-	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: coremsgs.APIMessageTBD},
-	},
+var adminGetOps = &oapispec.Route{
+	Name:            "adminGetOps",
+	Path:            "operations",
+	Method:          http.MethodGet,
 	QueryParams:     nil,
-	FilterFactory:   nil,
+	FilterFactory:   database.OperationQueryFactory,
 	Description:     coremsgs.APIMessageTBD,
 	JSONInputValue:  nil,
-	JSONOutputValue: nil,
-	JSONOutputCodes: []int{http.StatusNoContent},
+	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).DeleteConfigRecord(r.Ctx, r.PP["key"])
-		return nil, err
+		return filterResult(getOr(r.Ctx).GetOperations(r.Ctx, r.Filter))
 	},
 }

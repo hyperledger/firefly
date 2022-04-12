@@ -525,6 +525,13 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	return r
 }
 
+func (as *apiServer) adminWSHandler(o orchestrator.Orchestrator) http.HandlerFunc {
+	// The admin events listener will be initialized when we start, so we access it it from Orchestrator on demand
+	return func(w http.ResponseWriter, r *http.Request) {
+		o.AdminEvents().ServeHTTPWebSocketListener(w, r)
+	}
+}
+
 func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
 	r := mux.NewRouter()
 	if as.metricsEnabled {
@@ -542,6 +549,8 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(adminRoutes, apiBaseURL))))
 	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
+
+	r.HandleFunc(`/admin/ws`, as.adminWSHandler(o))
 
 	return r
 }

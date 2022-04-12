@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly/internal/adminevents"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -73,16 +74,17 @@ type Orchestrator interface {
 	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
-	Broadcast() broadcast.Manager
-	PrivateMessaging() privatemessaging.Manager
-	Events() events.EventManager
-	NetworkMap() networkmap.Manager
-	Data() data.Manager
+	AdminEvents() adminevents.Manager
 	Assets() assets.Manager
-	Contracts() contracts.Manager
-	Metrics() metrics.Manager
 	BatchManager() batch.Manager
+	Broadcast() broadcast.Manager
+	Contracts() contracts.Manager
+	Data() data.Manager
+	Events() events.EventManager
+	Metrics() metrics.Manager
+	NetworkMap() networkmap.Manager
 	Operations() operations.Manager
+	PrivateMessaging() privatemessaging.Manager
 	IsPreInit() bool
 
 	// Status
@@ -119,12 +121,14 @@ type Orchestrator interface {
 	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
 	GetDatatypeByName(ctx context.Context, ns, name, version string) (*fftypes.Datatype, error)
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error)
-	GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error)
-	GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
+	GetOperationByIDNamespaced(ctx context.Context, ns, id string) (*fftypes.Operation, error)
+	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
+	GetOperationByID(ctx context.Context, id string) (*fftypes.Operation, error)
+	GetOperations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
 	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.EnrichedEvent, *database.FilterResult, error)
-	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
+	GetBlockchainEventByID(ctx context.Context, ns, id string) (*fftypes.BlockchainEvent, error)
 	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
 	GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error)
 
@@ -170,6 +174,7 @@ type orchestrator struct {
 	node           *fftypes.UUID
 	metrics        metrics.Manager
 	operations     operations.Manager
+	adminEvents    adminevents.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
 }
@@ -273,6 +278,10 @@ func (or *orchestrator) WaitStop() {
 		or.operations.WaitStop()
 		or.operations = nil
 	}
+	if or.adminEvents != nil {
+		or.adminEvents.WaitStop()
+		or.adminEvents = nil
+	}
 	or.started = false
 }
 
@@ -318,6 +327,10 @@ func (or *orchestrator) Metrics() metrics.Manager {
 
 func (or *orchestrator) Operations() operations.Manager {
 	return or.operations
+}
+
+func (or *orchestrator) AdminEvents() adminevents.Manager {
+	return or.adminEvents
 }
 
 func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
@@ -562,6 +575,10 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	if or.adminEvents == nil {
+		or.adminEvents = adminevents.NewAdminEventManager(ctx)
 	}
 
 	if or.networkmap == nil {

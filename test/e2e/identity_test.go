@@ -40,8 +40,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	defer suite.testState.done()
 
 	ctx := context.Background()
-	received1, _ := wsReader(suite.testState.ws1, false)
-	received2, _ := wsReader(suite.testState.ws2, false)
+	received1 := wsReader(suite.testState.ws1, false)
+	received2 := wsReader(suite.testState.ws2, false)
 
 	// Create some keys
 	totalIdentities := 3
@@ -97,8 +97,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1, false)
-	received2, _ := wsReader(suite.testState.ws2, false)
+	received1 := wsReader(suite.testState.ws1, false)
+	received2 := wsReader(suite.testState.ws2, false)
 
 	// Create an identity on both sides
 	org1Key := CreateEthAccount(suite.T(), suite.testState.ethNode)

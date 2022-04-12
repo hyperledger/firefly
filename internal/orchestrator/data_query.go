@@ -24,10 +24,19 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
 	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
+}
+
+func (or *orchestrator) checkNamespace(ctx context.Context, requiredNS, objectNS string) error {
+	if objectNS != requiredNS {
+		log.L(ctx).Warnf("Object queried by ID in wrong namespace. Required=%s Found=%s", requiredNS, objectNS)
+		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	return nil
 }
 
 func (or *orchestrator) verifyIDAndNamespace(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
@@ -48,7 +57,11 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetTransactionByID(ctx, u)
+	tx, err := or.database.GetTransactionByID(ctx, u)
+	if err == nil && tx != nil {
+		err = or.checkNamespace(ctx, ns, tx.Namespace)
+	}
+	return tx, err
 }
 
 func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error) {
@@ -73,6 +86,9 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*fft
 	if err == nil && msg == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
+	if err == nil && msg != nil {
+		err = or.checkNamespace(ctx, ns, msg.Header.Namespace)
+	}
 	return msg, err
 }
 
@@ -95,6 +111,9 @@ func (or *orchestrator) fetchMessageData(ctx context.Context, msg *fftypes.Messa
 
 func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, ns, id string) (*fftypes.MessageInOut, error) {
 	msg, err := or.getMessageByID(ctx, ns, id)
+	if err == nil && msg != nil {
+		err = or.checkNamespace(ctx, ns, msg.Header.Namespace)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +125,11 @@ func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*fftyp
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetBatchByID(ctx, u)
+	b, err := or.database.GetBatchByID(ctx, u)
+	if err == nil && b != nil {
+		err = or.checkNamespace(ctx, ns, b.Namespace)
+	}
+	return b, err
 }
 
 func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error) {
@@ -114,7 +137,11 @@ func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*fftype
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetDataByID(ctx, u, true)
+	d, err := or.database.GetDataByID(ctx, u, true)
+	if err == nil && d != nil {
+		err = or.checkNamespace(ctx, ns, d.Namespace)
+	}
+	return d, err
 }
 
 func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error) {
@@ -122,7 +149,11 @@ func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*ff
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetDatatypeByID(ctx, u)
+	dt, err := or.database.GetDatatypeByID(ctx, u)
+	if err == nil && dt != nil {
+		err = or.checkNamespace(ctx, ns, dt.Namespace)
+	}
+	return dt, err
 }
 
 func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version string) (*fftypes.Datatype, error) {
@@ -132,11 +163,27 @@ func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version
 	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
 		return nil, err
 	}
-	return or.database.GetDatatypeByName(ctx, ns, name, version)
+	dt, err := or.database.GetDatatypeByName(ctx, ns, name, version)
+	if err == nil && dt != nil {
+		err = or.checkNamespace(ctx, ns, dt.Namespace)
+	}
+	return dt, err
 }
 
-func (or *orchestrator) GetOperationByID(ctx context.Context, ns, id string) (*fftypes.Operation, error) {
+func (or *orchestrator) GetOperationByIDNamespaced(ctx context.Context, ns, id string) (*fftypes.Operation, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	o, err := or.database.GetOperationByID(ctx, u)
+	if err == nil && o != nil {
+		err = or.checkNamespace(ctx, ns, o.Namespace)
+	}
+	return o, err
+}
+
+func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*fftypes.Operation, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +195,11 @@ func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*fftyp
 	if err != nil {
 		return nil, err
 	}
-	return or.database.GetEventByID(ctx, u)
+	e, err := or.database.GetEventByID(ctx, u)
+	if err == nil && e != nil {
+		err = or.checkNamespace(ctx, ns, e.Namespace)
+	}
+	return e, err
 }
 
 func (or *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, *database.FilterResult, error) {
@@ -278,8 +329,12 @@ func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter data
 	return or.database.GetDatatypes(ctx, filter)
 }
 
-func (or *orchestrator) GetOperations(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
+func (or *orchestrator) GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
+	return or.database.GetOperations(ctx, filter)
+}
+
+func (or *orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error) {
 	return or.database.GetOperations(ctx, filter)
 }
 
@@ -288,8 +343,16 @@ func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	return or.database.GetEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
-	return or.database.GetBlockchainEventByID(ctx, id)
+func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, ns, id string) (*fftypes.BlockchainEvent, error) {
+	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	if err != nil {
+		return nil, err
+	}
+	be, err := or.database.GetBlockchainEventByID(ctx, u)
+	if err == nil && be != nil {
+		err = or.checkNamespace(ctx, ns, be.Namespace)
+	}
+	return be, err
 }
 
 func (or *orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
