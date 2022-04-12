@@ -14271,5 +14271,68 @@ paths:
           description: Success
         default:
           description: ""
+  /status/websockets:
+    get:
+      description: 'TODO: Description'
+      operationId: getStatusWebSockets
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  connections:
+                    description: List of currently active websocket client connections
+                    items:
+                      description: List of currently active websocket client connections
+                      properties:
+                        id:
+                          description: The unique ID assigned to this client connection
+                          type: string
+                        remoteAddress:
+                          description: The remote address of the connected client
+                            (if available)
+                          type: string
+                        subscriptions:
+                          description: List of subscriptions currently started by
+                            this client
+                          items:
+                            description: List of subscriptions currently started by
+                              this client
+                            properties:
+                              ephemeral:
+                                description: Indicates whether the subscription is
+                                  ephemeral (vs durable)
+                                type: boolean
+                              name:
+                                description: The subscription name (for durable subscriptions
+                                  only)
+                                type: string
+                              namespace:
+                                description: The subscription namespace
+                                type: string
+                            type: object
+                          type: array
+                        userAgent:
+                          description: The user agent of the connected client (if
+                            available)
+                          type: string
+                      type: object
+                    type: array
+                  enabled:
+                    description: Indicates whether the websockets plugin is enabled
+                    type: boolean
+                type: object
+          description: Success
+        default:
+          description: ""
 servers:
 - url: http://localhost:5000
