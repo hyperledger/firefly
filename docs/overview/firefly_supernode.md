@@ -25,7 +25,7 @@ The development stack needed for an enterprise grade Web3 application,
 is just as sophisticated as the stack required for the Web 2.0 applications
 that came before.
 
-A raw blockchain simply node is not enough.
+A raw blockchain node is simply not enough.
 
 ## Your project with or without a Supernode
 
@@ -60,12 +60,12 @@ For theses solutions to be successful, they need decentralized deployment to mul
 Each party needs to customize the deployment to their SecDevOps environment, as well as
 onboard it to their key management solution etc.
 
-So the complexity of requiring a bespoke technology stack for a solution can be a barrier its adoption.
+So the complexity of requiring a bespoke technology stack for a solution can be a barrier to its adoption.
 
 Whereas, building on top of a standardized and open technology stack can ease adoption, as well
 as radically reducing the amount of engineering needed by the solution developer.
 
-### Organization requiring a gateway to Web3
+### Organizations needing a gateway to Web3
 
 Organizations are increasingly participating in multiple blockchain projects, and integrating with
 digital assets in multiple blockchain ecosystems.
@@ -92,9 +92,9 @@ Rapidly accelerating development is a key requirement of any Supernode.
 The business logic APIs, web and mobile user experiences for Web3 applications need to be just as rich
 and feature-full as the Web 2.0 / centralized applications.
 
-That means developers skilled in these traditional application layers, having the features they need for success.
+That means developers skilled in these application layers, must have the tools they need.
 
-Capabilities fitting their application development toolset, and optimized to their skillset.
+Capabilities fitting their application development toolchain, and optimized to their skillset.
 
 ### API Gateway
 
