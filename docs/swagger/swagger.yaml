@@ -10713,6 +10713,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: locator
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: message
         schema:
           type: string
@@ -10724,11 +10729,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: protocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -10826,6 +10826,10 @@ paths:
                         of new tokens (vs. only index existing ones) this determines
                         the signing key used to create the token on-chain
                       type: string
+                    locator:
+                      description: A unique identifier for the pool, as provided by
+                        the token connector
+                      type: string
                     message:
                       description: The UUID of the broadcast message used to inform
                         the network to index this pool
@@ -10835,10 +10839,6 @@ paths:
                       type: string
                     namespace:
                       description: The namespace for the token pool
-                      type: string
-                    protocolId:
-                      description: A unique identifier for the pool, as provided by
-                        the token connector
                       type: string
                     standard:
                       description: The ERC standard the token pool conforms to, as
@@ -10970,6 +10970,10 @@ paths:
                       of new tokens (vs. only index existing ones) this determines
                       the signing key used to create the token on-chain
                     type: string
+                  locator:
+                    description: A unique identifier for the pool, as provided by
+                      the token connector
+                    type: string
                   message:
                     description: The UUID of the broadcast message used to inform
                       the network to index this pool
@@ -10979,10 +10983,6 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
-                    type: string
-                  protocolId:
-                    description: A unique identifier for the pool, as provided by
-                      the token connector
                     type: string
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
@@ -11045,6 +11045,10 @@ paths:
                       of new tokens (vs. only index existing ones) this determines
                       the signing key used to create the token on-chain
                     type: string
+                  locator:
+                    description: A unique identifier for the pool, as provided by
+                      the token connector
+                    type: string
                   message:
                     description: The UUID of the broadcast message used to inform
                       the network to index this pool
@@ -11054,10 +11058,6 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
-                    type: string
-                  protocolId:
-                    description: A unique identifier for the pool, as provided by
-                      the token connector
                     type: string
                   standard:
                     description: The ERC standard the token pool conforms to, as reported
@@ -11148,6 +11148,10 @@ paths:
                       of new tokens (vs. only index existing ones) this determines
                       the signing key used to create the token on-chain
                     type: string
+                  locator:
+                    description: A unique identifier for the pool, as provided by
+                      the token connector
+                    type: string
                   message:
                     description: The UUID of the broadcast message used to inform
                       the network to index this pool
@@ -11157,10 +11161,6 @@ paths:
                     type: string
                   namespace:
                     description: The namespace for the token pool
-                    type: string
-                  protocolId:
-                    description: A unique identifier for the pool, as provided by
-                      the token connector
                     type: string
                   standard:
                     description: The ERC standard the token pool conforms to, as reported

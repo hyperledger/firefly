@@ -74,7 +74,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool
 	// This will ultimately trigger a pool creation event and a rewind
 	state.AddPreFinalize(func(ctx context.Context) error {
-		if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event.Info); err != nil {
+		if err := dh.assets.ActivateTokenPool(ctx, pool); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
 			return err
 		}

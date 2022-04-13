@@ -54,12 +54,12 @@ func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.U
 }
 
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
-	pool, err := em.database.GetTokenPoolByProtocolID(ctx, approval.Connector, approval.PoolProtocolID)
+	pool, err := em.database.GetTokenPoolByLocator(ctx, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
 	}
 	if pool == nil {
-		log.L(ctx).Infof("Token approval received for unknown pool '%s' - ignoring: %s", approval.PoolProtocolID, approval.Event.ProtocolID)
+		log.L(ctx).Infof("Token approval received for unknown pool '%s' - ignoring: %s", approval.PoolLocator, approval.Event.ProtocolID)
 		return false, nil
 	}
 	approval.Namespace = pool.Namespace

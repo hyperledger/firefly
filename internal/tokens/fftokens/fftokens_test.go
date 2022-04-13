@@ -201,10 +201,10 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 
 			res := &http.Response{
 				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
-					"type":   "fungible",
-					"poolId": "F1",
-					"signer": "0x0",
-					"data":   `{"tx":"` + pool.TX.ID.String() + `"}`,
+					"type":        "fungible",
+					"poolLocator": "F1",
+					"signer":      "0x0",
+					"data":        `{"tx":"` + pool.TX.ID.String() + `"}`,
 				}.String()))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
@@ -216,7 +216,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
+		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
 
 	complete, err := h.CreateTokenPool(context.Background(), opID, pool)
@@ -271,15 +271,12 @@ func TestActivateTokenPool(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	txInfo := map[string]interface{}{
-		"foo": "bar",
-	}
 	poolConfig := map[string]interface{}{
 		"address": "0x12345",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "N1",
-		Config:     poolConfig,
+		Locator: "N1",
+		Config:  poolConfig,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -288,10 +285,9 @@ func TestActivateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId": opID.String(),
-				"poolId":    "N1",
-				"config":    poolConfig,
-				"locator":   txInfo,
+				"requestId":   opID.String(),
+				"poolLocator": "N1",
+				"config":      poolConfig,
 			}, body)
 
 			res := &http.Response{
@@ -304,7 +300,7 @@ func TestActivateTokenPool(t *testing.T) {
 			return res, nil
 		})
 
-	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool)
 	assert.False(t, complete)
 	assert.NoError(t, err)
 }
@@ -324,7 +320,7 @@ func TestActivateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	complete, err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool, nil)
+	complete, err := h.ActivateTokenPool(context.Background(), fftypes.NewUUID(), pool)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10274", err)
 }
@@ -338,11 +334,8 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		"foo": "bar",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "N1",
-		Config:     poolConfig,
-	}
-	txInfo := map[string]interface{}{
-		"foo": "bar",
+		Locator: "N1",
+		Config:  poolConfig,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -351,17 +344,16 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId": opID.String(),
-				"poolId":    "N1",
-				"config":    poolConfig,
-				"locator":   txInfo,
+				"requestId":   opID.String(),
+				"poolLocator": "N1",
+				"config":      poolConfig,
 			}, body)
 
 			res := &http.Response{
 				Body: ioutil.NopCloser(bytes.NewReader([]byte(fftypes.JSONObject{
-					"type":   "fungible",
-					"poolId": "F1",
-					"signer": "0x0",
+					"type":        "fungible",
+					"poolLocator": "F1",
+					"signer":      "0x0",
 				}.String()))),
 				Header: http.Header{
 					"Content-Type": []string{"application/json"},
@@ -373,10 +365,10 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
+		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
 
-	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool)
 	assert.True(t, complete)
 	assert.NoError(t, err)
 }
@@ -390,11 +382,8 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		"foo": "bar",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "N1",
-		Config:     poolConfig,
-	}
-	txInfo := map[string]interface{}{
-		"foo": "bar",
+		Locator: "N1",
+		Config:  poolConfig,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -403,10 +392,9 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId": opID.String(),
-				"poolId":    "N1",
-				"config":    poolConfig,
-				"locator":   txInfo,
+				"requestId":   opID.String(),
+				"poolLocator": "N1",
+				"config":      poolConfig,
 			}, body)
 
 			res := &http.Response{
@@ -421,10 +409,10 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil
+		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
 
-	complete, err := h.ActivateTokenPool(context.Background(), opID, pool, txInfo)
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF00127", err)
 }
@@ -451,11 +439,11 @@ func TestMintTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":    "123",
-				"to":        "user1",
-				"amount":    "10",
-				"signer":    "0x123",
-				"requestId": opID.String(),
+				"poolLocator": "123",
+				"to":          "user1",
+				"amount":      "10",
+				"signer":      "0x123",
+				"requestId":   opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
 					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
@@ -501,10 +489,10 @@ func TestTokenApproval(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":   "123",
-				"operator": "0x02",
-				"approved": true,
-				"signer":   "0x123",
+				"poolLocator": "123",
+				"operator":    "0x02",
+				"approved":    true,
+				"signer":      "0x123",
 				"config": map[string]interface{}{
 					"foo": "bar",
 				},
@@ -578,12 +566,12 @@ func TestBurnTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":     "123",
-				"tokenIndex": "1",
-				"from":       "user1",
-				"amount":     "10",
-				"signer":     "0x123",
-				"requestId":  opID.String(),
+				"poolLocator": "123",
+				"tokenIndex":  "1",
+				"from":        "user1",
+				"amount":      "10",
+				"signer":      "0x123",
+				"requestId":   opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
 					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
@@ -641,13 +629,13 @@ func TestTransferTokens(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"poolId":     "123",
-				"tokenIndex": "1",
-				"from":       "user1",
-				"to":         "user2",
-				"amount":     "10",
-				"signer":     "0x123",
-				"requestId":  opID.String(),
+				"poolLocator": "123",
+				"tokenIndex":  "1",
+				"from":        "user1",
+				"to":          "user2",
+				"amount":      "10",
+				"signer":      "0x123",
+				"requestId":   opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
 					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
@@ -744,17 +732,17 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: invalid uuid (success)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == "000000000010/000020/000030"
+		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "7",
 		"event": "token-pool",
 		"data": fftypes.JSONObject{
-			"id":     "000000000010/000020/000030/000040",
-			"type":   "fungible",
-			"poolId": "F1",
-			"signer": "0x0",
-			"data":   fftypes.JSONObject{"tx": "bad"}.String(),
+			"id":          "000000000010/000020/000030/000040",
+			"type":        "fungible",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"data":        fftypes.JSONObject{"tx": "bad"}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -768,17 +756,17 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.ProtocolID == "F1" && p.Type == fftypes.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
+		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "8",
 		"event": "token-pool",
 		"data": fftypes.JSONObject{
-			"id":     "000000000010/000020/000030/000040",
-			"type":   "fungible",
-			"poolId": "F1",
-			"signer": "0x0",
-			"data":   fftypes.JSONObject{"tx": txID.String()}.String(),
+			"id":          "000000000010/000020/000030/000040",
+			"type":        "fungible",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -803,13 +791,13 @@ func TestEvents(t *testing.T) {
 		"id":    "10",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"subject":    "1.0.0",
-			"poolId":     "F1",
-			"tokenIndex": "0",
-			"signer":     "0x0",
-			"to":         "0x0",
-			"amount":     "bad",
-			"data":       fftypes.JSONObject{"tx": txID.String()}.String(),
+			"subject":     "1.0.0",
+			"poolLocator": "F1",
+			"tokenIndex":  "0",
+			"signer":      "0x0",
+			"to":          "0x0",
+			"amount":      "bad",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"info": fftypes.JSONObject{
 					"transactionHash": "0xffffeeee",
@@ -822,18 +810,18 @@ func TestEvents(t *testing.T) {
 
 	// token-mint: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.To == "0x0" && t.TokenIndex == "" && *t.TX.ID == *txID && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Amount.Int().Int64() == 2 && t.To == "0x0" && t.TokenIndex == "" && *t.TX.ID == *txID && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "11",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"subject": "000000000010/000020/000030/000040",
-			"poolId":  "F1",
-			"signer":  "0x0",
-			"to":      "0x0",
-			"amount":  "2",
-			"data":    fftypes.JSONObject{"tx": txID.String()}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"to":          "0x0",
+			"amount":      "2",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -847,19 +835,19 @@ func TestEvents(t *testing.T) {
 
 	// token-mint: invalid uuid (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 1 && t.To == "0x0" && t.TokenIndex == "1" && t.PoolProtocolID == "N1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Amount.Int().Int64() == 1 && t.To == "0x0" && t.TokenIndex == "1" && t.PoolLocator == "N1" && t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "12",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"subject":    "000000000010/000020/000030/000040",
-			"poolId":     "N1",
-			"tokenIndex": "1",
-			"signer":     "0x0",
-			"to":         "0x0",
-			"amount":     "1",
-			"data":       fftypes.JSONObject{"tx": "bad"}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "N1",
+			"tokenIndex":  "1",
+			"signer":      "0x0",
+			"to":          "0x0",
+			"amount":      "1",
+			"data":        fftypes.JSONObject{"tx": "bad"}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -876,13 +864,13 @@ func TestEvents(t *testing.T) {
 		"id":    "13",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"subject":    "000000000010/000020/000030/000040",
-			"poolId":     "F1",
-			"tokenIndex": "0",
-			"signer":     "0x0",
-			"to":         "0x0",
-			"amount":     "2",
-			"data":       fftypes.JSONObject{"tx": txID.String()}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"tokenIndex":  "0",
+			"signer":      "0x0",
+			"to":          "0x0",
+			"amount":      "2",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"info": fftypes.JSONObject{
 					"transactionHash": "0xffffeeee",
@@ -895,19 +883,19 @@ func TestEvents(t *testing.T) {
 
 	// token-transfer: bad message hash (success)
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "14",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"subject": "000000000010/000020/000030/000040",
-			"poolId":  "F1",
-			"signer":  "0x0",
-			"from":    "0x0",
-			"to":      "0x1",
-			"amount":  "2",
-			"data":    fftypes.JSONObject{"tx": txID.String(), "messageHash": "bad"}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"from":        "0x0",
+			"to":          "0x1",
+			"amount":      "2",
+			"data":        fftypes.JSONObject{"tx": txID.String(), "messageHash": "bad"}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -922,19 +910,19 @@ func TestEvents(t *testing.T) {
 	// token-transfer: success
 	messageID := fftypes.NewUUID()
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message) && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message) && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "15",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"subject": "000000000010/000020/000030/000040",
-			"poolId":  "F1",
-			"signer":  "0x0",
-			"from":    "0x0",
-			"to":      "0x1",
-			"amount":  "2",
-			"data":    fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"from":        "0x0",
+			"to":          "0x1",
+			"amount":      "2",
+			"data":        fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -948,19 +936,19 @@ func TestEvents(t *testing.T) {
 
 	// token-burn: success
 	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
-		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.TokenIndex == "0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "16",
 		"event": "token-burn",
 		"data": fftypes.JSONObject{
-			"subject":    "000000000010/000020/000030/000040",
-			"poolId":     "F1",
-			"tokenIndex": "0",
-			"signer":     "0x0",
-			"from":       "0x0",
-			"amount":     "2",
-			"data":       fftypes.JSONObject{"tx": txID.String()}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"tokenIndex":  "0",
+			"signer":      "0x0",
+			"from":        "0x0",
+			"amount":      "2",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -974,18 +962,18 @@ func TestEvents(t *testing.T) {
 
 	// token-approval: success
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
-		return t.Approved == true && t.Operator == "0x0" && t.PoolProtocolID == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "17",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
-			"subject":  "000000000010/000020/000030/000040",
-			"poolId":   "F1",
-			"signer":   "0x0",
-			"operator": "0x0",
-			"approved": true,
-			"data":     fftypes.JSONObject{"tx": txID.String()}.String(),
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"operator":    "0x0",
+			"approved":    true,
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -999,17 +987,17 @@ func TestEvents(t *testing.T) {
 
 	// token-approval: success (no data)
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
-		return t.Approved == true && t.Operator == "0x0" && t.PoolProtocolID == "F1"
+		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "18",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
-			"subject":  "000000000010/000020/000030/000040",
-			"poolId":   "F1",
-			"signer":   "0x0",
-			"operator": "0x0",
-			"approved": true,
+			"subject":     "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"operator":    "0x0",
+			"approved":    true,
 		},
 	}.String()
 	msg = <-toServer

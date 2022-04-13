@@ -1,8 +1,11 @@
 BEGIN;
 DROP INDEX tokenapproval_protocolid;
 DROP INDEX tokentransfer_protocolid;
+DROP INDEX tokenpool_protocolid;
 ALTER TABLE tokenapproval RENAME COLUMN protocol_id TO subject;
 ALTER TABLE tokentransfer RENAME COLUMN protocol_id TO subject;
+ALTER TABLE tokenpool RENAME COLUMN protocol_id TO locator;
 CREATE UNIQUE INDEX tokenapproval_subject ON tokenapproval(pool_id, subject);
-CREATE UNIQUE INDEX tokentransfer_subject ON tokentransfer(pool_id, subject);
+CREATE UNIQUE INDEX tokentransfer_subject ON tokentransfer(connector, subject);
+CREATE UNIQUE INDEX tokenpool_locator ON tokenpool(connector, locator);
 COMMIT;

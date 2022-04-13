@@ -45,19 +45,19 @@ type Plugin interface {
 	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error
+	MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *fftypes.TokenTransfer) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error
+	BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *fftypes.TokenTransfer) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error
+	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *fftypes.TokenTransfer) error
 
 	// TokenApproval approves an operator to transfer tokens on the owner's behalf
-	TokensApproval(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, approval *fftypes.TokenApproval) error
+	TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *fftypes.TokenApproval) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -101,8 +101,8 @@ type TokenPool struct {
 	// Type is the type of tokens (fungible, non-fungible, etc) in this pool
 	Type fftypes.TokenType
 
-	// ProtocolID is the ID assigned to this pool by the connector (must be unique for this connector)
-	ProtocolID string
+	// PoolLocator is the ID assigned to this pool by the connector (must be unique for this connector)
+	PoolLocator string
 
 	// TX is the FireFly-assigned information to correlate this to a transaction (optional)
 	TX fftypes.TransactionRef
@@ -128,8 +128,8 @@ type TokenTransfer struct {
 	// Notable fields NOT expected to be populated by plugins: Namespace, LocalID, Pool
 	fftypes.TokenTransfer
 
-	// PoolProtocolID is the ID assigned to the token pool by the connector
-	PoolProtocolID string
+	// PoolLocator is the ID assigned to the token pool by the connector
+	PoolLocator string
 
 	// Event contains info on the underlying blockchain event for this transfer
 	Event blockchain.Event
@@ -138,8 +138,8 @@ type TokenTransfer struct {
 type TokenApproval struct {
 	fftypes.TokenApproval
 
-	// PoolProtocolID is the ID assigned to the token pool by the connector
-	PoolProtocolID string
+	// PoolLocator is the ID assigned to the token pool by the connector
+	PoolLocator string
 
 	// Event contains info on the underlying blockchain event for this transfer
 	Event blockchain.Event

@@ -454,8 +454,8 @@ func TestMintTokensOperationFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -670,8 +670,8 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStatePending,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStatePending,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -738,8 +738,8 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)

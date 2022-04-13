@@ -65,12 +65,12 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
-	pool, err := em.database.GetTokenPoolByProtocolID(ctx, transfer.Connector, transfer.PoolProtocolID)
+	pool, err := em.database.GetTokenPoolByLocator(ctx, transfer.Connector, transfer.PoolLocator)
 	if err != nil {
 		return false, err
 	}
 	if pool == nil {
-		log.L(ctx).Infof("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolProtocolID, transfer.Event.ProtocolID)
+		log.L(ctx).Infof("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolLocator, transfer.Event.ProtocolID)
 		return false, nil
 	}
 	transfer.Namespace = pool.Namespace

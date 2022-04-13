@@ -399,8 +399,8 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
-	// GetTokenPoolByID - Get a token pool by protocol ID
-	GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error)
+	// GetTokenPoolByID - Get a token pool by locator
+	GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
@@ -906,19 +906,19 @@ var BlobQueryFactory = &queryFields{
 
 // TokenPoolQueryFactory filter fields for token pools
 var TokenPoolQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"type":       &StringField{},
-	"namespace":  &StringField{},
-	"name":       &StringField{},
-	"standard":   &StringField{},
-	"protocolid": &StringField{},
-	"symbol":     &StringField{},
-	"message":    &UUIDField{},
-	"state":      &StringField{},
-	"created":    &TimeField{},
-	"connector":  &StringField{},
-	"tx.type":    &StringField{},
-	"tx.id":      &UUIDField{},
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"standard":  &StringField{},
+	"locator":   &StringField{},
+	"symbol":    &StringField{},
+	"message":   &UUIDField{},
+	"state":     &StringField{},
+	"created":   &TimeField{},
+	"connector": &StringField{},
+	"tx.type":   &StringField{},
+	"tx.id":     &UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances
