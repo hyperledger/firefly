@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Blockchain protocols
-parent: Key Concepts
+parent: Understanding FireFly
 nav_order: 4
 ---
 
@@ -84,15 +84,11 @@ There are sub-communities building the blockchain interfaces for each of the "bi
   - Status: Mature
   - Repo: [hyperledger/firefly-ethconnect](https://github.com/hyperledger/firefly-ethconnect)
 - Hyperledger Fabric
-  - Status: Under active development
+  - Status: Mature
   - Repo: [hyperledger/firefly-fabconnect](https://github.com/hyperledger/firefly-fabconnect)
 - Corda
-  - Status: Core transactions+events proved out. Seeking contributors
+  - Status: Core model proven. Requires bespoke customization to each CorDapp
   - Repo: [hyperledger/firefly-cordaconnect](https://github.com/hyperledger/firefly-cordaconnect)
-
-> _Each FireFly network is tied to a single blockchain technology. Watch this space for
-> evolution of pluggable bridges for tokens, assets and data between networks through
-> FireFly plugins._
 
 ## Need help choosing the right blockchain ledger technology?
 

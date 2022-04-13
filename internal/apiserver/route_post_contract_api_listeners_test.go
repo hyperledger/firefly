@@ -19,7 +19,6 @@ package apiserver
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http/httptest"
 	"testing"
 
@@ -29,36 +28,19 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostContractInterfaceInvoke(t *testing.T) {
-	interfaceID := fftypes.NewUUID()
+func TestPostContractAPIListen(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.ContractCallRequest{}
+	input := fftypes.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/%s/invoke/test", interfaceID), &buf)
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/apis/banana/listeners/peeled", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("InvokeContract", mock.Anything, "ns1", mock.MatchedBy(func(req *fftypes.ContractCallRequest) bool {
-		return req.Type == fftypes.CallTypeInvoke && *req.Interface == *interfaceID
-	})).Return("banana", nil)
+	mcm.On("AddContractAPIListener", mock.Anything, "ns1", "banana", "peeled", mock.AnythingOfType("*fftypes.ContractListener")).Return(&fftypes.ContractListener{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestPostContractInterfaceInvokeBadID(t *testing.T) {
-	_, r := newTestAPIServer()
-	input := fftypes.ContractCallRequest{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/namespaces/ns1/contracts/interfaces/bad/invoke/test"), &buf)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 400, res.Result().StatusCode)
 }

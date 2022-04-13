@@ -346,7 +346,7 @@ func TestPanicOnMissingRouteDescription(t *testing.T) {
 			JSONOutputCodes: []int{http.StatusOK},
 		},
 	}
-	assert.PanicsWithValue(t, "FF10383: API route description missing for route 'GetPanicOnMissingRouteDescription'", func() {
+	assert.PanicsWithValue(t, "FF10384: API route description missing for route 'GetPanicOnMissingRouteDescription'", func() {
 		_ = SwaggerGen(context.Background(), routes, &SwaggerGenConfig{
 			Title:                     "UnitTest",
 			Version:                   "1.0",

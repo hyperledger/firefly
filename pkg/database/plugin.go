@@ -1017,6 +1017,9 @@ var ContractListenerQueryFactory = &queryFields{
 	"id":         &UUIDField{},
 	"interface":  &UUIDField{},
 	"namespace":  &StringField{},
+	"location":   &JSONField{},
+	"topic":      &StringField{},
+	"signature":  &StringField{},
 	"protocolid": &StringField{},
 	"created":    &TimeField{},
 }

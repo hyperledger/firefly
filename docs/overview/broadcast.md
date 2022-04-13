@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Broadcast / shared data
-parent: Key Concepts
-nav_order: 7
+parent: Understanding FireFly
+nav_order: 8
 ---
 
 # Broadcast / shared data

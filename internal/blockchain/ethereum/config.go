@@ -53,7 +53,7 @@ const (
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
-	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to EthConnect as the from address
+	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address
 	AddressResolverRetainOriginal = "retainOriginal"
 	// AddressResolverMethod the HTTP method to use to call the address resolver (default GET)
 	AddressResolverMethod = "method"

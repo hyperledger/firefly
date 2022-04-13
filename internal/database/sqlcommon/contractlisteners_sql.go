@@ -38,6 +38,7 @@ var (
 		"name",
 		"protocol_id",
 		"location",
+		"signature",
 		"topic",
 		"options",
 		"created",
@@ -48,7 +49,7 @@ var (
 	}
 )
 
-func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.ContractListener) (err error) {
+func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftypes.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -58,7 +59,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.Con
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("seq").
 			From("contractlisteners").
-			Where(sq.Eq{"protocol_id": sub.ProtocolID}),
+			Where(sq.Eq{"protocol_id": listener.ProtocolID}),
 	)
 	if err != nil {
 		return err
@@ -67,47 +68,49 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.Con
 	rows.Close()
 
 	var interfaceID *fftypes.UUID
-	if sub.Interface != nil {
-		interfaceID = sub.Interface.ID
+	if listener.Interface != nil {
+		interfaceID = listener.Interface.ID
 	}
 
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("contractlisteners").
-				Set("id", sub.ID).
+				Set("id", listener.ID).
 				Set("interface_id", interfaceID).
-				Set("event", sub.Event).
-				Set("namespace", sub.Namespace).
-				Set("name", sub.Name).
-				Set("location", sub.Location).
-				Set("topic", sub.Topic).
-				Set("options", sub.Options).
-				Where(sq.Eq{"protocol_id": sub.ProtocolID}),
+				Set("event", listener.Event).
+				Set("namespace", listener.Namespace).
+				Set("name", listener.Name).
+				Set("location", listener.Location).
+				Set("signature", listener.Signature).
+				Set("topic", listener.Topic).
+				Set("options", listener.Options).
+				Where(sq.Eq{"protocol_id": listener.ProtocolID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, sub.Namespace, sub.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
 			},
 		); err != nil {
 			return err
 		}
 	} else {
-		sub.Created = fftypes.Now()
+		listener.Created = fftypes.Now()
 		if _, err = s.insertTx(ctx, tx,
 			sq.Insert("contractlisteners").
 				Columns(contractListenerColumns...).
 				Values(
-					sub.ID,
+					listener.ID,
 					interfaceID,
-					sub.Event,
-					sub.Namespace,
-					sub.Name,
-					sub.ProtocolID,
-					sub.Location,
-					sub.Topic,
-					sub.Options,
-					sub.Created,
+					listener.Event,
+					listener.Namespace,
+					listener.Name,
+					listener.ProtocolID,
+					listener.Location,
+					listener.Signature,
+					listener.Topic,
+					listener.Options,
+					listener.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, sub.Namespace, sub.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, listener.Namespace, listener.ID)
 			},
 		); err != nil {
 			return err
@@ -118,25 +121,26 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, sub *fftypes.Con
 }
 
 func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractListener, error) {
-	sub := fftypes.ContractListener{
+	listener := fftypes.ContractListener{
 		Interface: &fftypes.FFIReference{},
 	}
 	err := row.Scan(
-		&sub.ID,
-		&sub.Interface.ID,
-		&sub.Event,
-		&sub.Namespace,
-		&sub.Name,
-		&sub.ProtocolID,
-		&sub.Location,
-		&sub.Topic,
-		&sub.Options,
-		&sub.Created,
+		&listener.ID,
+		&listener.Interface.ID,
+		&listener.Event,
+		&listener.Namespace,
+		&listener.Name,
+		&listener.ProtocolID,
+		&listener.Location,
+		&listener.Signature,
+		&listener.Topic,
+		&listener.Options,
+		&listener.Created,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "contractlisteners")
 	}
-	return &sub, nil
+	return &listener, nil
 }
 
 func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractListener, error) {
