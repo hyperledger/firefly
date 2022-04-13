@@ -140,7 +140,7 @@ Smart Contract specialist, familiar with EVM contracts in Solidity/Vyper, Fabric
 (or maybe even raw block transition logic in Rust or Go), and the backend/full-stack
 application developer / core-system integrator.
 
-Well document APIs are modern norm for this, and it is no different for blockchain. This means:
+Well documented APIs are the modern norm for this, and it is no different for blockchain. This means:
 
 - Generating the interface for methods and events on your smart contract
 - Providing robust transaction submission, and event streaming
