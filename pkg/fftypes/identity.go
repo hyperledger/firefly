@@ -111,7 +111,8 @@ type SignerRef struct {
 // from the parent identity to be published (on the same topic) before the identity is considered valid
 // and is stored as a confirmed identity.
 type IdentityClaim struct {
-	Identity *Identity `ffstruct:"IdentityClaim" json:"identity"`
+	Identity *Identity     `ffstruct:"IdentityClaim" json:"identity"`
+	Root     *IdentityBase `ffstruct:"IdentityClaim" json:"root"`
 }
 
 // IdentityVerification is the data payload used in message to broadcast a verification of a child identity.
@@ -131,7 +132,10 @@ type IdentityUpdate struct {
 }
 
 func (ic *IdentityClaim) Topic() string {
-	return ic.Identity.Topic()
+	if ic.Root == nil {
+		return ic.Identity.Topic()
+	}
+	return ic.Root.Topic()
 }
 
 func (ic *IdentityClaim) SetBroadcastMessage(msgID *UUID) {

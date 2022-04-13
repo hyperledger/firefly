@@ -50,6 +50,11 @@ func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns strin
 		return nil, err
 	}
 
+	// We must have the root here passed in, so all definitions from that root are ordered consistently
+	if def.Root == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgParentIdentityNotResolved)
+	}
+
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 

@@ -144,7 +144,7 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -194,7 +194,7 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -239,7 +239,7 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -271,7 +271,7 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	custom1, org1, claimMsg, claimData, verifyMsg, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -301,7 +301,7 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	custom1, org1, claimMsg, claimData, verifyMsg, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -331,7 +331,7 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -362,7 +362,7 @@ func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testi
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -386,7 +386,7 @@ func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T)
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -410,7 +410,7 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -435,7 +435,7 @@ func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -458,7 +458,7 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(&fftypes.Identity{
@@ -483,7 +483,7 @@ func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
@@ -506,7 +506,7 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 	claimMsg.Header.Author = ""
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
@@ -524,7 +524,7 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, nil, false, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
@@ -542,7 +542,7 @@ func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, true, fmt.Errorf("pop"))
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, nil, true, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
@@ -560,7 +560,7 @@ func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
+	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, nil, false, fmt.Errorf("wrong"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)

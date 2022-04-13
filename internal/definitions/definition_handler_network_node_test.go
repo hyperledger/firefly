@@ -106,7 +106,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 		Type:  fftypes.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(parent.Migrated().Identity, nil)
-	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(parent.Migrated().Identity, false, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(parent.Migrated().Identity, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, fftypes.IdentityTypeNode, fftypes.SystemNamespace, node.Name).Return(nil, nil)

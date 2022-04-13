@@ -130,7 +130,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
-	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
+	parent, _, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil && retryable {
 		return HandlerResult{Action: ActionRetry}, err
 	} else if err != nil {

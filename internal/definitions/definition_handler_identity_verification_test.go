@@ -39,7 +39,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
-	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(custom1, false, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(custom1, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, nil) // Simulate pending confirm in same pin batch

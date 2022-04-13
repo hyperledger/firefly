@@ -68,7 +68,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 	identity.DID, _ = identity.GenerateDID(ctx)
 
 	// Verify the chain
-	immediateParent, _, err := nm.identity.VerifyIdentityChain(ctx, identity)
+	immediateParent, rootIdentity, _, err := nm.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil {
 		return nil, err
 	}
@@ -100,21 +100,22 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 
 	if waitConfirm {
 		return nm.syncasync.WaitForIdentity(ctx, identity.Namespace, identity.ID, func(ctx context.Context) error {
-			return nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
+			return nm.sendIdentityRequest(ctx, identity, rootIdentity, claimSigner, parentSigner)
 		})
 	}
-	err = nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
+	err = nm.sendIdentityRequest(ctx, identity, rootIdentity, claimSigner, parentSigner)
 	if err != nil {
 		return nil, err
 	}
 	return identity, nil
 }
 
-func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes.Identity, claimSigner *fftypes.SignerRef, parentSigner *fftypes.SignerRef) error {
+func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity, rootIdentity *fftypes.Identity, claimSigner *fftypes.SignerRef, parentSigner *fftypes.SignerRef) error {
 
 	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
 	claimMsg, err := nm.broadcast.BroadcastIdentityClaim(ctx, identity.Namespace, &fftypes.IdentityClaim{
 		Identity: identity,
+		Root:     &rootIdentity.IdentityBase,
 	}, claimSigner, fftypes.SystemTagIdentityClaim, false)
 	if err != nil {
 		return err

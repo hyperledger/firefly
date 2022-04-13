@@ -43,7 +43,7 @@ func TestRegisterNodeOk(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, false, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, parentOrg, false, nil)
 	signerRef := &fftypes.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
@@ -80,7 +80,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, false, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, parentOrg, false, nil)
 	signerRef := &fftypes.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 

@@ -38,7 +38,7 @@ type DeprecatedDXInfo struct {
 }
 
 // Migrate creates and maintains a migrated IdentityClaim object, which
-// is used when processing an old-style nodeanization broadcast received when
+// is used when processing an old-style node broadcast received when
 // joining an existing network
 func (node *DeprecatedNode) Migrated() *IdentityClaim {
 	if node.identityClaim != nil {

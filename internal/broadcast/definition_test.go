@@ -57,12 +57,31 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 
 	_, err := bm.BroadcastIdentityClaim(bm.ctx, fftypes.SystemNamespace, &fftypes.IdentityClaim{
 		Identity: &fftypes.Identity{},
+		Root:     &fftypes.IdentityBase{},
 	}, &fftypes.SignerRef{
 		Key: "0x1234",
 	}, fftypes.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
 	msa.AssertExpectations(t)
+	mim.AssertExpectations(t)
+}
+
+func TestBroadcastIdentityClaimMissingRoot(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+
+	_, err := bm.BroadcastIdentityClaim(bm.ctx, fftypes.SystemNamespace, &fftypes.IdentityClaim{
+		Identity: &fftypes.Identity{},
+	}, &fftypes.SignerRef{
+		Key: "0x1234",
+	}, fftypes.SystemTagDefineNamespace, true)
+	assert.Regexp(t, "FF10385", err)
+
 	mim.AssertExpectations(t)
 }
 

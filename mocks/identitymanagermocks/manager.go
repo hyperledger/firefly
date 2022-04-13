@@ -263,7 +263,7 @@ func (_m *Manager) ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSigne
 }
 
 // VerifyIdentityChain provides a mock function with given fields: ctx, _a1
-func (_m *Manager) VerifyIdentityChain(ctx context.Context, _a1 *fftypes.Identity) (*fftypes.Identity, bool, error) {
+func (_m *Manager) VerifyIdentityChain(ctx context.Context, _a1 *fftypes.Identity) (*fftypes.Identity, *fftypes.Identity, bool, error) {
 	ret := _m.Called(ctx, _a1)
 
 	var r0 *fftypes.Identity
@@ -275,19 +275,28 @@ func (_m *Manager) VerifyIdentityChain(ctx context.Context, _a1 *fftypes.Identit
 		}
 	}
 
-	var r1 bool
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity) bool); ok {
+	var r1 *fftypes.Identity
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Identity) *fftypes.Identity); ok {
 		r1 = rf(ctx, _a1)
 	} else {
-		r1 = ret.Get(1).(bool)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*fftypes.Identity)
+		}
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Identity) error); ok {
+	var r2 bool
+	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Identity) bool); ok {
 		r2 = rf(ctx, _a1)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(bool)
 	}
 
-	return r0, r1, r2
+	var r3 error
+	if rf, ok := ret.Get(3).(func(context.Context, *fftypes.Identity) error); ok {
+		r3 = rf(ctx, _a1)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }

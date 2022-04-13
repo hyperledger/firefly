@@ -929,8 +929,9 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, idIntermediateCustom.ID).Return(idIntermediateCustom, nil).Once()
 	mdi.On("GetIdentityByID", ctx, idRoot.ID).Return(idRoot, nil).Once()
 
-	immeidateParent, _, err := im.VerifyIdentityChain(ctx, idLeaf)
+	immeidateParent, identityRoot, _, err := im.VerifyIdentityChain(ctx, idLeaf)
 	assert.Equal(t, idIntermediateCustom, immeidateParent)
+	assert.Equal(t, idRoot, identityRoot)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -944,7 +945,7 @@ func TestVerifyIdentityInvalid(t *testing.T) {
 		IdentityBase: fftypes.IdentityBase{},
 	}
 
-	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
+	_, _, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF00114", err)
 	assert.False(t, retryable)
 
@@ -986,7 +987,7 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
 
-	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
+	_, _, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10364", err)
 	assert.False(t, retryable)
 
@@ -1022,7 +1023,7 @@ func TestVerifyIdentityChainBadParent(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
 
-	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
+	_, _, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10366", err)
 	assert.False(t, retryable)
 
@@ -1048,7 +1049,7 @@ func TestVerifyIdentityChainErr(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, idID2).Return(nil, fmt.Errorf("pop"))
 
-	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
+	_, _, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retryable)
 
@@ -1074,7 +1075,7 @@ func TestVerifyIdentityChainNotFound(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, idID2).Return(nil, nil)
 
-	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
+	_, _, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10214", err)
 	assert.False(t, retryable)
 
@@ -1109,7 +1110,7 @@ func TestVerifyIdentityChainInvalidParent(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", ctx, id1.ID).Return(id1, nil).Once()
 
-	_, retryable, err := im.VerifyIdentityChain(ctx, id2)
+	_, _, retryable, err := im.VerifyIdentityChain(ctx, id2)
 	assert.Regexp(t, "FF10365", err)
 	assert.False(t, retryable)
 

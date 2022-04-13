@@ -212,8 +212,10 @@ func TestDefinitionObjects(t *testing.T) {
 	assert.Equal(t, "7ea456fa05fc63778e7c4cb22d0498d73f184b2778c11fd2ba31b5980f8490b9", o.IdentityBase.Topic())
 	assert.Equal(t, o.Topic(), o.IdentityBase.Topic())
 
+	// Root identity
 	ic := IdentityClaim{
 		Identity: o,
+		Root:     &o.IdentityBase,
 	}
 	assert.Equal(t, o.Topic(), ic.Topic())
 	claimMsg := NewUUID()

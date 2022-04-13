@@ -89,7 +89,7 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 	org, msg, data := testDeprecatedRootOrg(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
+	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, org.Name).Return(nil, nil)
