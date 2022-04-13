@@ -18,10 +18,10 @@ nav_order: 5
 
 ## Public and Permissioned Blockchain
 
-As separate choice to the technology for your blockchain, is what combination
+A separate choice to the technology for your blockchain, is what combination
 of blockchain ecosystems you will integrate with.
 
-There are are huge variety of options, and increasingly you might yourself
+There are a huge variety of options, and increasingly you might find yourself
 integrating with multiple ecosystems in your solutions.
 
 A rough (and incomplete) high level classification of the blockchains available is as follows:
@@ -56,8 +56,8 @@ For the public Layer 1 and 2 solutions, there are too many subclassifications to
 
 ## Common public considerations
 
-The thing most consistent across public blockchain technologies, is that the technical decision are
-backed by a system of token economics.
+The thing most consistent across public blockchain technologies, is that the technical decisions are
+backed by token economics.
 
 Put simply, creating a system where it's more financially rewarding to behave honestly, than it
 is to subvert and cheat the system.
@@ -100,15 +100,15 @@ The architecture is summarized as follows:
   - Able to intervene and adjust the characteristics of signing/submission
   - OSS reference implementation provided with Gas Station REST API integration
 - **Confirmation Manager**
-  - Extracted from the EthConnect codebase
+  - Extracted from the Ethconnect codebase
   - Coupled to both transaction submission and event confirmation
   - Embeds an efficient block cache
 - **Event Streams**
-  - Extracted from the EthConnect codebase
+  - Extracted from the Ethconnect codebase
   - Checkpoint restart based reliable at-least-once delivery of events
   - WebSockets interface upstream to FireFly Core  
 
-This evolution involves a significant refactoring of components used for production solutions in the FireFly EthConnect 
+This evolution involves a significant refactoring of components used for production solutions in the FireFly Ethconnect 
 microservice since mid 2018. This was summarized in [firefly-ethconnect#149](https://github.com/hyperledger/firefly-ethconnect/issues/149),
 and cumulated in the creation of a new repository in 2022.
 

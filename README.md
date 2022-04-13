@@ -30,7 +30,7 @@ FireFly CLI                   |  FireFly Explorer UI                | FireFly Sa
 
 ## Technical architecture
 
-Hyperledger FireFly is a pluggable microservices architecture. Everything is pluggable, from the the Blockchain technology,
+Hyperledger FireFly has a pluggable microservices architecture. Everything is pluggable, from the the Blockchain technology,
 token ERC standards, and custom smart contracts, all the way to the event distribution layer and private database.
 
 So if there aren't yet instructions for making FireFly a Supernode for your favorite blockchain technology -

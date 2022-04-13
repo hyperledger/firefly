@@ -36,10 +36,10 @@ and update all of the "plumbing" / "middleware" components needed underneath you
 logic yourself, or whether you look for pre-built solutions.
 
 The Hyperledger FireFly approach is to allow the community to collaborate on the development and hardening of
-these component, across industries and projects. Then fit them into an open source, enterprise grade,
+these components, across industries and projects. Then fit them into an open source, enterprise grade,
 pluggable development and runtime stack... the _Supernode_.
 
-The application then code against these APIs, and can be confident that the business logic that works
+The application developers then code against these APIs, and can be confident that the business logic that works
 on their local laptop against a sandbox, is being written in a way that scales to an enterprise
 decentralized application and can be deployed against one or more public/private blockchains in production.
 
@@ -52,15 +52,18 @@ approach of Hyperledger FireFly.
 
 ### Solution builders
 
-Teams building new decentralized web3 solutions, quickly find they are too complex to run without a
-dedicated deployment stack and private database. Particularly in the enterprise space, due to data
-security, access management privacy concerns.
+Teams building new decentralized Web3 solutions need a full technology stack for
+the application, to manage both private and blockchain data. Particularly in the enterprise space
+due to data security, regulatory and privacy concerns.
 
-For the solution to be successful, it needs decentralized deployment to multiple parties. So the
-complexity of a bespoke stack of an individual solution can be a barrier to adoption.
+For theses solutions to be successful, they need decentralized deployment to multiple parties.
+Each party needs to customize the deployment to their SecDevOps environment, as well as
+onboard it to their key management solution etc.
 
-Whereas, build on top of a standardized stack can ease adoption, as well as radically reducing
-the amount of engineering the project requires in the plumbing layer to build out that stack.
+So the complexity of requiring a bespoke technology stack for a solution can be a barrier its adoption.
+
+Whereas, building on top of a standardized and open technology stack can ease adoption, as well
+as radically reducing the amount of engineering needed by the solution developer.
 
 ### Organization requiring a gateway to Web3
 
@@ -71,8 +74,8 @@ This means core IT security policy needs to scale to the challenge of adding the
 and managing the wallets / signing identities, data flow, and SecDevOps requirements across multiple
 projects.
 
-A gateway tier at the edge between the core systems of the enterprise, and the web3 transactions,
-helps reduce the overhead, and reduce the risk.
+A gateway tier at the edge between the core systems of the enterprise, and the Web3 transactions,
+helps reduce the overhead, and reduce risk.
 
 ## Feature view
 
@@ -103,7 +106,7 @@ Modern APIs that:
 - Integrate with your security frameworks like OAuth 2.0 / OpenID Connect single sign-on
 - Provide Open API 3 / Swagger definitions
 - Come with code SDKs, with rich type information
-- Confirm as closely as possible to the principals of REST
+- Conform as closely as possible to the principles of REST
 - Do not pretend to be RESTful in cases when it is impossible to be
 
 ### Event Streams
@@ -125,9 +128,9 @@ This means great event support is a must:
 
 ### API Generation
 
-The blockchain is going to be at the heart of your web3 project. While usually small in overall surface
+The blockchain is going to be at the heart of your Web3 project. While usually small in overall surface
 area compared to the lines of code in the traditional application tiers, this kernel of
-mission-critical is what makes your solution transformational compared to a centralized / Web 2.0 solution.
+mission-critical code is what makes your solution transformational compared to a centralized / Web 2.0 solution.
 
 Whether the smart contract is hand crafted for your project, an existing contract on a public blockchain,
 or a built-in pattern of a framework like FireFly - it must be interacted with correctly.
@@ -145,7 +148,7 @@ Well document APIs are modern norm for this, and it is no different for blockcha
 
 ## Flow features
 
-Data, value and process flow are how decentralized systems function. In an enterprise context
+Data, value, and process flow are how decentralized systems function. In an enterprise context
 not all of this data can be shared with all parties, and some is very sensitive.
 
 ### Private data flow
@@ -172,7 +175,7 @@ legacy process flows, by giving deterministic outcomes that are trusted by all p
 backed by new forms of digital trust between parties.
 
 Some of the most interesting use cases require complex multi-step business process across
-participants. The web3 version of business process management, comes with a some new challenges.
+participants. The Web3 version of business process management, comes with a some new challenges.
 
 So you need the platform to:
 
@@ -199,20 +202,19 @@ The modelling, transfer and management of digital assets is the core programming
 foundation of blockchain.
 
 Yet out of the box, raw blockchains designed to efficiently manage these assets
-in large ecosystems, do not come out-of-the-box with all the building blocks
-needed by applications.
+in large ecosystems, do not come with all the building blocks needed by applications.
 
 ### Token API
 
 Tokens are such a fundamental construct, that they justify a standard API.
 This has been evolving in the industry through standards like ERC-20/ERC-721,
-and web3 signing wallets and that support these.
+and Web3 signing wallets and that support these.
 
 Supernodes bring this same standardization to applications. Providing APIs
 that work across token standards, and blockchain implementations, providing
 consistent and interoperable support.
 
-This means one application or set back-end systems, can integrate with multiple
+This means one application or set of back-end systems, can integrate with multiple
 blockchains, and different token implementations.
 
 Pluggability here is key, so that the rules of governance of each digital
@@ -225,7 +227,7 @@ For efficiency blockchains seldom provide in their core the ability to
 query historical transaction information. Sometimes even the ability
 to query balances is unavailable, for blockchains based on a UTXO model.
 
-So off-chain indexing of transaction history is an absolute must have
+So off-chain indexing of transaction history is an absolute must-have
 for any digital asset solution, or even a simple wallet application.
 
 A platform like Hyperledger FireFly provides:
