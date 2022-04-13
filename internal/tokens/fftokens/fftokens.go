@@ -259,7 +259,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
-	transferID := data.GetString("id")
+	subject := data.GetString("subject")
 	poolProtocolID := data.GetString("poolId")
 	signerAddress := data.GetString("signer")
 	fromAddress := data.GetString("from")
@@ -279,7 +279,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		timestamp = fftypes.Now()
 	}
 
-	if transferID == "" ||
+	if subject == "" ||
 		poolProtocolID == "" ||
 		signerAddress == "" ||
 		value == "" ||
@@ -320,7 +320,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			From:        fromAddress,
 			To:          toAddress,
 			Amount:      amount,
-			ProtocolID:  transferID,
+			Subject:     subject,
 			Key:         signerAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
@@ -347,7 +347,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 }
 
 func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
-	approvalID := data.GetString("id")
+	subject := data.GetString("subject")
 	signerAddress := data.GetString("signer")
 	poolProtocolID := data.GetString("poolId")
 	operatorAddress := data.GetString("operator")
@@ -364,7 +364,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 		timestamp = fftypes.Now()
 	}
 
-	if approvalID == "" ||
+	if subject == "" ||
 		poolProtocolID == "" ||
 		signerAddress == "" ||
 		operatorAddress == "" {
@@ -389,11 +389,11 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	approval := &tokens.TokenApproval{
 		PoolProtocolID: poolProtocolID,
 		TokenApproval: fftypes.TokenApproval{
-			Connector:  ft.configuredName,
-			Key:        signerAddress,
-			Operator:   operatorAddress,
-			Approved:   approved,
-			ProtocolID: approvalID,
+			Connector: ft.configuredName,
+			Key:       signerAddress,
+			Operator:  operatorAddress,
+			Approved:  approved,
+			Subject:   subject,
 			TX: fftypes.TransactionRef{
 				ID:   transferData.TX,
 				Type: txType,

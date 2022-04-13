@@ -41,7 +41,7 @@ func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.U
 	}
 	if len(operations) > 0 {
 		if origApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, operations[0]); err != nil {
-			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.ProtocolID, err)
+			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.Subject, err)
 		} else if origApproval != nil {
 			approval.LocalID = origApproval.LocalID
 		}
@@ -74,7 +74,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 			return valid, err
 		}
 
-		existing, err := em.database.GetTokenApproval(ctx, approval.Connector, approval.ProtocolID, pool.ID)
+		existing, err := em.database.GetTokenApproval(ctx, approval.Connector, approval.Subject, pool.ID)
 		if err != nil {
 			return false, err
 		}
@@ -105,10 +105,10 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	em.emitBlockchainEventMetric(&approval.Event)
 
 	if err := em.database.UpsertTokenApproval(ctx, &approval.TokenApproval); err != nil {
-		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.ProtocolID, err)
+		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.Subject, err)
 		return false, err
 	}
-	log.L(ctx).Infof("Token approval recorded id=%s author=%s", approval.ProtocolID, approval.Key)
+	log.L(ctx).Infof("Token approval recorded id=%s author=%s", approval.Subject, approval.Key)
 	return true, nil
 }
 

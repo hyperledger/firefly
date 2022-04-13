@@ -36,7 +36,7 @@ type TokenTransfer struct {
 	From            string            `ffstruct:"TokenTransfer" json:"from,omitempty" ffexcludeinput:"postTokenMint"`
 	To              string            `ffstruct:"TokenTransfer" json:"to,omitempty" ffexcludeinput:"postTokenBurn"`
 	Amount          FFBigInt          `ffstruct:"TokenTransfer" json:"amount"`
-	ProtocolID      string            `ffstruct:"TokenTransfer" json:"protocolId,omitempty" ffexcludeinput:"true"`
+	Subject         string            `ffstruct:"TokenTransfer" json:"subject,omitempty" ffexcludeinput:"true"`
 	Message         *UUID             `ffstruct:"TokenTransfer" json:"message,omitempty"`
 	MessageHash     *Bytes32          `ffstruct:"TokenTransfer" json:"messageHash,omitempty" ffexcludeinput:"true"`
 	Created         *FFTime           `ffstruct:"TokenTransfer" json:"created,omitempty" ffexcludeinput:"true"`

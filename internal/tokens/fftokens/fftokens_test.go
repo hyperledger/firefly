@@ -803,7 +803,7 @@ func TestEvents(t *testing.T) {
 		"id":    "10",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"id":         "1.0.0",
+			"subject":    "1.0.0",
 			"poolId":     "F1",
 			"tokenIndex": "0",
 			"signer":     "0x0",
@@ -828,12 +828,12 @@ func TestEvents(t *testing.T) {
 		"id":    "11",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"id":     "000000000010/000020/000030/000040",
-			"poolId": "F1",
-			"signer": "0x0",
-			"to":     "0x0",
-			"amount": "2",
-			"data":   fftypes.JSONObject{"tx": txID.String()}.String(),
+			"subject": "000000000010/000020/000030/000040",
+			"poolId":  "F1",
+			"signer":  "0x0",
+			"to":      "0x0",
+			"amount":  "2",
+			"data":    fftypes.JSONObject{"tx": txID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -853,7 +853,7 @@ func TestEvents(t *testing.T) {
 		"id":    "12",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"id":         "000000000010/000020/000030/000040",
+			"subject":    "000000000010/000020/000030/000040",
 			"poolId":     "N1",
 			"tokenIndex": "1",
 			"signer":     "0x0",
@@ -876,7 +876,7 @@ func TestEvents(t *testing.T) {
 		"id":    "13",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"id":         "000000000010/000020/000030/000040",
+			"subject":    "000000000010/000020/000030/000040",
 			"poolId":     "F1",
 			"tokenIndex": "0",
 			"signer":     "0x0",
@@ -901,13 +901,13 @@ func TestEvents(t *testing.T) {
 		"id":    "14",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"id":     "000000000010/000020/000030/000040",
-			"poolId": "F1",
-			"signer": "0x0",
-			"from":   "0x0",
-			"to":     "0x1",
-			"amount": "2",
-			"data":   fftypes.JSONObject{"tx": txID.String(), "messageHash": "bad"}.String(),
+			"subject": "000000000010/000020/000030/000040",
+			"poolId":  "F1",
+			"signer":  "0x0",
+			"from":    "0x0",
+			"to":      "0x1",
+			"amount":  "2",
+			"data":    fftypes.JSONObject{"tx": txID.String(), "messageHash": "bad"}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -928,13 +928,13 @@ func TestEvents(t *testing.T) {
 		"id":    "15",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"id":     "000000000010/000020/000030/000040",
-			"poolId": "F1",
-			"signer": "0x0",
-			"from":   "0x0",
-			"to":     "0x1",
-			"amount": "2",
-			"data":   fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
+			"subject": "000000000010/000020/000030/000040",
+			"poolId":  "F1",
+			"signer":  "0x0",
+			"from":    "0x0",
+			"to":      "0x1",
+			"amount":  "2",
+			"data":    fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
 			"blockchain": fftypes.JSONObject{
 				"id": "000000000010/000020/000030",
 				"info": fftypes.JSONObject{
@@ -954,7 +954,7 @@ func TestEvents(t *testing.T) {
 		"id":    "16",
 		"event": "token-burn",
 		"data": fftypes.JSONObject{
-			"id":         "000000000010/000020/000030/000040",
+			"subject":    "000000000010/000020/000030/000040",
 			"poolId":     "F1",
 			"tokenIndex": "0",
 			"signer":     "0x0",
@@ -980,7 +980,7 @@ func TestEvents(t *testing.T) {
 		"id":    "17",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
-			"id":       "000000000010/000020/000030/000040",
+			"subject":  "000000000010/000020/000030/000040",
 			"poolId":   "F1",
 			"signer":   "0x0",
 			"operator": "0x0",
@@ -1005,7 +1005,7 @@ func TestEvents(t *testing.T) {
 		"id":    "18",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
-			"id":       "000000000010/000020/000030/000040",
+			"subject":  "000000000010/000020/000030/000040",
 			"poolId":   "F1",
 			"signer":   "0x0",
 			"operator": "0x0",

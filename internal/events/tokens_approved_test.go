@@ -34,14 +34,14 @@ func newApproval() *tokens.TokenApproval {
 	return &tokens.TokenApproval{
 		PoolProtocolID: "F1",
 		TokenApproval: fftypes.TokenApproval{
-			LocalID:    fftypes.NewUUID(),
-			Pool:       fftypes.NewUUID(),
-			Connector:  "erc1155",
-			Namespace:  "ns1",
-			Key:        "0x01",
-			Operator:   "0x02",
-			Approved:   true,
-			ProtocolID: "123",
+			LocalID:   fftypes.NewUUID(),
+			Pool:      fftypes.NewUUID(),
+			Connector: "erc1155",
+			Namespace: "ns1",
+			Key:       "0x01",
+			Operator:  "0x02",
+			Approved:  true,
+			Subject:   "123",
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeTokenApproval,
 				ID:   fftypes.NewUUID(),
