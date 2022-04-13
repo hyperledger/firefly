@@ -29,11 +29,11 @@ var adminGetOpByID = &oapispec.Route{
 	Path:   "operations/{opid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "opid", Description: coremsgs.APIMessageTBD},
+		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminGetOpByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -31,11 +31,11 @@ var getSubscriptions = &oapispec.Route{
 	Path:   "namespaces/{ns}/subscriptions",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.SubscriptionQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetSubscriptions,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -230,4 +230,5 @@ var (
 	MsgFieldDescriptionMissing      = ffe("FF10381", "Field description missing for '%s' on route '%s'")
 	MsgFFStructTagMissing           = ffe("FF10382", "ffstruct tag is missing for '%s' on route '%s'")
 	MsgContractListenerExists       = ffe("FF10383", "A contract listener already exists for this combination of topic + location + event", 409)
+	MsgRouteDescriptionMissing      = ffe("FF10384", "API route description missing for route '%s'")
 )

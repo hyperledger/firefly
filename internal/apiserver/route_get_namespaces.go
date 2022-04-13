@@ -32,7 +32,7 @@ var getNamespaces = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.NamespaceQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetNamespaces,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},

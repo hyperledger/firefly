@@ -31,13 +31,13 @@ var postTokenPool = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/pools",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPostTokenPool,
 	JSONInputValue:  func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

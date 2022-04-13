@@ -32,13 +32,13 @@ var getEvents = &oapispec.Route{
 	Path:   "namespaces/{ns}/events",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchreferences", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchreferences", Example: "true", Description: coremsgs.APIParamsFetchReferences, IsBool: true},
 	},
 	FilterFactory:   database.EventQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},

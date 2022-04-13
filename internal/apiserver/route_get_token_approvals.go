@@ -31,10 +31,10 @@ var getTokenApprovals = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/approvals",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
-	FilterFactory:   database.TokenApprovalQueryFacory,
-	Description:     coremsgs.APIMessageTBD,
+	FilterFactory:   database.TokenApprovalQueryFactory,
+	Description:     coremsgs.APIEndpointsGetTokenApprovals,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenApproval{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -32,7 +32,7 @@ var adminGetConfigRecords = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.ConfigRecordQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminGetConfigRecords,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.ConfigRecord{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -29,10 +29,10 @@ var getDIDDocByDID = &oapispec.Route{
 	Path:   "network/diddocs/{did:.+}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "did", Description: coremsgs.APIMessageTBD},
+		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetDIDDocByDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},

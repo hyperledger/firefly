@@ -31,7 +31,7 @@ var adminPostResetConfig = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminPostResetConfig,
 	JSONInputValue:  func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent},

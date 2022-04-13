@@ -31,11 +31,11 @@ var getTokenPools = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/pools",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TokenPoolQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetTokenPools,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},

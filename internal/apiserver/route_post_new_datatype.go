@@ -31,13 +31,13 @@ var postNewDatatype = &oapispec.Route{
 	Path:   "namespaces/{ns}/datatypes",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPostNewDatatype,
 	JSONInputValue:  func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

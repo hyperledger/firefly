@@ -32,13 +32,13 @@ var getIdentities = &oapispec.Route{
 	Path:   "namespaces/{ns}/identities",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
 	FilterFactory:   database.IdentityQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetIdentities,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*fftypes.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

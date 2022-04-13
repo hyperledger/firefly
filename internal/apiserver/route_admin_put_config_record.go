@@ -29,11 +29,11 @@ var adminPutConfigRecord = &oapispec.Route{
 	Path:   "config/records/{key}",
 	Method: http.MethodPut,
 	PathParams: []*oapispec.PathParam{
-		{Name: "key", Example: "database", Description: coremsgs.APIMessageTBD},
+		{Name: "key", Example: "database", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminPutConfigRecord,
 	JSONInputValue:  func() interface{} { return fftypes.JSONAnyPtr("{}") },
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusOK},

@@ -31,11 +31,11 @@ var getContractListeners = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/listeners",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.ContractListenerQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetContractListeners,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},

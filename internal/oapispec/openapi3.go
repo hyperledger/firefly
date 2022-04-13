@@ -273,8 +273,12 @@ func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, exampl
 
 func addRoute(ctx context.Context, doc *openapi3.T, route *Route, conf *SwaggerGenConfig) {
 	pi := getPathItem(doc, route.Path)
+	routeDescription := i18n.Expand(ctx, route.Description)
+	if routeDescription == "" && conf.PanicOnMissingDescription {
+		log.Panicf(i18n.NewError(ctx, coremsgs.MsgRouteDescriptionMissing, route.Name).Error())
+	}
 	op := &openapi3.Operation{
-		Description: i18n.Expand(ctx, route.Description),
+		Description: routeDescription,
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
 		Deprecated:  route.Deprecated,
