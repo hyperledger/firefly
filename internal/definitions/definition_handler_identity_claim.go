@@ -210,6 +210,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 			})
 	}
 
+	state.DIDClaimConfirmed(identity.DID)
 	state.AddFinalize(func(ctx context.Context) error {
 		event := fftypes.NewEvent(fftypes.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, fftypes.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)

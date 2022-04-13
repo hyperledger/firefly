@@ -37,6 +37,7 @@ func TestRewinderE2E(t *testing.T) {
 	batchID2 := fftypes.NewUUID()
 	batchID3 := fftypes.NewUUID()
 	batchID4 := fftypes.NewUUID()
+	batchID5 := fftypes.NewUUID()
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -48,14 +49,19 @@ func TestRewinderE2E(t *testing.T) {
 		Return([]*fftypes.UUID{batchID2}, nil)
 	mdm.On("PeekMessageCache", mock.Anything, mock.Anything, data.CRORequireBatchID).Return(nil, nil)
 	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
-		Return([]*fftypes.UUID{batchID3}, nil)
+		Return([]*fftypes.UUID{batchID3}, nil).Once()
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).
+		Return([]*fftypes.IDAndSequence{{ID: *fftypes.NewUUID()}}, nil).Once()
+	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
+		Return([]*fftypes.UUID{batchID4}, nil).Once()
 
 	ag.rewinder.start()
 
 	ag.queueBatchRewind(batchID1)
 	ag.queueBlobRewind(fftypes.NewRandB32())
 	ag.queueMessageRewind(fftypes.NewUUID())
-	ag.queueBatchRewind(batchID4)
+	ag.queueDIDRewind("did:firefly:org/bob")
+	ag.queueBatchRewind(batchID5)
 
 	allReceived := make(map[fftypes.UUID]bool)
 	for len(allReceived) < 4 {
@@ -69,6 +75,7 @@ func TestRewinderE2E(t *testing.T) {
 	assert.True(t, allReceived[*batchID2])
 	assert.True(t, allReceived[*batchID3])
 	assert.True(t, allReceived[*batchID4])
+	assert.True(t, allReceived[*batchID5])
 
 	cancel()
 	<-ag.rewinder.loop1Done
@@ -78,7 +85,7 @@ func TestRewinderE2E(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestPrcessStagedRewindsErrorMessages(t *testing.T) {
+func TestProcessStagedRewindsErrorMessages(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	cancel()
@@ -100,7 +107,7 @@ func TestPrcessStagedRewindsErrorMessages(t *testing.T) {
 
 }
 
-func TestPrcessStagedRewindsMessagesCached(t *testing.T) {
+func TestProcessStagedRewindsMessagesCached(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	cancel()
@@ -123,7 +130,7 @@ func TestPrcessStagedRewindsMessagesCached(t *testing.T) {
 
 }
 
-func TestPrcessStagedRewindsErrorBlobBatchIDs(t *testing.T) {
+func TestProcessStagedRewindsErrorBlobBatchIDs(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	cancel()
@@ -147,7 +154,7 @@ func TestPrcessStagedRewindsErrorBlobBatchIDs(t *testing.T) {
 
 }
 
-func TestPrcessStagedRewindsErrorBlobDataRefs(t *testing.T) {
+func TestProcessStagedRewindsErrorBlobDataRefs(t *testing.T) {
 
 	ag, cancel := newTestAggregator()
 	cancel()
@@ -160,6 +167,46 @@ func TestPrcessStagedRewindsErrorBlobDataRefs(t *testing.T) {
 
 	ag.rewinder.stagedRewinds = []*rewind{
 		{rewindType: rewindBlob},
+	}
+	ag.rewinder.processStagedRewinds()
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestProcessStagedRewindsErrorDIDs(t *testing.T) {
+
+	ag, cancel := newTestAggregator()
+	cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).
+		Return(nil, fmt.Errorf("pop"))
+
+	ag.rewinder.stagedRewinds = []*rewind{
+		{rewindType: rewindDIDConfirmed},
+	}
+	ag.rewinder.processStagedRewinds()
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestProcessStagedRewindsNoDIDs(t *testing.T) {
+
+	ag, cancel := newTestAggregator()
+	cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).
+		Return([]*fftypes.IDAndSequence{}, nil)
+
+	ag.rewinder.stagedRewinds = []*rewind{
+		{rewindType: rewindDIDConfirmed},
 	}
 	ag.rewinder.processStagedRewinds()
 

@@ -135,6 +135,14 @@ func (ag *aggregator) queueBlobRewind(hash *fftypes.Bytes32) {
 	}
 }
 
+func (ag *aggregator) queueDIDRewind(did string) {
+	log.L(ag.ctx).Debugf("Queuing rewind for author DID %s", did)
+	ag.rewinder.rewindRequests <- rewind{
+		rewindType: rewindDIDConfirmed,
+		did:        did,
+	}
+}
+
 func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 
 	batchIDs := ag.rewinder.popRewinds()
@@ -558,6 +566,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 			if err = ag.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
+		}
+		for _, did := range state.confirmedDIDClaims {
+			ag.queueDIDRewind(did)
 		}
 		return nil
 	})

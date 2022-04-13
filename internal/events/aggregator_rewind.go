@@ -37,12 +37,14 @@ const (
 	rewindBatch rewindType = iota
 	rewindMessage
 	rewindBlob
+	rewindDIDConfirmed
 )
 
 type rewind struct {
 	rewindType rewindType
 	uuid       fftypes.UUID
 	hash       fftypes.Bytes32
+	did        string
 }
 
 type rewinder struct {
@@ -152,6 +154,7 @@ func (rw *rewinder) processStagedRewinds() bool {
 	batchIDs := make(map[fftypes.UUID]bool)
 	var msgRewinds []*fftypes.UUID
 	var newBlobHashes []driver.Value
+	var identityRewinds []driver.Value
 
 	// Pop the current batch of rewinds out of the staging area
 	rw.mux.Lock()
@@ -163,6 +166,8 @@ func (rw *rewinder) processStagedRewinds() bool {
 			newBlobHashes = append(newBlobHashes, &rewind.hash)
 		case rewindMessage:
 			msgRewinds = append(msgRewinds, &rewind.uuid)
+		case rewindDIDConfirmed:
+			identityRewinds = append(identityRewinds, rewind.did)
 		}
 	}
 	rw.stagedRewinds = rw.stagedRewinds[:0] // truncate
@@ -178,6 +183,11 @@ func (rw *rewinder) processStagedRewinds() bool {
 			}
 			if len(newBlobHashes) > 0 {
 				if err := rw.getRewindsForBlobs(ctx, newBlobHashes, batchIDs); err != nil {
+					return err
+				}
+			}
+			if len(identityRewinds) > 0 {
+				if err := rw.getRewindsForDIDs(ctx, identityRewinds, batchIDs); err != nil {
 					return err
 				}
 			}
@@ -282,4 +292,28 @@ func (rw *rewinder) getRewindsForBlobs(ctx context.Context, newHashes []driver.V
 	}
 
 	return nil
+}
+
+func (rw *rewinder) getRewindsForDIDs(ctx context.Context, dids []driver.Value, batchIDs map[fftypes.UUID]bool) error {
+
+	// We need to find all pending messages, that are authored by this DID
+	fb := database.MessageQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("state", fftypes.MessageStatePending),
+		fb.In("author", dids),
+	)
+	records, err := rw.database.GetMessageIDs(ctx, filter)
+	if err != nil {
+		return err
+	}
+	if len(records) == 0 {
+		return nil
+	}
+	msgIDs := make([]*fftypes.UUID, len(records))
+	for i, record := range records {
+		msgIDs[i] = &record.ID
+	}
+
+	// We can treat the message level rewinds just like any other message rewind
+	return rw.getRewindsForMessages(ctx, msgIDs, batchIDs)
 }

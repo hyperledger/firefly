@@ -177,13 +177,14 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
+	assert.Equal(t, bs.confirmedDIDClaims, []string{custom1.DID})
 
 	err = bs.finalizers[0](ctx)
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 

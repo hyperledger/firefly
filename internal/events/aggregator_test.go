@@ -451,6 +451,9 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Update the message
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
+	// simulate definition handler adding a DID rewind
+	bs.DIDClaimConfirmed("did:firefly:org/test")
+
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
 			Sequence:   10001,
@@ -1774,7 +1777,7 @@ func TestDefinitionBroadcastRejectBadSigner(t *testing.T) {
 
 }
 
-func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) {
+func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
@@ -1787,9 +1790,10 @@ func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
+	assert.Empty(t, newState)
 
 	mim.AssertExpectations(t)
 	msh.AssertExpectations(t)
