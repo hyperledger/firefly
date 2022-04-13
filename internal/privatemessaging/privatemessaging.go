@@ -22,20 +22,22 @@ import (
 
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/karlseguin/ccache"
 )
 
@@ -71,7 +73,6 @@ type privateMessaging struct {
 	retry                 retry.Retry
 	localNodeName         string
 	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
-	opCorrelationRetries  int
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
@@ -86,7 +87,7 @@ type blobTransferTracker struct {
 
 func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 
 	pm := &privateMessaging{
@@ -99,19 +100,18 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		data:          dm,
 		syncasync:     sa,
 		batchpin:      bp,
-		localNodeName: config.GetString(config.NodeName),
+		localNodeName: config.GetString(coreconfig.NodeName),
 		groupManager: groupManager{
 			database:      di,
 			data:          dm,
-			groupCacheTTL: config.GetDuration(config.GroupCacheTTL),
+			groupCacheTTL: config.GetDuration(coreconfig.GroupCacheTTL),
 		},
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.PrivateMessagingRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.PrivateMessagingRetryMaxDelay),
-			Factor:       config.GetFloat64(config.PrivateMessagingRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.PrivateMessagingRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.PrivateMessagingRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.PrivateMessagingRetryFactor),
 		},
-		opCorrelationRetries:  config.GetInt(config.PrivateMessagingOpCorrelationRetries),
-		maxBatchPayloadLength: config.GetByteSize(config.PrivateMessagingBatchPayloadLimit),
+		maxBatchPayloadLength: config.GetByteSize(coreconfig.PrivateMessagingBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,
 		orgFirstNodes:         make(map[fftypes.UUID]*fftypes.Identity),
@@ -119,15 +119,15 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 	pm.groupManager.groupCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.GroupCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.GroupCacheSize)),
 	)
 
 	bo := batch.DispatcherOptions{
 		BatchType:      fftypes.BatchTypePrivate,
-		BatchMaxSize:   config.GetUint(config.PrivateMessagingBatchSize),
+		BatchMaxSize:   config.GetUint(coreconfig.PrivateMessagingBatchSize),
 		BatchMaxBytes:  pm.maxBatchPayloadLength,
-		BatchTimeout:   config.GetDuration(config.PrivateMessagingBatchTimeout),
-		DisposeTimeout: config.GetDuration(config.PrivateMessagingBatchAgentTimeout),
+		BatchTimeout:   config.GetDuration(coreconfig.PrivateMessagingBatchTimeout),
+		DisposeTimeout: config.GetDuration(coreconfig.PrivateMessagingBatchAgentTimeout),
 	}
 
 	ba.RegisterDispatcher(pinnedPrivateDispatcherName,
@@ -206,7 +206,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data fftyp
 		for _, d := range data {
 			if d.Blob != nil {
 				if d.Blob.Hash == nil {
-					return i18n.NewError(ctx, i18n.MsgDataMissingBlobHash, d.ID)
+					return i18n.NewError(ctx, coremsgs.MsgDataMissingBlobHash, d.ID)
 				}
 
 				blob, err := pm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)
@@ -214,7 +214,7 @@ func (pm *privateMessaging) prepareBlobTransfers(ctx context.Context, data fftyp
 					return err
 				}
 				if blob == nil {
-					return i18n.NewError(ctx, i18n.MsgBlobNotFound, d.Blob)
+					return i18n.NewError(ctx, coremsgs.MsgBlobNotFound, d.Blob)
 				}
 
 				op := fftypes.NewOperation(

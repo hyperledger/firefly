@@ -41,8 +41,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	defer suite.testState.done()
 
 	ctx := context.Background()
-	received1, _ := wsReader(suite.testState.ws1, false)
-	received2, _ := wsReader(suite.testState.ws2, false)
+	received1 := wsReader(suite.testState.ws1, false)
+	received2 := wsReader(suite.testState.ws2, false)
 
 	totalIdentities := 3
 	ts := time.Now().Unix()
@@ -93,8 +93,8 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1, false)
-	received2, _ := wsReader(suite.testState.ws2, false)
+	received1 := wsReader(suite.testState.ws1, false)
+	received2 := wsReader(suite.testState.ws2, false)
 
 	org1key := getUnregisteredAccount(suite, suite.testState.org1.Name)
 	org2key := getUnregisteredAccount(suite, suite.testState.org2.Name)

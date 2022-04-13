@@ -22,32 +22,33 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mdi := &databasemocks.Plugin{}
-	mei := &eventsmocks.PluginAll{}
-	mei.On("Capabilities").Return(&events.Capabilities{ChangeEvents: true}).Maybe()
+	mei := &eventsmocks.Plugin{}
+	mei.On("Capabilities").Return(&events.Capabilities{}).Maybe()
 	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	ctx, cancel := context.WithCancel(context.Background())
-	return newEventDispatcher(ctx, mei, mdi, mdm, msh, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), newChangeEventListener(ctx), txHelper), func() {
+	return newEventDispatcher(ctx, mei, mdi, mdm, msh, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
 		cancel()
-		config.Reset()
+		coreconfig.Reset()
 	}
 }
 
@@ -84,7 +85,7 @@ func TestEventDispatcherStartStop(t *testing.T) {
 }
 
 func TestMaxReadAhead(t *testing.T) {
-	config.Set(config.SubscriptionDefaultsReadAhead, 65537)
+	config.Set(coreconfig.SubscriptionDefaultsReadAhead, 65537)
 	ed, cancel := newTestEventDispatcher(&subscription{
 		dispatcherElection: make(chan bool, 1),
 		definition: &fftypes.Subscription{
@@ -159,7 +160,7 @@ func TestEventDispatcherReadAheadOutOfOrderAcks(t *testing.T) {
 	go ed.deliverEvents()
 	ed.eventPoller.offsetCommitted = make(chan int64, 3)
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdm := ed.data.(*datamocks.Manager)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
@@ -255,7 +256,7 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 	mdm := ed.data.(*datamocks.Manager)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -327,72 +328,6 @@ func TestEventDispatcherNoReadAheadInOrder(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mei.AssertExpectations(t)
 	mdm.AssertExpectations(t)
-}
-
-func TestEventDispatcherChangeEvents(t *testing.T) {
-	log.SetLevel("debug")
-	sub := &subscription{
-		dispatcherElection: make(chan bool, 1),
-		definition: &fftypes.Subscription{
-			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
-			Ephemeral:       true,
-			Options: fftypes.SubscriptionOptions{
-				ChangeEvents: true,
-			},
-		},
-	}
-
-	ed, cancel := newTestEventDispatcher(sub)
-	defer cancel()
-	go ed.deliverEvents()
-
-	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
-
-	changeEvents := make(chan *fftypes.ChangeEvent)
-	deliveryRequestMock := mei.On("ChangeEvent", mock.Anything, mock.Anything).Return()
-	deliveryRequestMock.RunFn = func(a mock.Arguments) {
-		changeEvents <- a.Get(1).(*fftypes.ChangeEvent)
-	}
-
-	go func() {
-		ed.dispatchChangeEvent(&fftypes.ChangeEvent{
-			Collection: "widgets",
-		})
-	}()
-
-	ce := <-changeEvents
-	assert.Equal(t, "widgets", ce.Collection)
-
-	mdi.AssertExpectations(t)
-	mei.AssertExpectations(t)
-}
-
-func TestEventDispatcherChangeEventsNotSupported(t *testing.T) {
-	log.SetLevel("debug")
-	sub := &subscription{
-		dispatcherElection: make(chan bool, 1),
-		definition: &fftypes.Subscription{
-			SubscriptionRef: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
-			Ephemeral:       true,
-			Options: fftypes.SubscriptionOptions{
-				ChangeEvents: true,
-			},
-		},
-	}
-
-	ed, cancel := newTestEventDispatcher(sub)
-	defer cancel()
-
-	mei := &eventsmocks.Plugin{}
-	mei.On("Name").Return("ut")
-	mei.On("Capabilities").Return(&events.Capabilities{})
-	ed.transport = mei
-	go ed.deliverEvents()
-
-	ed.dispatchChangeEvent(&fftypes.ChangeEvent{
-		Collection: "widgets",
-	})
 }
 
 func TestEnrichEventsFailGetMessages(t *testing.T) {
@@ -652,7 +587,7 @@ func TestEnrichTransactionEvents(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -741,7 +676,7 @@ func TestEnrichBlockchainEventEvents(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 
 	eventDeliveries := make(chan *fftypes.EventDelivery)
 	deliveryRequestMock := mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -864,7 +799,7 @@ func TestBufferedDeliveryClosedContext(t *testing.T) {
 	cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mei.On("DeliveryRequest", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -884,7 +819,7 @@ func TestBufferedDeliveryNackRewind(t *testing.T) {
 	go ed.deliverEvents()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -929,7 +864,7 @@ func TestBufferedDeliveryFailNack(t *testing.T) {
 	ed.readAhead = 50
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mei := ed.transport.(*eventsmocks.PluginAll)
+	mei := ed.transport.(*eventsmocks.Plugin)
 	mdi.On("GetDataRefs", mock.Anything, mock.Anything).Return(nil, nil, nil)
 	mdi.On("UpdateOffset", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1128,23 +1063,4 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	})
 
 	msh.AssertExpectations(t)
-}
-
-func TestDispatchChangeEventBlockedClose(t *testing.T) {
-	yes := true
-	sub := &subscription{
-		definition: &fftypes.Subscription{
-			Options: fftypes.SubscriptionOptions{
-				SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
-					WithData: &yes,
-				},
-			},
-		},
-	}
-
-	ed, cancel := newTestEventDispatcher(sub)
-	cancel()
-	close(ed.eventPoller.closed)
-
-	ed.dispatchChangeEvent(&fftypes.ChangeEvent{})
 }

@@ -102,7 +102,7 @@ func TestBuildMessageBadInFilterField(t *testing.T) {
 	_, err := fb.And(
 		fb.In("!wrong", []driver.Value{"a", "b", "c"}),
 	).Finalize()
-	assert.Regexp(t, "FF10148", err)
+	assert.Regexp(t, "FF00142", err)
 }
 
 func TestBuildMessageBadInFilterValue(t *testing.T) {
@@ -110,7 +110,7 @@ func TestBuildMessageBadInFilterValue(t *testing.T) {
 	_, err := fb.And(
 		fb.In("sequence", []driver.Value{"!integer"}),
 	).Finalize()
-	assert.Regexp(t, "FF10149", err)
+	assert.Regexp(t, "FF00143", err)
 }
 
 func TestBuildMessageUUIDConvert(t *testing.T) {
@@ -244,31 +244,31 @@ func TestBuildFFStringArrayConvert(t *testing.T) {
 func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*namespace", err)
+	assert.Regexp(t, "FF00143.*namespace", err)
 }
 
 func TestBuildMessageFailBoolConvert(t *testing.T) {
 	fb := PinQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("masked", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*masked", err)
+	assert.Regexp(t, "FF00143.*masked", err)
 }
 
 func TestBuildMessageFailBypes32Convert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("group", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*group", err)
+	assert.Regexp(t, "FF00143.*group", err)
 }
 
 func TestBuildMessageFailInt64Convert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("sequence", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*sequence", err)
+	assert.Regexp(t, "FF00143.*sequence", err)
 }
 
 func TestBuildMessageFailTimeConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("created", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*created", err)
+	assert.Regexp(t, "FF00143.*created", err)
 }
 
 func TestQueryFactoryBadField(t *testing.T) {
@@ -276,7 +276,7 @@ func TestQueryFactoryBadField(t *testing.T) {
 	_, err := fb.And(
 		fb.Eq("wrong", "ns1"),
 	).Finalize()
-	assert.Regexp(t, "FF10148.*wrong", err)
+	assert.Regexp(t, "FF00142.*wrong", err)
 }
 
 func TestQueryFactoryBadValue(t *testing.T) {
@@ -284,7 +284,7 @@ func TestQueryFactoryBadValue(t *testing.T) {
 	_, err := fb.And(
 		fb.Eq("sequence", "not an int"),
 	).Finalize()
-	assert.Regexp(t, "FF10149.*sequence", err)
+	assert.Regexp(t, "FF00143.*sequence", err)
 }
 
 func TestQueryFactoryBadNestedValue(t *testing.T) {
@@ -294,7 +294,7 @@ func TestQueryFactoryBadNestedValue(t *testing.T) {
 			fb.Eq("sequence", "not an int"),
 		),
 	).Finalize()
-	assert.Regexp(t, "FF10149.*sequence", err)
+	assert.Regexp(t, "FF00143.*sequence", err)
 }
 
 func TestQueryFactoryStringMatchNonString(t *testing.T) {
@@ -302,7 +302,7 @@ func TestQueryFactoryStringMatchNonString(t *testing.T) {
 	_, err := fb.And(
 		fb.Contains("sequence", "stuff"),
 	).Finalize()
-	assert.Regexp(t, "FF10325", err)
+	assert.Regexp(t, "FF00145", err)
 }
 
 func TestQueryFactoryNullGreaterThan(t *testing.T) {
@@ -310,7 +310,7 @@ func TestQueryFactoryNullGreaterThan(t *testing.T) {
 	_, err := fb.And(
 		fb.Gt("created", nil),
 	).Finalize()
-	assert.Regexp(t, "FF10326", err)
+	assert.Regexp(t, "FF00144", err)
 }
 
 func TestQueryFactoryGetFields(t *testing.T) {
@@ -326,7 +326,7 @@ func TestQueryFactoryGetBuilder(t *testing.T) {
 func TestBuildMessageFailJSONConvert(t *testing.T) {
 	fb := OperationQueryFactory.NewFilter(context.Background())
 	_, err := fb.Lt("output", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF10149.*output", err)
+	assert.Regexp(t, "FF00143.*output", err)
 }
 
 func TestStringsForTypes(t *testing.T) {

@@ -181,7 +181,7 @@ func TestGetOperationsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetOperations(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGettOperationsReadMessageFail(t *testing.T) {
@@ -206,7 +206,7 @@ func TestOperationUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.OperationQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateOperation(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestOperationUpdateFail(t *testing.T) {

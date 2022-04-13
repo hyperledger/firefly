@@ -21,7 +21,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -50,7 +50,7 @@ type FFI struct {
 
 type FFIMethod struct {
 	ID          *UUID     `ffstruct:"FFIMethod" json:"id,omitempty"`
-	Contract    *UUID     `ffstruct:"FFIMethod" json:"contract,omitempty"`
+	Interface   *UUID     `ffstruct:"FFIMethod" json:"interface,omitempty"`
 	Name        string    `ffstruct:"FFIMethod" json:"name"`
 	Namespace   string    `ffstruct:"FFIMethod" json:"namespace,omitempty"`
 	Pathname    string    `ffstruct:"FFIMethod" json:"pathname"`
@@ -67,7 +67,7 @@ type FFIEventDefinition struct {
 
 type FFIEvent struct {
 	ID        *UUID  `ffstruct:"FFIEvent" json:"id,omitempty"`
-	Contract  *UUID  `ffstruct:"FFIEvent" json:"contract,omitempty"`
+	Interface *UUID  `ffstruct:"FFIEvent" json:"interface,omitempty"`
 	Namespace string `ffstruct:"FFIEvent" json:"namespace,omitempty"`
 	Pathname  string `ffstruct:"FFIEvent" json:"pathname,omitempty"`
 	FFIEventDefinition
@@ -120,7 +120,7 @@ func (m *FFIParams) Scan(src interface{}) error {
 	case []byte:
 		return json.Unmarshal(src, &m)
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, m)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, m)
 	}
 }
 

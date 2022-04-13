@@ -38,7 +38,7 @@ func TestBroadcastNamespaceBadName(t *testing.T) {
 	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name: "!ns",
 	}, false)
-	assert.Regexp(t, "FF10131.*name", err)
+	assert.Regexp(t, "FF00140.*name", err)
 }
 
 func TestBroadcastNamespaceDescriptionTooLong(t *testing.T) {
@@ -56,7 +56,7 @@ func TestBroadcastNamespaceDescriptionTooLong(t *testing.T) {
 		Name:        "ns1",
 		Description: buff.String(),
 	}, false)
-	assert.Regexp(t, "FF10188.*description", err)
+	assert.Regexp(t, "FF00135.*description", err)
 }
 
 func TestBroadcastNamespaceBroadcastOk(t *testing.T) {

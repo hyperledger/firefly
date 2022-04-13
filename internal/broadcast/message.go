@@ -19,11 +19,12 @@ package broadcast
 import (
 	"context"
 
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
@@ -103,7 +104,7 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 		}
 		msgSizeEstimate := s.msg.Message.EstimateSize(true)
 		if msgSizeEstimate > s.mgr.maxBatchPayloadLength {
-			return i18n.NewError(ctx, i18n.MsgTooLargeBroadcast, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
+			return i18n.NewError(ctx, coremsgs.MsgTooLargeBroadcast, float64(msgSizeEstimate)/1024, float64(s.mgr.maxBatchPayloadLength)/1024)
 		}
 		s.resolved = true
 	}
@@ -116,7 +117,7 @@ func (s *broadcastSender) resolve(ctx context.Context) error {
 	// Resolve the sending identity
 	if msg.Header.Type != fftypes.MessageTypeDefinition || msg.Header.Tag != fftypes.SystemTagIdentityClaim {
 		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgAuthorInvalid)
+			return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 		}
 	}
 

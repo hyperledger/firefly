@@ -14,8 +14,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build swagger
-// +build swagger
+//go:build reference
+// +build reference
 
 package apiserver
 
@@ -30,12 +30,13 @@ import (
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDownloadSwaggerYAML(t *testing.T) {
-	config.Set(config.APIOASPanicOnMissingDescription, true)
+	config.Set(coreconfig.APIOASPanicOnMissingDescription, true)
 	as := &apiServer{}
 	handler := as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:5000")))
 	s := httptest.NewServer(http.HandlerFunc(handler))

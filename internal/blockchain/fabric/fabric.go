@@ -27,14 +27,15 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
-	"github.com/hyperledger/firefly/internal/restclient"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
@@ -163,25 +164,25 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 
-	if fabconnectConf.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "blockchain.fabconnect")
+	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabconnect")
 	}
 	f.defaultChannel = fabconnectConf.GetString(FabconnectConfigDefaultChannel)
 	f.chaincode = fabconnectConf.GetString(FabconnectConfigChaincode)
 	if f.chaincode == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "chaincode", "blockchain.fabconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabconnect")
 	}
 	// the org identity is guaranteed to be configured by the core
 	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
 	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
 	if f.topic == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "topic", "blockchain.fabconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.fabconnect")
 	}
 
 	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
 	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
 
-	f.client = restclient.New(f.ctx, fabconnectConf)
+	f.client = ffresty.New(f.ctx, fabconnectConf)
 	f.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -323,6 +324,8 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			Output:         *payload,
 			Info:           msgJSON,
 			Timestamp:      fftypes.UnixTime(timestamp),
+			Location:       f.buildEventLocationString(msgJSON),
+			Signature:      "BatchPin",
 		},
 	}
 
@@ -331,6 +334,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		Type:  fftypes.VerifierTypeMSPIdentity,
 		Value: signer,
 	})
+}
+
+func (f *Fabric) buildEventLocationString(msgJSON fftypes.JSONObject) string {
+	return fmt.Sprintf("chaincode=%s", msgJSON.GetString("chaincodeId"))
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -364,6 +371,8 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			Output:         *payload,
 			Info:           msgJSON,
 			Timestamp:      fftypes.UnixTime(timestamp),
+			Location:       f.buildEventLocationString(msgJSON),
+			Signature:      name,
 		},
 	}
 
@@ -484,7 +493,7 @@ func (f *Fabric) NormalizeSigningKey(ctx context.Context, signingKeyInput string
 			var idRes fabIdentity
 			res, err := f.client.R().SetContext(f.ctx).SetResult(&idRes).Get(fmt.Sprintf("/identities/%s", signingKeyInput))
 			if err != nil || !res.IsSuccess() {
-				return "", i18n.NewError(f.ctx, i18n.MsgFabconnectRESTErr, err)
+				return "", i18n.NewError(f.ctx, coremsgs.MsgFabconnectRESTErr, err)
 			}
 			f.idCache[signingKeyInput] = &idRes
 			existingID = &idRes
@@ -492,11 +501,11 @@ func (f *Fabric) NormalizeSigningKey(ctx context.Context, signingKeyInput string
 
 		ecertDN, err := getDNFromCertString(existingID.ECert)
 		if err != nil {
-			return "", i18n.NewError(f.ctx, i18n.MsgFailedToDecodeCertificate, err)
+			return "", i18n.NewError(f.ctx, coremsgs.MsgFailedToDecodeCertificate, err)
 		}
 		cacertDN, err := getDNFromCertString(existingID.CACert)
 		if err != nil {
-			return "", i18n.NewError(f.ctx, i18n.MsgFailedToDecodeCertificate, err)
+			return "", i18n.NewError(f.ctx, coremsgs.MsgFailedToDecodeCertificate, err)
 		}
 		resolvedSigningKey := fmt.Sprintf("%s::x509::%s::%s", existingID.MSPID, ecertDN, cacertDN)
 		log.L(f.ctx).Debugf("Resolved signing key: %s", resolvedSigningKey)
@@ -566,7 +575,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 
 	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }
@@ -600,7 +609,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
 
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	return nil
 }
@@ -646,7 +655,7 @@ func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, m
 		Post("/query")
 
 	if err != nil || !res.IsSuccess() {
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgFabconnectRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 	}
 	output := &fabQueryNamedOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -673,21 +682,28 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]string, e
 	return
 }
 
-func (f *Fabric) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
-	_, err = parseContractLocation(ctx, location)
-	return
+func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	normalized, err := json.Marshal(parsed)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
 	fabricLocation := Location{}
 	if err := json.Unmarshal(location.Bytes(), &fabricLocation); err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, err)
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, err)
 	}
 	if fabricLocation.Channel == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'channel' not set")
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
 	}
 	if fabricLocation.Chaincode == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgContractLocationInvalid, "'chaincode' not set")
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	return &fabricLocation, nil
 }
@@ -715,5 +731,9 @@ func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVali
 }
 
 func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
-	return nil, i18n.NewError(ctx, i18n.MsgFFIGenerationUnsupported)
+	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
+}
+
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+	return event.Name
 }

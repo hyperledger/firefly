@@ -19,9 +19,10 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []fftypes.ChartHistogramInterval) {
@@ -39,10 +40,10 @@ func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, nu
 
 func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
 	if buckets > fftypes.ChartHistogramMaxBuckets || buckets < fftypes.ChartHistogramMinBuckets {
-		return nil, i18n.NewError(ctx, i18n.MsgInvalidNumberOfIntervals, fftypes.ChartHistogramMinBuckets, fftypes.ChartHistogramMaxBuckets)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidNumberOfIntervals, fftypes.ChartHistogramMinBuckets, fftypes.ChartHistogramMaxBuckets)
 	}
 	if startTime > endTime {
-		return nil, i18n.NewError(ctx, i18n.MsgHistogramInvalidTimes)
+		return nil, i18n.NewError(ctx, coremsgs.MsgHistogramInvalidTimes)
 	}
 
 	intervals := or.getHistogramIntervals(startTime, endTime, buckets)

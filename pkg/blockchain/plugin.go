@@ -19,8 +19,8 @@ package blockchain
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
@@ -69,6 +69,12 @@ type Plugin interface {
 
 	// GenerateFFI returns an FFI from a blockchain specific interface format e.g. an Ethereum ABI
 	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
+
+	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
+	NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
+
+	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
+	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
 }
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

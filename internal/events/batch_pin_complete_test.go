@@ -488,7 +488,7 @@ func TestPersistBatchSwallowBadData(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestPersistBatchGoodDataUpsertOptimizFail(t *testing.T) {
+func TestPersistBatchGoodDataUpsertOptimizeFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
@@ -514,7 +514,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("InsertMessages", mock.Anything, mock.Anything).Return(fmt.Errorf("optimzation miss"))
+	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimzation miss"))
 	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
 
 	bp, valid, err := em.persistBatch(context.Background(), batch)

@@ -611,6 +611,7 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
+			Topic: "firefly-e2e",
 		},
 	}
 	var sub fftypes.ContractListener
@@ -624,17 +625,14 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 	return &sub
 }
 
-func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventName string, location *fftypes.JSONObject) *fftypes.ContractListener {
+func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventPath string, location *fftypes.JSONObject) *fftypes.ContractListener {
 	body := fftypes.ContractListenerInput{
 		ContractListener: fftypes.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
 			Interface: ffiReference,
-			Event: &fftypes.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
-					Name: eventName,
-				},
-			},
+			Topic:     "firefly-e2e",
 		},
+		EventPath: eventPath,
 	}
 	var sub fftypes.ContractListener
 	path := urlContractListeners
@@ -710,30 +708,6 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func QueryFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/query/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 

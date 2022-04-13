@@ -20,11 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -48,11 +48,14 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 }
 
 func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event, blockchainTXID string) error {
-	chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
-	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
-		return err
+	if ev.ProtocolID != "" || ev.BlockchainTXID != "" {
+		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
+		chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
+		if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+			return err
+		}
+		em.emitBlockchainEventMetric(ev)
 	}
-	em.emitBlockchainEventMetric(ev)
 	if op, err := em.findTXOperation(ctx, pool.TX.ID, fftypes.OpTypeTokenActivatePool); err != nil {
 		return err
 	} else if op == nil {

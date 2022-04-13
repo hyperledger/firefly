@@ -19,18 +19,19 @@ package database
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var (
 	// HashMismatch sentinel error
-	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
+	HashMismatch = i18n.NewError(context.Background(), coremsgs.MsgHashMismatch)
 	// IDMismatch sentinel error
-	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	IDMismatch = i18n.NewError(context.Background(), coremsgs.MsgIDMismatch)
 	// DeleteRecordNotFound sentinel error
-	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
+	DeleteRecordNotFound = i18n.NewError(context.Background(), coremsgs.Msg404NotFound)
 )
 
 type UpsertOptimization int
@@ -81,7 +82,7 @@ type iMessageCollection interface {
 	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
 
 	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
-	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
+	InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...PostCompletionHook) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -619,7 +620,7 @@ const (
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
 	CollectionContractAPIs      UUIDCollectionNS = "contractapis"
-	CollectionContractListeners UUIDCollectionNS = "contractsubscriptions"
+	CollectionContractListeners UUIDCollectionNS = "contractlisteners"
 	CollectionIdentities        UUIDCollectionNS = "identities"
 )
 
@@ -1016,6 +1017,9 @@ var ContractListenerQueryFactory = &queryFields{
 	"id":         &UUIDField{},
 	"interface":  &UUIDField{},
 	"namespace":  &StringField{},
+	"location":   &JSONField{},
+	"topic":      &StringField{},
+	"signature":  &StringField{},
 	"protocolid": &StringField{},
 	"created":    &TimeField{},
 }

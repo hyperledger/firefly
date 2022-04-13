@@ -19,11 +19,12 @@ package assets
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (am *assetManager) GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenApproval, *database.FilterResult, error) {
@@ -97,7 +98,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 			return err
 		}
 		if pool.State != fftypes.TokenPoolStateConfirmed {
-			return i18n.NewError(ctx, i18n.MsgTokenPoolNotConfirmed)
+			return i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 		}
 
 		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenApproval)

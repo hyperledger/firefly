@@ -122,7 +122,7 @@ type EthereumContractTestSuite struct {
 	suite.Suite
 	testState       *testState
 	contractAddress string
-	interfaceID     string
+	interfaceID     *fftypes.UUID
 	ethClient       *resty.Client
 	ethIdentity     string
 }
@@ -140,7 +140,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
 	res, err := CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
-	suite.interfaceID = res.(map[string]interface{})["id"].(string)
+	suite.interfaceID = fftypes.MustParseUUID(res.(map[string]interface{})["id"].(string))
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
 }
@@ -152,14 +152,13 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received1 := wsReader(suite.testState.ws1, true)
 
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
 	<-received1
-	<-changes1 // only expect database change events
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
@@ -192,13 +191,11 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received1 := wsReader(suite.testState.ws1, true)
 
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
-
-	<-changes1 // only expect database change events
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
@@ -249,17 +246,15 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received1 := wsReader(suite.testState.ws1, true)
 
 	ffiReference := &fftypes.FFIReference{
-		ID: fftypes.MustParseUUID(suite.interfaceID),
+		ID: suite.interfaceID,
 	}
 
 	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
-
-	<-changes1 // only expect database change events
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
@@ -274,11 +269,13 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		Input: map[string]interface{}{
 			"newValue": float64(42),
 		},
+		Interface:  suite.interfaceID,
+		MethodPath: "set",
 	}
 
 	<-received1
 
-	res, err := InvokeFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, "set", invokeContractRequest)
+	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
 	assert.NoError(suite.testState.t, err)
 	assert.NotNil(suite.testState.t, res)
 
@@ -297,10 +294,11 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	assert.NotNil(suite.T(), event)
 
 	queryContractRequest := &fftypes.ContractCallRequest{
-		Location: fftypes.JSONAnyPtrBytes(locationBytes),
-		Method:   simpleStorageFFIGet(),
+		Location:   fftypes.JSONAnyPtrBytes(locationBytes),
+		Interface:  suite.interfaceID,
+		MethodPath: "get",
 	}
-	res, err = QueryFFIMethod(suite.testState.t, suite.testState.client1, suite.interfaceID, "get", queryContractRequest)
+	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
 	assert.NoError(suite.testState.t, err)
 	resJSON, err := json.Marshal(res)
 	assert.NoError(suite.testState.t, err)

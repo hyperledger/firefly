@@ -20,8 +20,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type blockchainInvokeData struct {
@@ -55,7 +56,7 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 		return opBlockchainInvoke(op, req), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -66,7 +67,7 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 		return nil, false, cm.blockchain.InvokeContract(ctx, op.ID, req.Key, req.Location, req.Method, req.Input)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 

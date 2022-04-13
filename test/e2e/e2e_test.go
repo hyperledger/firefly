@@ -308,12 +308,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
+func wsReader(conn *websocket.Conn, dbChanges bool) chan *fftypes.EventDelivery {
 	events := make(chan *fftypes.EventDelivery, 100)
-	var changeEvents chan *fftypes.ChangeEvent
-	if dbChanges {
-		changeEvents = make(chan *fftypes.ChangeEvent, 100)
-	}
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
@@ -327,19 +323,6 @@ func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery
 				panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
 			}
 			switch wsa.Type {
-			case fftypes.WSClientActionChangeNotifcation:
-				var wscn fftypes.WSChangeNotification
-				err = json.Unmarshal(b, &wscn)
-				if err != nil {
-					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
-				}
-				if err == nil {
-					// Throw away DB changes if the caller doesn't want them
-					fmt.Printf("Websocket %s change event: %s/%s/%s\n", conn.RemoteAddr(), wscn.ChangeEvent.Namespace, wscn.ChangeEvent.Collection, wscn.ChangeEvent.Type)
-					if dbChanges {
-						changeEvents <- wscn.ChangeEvent
-					}
-				}
 			default:
 				var ed fftypes.EventDelivery
 				err = json.Unmarshal(b, &ed)
@@ -353,7 +336,7 @@ func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery
 			}
 		}
 	}()
-	return events, changeEvents
+	return events
 }
 
 func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {

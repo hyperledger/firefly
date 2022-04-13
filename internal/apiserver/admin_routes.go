@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,10 +19,13 @@ package apiserver
 import "github.com/hyperledger/firefly/internal/oapispec"
 
 var adminRoutes = []*oapispec.Route{
-	getConfig,
-	getConfigRecord,
-	getConfigRecords,
-	postResetConfig,
-	putConfigRecord,
-	deleteConfigRecord,
+	adminDeleteConfigRecord,
+	adminGetConfig,
+	adminGetConfigRecord,
+	adminGetConfigRecords,
+	adminGetOpByID,
+	adminGetOps,
+	adminPostResetConfig,
+	adminPatchOpByID,
+	adminPutConfigRecord,
 }

@@ -208,7 +208,7 @@ func TestGetContractListenersBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
 	_, _, err := s.GetContractListeners(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetContractListenersScanFail(t *testing.T) {
@@ -231,7 +231,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
-		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "topic1", nil, fftypes.Now()),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())

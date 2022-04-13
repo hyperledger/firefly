@@ -19,9 +19,10 @@ package iifactory
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity/tbd"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/identity"
 )
 
@@ -39,7 +40,7 @@ func InitPrefix(prefix config.Prefix) {
 func GetPlugin(ctx context.Context, pluginType string) (identity.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownIdentityPlugin, pluginType)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownIdentityPlugin, pluginType)
 	}
 	return plugin(), nil
 }

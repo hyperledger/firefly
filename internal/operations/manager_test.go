@@ -1,17 +1,18 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package operations
 
 import (
@@ -20,11 +21,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -52,8 +54,8 @@ func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOper
 }
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
-	config.Reset()
-	config.Set(config.OpUpdateWorkerCount, 1)
+	coreconfig.Reset()
+	config.Set(coreconfig.OpUpdateWorkerCount, 1)
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(&database.Capabilities{
 		Concurrency: true,
@@ -542,5 +544,45 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 	om.TransferResult(mdx, mde)
 
 	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveOperationByIDOk(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.Operation{
+		ID:     fftypes.NewUUID(),
+		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Status: fftypes.OpStatusSucceeded,
+		Error:  "my error",
+		Output: fftypes.JSONObject{
+			"my": "data",
+		},
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "my error", fftypes.JSONObject{
+		"my": "data",
+	}).Return(nil)
+
+	_, err := om.ResolveOperationByID(ctx, op.ID.String(), op)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResolveOperationBadID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.Operation{}
+
+	_, err := om.ResolveOperationByID(ctx, "badness", op)
+
+	assert.Regexp(t, "FF00138", err)
 
 }

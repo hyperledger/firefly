@@ -21,18 +21,19 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type ContractListener struct {
 	ID         *UUID                    `ffstruct:"ContractListener" json:"id,omitempty" ffexcludeinput:"true"`
-	Interface  *FFIReference            `ffstruct:"ContractListener" json:"interface,omitempty"`
+	Interface  *FFIReference            `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
 	Namespace  string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name       string                   `ffstruct:"ContractListener" json:"name,omitempty"`
 	ProtocolID string                   `ffstruct:"ContractListener" json:"protocolId,omitempty" ffexcludeinput:"true"`
 	Location   *JSONAny                 `ffstruct:"ContractListener" json:"location,omitempty"`
 	Created    *FFTime                  `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
-	Event      *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty"`
+	Event      *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	Signature  string                   `ffstruct:"ContractListener" json:"signature" ffexcludeinput:"true"`
 	Topic      string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
 	Options    *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
 }
@@ -43,7 +44,7 @@ type ContractListenerOptions struct {
 
 type ContractListenerInput struct {
 	ContractListener
-	EventID *UUID `ffstruct:"ContractListener" json:"eventId,omitempty"`
+	EventPath string `ffstruct:"ContractListener" json:"eventPath,omitempty"`
 }
 
 type FFISerializedEvent struct {
@@ -61,7 +62,7 @@ func (fse *FFISerializedEvent) Scan(src interface{}) error {
 	case []byte:
 		return json.Unmarshal(src, &fse)
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, fse)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, fse)
 	}
 }
 
@@ -81,7 +82,7 @@ func (o *ContractListenerOptions) Scan(src interface{}) error {
 	case []byte:
 		return json.Unmarshal(src, &o)
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, o)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, o)
 	}
 }
 

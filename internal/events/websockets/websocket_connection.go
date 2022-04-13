@@ -21,13 +21,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type websocketStartedSub struct {
@@ -37,23 +37,24 @@ type websocketStartedSub struct {
 }
 
 type websocketConnection struct {
-	ctx                context.Context
-	ws                 *WebSockets
-	wsConn             *websocket.Conn
-	cancelCtx          func()
-	connID             string
-	sendMessages       chan interface{}
-	senderDone         chan struct{}
-	receiverDone       chan struct{}
-	autoAck            bool
-	started            []*websocketStartedSub
-	inflight           []*fftypes.EventDeliveryResponse
-	mux                sync.Mutex
-	closed             bool
-	changeEventMatcher *regexp.Regexp
+	ctx          context.Context
+	ws           *WebSockets
+	wsConn       *websocket.Conn
+	cancelCtx    func()
+	connID       string
+	sendMessages chan interface{}
+	senderDone   chan struct{}
+	receiverDone chan struct{}
+	autoAck      bool
+	started      []*websocketStartedSub
+	inflight     []*fftypes.EventDeliveryResponse
+	mux          sync.Mutex
+	closed       bool
+	remoteAddr   string
+	userAgent    string
 }
 
-func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn) *websocketConnection {
+func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn, req *http.Request) *websocketConnection {
 	connID := fftypes.NewUUID().String()
 	ctx := log.WithLogField(pCtx, "websocket", connID)
 	ctx, cancelCtx := context.WithCancel(ctx)
@@ -66,6 +67,8 @@ func newConnection(pCtx context.Context, ws *WebSockets, wsConn *websocket.Conn)
 		sendMessages: make(chan interface{}),
 		senderDone:   make(chan struct{}),
 		receiverDone: make(chan struct{}),
+		remoteAddr:   req.RemoteAddr,
+		userAgent:    req.UserAgent(),
 	}
 	go wc.sendLoop()
 	go wc.receiveLoop()
@@ -83,12 +86,11 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	if hasEphemeral || hasName {
 		filter := fftypes.NewSubscriptionFilterFromQuery(query)
 		err := wc.handleStart(&fftypes.WSClientActionStartPayload{
-			AutoAck:      &isAutoack,
-			Ephemeral:    isEphemeral,
-			Namespace:    query.Get("namespace"),
-			Name:         query.Get("name"),
-			Filter:       filter,
-			ChangeEvents: query.Get("changeevents"),
+			AutoAck:   &isAutoack,
+			Ephemeral: isEphemeral,
+			Namespace: query.Get("namespace"),
+			Name:      query.Get("name"),
+			Filter:    filter,
 		})
 		if err != nil {
 			wc.protocolError(err)
@@ -136,7 +138,7 @@ func (wc *websocketConnection) receiveLoop() {
 				err = json.Unmarshal(msgData, &msgHeader)
 				if err != nil {
 					// We can notify the client on this one, before we bail
-					wc.protocolError(i18n.WrapError(wc.ctx, err, i18n.MsgWSClientSentInvalidData))
+					wc.protocolError(i18n.WrapError(wc.ctx, err, coremsgs.MsgWSClientSentInvalidData))
 				}
 			}
 		}
@@ -159,27 +161,14 @@ func (wc *websocketConnection) receiveLoop() {
 				err = wc.handleAck(&msg)
 			}
 		default:
-			err = i18n.NewError(wc.ctx, i18n.MsgWSClientUnknownAction, msgHeader.Type)
+			err = i18n.NewError(wc.ctx, coremsgs.MsgWSClientUnknownAction, msgHeader.Type)
 		}
 		if err != nil {
-			wc.protocolError(i18n.WrapError(wc.ctx, err, i18n.MsgWSClientSentInvalidData))
+			wc.protocolError(i18n.WrapError(wc.ctx, err, coremsgs.MsgWSClientSentInvalidData))
 			l.Errorf("Invalid request sent on socket: %s", err)
 			return
 		}
 	}
-}
-
-func (wc *websocketConnection) dispatchChangeEvent(ce *fftypes.ChangeEvent) error {
-	if wc.changeEventMatcher == nil || !wc.changeEventMatcher.MatchString(ce.Collection) {
-		return nil
-	}
-	// Change events do *NOT* require an ack
-	return wc.send(&fftypes.WSChangeNotification{
-		WSClientActionBase: fftypes.WSClientActionBase{
-			Type: fftypes.WSClientActionChangeNotifcation,
-		},
-		ChangeEvent: ce,
-	})
 }
 
 func (wc *websocketConnection) dispatch(event *fftypes.EventDelivery) error {
@@ -221,7 +210,7 @@ func (wc *websocketConnection) protocolError(err error) {
 
 func (wc *websocketConnection) send(msg interface{}) error {
 	if wc.closed {
-		return i18n.NewError(wc.ctx, i18n.MsgWSClosed)
+		return i18n.NewError(wc.ctx, coremsgs.MsgWSClosed)
 	}
 	select {
 	case wc.sendMessages <- msg:
@@ -235,33 +224,18 @@ func (wc *websocketConnection) handleStart(start *fftypes.WSClientActionStartPay
 	wc.mux.Lock()
 	if start.AutoAck != nil {
 		if *start.AutoAck != wc.autoAck && len(wc.started) > 0 {
-			return i18n.NewError(wc.ctx, i18n.MsgWSAutoAckChanged)
+			wc.mux.Unlock()
+			return i18n.NewError(wc.ctx, coremsgs.MsgWSAutoAckChanged)
 		}
 		wc.autoAck = *start.AutoAck
 	}
-	wc.mux.Unlock()
-
-	if start.ChangeEvents != "" {
-		wc.changeEventMatcher, err = regexp.Compile(start.ChangeEvents)
-		if err != nil {
-			log.L(wc.ctx).Errorf("Unable to compile change events regular expression '%s': %s", start.ChangeEvents, err)
-		} else {
-			start.Options.ChangeEvents = true
-		}
-	}
-
-	wc.mux.Lock()
 	wc.started = append(wc.started, &websocketStartedSub{
 		ephemeral: start.Ephemeral,
 		namespace: start.Namespace,
 		name:      start.Name,
 	})
 	wc.mux.Unlock()
-	err = wc.ws.start(wc, start)
-	if err != nil {
-		return err
-	}
-	return nil
+	return wc.ws.start(wc, start)
 }
 
 func (wc *websocketConnection) durableSubMatcher(sr fftypes.SubscriptionRef) bool {
@@ -282,7 +256,7 @@ func (wc *websocketConnection) checkAck(ack *fftypes.WSClientActionAckPayload) (
 	defer wc.mux.Unlock()
 
 	if wc.autoAck {
-		return nil, i18n.NewError(wc.ctx, i18n.MsgWSAutoAckEnabled)
+		return nil, i18n.NewError(wc.ctx, coremsgs.MsgWSAutoAckEnabled)
 	}
 
 	if ack.ID != nil {
@@ -300,7 +274,7 @@ func (wc *websocketConnection) checkAck(ack *fftypes.WSClientActionAckPayload) (
 					// If there's more than one started subscription, that's a problem
 					if len(wc.started) != 1 {
 						l.Errorf("No subscription specified on ack, and there is not exactly one started subscription")
-						return nil, i18n.NewError(wc.ctx, i18n.MsgWSMsgSubNotMatched)
+						return nil, i18n.NewError(wc.ctx, coremsgs.MsgWSMsgSubNotMatched)
 					}
 					match = true
 				}
@@ -323,7 +297,7 @@ func (wc *websocketConnection) checkAck(ack *fftypes.WSClientActionAckPayload) (
 		}
 	}
 	if inflight == nil {
-		return nil, i18n.NewError(wc.ctx, i18n.MsgWSMsgSubNotMatched)
+		return nil, i18n.NewError(wc.ctx, coremsgs.MsgWSMsgSubNotMatched)
 	}
 	return inflight, nil
 }

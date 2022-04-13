@@ -5,7 +5,7 @@ package dataexchangemocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/internal/config"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 

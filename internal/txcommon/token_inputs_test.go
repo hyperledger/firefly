@@ -77,7 +77,7 @@ func TestRetrieveTokenPoolCreateInputsBadID(t *testing.T) {
 	}
 
 	_, err := RetrieveTokenPoolCreateInputs(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestAddTokenPoolActivateInputs(t *testing.T) {
@@ -157,7 +157,7 @@ func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
 	}
 
 	_, err := RetrieveTokenTransferInputs(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestAddTokenApprovalInputs(t *testing.T) {
@@ -210,5 +210,5 @@ func TestRetrieveTokenApprovalInputsBadID(t *testing.T) {
 	}
 
 	_, err := RetrieveTokenApprovalInputs(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }

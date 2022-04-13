@@ -26,14 +26,15 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ var utFabconnectConf = utConfPrefix.SubPrefix(FabconnectConfigKey)
 var signer = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	e := &Fabric{}
 	e.InitPrefix(utConfPrefix)
 }
@@ -112,7 +113,7 @@ func TestInitMissingChaincode(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
@@ -123,7 +124,7 @@ func TestInitMissingTopic(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(FabconnectConfigChaincode, "Firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
@@ -164,8 +165,8 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		})
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, httpURL)
-	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
@@ -204,13 +205,13 @@ func TestWSInitFail(t *testing.T) {
 	defer cancel()
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "!!!://")
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.Regexp(t, "FF10162", err)
+	assert.Regexp(t, "FF00149", err)
 
 }
 
@@ -244,8 +245,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 		}))
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
@@ -273,9 +274,9 @@ func TestStreamQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
@@ -302,9 +303,9 @@ func TestStreamCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
@@ -333,9 +334,9 @@ func TestSubQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
@@ -366,9 +367,9 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utFabconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utFabconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
@@ -1412,7 +1413,7 @@ func TestInvokeContractBadSchema(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestInvokeContractChaincodeNotSet(t *testing.T) {
@@ -1507,7 +1508,7 @@ func TestQueryContractInputNotJSON(t *testing.T) {
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestQueryContractBadLocation(t *testing.T) {
@@ -1580,7 +1581,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 	assert.Regexp(t, "invalid character", err)
 }
 
-func TestValidateContractLocation(t *testing.T) {
+func TestNormalizeContractLocation(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	location := &Location{
@@ -1589,7 +1590,7 @@ func TestValidateContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 }
 
@@ -1601,7 +1602,7 @@ func TestValidateNoContractLocationChaincode(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1627,7 +1628,7 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
 	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestGetFFIParamValidator(t *testing.T) {
@@ -1646,4 +1647,10 @@ func TestGenerateFFI(t *testing.T) {
 		Input:       fftypes.JSONAnyPtr(`[]`),
 	})
 	assert.Regexp(t, "FF10347", err)
+}
+
+func TestGenerateEventSignature(t *testing.T) {
+	e, _ := newTestFabric()
+	signature := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	assert.Equal(t, "Changed", signature)
 }

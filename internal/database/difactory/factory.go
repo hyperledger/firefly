@@ -19,9 +19,10 @@ package difactory
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func InitPrefix(prefix config.Prefix) {
@@ -33,7 +34,7 @@ func InitPrefix(prefix config.Prefix) {
 func GetPlugin(ctx context.Context, pluginType string) (database.Plugin, error) {
 	plugin, ok := pluginsByName[pluginType]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownDatabasePlugin, pluginType)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownDatabasePlugin, pluginType)
 	}
 	return plugin(), nil
 }

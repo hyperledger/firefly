@@ -20,9 +20,9 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/operations"
@@ -30,8 +30,10 @@ import (
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -84,7 +86,7 @@ type assetManager struct {
 
 func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil || mm == nil || om == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	am := &assetManager{
 		ctx:              ctx,
@@ -96,7 +98,7 @@ func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manage
 		broadcast:        bm,
 		messaging:        pm,
 		tokens:           ti,
-		keyNormalization: identity.ParseKeyNormalizationConfig(config.GetString(config.AssetManagerKeyNormalization)),
+		keyNormalization: identity.ParseKeyNormalizationConfig(config.GetString(coreconfig.AssetManagerKeyNormalization)),
 		metrics:          mm,
 		operations:       om,
 	}
@@ -119,7 +121,7 @@ func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tok
 			return plugin, nil
 		}
 	}
-	return nil, i18n.NewError(ctx, i18n.MsgUnknownTokensPlugin, name)
+	return nil, i18n.NewError(ctx, coremsgs.MsgUnknownTokensPlugin, name)
 }
 
 func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
@@ -162,7 +164,7 @@ func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (s
 		return "", err
 	}
 	if len(tokenConnectors) != 1 {
-		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "connector")
+		return "", i18n.NewError(ctx, coremsgs.MsgFieldNotSpecified, "connector")
 	}
 	return tokenConnectors[0].Name, nil
 }
@@ -175,7 +177,7 @@ func (am *assetManager) getTokenPoolName(ctx context.Context, ns string) (string
 		return "", err
 	}
 	if *fr.TotalCount != 1 {
-		return "", i18n.NewError(ctx, i18n.MsgFieldNotSpecified, "pool")
+		return "", i18n.NewError(ctx, coremsgs.MsgFieldNotSpecified, "pool")
 	}
 	return tokenPools[0].Name, nil
 }

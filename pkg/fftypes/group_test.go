@@ -32,7 +32,7 @@ func TestGroupValidation(t *testing.T) {
 			Name:      "!wrong",
 		},
 	}
-	assert.Regexp(t, "FF10131.*name", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00140.*name", group.Validate(context.Background(), false))
 
 	group = &Group{
 		GroupIdentity: GroupIdentity{
@@ -40,7 +40,7 @@ func TestGroupValidation(t *testing.T) {
 			Namespace: "!wrong",
 		},
 	}
-	assert.Regexp(t, "FF10131.*namespace", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00140.*namespace", group.Validate(context.Background(), false))
 
 	group = &Group{
 		GroupIdentity: GroupIdentity{
@@ -48,7 +48,7 @@ func TestGroupValidation(t *testing.T) {
 			Namespace: "ok",
 		},
 	}
-	assert.Regexp(t, "FF10219.*member", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00115.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
 		GroupIdentity: GroupIdentity{
@@ -57,7 +57,7 @@ func TestGroupValidation(t *testing.T) {
 			Members:   Members{{Node: NewUUID()}},
 		},
 	}
-	assert.Regexp(t, "FF10220.*member", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00116.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
 		GroupIdentity: GroupIdentity{
@@ -66,7 +66,7 @@ func TestGroupValidation(t *testing.T) {
 			Members:   Members{{Identity: "0x12345"}},
 		},
 	}
-	assert.Regexp(t, "FF10221.*member", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00117.*member", group.Validate(context.Background(), false))
 
 	group = &Group{
 		GroupIdentity: GroupIdentity{
@@ -75,7 +75,7 @@ func TestGroupValidation(t *testing.T) {
 			Members:   Members{{Identity: string(make([]byte, 1025)), Node: NewUUID()}},
 		},
 	}
-	assert.Regexp(t, "FF10188.*identity", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00135.*identity", group.Validate(context.Background(), false))
 
 	group = &Group{
 		GroupIdentity: GroupIdentity{
@@ -86,7 +86,7 @@ func TestGroupValidation(t *testing.T) {
 	}
 	assert.NoError(t, group.Validate(context.Background(), false))
 
-	assert.Regexp(t, "FF10230", group.Validate(context.Background(), true))
+	assert.Regexp(t, "FF00119", group.Validate(context.Background(), true))
 	group.Seal()
 	assert.NoError(t, group.Validate(context.Background(), true))
 
@@ -97,7 +97,7 @@ func TestGroupValidation(t *testing.T) {
 			Members:   Members{{ /* blank */ }},
 		},
 	}
-	assert.Regexp(t, "FF10220", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00116", group.Validate(context.Background(), false))
 
 	nodeID := MustParseUUID("8b5c0d39-925f-4579-9c60-54f3e846ab99")
 	group = &Group{
@@ -110,7 +110,7 @@ func TestGroupValidation(t *testing.T) {
 			},
 		},
 	}
-	assert.Regexp(t, "FF10222", group.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00118", group.Validate(context.Background(), false))
 
 	group.Members = Members{
 		{Node: nodeID, Identity: "0x12345"},
