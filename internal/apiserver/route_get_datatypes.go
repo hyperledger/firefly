@@ -31,11 +31,11 @@ var getDatatypes = &oapispec.Route{
 	Path:   "namespaces/{ns}/datatypes",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.DatatypeQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetDatatypes,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -6,7 +6,7 @@ openapi: 3.0.2
 paths:
   /namespaces:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of namespaces
       operationId: getNamespaces
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -120,7 +120,7 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates and broadcasts a new namespace
       operationId: postNewNamespace
       parameters:
       - description: When true the HTTP request blocks until the message is confirmed
@@ -211,10 +211,10 @@ paths:
           description: ""
   /namespaces/{ns}:
     get:
-      description: 'TODO: Description'
+      description: Gets a namespace
       operationId: getNamespace
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -262,10 +262,10 @@ paths:
           description: ""
   /namespaces/{ns}/apis:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of contract APIs that have been published
       operationId: getContractAPIs
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -389,10 +389,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates and broadcasts a new custom smart contract API
       operationId: postNewContractAPI
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -543,17 +543,18 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{apiName}:
     get:
-      description: 'TODO: Description'
+      description: Gets information about a contract API, including the URLs for the
+        OpenAPI Spec and Swagger UI for the API
       operationId: getContractAPIByName
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
@@ -620,17 +621,17 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{apiName}/interface:
     get:
-      description: 'TODO: Description'
+      description: Gets a contract interface for a contract API
       operationId: getContractAPIInterface
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
@@ -784,23 +785,25 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{apiName}/invoke/{methodPath}:
     post:
-      description: 'TODO: Description'
+      description: Invokes a method on a smart contract API. Performs a blockchain
+        transaction.
       operationId: postContractAPIInvoke
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: The name or uniquely generated path name of a method on a smart
+          contract
         in: path
         name: methodPath
         required: true
@@ -860,23 +863,24 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{apiName}/listeners/{eventPath}:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of contract listeners
       operationId: getContractAPIListeners
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: The name or uniquely generated path name of a event on a smart
+          contract
         in: path
         name: eventPath
         required: true
@@ -1061,23 +1065,25 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates a new blockchain listener for events emitted by custom
+        smart contracts
       operationId: postContractAPIListeners
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: The name or uniquely generated path name of a event on a smart
+          contract
         in: path
         name: eventPath
         required: true
@@ -1217,23 +1223,25 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{apiName}/query/{methodPath}:
     post:
-      description: 'TODO: Description'
+      description: Queries a method on a smart contract API. Performs a read-only
+        query.
       operationId: postContractAPIQuery
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: apiName
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: The name or uniquely generated path name of a method on a smart
+          contract
         in: path
         name: methodPath
         required: true
@@ -1284,17 +1292,17 @@ paths:
           description: ""
   /namespaces/{ns}/apis/{id}:
     put:
-      description: 'TODO: Description'
+      description: The ID of the contract API
       operationId: putContractAPI
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract API
         in: path
         name: id
         required: true
@@ -1445,10 +1453,10 @@ paths:
           description: ""
   /namespaces/{ns}/batches:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of message batches
       operationId: getBatches
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -1619,17 +1627,17 @@ paths:
           description: ""
   /namespaces/{ns}/batches/{batchid}:
     get:
-      description: 'TODO: Description'
+      description: Gets a message batch
       operationId: getBatchByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The batch ID
         in: path
         name: batchid
         required: true
@@ -1698,10 +1706,10 @@ paths:
           description: ""
   /namespaces/{ns}/blockchainevents:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of blockchain events
       operationId: getBlockchainEvents
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -1857,17 +1865,17 @@ paths:
           description: ""
   /namespaces/{ns}/blockchainevents/{id}:
     get:
-      description: 'TODO: Description'
+      description: Gets a blockchain event
       operationId: getBlockchainEventByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The blockchain event ID
         in: path
         name: id
         required: true
@@ -1941,17 +1949,19 @@ paths:
           description: ""
   /namespaces/{ns}/charts/histogram/{collection}:
     get:
-      description: 'TODO: Description'
+      description: Gets a JSON object containing statistics data that can be used
+        to build a graphical representation of recent activity in a given database
+        collection
       operationId: getChartHistogram
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The collection ID
         in: path
         name: collection
         required: true
@@ -2019,10 +2029,10 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/interfaces:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of contract interfaces that have been published
       operationId: getContractInterfaces
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -2238,10 +2248,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates and broadcasts a new custom smart contract interface
       operationId: postNewContractInterface
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -2528,23 +2538,24 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/interfaces/{interfaceId}:
     get:
-      description: 'TODO: Description'
+      description: Gets a contract interface by its ID
       operationId: getContractInterface
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The ID of the contract interface
         in: path
         name: interfaceId
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the full FireFly Interface document
+          including all methods, events, and parameters
         in: query
         name: fetchchildren
         schema:
@@ -2698,29 +2709,30 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/interfaces/{name}/{version}:
     get:
-      description: 'TODO: Description'
+      description: Gets a contract interface by its name and version
       operationId: getContractInterfaceByNameAndVersion
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the contract interface
         in: path
         name: name
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: The version of the contract interface
         in: path
         name: version
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the full FireFly Interface document
+          including all methods, events, and parameters
         in: query
         name: fetchchildren
         schema:
@@ -2874,10 +2886,12 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/interfaces/generate:
     post:
-      description: 'TODO: Description'
+      description: A convenience method to convert a blockchain specific smart contract
+        format into a FireFly Interface format. The specific blockchain plugin in
+        use must support this functionality.
       operationId: postGenerateContractInterface
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -3057,10 +3071,10 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/invoke:
     post:
-      description: 'TODO: Description'
+      description: Invokes a method on a smart contract. Performs a blockchain transaction.
       operationId: postContractInvoke
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -3192,10 +3206,10 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/listeners:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of contract listeners
       operationId: getContractListeners
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -3381,10 +3395,11 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates a new blockchain listener for events emitted by custom
+        smart contracts
       operationId: postNewContractListener
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -3573,17 +3588,17 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/listeners/{nameOrId}:
     delete:
-      description: 'TODO: Description'
+      description: Deletes a contract listener referenced by its name or its ID
       operationId: deleteContractListener
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The contract listener name or ID
         in: path
         name: nameOrId
         required: true
@@ -3604,17 +3619,17 @@ paths:
         default:
           description: ""
     get:
-      description: 'TODO: Description'
+      description: Gets a contract listener by its name or ID
       operationId: getContractListenerByNameOrID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The contract listener name or ID
         in: path
         name: nameOrId
         required: true
@@ -3724,10 +3739,10 @@ paths:
           description: ""
   /namespaces/{ns}/contracts/query:
     post:
-      description: 'TODO: Description'
+      description: Queries a method on a smart contract. Performs a read-only query.
       operationId: postContractQuery
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -3850,10 +3865,10 @@ paths:
           description: ""
   /namespaces/{ns}/data:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of data items
       operationId: getData
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -4024,10 +4039,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates a new data item in this FireFly node
       operationId: postData
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -4174,17 +4189,17 @@ paths:
           description: ""
   /namespaces/{ns}/data/{dataid}:
     get:
-      description: 'TODO: Description'
+      description: Gets a data item by its ID, including metadata about this item
       operationId: getDataByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The data item ID
         in: path
         name: dataid
         required: true
@@ -4259,17 +4274,17 @@ paths:
           description: ""
   /namespaces/{ns}/data/{dataid}/blob:
     get:
-      description: 'TODO: Description'
+      description: Downloads the original file that was previously uploaded or received
       operationId: getDataBlob
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The blob ID
         in: path
         name: dataid
         required: true
@@ -4413,17 +4428,17 @@ paths:
           description: ""
   /namespaces/{ns}/data/{dataid}/messages:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of the messages associated with a data item
       operationId: getDataMsgs
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The data item ID
         in: path
         name: dataid
         required: true
@@ -4660,10 +4675,10 @@ paths:
           description: ""
   /namespaces/{ns}/datatypes:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of datatypes that have been published
       operationId: getDatatypes
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -4794,10 +4809,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates and broadcasts a new datatype
       operationId: postNewDatatype
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -4931,23 +4946,23 @@ paths:
           description: ""
   /namespaces/{ns}/datatypes/{name}/{version}:
     get:
-      description: 'TODO: Description'
+      description: Gets a datatype by its name and version
       operationId: getDatatypeByName
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The name of the datatype
         in: path
         name: name
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: The version of the datatype
         in: path
         name: version
         required: true
@@ -5007,17 +5022,18 @@ paths:
           description: ""
   /namespaces/{ns}/events:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of events
       operationId: getEvents
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the record that this item references
+          in its 'ref' field
         in: query
         name: fetchreferences
         schema:
@@ -5183,17 +5199,17 @@ paths:
           description: ""
   /namespaces/{ns}/events/{eid}:
     get:
-      description: 'TODO: Description'
+      description: Gets an event by its ID
       operationId: getEventByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The event ID
         in: path
         name: eid
         required: true
@@ -5278,10 +5294,10 @@ paths:
           description: ""
   /namespaces/{ns}/groups:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of groups
       operationId: getGroups
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -5400,21 +5416,21 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/groups/{groupid}:
+  /namespaces/{ns}/groups/{hash}:
     get:
-      description: 'TODO: Description'
+      description: Gets a group by its ID (hash)
       operationId: getGroupByHash
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The hash of the group
         in: path
-        name: groupid
+        name: hash
         required: true
         schema:
           type: string
@@ -5466,17 +5482,17 @@ paths:
           description: ""
   /namespaces/{ns}/identities:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of identities that have been registered in the network
       operationId: getIdentities
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the verifier for this identity
         in: query
         name: fetchverifiers
         schema:
@@ -5676,10 +5692,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Registers a new identity in the network
       operationId: postNewIdentity
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -5857,26 +5873,27 @@ paths:
           description: Success
         default:
           description: ""
+  /namespaces/{ns}/identities/{id}: {}
   /namespaces/{ns}/identities/{iid}:
     get:
-      description: 'TODO: Description'
+      description: Gets an identity by its ID
       operationId: getIdentityByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The identity ID, which is a UUID generated by FireFly
         in: path
         name: iid
         required: true
         schema:
           example: id
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the verifier for this identity
         in: query
         name: fetchverifiers
         schema:
@@ -5954,17 +5971,17 @@ paths:
           description: ""
   /namespaces/{ns}/identities/{iid}/did:
     get:
-      description: 'TODO: Description'
+      description: Gets the DID for an identity based on its ID
       operationId: getIdentityDID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The identity ID, which is a UUID generated by FireFly
         in: path
         name: iid
         required: true
@@ -6036,17 +6053,17 @@ paths:
           description: ""
   /namespaces/{ns}/identities/{iid}/verifiers:
     get:
-      description: 'TODO: Description'
+      description: Gets the verifiers for an identity
       operationId: getIdentityVerifiers
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The identity ID, which is a UUID generated by FireFly
         in: path
         name: iid
         required: true
@@ -6161,10 +6178,10 @@ paths:
           description: ""
   /namespaces/{ns}/messages:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of messages
       operationId: getMsgs
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -6410,17 +6427,17 @@ paths:
           description: ""
   /namespaces/{ns}/messages/{msgid}:
     get:
-      description: 'TODO: Description'
+      description: Gets a message by its ID
       operationId: getMsgByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The message ID
         in: path
         name: msgid
         required: true
@@ -6575,17 +6592,17 @@ paths:
           description: ""
   /namespaces/{ns}/messages/{msgid}/data:
     get:
-      description: 'TODO: Description'
+      description: Gets the list of data items that are attached to a message
       operationId: getMsgData
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The message ID
         in: path
         name: msgid
         required: true
@@ -6662,17 +6679,17 @@ paths:
           description: ""
   /namespaces/{ns}/messages/{msgid}/events:
     get:
-      description: 'TODO: Description'
+      description: Gets the list of events for a message
       operationId: getMsgEvents
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The message ID
         in: path
         name: msgid
         required: true
@@ -6838,17 +6855,17 @@ paths:
           description: ""
   /namespaces/{ns}/messages/{msgid}/transaction:
     get:
-      description: 'TODO: Description'
+      description: Gets the transaction for a message
       operationId: getMsgTxn
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The message ID
         in: path
         name: msgid
         required: true
@@ -6905,10 +6922,10 @@ paths:
           description: ""
   /namespaces/{ns}/messages/broadcast:
     post:
-      description: 'TODO: Description'
+      description: Broadcasts a message to all members in the network
       operationId: postNewMessageBroadcast
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -7219,10 +7236,10 @@ paths:
           description: ""
   /namespaces/{ns}/messages/private:
     post:
-      description: 'TODO: Description'
+      description: Privately sends a message to one or more members in the network
       operationId: postNewMessagePrivate
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -7577,10 +7594,11 @@ paths:
           description: ""
   /namespaces/{ns}/messages/requestreply:
     post:
-      description: 'TODO: Description'
+      description: Sends a message with a blocking HTTP request, waits for a reply
+        to that message, then sends the reply as the HTTP response.
       operationId: postNewMessageRequestReply
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -7862,10 +7880,10 @@ paths:
           description: ""
   /namespaces/{ns}/operations:
     get:
-      description: 'TODO: Description'
+      description: Gets a a list of operations
       operationId: getOps
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -8041,17 +8059,17 @@ paths:
           description: ""
   /namespaces/{ns}/operations/{opid}:
     get:
-      description: 'TODO: Description'
+      description: Gets an operation by ID
       operationId: getOpByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The operation ID key to get
         in: path
         name: opid
         required: true
@@ -8130,17 +8148,17 @@ paths:
           description: ""
   /namespaces/{ns}/operations/{opid}/retry:
     post:
-      description: 'TODO: Description'
+      description: Retries a failed operation
       operationId: postOpRetry
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The UUID of the operation
         in: path
         name: opid
         required: true
@@ -8223,10 +8241,10 @@ paths:
           description: ""
   /namespaces/{ns}/subscriptions:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of subscriptions
       operationId: getSubscriptions
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -8456,10 +8474,11 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates a new subscription for an application to receive events
+        from FireFly
       operationId: postNewSubscription
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -8730,10 +8749,10 @@ paths:
         default:
           description: ""
     put:
-      description: 'TODO: Description'
+      description: Update an existing subscription
       operationId: putSubscription
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -9005,17 +9024,17 @@ paths:
           description: ""
   /namespaces/{ns}/subscriptions/{subid}:
     delete:
-      description: 'TODO: Description'
+      description: Deletes a subscription
       operationId: deleteSubscription
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The subscription ID
         in: path
         name: subid
         required: true
@@ -9036,17 +9055,17 @@ paths:
         default:
           description: ""
     get:
-      description: 'TODO: Description'
+      description: Gets a subscription by its ID
       operationId: getSubscriptionByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The subscription ID
         in: path
         name: subid
         required: true
@@ -9198,10 +9217,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/accounts:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of token accounts
       operationId: getTokenAccounts
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -9282,17 +9301,18 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/accounts/{key}/pools:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of token pools that contain a given token account key
       operationId: getTokenAccountPools
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The key for the token account. The exact format may vary based
+          on the token connector use.
         in: path
         name: key
         required: true
@@ -9371,10 +9391,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/approvals:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of token approvals
       operationId: getTokenApprovals
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -9556,10 +9576,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates a token approval
       operationId: postTokenApproval
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -9775,10 +9795,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/balances:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of token balances
       operationId: getTokenBalances
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -9912,10 +9932,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/burn:
     post:
-      description: 'TODO: Description'
+      description: Burns some tokens
       operationId: postTokenBurn
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -10268,10 +10288,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/connectors:
     get:
-      description: 'TODO: Description'
+      description: Gets the list of token connectors currently in use
       operationId: getTokenConnectors
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -10303,10 +10323,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/mint:
     post:
-      description: 'TODO: Description'
+      description: Mints some tokens
       operationId: postTokenMint
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -10659,10 +10679,10 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/pools:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of token pools
       operationId: getTokenPools
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -10857,10 +10877,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Creates a new token pool
       operationId: postTokenPool
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -11076,17 +11096,17 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/pools/{nameOrId}:
     get:
-      description: 'TODO: Description'
+      description: Gets a token pool by its name or its ID
       operationId: getTokenPoolByNameOrID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The token pool name or ID
         in: path
         name: nameOrId
         required: true
@@ -11179,17 +11199,17 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/transfers:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of token transfers
       operationId: getTokenTransfers
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The sending or receiving token account for a token transfer
         in: query
         name: fromOrTo
         schema:
@@ -11412,10 +11432,10 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Transfers some tokens
       operationId: postTokenTransfer
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -11772,17 +11792,17 @@ paths:
           description: ""
   /namespaces/{ns}/tokens/transfers/{transferId}:
     get:
-      description: 'TODO: Description'
+      description: Gets a token transfer by its ID
       operationId: getTokenTransferByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The token transfer ID
         in: path
         name: transferId
         required: true
@@ -11881,10 +11901,10 @@ paths:
           description: ""
   /namespaces/{ns}/transactions:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of transactions
       operationId: getTxns
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -12004,17 +12024,17 @@ paths:
           description: ""
   /namespaces/{ns}/transactions/{txnid}:
     get:
-      description: 'TODO: Description'
+      description: Gets a transaction by its ID
       operationId: getTxnByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The transaction ID
         in: path
         name: txnid
         required: true
@@ -12130,17 +12150,17 @@ paths:
           description: ""
   /namespaces/{ns}/transactions/{txnid}/blockchainevents:
     get:
-      description: 'TODO: Description'
+      description: Gets a list blockchain events for a specific transaction
       operationId: getTxnBlockchainEvents
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The transaction ID
         in: path
         name: txnid
         required: true
@@ -12216,17 +12236,17 @@ paths:
           description: ""
   /namespaces/{ns}/transactions/{txnid}/operations:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of operations in a specific transaction
       operationId: getTxnOps
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The transaction ID
         in: path
         name: txnid
         required: true
@@ -12307,17 +12327,17 @@ paths:
           description: ""
   /namespaces/{ns}/transactions/{txnid}/status:
     get:
-      description: 'TODO: Description'
+      description: Gets the status of a transaction
       operationId: getTxnStatus
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The transaction ID
         in: path
         name: txnid
         required: true
@@ -12384,10 +12404,10 @@ paths:
           description: ""
   /namespaces/{ns}/verifiers:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of verifiers
       operationId: getVerifiers
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
@@ -12500,24 +12520,24 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/verifiers/{vid}:
+  /namespaces/{ns}/verifiers/{hash}:
     get:
-      description: 'TODO: Description'
+      description: Gets a verifier by its hash
       operationId: getVerifierByID
       parameters:
-      - description: 'TODO: Description'
+      - description: The namespace which scopes this request
         in: path
         name: ns
         required: true
         schema:
           example: default
           type: string
-      - description: 'TODO: Description'
+      - description: The hash of the verifier
         in: path
-        name: vid
+        name: hash
         required: true
         schema:
-          example: id
+          example: hash
           type: string
       - description: Server-side request timeout (millseconds, or set a custom suffix
           like 10s)
@@ -12561,10 +12581,10 @@ paths:
           description: ""
   /network/diddocs/{did}:
     get:
-      description: 'TODO: Description'
+      description: Gets a DID document by its DID
       operationId: getDIDDocByDID
       parameters:
-      - description: 'TODO: Description'
+      - description: The identity DID
         in: path
         name: did
         required: true
@@ -12635,10 +12655,10 @@ paths:
           description: ""
   /network/identities:
     get:
-      description: 'TODO: Description'
+      description: Gets the list of identities in the network
       operationId: getNetworkIdentities
       parameters:
-      - description: 'TODO: Description'
+      - description: When set, the API will return the verifier for this identity
         in: query
         name: fetchverifiers
         schema:
@@ -12839,16 +12859,16 @@ paths:
           description: ""
   /network/identities/{did}:
     get:
-      description: 'TODO: Description'
+      description: Gets an identity by its DID
       operationId: getIdentityByDID
       parameters:
-      - description: 'TODO: Description'
+      - description: The identity DID
         in: path
         name: did
         required: true
         schema:
           type: string
-      - description: 'TODO: Description'
+      - description: When set, the API will return the verifier for this identity
         in: query
         name: fetchverifiers
         schema:
@@ -12948,7 +12968,7 @@ paths:
           description: ""
   /network/nodes:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of nodes in the network
       operationId: getNetworkNodes
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -13124,10 +13144,10 @@ paths:
           description: ""
   /network/nodes/{nameOrId}:
     get:
-      description: 'TODO: Description'
+      description: Gets information about a specific node in the network
       operationId: getNetworkNode
       parameters:
-      - description: 'TODO: Description'
+      - description: The name or ID of the node
         in: path
         name: nameOrId
         required: true
@@ -13205,7 +13225,7 @@ paths:
           description: ""
   /network/nodes/self:
     post:
-      description: 'TODO: Description'
+      description: Instructs this FireFly node to register itself on the network
       operationId: postNodesSelf
       parameters:
       - description: When true the HTTP request blocks until the message is confirmed
@@ -13350,7 +13370,7 @@ paths:
           description: ""
   /network/organizations:
     get:
-      description: 'TODO: Description'
+      description: Gets a list of orgs in the network
       operationId: getNetworkOrgs
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -13525,7 +13545,7 @@ paths:
         default:
           description: ""
     post:
-      description: 'TODO: Description'
+      description: Registers a new org in the network
       operationId: postNewOrganization
       parameters:
       - description: When true the HTTP request blocks until the message is confirmed
@@ -13702,10 +13722,10 @@ paths:
           description: ""
   /network/organizations/{nameOrId}:
     get:
-      description: 'TODO: Description'
+      description: Gets information about a specifc org in the network
       operationId: getNetworkOrg
       parameters:
-      - description: 'TODO: Description'
+      - description: The name or ID of the org
         in: path
         name: nameOrId
         required: true
@@ -13783,7 +13803,7 @@ paths:
           description: ""
   /network/organizations/self:
     post:
-      description: 'TODO: Description'
+      description: Instructs this FireFly node to register its org on the network
       operationId: postNewOrganizationSelf
       parameters:
       - description: When true the HTTP request blocks until the message is confirmed
@@ -13928,7 +13948,7 @@ paths:
           description: ""
   /status:
     get:
-      description: 'TODO: Description'
+      description: Gets the status of this node
       operationId: getStatus
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -14104,7 +14124,7 @@ paths:
           description: ""
   /status/batchmanager:
     get:
-      description: 'TODO: Description'
+      description: Gets the status of the batch manager
       operationId: getStatusBatchManager
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -14188,7 +14208,7 @@ paths:
           description: ""
   /status/pins:
     get:
-      description: 'TODO: Description'
+      description: Queries the pins table that is the status of the event aggregator
       operationId: getStatusPins
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix
@@ -14320,7 +14340,7 @@ paths:
           description: ""
   /status/websockets:
     get:
-      description: 'TODO: Description'
+      description: Gets the status of the current WebSocket connections to this node
       operationId: getStatusWebSockets
       parameters:
       - description: Server-side request timeout (millseconds, or set a custom suffix

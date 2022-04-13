@@ -29,11 +29,11 @@ var getNetworkOrg = &oapispec.Route{
 	Path:   "network/organizations/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "nameOrId", Description: coremsgs.APIMessageTBD},
+		{Name: "nameOrId", Description: coremsgs.APIParamsOrgNameOrID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetNetworkOrg,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

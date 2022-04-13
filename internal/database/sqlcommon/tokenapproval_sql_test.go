@@ -76,7 +76,7 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
 	// Query back token approval by query filter
-	fb := database.TokenApprovalQueryFacory.NewFilter(ctx)
+	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("pool", approval.Pool),
 		fb.Eq("key", approval.Key),
@@ -183,7 +183,7 @@ func TestGetApprovalByIDScanFail(t *testing.T) {
 func TestGetApprovalsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.TokenApprovalQueryFacory.NewFilter(context.Background()).Eq("protocolid", "")
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
 	_, _, err := s.GetTokenApprovals(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -191,7 +191,7 @@ func TestGetApprovalsQueryFail(t *testing.T) {
 func TestGetApprovalsBuildQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.TokenApprovalQueryFacory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
 	_, _, err := s.GetTokenApprovals(context.Background(), f)
 	assert.Regexp(t, "FF00143.*id", err)
 }
@@ -199,7 +199,7 @@ func TestGetApprovalsBuildQueryFail(t *testing.T) {
 func TestGetApprovalsScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
-	f := database.TokenApprovalQueryFacory.NewFilter(context.Background()).Eq("protocolid", "")
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
 	_, _, err := s.GetTokenApprovals(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())

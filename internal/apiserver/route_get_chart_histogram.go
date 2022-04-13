@@ -33,8 +33,8 @@ var getChartHistogram = &oapispec.Route{
 	Path:   "namespaces/{ns}/charts/histogram/{collection}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "collection", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "collection", Description: coremsgs.APIParamsCollectionID},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "startTime", Description: coremsgs.APIHistogramStartTimeParam, IsBool: false},
@@ -42,7 +42,7 @@ var getChartHistogram = &oapispec.Route{
 		{Name: "buckets", Description: coremsgs.APIHistogramBucketsParam, IsBool: false},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetChartHistogram,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},

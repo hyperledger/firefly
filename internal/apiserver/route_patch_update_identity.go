@@ -28,24 +28,24 @@ import (
 
 var patchUpdateIdentity = &oapispec.Route{
 	Name:   "patchUpdateIdentity",
-	Path:   "namespaces/{ns}/identities/{iid}",
+	Path:   "namespaces/{ns}/identities/{id}",
 	Method: http.MethodPatch,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "iid", Example: "id", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "id", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPatchUpdateIdentity,
 	JSONInputValue:  func() interface{} { return &fftypes.IdentityUpdateDTO{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, r.PP["ns"], r.PP["iid"], r.Input.(*fftypes.IdentityUpdateDTO), waitConfirm)
+		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, r.PP["ns"], r.PP["id"], r.Input.(*fftypes.IdentityUpdateDTO), waitConfirm)
 		return org, err
 	},
 }

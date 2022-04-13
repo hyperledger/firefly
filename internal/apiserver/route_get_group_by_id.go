@@ -27,20 +27,20 @@ import (
 
 var getGroupByHash = &oapispec.Route{
 	Name:   "getGroupByHash",
-	Path:   "namespaces/{ns}/groups/{groupid}",
+	Path:   "namespaces/{ns}/groups/{hash}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "groupid", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "hash", Description: coremsgs.APIParamsGroupHash},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetGroupByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.PrivateMessaging().GetGroupByID(r.Ctx, r.PP["groupid"])
+		output, err = r.Or.PrivateMessaging().GetGroupByID(r.Ctx, r.PP["hash"])
 		return output, err
 	},
 }

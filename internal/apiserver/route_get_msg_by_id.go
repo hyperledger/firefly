@@ -31,14 +31,14 @@ var getMsgByID = &oapispec.Route{
 	Path:   "namespaces/{ns}/messages/{msgid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "msgid", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "msgid", Description: coremsgs.APIParamsMessageID},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fetchdata", IsBool: true, Description: coremsgs.APIFetchDataDesc},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetMsgByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} }, // can include full values
 	JSONOutputCodes: []int{http.StatusOK},
