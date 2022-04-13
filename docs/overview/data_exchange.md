@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Private data exchange
-parent: Key Concepts
-nav_order: 6
+parent: Understanding FireFly
+nav_order: 7
 ---
 
 # Private data exchange

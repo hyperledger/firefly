@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Release Guide
-parent: Maintainers
-nav_order: 2
+parent: Contributors
+nav_order: 8
 ---
 
 # Release Guide
