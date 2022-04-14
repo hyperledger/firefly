@@ -42,7 +42,9 @@ func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.U
 	if len(operations) > 0 {
 		if origApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, operations[0]); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.Subject, err)
-		} else if origApproval != nil {
+		} else if origApproval != nil &&
+			origApproval.Connector == approval.Connector &&
+			origApproval.Pool.Equals(approval.Pool) {
 			approval.LocalID = origApproval.LocalID
 		}
 	}
@@ -79,7 +81,6 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		if err := em.loadApprovalOperation(ctx, approval.TX.ID, &approval.TokenApproval); err != nil {
 			return false, err
 		}
-
 		if valid, err := em.txHelper.PersistTransaction(ctx, approval.Namespace, approval.TX.ID, approval.TX.Type, approval.Event.BlockchainTXID); err != nil || !valid {
 			return valid, err
 		}
@@ -88,7 +89,6 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		if err != nil {
 			return false, err
 		}
-
 		if existingLocal != nil {
 			approval.LocalID = fftypes.NewUUID()
 		}

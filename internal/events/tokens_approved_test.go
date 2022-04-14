@@ -159,7 +159,7 @@ func TestPersistApprovalBadOp(t *testing.T) {
 	}
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localid": "realbad",
+			"localId": "realbad",
 		},
 		Transaction: fftypes.NewUUID(),
 	}}
@@ -191,7 +191,9 @@ func TestPersistApprovalTxFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localid": localID.String(),
+			"localId":   localID.String(),
+			"connector": approval.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 
@@ -223,7 +225,7 @@ func TestPersistApprovalGetApprovalFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localid": localID.String(),
+			"localId": localID.String(),
 		},
 	}}
 
@@ -272,7 +274,9 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localid": localID.String(),
+			"localId":   localID.String(),
+			"connector": approval.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 
@@ -317,7 +321,9 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localid": localID.String(),
+			"localId":   localID.String(),
+			"connector": approval.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 

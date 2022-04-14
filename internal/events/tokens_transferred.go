@@ -42,7 +42,9 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 	if len(operations) > 0 {
 		if origTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, operations[0]); err != nil {
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
-		} else if origTransfer != nil {
+		} else if origTransfer != nil &&
+			origTransfer.Connector == transfer.Connector &&
+			origTransfer.Pool.Equals(transfer.Pool) {
 			transfer.LocalID = origTransfer.LocalID
 		}
 	}
