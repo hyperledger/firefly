@@ -430,8 +430,8 @@ type iTokenTransferCollection interface {
 	// GetTokenTransfer - Get a token transfer by ID
 	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
 
-	// GetTokenTransferByProtocolID - Get a token transfer by subject
-	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
+	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
+	GetTokenTransferByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
@@ -444,8 +444,8 @@ type iTokenApprovalCollection interface {
 	// GetTokenApprovalByID - Get a token approval by ID
 	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
-	// GetTokenApproval - Get a token approval by connector, subject, and poolID
-	GetTokenApproval(ctx context.Context, connector, subject string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error)
+	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
+	GetTokenApprovalByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)

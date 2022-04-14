@@ -55,13 +55,6 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
 	countMetric := true
-	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
-		return false, err
-	} else if existing != nil {
-		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
-		return false, nil
-	}
 
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
@@ -75,6 +68,14 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	}
 	transfer.Namespace = pool.Namespace
 	transfer.Pool = pool.ID
+
+	// Check that transfer has not already been recorded
+	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Pool, transfer.ProtocolID); err != nil {
+		return false, err
+	} else if existing != nil {
+		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
+		return false, nil
+	}
 
 	if transfer.TX.ID != nil {
 		if err := em.loadTransferOperation(ctx, transfer.TX.ID, &transfer.TokenTransfer); err != nil {

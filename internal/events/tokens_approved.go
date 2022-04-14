@@ -54,6 +54,8 @@ func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.U
 }
 
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
+	// Check that this is from a known pool
+	// TODO: should cache this lookup for efficiency
 	pool, err := em.database.GetTokenPoolByLocator(ctx, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
@@ -65,6 +67,14 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	approval.Namespace = pool.Namespace
 	approval.Pool = pool.ID
 
+	// Check that approval has not already been recorded
+	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, approval.Pool, approval.ProtocolID); err != nil {
+		return false, err
+	} else if existing != nil {
+		log.L(ctx).Warnf("Token approval '%s' has already been recorded - ignoring", approval.ProtocolID)
+		return false, nil
+	}
+
 	if approval.TX.ID != nil {
 		if err := em.loadApprovalOperation(ctx, approval.TX.ID, &approval.TokenApproval); err != nil {
 			return false, err
@@ -74,24 +84,13 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 			return valid, err
 		}
 
-		existing, err := em.database.GetTokenApproval(ctx, approval.Connector, approval.Subject, pool.ID)
+		existingLocal, err := em.database.GetTokenApprovalByID(ctx, approval.LocalID)
 		if err != nil {
 			return false, err
 		}
 
-		// If there's not an existing approval, look for approvals with a matching local ID
-		if existing == nil {
-			existingLocal, err := em.database.GetTokenApprovalByID(ctx, approval.LocalID)
-			if err != nil {
-				return false, err
-			}
-
-			if existingLocal != nil {
-				approval.LocalID = fftypes.NewUUID()
-			}
-		} else {
-			log.L(ctx).Infof("Updating existing approval with local ID: %s", existing.LocalID)
-			approval.LocalID = existing.LocalID
+		if existingLocal != nil {
+			approval.LocalID = fftypes.NewUUID()
 		}
 	} else {
 		approval.LocalID = fftypes.NewUUID()

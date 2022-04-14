@@ -34,14 +34,15 @@ func newApproval() *tokens.TokenApproval {
 	return &tokens.TokenApproval{
 		PoolLocator: "F1",
 		TokenApproval: fftypes.TokenApproval{
-			LocalID:   fftypes.NewUUID(),
-			Pool:      fftypes.NewUUID(),
-			Connector: "erc1155",
-			Namespace: "ns1",
-			Key:       "0x01",
-			Operator:  "0x02",
-			Approved:  true,
-			Subject:   "123",
+			LocalID:    fftypes.NewUUID(),
+			Pool:       fftypes.NewUUID(),
+			Connector:  "erc1155",
+			Namespace:  "ns1",
+			Key:        "0x01",
+			Operator:   "0x02",
+			Approved:   true,
+			ProtocolID: "0001/01/01",
+			Subject:    "123",
 			TX: fftypes.TransactionRef{
 				Type: fftypes.TransactionTypeTokenApproval,
 				ID:   fftypes.NewUUID(),
@@ -67,11 +68,14 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 	approval := newApproval()
 	approval.TX = fftypes.TransactionRef{}
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(3)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil).Times(2)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil).Times(2)
@@ -93,6 +97,28 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 
 }
 
+func TestPersistApprovalDuplicate(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+
+	approval := newApproval()
+	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(&fftypes.TokenApproval{}, nil)
+
+	valid, err := em.persistTokenApproval(em.ctx, approval)
+	assert.False(t, valid)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestPersistApprovalOpFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -101,10 +127,12 @@ func TestPersistApprovalOpFail(t *testing.T) {
 
 	approval := newApproval()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
@@ -123,6 +151,7 @@ func TestPersistApprovalBadOp(t *testing.T) {
 
 	approval := newApproval()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	ops := []*fftypes.Operation{{
@@ -133,6 +162,7 @@ func TestPersistApprovalBadOp(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
@@ -152,6 +182,7 @@ func TestPersistApprovalTxFail(t *testing.T) {
 
 	approval := newApproval()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
@@ -162,38 +193,10 @@ func TestPersistApprovalTxFail(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(false, fmt.Errorf("pop"))
-
-	valid, err := em.persistTokenApproval(em.ctx, approval)
-	assert.False(t, valid)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-}
-
-func TestPersistApprovalGetUniqueApprovalFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mth := em.txHelper.(*txcommonmocks.Helper)
-
-	approval := newApproval()
-	pool := &fftypes.TokenPool{
-		Namespace: "ns1",
-	}
-	localID := fftypes.NewUUID()
-	ops := []*fftypes.Operation{{
-		Input: fftypes.JSONObject{
-			"localid": localID.String(),
-		},
-	}}
-
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
@@ -211,6 +214,7 @@ func TestPersistApprovalGetApprovalFail(t *testing.T) {
 
 	approval := newApproval()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
@@ -221,10 +225,9 @@ func TestPersistApprovalGetApprovalFail(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
+	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
@@ -260,6 +263,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 
 	approval := newApproval()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
@@ -270,7 +274,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
@@ -302,6 +306,7 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 
 	approval := newApproval()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
@@ -312,7 +317,7 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
@@ -323,48 +328,6 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mth.AssertExpectations(t)
-}
-
-func TestUpdateExistingTokenApproval(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mth := em.txHelper.(*txcommonmocks.Helper)
-
-	approval := newApproval()
-	pool := &fftypes.TokenPool{
-		Namespace: "ns1",
-	}
-	localID := fftypes.NewUUID()
-	ops := []*fftypes.Operation{{
-		Input: fftypes.JSONObject{
-			"localid": localID.String(),
-		},
-	}}
-
-	existingApproval := &fftypes.TokenApproval{
-		LocalID: fftypes.NewUUID(),
-	}
-
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetTokenApproval", em.ctx, "erc1155", mock.Anything, mock.Anything).Return(existingApproval, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
-	})).Return(nil)
-	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
-	})).Return(nil)
-	mdi.On("UpsertTokenApproval", em.ctx, &approval.TokenApproval).Return(nil)
-
-	valid, err := em.persistTokenApproval(em.ctx, approval)
-	assert.True(t, valid)
-	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)

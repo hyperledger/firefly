@@ -35,14 +35,15 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	approval := &fftypes.TokenApproval{
-		LocalID:   fftypes.NewUUID(),
-		Pool:      fftypes.NewUUID(),
-		Connector: "erc1155",
-		Namespace: "ns1",
-		Key:       "0x01",
-		Operator:  "0x02",
-		Approved:  true,
-		Subject:   "12345",
+		LocalID:    fftypes.NewUUID(),
+		Pool:       fftypes.NewUUID(),
+		Connector:  "erc1155",
+		Namespace:  "ns1",
+		Key:        "0x01",
+		Operator:   "0x02",
+		Approved:   true,
+		ProtocolID: "0001/01/01",
+		Subject:    "12345",
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenApproval,
 			ID:   fftypes.NewUUID(),
@@ -68,8 +69,8 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	approvalReadJson, _ := json.Marshal(&approvalRead)
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
-	//query back token approval by Protcol ID and Pool ID
-	approvalRead, err = s.GetTokenApproval(ctx, approval.Connector, approval.Subject, approval.Pool)
+	// Query back token approval by protocol ID
+	approvalRead, err = s.GetTokenApprovalByProtocolID(ctx, approval.Pool, approval.ProtocolID)
 	assert.NoError(t, err)
 	assert.NotNil(t, approvalRead)
 	approvalReadJson, _ = json.Marshal(&approvalRead)
