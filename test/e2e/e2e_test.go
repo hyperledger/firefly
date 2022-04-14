@@ -256,7 +256,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.DID, ts.org1.ID, ts.org1key.Value)
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event|token_approval_confirmed|identity_confirmed"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{

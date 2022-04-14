@@ -81,7 +81,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 
 	if existing {
 		if _, err = s.updateTx(ctx, tx,
-			sq.Update("tokenApproval").
+			sq.Update("tokenapproval").
 				Set("local_id", approval.LocalID).
 				Set("protocol_id", approval.ProtocolID).
 				Set("active", approval.Active).
@@ -98,7 +98,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 				Where(sq.Eq{"subject": approval.Subject}).
 				Where(sq.Eq{"pool_id": approval.Pool}),
 			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID)
 			},
 		); err != nil {
 			return err
@@ -126,7 +126,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 					approval.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeCreated, approval.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeCreated, approval.Namespace, approval.LocalID)
 			},
 		); err != nil {
 			return err

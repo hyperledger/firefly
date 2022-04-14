@@ -502,13 +502,16 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
-	// InsertBlockchainEvent - insert an event from an external smart contract
+	// InsertBlockchainEvent - insert an event from the blockchain
 	InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error)
 
-	// GetBlockchainEventByID - get smart contract event by ID
+	// GetBlockchainEventByID - get blockchain event by ID
 	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 
-	// GetBlockchainEvents - get smart contract events
+	// GetBlockchainEventByID - get blockchain event by protocol ID
+	GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error)
+
+	// GetBlockchainEvents - get blockchain events
 	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*fftypes.BlockchainEvent, *FilterResult, error)
 }
 
@@ -619,6 +622,8 @@ const (
 	CollectionSubscriptions     UUIDCollectionNS = "subscriptions"
 	CollectionTransactions      UUIDCollectionNS = "transactions"
 	CollectionTokenPools        UUIDCollectionNS = "tokenpools"
+	CollectionTokenTransfers    UUIDCollectionNS = "tokentransfers"
+	CollectionTokenApprovals    UUIDCollectionNS = "tokenapprovals"
 	CollectionFFIs              UUIDCollectionNS = "ffi"
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
@@ -641,9 +646,7 @@ const (
 type UUIDCollection CollectionName
 
 const (
-	CollectionNamespaces     UUIDCollection = "namespaces"
-	CollectionTokenTransfers UUIDCollection = "tokentransfers"
-	CollectionTokenApprovals UUIDCollection = "tokenapprovals"
+	CollectionNamespaces UUIDCollection = "namespaces"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.

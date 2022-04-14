@@ -104,7 +104,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("blockchain_event", transfer.BlockchainEvent).
 				Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
 			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID)
 			},
 		); err != nil {
 			return err
@@ -135,7 +135,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID)
 			},
 		); err != nil {
 			return err

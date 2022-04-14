@@ -56,9 +56,9 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	}
 	transfer.Amount.Int().SetInt64(10)
 
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID, mock.Anything).
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID, mock.Anything).
 		Return().Once()
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.LocalID, mock.Anything).
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID, mock.Anything).
 		Return().Once()
 
 	err := s.UpsertTokenTransfer(ctx, transfer)

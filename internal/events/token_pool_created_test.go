@@ -133,6 +133,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), chainPool.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == chainPool.Event.Name
 	})).Return(nil).Once()
@@ -281,6 +282,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "magic-tokens", "123").Return(storedPool, nil).Times(2)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), chainPool.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == chainPool.Event.Name
 	})).Return(nil).Once()
@@ -307,6 +309,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
 	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	txID := fftypes.NewUUID()
@@ -323,8 +326,10 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 	event := &blockchain.Event{
 		BlockchainTXID: "0xffffeeee",
 		Name:           "TokenPool",
+		ProtocolID:     "tx1",
 	}
 
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == event.Name
 	})).Return(fmt.Errorf("pop"))
@@ -332,6 +337,7 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
 	assert.EqualError(t, err, "pop")
 
+	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 }
 
@@ -355,8 +361,10 @@ func TestConfirmPoolGetOpsFail(t *testing.T) {
 	event := &blockchain.Event{
 		BlockchainTXID: "0xffffeeee",
 		Name:           "TokenPool",
+		ProtocolID:     "tx1",
 	}
 
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == event.Name
 	})).Return(nil)
@@ -393,8 +401,10 @@ func TestConfirmPoolResolveOpFail(t *testing.T) {
 	event := &blockchain.Event{
 		BlockchainTXID: "0xffffeeee",
 		Name:           "TokenPool",
+		ProtocolID:     "tx1",
 	}
 
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == event.Name
 	})).Return(nil)
@@ -433,8 +443,10 @@ func TestConfirmPoolTxFail(t *testing.T) {
 	event := &blockchain.Event{
 		BlockchainTXID: "0xffffeeee",
 		Name:           "TokenPool",
+		ProtocolID:     "tx1",
 	}
 
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == event.Name
 	})).Return(nil)
@@ -470,8 +482,10 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	event := &blockchain.Event{
 		BlockchainTXID: "0xffffeeee",
 		Name:           "TokenPool",
+		ProtocolID:     "tx1",
 	}
 
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == event.Name
 	})).Return(nil)

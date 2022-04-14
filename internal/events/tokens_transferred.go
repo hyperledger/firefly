@@ -99,11 +99,12 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	}
 
 	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &transfer.TX)
-	transfer.BlockchainEvent = chainEvent.ID
-	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&transfer.Event)
+	transfer.BlockchainEvent = chainEvent.ID
+
 	if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
 		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 		return false, err
@@ -112,6 +113,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
 		return false, err
 	}
+
 	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 	if em.metrics.IsMetricsEnabled() && countMetric {
 		em.metrics.TransferConfirmed(&transfer.TokenTransfer)

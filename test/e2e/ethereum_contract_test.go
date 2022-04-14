@@ -273,8 +273,6 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		MethodPath: "set",
 	}
 
-	<-received1
-
 	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
 	assert.NoError(suite.testState.t, err)
 	assert.NotNil(suite.testState.t, res)

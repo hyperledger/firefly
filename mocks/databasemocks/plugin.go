@@ -340,6 +340,29 @@ func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) 
 	return r0, r1
 }
 
+// GetBlockchainEventByProtocolID provides a mock function with given fields: ctx, ns, listener, protocolID
+func (_m *Plugin) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error) {
+	ret := _m.Called(ctx, ns, listener, protocolID)
+
+	var r0 *fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, ns, listener, protocolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, ns, listener, protocolID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBlockchainEvents provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

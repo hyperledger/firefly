@@ -76,6 +76,7 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(4)
 	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil).Times(3)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), approval.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil).Times(3)
@@ -280,6 +281,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), approval.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(nil)
@@ -324,6 +326,7 @@ func TestApprovedBlockchainEventFail(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(&fftypes.TokenApproval{}, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), approval.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
 	})).Return(fmt.Errorf("pop"))

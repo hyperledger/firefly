@@ -51,7 +51,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 	if ev.ProtocolID != "" || ev.BlockchainTXID != "" {
 		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
 		chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
-		if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+		if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 			return err
 		}
 		em.emitBlockchainEventMetric(ev)

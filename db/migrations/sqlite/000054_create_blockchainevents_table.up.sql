@@ -13,7 +13,6 @@ CREATE TABLE blockchainevents (
   tx_id            UUID
 );
 
-CREATE INDEX blockchainevents_id ON blockchainevents(id);
+CREATE UNIQUE INDEX blockchainevents_id ON blockchainevents(id);
 CREATE INDEX blockchainevents_tx ON blockchainevents(tx_id);
-CREATE INDEX blockchainevents_timestamp ON blockchainevents(timestamp);
 CREATE INDEX blockchainevents_subscription_id ON blockchainevents(subscription_id);

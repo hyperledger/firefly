@@ -97,11 +97,11 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	}
 
 	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &approval.TX)
-	approval.BlockchainEvent = chainEvent.ID
-	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&approval.Event)
+	approval.BlockchainEvent = chainEvent.ID
 
 	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
 	filter := fb.And(

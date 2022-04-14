@@ -52,9 +52,9 @@ func TestApprovalE2EWithDB(t *testing.T) {
 		BlockchainEvent: fftypes.NewUUID(),
 	}
 
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenApprovals, fftypes.ChangeEventTypeCreated, approval.LocalID, mock.Anything).
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenApprovals, fftypes.ChangeEventTypeCreated, approval.Namespace, approval.LocalID, mock.Anything).
 		Return().Once()
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.LocalID, mock.Anything).
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID, mock.Anything).
 		Return().Once()
 
 	err := s.UpsertTokenApproval(ctx, approval)

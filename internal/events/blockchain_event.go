@@ -86,7 +86,14 @@ func (em *eventManager) getTopicForChainListener(ctx context.Context, listenerID
 	return topic, nil
 }
 
-func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+	if existing, err := em.database.GetBlockchainEventByProtocolID(ctx, chainEvent.Namespace, chainEvent.Listener, chainEvent.ProtocolID); err != nil {
+		return err
+	} else if existing != nil {
+		log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", chainEvent.ProtocolID)
+		chainEvent.ID = existing.ID
+		return nil
+	}
 	if err := em.txHelper.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
@@ -120,7 +127,7 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 			}
 
 			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, nil)
-			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
 			em.emitBlockchainEventMetric(&event.Event)
