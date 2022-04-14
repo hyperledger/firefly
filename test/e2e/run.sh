@@ -80,7 +80,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS
+  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
@@ -92,13 +92,13 @@ if [ "$CREATE_STACK" == "true" ]; then
   if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
       export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
       # Create 5 new accounts for use in testing
-      for i in {1..5}
+      for i in {1..4}
       do
           $CLI accounts create $STACK_NAME
       done
   elif [ "$TEST_SUITE" == "TestFabricE2ESuite" ]; then
       # Create 5 new accounts for use in testing
-      for i in {1..4}
+      for i in {1..3}
       do
           $CLI accounts create $STACK_NAME org_0  user_$i
       done
