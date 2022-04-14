@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Listen for events
-parent: Getting Started
+parent: Tutorials
 nav_order: 6
 ---
 

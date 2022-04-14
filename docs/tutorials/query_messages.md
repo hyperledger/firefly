@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Explore messages
-parent: Getting Started
+parent: Tutorials
 nav_order: 5
 ---
 
