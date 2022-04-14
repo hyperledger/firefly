@@ -44,7 +44,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	received1 := wsReader(suite.testState.ws1, false)
 	received2 := wsReader(suite.testState.ws2, false)
 
-	totalIdentities := 3
+	totalIdentities := 2
 	ts := time.Now().Unix()
 	for i := 0; i < totalIdentities; i++ {
 		key := getUnregisteredAccount(suite, suite.testState.org1.Name)
