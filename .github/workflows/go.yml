@@ -68,5 +68,5 @@ jobs:
         uses: actions/upload-artifact@v2
         if: always()
         with:
-          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}
+          name: container-logs-${{ matrix.test-suite }}-${{ matrix.blockchain-provider }}-${{ matrix.database-type }}-${{ matrix.token-provider }}
           path: containerlogs/logs.txt
