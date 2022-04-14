@@ -488,8 +488,8 @@ type iContractListenerCollection interface {
 	// GetContractListenerByID - get smart contract subscription by ID
 	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractListener, err error)
 
-	// GetContractListenerByProtocolID - get smart contract subscription by protocol ID
-	GetContractListenerByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error)
+	// GetContractListenerByBackendID - get smart contract subscription by backend ID
+	GetContractListenerByBackendID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error)
 
 	// GetContractListeners - get smart contract subscriptions
 	GetContractListeners(ctx context.Context, filter Filter) ([]*fftypes.ContractListener, *FilterResult, error)
@@ -1014,14 +1014,14 @@ var FFIEventQueryFactory = &queryFields{
 
 // ContractListenerQueryFactory filter fields for contract listeners
 var ContractListenerQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"interface":  &UUIDField{},
-	"namespace":  &StringField{},
-	"location":   &JSONField{},
-	"topic":      &StringField{},
-	"signature":  &StringField{},
-	"protocolid": &StringField{},
-	"created":    &TimeField{},
+	"id":        &UUIDField{},
+	"interface": &UUIDField{},
+	"namespace": &StringField{},
+	"location":  &JSONField{},
+	"topic":     &StringField{},
+	"signature": &StringField{},
+	"backendid": &StringField{},
+	"created":   &TimeField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events

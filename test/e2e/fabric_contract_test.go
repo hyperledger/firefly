@@ -149,7 +149,7 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 
 	subs := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(subs))
-	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
+	assert.Equal(suite.T(), sub.BackendID, subs[0].BackendID)
 
 	assetName := nanoid.New()
 	location := map[string]interface{}{

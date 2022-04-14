@@ -54,8 +54,8 @@ func TestContractEventWithRetries(t *testing.T) {
 	var eventID *fftypes.UUID
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(sub, nil).Times(1) // cached
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(sub, nil).Times(1) // cached
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
@@ -94,7 +94,7 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListenerByProtocolID", mock.Anything, "sb-1").Return(nil, nil)
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(nil, nil)
 
 	err := em.BlockchainEvent(ev)
 	assert.NoError(t, err)

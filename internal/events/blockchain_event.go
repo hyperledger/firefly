@@ -45,7 +45,7 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 
 func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*fftypes.ContractListener, error) {
 	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*fftypes.ContractListener, error) {
-		return em.database.GetContractListenerByProtocolID(ctx, protocolID)
+		return em.database.GetContractListenerByBackendID(ctx, protocolID)
 	})
 }
 

@@ -717,12 +717,12 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *fftypes.Cont
 	if err != nil {
 		return err
 	}
-	listener.ProtocolID = result.ID
+	listener.BackendID = result.ID
 	return nil
 }
 
 func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
-	return f.streams.deleteSubscription(ctx, subscription.ProtocolID)
+	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

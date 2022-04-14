@@ -551,6 +551,29 @@ func (_m *Plugin) GetContractListener(ctx context.Context, ns string, name strin
 	return r0, r1
 }
 
+// GetContractListenerByBackendID provides a mock function with given fields: ctx, id
+func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string) (*fftypes.ContractListener, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *fftypes.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractListener); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.ContractListener)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractListenerByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractListener, error) {
 	ret := _m.Called(ctx, id)
@@ -566,29 +589,6 @@ func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID)
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetContractListenerByProtocolID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractListenerByProtocolID(ctx context.Context, id string) (*fftypes.ContractListener, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractListener); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
