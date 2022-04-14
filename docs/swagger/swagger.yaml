@@ -1836,9 +1836,9 @@ paths:
                         to the interface of the smart contract
                       type: object
                     protocolId:
-                      description: A alphanumerically sortable string that represents
-                        this event uniquely on the blockchain. Convention for plugins
-                        is zero-padded values BLOCKNUMBER/TXN_INDEX/EVENT_INDEX
+                      description: An alphanumerically sortable string that represents
+                        this event uniquely on the blockchain (convention for plugins
+                        is zero-padded values BLOCKNUMBER/TXN_INDEX/EVENT_INDEX)
                       type: string
                     source:
                       description: The blockchain plugin or token service that detected
@@ -1921,9 +1921,9 @@ paths:
                       to the interface of the smart contract
                     type: object
                   protocolId:
-                    description: A alphanumerically sortable string that represents
-                      this event uniquely on the blockchain. Convention for plugins
-                      is zero-padded values BLOCKNUMBER/TXN_INDEX/EVENT_INDEX
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely on the blockchain (convention for plugins
+                      is zero-padded values BLOCKNUMBER/TXN_INDEX/EVENT_INDEX)
                     type: string
                   source:
                     description: The blockchain plugin or token service that detected
@@ -9566,8 +9566,8 @@ paths:
                     pool:
                       description: The UUID the token pool this approval applies to
                     protocolId:
-                      description: A unique identifier for this approval, as provided
-                        by the token connector
+                      description: An alphanumerically sortable string that represents
+                        this event uniquely with respect to the blockchain
                       type: string
                     subject:
                       description: A string identifying the parties and entities in
@@ -9723,8 +9723,8 @@ paths:
                   pool:
                     description: The UUID the token pool this approval applies to
                   protocolId:
-                    description: A unique identifier for this approval, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   subject:
                     description: A string identifying the parties and entities in
@@ -9799,8 +9799,8 @@ paths:
                   pool:
                     description: The UUID the token pool this approval applies to
                   protocolId:
-                    description: A unique identifier for this approval, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   subject:
                     description: A string identifying the parties and entities in
@@ -10201,8 +10201,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -10282,8 +10282,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -10592,8 +10592,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -10673,8 +10673,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -11426,8 +11426,8 @@ paths:
                     pool:
                       description: The UUID the token pool this transfer applies to
                     protocolId:
-                      description: A unique identifier for this transfer, as provided
-                        by the token connector
+                      description: An alphanumerically sortable string that represents
+                        this event uniquely with respect to the blockchain
                       type: string
                     to:
                       description: The target account for the transfer. On input defaults
@@ -11705,8 +11705,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -11786,8 +11786,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -11895,8 +11895,8 @@ paths:
                   pool:
                     description: The UUID the token pool this transfer applies to
                   protocolId:
-                    description: A unique identifier for this transfer, as provided
-                      by the token connector
+                    description: An alphanumerically sortable string that represents
+                      this event uniquely with respect to the blockchain
                     type: string
                   to:
                     description: The target account for the transfer. On input defaults
@@ -12239,9 +12239,9 @@ paths:
                         to the interface of the smart contract
                       type: object
                     protocolId:
-                      description: A alphanumerically sortable string that represents
-                        this event uniquely on the blockchain. Convention for plugins
-                        is zero-padded values BLOCKNUMBER/TXN_INDEX/EVENT_INDEX
+                      description: An alphanumerically sortable string that represents
+                        this event uniquely on the blockchain (convention for plugins
+                        is zero-padded values BLOCKNUMBER/TXN_INDEX/EVENT_INDEX)
                       type: string
                     source:
                       description: The blockchain plugin or token service that detected
