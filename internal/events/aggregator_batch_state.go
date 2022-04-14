@@ -154,6 +154,12 @@ func (bs *batchState) DIDClaimConfirmed(did string) {
 	bs.confirmedDIDClaims = append(bs.confirmedDIDClaims, did)
 }
 
+func (bs *batchState) queueRewinds(ag *aggregator) {
+	for _, did := range bs.confirmedDIDClaims {
+		ag.queueDIDRewind(did)
+	}
+}
+
 func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *fftypes.Message, topic string, firstMsgPinSequence int64) (bool, error) {
 
 	ucs, found := bs.unmaskedContexts[*contextUnmasked]

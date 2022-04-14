@@ -254,6 +254,7 @@ func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc str
 		Post(urlIdentities)
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
+	t.Logf("Identity creation initiated with key %s: %s (%s)", key, identity.ID, identity.DID)
 	return &identity
 }
 

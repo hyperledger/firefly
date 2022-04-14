@@ -62,8 +62,10 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	for i := 0; i < totalIdentities; i++ {
 		ed := waitForIdentityConfirmed(suite.T(), received1)
 		identityIDs[*ed.Reference] = true
+		suite.T().Logf("Received node 1 confirmation of identity %s", ed.Reference)
 		ed = waitForIdentityConfirmed(suite.T(), received2)
 		identityIDs[*ed.Reference] = true
+		suite.T().Logf("Received node 2 confirmation of identity %s", ed.Reference)
 	}
 	assert.Len(suite.T(), identityIDs, totalIdentities)
 

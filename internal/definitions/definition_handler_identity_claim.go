@@ -184,9 +184,10 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		if verificationID == nil {
 			// Ok, we still confirm the message as it's valid, and we do not want to block the context.
 			// But we do NOT go on to create the identity - we will be called back
+			log.L(ctx).Infof("Identity %s (%s) awaiting verification claim='%s'", identity.DID, identity.ID, msg.Header.ID)
 			return HandlerResult{Action: ActionConfirm}, nil
 		}
-		log.L(ctx).Infof("Identity '%s' verified claim='%s' verification='%s'", identity.ID, msg.Header.ID, verificationID)
+		log.L(ctx).Infof("Identity %s (%s) verified claim='%s' verification='%s'", identity.DID, identity.ID, msg.Header.ID, verificationID)
 		identity.Messages.Verification = verificationID
 	}
 

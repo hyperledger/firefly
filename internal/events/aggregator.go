@@ -191,16 +191,19 @@ func (ag *aggregator) processWithBatchState(callback func(ctx context.Context, s
 		return err
 	}
 
-	if len(state.PreFinalize) == 0 {
-		return err
+	if len(state.PreFinalize) > 0 {
+		if err := state.RunPreFinalize(ag.ctx); err != nil {
+			return err
+		}
+		err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
+			return state.RunFinalize(ctx)
+		})
+		if err != nil {
+			return err
+		}
 	}
-
-	if err := state.RunPreFinalize(ag.ctx); err != nil {
-		return err
-	}
-	return ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
-		return state.RunFinalize(ctx)
-	})
+	state.queueRewinds(ag)
+	return nil
 }
 
 func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced) (repoll bool, err error) {
@@ -566,9 +569,6 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 			if err = ag.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
-		}
-		for _, did := range state.confirmedDIDClaims {
-			ag.queueDIDRewind(did)
 		}
 		return nil
 	})

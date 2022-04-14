@@ -451,9 +451,6 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Update the message
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
-	// simulate definition handler adding a DID rewind
-	bs.DIDClaimConfirmed("did:firefly:org/test")
-
 	err := ag.processPins(ag.ctx, []*fftypes.Pin{
 		{
 			Sequence:   10001,
@@ -2106,6 +2103,41 @@ func TestProcessWithBatchActionsSuccess(t *testing.T) {
 		return nil
 	})
 	assert.NoError(t, err)
+}
+
+func TestProcessWithBatchRewindsSuccess(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
+		actions.DIDClaimConfirmed("did:firefly:org/test")
+		return nil
+	})
+	assert.NoError(t, err)
+}
+
+func TestProcessWithBatchActionsFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Once()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
+		actions.AddPreFinalize(func(ctx context.Context) error { return nil })
+		return nil
+	})
+	assert.EqualError(t, err, "pop")
 }
 
 func TestExtractManifestFail(t *testing.T) {
