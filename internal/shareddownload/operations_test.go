@@ -18,6 +18,7 @@ package shareddownload
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -133,4 +134,10 @@ func TestDownloadBlobDownloadDataReadFail(t *testing.T) {
 
 	mss.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+}
+
+func TestOperationUpdate(t *testing.T) {
+	dm, cancel := newTestDownloadManager(t)
+	defer cancel()
+	assert.NoError(t, dm.OnOperationUpdate(context.Background(), nil, nil))
 }

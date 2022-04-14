@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 )
@@ -140,6 +141,10 @@ func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.Prepar
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (pm *privateMessaging) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
 }
 
 func opSendBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes.Blob) *fftypes.PreparedOperation {

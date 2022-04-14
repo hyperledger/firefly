@@ -497,3 +497,9 @@ func TestRunOperationUploadBlobDownloadFail(t *testing.T) {
 	mps.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 }
+
+func TestOperationUpdate(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	assert.NoError(t, bm.OnOperationUpdate(context.Background(), nil, nil))
+}

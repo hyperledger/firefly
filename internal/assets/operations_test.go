@@ -20,11 +20,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestPrepareAndRunCreatePool(t *testing.T) {
@@ -519,4 +521,159 @@ func TestRunOperationTransfer(t *testing.T) {
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransfer(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransfer{
+		LocalID: fftypes.NewUUID(),
+		Pool:    fftypes.NewUUID(),
+		Type:    fftypes.TokenTransferTypeTransfer,
+	}
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenTransfer,
+	}
+	err := txcommon.AddTokenTransferInputs(op, transfer)
+	assert.NoError(t, err)
+
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeTransferOpFailed && *event.Reference == *op.ID && *event.Correlator == *transfer.LocalID
+	})).Return(nil)
+
+	err = am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransferBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenTransfer,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeTransferOpFailed && *event.Reference == *op.ID && event.Correlator == nil
+	})).Return(nil)
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransferEventFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenTransfer,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApproval(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	approval := &fftypes.TokenApproval{
+		LocalID: fftypes.NewUUID(),
+		Pool:    fftypes.NewUUID(),
+	}
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	err := txcommon.AddTokenApprovalInputs(op, approval)
+	assert.NoError(t, err)
+
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeApprovalOpFailed && *event.Reference == *op.ID && *event.Correlator == *approval.LocalID
+	})).Return(nil)
+
+	err = am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeApprovalOpFailed && *event.Reference == *op.ID && event.Correlator == nil
+	})).Return(nil)
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalEventFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }

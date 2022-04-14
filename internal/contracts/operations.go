@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 )
@@ -69,6 +70,10 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
 }
 
 func opBlockchainInvoke(op *fftypes.Operation, req *fftypes.ContractCallRequest) *fftypes.PreparedOperation {

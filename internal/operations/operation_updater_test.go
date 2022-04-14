@@ -43,7 +43,7 @@ func newTestOperationUpdater(t *testing.T) *operationUpdater {
 	return newTestOperationUpdaterCommon(t, &database.Capabilities{Concurrency: true})
 }
 
-func newTestOperationUpdaterNoConcrrency(t *testing.T) *operationUpdater {
+func newTestOperationUpdaterNoConcurrency(t *testing.T) *operationUpdater {
 	return newTestOperationUpdaterCommon(t, &database.Capabilities{Concurrency: false})
 }
 
@@ -54,15 +54,16 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)
 	logrus.SetLevel(logrus.DebugLevel)
 
+	mom := &operationsManager{handlers: make(map[fftypes.FFEnum]OperationHandler)}
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCapabilities)
 	mdm := &datamocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	return newOperationUpdater(context.Background(), mdi, txHelper)
+	return newOperationUpdater(context.Background(), mom, mdi, txHelper)
 }
 
 func TestNewOperationUpdaterNoConcurrency(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 	assert.Zero(t, ou.conf.workerCount)
 }
@@ -80,7 +81,7 @@ func TestSubmitUpdateClosed(t *testing.T) {
 }
 
 func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
 
@@ -121,15 +122,10 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusSucceeded, "", fftypes.JSONObject(nil)).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, tx1.ID, mock.Anything).Return(nil)
 	mdi.On("ResolveOperation", mock.Anything, opID2, fftypes.OpStatusFailed, "err1", fftypes.JSONObject{"test": true}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, opID3, fftypes.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeTransferOpFailed
-	})).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeApprovalOpFailed
-	})).Return(nil).Run(func(args mock.Arguments) {
-		close(done)
-	})
+	mdi.On("ResolveOperation", mock.Anything, opID3, fftypes.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil).
+		Run(func(args mock.Arguments) {
+			close(done)
+		})
 
 	om.Start()
 
@@ -176,7 +172,7 @@ func TestUpdateLoopExitRetryCancelledContext(t *testing.T) {
 }
 
 func TestDoBatchUpdateFailUpdate(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 
 	opID1 := fftypes.NewUUID()
@@ -197,7 +193,7 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 }
 
 func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 
 	opID1 := fftypes.NewUUID()
@@ -218,7 +214,7 @@ func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
 }
 
 func TestDoBatchUpdateFailGetOperations(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 
 	opID1 := fftypes.NewUUID()
@@ -236,7 +232,7 @@ func TestDoBatchUpdateFailGetOperations(t *testing.T) {
 }
 
 func TestDoUpdateFailTransactionUpdate(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 
 	opID1 := fftypes.NewUUID()
@@ -258,59 +254,20 @@ func TestDoUpdateFailTransactionUpdate(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestDoUpdateFailTransferFailTransferEventInsert(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
+func TestDoUpdateFailExternalHandler(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
 	defer ou.close()
 
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
-	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("UpdateTransaction", mock.Anything, txID1, mock.Anything).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeTransferOpFailed
-	})).Return(fmt.Errorf("pop"))
+	ou.manager.handlers[fftypes.OpTypeBlockchainInvoke] = &mockHandler{UpdateErr: fmt.Errorf("pop")}
 
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, Status: fftypes.OpStatusFailed, BlockchainTXID: "0x12345",
+		ID: opID1, Status: fftypes.OpStatusSucceeded,
 	}, []*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeTokenTransfer, Transaction: txID1, Input: fftypes.JSONObject{
-			"localId": fftypes.NewUUID().String(),
-			"type":    fftypes.TokenTransferTypeMint,
-		}},
-	}, []*fftypes.Transaction{
-		{ID: txID1},
-	})
+		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: txID1},
+	}, []*fftypes.Transaction{})
 	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestDoUpdateFailTransferFailApprovalEventInsert(t *testing.T) {
-	ou := newTestOperationUpdaterNoConcrrency(t)
-	defer ou.close()
-
-	opID1 := fftypes.NewUUID()
-	txID1 := fftypes.NewUUID()
-	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("UpdateTransaction", mock.Anything, txID1, mock.Anything).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(ev *fftypes.Event) bool {
-		return ev.Type == fftypes.EventTypeApprovalOpFailed
-	})).Return(fmt.Errorf("pop"))
-
-	ou.initQueues()
-
-	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, Status: fftypes.OpStatusFailed, BlockchainTXID: "0x12345",
-	}, []*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeTokenApproval, Transaction: txID1, Input: fftypes.JSONObject{
-			"localId": fftypes.NewUUID().String(),
-		}},
-	}, []*fftypes.Transaction{
-		{ID: txID1},
-	})
-	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
 }

@@ -56,6 +56,7 @@ type operationUpdaterBatch struct {
 type operationUpdater struct {
 	ctx         context.Context
 	cancelFunc  func()
+	manager     *operationsManager
 	database    database.Plugin
 	txHelper    txcommon.Helper
 	workQueues  []chan *OperationUpdate
@@ -72,8 +73,9 @@ type operationUpdaterConf struct {
 	queueLength  int
 }
 
-func newOperationUpdater(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) *operationUpdater {
+func newOperationUpdater(ctx context.Context, om *operationsManager, di database.Plugin, txHelper txcommon.Helper) *operationUpdater {
 	ou := &operationUpdater{
+		manager:  om,
 		database: di,
 		txHelper: txHelper,
 		conf: operationUpdaterConf{
@@ -246,7 +248,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 		return nil
 	}
 
-	// Match a TX we already retireved, if found add a specified Blockchain Transaction ID to it
+	// Match a TX we already retrieved, if found add a specified Blockchain Transaction ID to it
 	var tx *fftypes.Transaction
 	if op.Transaction != nil && update.BlockchainTXID != "" {
 		for _, candidate := range transactions {
@@ -262,38 +264,8 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 		}
 	}
 
-	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
-	if op.Type == fftypes.OpTypeTokenTransfer && update.Status == fftypes.OpStatusFailed {
-		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
-		topic := ""
-		if tokenTransfer != nil {
-			topic = tokenTransfer.Pool.String()
-		}
-		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, topic)
-		if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
-			log.L(ctx).Warnf("Could not parse token transfer: %s (%+v)", err, op.Input)
-		} else {
-			event.Correlator = tokenTransfer.LocalID
-		}
-		if err := ou.database.InsertEvent(ctx, event); err != nil {
-			return err
-		}
-	}
-
-	// Special handling for OpTypeTokenApproval, which writes an event when it fails
-	if op.Type == fftypes.OpTypeTokenApproval && update.Status == fftypes.OpStatusFailed {
-		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
-		topic := ""
-		if tokenApproval != nil {
-			topic = tokenApproval.Pool.String()
-		}
-		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, topic)
-		if err != nil || tokenApproval.LocalID == nil {
-			log.L(ctx).Warnf("Could not parse token approval: %s (%+v)", err, op.Input)
-		} else {
-			event.Correlator = tokenApproval.LocalID
-		}
-		if err := ou.database.InsertEvent(ctx, event); err != nil {
+	if handler, ok := ou.manager.handlers[op.Type]; ok {
+		if err := handler.OnOperationUpdate(ctx, op, update); err != nil {
 			return err
 		}
 	}

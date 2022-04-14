@@ -21,9 +21,11 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type createPoolData struct {
@@ -141,6 +143,46 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
+	if op.Type == fftypes.OpTypeTokenTransfer && update.Status == fftypes.OpStatusFailed {
+		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
+		topic := ""
+		if tokenTransfer != nil {
+			topic = tokenTransfer.Pool.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
+			log.L(ctx).Warnf("Could not parse token transfer: %s (%+v)", err, op.Input)
+		} else {
+			event.Correlator = tokenTransfer.LocalID
+		}
+		if err := am.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	// Special handling for OpTypeTokenApproval, which writes an event when it fails
+	if op.Type == fftypes.OpTypeTokenApproval && update.Status == fftypes.OpStatusFailed {
+		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
+		topic := ""
+		if tokenApproval != nil {
+			topic = tokenApproval.Pool.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenApproval.LocalID == nil {
+			log.L(ctx).Warnf("Could not parse token approval: %s (%+v)", err, op.Input)
+		} else {
+			event.Correlator = tokenApproval.LocalID
+		}
+		if err := am.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func opCreatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {

@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
@@ -96,6 +97,10 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (bp *batchPinSubmitter) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
 }
 
 func opBatchPin(op *fftypes.Operation, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) *fftypes.PreparedOperation {

@@ -33,6 +33,7 @@ type OperationHandler interface {
 	fftypes.Named
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *OperationUpdate) error
 }
 
 type Manager interface {
@@ -69,8 +70,9 @@ func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txco
 		ctx:      ctx,
 		database: di,
 		handlers: make(map[fftypes.OpType]OperationHandler),
-		updater:  newOperationUpdater(ctx, di, txHelper),
 	}
+	updater := newOperationUpdater(ctx, om, di, txHelper)
+	om.updater = updater
 	return om, nil
 }
 
