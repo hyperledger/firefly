@@ -791,7 +791,7 @@ func TestEvents(t *testing.T) {
 		"id":    "10",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"subject":     "1.0.0",
+			"id":          "1.0.0",
 			"poolLocator": "F1",
 			"tokenIndex":  "0",
 			"signer":      "0x0",
@@ -816,7 +816,7 @@ func TestEvents(t *testing.T) {
 		"id":    "11",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"to":          "0x0",
@@ -841,7 +841,7 @@ func TestEvents(t *testing.T) {
 		"id":    "12",
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
 			"poolLocator": "N1",
 			"tokenIndex":  "1",
 			"signer":      "0x0",
@@ -864,7 +864,7 @@ func TestEvents(t *testing.T) {
 		"id":    "13",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
 			"poolLocator": "F1",
 			"tokenIndex":  "0",
 			"signer":      "0x0",
@@ -889,7 +889,7 @@ func TestEvents(t *testing.T) {
 		"id":    "14",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"from":        "0x0",
@@ -916,7 +916,7 @@ func TestEvents(t *testing.T) {
 		"id":    "15",
 		"event": "token-transfer",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"from":        "0x0",
@@ -942,7 +942,7 @@ func TestEvents(t *testing.T) {
 		"id":    "16",
 		"event": "token-burn",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
 			"poolLocator": "F1",
 			"tokenIndex":  "0",
 			"signer":      "0x0",
@@ -968,7 +968,8 @@ func TestEvents(t *testing.T) {
 		"id":    "17",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
+			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"operator":    "0x0",
@@ -993,7 +994,8 @@ func TestEvents(t *testing.T) {
 		"id":    "18",
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
-			"subject":     "000000000010/000020/000030/000040",
+			"id":          "000000000010/000020/000030/000040",
+			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"operator":    "0x0",

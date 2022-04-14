@@ -45,7 +45,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		Namespace:   "ns1",
 		From:        "0x01",
 		To:          "0x02",
-		Subject:     "12345",
+		ProtocolID:  "12345",
 		Message:     fftypes.NewUUID(),
 		MessageHash: fftypes.NewRandB32(),
 		TX: fftypes.TransactionRef{
@@ -75,7 +75,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(transferJson), string(transferReadJson))
 
 	// Query back the token transfer (by protocol ID)
-	transferRead, err = s.GetTokenTransferBySubject(ctx, transfer.Connector, transfer.Subject)
+	transferRead, err = s.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID)
 	assert.NoError(t, err)
 	assert.NotNil(t, transferRead)
 	transferReadJson, _ = json.Marshal(&transferRead)
@@ -88,7 +88,7 @@ func TestTokenTransferE2EWithDB(t *testing.T) {
 		fb.Eq("tokenindex", transfer.TokenIndex),
 		fb.Eq("from", transfer.From),
 		fb.Eq("to", transfer.To),
-		fb.Eq("subject", transfer.Subject),
+		fb.Eq("protocolid", transfer.ProtocolID),
 		fb.Eq("created", transfer.Created),
 	)
 	transfers, res, err := s.GetTokenTransfers(ctx, filter.Count(true))
@@ -145,7 +145,7 @@ func TestUpsertTokenTransferFailInsert(t *testing.T) {
 func TestUpsertTokenTransferFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"subject"}).AddRow("1"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertTokenTransfer(context.Background(), &fftypes.TokenTransfer{})
@@ -156,7 +156,7 @@ func TestUpsertTokenTransferFailUpdate(t *testing.T) {
 func TestUpsertTokenTransferFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"subject"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertTokenTransfer(context.Background(), &fftypes.TokenTransfer{})
@@ -174,7 +174,7 @@ func TestGetTokenTransferByIDSelectFail(t *testing.T) {
 
 func TestGetTokenTransferByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"subject"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
 	msg, err := s.GetTokenTransfer(context.Background(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
@@ -183,7 +183,7 @@ func TestGetTokenTransferByIDNotFound(t *testing.T) {
 
 func TestGetTokenTransferByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"subject"}).AddRow("only one"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
 	_, err := s.GetTokenTransfer(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -192,7 +192,7 @@ func TestGetTokenTransferByIDScanFail(t *testing.T) {
 func TestGetTokenTransfersQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("subject", "")
+	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
 	_, _, err := s.GetTokenTransfers(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -200,15 +200,15 @@ func TestGetTokenTransfersQueryFail(t *testing.T) {
 
 func TestGetTokenTransfersBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("subject", map[bool]bool{true: false})
+	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
 	_, _, err := s.GetTokenTransfers(context.Background(), f)
-	assert.Regexp(t, "FF00143.*subject", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetTokenTransfersScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"subject"}).AddRow("only one"))
-	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("subject", "")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
+	f := database.TokenTransferQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
 	_, _, err := s.GetTokenTransfers(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())

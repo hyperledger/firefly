@@ -873,8 +873,8 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	gmid := mdi.On("GetTokenTransfer", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		transfer := &fftypes.TokenTransfer{
-			LocalID: requestID,
-			Subject: "abc",
+			LocalID:    requestID,
+			ProtocolID: "abc",
 		}
 		gmid.ReturnArguments = mock.Arguments{
 			transfer, nil,
@@ -898,7 +898,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *requestID, *reply.LocalID)
-	assert.Equal(t, "abc", reply.Subject)
+	assert.Equal(t, "abc", reply.ProtocolID)
 }
 
 func TestAwaitTokenApprovalConfirmation(t *testing.T) {

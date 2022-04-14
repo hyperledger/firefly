@@ -41,7 +41,7 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 	}
 	if len(operations) > 0 {
 		if origTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, operations[0]); err != nil {
-			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.Subject, err)
+			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
 		} else if origTransfer != nil {
 			transfer.LocalID = origTransfer.LocalID
 		}
@@ -56,10 +56,10 @@ func (em *eventManager) loadTransferOperation(ctx context.Context, tx *fftypes.U
 func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *tokens.TokenTransfer) (valid bool, err error) {
 	countMetric := true
 	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferBySubject(ctx, transfer.Connector, transfer.Subject); err != nil {
+	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
-		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.Subject)
+		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)
 		return false, nil
 	}
 
@@ -104,14 +104,14 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	}
 	em.emitBlockchainEventMetric(&transfer.Event)
 	if err := em.database.UpsertTokenTransfer(ctx, &transfer.TokenTransfer); err != nil {
-		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.Subject, err)
+		log.L(ctx).Errorf("Failed to record token transfer '%s': %s", transfer.ProtocolID, err)
 		return false, err
 	}
 	if err := em.database.UpdateTokenBalances(ctx, &transfer.TokenTransfer); err != nil {
-		log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.Subject, err)
+		log.L(ctx).Errorf("Failed to update accounts %s -> %s for token transfer '%s': %s", transfer.From, transfer.To, transfer.ProtocolID, err)
 		return false, err
 	}
-	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.Subject, transfer.Key)
+	log.L(ctx).Infof("Token transfer recorded id=%s author=%s", transfer.ProtocolID, transfer.Key)
 	if em.metrics.IsMetricsEnabled() && countMetric {
 		em.metrics.TransferConfirmed(&transfer.TokenTransfer)
 	}

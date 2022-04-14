@@ -2078,13 +2078,13 @@ func (_m *Plugin) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (
 	return r0, r1
 }
 
-// GetTokenTransferBySubject provides a mock function with given fields: ctx, connector, subject
-func (_m *Plugin) GetTokenTransferBySubject(ctx context.Context, connector string, subject string) (*fftypes.TokenTransfer, error) {
-	ret := _m.Called(ctx, connector, subject)
+// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, connector, protocolID
+func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, connector, protocolID)
 
 	var r0 *fftypes.TokenTransfer
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenTransfer); ok {
-		r0 = rf(ctx, connector, subject)
+		r0 = rf(ctx, connector, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenTransfer)
@@ -2093,7 +2093,7 @@ func (_m *Plugin) GetTokenTransferBySubject(ctx context.Context, connector strin
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, subject)
+		r1 = rf(ctx, connector, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}

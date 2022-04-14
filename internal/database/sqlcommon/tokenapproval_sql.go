@@ -31,6 +31,7 @@ import (
 var (
 	tokenApprovalColumns = []string{
 		"local_id",
+		"protocol_id",
 		"subject",
 		"key",
 		"operator_key",
@@ -46,6 +47,7 @@ var (
 	}
 	tokenApprovalFilterFieldMap = map[string]string{
 		"localid":         "local_id",
+		"protocolid":      "protocol_id",
 		"pool":            "pool_id",
 		"approved":        "approved",
 		"key":             "key",
@@ -80,6 +82,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 		if _, err = s.updateTx(ctx, tx,
 			sq.Update("tokenApproval").
 				Set("local_id", approval.LocalID).
+				Set("protocol_id", approval.ProtocolID).
 				Set("key", approval.Key).
 				Set("operator_key", approval.Operator).
 				Set("pool_id", approval.Pool).
@@ -105,6 +108,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 				Columns(tokenApprovalColumns...).
 				Values(
 					approval.LocalID,
+					approval.ProtocolID,
 					approval.Subject,
 					approval.Key,
 					approval.Operator,
@@ -132,6 +136,7 @@ func (s *SQLCommon) tokenApprovalResult(ctx context.Context, row *sql.Rows) (*ff
 	approval := fftypes.TokenApproval{}
 	err := row.Scan(
 		&approval.LocalID,
+		&approval.ProtocolID,
 		&approval.Subject,
 		&approval.Key,
 		&approval.Operator,

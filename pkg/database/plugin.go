@@ -430,8 +430,8 @@ type iTokenTransferCollection interface {
 	// GetTokenTransfer - Get a token transfer by ID
 	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
 
-	// GetTokenTransferBySubject - Get a token transfer by subject
-	GetTokenTransferBySubject(ctx context.Context, connector, subject string) (*fftypes.TokenTransfer, error)
+	// GetTokenTransferByProtocolID - Get a token transfer by subject
+	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
@@ -959,7 +959,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"from":            &StringField{},
 	"to":              &StringField{},
 	"amount":          &Int64Field{},
-	"subject":         &StringField{},
+	"protocolid":      &StringField{},
 	"message":         &UUIDField{},
 	"messagehash":     &Bytes32Field{},
 	"created":         &TimeField{},
@@ -977,6 +977,7 @@ var TokenApprovalQueryFactory = &queryFields{
 	"key":             &StringField{},
 	"operator":        &StringField{},
 	"approved":        &BoolField{},
+	"protocolid":      &StringField{},
 	"subject":         &StringField{},
 	"created":         &TimeField{},
 	"tx.type":         &StringField{},

@@ -9455,6 +9455,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: protocolid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: subject
         schema:
           type: string
@@ -9551,9 +9556,13 @@ paths:
                       type: string
                     pool:
                       description: The UUID the token pool this approval applies to
-                    subject:
+                    protocolId:
                       description: A unique identifier for this approval, as provided
                         by the token connector
+                      type: string
+                    subject:
+                      description: A string identifying the parties and entities in
+                        the scope of this approval, as provided by the token connector
                       type: string
                     tokenIndex:
                       description: The index of the token within the pool that this
@@ -9646,9 +9655,7 @@ paths:
                   description: The blockchain identity that is granted the approval
                   type: string
                 pool:
-                  description: The name or UUID of a token pool. Required if more
-                    than one pool exists.
-                  type: string
+                  description: The UUID the token pool this approval applies to
                 tokenIndex:
                   description: The index of the token within the pool that this approval
                     applies to
@@ -9702,9 +9709,13 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this approval applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this approval, as provided
                       by the token connector
+                    type: string
+                  subject:
+                    description: A string identifying the parties and entities in
+                      the scope of this approval, as provided by the token connector
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -9770,9 +9781,13 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this approval applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this approval, as provided
                       by the token connector
+                    type: string
+                  subject:
+                    description: A string identifying the parties and entities in
+                      the scope of this approval, as provided by the token connector
                     type: string
                   tokenIndex:
                     description: The index of the token within the pool that this
@@ -10168,7 +10183,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
@@ -10249,7 +10264,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
@@ -10559,7 +10574,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
@@ -10640,7 +10655,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
@@ -11278,7 +11293,7 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: subject
+        name: protocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -11393,7 +11408,7 @@ paths:
                       type: string
                     pool:
                       description: The UUID the token pool this transfer applies to
-                    subject:
+                    protocolId:
                       description: A unique identifier for this transfer, as provided
                         by the token connector
                       type: string
@@ -11672,7 +11687,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
@@ -11753,7 +11768,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
@@ -11862,7 +11877,7 @@ paths:
                     type: string
                   pool:
                     description: The UUID the token pool this transfer applies to
-                  subject:
+                  protocolId:
                     description: A unique identifier for this transfer, as provided
                       by the token connector
                     type: string
