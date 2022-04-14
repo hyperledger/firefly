@@ -9410,6 +9410,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: active
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: approved
         schema:
           type: string
@@ -9514,6 +9519,10 @@ paths:
               schema:
                 items:
                   properties:
+                    active:
+                      description: Indicates if this approval is currently active
+                        (only one approval can be active per subject)
+                      type: boolean
                     approved:
                       description: Whether this record grants permission for an operator
                         to perform actions on the token balance (true), or revokes
@@ -9667,6 +9676,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates if this approval is currently active (only
+                      one approval can be active per subject)
+                    type: boolean
                   approved:
                     description: Whether this record grants permission for an operator
                       to perform actions on the token balance (true), or revokes permission
@@ -9739,6 +9752,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  active:
+                    description: Indicates if this approval is currently active (only
+                      one approval can be active per subject)
+                    type: boolean
                   approved:
                     description: Whether this record grants permission for an operator
                       to perform actions on the token balance (true), or revokes permission

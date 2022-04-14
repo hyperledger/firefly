@@ -441,6 +441,9 @@ type iTokenApprovalCollection interface {
 	// UpsertTokenApproval - Upsert a token approval
 	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
 
+	// UpdateTokenApprovals - Update multiple token approvals
+	UpdateTokenApprovals(ctx context.Context, filter Filter, update Update) (err error)
+
 	// GetTokenApprovalByID - Get a token approval by ID
 	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
@@ -979,6 +982,7 @@ var TokenApprovalQueryFactory = &queryFields{
 	"approved":        &BoolField{},
 	"protocolid":      &StringField{},
 	"subject":         &StringField{},
+	"active":          &BoolField{},
 	"created":         &TimeField{},
 	"tx.type":         &StringField{},
 	"tx.id":           &UUIDField{},

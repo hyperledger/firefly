@@ -483,6 +483,7 @@ var (
 	TokenApprovalNamespace       = ffm("TokenApproval.namespace", "The namespace for the approval, which must match the namespace of the token pool")
 	TokenApprovalProtocolID      = ffm("TokenApproval.protocolId", "A unique identifier for this approval, as provided by the token connector")
 	TokenApprovalSubject         = ffm("TokenApproval.subject", "A string identifying the parties and entities in the scope of this approval, as provided by the token connector")
+	TokenApprovalActive          = ffm("TokenApproval.active", "Indicates if this approval is currently active (only one approval can be active per subject)")
 	TokenApprovalCreated         = ffm("TokenApproval.created", "The creation time of the token approval")
 	TokenApprovalTX              = ffm("TokenApproval.tx", "If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data)")
 	TokenApprovalBlockchainEvent = ffm("TokenApproval.blockchainEvent", "The UUID of the blockchain event")

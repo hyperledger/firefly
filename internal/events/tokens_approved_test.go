@@ -73,15 +73,17 @@ func TestTokensApprovedSucceedWithRetries(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(3)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(4)
 	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil).Times(2)
+	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil).Times(3)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == approval.Event.Name
-	})).Return(nil).Times(2)
+	})).Return(nil).Times(3)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
-	})).Return(nil).Times(2)
+	})).Return(nil).Times(3)
+	mdi.On("UpdateTokenApprovals", em.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mdi.On("UpdateTokenApprovals", em.ctx, mock.Anything, mock.Anything).Return(nil).Times(2)
 	mdi.On("UpsertTokenApproval", em.ctx, &approval.TokenApproval).Return(fmt.Errorf("pop")).Once()
 	mdi.On("UpsertTokenApproval", em.ctx, &approval.TokenApproval).Return(nil).Times(1)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -284,6 +286,7 @@ func TestApprovedWithTransactionRegenerateLocalID(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
 		return ev.Type == fftypes.EventTypeBlockchainEventReceived && ev.Namespace == pool.Namespace
 	})).Return(nil)
+	mdi.On("UpdateTokenApprovals", em.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertTokenApproval", em.ctx, &approval.TokenApproval).Return(nil)
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)

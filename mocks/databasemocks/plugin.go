@@ -2705,6 +2705,20 @@ func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string
 	return r0
 }
 
+// UpdateTokenApprovals provides a mock function with given fields: ctx, filter, update
+func (_m *Plugin) UpdateTokenApprovals(ctx context.Context, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, filter, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, filter, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpdateTokenBalances provides a mock function with given fields: ctx, transfer
 func (_m *Plugin) UpdateTokenBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error {
 	ret := _m.Called(ctx, transfer)

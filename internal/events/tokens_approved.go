@@ -103,10 +103,23 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	}
 	em.emitBlockchainEventMetric(&approval.Event)
 
+	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("pool", approval.Pool),
+		fb.Eq("subject", approval.Subject),
+	)
+	update := database.TokenApprovalQueryFactory.NewUpdate(ctx).Set("active", false)
+	if err := em.database.UpdateTokenApprovals(ctx, filter, update); err != nil {
+		log.L(ctx).Errorf("Failed to update prior token approvals for '%s': %s", approval.Subject, err)
+		return false, err
+	}
+
+	approval.Active = true
 	if err := em.database.UpsertTokenApproval(ctx, &approval.TokenApproval); err != nil {
 		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.Subject, err)
 		return false, err
 	}
+
 	log.L(ctx).Infof("Token approval recorded id=%s author=%s", approval.Subject, approval.Key)
 	return true, nil
 }

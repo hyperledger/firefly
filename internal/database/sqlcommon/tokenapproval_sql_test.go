@@ -44,6 +44,7 @@ func TestApprovalE2EWithDB(t *testing.T) {
 		Approved:   true,
 		ProtocolID: "0001/01/01",
 		Subject:    "12345",
+		Active:     true,
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenApproval,
 			ID:   fftypes.NewUUID(),
@@ -92,10 +93,17 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	approvalReadJson, _ = json.Marshal(&approvalRead)
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
-	// Update the token approval
+	// Update the token approval (by upsert)
 	approval.Approved = false
 	err = s.UpsertTokenApproval(ctx, approval)
 	assert.NoError(t, err)
+
+	// Update the token approval (by update)
+	filter = fb.And(fb.Eq("subject", approval.Subject))
+	update := database.TokenApprovalQueryFactory.NewUpdate(ctx).Set("active", false)
+	err = s.UpdateTokenApprovals(ctx, filter, update)
+	assert.NoError(t, err)
+	approval.Active = false
 
 	// Query back token approval by ID
 	approvalRead, err = s.GetTokenApprovalByID(ctx, approval.LocalID)
@@ -204,4 +212,43 @@ func TestGetApprovalsScanFail(t *testing.T) {
 	_, _, err := s.GetTokenApprovals(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateApprovalsFailBegin(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", "test")
+	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", false)
+	err := s.UpdateTokenApprovals(context.Background(), f, u)
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateApprovalsBuildUpdateFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", "test")
+	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", map[bool]bool{true: false})
+	err := s.UpdateTokenApprovals(context.Background(), f, u)
+	assert.Regexp(t, "FF00143.*active", err)
+}
+
+func TestUpdateApprovalsBuildFilterFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", map[bool]bool{true: false})
+	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", false)
+	err := s.UpdateTokenApprovals(context.Background(), f, u)
+	assert.Regexp(t, "FF00143.*subject", err)
+}
+
+func TestUpdateApprovalsUpdateFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
+	mock.ExpectRollback()
+	f := database.TokenApprovalQueryFactory.NewFilter(context.Background()).Eq("subject", "test")
+	u := database.TokenApprovalQueryFactory.NewUpdate(context.Background()).Set("active", false)
+	err := s.UpdateTokenApprovals(context.Background(), f, u)
+	assert.Regexp(t, "FF10117", err)
 }
