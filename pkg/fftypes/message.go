@@ -68,17 +68,17 @@ var (
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID     *UUID           `ffstruct:"MessageHeader" json:"id,omitempty"`
+	ID     *UUID           `ffstruct:"MessageHeader" json:"id,omitempty" ffexcludeinput:"true"`
 	CID    *UUID           `ffstruct:"MessageHeader" json:"cid,omitempty"`
 	Type   MessageType     `ffstruct:"MessageHeader" json:"type" ffenum:"messagetype"`
-	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty"`
+	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty" ffexcludeinput:"true"`
 	SignerRef
-	Created   *FFTime       `ffstruct:"MessageHeader" json:"created,omitempty"`
-	Namespace string        `ffstruct:"MessageHeader" json:"namespace,omitempty"`
+	Created   *FFTime       `ffstruct:"MessageHeader" json:"created,omitempty" ffexcludeinput:"true"`
+	Namespace string        `ffstruct:"MessageHeader" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Group     *Bytes32      `ffstruct:"MessageHeader" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
 	Topics    FFStringArray `ffstruct:"MessageHeader" json:"topics,omitempty"`
 	Tag       string        `ffstruct:"MessageHeader" json:"tag,omitempty"`
-	DataHash  *Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty"`
+	DataHash  *Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
@@ -86,12 +86,12 @@ type MessageHeader struct {
 // details of the message, provides a verification against tampering.
 type Message struct {
 	Header    MessageHeader `ffstruct:"Message" json:"header"`
-	Hash      *Bytes32      `ffstruct:"Message" json:"hash,omitempty"`
-	BatchID   *UUID         `ffstruct:"Message" json:"batch,omitempty"`
+	Hash      *Bytes32      `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
+	BatchID   *UUID         `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
 	State     MessageState  `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate"`
-	Confirmed *FFTime       `ffstruct:"Message" json:"confirmed,omitempty"`
-	Data      DataRefs      `ffstruct:"Message" json:"data"`
-	Pins      FFStringArray `ffstruct:"Message" json:"pins,omitempty"`
+	Confirmed *FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
+	Data      DataRefs      `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
+	Pins      FFStringArray `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
 	Sequence  int64         `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
 }
 
@@ -132,7 +132,7 @@ type DataRefOrValue struct {
 	Validator ValidatorType `ffstruct:"DataRefOrValue" json:"validator,omitempty"`
 	Datatype  *DatatypeRef  `ffstruct:"DataRefOrValue" json:"datatype,omitempty"`
 	Value     *JSONAny      `ffstruct:"DataRefOrValue" json:"value,omitempty"`
-	Blob      *BlobRef      `ffstruct:"DataRefOrValue" json:"blob,omitempty"`
+	Blob      *BlobRef      `ffstruct:"DataRefOrValue" json:"blob,omitempty" ffexcludeinput:"true"`
 }
 
 // MessageRef is a lightweight data structure that can be used to refer to a message
