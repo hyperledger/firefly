@@ -59,7 +59,8 @@
     "upserts",
     "Warnf",
     "wsclient",
-    "wsconfig"
+    "wsconfig",
+    "wsconn"
   ],
   "go.testTimeout": "10s"
 }
