@@ -25,17 +25,17 @@ import (
 )
 
 type ContractListener struct {
-	ID         *UUID                    `ffstruct:"ContractListener" json:"id,omitempty" ffexcludeinput:"true"`
-	Interface  *FFIReference            `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
-	Namespace  string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Name       string                   `ffstruct:"ContractListener" json:"name,omitempty"`
-	ProtocolID string                   `ffstruct:"ContractListener" json:"protocolId,omitempty" ffexcludeinput:"true"`
-	Location   *JSONAny                 `ffstruct:"ContractListener" json:"location,omitempty"`
-	Created    *FFTime                  `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
-	Event      *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"postContractAPIListeners"`
-	Signature  string                   `ffstruct:"ContractListener" json:"signature" ffexcludeinput:"true"`
-	Topic      string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
-	Options    *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
+	ID        *UUID                    `ffstruct:"ContractListener" json:"id,omitempty" ffexcludeinput:"true"`
+	Interface *FFIReference            `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	Namespace string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Name      string                   `ffstruct:"ContractListener" json:"name,omitempty"`
+	BackendID string                   `ffstruct:"ContractListener" json:"backendId,omitempty" ffexcludeinput:"true"`
+	Location  *JSONAny                 `ffstruct:"ContractListener" json:"location,omitempty"`
+	Created   *FFTime                  `ffstruct:"ContractListener" json:"created,omitempty" ffexcludeinput:"true"`
+	Event     *FFISerializedEvent      `ffstruct:"ContractListener" json:"event,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	Signature string                   `ffstruct:"ContractListener" json:"signature" ffexcludeinput:"true"`
+	Topic     string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
+	Options   *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
 }
 
 type ContractListenerOptions struct {

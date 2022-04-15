@@ -574,7 +574,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 		return nil, err
 	}
 	if listener.Name == "" {
-		listener.Name = listener.ProtocolID
+		listener.Name = listener.BackendID
 	}
 	if err = cm.database.UpsertContractListener(ctx, &listener.ContractListener); err != nil {
 		return nil, err

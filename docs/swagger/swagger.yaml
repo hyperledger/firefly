@@ -895,6 +895,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: backendid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -916,11 +921,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: protocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -974,6 +974,10 @@ paths:
               schema:
                 items:
                   properties:
+                    backendId:
+                      description: An ID assigned by the blockchain connector to this
+                        listener
+                      type: string
                     created:
                       description: The creation time of the listener
                     event:
@@ -1045,10 +1049,6 @@ paths:
                             Default is 'newest'
                           type: string
                       type: object
-                    protocolId:
-                      description: An ID assigned by the blockchain connector to this
-                        listener
-                      type: string
                     signature:
                       description: The stringified signature of the event, as computed
                         by the blockchain plugin
@@ -1132,6 +1132,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  backendId:
+                    description: An ID assigned by the blockchain connector to this
+                      listener
+                    type: string
                   created:
                     description: The creation time of the listener
                   event:
@@ -1203,10 +1207,6 @@ paths:
                           Default is 'newest'
                         type: string
                     type: object
-                  protocolId:
-                    description: An ID assigned by the blockchain connector to this
-                      listener
-                    type: string
                   signature:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
@@ -3225,6 +3225,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: backendid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: created
         schema:
           type: string
@@ -3246,11 +3251,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: protocolid
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3304,6 +3304,10 @@ paths:
               schema:
                 items:
                   properties:
+                    backendId:
+                      description: An ID assigned by the blockchain connector to this
+                        listener
+                      type: string
                     created:
                       description: The creation time of the listener
                     event:
@@ -3375,10 +3379,6 @@ paths:
                             Default is 'newest'
                           type: string
                       type: object
-                    protocolId:
-                      description: An ID assigned by the blockchain connector to this
-                        listener
-                      type: string
                     signature:
                       description: The stringified signature of the event, as computed
                         by the blockchain plugin
@@ -3497,6 +3497,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  backendId:
+                    description: An ID assigned by the blockchain connector to this
+                      listener
+                    type: string
                   created:
                     description: The creation time of the listener
                   event:
@@ -3568,10 +3572,6 @@ paths:
                           Default is 'newest'
                         type: string
                     type: object
-                  protocolId:
-                    description: An ID assigned by the blockchain connector to this
-                      listener
-                    type: string
                   signature:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
@@ -3648,6 +3648,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  backendId:
+                    description: An ID assigned by the blockchain connector to this
+                      listener
+                    type: string
                   created:
                     description: The creation time of the listener
                   event:
@@ -3719,10 +3723,6 @@ paths:
                           Default is 'newest'
                         type: string
                     type: object
-                  protocolId:
-                    description: An ID assigned by the blockchain connector to this
-                      listener
-                    type: string
                   signature:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin

@@ -36,7 +36,7 @@ var (
 		"event",
 		"namespace",
 		"name",
-		"protocol_id",
+		"backend_id",
 		"location",
 		"signature",
 		"topic",
@@ -44,8 +44,8 @@ var (
 		"created",
 	}
 	contractListenerFilterFieldMap = map[string]string{
-		"interface":  "interface_id",
-		"protocolid": "protocol_id",
+		"interface": "interface_id",
+		"backendid": "backend_id",
 	}
 )
 
@@ -59,7 +59,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("seq").
 			From("contractlisteners").
-			Where(sq.Eq{"protocol_id": listener.ProtocolID}),
+			Where(sq.Eq{"backend_id": listener.BackendID}),
 	)
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 				Set("signature", listener.Signature).
 				Set("topic", listener.Topic).
 				Set("options", listener.Options).
-				Where(sq.Eq{"protocol_id": listener.ProtocolID}),
+				Where(sq.Eq{"backend_id": listener.BackendID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
 			},
@@ -102,7 +102,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 					listener.Event,
 					listener.Namespace,
 					listener.Name,
-					listener.ProtocolID,
+					listener.BackendID,
 					listener.Location,
 					listener.Signature,
 					listener.Topic,
@@ -130,7 +130,7 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		&listener.Event,
 		&listener.Namespace,
 		&listener.Name,
-		&listener.ProtocolID,
+		&listener.BackendID,
 		&listener.Location,
 		&listener.Signature,
 		&listener.Topic,
@@ -175,8 +175,8 @@ func (s *SQLCommon) GetContractListenerByID(ctx context.Context, id *fftypes.UUI
 	return s.getContractListenerPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetContractListenerByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error) {
-	return s.getContractListenerPred(ctx, id, sq.Eq{"protocol_id": id})
+func (s *SQLCommon) GetContractListenerByBackendID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error) {
+	return s.getContractListenerPred(ctx, id, sq.Eq{"backend_id": id})
 }
 
 func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Filter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
