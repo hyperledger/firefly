@@ -6245,7 +6245,6 @@ paths:
           description: Success
         default:
           description: ""
-  /namespaces/{ns}/identities/{id}: {}
   /namespaces/{ns}/identities/{iid}:
     get:
       description: Gets an identity by its ID

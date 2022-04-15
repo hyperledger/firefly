@@ -28,11 +28,11 @@ import (
 
 var patchUpdateIdentity = &oapispec.Route{
 	Name:   "patchUpdateIdentity",
-	Path:   "namespaces/{ns}/identities/{id}",
+	Path:   "namespaces/{ns}/identities/{iid}",
 	Method: http.MethodPatch,
 	PathParams: []*oapispec.PathParam{
 		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-		{Name: "id", Example: "id", Description: coremsgs.APIParamsIdentityID},
+		{Name: "iid", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
@@ -45,7 +45,7 @@ var patchUpdateIdentity = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, r.PP["ns"], r.PP["id"], r.Input.(*fftypes.IdentityUpdateDTO), waitConfirm)
+		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, r.PP["ns"], r.PP["iid"], r.Input.(*fftypes.IdentityUpdateDTO), waitConfirm)
 		return org, err
 	},
 }
