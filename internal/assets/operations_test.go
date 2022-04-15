@@ -35,8 +35,8 @@ func TestPrepareAndRunCreatePool(t *testing.T) {
 		Type: fftypes.OpTypeTokenCreatePool,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	err := txcommon.AddTokenPoolCreateInputs(op, pool)
 	assert.NoError(t, err)
@@ -64,24 +64,20 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 		Type: fftypes.OpTypeTokenActivatePool,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ID:         fftypes.NewUUID(),
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		ID:        fftypes.NewUUID(),
+		Locator:   "F1",
 	}
-	info := fftypes.JSONObject{
-		"some": "info",
-	}
-	txcommon.AddTokenPoolActivateInputs(op, pool.ID, info)
+	txcommon.AddTokenPoolActivateInputs(op, pool.ID)
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("ActivateTokenPool", context.Background(), op.ID, pool, info).Return(true, nil)
+	mti.On("ActivateTokenPool", context.Background(), op.ID, pool).Return(true, nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, pool, po.Data.(activatePoolData).Pool)
-	assert.Equal(t, info, po.Data.(activatePoolData).BlockchainInfo)
 
 	_, complete, err := am.RunOperation(context.Background(), po)
 
@@ -100,8 +96,8 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 		Type: fftypes.OpTypeTokenTransfer,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		LocalID: fftypes.NewUUID(),
@@ -137,8 +133,8 @@ func TestPrepareAndRunApproval(t *testing.T) {
 		Type: fftypes.OpTypeTokenApproval,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	approval := &fftypes.TokenApproval{
 		LocalID:  fftypes.NewUUID(),
@@ -393,9 +389,8 @@ func TestRunOperationActivatePoolBadPlugin(t *testing.T) {
 
 	op := &fftypes.Operation{}
 	pool := &fftypes.TokenPool{}
-	info := fftypes.JSONObject{}
 
-	_, complete, err := am.RunOperation(context.Background(), opActivatePool(op, pool, info))
+	_, complete, err := am.RunOperation(context.Background(), opActivatePool(op, pool))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10272", err)
@@ -456,8 +451,8 @@ func TestRunOperationTransferMint(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		Type: fftypes.TokenTransferTypeMint,
@@ -482,8 +477,8 @@ func TestRunOperationTransferBurn(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		Type: fftypes.TokenTransferTypeBurn,
@@ -508,8 +503,8 @@ func TestRunOperationTransfer(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		Type: fftypes.TokenTransferTypeTransfer,

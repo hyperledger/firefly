@@ -34,7 +34,7 @@ var (
 		"namespace",
 		"name",
 		"standard",
-		"protocol_id",
+		"locator",
 		"type",
 		"connector",
 		"symbol",
@@ -46,10 +46,9 @@ var (
 		"info",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
-		"protocolid": "protocol_id",
-		"message":    "message_id",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
+		"message": "message_id",
+		"tx.type": "tx_type",
+		"tx.id":   "tx_id",
 	}
 )
 
@@ -87,7 +86,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
 				Set("standard", pool.Standard).
-				Set("protocol_id", pool.ProtocolID).
+				Set("locator", pool.Locator).
 				Set("type", pool.Type).
 				Set("connector", pool.Connector).
 				Set("symbol", pool.Symbol).
@@ -113,7 +112,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Namespace,
 					pool.Name,
 					pool.Standard,
-					pool.ProtocolID,
+					pool.Locator,
 					pool.Type,
 					pool.Connector,
 					pool.Symbol,
@@ -142,7 +141,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Namespace,
 		&pool.Name,
 		&pool.Standard,
-		&pool.ProtocolID,
+		&pool.Locator,
 		&pool.Type,
 		&pool.Connector,
 		&pool.Symbol,
@@ -191,10 +190,10 @@ func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (mes
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error) {
-	return s.getTokenPoolPred(ctx, protocolID, sq.And{
+func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*fftypes.TokenPool, error) {
+	return s.getTokenPoolPred(ctx, locator, sq.And{
 		sq.Eq{"connector": connector},
-		sq.Eq{"protocol_id": protocolID},
+		sq.Eq{"locator": locator},
 	})
 }
 

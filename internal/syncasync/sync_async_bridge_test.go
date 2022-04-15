@@ -430,7 +430,7 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfer", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		EnrichedEvent: fftypes.EnrichedEvent{
@@ -592,7 +592,7 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfer", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&fftypes.EventDelivery{
 		EnrichedEvent: fftypes.EnrichedEvent{
@@ -870,7 +870,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenTransfer", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		transfer := &fftypes.TokenTransfer{
 			LocalID:    requestID,
@@ -915,8 +915,8 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 	gmid := mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		approval := &fftypes.TokenApproval{
-			LocalID:    requestID,
-			ProtocolID: "abc",
+			LocalID: requestID,
+			Subject: "abc",
 		}
 		gmid.ReturnArguments = mock.Arguments{
 			approval, nil,
@@ -940,7 +940,7 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, *requestID, *reply.LocalID)
-	assert.Equal(t, "abc", reply.ProtocolID)
+	assert.Equal(t, "abc", reply.Subject)
 }
 
 func TestAwaitTokenApprovalConfirmationSendFail(t *testing.T) {

@@ -121,6 +121,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 		}
 	}
 
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Name == batchPin.Event.Name
 	})).Return(fmt.Errorf("pop")).Once()
@@ -156,6 +157,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
 		Event: blockchain.Event{
 			BlockchainTXID: "0x12345",
+			ProtocolID:     "10/20/30",
 		},
 	}
 
@@ -166,6 +168,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("These pins have been seen before")) // simulate replay fallback
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
@@ -198,6 +201,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
 		Event: blockchain.Event{
 			BlockchainTXID: "0x12345",
+			ProtocolID:     "10/20/30",
 		},
 	}
 
@@ -208,6 +212,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(fmt.Errorf("optimization miss"))
 	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
@@ -233,6 +238,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
 		Event: blockchain.Event{
 			BlockchainTXID: "0x12345",
+			ProtocolID:     "10/20/30",
 		},
 	}
 
@@ -243,6 +249,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)

@@ -318,7 +318,7 @@ func (s *SQLCommon) UpdateGroups(ctx context.Context, filter database.Filter, up
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, "", query, filter, opFilterFieldMap)
+	query, err = s.filterUpdate(ctx, query, filter, opFilterFieldMap)
 	if err != nil {
 		return err
 	}

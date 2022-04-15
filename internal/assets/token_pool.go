@@ -98,7 +98,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	return pool, err
 }
 
-func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error {
+func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return err
@@ -109,12 +109,12 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 		pool.Namespace,
 		pool.TX.ID,
 		fftypes.OpTypeTokenActivatePool)
-	txcommon.AddTokenPoolActivateInputs(op, pool.ID, blockchainInfo)
+	txcommon.AddTokenPoolActivateInputs(op, pool.ID)
 	if err := am.database.InsertOperation(ctx, op); err != nil {
 		return err
 	}
 
-	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool, blockchainInfo))
+	_, err = am.operations.RunOperation(ctx, opActivatePool(op, pool))
 	return err
 }
 

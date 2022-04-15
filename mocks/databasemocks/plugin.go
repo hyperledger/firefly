@@ -340,6 +340,29 @@ func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) 
 	return r0, r1
 }
 
+// GetBlockchainEventByProtocolID provides a mock function with given fields: ctx, ns, listener, protocolID
+func (_m *Plugin) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error) {
+	ret := _m.Called(ctx, ns, listener, protocolID)
+
+	var r0 *fftypes.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.BlockchainEvent); ok {
+		r0 = rf(ctx, ns, listener, protocolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, ns, listener, protocolID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetBlockchainEvents provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -1821,29 +1844,6 @@ func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
-// GetTokenApproval provides a mock function with given fields: ctx, connector, protocolID, poolID
-func (_m *Plugin) GetTokenApproval(ctx context.Context, connector string, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error) {
-	ret := _m.Called(ctx, connector, protocolID, poolID)
-
-	var r0 *fftypes.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.UUID) *fftypes.TokenApproval); ok {
-		r0 = rf(ctx, connector, protocolID, poolID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenApproval)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, connector, protocolID, poolID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetTokenApprovalByID provides a mock function with given fields: ctx, localID
 func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
 	ret := _m.Called(ctx, localID)
@@ -1860,6 +1860,29 @@ func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUI
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, localID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, poolID, protocolID
+func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenApproval, error) {
+	ret := _m.Called(ctx, poolID, protocolID)
+
+	var r0 *fftypes.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string) *fftypes.TokenApproval); ok {
+		r0 = rf(ctx, poolID, protocolID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.TokenApproval)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, poolID, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2000,13 +2023,13 @@ func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*ffty
 	return r0, r1
 }
 
-// GetTokenPoolByProtocolID provides a mock function with given fields: ctx, connector, protocolID
-func (_m *Plugin) GetTokenPoolByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenPool, error) {
-	ret := _m.Called(ctx, connector, protocolID)
+// GetTokenPoolByLocator provides a mock function with given fields: ctx, connector, locator
+func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, locator string) (*fftypes.TokenPool, error) {
+	ret := _m.Called(ctx, connector, locator)
 
 	var r0 *fftypes.TokenPool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenPool); ok {
-		r0 = rf(ctx, connector, protocolID)
+		r0 = rf(ctx, connector, locator)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenPool)
@@ -2015,7 +2038,7 @@ func (_m *Plugin) GetTokenPoolByProtocolID(ctx context.Context, connector string
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, protocolID)
+		r1 = rf(ctx, connector, locator)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2055,8 +2078,8 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 	return r0, r1, r2
 }
 
-// GetTokenTransfer provides a mock function with given fields: ctx, localID
-func (_m *Plugin) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+// GetTokenTransferByID provides a mock function with given fields: ctx, localID
+func (_m *Plugin) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, localID)
 
 	var r0 *fftypes.TokenTransfer
@@ -2078,13 +2101,13 @@ func (_m *Plugin) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (
 	return r0, r1
 }
 
-// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, connector, protocolID
-func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenTransfer, error) {
-	ret := _m.Called(ctx, connector, protocolID)
+// GetTokenTransferByProtocolID provides a mock function with given fields: ctx, poolID, protocolID
+func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenTransfer, error) {
+	ret := _m.Called(ctx, poolID, protocolID)
 
 	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenTransfer); ok {
-		r0 = rf(ctx, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string) *fftypes.TokenTransfer); ok {
+		r0 = rf(ctx, poolID, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.TokenTransfer)
@@ -2092,8 +2115,8 @@ func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector st
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, string) error); ok {
+		r1 = rf(ctx, poolID, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2698,6 +2721,20 @@ func (_m *Plugin) UpdateSubscription(ctx context.Context, ns string, name string
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.Update) error); ok {
 		r0 = rf(ctx, ns, name, update)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateTokenApprovals provides a mock function with given fields: ctx, filter, update
+func (_m *Plugin) UpdateTokenApprovals(ctx context.Context, filter database.Filter, update database.Update) error {
+	ret := _m.Called(ctx, filter, update)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter, database.Update) error); ok {
+		r0 = rf(ctx, filter, update)
 	} else {
 		r0 = ret.Error(0)
 	}
