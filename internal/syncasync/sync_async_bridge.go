@@ -19,6 +19,7 @@ package syncasync
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -53,6 +54,8 @@ type Bridge interface {
 	WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenTransfer, error)
 	// WaitForTokenTransfer waits for a token approval with the supplied ID
 	WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.TokenApproval, error)
+	// WaitForInvokeOperation waits for an operation with the supplied ID
+	WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Operation, error)
 }
 
 type RequestSender func(ctx context.Context) error
@@ -66,6 +69,7 @@ const (
 	tokenPoolConfirm
 	tokenTransferConfirm
 	tokenApproveConfirm
+	invokeOperationConfirm
 )
 
 type inflightRequest struct {
@@ -410,6 +414,40 @@ func (sa *syncAsyncBridge) handleApprovalOpFailedEvent(event *fftypes.EventDeliv
 	return nil
 }
 
+func (sa *syncAsyncBridge) handleOperationSuccededEvent(event *fftypes.EventDelivery) error {
+	// See if this is a failure of an inflight invoke operation
+	inflight := sa.getInFlight(event.Namespace, invokeOperationConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
+	op, err := sa.getOperationFromEvent(event)
+	if err != nil || op == nil {
+		return err
+	}
+
+	go sa.resolveSuccessfulOperation(inflight, op)
+
+	return nil
+}
+
+func (sa *syncAsyncBridge) handleOperationFailedEvent(event *fftypes.EventDelivery) error {
+	// See if this is a failure of an inflight invoke operation
+	inflight := sa.getInFlight(event.Namespace, invokeOperationConfirm, event.Reference)
+	if inflight == nil {
+		return nil
+	}
+
+	op, err := sa.getOperationFromEvent(event)
+	if err != nil || op == nil {
+		return err
+	}
+
+	go sa.resolveFailedOperation(inflight, op)
+
+	return nil
+}
+
 func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 	sa.inflightMux.Lock()
 	defer sa.inflightMux.Unlock()
@@ -444,6 +482,12 @@ func (sa *syncAsyncBridge) eventCallback(event *fftypes.EventDelivery) error {
 
 	case fftypes.EventTypeApprovalOpFailed:
 		return sa.handleApprovalOpFailedEvent(event)
+
+	case fftypes.EventTypeBlockchainInvokeOpSucceeded:
+		return sa.handleOperationSuccededEvent(event)
+
+	case fftypes.EventTypeBlockchainInvokeOpFailed:
+		return sa.handleOperationFailedEvent(event)
 	}
 
 	return nil
@@ -509,6 +553,16 @@ func (sa *syncAsyncBridge) resolveFailedTokenApproval(inflight *inflightRequest,
 	err := i18n.NewError(sa.ctx, coremsgs.MsgTokenApprovalFailed, transferID)
 	log.L(sa.ctx).Debugf("Resolving token approval request '%s' with error '%s'", inflight.id, err)
 	inflight.response <- inflightResponse{err: err}
+}
+
+func (sa *syncAsyncBridge) resolveSuccessfulOperation(inflight *inflightRequest, op *fftypes.Operation) {
+	log.L(sa.ctx).Debugf("Resolving operation request '%s' with ID '%s'", inflight.id, op.ID)
+	inflight.response <- inflightResponse{id: op.ID, data: op}
+}
+
+func (sa *syncAsyncBridge) resolveFailedOperation(inflight *inflightRequest, op *fftypes.Operation) {
+	log.L(sa.ctx).Debugf("Resolving operation request '%s' with error '%s'", inflight.id, op.Error)
+	inflight.response <- inflightResponse{err: fmt.Errorf(op.Error)}
 }
 
 func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftypes.UUID, reqType requestType, send RequestSender) (interface{}, error) {
@@ -587,4 +641,12 @@ func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, ns string, 
 		return nil, err
 	}
 	return reply.(*fftypes.TokenApproval), err
+}
+
+func (sa *syncAsyncBridge) WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*fftypes.Operation, error) {
+	reply, err := sa.sendAndWait(ctx, ns, id, invokeOperationConfirm, send)
+	if err != nil {
+		return nil, err
+	}
+	return reply.(*fftypes.Operation), err
 }

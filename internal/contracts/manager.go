@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -43,8 +44,8 @@ type Manager interface {
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
 	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error)
 
-	InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (interface{}, error)
-	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error)
+	InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error)
+	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
 	GetContractAPIInterface(ctx context.Context, ns, apiName string) (*fftypes.FFI, error)
 	GetContractAPIMethod(ctx context.Context, ns, apiName, methodPath string) (*fftypes.FFIMethod, error)
@@ -75,10 +76,11 @@ type contractManager struct {
 	blockchain        blockchain.Plugin
 	ffiParamValidator fftypes.FFIParamValidator
 	operations        operations.Manager
+	syncasync         syncasync.Bridge
 }
 
-func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
-	if di == nil || bm == nil || im == nil || bi == nil || om == nil {
+func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
+	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
@@ -94,6 +96,7 @@ func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Ma
 		blockchain:        bi,
 		ffiParamValidator: v,
 		operations:        om,
+		syncasync:         sa,
 	}
 
 	om.RegisterHandler(ctx, cm, []fftypes.OpType{
@@ -211,7 +214,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 	return op, err
 }
 
-func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (res interface{}, err error) {
+func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
 	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
@@ -239,9 +242,15 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 
 	switch req.Type {
 	case fftypes.CallTypeInvoke:
-		res = &fftypes.ContractCallResponse{ID: op.ID}
-		_, err := cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
-		return res, err
+		send := func(ctx context.Context) error {
+			_, err := cm.operations.RunOperation(ctx, opBlockchainInvoke(op, req))
+			return err
+		}
+		if waitConfirm {
+			return cm.syncasync.WaitForInvokeOperation(ctx, ns, op.ID, send)
+		}
+		err = send(ctx)
+		return op, err
 	case fftypes.CallTypeQuery:
 		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
 	default:
@@ -249,7 +258,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *f
 	}
 }
 
-func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error) {
+func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error) {
 	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
 	if err != nil {
 		return nil, err
@@ -261,7 +270,7 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	if api.Location != nil {
 		req.Location = api.Location
 	}
-	return cm.InvokeContract(ctx, ns, req)
+	return cm.InvokeContract(ctx, ns, req, waitConfirm)
 }
 
 func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (err error) {

@@ -73,6 +73,21 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 }
 
 func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	// Special handling for OpTypeBlockchainInvoke, which writes an event when it succeeds or fails
+	if op.Type == fftypes.OpTypeBlockchainInvoke {
+		if update.Status == fftypes.OpStatusSucceeded {
+			event := fftypes.NewEvent(fftypes.EventTypeBlockchainInvokeOpSucceeded, op.Namespace, op.ID, op.Transaction, "")
+			if err := cm.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
+		}
+		if update.Status == fftypes.OpStatusFailed {
+			event := fftypes.NewEvent(fftypes.EventTypeBlockchainInvokeOpFailed, op.Namespace, op.ID, op.Transaction, "")
+			if err := cm.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 

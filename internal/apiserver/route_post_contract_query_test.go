@@ -41,7 +41,7 @@ func TestPostContractQuery(t *testing.T) {
 
 	mcm.On("InvokeContract", mock.Anything, "ns1", mock.MatchedBy(func(req *fftypes.ContractCallRequest) bool {
 		return req.Type == fftypes.CallTypeQuery
-	})).Return("banana", nil)
+	}), true).Return("banana", nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
