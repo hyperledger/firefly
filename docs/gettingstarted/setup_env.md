@@ -16,9 +16,16 @@ nav_order: 2
 
 ---
 
+## Previous steps: Install the FireFly CLI
+If you haven't set up the FireFly CLI already, please go back to the previous step and read the guide on how to [Install the FireFly CLI](./firefly_cli.md).
+
+[← ① Install the FireFly CLI](firefly_cli.md){: .btn .btn-purple .mb-5}
+
 Now that you have the FireFly CLI installed, you are ready to run some Supernodes on your machine!
 
-> **NOTE:** If you haven't set up the FireFly CLI already, please go back to the previous step and read the guide on how to [Install the FireFly CLI](./firefly_cli.md)
+<!-- > **NOTE:** If you haven't set up the FireFly CLI already, please go back to the previous step and read the guide on how to [Install the FireFly CLI](./firefly_cli.md)
+>  -->
+
 
 ## A FireFly Stack
 
