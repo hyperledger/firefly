@@ -57,7 +57,7 @@ func TestGetTokenTransferByID(t *testing.T) {
 
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfer", context.Background(), u).Return(&fftypes.TokenTransfer{}, nil)
+	mdi.On("GetTokenTransferByID", context.Background(), u).Return(&fftypes.TokenTransfer{}, nil)
 	_, err := am.GetTokenTransferByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 

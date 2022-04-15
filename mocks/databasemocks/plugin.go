@@ -2078,8 +2078,8 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 	return r0, r1, r2
 }
 
-// GetTokenTransfer provides a mock function with given fields: ctx, localID
-func (_m *Plugin) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+// GetTokenTransferByID provides a mock function with given fields: ctx, localID
+func (_m *Plugin) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
 	ret := _m.Called(ctx, localID)
 
 	var r0 *fftypes.TokenTransfer

@@ -174,6 +174,7 @@ func TestPersistApprovalBadOp(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestPersistApprovalTxFail(t *testing.T) {
@@ -200,14 +201,15 @@ func TestPersistApprovalTxFail(t *testing.T) {
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(nil, nil)
+	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestPersistApprovalGetApprovalFail(t *testing.T) {
@@ -225,20 +227,23 @@ func TestPersistApprovalGetApprovalFail(t *testing.T) {
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localId": localID.String(),
+			"localId":   localID.String(),
+			"connector": approval.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetTokenApprovalByProtocolID", em.ctx, pool.ID, approval.ProtocolID).Return(nil, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", approval.TX.ID, fftypes.TransactionTypeTokenApproval, "0xffffeeee").Return(false, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenApproval(em.ctx, approval)
 	assert.False(t, valid)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestApprovedBadPool(t *testing.T) {

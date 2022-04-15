@@ -197,7 +197,7 @@ func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred 
 	return transfer, nil
 }
 
-func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+func (s *SQLCommon) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
