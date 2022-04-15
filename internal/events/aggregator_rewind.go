@@ -62,6 +62,7 @@ type rewinder struct {
 	stagedRewinds    []*rewind
 	loop2ShoulderTap chan bool
 	readyRewinds     map[fftypes.UUID]bool
+	querySafetyLimit uint64
 }
 
 func newRewinder(ag *aggregator) *rewinder {
@@ -76,6 +77,7 @@ func newRewinder(ag *aggregator) *rewinder {
 		rewindRequests:   make(chan rewind, config.GetInt(coreconfig.EventAggregatorRewindQueueLength)),
 		loop2ShoulderTap: make(chan bool, 1),
 		minRewindTimeout: config.GetDuration(coreconfig.EventAggregatorRewindTimeout),
+		querySafetyLimit: uint64(config.GetUint((coreconfig.EventAggregatorRewindQueryLimit))),
 		readyRewinds:     make(map[fftypes.UUID]bool),
 	}
 }
@@ -267,7 +269,7 @@ func (rw *rewinder) getRewindsForBlobs(ctx context.Context, newHashes []driver.V
 
 	// Find any data associated with this blob
 	var data []*fftypes.DataRef
-	filter := database.DataQueryFactory.NewFilter(ctx).In("blob.hash", newHashes)
+	filter := database.DataQueryFactory.NewFilterLimit(ctx, rw.querySafetyLimit).In("blob.hash", newHashes)
 	data, _, err := rw.database.GetDataRefs(ctx, filter)
 	if err != nil {
 		return err
@@ -297,7 +299,7 @@ func (rw *rewinder) getRewindsForBlobs(ctx context.Context, newHashes []driver.V
 func (rw *rewinder) getRewindsForDIDs(ctx context.Context, dids []driver.Value, batchIDs map[fftypes.UUID]bool) error {
 
 	// We need to find all pending messages, that are authored by this DID
-	fb := database.MessageQueryFactory.NewFilter(ctx)
+	fb := database.MessageQueryFactory.NewFilterLimit(ctx, rw.querySafetyLimit)
 	filter := fb.And(
 		fb.Eq("state", fftypes.MessageStatePending),
 		fb.In("author", dids),

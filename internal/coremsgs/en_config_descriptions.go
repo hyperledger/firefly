@@ -176,8 +176,8 @@ var (
 	ConfigEventAggregatorPollTimeout       = ffc("config.event.aggregator.pollTimeout", "The time to wait without a notification of new events, before trying a select on the table", i18n.TimeDurationType)
 	ConfigEventAggregatorRewindQueueLength = ffc("config.event.aggregator.rewindQueueLength", "The size of the queue into the rewind dispatcher", i18n.IntType)
 	ConfigEventAggregatorRewindTimout      = ffc("config.event.aggregator.rewindTimeout", "The minimum time to wait for rewinds to accumulate before resolving them", i18n.TimeDurationType)
-
-	ConfigEventDbeventsBufferSize = ffc("config.event.dbevents.bufferSize", "The size of the buffer of change events", i18n.ByteSizeType)
+	ConfigEventAggregatorRewindQueryLimit  = ffc("config.event.aggregator.rewindQueryLimit", "Safety limit on the maximum number of records to search when performing queries to search for rewinds", i18n.IntType)
+	ConfigEventDbeventsBufferSize          = ffc("config.event.dbevents.bufferSize", "The size of the buffer of change events", i18n.ByteSizeType)
 
 	ConfigEventDispatcherBatchTimeout = ffc("config.event.dispatcher.batchTimeout", "A short time to wait for new events to arrive before re-polling for new events", i18n.TimeDurationType)
 	ConfigEventDispatcherBufferLength = ffc("config.event.dispatcher.bufferLength", "The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription", i18n.IntType)
