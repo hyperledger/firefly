@@ -7,7 +7,7 @@ set -o pipefail
 CWD=$(dirname "$0")
 CLI="ff -v --ansi never"
 CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
-STACK_DIR=~/.firefly/stacks
+STACKS_DIR=~/.firefly/stacks
 
 checkOk() {
   local rc=$1
@@ -44,9 +44,12 @@ if [ -z "${DATABASE_TYPE}" ]; then
 fi
 
 if [ -z "${STACK_FILE}" ]; then
-  STACK_FILE=$STACK_DIR/$STACK_NAME/stack.json
+  STACK_FILE=$STACKS_DIR/$STACK_NAME/stack.json
 fi
 
+if [ -z "${STACK_STATE}" ]; then
+  STACK_STATE=$STACKS_DIR/$STACK_NAME/runtime/stackState.json
+fi
 
 if [ -z "${BLOCKCHAIN_PROVIDER}" ]; then
   BLOCKCHAIN_PROVIDER=geth
@@ -77,7 +80,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS
+  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
@@ -87,25 +90,33 @@ if [ "$CREATE_STACK" == "true" ]; then
   checkOk $?
 
   if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
-      prefix='contract address: '
-      output=$($CLI deploy $STACK_NAME ../data/simplestorage/simple_storage.json | grep address)
-      export CONTRACT_ADDRESS=${output#"$prefix"}
+      export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
+      # Create 5 new accounts for use in testing
+      for i in {1..4}
+      do
+          $CLI accounts create $STACK_NAME
+      done
+  elif [ "$TEST_SUITE" == "TestFabricE2ESuite" ]; then
+      # Create 5 new accounts for use in testing
+      for i in {1..3}
+      do
+          $CLI accounts create $STACK_NAME org_0  user_$i
+      done
+      # Create one account that is specifically only usable from the second org
+      $CLI accounts create $STACK_NAME org_1  user_5
   fi
 fi
 
 if [ "$TOKENS_PROVIDER" == "erc20_erc721" ]; then
-    prefix='contract address: '
-    output=$($CLI deploy $STACK_NAME ../data/erc20/ERC20WithData.json | grep address)
-    export ERC20_CONTRACT_ADDRESS=${output#"$prefix"}
-    prefix='contract address: '
-    output=$($CLI deploy $STACK_NAME ../data/erc721/ERC721WithData.json | grep address)
-    export ERC721_CONTRACT_ADDRESS=${output#"$prefix"}
+    export ERC20_CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/erc20/ERC20WithData.json | jq -r '.address')
+    export ERC721_CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/erc721/ERC721WithData.json | jq -r '.address')
 fi
 
 $CLI info $STACK_NAME
 checkOk $?
 
 export STACK_FILE
+export STACK_STATE
 
 go clean -testcache && go test -v . -run $TEST_SUITE
 checkOk $?

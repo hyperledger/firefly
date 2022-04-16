@@ -411,6 +411,7 @@ nav_order: 3
 |batchTimeout|How long to wait for new events to arrive before performing aggregation on a page of events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |firstEvent|The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are `oldest` or `newest`|`string`|`<nil>`
 |pollTimeout|The time to wait without a notification of new events, before trying a select on the table|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|rewindQueryLimit|Safety limit on the maximum number of records to search when performing queries to search for rewinds|`int`|`<nil>`
 |rewindQueueLength|The size of the queue into the rewind dispatcher|`int`|`<nil>`
 |rewindTimeout|The minimum time to wait for rewinds to accumulate before resolving them|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 

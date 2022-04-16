@@ -37,18 +37,20 @@ import (
 )
 
 type testState struct {
-	startTime time.Time
-	t         *testing.T
-	client1   *resty.Client
-	client2   *resty.Client
-	ethNode   *resty.Client
-	ws1       *websocket.Conn
-	ws2       *websocket.Conn
-	org1      *fftypes.Identity
-	org1key   *fftypes.Verifier
-	org2      *fftypes.Identity
-	org2key   *fftypes.Verifier
-	done      func()
+	startTime            time.Time
+	t                    *testing.T
+	client1              *resty.Client
+	client2              *resty.Client
+	ethNode              *resty.Client
+	ws1                  *websocket.Conn
+	ws2                  *websocket.Conn
+	org1                 *fftypes.Identity
+	org1key              *fftypes.Verifier
+	org2                 *fftypes.Identity
+	org2key              *fftypes.Verifier
+	done                 func()
+	stackState           *StackState
+	unregisteredAccounts []interface{}
 }
 
 var widgetSchemaJSON = []byte(`{
@@ -163,17 +165,30 @@ func readStackFile(t *testing.T) *Stack {
 	return stack
 }
 
+func readStackState(t *testing.T) *StackState {
+	stackFile := os.Getenv("STACK_STATE")
+	if stackFile == "" {
+		t.Fatal("STACK_STATE must be set")
+	}
+	stackState, err := ReadStackState(stackFile)
+	assert.NoError(t, err)
+	return stackState
+}
+
 func beforeE2ETest(t *testing.T) *testState {
 	stack := readStackFile(t)
+	stackState := readStackState(t)
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
 
 	ts := &testState{
-		t:         t,
-		startTime: time.Now(),
-		client1:   NewResty(t),
-		client2:   NewResty(t),
+		t:                    t,
+		startTime:            time.Now(),
+		client1:              NewResty(t),
+		client2:              NewResty(t),
+		stackState:           stackState,
+		unregisteredAccounts: stackState.Accounts[2:],
 	}
 
 	httpProtocolClient1 := "http"

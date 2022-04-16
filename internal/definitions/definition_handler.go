@@ -91,6 +91,9 @@ type DefinitionBatchState interface {
 
 	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
 	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
+
+	// Notify of a DID claim locking in, so a rewind gets queued for it to go back and process any dependent child identities/messages
+	DIDClaimConfirmed(did string)
 }
 
 type definitionHandlers struct {

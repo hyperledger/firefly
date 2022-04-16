@@ -69,6 +69,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, fftypes.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
+	assert.Equal(t, bs.confirmedDIDClaims, []string{custom1.DID})
 
 	err = bs.finalizers[0](ctx)
 	assert.NoError(t, err)

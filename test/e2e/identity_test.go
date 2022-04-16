@@ -19,6 +19,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -43,18 +44,13 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	received1 := wsReader(suite.testState.ws1, false)
 	received2 := wsReader(suite.testState.ws2, false)
 
-	// Create some keys
-	totalIdentities := 3
-	keys := make([]string, totalIdentities)
-	for i := 0; i < totalIdentities; i++ {
-		keys[i] = CreateEthAccount(suite.T(), suite.testState.ethNode)
-	}
-
+	totalIdentities := 2
 	ts := time.Now().Unix()
 	for i := 0; i < totalIdentities; i++ {
+		key := getUnregisteredAccount(suite, suite.testState.org1.Name)
 		ClaimCustomIdentity(suite.T(),
 			suite.testState.client1,
-			keys[i],
+			key,
 			fmt.Sprintf("custom_%d_%d", ts, i),
 			fmt.Sprintf("Description %d", i),
 			fftypes.JSONObject{"profile": i},
@@ -66,8 +62,10 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	for i := 0; i < totalIdentities; i++ {
 		ed := waitForIdentityConfirmed(suite.T(), received1)
 		identityIDs[*ed.Reference] = true
+		suite.T().Logf("Received node 1 confirmation of identity %s", ed.Reference)
 		ed = waitForIdentityConfirmed(suite.T(), received2)
 		identityIDs[*ed.Reference] = true
+		suite.T().Logf("Received node 2 confirmation of identity %s", ed.Reference)
 	}
 	assert.Len(suite.T(), identityIDs, totalIdentities)
 
@@ -100,14 +98,13 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 	received1 := wsReader(suite.testState.ws1, false)
 	received2 := wsReader(suite.testState.ws2, false)
 
-	// Create an identity on both sides
-	org1Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
-	org2Key := CreateEthAccount(suite.T(), suite.testState.ethNode)
+	org1key := getUnregisteredAccount(suite, suite.testState.org1.Name)
+	org2key := getUnregisteredAccount(suite, suite.testState.org2.Name)
 
 	ts := time.Now().Unix()
 	custom1 := ClaimCustomIdentity(suite.T(),
 		suite.testState.client1,
-		org1Key,
+		org1key,
 		fmt.Sprintf("custom_%d_org1priv", ts),
 		fmt.Sprintf("Description org1priv"),
 		nil,
@@ -115,7 +112,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		true)
 	custom2 := ClaimCustomIdentity(suite.T(),
 		suite.testState.client2,
-		org2Key,
+		org2key,
 		fmt.Sprintf("custom_%d_org2priv", ts),
 		fmt.Sprintf("Description org2priv"),
 		nil,
@@ -126,7 +123,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		waitForIdentityConfirmed(suite.T(), received2)
 	}
 
-	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1Key, "topic1", &fftypes.DataRefOrValue{
+	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1key, "topic1", &fftypes.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
 	}, []string{custom1.DID, custom2.DID}, "tag1", fftypes.TransactionTypeBatchPin, true)
 	require.NoError(suite.T(), err)
@@ -134,5 +131,46 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 
 	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
 	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
+}
 
+func getUnregisteredAccount(suite *IdentityTestSuite, orgName string) string {
+	verifiers := GetVerifiers(suite.T(), suite.testState.client1)
+	suite.T().Logf("checking for account with orgName: %s", orgName)
+	for i, account := range suite.testState.unregisteredAccounts {
+		alreadyRegisted := false
+		accountMap := account.(map[string]interface{})
+		suite.T().Logf("account from stackState has orgName: %s", accountMap["orgName"])
+		if accountOrgName, ok := accountMap["orgName"]; ok {
+			if accountOrgName != orgName {
+				// An orgName was present and it wasn't what we were looking for. Skip.
+				continue
+			}
+		}
+		var key string
+		if k, ok := accountMap["address"]; ok {
+			key = k.(string)
+		}
+		if k, ok := accountMap["name"]; ok {
+			key = k.(string)
+		}
+
+		suite.T().Logf("checking to make sure key '%s' is not registered", key)
+		if len(verifiers) > 0 {
+			for _, verifier := range verifiers {
+
+				suite.T().Logf("account name/address: %s", key)
+				suite.T().Logf("verifier value: %s", verifier.Value)
+				if strings.Contains(verifier.Value, key) {
+					// Already registered. Look at the next account
+					alreadyRegisted = true
+					break
+				}
+			}
+		}
+		if !alreadyRegisted {
+			suite.testState.unregisteredAccounts = append(suite.testState.unregisteredAccounts[:i], suite.testState.unregisteredAccounts[i+1:]...)
+			return key
+		}
+	}
+	return ""
 }
