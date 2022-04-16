@@ -89,7 +89,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 		}
 		e.TokenApproval = approval
 	case fftypes.EventTypeTransferConfirmed, fftypes.EventTypeTransferOpFailed:
-		transfer, err := t.database.GetTokenTransfer(ctx, event.Reference)
+		transfer, err := t.database.GetTokenTransferByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}

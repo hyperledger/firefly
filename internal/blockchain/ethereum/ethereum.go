@@ -658,12 +658,12 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *fftypes.Co
 	if err != nil {
 		return err
 	}
-	listener.ProtocolID = result.ID
+	listener.BackendID = result.ID
 	return nil
 }
 
 func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
-	return e.streams.deleteSubscription(ctx, subscription.ProtocolID)
+	return e.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {

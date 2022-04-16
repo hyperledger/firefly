@@ -399,8 +399,8 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
-	// GetTokenPoolByID - Get a token pool by protocol ID
-	GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error)
+	// GetTokenPoolByID - Get a token pool by locator
+	GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
@@ -427,11 +427,11 @@ type iTokenTransferCollection interface {
 	// UpsertTokenTransfer - Upsert a token transfer
 	UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
-	// GetTokenTransfer - Get a token transfer by ID
-	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
+	// GetTokenTransferByID - Get a token transfer by ID
+	GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
@@ -441,11 +441,14 @@ type iTokenApprovalCollection interface {
 	// UpsertTokenApproval - Upsert a token approval
 	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
 
+	// UpdateTokenApprovals - Update multiple token approvals
+	UpdateTokenApprovals(ctx context.Context, filter Filter, update Update) (err error)
+
 	// GetTokenApprovalByID - Get a token approval by ID
 	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
 
-	// GetTokenApproval - Get a token approval by connector, protocolID, and poolID
-	GetTokenApproval(ctx context.Context, connector, protocolID string, poolID *fftypes.UUID) (*fftypes.TokenApproval, error)
+	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
+	GetTokenApprovalByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)
@@ -488,8 +491,8 @@ type iContractListenerCollection interface {
 	// GetContractListenerByID - get smart contract subscription by ID
 	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractListener, err error)
 
-	// GetContractListenerByProtocolID - get smart contract subscription by protocol ID
-	GetContractListenerByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error)
+	// GetContractListenerByBackendID - get smart contract subscription by backend ID
+	GetContractListenerByBackendID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error)
 
 	// GetContractListeners - get smart contract subscriptions
 	GetContractListeners(ctx context.Context, filter Filter) ([]*fftypes.ContractListener, *FilterResult, error)
@@ -499,13 +502,16 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
-	// InsertBlockchainEvent - insert an event from an external smart contract
+	// InsertBlockchainEvent - insert an event from the blockchain
 	InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error)
 
-	// GetBlockchainEventByID - get smart contract event by ID
+	// GetBlockchainEventByID - get blockchain event by ID
 	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 
-	// GetBlockchainEvents - get smart contract events
+	// GetBlockchainEventByID - get blockchain event by protocol ID
+	GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error)
+
+	// GetBlockchainEvents - get blockchain events
 	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*fftypes.BlockchainEvent, *FilterResult, error)
 }
 
@@ -616,6 +622,8 @@ const (
 	CollectionSubscriptions     UUIDCollectionNS = "subscriptions"
 	CollectionTransactions      UUIDCollectionNS = "transactions"
 	CollectionTokenPools        UUIDCollectionNS = "tokenpools"
+	CollectionTokenTransfers    UUIDCollectionNS = "tokentransfers"
+	CollectionTokenApprovals    UUIDCollectionNS = "tokenapprovals"
 	CollectionFFIs              UUIDCollectionNS = "ffi"
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
@@ -638,9 +646,7 @@ const (
 type UUIDCollection CollectionName
 
 const (
-	CollectionNamespaces     UUIDCollection = "namespaces"
-	CollectionTokenTransfers UUIDCollection = "tokentransfers"
-	CollectionTokenApprovals UUIDCollection = "tokenapprovals"
+	CollectionNamespaces UUIDCollection = "namespaces"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.
@@ -906,19 +912,19 @@ var BlobQueryFactory = &queryFields{
 
 // TokenPoolQueryFactory filter fields for token pools
 var TokenPoolQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"type":       &StringField{},
-	"namespace":  &StringField{},
-	"name":       &StringField{},
-	"standard":   &StringField{},
-	"protocolid": &StringField{},
-	"symbol":     &StringField{},
-	"message":    &UUIDField{},
-	"state":      &StringField{},
-	"created":    &TimeField{},
-	"connector":  &StringField{},
-	"tx.type":    &StringField{},
-	"tx.id":      &UUIDField{},
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"standard":  &StringField{},
+	"locator":   &StringField{},
+	"symbol":    &StringField{},
+	"message":   &UUIDField{},
+	"state":     &StringField{},
+	"created":   &TimeField{},
+	"connector": &StringField{},
+	"tx.type":   &StringField{},
+	"tx.id":     &UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances
@@ -978,6 +984,8 @@ var TokenApprovalQueryFactory = &queryFields{
 	"operator":        &StringField{},
 	"approved":        &BoolField{},
 	"protocolid":      &StringField{},
+	"subject":         &StringField{},
+	"active":          &BoolField{},
 	"created":         &TimeField{},
 	"tx.type":         &StringField{},
 	"tx.id":           &UUIDField{},
@@ -1014,14 +1022,14 @@ var FFIEventQueryFactory = &queryFields{
 
 // ContractListenerQueryFactory filter fields for contract listeners
 var ContractListenerQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"interface":  &UUIDField{},
-	"namespace":  &StringField{},
-	"location":   &JSONField{},
-	"topic":      &StringField{},
-	"signature":  &StringField{},
-	"protocolid": &StringField{},
-	"created":    &TimeField{},
+	"id":        &UUIDField{},
+	"interface": &UUIDField{},
+	"namespace": &StringField{},
+	"location":  &JSONField{},
+	"topic":     &StringField{},
+	"signature": &StringField{},
+	"backendid": &StringField{},
+	"created":   &TimeField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events

@@ -132,6 +132,14 @@ func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID
 	return s.getBlockchainEventPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
+func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error) {
+	return s.getBlockchainEventPred(ctx, protocolID, sq.Eq{
+		"namespace":   ns,
+		"listener_id": listener,
+		"protocol_id": protocolID,
+	})
+}
+
 func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "",

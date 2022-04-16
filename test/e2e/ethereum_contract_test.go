@@ -162,7 +162,7 @@ func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
-	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
+	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
 
 	startTime := time.Now()
 	suite.T().Log(startTime.UTC().UnixNano())
@@ -199,7 +199,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
-	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
+	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
 
 	location := map[string]interface{}{
 		"address": suite.contractAddress,
@@ -258,7 +258,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
-	assert.Equal(suite.T(), listener.ProtocolID, listeners[0].ProtocolID)
+	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
 
 	location := map[string]interface{}{
 		"address": suite.contractAddress,
@@ -272,8 +272,6 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		Interface:  suite.interfaceID,
 		MethodPath: "set",
 	}
-
-	<-received1
 
 	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
 	assert.NoError(suite.testState.t, err)

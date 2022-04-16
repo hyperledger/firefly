@@ -59,8 +59,8 @@ func TestTokenApprovalSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -97,8 +97,8 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -223,9 +223,9 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 	f.Limit(1).Count(true)
 	tokenPools := []*fftypes.TokenPool{
 		{
-			Name:       "pool1",
-			ProtocolID: "F1",
-			State:      fftypes.TokenPoolStateConfirmed,
+			Name:    "pool1",
+			Locator: "F1",
+			State:   fftypes.TokenPoolStateConfirmed,
 		},
 	}
 	totalCount := int64(1)
@@ -318,8 +318,8 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStatePending,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStatePending,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -366,8 +366,8 @@ func TestApprovalFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -404,8 +404,8 @@ func TestApprovalTransactionFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -435,8 +435,8 @@ func TestApprovalOperationsFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -465,8 +465,8 @@ func TestTokenApprovalConfirm(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)

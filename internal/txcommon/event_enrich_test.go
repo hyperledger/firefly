@@ -583,7 +583,7 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransfer", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
+	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
 		LocalID: ref1,
 	}, nil)
 
@@ -609,7 +609,7 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransfer", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
+	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
 		LocalID: ref1,
 	}, nil)
 
@@ -635,7 +635,7 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransfer", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &fftypes.Event{
 		ID:        ev1,

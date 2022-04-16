@@ -32,6 +32,8 @@ type TokenApproval struct {
 	Info            JSONObject     `ffstruct:"TokenApproval" json:"info,omitempty"`
 	Namespace       string         `ffstruct:"TokenApproval" json:"namespace,omitempty"`
 	ProtocolID      string         `ffstruct:"TokenApproval" json:"protocolId,omitempty" ffexcludeinput:"true"`
+	Subject         string         `ffstruct:"TokenApproval" json:"subject,omitempty" ffexcludeinput:"true"`
+	Active          bool           `ffstruct:"TokenApproval" json:"active,omitempty" ffexcludeinput:"true"`
 	Created         *FFTime        `ffstruct:"TokenApproval" json:"created,omitempty" ffexcludeinput:"true"`
 	TX              TransactionRef `ffstruct:"TokenApproval" json:"tx" ffexcludeinput:"true"`
 	BlockchainEvent *UUID          `ffstruct:"TokenApproval" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`

@@ -102,11 +102,11 @@ func (s *SQLCommon) buildUpdate(sel sq.UpdateBuilder, update database.Update, ty
 	return sel, nil
 }
 
-func (s *SQLCommon) filterUpdate(ctx context.Context, tableName string, update sq.UpdateBuilder, filter database.Filter, typeMap map[string]string) (sq.UpdateBuilder, error) {
+func (s *SQLCommon) filterUpdate(ctx context.Context, update sq.UpdateBuilder, filter database.Filter, typeMap map[string]string) (sq.UpdateBuilder, error) {
 	fi, err := filter.Finalize()
 	var fop sq.Sqlizer
 	if err == nil {
-		fop, err = s.filterOp(ctx, tableName, fi, typeMap)
+		fop, err = s.filterOp(ctx, "", fi, typeMap)
 	}
 	if err != nil {
 		return update, err
