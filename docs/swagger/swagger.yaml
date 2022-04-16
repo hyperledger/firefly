@@ -7467,6 +7467,10 @@ paths:
                           - using the default topic is discouraged
                         type: string
                       type: array
+                    txtype:
+                      description: The type of transaction used to order/deliver this
+                        message
+                      type: string
                     type:
                       description: The type of the message
                       enum:
@@ -7852,6 +7856,10 @@ paths:
                           - using the default topic is discouraged
                         type: string
                       type: array
+                    txtype:
+                      description: The type of transaction used to order/deliver this
+                        message
+                      type: string
                     type:
                       description: The type of the message
                       enum:
@@ -8245,6 +8253,10 @@ paths:
                           - using the default topic is discouraged
                         type: string
                       type: array
+                    txtype:
+                      description: The type of transaction used to order/deliver this
+                        message
+                      type: string
                     type:
                       description: The type of the message
                       enum:
@@ -10760,6 +10772,10 @@ paths:
                               assigned - using the default topic is discouraged
                             type: string
                           type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          type: string
                         type:
                           description: The type of the message
                           enum:
@@ -11177,6 +11193,10 @@ paths:
                               assigned - using the default topic is discouraged
                             type: string
                           type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          type: string
                         type:
                           description: The type of the message
                           enum:
@@ -12367,6 +12387,10 @@ paths:
                               assigned - using the default topic is discouraged
                             type: string
                           type: array
+                        txtype:
+                          description: The type of transaction used to order/deliver
+                            this message
+                          type: string
                         type:
                           description: The type of the message
                           enum:
