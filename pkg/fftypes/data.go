@@ -27,7 +27,7 @@ import (
 
 type DataRef struct {
 	ID   *UUID    `ffstruct:"DataRef" json:"id,omitempty"`
-	Hash *Bytes32 `ffstruct:"DataRef" json:"hash,omitempty"`
+	Hash *Bytes32 `ffstruct:"DataRef" json:"hash,omitempty" ffexcludeinput:"true"`
 
 	ValueSize int64 `json:"-"` // used internally for message size calculation, without full payload retrieval
 }

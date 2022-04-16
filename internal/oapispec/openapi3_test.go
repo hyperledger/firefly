@@ -126,13 +126,13 @@ var testRoutes = []*Route{
 }
 
 type TestInOutType struct {
-	Length           float64 `ffstruct:"TestInOutType" json:"length"`
-	Width            float64 `ffstruct:"TestInOutType" json:"width"`
-	Height           float64 `ffstruct:"TestInOutType" json:"height" ffexcludeoutput:"true"`
-	Volume           float64 `ffstruct:"TestInOutType" json:"volume" ffexcludeinput:"true"`
-	Secret           string  `ffstruct:"TestInOutType" json:"secret" ffexclude:"true"`
-	Conditional      string  `ffstruct:"TestInOutType" json:"conditional" ffexclude:"PostTagTest"`
-	ConditionalInput string  `ffstruct:"TestInOutType" json:"conditionalInput" ffexcludeinput:"PostTagTest"`
+	Length           float64          `ffstruct:"TestInOutType" json:"length"`
+	Width            float64          `ffstruct:"TestInOutType" json:"width"`
+	Height           float64          `ffstruct:"TestInOutType" json:"height" ffexcludeoutput:"true"`
+	Volume           fftypes.FFBigInt `ffstruct:"TestInOutType" json:"volume" ffexcludeinput:"true"`
+	Secret           string           `ffstruct:"TestInOutType" json:"secret" ffexclude:"true"`
+	Conditional      string           `ffstruct:"TestInOutType" json:"conditional" ffexclude:"PostTagTest"`
+	ConditionalInput string           `ffstruct:"TestInOutType" json:"conditionalInput" ffexcludeinput:"PostTagTest"`
 }
 
 type TestNonTaggedType struct {
