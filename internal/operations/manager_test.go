@@ -35,10 +35,11 @@ import (
 )
 
 type mockHandler struct {
-	Complete bool
-	Err      error
-	Prepared *fftypes.PreparedOperation
-	Outputs  fftypes.JSONObject
+	Complete  bool
+	RunErr    error
+	Prepared  *fftypes.PreparedOperation
+	Outputs   fftypes.JSONObject
+	UpdateErr error
 }
 
 func (m *mockHandler) Name() string {
@@ -46,11 +47,15 @@ func (m *mockHandler) Name() string {
 }
 
 func (m *mockHandler) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
-	return m.Prepared, m.Err
+	return m.Prepared, m.RunErr
 }
 
 func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
-	return m.Outputs, m.Complete, m.Err
+	return m.Outputs, m.Complete, m.RunErr
+}
+
+func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *OperationUpdate) error {
+	return m.UpdateErr
 }
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
@@ -166,7 +171,7 @@ func TestRunOperationFail(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
 
-	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
 
 	assert.EqualError(t, err, "pop")
@@ -187,7 +192,7 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
 
-	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
 
 	assert.EqualError(t, err, "pop")

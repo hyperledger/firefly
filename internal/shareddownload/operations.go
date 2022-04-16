@@ -23,6 +23,7 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -163,6 +164,10 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	dm.callbacks.SharedStorageBlobDownloaded(*hash, blobSize, dxPayloadRef)
 
 	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), true, nil
+}
+
+func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
 }
 
 func opDownloadBatch(op *fftypes.Operation, ns string, payloadRef string) *fftypes.PreparedOperation {

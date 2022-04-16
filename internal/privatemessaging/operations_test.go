@@ -533,3 +533,9 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10137", err)
 }
+
+func TestOperationUpdate(t *testing.T) {
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+	assert.NoError(t, pm.OnOperationUpdate(context.Background(), nil, nil))
+}
