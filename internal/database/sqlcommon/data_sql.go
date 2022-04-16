@@ -143,7 +143,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 	}
 
 	if !optimized {
-		// Do a select within the transaction to detemine if the UUID already exists
+		// Do a select within the transaction to determine if the UUID already exists
 		dataRows, _, err := s.queryTx(ctx, tx,
 			sq.Select("hash").
 				From("data").
