@@ -45,7 +45,7 @@ Go to the [latest release page](https://github.com/hyperledger/firefly-cli/relea
 
 ### Extract the binary and move it to `/usr/bin/local`
 
-Assuming you downloaded the package from GitHub into you `Downloads` directory, run the following command:
+Assuming you downloaded the package from GitHub into your `Downloads` directory, run the following command:
 
 ```
 sudo tar -zxf ~/Downloads/firefly-cli_*.tar.gz -C /usr/local/bin ff && rm ~/Downloads/firefly-cli_*.tar.gz

@@ -23,17 +23,13 @@ If you haven't set up the FireFly CLI already, please go back to the previous st
 
 Now that you have the FireFly CLI installed, you are ready to run some Supernodes on your machine!
 
-<!-- > **NOTE:** If you haven't set up the FireFly CLI already, please go back to the previous step and read the guide on how to [Install the FireFly CLI](./firefly_cli.md)
->  -->
-
-
 ## A FireFly Stack
 
 A FireFly stack is a collection of Supernodes with networking and configuration that are designed to work together on a single development machine. A stack has multiple members (also referred to organizations). Each member has their own Supernode within the stack. This allows developers to build and test data flows with a mix of public and private data between various parties, all within a single development environment.
 
 ![FireFly Stack](../images/firefly_stack.svg)
 
-The stack also contains an instance of the FireFly Sandbox for each member. This is an example of an end-user application that uses FireFly's API. It has a backend and a frontend which are designed to walk developers through the features of FireFly, and provide code snippets and as examples of how to build those features into their own application. The next section in this guide will walk you through using the Sandbox.
+The stack also contains an instance of the FireFly Sandbox for each member. This is an example of an end-user application that uses FireFly's API. It has a backend and a frontend which are designed to walk developers through the features of FireFly, and provides code snippets as examples of how to build those features into their own application. The next section in this guide will walk you through using the Sandbox.
 
 ## System Resources
 

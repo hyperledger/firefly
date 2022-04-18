@@ -21,7 +21,7 @@ If you haven't started a FireFly stack already, please go back to the previous s
 
 [← ② Start your environment](setup_env.md){: .btn .btn-purple .mb-5}
 
-Now that you have a full network of 3 Supernodes running on your machine, let's look at the first two components that you will interact with: the FireFly Sandbox and the FireFly Explorer.
+Now that you have a full network of three Supernodes running on your machine, let's look at the first two components that you will interact with: the FireFly Sandbox and the FireFly Explorer.
 
 ## Video walkthrough
 
@@ -40,7 +40,7 @@ The FireFly Sandbox sits logically outside the Supernode, and it acts like an "e
 
 The FireFly explorer is a part of FireFly Core itself. It is a view into the system that allows operators to monitor the current state of the system and investigate specific transactions, messages, and events. It is also a great way for developers to see the results of running their code against FireFly's API.
 
-![FireFly Explorer](../images/firefly_explorer.png)
+![FireFly Explorer](../images/.png)
 
 ## Open the FireFly Sandbox for the first member
 
@@ -80,7 +80,7 @@ On the left-hand side of the page, you can fill out simple form fields to constr
 The first tab we will explore is the **MESSAGING** tab. This is where we can send broadcasts and private messages.
 
 ### Middle column: Preview server code and see response
-As you type in the form on the left side of the page, you may notice that the source code in the top middle of the page updates automatically. If you were building a backend app, this is an example of code that your app could use to call the FireFly SDK. The middle column also contains the button to actually send the request.
+As you type in the form on the left side of the page, you may notice that the source code in the top middle of the page updates automatically. If you were building a backend app, this is an example of code that your app could use to call the FireFly SDK. The middle column also contains a `RUN` button to actually send the request.
 
 ### Right column: Events received on the WebSocket
 On the right-hand side of the page you can see a stream of events being received on a WebSocket connection that the backend has open to FireFly. For example, as you make requests to send messages, you can see when the messages are asynchronously confirmed.
@@ -121,7 +121,7 @@ The Contracts section of the Sandbox lets you interact with custom smart contrac
 
 ### Things to try out
 
-- Create a contract interface and API then view the Swagger UI for your new API
+- Create a contract interface and API, then view the Swagger UI for your new API
 - Create an event listener
 - Use the Swagger UI to call a smart contract function that emits an event. Verify that the event is received in the Sandbox and shows up in the FireFly Explorer.
 
