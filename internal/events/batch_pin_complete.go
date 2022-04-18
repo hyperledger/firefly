@@ -55,9 +55,10 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 				return err
 			}
-			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   batchPin.TransactionID,
+			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &fftypes.BlockchainTransactionRef{
+				Type:         fftypes.TransactionTypeBatchPin,
+				ID:           batchPin.TransactionID,
+				BlockchainID: batchPin.Event.BlockchainTXID,
 			})
 			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err

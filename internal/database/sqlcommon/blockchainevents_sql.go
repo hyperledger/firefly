@@ -41,12 +41,14 @@ var (
 		"timestamp",
 		"tx_type",
 		"tx_id",
+		"tx_blockchain_id",
 	}
 	blockchainEventFilterFieldMap = map[string]string{
-		"protocolid": "protocol_id",
-		"listener":   "listener_id",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
+		"protocolid":      "protocol_id",
+		"listener":        "listener_id",
+		"tx.type":         "tx_type",
+		"tx.id":           "tx_id",
+		"tx.blockchainid": "tx_blockchain_id",
 	}
 )
 
@@ -72,6 +74,7 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 				event.Timestamp,
 				event.TX.Type,
 				event.TX.ID,
+				event.TX.BlockchainID,
 			),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID)
@@ -97,6 +100,7 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 		&event.Timestamp,
 		&event.TX.Type,
 		&event.TX.ID,
+		&event.TX.BlockchainID,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "blockchainevents")

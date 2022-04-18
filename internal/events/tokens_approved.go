@@ -99,7 +99,11 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		}
 	}
 
-	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &approval.TX)
+	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &fftypes.BlockchainTransactionRef{
+		ID:           approval.TX.ID,
+		Type:         approval.TX.Type,
+		BlockchainID: approval.Event.BlockchainTXID,
+	})
 	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
