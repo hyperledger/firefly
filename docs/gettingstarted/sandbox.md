@@ -40,7 +40,7 @@ The FireFly Sandbox sits logically outside the Supernode, and it acts like an "e
 
 The FireFly explorer is a part of FireFly Core itself. It is a view into the system that allows operators to monitor the current state of the system and investigate specific transactions, messages, and events. It is also a great way for developers to see the results of running their code against FireFly's API.
 
-![FireFly Explorer](../images/.png)
+![FireFly Explorer](../images/firefly_explorer.png)
 
 ## Open the FireFly Sandbox for the first member
 
