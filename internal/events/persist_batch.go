@@ -298,6 +298,8 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 				log.L(ctx).Errorf("Failed to insert message entry %d in batch '%s': %s", i, batch.ID, err)
 				return false, err // a persistence failure here is considered retryable (so returned)
 			}
+			mm := matchedMsgs[i]
+			em.data.UpdateMessageCache(mm.message, mm.data)
 		}
 	}
 
