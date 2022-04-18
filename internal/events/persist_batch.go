@@ -246,6 +246,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 	// If we are sure we wrote the batch, then we do a cached lookup of each in turn - which is efficient
 	// because all of those should be in the cache as we wrote them recently.
 	if em.sentByUs(ctx, batch) {
+		log.L(ctx).Debugf("Batch %s sent by us", batch.ID)
 		allStored, err := em.verifyAlreadyStored(ctx, batch)
 		if err != nil {
 			return false, err
