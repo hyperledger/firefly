@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Work with custom smart contracts
-parent: Getting Started
+parent: Tutorials
 nav_order: 10
 ---
 

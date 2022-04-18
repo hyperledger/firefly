@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Define a datatype
-parent: Getting Started
+parent: Tutorials
 nav_order: 7
 ---
 
