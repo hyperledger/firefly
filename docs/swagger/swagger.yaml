@@ -1878,6 +1878,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.blockchainid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx.id
         schema:
           type: string
@@ -1976,6 +1981,11 @@ paths:
                         transaction such as a FireFly submitted token transfer, this
                         field is set to the UUID of the FireFly transaction
                       properties:
+                        blockchainId:
+                          description: The blockchain transaction ID, in the format
+                            specific to the blockchain involved in the transaction.
+                            Not all FireFly transactions include a blockchain
+                          type: string
                         id:
                           description: The UUID of the FireFly transaction
                           format: uuid
@@ -2069,6 +2079,11 @@ paths:
                       transaction such as a FireFly submitted token transfer, this
                       field is set to the UUID of the FireFly transaction
                     properties:
+                      blockchainId:
+                        description: The blockchain transaction ID, in the format
+                          specific to the blockchain involved in the transaction.
+                          Not all FireFly transactions include a blockchain
+                        type: string
                       id:
                         description: The UUID of the FireFly transaction
                         format: uuid
@@ -13082,6 +13097,11 @@ paths:
                         transaction such as a FireFly submitted token transfer, this
                         field is set to the UUID of the FireFly transaction
                       properties:
+                        blockchainId:
+                          description: The blockchain transaction ID, in the format
+                            specific to the blockchain involved in the transaction.
+                            Not all FireFly transactions include a blockchain
+                          type: string
                         id:
                           description: The UUID of the FireFly transaction
                           format: uuid

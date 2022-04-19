@@ -161,6 +161,7 @@ var (
 	TransactionType          = ffm("Transaction.type", "The type of the FireFly transaction")
 	TransactionNamespace     = ffm("Transaction.namespace", "The namespace of the FireFly transaction")
 	TransactionCreated       = ffm("Transaction.created", "The time the transaction was created on this node. Note the transaction is individually created with the same UUID on each participant in the FireFly transaction")
+	TransactionBlockchainID  = ffm("Transaction.blockchainId", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain")
 	TransactionBlockchainIDs = ffm("Transaction.blockchainIds", "The blockchain transaction ID, in the format specific to the blockchain involved in the transaction. Not all FireFly transactions include a blockchain. FireFly transactions are extensible to support multiple blockchain transactions")
 
 	// Operation field description

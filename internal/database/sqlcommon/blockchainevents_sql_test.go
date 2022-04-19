@@ -43,6 +43,11 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 		Output:     fftypes.JSONObject{"value": 1},
 		Info:       fftypes.JSONObject{"blockNumber": 1},
 		Timestamp:  fftypes.Now(),
+		TX: fftypes.BlockchainTransactionRef{
+			ID:           fftypes.NewUUID(),
+			Type:         fftypes.TransactionTypeBatchPin,
+			BlockchainID: "0x12345",
+		},
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, "ns", event.ID).Return()

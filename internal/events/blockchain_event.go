@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) *fftypes.BlockchainEvent {
+func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.BlockchainTransactionRef) *fftypes.BlockchainEvent {
 	ev := &fftypes.BlockchainEvent{
 		ID:         fftypes.NewUUID(),
 		Namespace:  ns,

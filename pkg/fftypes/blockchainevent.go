@@ -17,14 +17,14 @@
 package fftypes
 
 type BlockchainEvent struct {
-	ID         *UUID          `ffstruct:"BlockchainEvent" json:"id,omitempty"`
-	Source     string         `ffstruct:"BlockchainEvent" json:"source,omitempty"`
-	Namespace  string         `ffstruct:"BlockchainEvent" json:"namespace,omitempty"`
-	Name       string         `ffstruct:"BlockchainEvent" json:"name,omitempty"`
-	Listener   *UUID          `ffstruct:"BlockchainEvent" json:"listener,omitempty"`
-	ProtocolID string         `ffstruct:"BlockchainEvent" json:"protocolId,omitempty"`
-	Output     JSONObject     `ffstruct:"BlockchainEvent" json:"output,omitempty"`
-	Info       JSONObject     `ffstruct:"BlockchainEvent" json:"info,omitempty"`
-	Timestamp  *FFTime        `ffstruct:"BlockchainEvent" json:"timestamp,omitempty"`
-	TX         TransactionRef `ffstruct:"BlockchainEvent" json:"tx"`
+	ID         *UUID                    `ffstruct:"BlockchainEvent" json:"id,omitempty"`
+	Source     string                   `ffstruct:"BlockchainEvent" json:"source,omitempty"`
+	Namespace  string                   `ffstruct:"BlockchainEvent" json:"namespace,omitempty"`
+	Name       string                   `ffstruct:"BlockchainEvent" json:"name,omitempty"`
+	Listener   *UUID                    `ffstruct:"BlockchainEvent" json:"listener,omitempty"`
+	ProtocolID string                   `ffstruct:"BlockchainEvent" json:"protocolId,omitempty"`
+	Output     JSONObject               `ffstruct:"BlockchainEvent" json:"output,omitempty"`
+	Info       JSONObject               `ffstruct:"BlockchainEvent" json:"info,omitempty"`
+	Timestamp  *FFTime                  `ffstruct:"BlockchainEvent" json:"timestamp,omitempty"`
+	TX         BlockchainTransactionRef `ffstruct:"BlockchainEvent" json:"tx"`
 }

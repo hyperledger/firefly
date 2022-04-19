@@ -99,7 +99,11 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		}
 	}
 
-	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &transfer.TX)
+	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &fftypes.BlockchainTransactionRef{
+		ID:           transfer.TX.ID,
+		Type:         transfer.TX.Type,
+		BlockchainID: transfer.Event.BlockchainTXID,
+	})
 	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
