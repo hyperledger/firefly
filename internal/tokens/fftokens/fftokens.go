@@ -192,6 +192,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	poolLocator := data.GetString("poolLocator")
 	standard := data.GetString("standard") // optional
 	symbol := data.GetString("symbol")     // optional
+	decimals := data.GetInt64("decimals")  // optional
 	info := data.GetObject("info")         // optional
 
 	// All blockchain items below are optional
@@ -235,6 +236,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Connector: ft.configuredName,
 		Standard:  standard,
 		Symbol:    symbol,
+		Decimals:  int(decimals),
 		Info:      info,
 	}
 

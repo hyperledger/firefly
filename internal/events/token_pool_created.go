@@ -33,6 +33,7 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	ffPool.Locator = pluginPool.PoolLocator
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	ffPool.Decimals = pluginPool.Decimals
 	if pluginPool.TX.ID != nil {
 		ffPool.TX = pluginPool.TX
 	}

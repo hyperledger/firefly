@@ -515,6 +515,7 @@ var (
 	TokenPoolLocator   = ffm("TokenPool.locator", "A unique identifier for the pool, as provided by the token connector")
 	TokenPoolKey       = ffm("TokenPool.key", "The signing key used to create the token pool. On input for token connectors that support on-chain deployment of new tokens (vs. only index existing ones) this determines the signing key used to create the token on-chain")
 	TokenPoolSymbol    = ffm("TokenPool.symbol", "The token symbol. If supplied on input for an existing on-chain token, this must match the on-chain information")
+	TokenPoolDecimals  = ffm("TokenPool.decimals", "Number of decimal places that this token has")
 	TokenPoolConnector = ffm("TokenPool.connector", "The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured")
 	TokenPoolMessage   = ffm("TokenPool.message", "The UUID of the broadcast message used to inform the network to index this pool")
 	TokenPoolState     = ffm("TokenPool.state", "The current state of the token pool")

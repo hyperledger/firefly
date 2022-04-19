@@ -113,6 +113,9 @@ type TokenPool struct {
 	// Standard is the well-defined token standard that this pool conforms to (optional)
 	Standard string
 
+	// Decimals is the number of decimal places that this token has
+	Decimals int
+
 	// Symbol is the short token symbol, if the connector uses one (optional)
 	Symbol string
 

@@ -11472,6 +11472,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: decimals
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -11576,6 +11581,9 @@ paths:
                       description: The creation time of the pool
                       format: date-time
                       type: string
+                    decimals:
+                      description: Number of decimal places that this token has
+                      type: integer
                     id:
                       description: The UUID of the token pool
                       format: uuid
@@ -11692,6 +11700,9 @@ paths:
                     FireFly core configuration file that is responsible for the token
                     pool. Required on input when multiple token connectors are configured
                   type: string
+                decimals:
+                  description: Number of decimal places that this token has
+                  type: integer
                 key:
                   description: The signing key used to create the token pool. On input
                     for token connectors that support on-chain deployment of new tokens
@@ -11729,6 +11740,9 @@ paths:
                     description: The creation time of the pool
                     format: date-time
                     type: string
+                  decimals:
+                    description: Number of decimal places that this token has
+                    type: integer
                   id:
                     description: The UUID of the token pool
                     format: uuid
@@ -11812,6 +11826,9 @@ paths:
                     description: The creation time of the pool
                     format: date-time
                     type: string
+                  decimals:
+                    description: Number of decimal places that this token has
+                    type: integer
                   id:
                     description: The UUID of the token pool
                     format: uuid
@@ -11923,6 +11940,9 @@ paths:
                     description: The creation time of the pool
                     format: date-time
                     type: string
+                  decimals:
+                    description: Number of decimal places that this token has
+                    type: integer
                   id:
                     description: The UUID of the token pool
                     format: uuid
