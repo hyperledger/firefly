@@ -388,7 +388,6 @@ paths:
                         a smart contract, this field can include a blockchain specific
                         contract identifier. For example an Ethereum contract address,
                         or a Fabric chaincode name and channel
-                      type: string
                     message:
                       description: The UUID of the broadcast message that was used
                         to publish this API to the network
@@ -467,7 +466,6 @@ paths:
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
-                  type: string
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -502,7 +500,6 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
-                    type: string
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -557,7 +554,6 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
-                    type: string
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -641,7 +637,6 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
-                    type: string
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -742,7 +737,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -801,7 +795,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -825,7 +818,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -908,7 +900,6 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
-                  type: string
               type: object
       responses:
         "200":
@@ -1073,7 +1064,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -1100,7 +1090,6 @@ paths:
                       description: A blockchain specific contract identifier. For
                         example an Ethereum contract address, or a Fabric chaincode
                         name and channel
-                      type: string
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -1174,7 +1163,6 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
-                  type: string
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -1237,7 +1225,6 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
-                              type: string
                           type: object
                         type: array
                     type: object
@@ -1264,7 +1251,6 @@ paths:
                     description: A blockchain specific contract identifier. For example
                       an Ethereum contract address, or a Fabric chaincode name and
                       channel
-                    type: string
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -1354,7 +1340,6 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
-                  type: string
               type: object
       responses:
         "200":
@@ -1423,7 +1408,6 @@ paths:
                     smart contract, this field can include a blockchain specific contract
                     identifier. For example an Ethereum contract address, or a Fabric
                     chaincode name and channel
-                  type: string
                 name:
                   description: The name that is used in the URL to access the API
                   type: string
@@ -1458,7 +1442,6 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
-                    type: string
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -1513,7 +1496,6 @@ paths:
                       a smart contract, this field can include a blockchain specific
                       contract identifier. For example an Ethereum contract address,
                       or a Fabric chaincode name and channel
-                    type: string
                   message:
                     description: The UUID of the broadcast message that was used to
                       publish this API to the network
@@ -1695,7 +1677,6 @@ paths:
                       type: string
                     manifest:
                       description: The manifest of the batch
-                      type: string
                     namespace:
                       description: The namespace of the batch
                       type: string
@@ -1789,7 +1770,6 @@ paths:
                     type: string
                   manifest:
                     description: The manifest of the batch
-                    type: string
                   namespace:
                     description: The namespace of the batch
                     type: string
@@ -2302,7 +2282,6 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
-                                  type: string
                               type: object
                             type: array
                           pathname:
@@ -2363,7 +2342,6 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
-                                  type: string
                               type: object
                             type: array
                           pathname:
@@ -2389,7 +2367,6 @@ paths:
                                     native blockchain interface definitions / type
                                     systems - such as an Ethereum ABI. See the documentation
                                     for more detail
-                                  type: string
                               type: object
                             type: array
                         type: object
@@ -2481,7 +2458,6 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
-                              type: string
                           type: object
                         type: array
                       pathname:
@@ -2530,7 +2506,6 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
-                              type: string
                           type: object
                         type: array
                       pathname:
@@ -2554,7 +2529,6 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
-                              type: string
                           type: object
                         type: array
                     type: object
@@ -2616,7 +2590,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -2675,7 +2648,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -2699,7 +2671,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -2799,7 +2770,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -2858,7 +2828,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -2882,7 +2851,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -2988,7 +2956,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -3047,7 +3014,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -3071,7 +3037,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -3126,7 +3091,6 @@ paths:
                   description: A blockchain connector specific payload. For example
                     in Ethereum this is a JSON structure containing an 'abi' array,
                     and optionally a 'devdocs' array.
-                  type: string
                 name:
                   description: The name of the FFI to generate
                   type: string
@@ -3185,7 +3149,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -3244,7 +3207,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                         pathname:
@@ -3268,7 +3230,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -3345,7 +3306,6 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
-                  type: string
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -3384,7 +3344,6 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
-                            type: string
                         type: object
                       type: array
                     pathname:
@@ -3408,7 +3367,6 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
-                            type: string
                         type: object
                       type: array
                   type: object
@@ -3566,7 +3524,6 @@ paths:
                                   Converters are available for native blockchain interface
                                   definitions / type systems - such as an Ethereum
                                   ABI. See the documentation for more detail
-                                type: string
                             type: object
                           type: array
                       type: object
@@ -3593,7 +3550,6 @@ paths:
                       description: A blockchain specific contract identifier. For
                         example an Ethereum contract address, or a Fabric chaincode
                         name and channel
-                      type: string
                     name:
                       description: A descriptive name for the listener
                       type: string
@@ -3677,7 +3633,6 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
-                            type: string
                         type: object
                       type: array
                   type: object
@@ -3704,7 +3659,6 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
-                  type: string
                 name:
                   description: A descriptive name for the listener
                   type: string
@@ -3767,7 +3721,6 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
-                              type: string
                           type: object
                         type: array
                     type: object
@@ -3794,7 +3747,6 @@ paths:
                     description: A blockchain specific contract identifier. For example
                       an Ethereum contract address, or a Fabric chaincode name and
                       channel
-                    type: string
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -3924,7 +3876,6 @@ paths:
                                 Converters are available for native blockchain interface
                                 definitions / type systems - such as an Ethereum ABI.
                                 See the documentation for more detail
-                              type: string
                           type: object
                         type: array
                     type: object
@@ -3951,7 +3902,6 @@ paths:
                     description: A blockchain specific contract identifier. For example
                       an Ethereum contract address, or a Fabric chaincode name and
                       channel
-                    type: string
                   name:
                     description: A descriptive name for the listener
                     type: string
@@ -4035,7 +3985,6 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
-                  type: string
                 method:
                   description: An in-line FFI method definition for the method to
                     invoke. Required when FFI is not specified
@@ -4074,7 +4023,6 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
-                            type: string
                         type: object
                       type: array
                     pathname:
@@ -4098,7 +4046,6 @@ paths:
                               Converters are available for native blockchain interface
                               definitions / type systems - such as an Ethereum ABI.
                               See the documentation for more detail
-                            type: string
                         type: object
                       type: array
                   type: object
@@ -4293,7 +4240,6 @@ paths:
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
-                      type: string
                   type: object
                 type: array
           description: Success
@@ -4344,7 +4290,6 @@ paths:
                 value:
                   description: The in-line value for the data. Can be any JSON type
                     - object, array, string, number or boolean
-                  type: string
               type: object
           multipart/form-data:
             schema:
@@ -4431,7 +4376,6 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
-                    type: string
                 type: object
           description: Success
         default:
@@ -4524,7 +4468,6 @@ paths:
                     description: The value for the data, stored in the FireFly core
                       database. Can be any JSON type - object, array, string, number
                       or boolean. Can be combined with a binary blob attachment
-                    type: string
                 type: object
           description: Success
         default:
@@ -5082,7 +5025,6 @@ paths:
                     value:
                       description: The definition of the datatype, in the syntax supported
                         by the validator (such as a JSON Schema definition)
-                      type: string
                     version:
                       description: The version of the datatype. Multiple versions
                         can exist with the same name. Use of semantic versioning is
@@ -5135,7 +5077,6 @@ paths:
                 value:
                   description: The definition of the datatype, in the syntax supported
                     by the validator (such as a JSON Schema definition)
-                  type: string
                 version:
                   description: The version of the datatype. Multiple versions can
                     exist with the same name. Use of semantic versioning is encourages,
@@ -5185,7 +5126,6 @@ paths:
                   value:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
-                    type: string
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -5235,7 +5175,6 @@ paths:
                   value:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
-                    type: string
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -5319,7 +5258,6 @@ paths:
                   value:
                     description: The definition of the datatype, in the syntax supported
                       by the validator (such as a JSON Schema definition)
-                    type: string
                   version:
                     description: The version of the datatype. Multiple versions can
                       exist with the same name. Use of semantic versioning is encourages,
@@ -7125,7 +7063,6 @@ paths:
                       description: The value for the data, stored in the FireFly core
                         database. Can be any JSON type - object, array, string, number
                         or boolean. Can be combined with a binary blob attachment
-                      type: string
                   type: object
                 type: array
           description: Success
@@ -7450,7 +7387,6 @@ paths:
                       value:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
-                        type: string
                     type: object
                   type: array
                 header:
@@ -7801,7 +7737,6 @@ paths:
                       value:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
-                        type: string
                     type: object
                   type: array
                 group:
@@ -8198,7 +8133,6 @@ paths:
                       value:
                         description: The in-line value for the data. Can be any JSON
                           type - object, array, string, number or boolean
-                        type: string
                     type: object
                   type: array
                 group:
@@ -10716,7 +10650,6 @@ paths:
                           value:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
-                            type: string
                         type: object
                       type: array
                     group:
@@ -11137,7 +11070,6 @@ paths:
                           value:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
-                            type: string
                         type: object
                       type: array
                     group:
@@ -12331,7 +12263,6 @@ paths:
                           value:
                             description: The in-line value for the data. Can be any
                               JSON type - object, array, string, number or boolean
-                            type: string
                         type: object
                       type: array
                     group:
