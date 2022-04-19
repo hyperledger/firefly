@@ -30,11 +30,11 @@ var postNewMessageRequestReply = &oapispec.Route{
 	Path:   "namespaces/{ns}/messages/requestreply",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPostNewMessageRequestReply,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
 	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation

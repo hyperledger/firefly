@@ -171,7 +171,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
 			updateStatus(result, fftypes.OpStatusPending)
 		}
-		f := database.TokenApprovalQueryFacory.NewFilter(ctx)
+		f := database.TokenApprovalQueryFactory.NewFilter(ctx)
 		switch approvals, _, err := or.database.GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err

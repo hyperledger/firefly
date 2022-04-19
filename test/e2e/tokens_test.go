@@ -86,7 +86,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
-	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
 
 	waitForEvent(suite.T(), received2, fftypes.EventTypePoolConfirmed, poolID)
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
@@ -95,7 +95,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
-	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
 
 	approval := &fftypes.TokenApprovalInput{
 		TokenApproval: fftypes.TokenApproval{
@@ -107,7 +107,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	}
 	approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, false)
 
-	waitForApprovalEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.TX.ID)
+	waitForEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.LocalID)
 	approvals := GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
 	assert.Equal(suite.T(), 1, len(approvals))
 	assert.Equal(suite.T(), suite.connector, approvals[0].Connector)
@@ -251,7 +251,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), "default", poolOut.Namespace)
 	assert.Equal(suite.T(), poolName, poolOut.Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, poolOut.Type)
-	assert.NotEmpty(suite.T(), poolOut.ProtocolID)
+	assert.NotEmpty(suite.T(), poolOut.Locator)
 
 	poolID := poolOut.ID
 
@@ -262,25 +262,23 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), "default", pools[0].Namespace)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, pools[0].Type)
-	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
 
-	// Commenting this out because sync token approvals are currently broken due to issues
-	// described in https://github.com/hyperledger/firefly/issues/661
-	// approval := &fftypes.TokenApprovalInput{
-	// 	TokenApproval: fftypes.TokenApproval{
-	// 		Key:      suite.testState.org1key.Value,
-	// 		Operator: suite.testState.org2key.Value,
-	// 		Approved: true,
-	// 	},
-	// 	Pool: poolName,
-	// }
-	// approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, true)
+	approval := &fftypes.TokenApprovalInput{
+		TokenApproval: fftypes.TokenApproval{
+			Key:      suite.testState.org1key.Value,
+			Operator: suite.testState.org2key.Value,
+			Approved: true,
+		},
+		Pool: poolName,
+	}
+	approvalOut := TokenApproval(suite.T(), suite.testState.client1, approval, true)
 
-	// waitForEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.LocalID)
-	// approvals := GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
-	// assert.Equal(suite.T(), 1, len(approvals))
-	// assert.Equal(suite.T(), suite.connector, approvals[0].Connector)
-	// assert.Equal(suite.T(), true, approvals[0].Approved)
+	waitForEvent(suite.T(), received1, fftypes.EventTypeApprovalConfirmed, approvalOut.LocalID)
+	approvals := GetTokenApprovals(suite.T(), suite.testState.client1, poolID)
+	assert.Equal(suite.T(), 1, len(approvals))
+	assert.Equal(suite.T(), suite.connector, approvals[0].Connector)
+	assert.Equal(suite.T(), true, approvals[0].Approved)
 
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{

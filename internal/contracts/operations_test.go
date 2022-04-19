@@ -93,3 +93,8 @@ func TestRunOperationNotSupported(t *testing.T) {
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
 }
+
+func TestOperationUpdate(t *testing.T) {
+	cm := newTestContractManager()
+	assert.NoError(t, cm.OnOperationUpdate(context.Background(), nil, nil))
+}

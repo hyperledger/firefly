@@ -23,27 +23,32 @@ import (
 
 type Stack struct {
 	Name                  string    `json:"name,omitempty"`
-	ExposedBlockchainPort int       `json:"exposedGethPort,omitempty"`
+	ExposedBlockchainPort int       `json:"exposedBlockchainPort,omitempty"`
 	BlockchainProvider    string    `json:"blockchainProvider"`
 	TokenProviders        []string  `json:"tokenProviders"`
 	Members               []*Member `json:"members,omitempty"`
 	ContractAddress       string    `json:"contractAddress"`
 }
 
+type StackState struct {
+	Accounts []interface{} `json:"accounts"`
+}
+
 type Member struct {
-	ExposedFireflyPort   int    `json:"exposedFireflyPort,omitempty"`
-	FireflyHostname      string `json:"fireflyHostname,omitempty"`
-	Username             string `json:"username,omitempty"`
-	Password             string `json:"password,omitempty"`
-	UseHTTPS             bool   `json:"useHttps,omitempty"`
-	ExposedConnectorPort int    `json:"exposedConnectorPort,omitempty"`
-	OrgName              string `json:"orgName,omitempty"`
-	BlockchainHostname   string `json:"blockchainHostname,omitempty"`
-	BlockchainUsername   string `json:"blockchainUsername,omitempty"`
-	BlockchainPassword   string `json:"blockchainPassword,omitempty"`
-	EthConnectHostname   string `json:"ethConnectHostname"`
-	EthConnectUsername   string `json:"ethConnectUsername"`
-	EthConnectPassword   string `json:"ethConnectPassword"`
+	ExposedFireflyPort   int         `json:"exposedFireflyPort,omitempty"`
+	FireflyHostname      string      `json:"fireflyHostname,omitempty"`
+	Username             string      `json:"username,omitempty"`
+	Password             string      `json:"password,omitempty"`
+	UseHTTPS             bool        `json:"useHttps,omitempty"`
+	ExposedConnectorPort int         `json:"exposedConnectorPort,omitempty"`
+	OrgName              string      `json:"orgName,omitempty"`
+	BlockchainHostname   string      `json:"blockchainHostname,omitempty"`
+	BlockchainUsername   string      `json:"blockchainUsername,omitempty"`
+	BlockchainPassword   string      `json:"blockchainPassword,omitempty"`
+	EthConnectHostname   string      `json:"ethConnectHostname"`
+	EthConnectUsername   string      `json:"ethConnectUsername"`
+	EthConnectPassword   string      `json:"ethConnectPassword"`
+	Account              interface{} `json:"account,omitempty"`
 }
 
 func GetMemberPort(filename string, n int) (int, error) {
@@ -99,4 +104,19 @@ func ReadStack(filename string) (*Stack, error) {
 	}
 
 	return stack, nil
+}
+
+func ReadStackState(filename string) (*StackState, error) {
+	jsonBytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	var stackState *StackState
+	err = json.Unmarshal(jsonBytes, &stackState)
+	if err != nil {
+		return nil, err
+	}
+
+	return stackState, nil
 }

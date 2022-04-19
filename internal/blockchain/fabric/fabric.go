@@ -324,6 +324,8 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			Output:         *payload,
 			Info:           msgJSON,
 			Timestamp:      fftypes.UnixTime(timestamp),
+			Location:       f.buildEventLocationString(msgJSON),
+			Signature:      "BatchPin",
 		},
 	}
 
@@ -332,6 +334,10 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		Type:  fftypes.VerifierTypeMSPIdentity,
 		Value: signer,
 	})
+}
+
+func (f *Fabric) buildEventLocationString(msgJSON fftypes.JSONObject) string {
+	return fmt.Sprintf("chaincode=%s", msgJSON.GetString("chaincodeId"))
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -365,6 +371,8 @@ func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONOb
 			Output:         *payload,
 			Info:           msgJSON,
 			Timestamp:      fftypes.UnixTime(timestamp),
+			Location:       f.buildEventLocationString(msgJSON),
+			Signature:      name,
 		},
 	}
 
@@ -674,9 +682,16 @@ func jsonEncodeInput(params map[string]interface{}) (output map[string]string, e
 	return
 }
 
-func (f *Fabric) ValidateContractLocation(ctx context.Context, location *fftypes.JSONAny) (err error) {
-	_, err = parseContractLocation(ctx, location)
-	return
+func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (result *fftypes.JSONAny, err error) {
+	parsed, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return nil, err
+	}
+	normalized, err := json.Marshal(parsed)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -702,12 +717,12 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *fftypes.Cont
 	if err != nil {
 		return err
 	}
-	listener.ProtocolID = result.ID
+	listener.BackendID = result.ID
 	return nil
 }
 
 func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
-	return f.streams.deleteSubscription(ctx, subscription.ProtocolID)
+	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
 func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
@@ -717,4 +732,8 @@ func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVali
 
 func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
+}
+
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+	return event.Name
 }

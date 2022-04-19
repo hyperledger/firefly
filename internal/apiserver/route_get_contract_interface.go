@@ -31,14 +31,14 @@ var getContractInterface = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "interfaceId", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "interfaceId", Description: coremsgs.APIParamsContractInterfaceID},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIParamsContractInterfaceFetchChildren, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetContractInterface,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},

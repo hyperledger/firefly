@@ -33,7 +33,7 @@ import (
 
 // addressResolver is a REST-pluggable interface to allow arbitrary strings that reference
 // keys, to be resolved down to an Ethereum address - which will be kept in a LRU cache.
-// This supports cases where the signing device behind EthConnect is able to support keys
+// This supports cases where the signing device behind Ethconnect is able to support keys
 // addressed using somthing like a HD Wallet hierarchical syntax.
 // Once the resolver has returned the String->Address mapping, the ethconnect downstream
 // signing process must be able to process using the resolved ethereum address (meaning

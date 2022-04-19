@@ -23,6 +23,7 @@ import (
 )
 
 func TestFabricE2ESuite(t *testing.T) {
+	suite.Run(t, new(IdentityTestSuite))
 	suite.Run(t, new(OnChainOffChainTestSuite))
 	suite.Run(t, new(FabricContractTestSuite))
 }

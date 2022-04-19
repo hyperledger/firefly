@@ -50,10 +50,11 @@ func newTestDefinitionHandlers(t *testing.T) (*definitionHandlers, *testDefiniti
 }
 
 type testDefinitionBatchState struct {
-	t               *testing.T
-	preFinalizers   []func(ctx context.Context) error
-	finalizers      []func(ctx context.Context) error
-	pendingConfirms map[fftypes.UUID]*fftypes.Message
+	t                  *testing.T
+	preFinalizers      []func(ctx context.Context) error
+	finalizers         []func(ctx context.Context) error
+	pendingConfirms    map[fftypes.UUID]*fftypes.Message
+	confirmedDIDClaims []string
 }
 
 func newTestDefinitionBatchState(t *testing.T) *testDefinitionBatchState {
@@ -73,6 +74,10 @@ func (bs *testDefinitionBatchState) AddFinalize(pf func(ctx context.Context) err
 
 func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
 	return bs.pendingConfirms
+}
+
+func (bs *testDefinitionBatchState) DIDClaimConfirmed(did string) {
+	bs.confirmedDIDClaims = append(bs.confirmedDIDClaims, did)
 }
 
 func (bs *testDefinitionBatchState) assertNoFinalizers() {

@@ -134,12 +134,12 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	if err != nil && retryable {
 		return HandlerResult{Action: ActionRetry}, err
 	} else if err != nil {
-		// This cannot be processed as the parent does not exist (or similar).
-		// We treat this as a bad request, as nodes should not be broadcast until the parent identity is
-		// is already confirmed. (Note different processing for org/custom child's, where there's a parent
-		// verification to coordinate).
-		l.Warnf("Unable to process identity claim %s: %s", msg.Header.ID, err)
-		return HandlerResult{Action: ActionReject}, nil
+		// This cannot be processed as something in the identity chain is invalid.
+		// We treat this as a park - because we don't know if the parent identity
+		// will be processed after this message and generate a rewind.
+		// They are on separate topics, so there is not ordering assurance between the two messages.
+		l.Infof("Unable to process identity claim (parked) %s: %s", msg.Header.ID, err)
+		return HandlerResult{Action: ActionWait}, nil
 	}
 
 	// Check signature verification
@@ -184,9 +184,10 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		if verificationID == nil {
 			// Ok, we still confirm the message as it's valid, and we do not want to block the context.
 			// But we do NOT go on to create the identity - we will be called back
+			log.L(ctx).Infof("Identity %s (%s) awaiting verification claim='%s'", identity.DID, identity.ID, msg.Header.ID)
 			return HandlerResult{Action: ActionConfirm}, nil
 		}
-		log.L(ctx).Infof("Identity '%s' verified claim='%s' verification='%s'", identity.ID, msg.Header.ID, verificationID)
+		log.L(ctx).Infof("Identity %s (%s) verified claim='%s' verification='%s'", identity.DID, identity.ID, msg.Header.ID, verificationID)
 		identity.Messages.Verification = verificationID
 	}
 
@@ -210,6 +211,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 			})
 	}
 
+	state.DIDClaimConfirmed(identity.DID)
 	state.AddFinalize(func(ctx context.Context) error {
 		event := fftypes.NewEvent(fftypes.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, fftypes.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)

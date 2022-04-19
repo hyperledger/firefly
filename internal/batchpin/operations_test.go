@@ -147,3 +147,8 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 	_, err := bp.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 }
+
+func TestOperationUpdate(t *testing.T) {
+	bp := newTestBatchPinSubmitter(t, false)
+	assert.NoError(t, bp.OnOperationUpdate(context.Background(), nil, nil))
+}

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -119,6 +120,24 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 	}
 	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "pop", err)
+}
+
+func TestUpsertContractAPIIDMismatch(t *testing.T) {
+	s, db := newMockProvider().init()
+	callbacks := &databasemocks.Callbacks{}
+	s.SQLCommon.callbacks = callbacks
+	apiID := fftypes.NewUUID()
+	api := &fftypes.ContractAPI{
+		ID:        apiID,
+		Namespace: "ns1",
+	}
+
+	db.ExpectBegin()
+	db.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
+	db.ExpectRollback()
+	err := s.UpsertContractAPI(context.Background(), api)
+	assert.Equal(t, database.IDMismatch, err)
+	assert.NoError(t, db.ExpectationsWereMet())
 }
 
 func TestContractAPIDBFailScan(t *testing.T) {

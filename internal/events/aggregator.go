@@ -135,6 +135,14 @@ func (ag *aggregator) queueBlobRewind(hash *fftypes.Bytes32) {
 	}
 }
 
+func (ag *aggregator) queueDIDRewind(did string) {
+	log.L(ag.ctx).Debugf("Queuing rewind for author DID %s", did)
+	ag.rewinder.rewindRequests <- rewind{
+		rewindType: rewindDIDConfirmed,
+		did:        did,
+	}
+}
+
 func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 
 	batchIDs := ag.rewinder.popRewinds()
@@ -183,16 +191,19 @@ func (ag *aggregator) processWithBatchState(callback func(ctx context.Context, s
 		return err
 	}
 
-	if len(state.PreFinalize) == 0 {
-		return err
+	if len(state.PreFinalize) > 0 {
+		if err := state.RunPreFinalize(ag.ctx); err != nil {
+			return err
+		}
+		err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
+			return state.RunFinalize(ctx)
+		})
+		if err != nil {
+			return err
+		}
 	}
-
-	if err := state.RunPreFinalize(ag.ctx); err != nil {
-		return err
-	}
-	return ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
-		return state.RunFinalize(ctx)
-	})
+	state.queueRewinds(ag)
+	return nil
 }
 
 func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced) (repoll bool, err error) {

@@ -19,7 +19,7 @@ nav_order: 2
 Use the following diagram to better understand the hierarchy amongst the core FireFly components, plugins and utility frameworks:
 
 ```
-┌──────────┐  ┌───────────────┐  
+┌──────────┐  ┌───────────────┐
 │ cmd      ├──┤ firefly   [Ff]│  - CLI entry point
 └──────────┘  │               │  - Creates parent context
               │               │  - Signal handling
@@ -41,6 +41,11 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
               │ websockets    │    * Reliable sequenced delivery
               └─────┬─────────┘    * _Event interface [Ei] supports lower level integration with other compute frameworks/transports_
                     │
+              ┌─────┴─────────┐  - Extension point interface to listen for database change events
+              │ admin     [Ae]│    * For building microservice extensions to the core that run externally
+              │ events        |    * Used by the Transaction Manager component
+              └─────┬─────────┘    * Filtering to specific object types
+                    │
               ┌─────┴─────────┐  - Core data types
               │ fftypes   [Ft]│    * Used for API and Serialization
               │               │    * APIs can mask fields on input via router definition
@@ -54,6 +59,11 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │
   │  Components: Components do the heavy lifting within the engine
   │       │
+  │       │   ┌───────────────┐  - Integrates with Blockchain Smart Contract logic across blockchain technologies
+  │       ├───┤ contract  [Cm]│    * Generates OpenAPI 3 / Swagger definitions for smart contracts, and propagates to network
+  │       │   │ manager       │    * Manages listeners for native Blockchain events, and routes those to application events
+  │       │   └───────────────┘    * Convert to/from native Blockchain interfaces (ABI etc.) and FireFly Interface [FFI] format
+  │       │
   │       │   ┌───────────────┐  - Maintains a view of the entire network
   │       ├───┤ network   [Nm]│    * Integrates with network permissioning [NP] plugin
   │       │   │ map           │    * Integrates with broadcast plugin
@@ -61,7 +71,7 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │
   │       │   ┌───────────────┐  - Broadcast of data to all parties in the network
   │       ├───┤ broadcast [Bm]│    * Implements dispatcher for batch component
-  │       │   │ manager       |    * Integrates with shared storage interface [Ps] plugin
+  │       │   │ manager       |    * Integrates with shared storage interface [Ss] plugin
   │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │
   │       │   ┌───────────────┐  - Send private data to individual parties in the network
@@ -79,15 +89,31 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │   │ manager       │    * Integrates with data exchange [Dx] plugin
   │       │   └──────┬────────┘    * Integrates with blockchain interface [Bi] plugin
   │       │          │
-  │       │   ┌──────┴────────┐  - JSON data shema management and validation (architecture extensible to XML and more)
+  │       │   ┌──────┴────────┐  - JSON data schema management and validation (architecture extensible to XML and more)
   │       │   │ json      [Jv]│    * JSON Schema validation logic for outbound and inbound messages
-  │       │   │ validator     │    * Schema propagatation
+  │       │   │ validator     │    * Schema propagation
   │       │   └──────┬────────┘    * Integrates with broadcast plugin
   │       │          │
   │       │   ┌──────┴────────┐  - Binary data addressable via ID or Hash
   │       │   │ blobstore [Bs]│    * Integrates with data exchange [Dx] plugin
   │       │   │               │    * Hashes data, and maintains mapping to payload references in blob storage
   │       │   └───────────────┘    * Integrates with blockchain interface [Bi] plugin
+  │       │
+  │       │   ┌───────────────┐  - Download from shared storage
+  │       ├───┤ shared    [Sd]│    * Parallel asynchronous download
+  │       │   │ download      │    * Resilient retry and crash recovery
+  │       │   └───────────────┘    * Notification to event aggregator on completion
+  │       │
+  │       │   ┌───────────────┐
+  │       ├───┤ identity [Im] │  - Central identity management service across components
+  │       │   │ manager       │    * Resolves API input identity + key combos (short names, formatting etc.)
+  │       │   │               │    * Resolves registered on-chain signing keys back to identities
+  │       │   └───────────────┘    * Integrates with Blockchain Interface and pluggable Identity Interface (TBD)
+  │       │
+  │       │   ┌───────────────┐  - Keeps track of all operations performed against external components via plugins
+  │       ├───┤ operation [Om]│    * Updates database with inputs/outputs
+  │       │   │ manager       │    * Provides consistent retry semantics across plugins
+  │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Private data management and validation
   │       ├───┤ event     [Em]│    * Implements dispatcher for batch component
@@ -96,7 +122,7 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │          │
   │       │   ┌──────┴────────┐  - Handles incoming external data
   │       │   │           [Ag]│    * Integrates with data exchange [Dx] plugin
-  │       │   │ aggregator    │    * Integrates with shared storage interface [Ps] plugin
+  │       │   │ aggregator    │    * Integrates with shared storage interface [Ss] plugin
   │       │   │               │    * Integrates with blockchain interface [Bi] plugin
   │       │   │               │  - Ensures valid events are dispatched only once all data is available
   │       │   └──────┬────────┘    * Context aware, to prevent block-the-world scenarios
@@ -112,10 +138,19 @@ Use the following diagram to better understand the hierarchy amongst the core Fi
   │       │   │ dispatcher    │    * Integrates with blockchain interface [Bi] plugin
   │       │   └───────────────┘
   │       │
-  │       │   ┌───────────────┐  - Token operations
-  │       ├───┤ asset     [Am]│    * NFT coupling with contexts
-  │       │   │ manager       │    * Transfer coupling with data describing payment reason
-  │       │   │               │  - ...
+  │       │   ┌───────────────┐  - Token creation/transfer initiation, indexing and coordination
+  │       ├───┤ asset     [Am]│    * Fungible tokens: Digitized value/settlement (coins)
+  │       │   │ manager       │    * Non-fungible tokens: NFTs / globally uniqueness / digital twins
+  │       │   └───────────────┘    * Full indexing of transaction history
+  │       │   [REST/WebSockets]
+  │       │   ┌─────┴─────────────┐   ┌──────────┐   ┌─ 
+  │       │   │ ERC-20 / ERC-721  ├───┤ ERC-1155 ├───┤  Simple framework for building token connectors
+  │       │   └───────────────────┘   └──────────┘   └─ 
+  │       │
+  │       │   ┌───────────────┐
+  │       ├───┤ sync /   [Sa] │  - Sync/Async Bridge
+  │       │   │ async bridge  │    * Provides synchronous request/reply APIs
+  │       │   │               │    * Translates to underlying event-driven API
   │       │   └───────────────┘
   │       │
   │       │   ┌───────────────┐  - Aggregates messages and data, with rolled up hashes for pinning
@@ -139,10 +174,23 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           │ interface     │    * Standardized operations, and custom on-chain coupling
   │           └─────┬─────────┘
   │                 │
-  │                 ├─────────────────────┬───────────────────┬────────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐   ┌───────┴────────┐
-  │           │ ethereum      │   │ corda         │   │ fabric         │   │ utdbql [1]     │
-  │           └───────────────┘   └───────────────┘   └────────────────┘   └────────────────┘
+  │                 ├─────────────────────┬───────────────────┐
+  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
+  │           │ ethereum      │   │ fabric        │   │ corda/cordapps │
+  │           └─────┬─────────┘   └───────────────┘   └────────────────┘
+  │           [REST/WebSockets]
+  │           ┌─────┴────────────────────┐   ┌────────────────────────┐   ┌─ 
+  │           │ transaction manager [Tm] ├───┤ Connector API [ffcapi] ├───┤  Simple framework for building blockchain connectors
+  │           └──────────────────────────┘   └────────────────────────┘   └─ 
+  │        
+  │           ┌───────────────┐  - Token interface
+  ├───────────┤ tokens    [Ti]│    * Standardizes core concepts: token pools, transfers, approvals
+  │           │ interface     │    * Pluggable across token standards
+  │           └───────────────┘    * Supports simple implementation of custom token standards via microservice connector
+  │           [REST/WebSockets]
+  │           ┌─────┴─────────────┐   ┌──────────┐   ┌─ 
+  │           │ ERC-20 / ERC-721  ├───┤ ERC-1155 ├───┤  Simple framework for building token connectors
+  │           └───────────────────┘   └──────────┘   └─ 
   │
   │           ┌───────────────┐  - P2P Content Addresssed Filesystem
   ├───────────┤ shared    [Si]│    * Payload upload / download
@@ -162,18 +210,8 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │                 │
   │                 ├─────────────────────┬────────── ... extensible to any private data exchange tech
   │           ┌─────┴─────────┐   ┌───────┴───────┐
-  │           │ httpdirect    │   │ kaleido       │
+  │           │ https / MTLS  │   │ Kaleido       │
   │           └───────────────┘   └───────────────┘
-  │
-  │           ┌───────────────┐  - Identity resolution and mapping
-  ├───────────┤ identity  [Ii]│    * Resolves opaque identifiers used throughout FireFly
-  │           │ interface     │    * Maps to and from blockchain signing identities
-  │           └─────┬─────────┘    * Map API/user identities from authentication, to network/organizational identities
-  │                 │
-  │                 ├───────────── ... extensible to DIDs etc.
-  │           ┌─────┴─────────┐
-  │           │ onchain       │
-  │           └───────────────┘
   │
   │           ┌───────────────┐  - API Authentication and Authorization Interface
   ├───────────┤ api auth  [Aa]│    * Authenticates security credentials (OpenID Connect id token JWTs etc.)
@@ -194,21 +232,20 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
   │           ┌─────┴─────────┐
   │           │ sqlcommon     │
   │           └─────┬─────────┘
-  │                 ├─────────────────────┬───────────────────┐
-  │           ┌─────┴─────────┐   ┌───────┴───────┐   ┌───────┴────────┐
-  │           │ postgres      │   │ ql            │   │ sqlite         │
-  │           └───────────────┘   └───────────────┘   └────────────────┘
+  │                 ├───────────────────────┬───────── ... extensible other SQL databases
+  │           ┌─────┴─────────┐     ┌───────┴────────┐
+  │           │ postgres      │     │ sqlite3        │
+  │           └───────────────┘     └────────────────┘
   │
   │           ┌───────────────┐  - Connects the core event engine to external frameworks and applications
   ├───────────┤ event     [Ei]│    * Supports long-lived (durable) and ephemeral event subscriptions
   │           │ interface     │    * Batching, filtering, all handled in core prior to transport
   │           └─────┬─────────┘    * Interface supports connect-in (websocket) and connect-out (broker runtime style) plugins
   │                 │
-  │                 ├───────── ... extensible to integrate off-chain compute framework (Hyperledger Avalon, TEE, ZKP, MPC etc.)
-  │                 │          ... extensible to additional event delivery brokers/subsystems (Webhooks, Kafka, AMQP etc.)
-  │           ┌─────┴─────────┐
-  │           │ websockets    │
-  │           └───────────────┘
+  │                 ├───────────────────────┬──────────   ... extensible to additional event buses (Kafka, NATS, AMQP etc.)
+  │           ┌─────┴─────────┐     ┌───────┴────────┐
+  │           │ websockets    │     │ webhooks       │
+  │           └───────────────┘     └────────────────┘
   │  ... more TBD
 
   Additional utility framworks
@@ -236,8 +273,4 @@ Plugins: Each plugin comprises a Go shim, plus a remote agent microservice runti
               │ config    [Co]│    * File and Environment Variable based logging framework (viper)
               │               │    * Primary config keys all defined centrally
               └───────────────┘    * Plugins integrate by returning their config structure for unmarshaling (JSON tags)
-
-[1] The "utdbql" blockchain plugin is a simple standalone ordering service, that uses the an in-process database
-    It does NOT provide a multi-party blockchain, and does NOT provide broadcast to all members in the network
-
 ```

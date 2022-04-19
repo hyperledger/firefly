@@ -31,10 +31,10 @@ var getNetworkIdentities = &oapispec.Route{
 	Path:   "network/identities",
 	Method: http.MethodGet,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIMessageTBD, IsBool: true},
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
 	FilterFactory:   database.IdentityQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetNetworkIdentities,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*fftypes.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

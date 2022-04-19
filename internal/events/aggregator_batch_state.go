@@ -101,6 +101,7 @@ type batchState struct {
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
 	pendingConfirms    map[fftypes.UUID]*fftypes.Message
+	confirmedDIDClaims []string
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
 	// - Will execute after all batch messages have been processed
@@ -147,6 +148,16 @@ func (bs *batchState) RunFinalize(ctx context.Context) error {
 		}
 	}
 	return bs.flushPins(ctx)
+}
+
+func (bs *batchState) DIDClaimConfirmed(did string) {
+	bs.confirmedDIDClaims = append(bs.confirmedDIDClaims, did)
+}
+
+func (bs *batchState) queueRewinds(ag *aggregator) {
+	for _, did := range bs.confirmedDIDClaims {
+		ag.queueDIDRewind(did)
+	}
 }
 
 func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *fftypes.Message, topic string, firstMsgPinSequence int64) (bool, error) {

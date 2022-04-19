@@ -49,6 +49,7 @@ var (
 	urlDatatypes         = "/namespaces/default/datatypes"
 	urlIdentities        = "/namespaces/default/identities"
 	urlIdentity          = "/namespaces/default/identities/%s"
+	urlVerifiers         = "/namespaces/default/verifiers"
 	urlTokenPools        = "/namespaces/default/tokens/pools"
 	urlTokenMint         = "/namespaces/default/tokens/mint"
 	urlTokenBurn         = "/namespaces/default/tokens/burn"
@@ -250,28 +251,6 @@ func BroadcastMessageAsIdentity(t *testing.T, client *resty.Client, did, topic s
 	return res, err
 }
 
-func CreateEthAccount(t *testing.T, client *resty.Client) string {
-	createPayload := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": "personal_newAccount", "params": []interface{}{""}}
-	var resBody struct {
-		Result string `json:"result"`
-	}
-	res, err := client.R().
-		SetBody(createPayload).
-		SetResult(&resBody).
-		Post("/")
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode())
-	newKey := resBody.Result
-	t.Logf("New key: %s", newKey)
-	unlockPayload := map[string]interface{}{"jsonrpc": "2.0", "id": 0, "method": "personal_unlockAccount", "params": []interface{}{newKey, "", 0}}
-	res, err = client.R().
-		SetBody(unlockPayload).
-		Post("/")
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode())
-	return newKey
-}
-
 func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) *fftypes.Identity {
 	var identity fftypes.Identity
 	res, err := client.R().
@@ -290,6 +269,7 @@ func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc str
 		Post(urlIdentities)
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
+	t.Logf("Identity creation initiated with key %s: %s (%s)", key, identity.ID, identity.DID)
 	return &identity
 }
 
@@ -301,6 +281,16 @@ func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *fftypes.
 	assert.NoError(t, err)
 	assert.True(t, res.IsSuccess())
 	return &identity
+}
+
+func GetVerifiers(t *testing.T, client *resty.Client) []*fftypes.Verifier {
+	var verifiers []*fftypes.Verifier
+	res, err := client.R().
+		SetResult(&verifiers).
+		Get(urlVerifiers)
+	assert.NoError(t, err)
+	assert.True(t, res.IsSuccess())
+	return verifiers
 }
 
 func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *fftypes.Data {
@@ -637,6 +627,7 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 			Event: &fftypes.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
+			Topic: "firefly-e2e",
 		},
 	}
 	var sub fftypes.ContractListener
@@ -655,6 +646,7 @@ func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference 
 		ContractListener: fftypes.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
 			Interface: ffiReference,
+			Topic:     "firefly-e2e",
 		},
 		EventPath: eventPath,
 	}
@@ -732,30 +724,6 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func InvokeFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return res, err
-}
-
-func QueryFFIMethod(t *testing.T, client *resty.Client, interfaceID, methodName string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	var res interface{}
-	path := fmt.Sprintf("%s/%s/query/%s", urlContractInterface, interfaceID, methodName)
-	resp, err := client.R().
-		SetBody(req).
-		SetResult(&res).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 

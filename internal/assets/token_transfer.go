@@ -37,7 +37,7 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 		return nil, err
 	}
 
-	return am.database.GetTokenTransfer(ctx, transferID)
+	return am.database.GetTokenTransferByID(ctx, transferID)
 }
 
 func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {

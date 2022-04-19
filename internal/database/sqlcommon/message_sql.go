@@ -581,7 +581,7 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, "", query, filter, opFilterFieldMap)
+	query, err = s.filterUpdate(ctx, query, filter, msgFilterFieldMap)
 	if err != nil {
 		return err
 	}

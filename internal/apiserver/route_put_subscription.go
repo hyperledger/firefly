@@ -30,11 +30,11 @@ var putSubscription = &oapispec.Route{
 	Path:   "namespaces/{ns}/subscriptions",
 	Method: http.MethodPut,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPutSubscription,
 	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation

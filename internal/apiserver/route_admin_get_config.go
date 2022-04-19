@@ -31,7 +31,7 @@ var adminGetConfig = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsAdminGetConfig,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.JSONObject{} },
 	JSONOutputCodes: []int{http.StatusOK},

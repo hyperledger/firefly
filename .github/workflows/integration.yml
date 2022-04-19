@@ -13,10 +13,12 @@ jobs:
     strategy:
       matrix:
         test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
-        blockchain-provider: [geth, fabric]
+        blockchain-provider: [geth, besu, fabric]
         database-type: [sqlite3, postgres]
         exclude:
           - blockchain-provider: geth
+            test-suite: TestFabricE2ESuite
+          - blockchain-provider: besu
             test-suite: TestFabricE2ESuite
           - blockchain-provider: fabric
             test-suite: TestEthereumE2ESuite

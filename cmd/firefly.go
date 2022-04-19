@@ -36,6 +36,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const configSuffix = "core"
+
 var sigs = make(chan os.Signal, 1)
 
 var rootCmd = &cobra.Command{
@@ -57,7 +59,7 @@ var showConfigCommand = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
 		getOrchestrator()
-		_ = config.ReadConfig(cfgFile)
+		_ = config.ReadConfig(configSuffix, cfgFile)
 
 		// Print it all out
 		fmt.Printf("%-64s %v\n", "Key", "Value")
@@ -94,7 +96,7 @@ func run() error {
 
 	// Read the configuration
 	coreconfig.Reset()
-	err := config.ReadConfig(cfgFile)
+	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -131,7 +133,7 @@ func run() error {
 			o.WaitStop()
 			// Re-read the configuration
 			coreconfig.Reset()
-			if err := config.ReadConfig(cfgFile); err != nil {
+			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
 				cancelCtx()
 				return err
 			}

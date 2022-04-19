@@ -70,6 +70,12 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 	eventReadJson, _ = json.Marshal(eventRead)
 	assert.Equal(t, string(eventJson), string(eventReadJson))
+
+	// Query back the event (by protocol ID)
+	eventRead, err = s.GetBlockchainEventByProtocolID(ctx, event.Namespace, event.Listener, event.ProtocolID)
+	assert.NoError(t, err)
+	eventReadJson, _ = json.Marshal(eventRead)
+	assert.Equal(t, string(eventJson), string(eventReadJson))
 }
 
 func TestInsertBlockchainEventFailBegin(t *testing.T) {

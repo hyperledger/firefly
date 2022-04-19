@@ -1190,7 +1190,7 @@ func TestDeleteSubscription(t *testing.T) {
 	}
 
 	sub := &fftypes.ContractListener{
-		ProtocolID: "sb-1",
+		BackendID: "sb-1",
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
@@ -1215,7 +1215,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &fftypes.ContractListener{
-		ProtocolID: "sb-1",
+		BackendID: "sb-1",
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
@@ -1581,7 +1581,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 	assert.Regexp(t, "invalid character", err)
 }
 
-func TestValidateContractLocation(t *testing.T) {
+func TestNormalizeContractLocation(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	location := &Location{
@@ -1590,7 +1590,7 @@ func TestValidateContractLocation(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
 }
 
@@ -1602,7 +1602,7 @@ func TestValidateNoContractLocationChaincode(t *testing.T) {
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1647,4 +1647,10 @@ func TestGenerateFFI(t *testing.T) {
 		Input:       fftypes.JSONAnyPtr(`[]`),
 	})
 	assert.Regexp(t, "FF10347", err)
+}
+
+func TestGenerateEventSignature(t *testing.T) {
+	e, _ := newTestFabric()
+	signature := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	assert.Equal(t, "Changed", signature)
 }

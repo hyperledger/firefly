@@ -31,13 +31,13 @@ var getContractInterfaces = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/interfaces",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.FFIQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetContractInterfaces,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).Contracts().GetFFIs(r.Ctx, r.PP["ns"], r.Filter))

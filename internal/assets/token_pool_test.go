@@ -456,9 +456,6 @@ func TestActivateTokenPool(t *testing.T) {
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
-	info := fftypes.JSONObject{
-		"some": "info",
-	}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
@@ -467,11 +464,10 @@ func TestActivateTokenPool(t *testing.T) {
 	})).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
-		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil, nil)
 
-	err := am.ActivateTokenPool(context.Background(), pool, info)
+	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -486,9 +482,8 @@ func TestActivateTokenPoolBadConnector(t *testing.T) {
 		Namespace: "ns1",
 		Connector: "bad",
 	}
-	info := fftypes.JSONObject{}
 
-	err := am.ActivateTokenPool(context.Background(), pool, info)
+	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.Regexp(t, "FF10272", err)
 }
 
@@ -500,14 +495,13 @@ func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
-	info := fftypes.JSONObject{}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
 		return op.Type == fftypes.OpTypeTokenActivatePool
 	})).Return(fmt.Errorf("pop"))
 
-	err := am.ActivateTokenPool(context.Background(), pool, info)
+	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -521,9 +515,6 @@ func TestActivateTokenPoolFail(t *testing.T) {
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
-	info := fftypes.JSONObject{
-		"some": "info",
-	}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mth := am.txHelper.(*txcommonmocks.Helper)
@@ -533,11 +524,10 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	})).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
-		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil, fmt.Errorf("pop"))
 
-	err := am.ActivateTokenPool(context.Background(), pool, info)
+	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -553,9 +543,6 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
-	info := fftypes.JSONObject{
-		"some": "info",
-	}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mth := am.txHelper.(*txcommonmocks.Helper)
@@ -565,11 +552,10 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	})).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
-		assert.Equal(t, info, data.BlockchainInfo)
 		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil, nil)
 
-	err := am.ActivateTokenPool(context.Background(), pool, info)
+	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

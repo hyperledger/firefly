@@ -1392,7 +1392,7 @@ func TestDeleteSubscription(t *testing.T) {
 	}
 
 	sub := &fftypes.ContractListener{
-		ProtocolID: "sb-1",
+		BackendID: "sb-1",
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
@@ -1417,7 +1417,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &fftypes.ContractListener{
-		ProtocolID: "sb-1",
+		BackendID: "sb-1",
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
@@ -1778,16 +1778,39 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 	assert.Regexp(t, "invalid character", err)
 }
 
-func TestValidateContractLocation(t *testing.T) {
+func TestNormalizeContractLocation(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	location := &Location{
-		Address: "0x12345",
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	result, err := e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
+	assert.Equal(t, "0x3081d84fd367044f4ed453f2024709242470388c", result.JSONObject()["address"])
+}
+
+func TestNormalizeContractLocationInvalid(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "bad",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Regexp(t, "FF10141", err)
+}
+
+func TestNormalizeContractLocationBlank(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Regexp(t, "FF10310", err)
 }
 
 func TestGetContractAddressBadJSON(t *testing.T) {
@@ -2387,4 +2410,67 @@ func TestGetFFIType(t *testing.T) {
 	assert.Equal(t, e.getFFIType("string[]"), "array")
 	assert.Equal(t, e.getFFIType("tuple"), "object")
 	assert.Equal(t, e.getFFIType("foobar"), "")
+}
+
+func TestGenerateEventSignature(t *testing.T) {
+	e, _ := newTestEthereum()
+	complexParam := fftypes.JSONObject{
+		"type": "object",
+		"details": fftypes.JSONObject{
+			"type": "tuple",
+		},
+		"properties": fftypes.JSONObject{
+			"prop1": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 0,
+				},
+			},
+			"prop2": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 1,
+				},
+			},
+		},
+	}.String()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(complexParam),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256))", signature)
+}
+
+func TestGenerateEventSignatureInvalid(t *testing.T) {
+	e, _ := newTestEthereum()
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"!bad": "bad"`),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "", signature)
 }

@@ -1774,7 +1774,7 @@ func TestDefinitionBroadcastRejectBadSigner(t *testing.T) {
 
 }
 
-func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) {
+func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
@@ -1787,9 +1787,10 @@ func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
+	assert.Empty(t, newState)
 
 	mim.AssertExpectations(t)
 	msh.AssertExpectations(t)
@@ -2102,6 +2103,41 @@ func TestProcessWithBatchActionsSuccess(t *testing.T) {
 		return nil
 	})
 	assert.NoError(t, err)
+}
+
+func TestProcessWithBatchRewindsSuccess(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
+		actions.DIDClaimConfirmed("did:firefly:org/test")
+		return nil
+	})
+	assert.NoError(t, err)
+}
+
+func TestProcessWithBatchActionsFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Once()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
+		actions.AddPreFinalize(func(ctx context.Context) error { return nil })
+		return nil
+	})
+	assert.EqualError(t, err, "pop")
 }
 
 func TestExtractManifestFail(t *testing.T) {

@@ -151,6 +151,8 @@ var (
 	EventAggregatorRewindTimeout = ffc("event.aggregator.rewindTimeout")
 	// EventAggregatorRewindQueueLength the size of the queue into the rewind dispatcher
 	EventAggregatorRewindQueueLength = ffc("event.aggregator.rewindQueueLength")
+	// EventAggregatorRewindQueryLimit safety limit on the maximum number of records to search when performing queries to search for rewinds
+	EventAggregatorRewindQueryLimit = ffc("event.aggregator.rewindQueryLimit")
 	// EventAggregatorRetryFactor the backoff factor to use for retry of database operations
 	EventAggregatorRetryFactor = ffc("event.aggregator.retry.factor")
 	// EventAggregatorRetryInitDelay the initial delay to use for retry of data base operations
@@ -324,6 +326,7 @@ func setDefaults() {
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
 	viper.SetDefault(string(EventAggregatorRewindTimeout), "50ms")
 	viper.SetDefault(string(EventAggregatorRewindQueueLength), 10)
+	viper.SetDefault(string(EventAggregatorRewindQueryLimit), 1000)
 	viper.SetDefault(string(EventAggregatorRetryFactor), 2.0)
 	viper.SetDefault(string(EventAggregatorRetryInitDelay), "100ms")
 	viper.SetDefault(string(EventAggregatorRetryMaxDelay), "30s")

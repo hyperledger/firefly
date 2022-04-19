@@ -209,7 +209,7 @@ func (sa *syncAsyncBridge) getPoolFromMessage(msg *fftypes.Message) (*fftypes.To
 }
 
 func (sa *syncAsyncBridge) getTransferFromEvent(event *fftypes.EventDelivery) (transfer *fftypes.TokenTransfer, err error) {
-	if transfer, err = sa.database.GetTokenTransfer(sa.ctx, event.Reference); err != nil {
+	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, event.Reference); err != nil {
 		return nil, err
 	}
 	if transfer == nil {

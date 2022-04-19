@@ -31,14 +31,14 @@ var patchUpdateIdentity = &oapispec.Route{
 	Path:   "namespaces/{ns}/identities/{iid}",
 	Method: http.MethodPatch,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "iid", Example: "id", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "iid", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsPatchUpdateIdentity,
 	JSONInputValue:  func() interface{} { return &fftypes.IdentityUpdateDTO{} },
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

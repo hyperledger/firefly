@@ -31,11 +31,11 @@ var getVerifiers = &oapispec.Route{
 	Path:   "namespaces/{ns}/verifiers",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.VerifierQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetVerifiers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*fftypes.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},

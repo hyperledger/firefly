@@ -53,12 +53,22 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("contractapis").
-			Where(sq.And{sq.Eq{"id": api.ID}}),
+			Where(sq.And{sq.Eq{"namespace": api.Namespace}, sq.Eq{"name": api.Name}}),
 	)
 	if err != nil {
 		return err
 	}
 	existing := rows.Next()
+
+	if existing {
+		var id fftypes.UUID
+		_ = rows.Scan(&id)
+		if api.ID != nil && *api.ID != id {
+			rows.Close()
+			return database.IDMismatch
+		}
+		api.ID = &id // Update on returned object
+	}
 	rows.Close()
 
 	if existing {

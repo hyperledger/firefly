@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
@@ -165,6 +166,10 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 
 	log.L(ctx).Infof("Published blob with hash '%s' for data '%s' to shared storage: '%s'", data.Data.Blob.Hash, data.Data.ID, data.Data.Blob.Public)
 	return getUploadBlobOutputs(data.Data.Blob.Public), true, nil
+}
+
+func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
 }
 
 func opUploadBatch(op *fftypes.Operation, batch *fftypes.Batch, batchPersisted *fftypes.BatchPersisted) *fftypes.PreparedOperation {

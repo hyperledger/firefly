@@ -153,10 +153,30 @@ func ffTagHandler(ctx context.Context, route *Route, name string, tag reflect.St
 	return nil
 }
 
+func addCustomType(t reflect.Type, schema *openapi3.Schema) {
+	typeString := "string"
+	if schema.Type == "" {
+		switch t.Name() {
+		case "UUID":
+			schema.Type = typeString
+			schema.Format = "uuid"
+		case "FFTime":
+			schema.Type = typeString
+			schema.Format = "date-time"
+		case "Bytes32":
+			schema.Type = typeString
+			schema.Format = "byte"
+		case "FFBigInt":
+			schema.Type = typeString
+		}
+	}
+}
+
 func addInput(ctx context.Context, doc *openapi3.T, route *Route, op *openapi3.Operation, conf *SwaggerGenConfig) {
 	var schemaRef *openapi3.SchemaRef
 	var err error
 	schemaCustomizer := func(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+		addCustomType(t, schema)
 		return ffInputTagHandler(ctx, route, name, tag, schema, conf)
 	}
 	switch {
@@ -209,6 +229,7 @@ func addOutput(ctx context.Context, doc *openapi3.T, route *Route, op *openapi3.
 	var err error
 	s := i18n.Expand(ctx, coremsgs.APISuccessResponse)
 	schemaCustomizer := func(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+		addCustomType(t, schema)
 		return ffOutputTagHandler(ctx, route, name, tag, schema, conf)
 	}
 	switch {
@@ -273,8 +294,12 @@ func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, exampl
 
 func addRoute(ctx context.Context, doc *openapi3.T, route *Route, conf *SwaggerGenConfig) {
 	pi := getPathItem(doc, route.Path)
+	routeDescription := i18n.Expand(ctx, route.Description)
+	if routeDescription == "" && conf.PanicOnMissingDescription {
+		log.Panicf(i18n.NewError(ctx, coremsgs.MsgRouteDescriptionMissing, route.Name).Error())
+	}
 	op := &openapi3.Operation{
-		Description: i18n.Expand(ctx, route.Description),
+		Description: routeDescription,
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
 		Deprecated:  route.Deprecated,

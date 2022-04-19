@@ -204,7 +204,7 @@ func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, upda
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, "", query, filter, pinFilterFieldMap)
+	query, err = s.filterUpdate(ctx, query, filter, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}

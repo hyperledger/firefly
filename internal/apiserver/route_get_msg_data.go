@@ -30,12 +30,12 @@ var getMsgData = &oapispec.Route{
 	Path:   "namespaces/{ns}/messages/{msgid}/data",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "msgid", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "msgid", Description: coremsgs.APIParamsMessageID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil, // No filtering on this route - use namespaces/{ns}/data
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetMsgData,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return fftypes.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},

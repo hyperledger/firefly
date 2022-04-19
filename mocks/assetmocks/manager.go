@@ -18,13 +18,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// ActivateTokenPool provides a mock function with given fields: ctx, pool, blockchainInfo
-func (_m *Manager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) error {
-	ret := _m.Called(ctx, pool, blockchainInfo)
+// ActivateTokenPool provides a mock function with given fields: ctx, pool
+func (_m *Manager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
+	ret := _m.Called(ctx, pool)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, pool, blockchainInfo)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool) error); ok {
+		r0 = rf(ctx, pool)
 	} else {
 		r0 = ret.Error(0)
 	}

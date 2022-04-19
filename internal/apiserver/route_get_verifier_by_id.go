@@ -27,18 +27,18 @@ import (
 
 var getVerifierByID = &oapispec.Route{
 	Name:   "getVerifierByID",
-	Path:   "namespaces/{ns}/verifiers/{vid}",
+	Path:   "namespaces/{ns}/verifiers/{hash}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
-		{Name: "vid", Example: "id", Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "hash", Example: "hash", Description: coremsgs.APIParamsVerifierHash},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetVerifierByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetVerifierByHash(r.Ctx, r.PP["ns"], r.PP["vid"])
+		return getOr(r.Ctx).NetworkMap().GetVerifierByHash(r.Ctx, r.PP["ns"], r.PP["hash"])
 	},
 }

@@ -31,11 +31,11 @@ var getGroups = &oapispec.Route{
 	Path:   "namespaces/{ns}/groups",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIMessageTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.GroupQueryFactory,
-	Description:     coremsgs.APIMessageTBD,
+	Description:     coremsgs.APIEndpointsGetGroups,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
