@@ -132,7 +132,7 @@ func RootConfigReset(setServiceDefaults ...func()) {
 }
 
 // ReadConfig initializes the config
-func ReadConfig(cfgFile string) error {
+func ReadConfig(cfgSuffix, cfgFile string) error {
 	keysMutex.Lock() // must only call viper directly here (as we already hold the lock)
 	defer keysMutex.Unlock()
 
@@ -149,7 +149,7 @@ func ReadConfig(cfgFile string) error {
 		}
 		return err
 	}
-	viper.SetConfigName("firefly.core")
+	viper.SetConfigName(fmt.Sprintf("firefly.%s", cfgSuffix))
 	viper.AddConfigPath("/etc/firefly/")
 	viper.AddConfigPath("$HOME/.firefly")
 	viper.AddConfigPath(".")
