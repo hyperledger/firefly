@@ -36,7 +36,7 @@ const configDir = "../../test/data/config"
 
 func TestInitConfigOK(t *testing.T) {
 	viper.Reset()
-	err := ReadConfig("")
+	err := ReadConfig("core", "")
 	assert.Regexp(t, "Not Found", err)
 }
 
@@ -66,7 +66,7 @@ func TestDefaults(t *testing.T) {
 		viper.SetDefault(string(key8), fftypes.JSONObjectArray{{"key1": "value1"}})
 		viper.SetDefault(string(key9), "1Mb")
 	})
-	err = ReadConfig("")
+	err = ReadConfig("core", "")
 	assert.NoError(t, err)
 
 	assert.Equal(t, "value1", GetString(key1))
@@ -83,13 +83,13 @@ func TestDefaults(t *testing.T) {
 
 func TestSpecificConfigFileOk(t *testing.T) {
 	RootConfigReset()
-	err := ReadConfig(configDir + "/firefly.core.yaml")
+	err := ReadConfig("core", configDir+"/firefly.core.yaml")
 	assert.NoError(t, err)
 }
 
 func TestSpecificConfigFileFail(t *testing.T) {
 	RootConfigReset()
-	err := ReadConfig(configDir + "/no.hope.yaml")
+	err := ReadConfig("core", configDir+"/no.hope.yaml")
 	assert.Error(t, err)
 }
 

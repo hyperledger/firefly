@@ -723,7 +723,7 @@ func TestInitOK(t *testing.T) {
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mmi.On("Init").Return(nil)
-	err := config.ReadConfig(configDir + "/firefly.core.yaml")
+	err := config.ReadConfig("core", configDir+"/firefly.core.yaml")
 	assert.NoError(t, err)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err = or.Init(ctx, cancelCtx)
