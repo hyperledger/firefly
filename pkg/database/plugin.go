@@ -919,6 +919,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"standard":  &StringField{},
 	"locator":   &StringField{},
 	"symbol":    &StringField{},
+	"decimals":  &Int64Field{},
 	"message":   &UUIDField{},
 	"state":     &StringField{},
 	"created":   &TimeField{},
