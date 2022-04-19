@@ -11,19 +11,19 @@ STACKS_DIR=~/.firefly/stacks
 
 create_accounts() {
   if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
-      # Create 5 new accounts for use in testing
+      # Create 4 new accounts for use in testing
       for i in {1..4}
       do
           $CLI accounts create $STACK_NAME
       done
   elif [ "$TEST_SUITE" == "TestFabricE2ESuite" ]; then
-      # Create 5 new accounts for use in testing
+      # Create 4 new accounts for the first org for use in testing
       for i in {1..3}
       do
-          $CLI accounts create $STACK_NAME org_0  user_$i
+          $CLI accounts create $STACK_NAME org_0 user_$(openssl rand -hex 10)
       done
-      # Create one account that is specifically only usable from the second org
-      $CLI accounts create $STACK_NAME org_1  user_5
+      # Create one account for the second org
+      $CLI accounts create $STACK_NAME org_1 user_$(openssl rand -hex 10)
   fi
 }
 
@@ -110,7 +110,6 @@ fi
 
 if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
     export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
-    # Create 5 new accounts for use in testing
 fi
 
 if [ "$TOKENS_PROVIDER" == "erc20_erc721" ]; then
