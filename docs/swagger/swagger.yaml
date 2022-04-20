@@ -5503,6 +5503,7 @@ paths:
                       - identity_confirmed
                       - identity_updated
                       - token_pool_confirmed
+                      - token_pool_op_failed
                       - token_transfer_confirmed
                       - token_transfer_op_failed
                       - token_approval_confirmed
@@ -5609,6 +5610,7 @@ paths:
                     - identity_confirmed
                     - identity_updated
                     - token_pool_confirmed
+                    - token_pool_op_failed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
                     - token_approval_confirmed
@@ -7304,6 +7306,7 @@ paths:
                       - identity_confirmed
                       - identity_updated
                       - token_pool_confirmed
+                      - token_pool_op_failed
                       - token_transfer_confirmed
                       - token_transfer_op_failed
                       - token_approval_confirmed

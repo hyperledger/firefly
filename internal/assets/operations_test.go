@@ -523,6 +523,82 @@ func TestRunOperationTransfer(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
+func TestOperationUpdatePool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+	}
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenCreatePool,
+	}
+	err := txcommon.AddTokenPoolCreateInputs(op, pool)
+	assert.NoError(t, err)
+
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypePoolOpFailed && *event.Reference == *op.ID && *event.Correlator == *pool.ID
+	})).Return(nil)
+
+	err = am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdatePoolBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenCreatePool,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypePoolOpFailed && *event.Reference == *op.ID && event.Correlator == nil
+	})).Return(nil)
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdatePoolEventFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenCreatePool,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
 func TestOperationUpdateTransfer(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
