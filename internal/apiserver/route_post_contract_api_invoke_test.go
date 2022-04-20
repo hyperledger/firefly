@@ -41,8 +41,8 @@ func TestPostContractAPIInvoke(t *testing.T) {
 
 	mcm.On("InvokeContractAPI", mock.Anything, "ns1", "banana", "peel", mock.MatchedBy(func(req *fftypes.ContractCallRequest) bool {
 		return req.Type == fftypes.CallTypeInvoke
-	})).Return("banana", nil)
+	}), false).Return("banana", nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 200, res.Result().StatusCode)
+	assert.Equal(t, 202, res.Result().StatusCode)
 }

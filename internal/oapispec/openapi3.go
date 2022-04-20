@@ -155,20 +155,20 @@ func ffTagHandler(ctx context.Context, route *Route, name string, tag reflect.St
 
 func addCustomType(t reflect.Type, schema *openapi3.Schema) {
 	typeString := "string"
-	if schema.Type == "" {
-		switch t.Name() {
-		case "UUID":
-			schema.Type = typeString
-			schema.Format = "uuid"
-		case "FFTime":
-			schema.Type = typeString
-			schema.Format = "date-time"
-		case "Bytes32":
-			schema.Type = typeString
-			schema.Format = "byte"
-		case "FFBigInt":
-			schema.Type = typeString
-		}
+	switch t.Name() {
+	case "UUID":
+		schema.Type = typeString
+		schema.Format = "uuid"
+	case "FFTime":
+		schema.Type = typeString
+		schema.Format = "date-time"
+	case "Bytes32":
+		schema.Type = typeString
+		schema.Format = "byte"
+	case "FFBigInt":
+		schema.Type = typeString
+	case "JSONAny":
+		schema.Type = ""
 	}
 }
 

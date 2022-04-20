@@ -481,13 +481,13 @@ func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFi
 	return r0, r1, r2
 }
 
-// InvokeContract provides a mock function with given fields: ctx, ns, req
-func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	ret := _m.Called(ctx, ns, req)
+// InvokeContract provides a mock function with given fields: ctx, ns, req, waitConfirm
+func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error) {
+	ret := _m.Called(ctx, ns, req, waitConfirm)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractCallRequest) interface{}); ok {
-		r0 = rf(ctx, ns, req)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractCallRequest, bool) interface{}); ok {
+		r0 = rf(ctx, ns, req, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -495,8 +495,8 @@ func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.C
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractCallRequest) error); ok {
-		r1 = rf(ctx, ns, req)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractCallRequest, bool) error); ok {
+		r1 = rf(ctx, ns, req, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -504,13 +504,13 @@ func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.C
 	return r0, r1
 }
 
-// InvokeContractAPI provides a mock function with given fields: ctx, ns, apiName, methodPath, req
-func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodPath string, req *fftypes.ContractCallRequest) (interface{}, error) {
-	ret := _m.Called(ctx, ns, apiName, methodPath, req)
+// InvokeContractAPI provides a mock function with given fields: ctx, ns, apiName, methodPath, req, waitConfirm
+func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodPath string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error) {
+	ret := _m.Called(ctx, ns, apiName, methodPath, req, waitConfirm)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractCallRequest) interface{}); ok {
-		r0 = rf(ctx, ns, apiName, methodPath, req)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractCallRequest, bool) interface{}); ok {
+		r0 = rf(ctx, ns, apiName, methodPath, req, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(interface{})
@@ -518,8 +518,8 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractCallRequest) error); ok {
-		r1 = rf(ctx, ns, apiName, methodPath, req)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractCallRequest, bool) error); ok {
+		r1 = rf(ctx, ns, apiName, methodPath, req, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

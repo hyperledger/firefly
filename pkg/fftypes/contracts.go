@@ -37,16 +37,6 @@ type ContractCallRequest struct {
 	Input      map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
 }
 
-type ContractCallResponse struct {
-	ID *UUID `ffstruct:"ContractCallResponse" json:"id"`
-}
-
-type ContractSubscribeRequest struct {
-	Interface *UUID     `json:"interface,omitempty"`
-	Location  *JSONAny  `json:"location,omitempty"`
-	Event     *FFIEvent `json:"event,omitempty"`
-}
-
 type ContractURLs struct {
 	OpenAPI string `ffstruct:"ContractURLs" json:"openapi"`
 	UI      string `ffstruct:"ContractURLs" json:"ui"`
