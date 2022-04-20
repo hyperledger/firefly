@@ -70,9 +70,12 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 				return err
 			}
 
-			_, err := em.database.GetBatchByID(ctx, batchPin.BatchID)
+			batch, err := em.database.GetBatchByID(ctx, batchPin.BatchID)
+			if err != nil {
+				return err
+			}
 			// Kick off a download for broadcast batches if the batch isn't already persisted
-			if !private && err != nil {
+			if !private && batch == nil {
 				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
 					return err
 				}
