@@ -73,11 +73,11 @@ var (
 	LogJSONTimestampField = ffc("log.json.fields.timestamp")
 	// LogJSONLevelField configures the JSON key containing the log level
 	LogJSONLevelField = ffc("log.json.fields.level")
-	// LogJSONLevelField configures the JSON key containing the log message
+	// LogJSONMessageField configures the JSON key containing the log message
 	LogJSONMessageField = ffc("log.json.fields.message")
-	// LogJSONLevelField configures the JSON key containing the calling function
+	// LogJSONFuncField configures the JSON key containing the calling function
 	LogJSONFuncField = ffc("log.json.fields.func")
-	// LogJSONLevelField configures the JSON key containing the calling function
+	// LogJSONFileField configures the JSON key containing the calling file
 	LogJSONFileField = ffc("log.json.fields.file")
 )
 
