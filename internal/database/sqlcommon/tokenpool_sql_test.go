@@ -46,6 +46,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		Locator:   "12345",
 		Connector: "erc1155",
 		Symbol:    "COIN",
+		Decimals:  18,
 		Message:   fftypes.NewUUID(),
 		State:     fftypes.TokenPoolStateConfirmed,
 		TX: fftypes.TransactionRef{

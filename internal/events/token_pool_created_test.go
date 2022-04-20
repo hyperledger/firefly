@@ -334,7 +334,7 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 		return e.Name == event.Name
 	})).Return(fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
+	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -373,7 +373,7 @@ func TestConfirmPoolGetOpsFail(t *testing.T) {
 	})).Return(nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
+	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -416,7 +416,7 @@ func TestConfirmPoolResolveOpFail(t *testing.T) {
 	}}, nil, nil)
 	mdi.On("ResolveOperation", em.ctx, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
+	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -456,7 +456,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
+	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -496,7 +496,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 
-	err := em.confirmPool(em.ctx, storedPool, event, "0xffffeeee")
+	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)

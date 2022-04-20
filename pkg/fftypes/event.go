@@ -37,6 +37,8 @@ var (
 	EventTypeIdentityUpdated = ffEnum("eventtype", "identity_updated")
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
 	EventTypePoolConfirmed = ffEnum("eventtype", "token_pool_confirmed")
+	// EventTypePoolOpFailed occurs when a token pool creation initiated by this node has failed (based on feedback from connector)
+	EventTypePoolOpFailed = ffEnum("eventtype", "token_pool_op_failed")
 	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
 	EventTypeTransferConfirmed = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)

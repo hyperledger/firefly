@@ -38,6 +38,7 @@ var (
 		"type",
 		"connector",
 		"symbol",
+		"decimals",
 		"message_id",
 		"state",
 		"created",
@@ -90,6 +91,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("type", pool.Type).
 				Set("connector", pool.Connector).
 				Set("symbol", pool.Symbol).
+				Set("decimals", pool.Decimals).
 				Set("message_id", pool.Message).
 				Set("state", pool.State).
 				Set("tx_type", pool.TX.Type).
@@ -116,6 +118,7 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Type,
 					pool.Connector,
 					pool.Symbol,
+					pool.Decimals,
 					pool.Message,
 					pool.State,
 					pool.Created,
@@ -145,6 +148,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Type,
 		&pool.Connector,
 		&pool.Symbol,
+		&pool.Decimals,
 		&pool.Message,
 		&pool.State,
 		&pool.Created,

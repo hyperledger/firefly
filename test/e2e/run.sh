@@ -9,6 +9,24 @@ CLI="ff -v --ansi never"
 CLI_VERSION=$(cat $CWD/../../manifest.json | jq -r .cli.tag)
 STACKS_DIR=~/.firefly/stacks
 
+create_accounts() {
+  if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
+      # Create 4 new accounts for use in testing
+      for i in {1..4}
+      do
+          $CLI accounts create $STACK_NAME
+      done
+  elif [ "$TEST_SUITE" == "TestFabricE2ESuite" ]; then
+      # Create 4 new accounts for the first org for use in testing
+      for i in {1..3}
+      do
+          $CLI accounts create $STACK_NAME org_0 user_$(openssl rand -hex 10)
+      done
+      # Create one account for the second org
+      $CLI accounts create $STACK_NAME org_1 user_$(openssl rand -hex 10)
+  fi
+}
+
 checkOk() {
   local rc=$1
 
@@ -88,29 +106,18 @@ if [ "$CREATE_STACK" == "true" ]; then
 
   $CLI start -b $STACK_NAME
   checkOk $?
+fi
 
-  if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
-      export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
-      # Create 5 new accounts for use in testing
-      for i in {1..4}
-      do
-          $CLI accounts create $STACK_NAME
-      done
-  elif [ "$TEST_SUITE" == "TestFabricE2ESuite" ]; then
-      # Create 5 new accounts for use in testing
-      for i in {1..3}
-      do
-          $CLI accounts create $STACK_NAME org_0  user_$i
-      done
-      # Create one account that is specifically only usable from the second org
-      $CLI accounts create $STACK_NAME org_1  user_5
-  fi
+if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
+    export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
 fi
 
 if [ "$TOKENS_PROVIDER" == "erc20_erc721" ]; then
     export ERC20_CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/erc20/ERC20WithData.json | jq -r '.address')
     export ERC721_CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/erc721/ERC721WithData.json | jq -r '.address')
 fi
+
+create_accounts
 
 $CLI info $STACK_NAME
 checkOk $?
@@ -127,6 +134,8 @@ if [ "$RESTART" == "true" ]; then
 
   $CLI start $STACK_NAME
   checkOk $?
+
+  create_accounts
 
   go clean -testcache && go test -v . -run $TEST_SUITE
   checkOk $?

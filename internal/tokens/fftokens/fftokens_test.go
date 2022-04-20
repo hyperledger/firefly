@@ -204,6 +204,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 					"type":        "fungible",
 					"poolLocator": "F1",
 					"signer":      "0x0",
+					"decimals":    18,
 					"data":        `{"tx":"` + pool.TX.ID.String() + `"}`,
 				}.String()))),
 				Header: http.Header{

@@ -2008,6 +2008,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: tx.blockchainid
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: tx.id
         schema:
           type: string
@@ -2106,6 +2111,11 @@ paths:
                         transaction such as a FireFly submitted token transfer, this
                         field is set to the UUID of the FireFly transaction
                       properties:
+                        blockchainId:
+                          description: The blockchain transaction ID, in the format
+                            specific to the blockchain involved in the transaction.
+                            Not all FireFly transactions include a blockchain
+                          type: string
                         id:
                           description: The UUID of the FireFly transaction
                           format: uuid
@@ -2199,6 +2209,11 @@ paths:
                       transaction such as a FireFly submitted token transfer, this
                       field is set to the UUID of the FireFly transaction
                     properties:
+                      blockchainId:
+                        description: The blockchain transaction ID, in the format
+                          specific to the blockchain involved in the transaction.
+                          Not all FireFly transactions include a blockchain
+                        type: string
                       id:
                         description: The UUID of the FireFly transaction
                         format: uuid
@@ -5748,6 +5763,7 @@ paths:
                       - identity_confirmed
                       - identity_updated
                       - token_pool_confirmed
+                      - token_pool_op_failed
                       - token_transfer_confirmed
                       - token_transfer_op_failed
                       - token_approval_confirmed
@@ -5856,6 +5872,7 @@ paths:
                     - identity_confirmed
                     - identity_updated
                     - token_pool_confirmed
+                    - token_pool_op_failed
                     - token_transfer_confirmed
                     - token_transfer_op_failed
                     - token_approval_confirmed
@@ -7553,6 +7570,7 @@ paths:
                       - identity_confirmed
                       - identity_updated
                       - token_pool_confirmed
+                      - token_pool_op_failed
                       - token_transfer_confirmed
                       - token_transfer_op_failed
                       - token_approval_confirmed
@@ -11723,6 +11741,11 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: decimals
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: id
         schema:
           type: string
@@ -11827,6 +11850,9 @@ paths:
                       description: The creation time of the pool
                       format: date-time
                       type: string
+                    decimals:
+                      description: Number of decimal places that this token has
+                      type: integer
                     id:
                       description: The UUID of the token pool
                       format: uuid
@@ -11943,6 +11969,9 @@ paths:
                     FireFly core configuration file that is responsible for the token
                     pool. Required on input when multiple token connectors are configured
                   type: string
+                decimals:
+                  description: Number of decimal places that this token has
+                  type: integer
                 key:
                   description: The signing key used to create the token pool. On input
                     for token connectors that support on-chain deployment of new tokens
@@ -11980,6 +12009,9 @@ paths:
                     description: The creation time of the pool
                     format: date-time
                     type: string
+                  decimals:
+                    description: Number of decimal places that this token has
+                    type: integer
                   id:
                     description: The UUID of the token pool
                     format: uuid
@@ -12063,6 +12095,9 @@ paths:
                     description: The creation time of the pool
                     format: date-time
                     type: string
+                  decimals:
+                    description: Number of decimal places that this token has
+                    type: integer
                   id:
                     description: The UUID of the token pool
                     format: uuid
@@ -12174,6 +12209,9 @@ paths:
                     description: The creation time of the pool
                     format: date-time
                     type: string
+                  decimals:
+                    description: Number of decimal places that this token has
+                    type: integer
                   id:
                     description: The UUID of the token pool
                     format: uuid
@@ -13348,6 +13386,11 @@ paths:
                         transaction such as a FireFly submitted token transfer, this
                         field is set to the UUID of the FireFly transaction
                       properties:
+                        blockchainId:
+                          description: The blockchain transaction ID, in the format
+                            specific to the blockchain involved in the transaction.
+                            Not all FireFly transactions include a blockchain
+                          type: string
                         id:
                           description: The UUID of the FireFly transaction
                           format: uuid

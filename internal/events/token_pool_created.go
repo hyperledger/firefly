@@ -33,6 +33,7 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	ffPool.Locator = pluginPool.PoolLocator
 	ffPool.Connector = pluginPool.Connector
 	ffPool.Standard = pluginPool.Standard
+	ffPool.Decimals = pluginPool.Decimals
 	if pluginPool.TX.ID != nil {
 		ffPool.TX = pluginPool.TX
 	}
@@ -47,10 +48,14 @@ func addPoolDetailsFromPlugin(ffPool *fftypes.TokenPool, pluginPool *tokens.Toke
 	return nil
 }
 
-func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event, blockchainTXID string) error {
+func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool, ev *blockchain.Event) error {
 	if ev.ProtocolID != "" || ev.BlockchainTXID != "" {
 		// Some pools will not include a blockchain event for creation (such as when indexing a pre-existing pool)
-		chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &pool.TX)
+		chainEvent := buildBlockchainEvent(pool.Namespace, nil, ev, &fftypes.BlockchainTransactionRef{
+			ID:           pool.TX.ID,
+			Type:         pool.TX.Type,
+			BlockchainID: ev.BlockchainTXID,
+		})
 		if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 			return err
 		}
@@ -63,7 +68,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 	} else if err := em.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusSucceeded, "", nil); err != nil {
 		return err
 	}
-	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, blockchainTXID); err != nil {
+	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, ev.BlockchainTXID); err != nil {
 		return err
 	}
 	pool.State = fftypes.TokenPoolStateConfirmed
@@ -152,7 +157,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 					return nil // already confirmed
 				}
 				msgIDforRewind = existingPool.Message
-				return em.confirmPool(ctx, existingPool, &pool.Event, pool.Event.BlockchainTXID)
+				return em.confirmPool(ctx, existingPool, &pool.Event)
 			} else if pool.TX.ID == nil {
 				// TransactionID is required if the pool doesn't exist yet
 				// (but it may be omitted when activating a pool that was received via definition broadcast)

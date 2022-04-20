@@ -919,6 +919,7 @@ var TokenPoolQueryFactory = &queryFields{
 	"standard":  &StringField{},
 	"locator":   &StringField{},
 	"symbol":    &StringField{},
+	"decimals":  &Int64Field{},
 	"message":   &UUIDField{},
 	"state":     &StringField{},
 	"created":   &TimeField{},
@@ -1034,15 +1035,16 @@ var ContractListenerQueryFactory = &queryFields{
 
 // BlockchainEventQueryFactory filter fields for contract events
 var BlockchainEventQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"source":     &StringField{},
-	"namespace":  &StringField{},
-	"name":       &StringField{},
-	"protocolid": &StringField{},
-	"listener":   &StringField{},
-	"tx.type":    &StringField{},
-	"tx.id":      &UUIDField{},
-	"timestamp":  &TimeField{},
+	"id":              &UUIDField{},
+	"source":          &StringField{},
+	"namespace":       &StringField{},
+	"name":            &StringField{},
+	"protocolid":      &StringField{},
+	"listener":        &StringField{},
+	"tx.type":         &StringField{},
+	"tx.id":           &UUIDField{},
+	"tx.blockchainid": &StringField{},
+	"timestamp":       &TimeField{},
 }
 
 // ContractAPIQueryFactory filter fields for Contract APIs

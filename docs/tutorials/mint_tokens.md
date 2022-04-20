@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Mint some tokens
-parent: Getting Started
+parent: Tutorials
 nav_order: 9
 ---
 

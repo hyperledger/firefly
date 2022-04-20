@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
@@ -64,6 +65,11 @@ func testFFI() *fftypes.FFI {
 					},
 				},
 			},
+			{
+				Name:     "method2",
+				Pathname: "method2",
+				/* no params */
+			},
 		},
 		Events: []*fftypes.FFIEvent{
 			{
@@ -83,6 +89,22 @@ func testFFI() *fftypes.FFI {
 	}
 }
 
+func pathNames(p openapi3.Paths) []string {
+	var keys []string
+	for k := range p {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func paramNames(p openapi3.Schemas) []string {
+	var keys []string
+	for k := range p {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func TestGenerate(t *testing.T) {
 	g := NewFFISwaggerGen()
 	api := &fftypes.ContractAPI{}
@@ -91,6 +113,32 @@ func TestGenerate(t *testing.T) {
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
 	fmt.Print(string(b))
+
+	assert.ElementsMatch(t, []string{"/interface", "/invoke/method1", "/invoke/method2", "/query/method1", "/query/method2", "/listeners/event1"}, pathNames(doc.Paths))
+
+	invokeMethod1 := doc.Paths["/invoke/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", invokeMethod1.Type)
+	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(invokeMethod1.Properties))
+	assert.Equal(t, "object", invokeMethod1.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(invokeMethod1.Properties["input"].Value.Properties))
+
+	invokeMethod2 := doc.Paths["/invoke/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", invokeMethod2.Type)
+	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(invokeMethod2.Properties))
+	assert.Equal(t, "object", invokeMethod2.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{}, paramNames(invokeMethod2.Properties["input"].Value.Properties))
+
+	queryMethod1 := doc.Paths["/query/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", queryMethod1.Type)
+	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(queryMethod1.Properties))
+	assert.Equal(t, "object", queryMethod1.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(queryMethod1.Properties["input"].Value.Properties))
+
+	queryMethod2 := doc.Paths["/query/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", queryMethod2.Type)
+	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(queryMethod2.Properties))
+	assert.Equal(t, "object", queryMethod2.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{}, paramNames(queryMethod2.Properties["input"].Value.Properties))
 }
 
 func TestGenerateWithLocation(t *testing.T) {
@@ -101,6 +149,32 @@ func TestGenerateWithLocation(t *testing.T) {
 	b, err := yaml.Marshal(doc)
 	assert.NoError(t, err)
 	fmt.Print(string(b))
+
+	assert.ElementsMatch(t, []string{"/interface", "/invoke/method1", "/invoke/method2", "/query/method1", "/query/method2", "/listeners/event1"}, pathNames(doc.Paths))
+
+	invokeMethod1 := doc.Paths["/invoke/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", invokeMethod1.Type)
+	assert.ElementsMatch(t, []string{"input"}, paramNames(invokeMethod1.Properties))
+	assert.Equal(t, "object", invokeMethod1.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(invokeMethod1.Properties["input"].Value.Properties))
+
+	invokeMethod2 := doc.Paths["/invoke/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", invokeMethod2.Type)
+	assert.ElementsMatch(t, []string{"input"}, paramNames(invokeMethod2.Properties))
+	assert.Equal(t, "object", invokeMethod2.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{}, paramNames(invokeMethod2.Properties["input"].Value.Properties))
+
+	queryMethod1 := doc.Paths["/query/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", queryMethod1.Type)
+	assert.ElementsMatch(t, []string{"input"}, paramNames(queryMethod1.Properties))
+	assert.Equal(t, "object", queryMethod1.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(queryMethod1.Properties["input"].Value.Properties))
+
+	queryMethod2 := doc.Paths["/query/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
+	assert.Equal(t, "object", queryMethod2.Type)
+	assert.ElementsMatch(t, []string{"input"}, paramNames(queryMethod2.Properties))
+	assert.Equal(t, "object", queryMethod2.Properties["input"].Value.Type)
+	assert.ElementsMatch(t, []string{}, paramNames(queryMethod2.Properties["input"].Value.Properties))
 }
 
 func TestFFIParamBadSchema(t *testing.T) {

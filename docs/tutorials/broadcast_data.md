@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Broadcast data
-parent: Getting Started
+parent: Tutorials
 nav_order: 4
 ---
 
