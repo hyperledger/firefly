@@ -146,7 +146,25 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 }
 
 func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
-	// Special handling for OpTypeTokenTransfer, which writes an event when it fails
+	// Write an event for failed pool operations
+	if op.Type == fftypes.OpTypeTokenCreatePool && update.Status == fftypes.OpStatusFailed {
+		tokenPool, err := txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
+		topic := ""
+		if tokenPool != nil {
+			topic = tokenPool.ID.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypePoolOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenPool.ID == nil {
+			log.L(ctx).Warnf("Could not parse token pool: %s (%+v)", err, op.Input)
+		} else {
+			event.Correlator = tokenPool.ID
+		}
+		if err := am.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	// Write an event for failed transfer operations
 	if op.Type == fftypes.OpTypeTokenTransfer && update.Status == fftypes.OpStatusFailed {
 		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
 		topic := ""
@@ -164,7 +182,7 @@ func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Opera
 		}
 	}
 
-	// Special handling for OpTypeTokenApproval, which writes an event when it fails
+	// Write an event for failed approval operations
 	if op.Type == fftypes.OpTypeTokenApproval && update.Status == fftypes.OpStatusFailed {
 		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
 		topic := ""
