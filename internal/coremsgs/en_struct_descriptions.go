@@ -569,9 +569,6 @@ var (
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
 
-	// ContractCallResponse field descriptions
-	ContractCallResponseID = ffm("ContractCallResponse.id", "The UUID of the operation created to track the transaction submission through to completion")
-
 	// WebSocketStatus field descriptions
 	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")
 	WebSocketStatusConnections = ffm("WebSocketStatus.connections", "List of currently active websocket client connections")

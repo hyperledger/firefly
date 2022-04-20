@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -40,11 +41,13 @@ var postContractAPIInvoke = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostContractAPIInvoke,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
-	JSONOutputValue: func() interface{} { return &fftypes.ContractCallResponse{} },
-	JSONOutputCodes: []int{http.StatusOK},
+	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
+	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+		r.SuccessStatus = syncRetcode(waitConfirm)
 		req := r.Input.(*fftypes.ContractCallRequest)
 		req.Type = fftypes.CallTypeInvoke
-		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"], req)
+		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
 	},
 }

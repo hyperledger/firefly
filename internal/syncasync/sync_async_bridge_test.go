@@ -250,6 +250,8 @@ func TestEventCallbackNotInflight(t *testing.T) {
 		fftypes.EventTypeTransferOpFailed,
 		fftypes.EventTypeApprovalOpFailed,
 		fftypes.EventTypeIdentityConfirmed,
+		fftypes.EventTypeBlockchainInvokeOpSucceeded,
+		fftypes.EventTypeBlockchainInvokeOpFailed,
 	} {
 		err := sa.eventCallback(&fftypes.EventDelivery{
 			EnrichedEvent: fftypes.EnrichedEvent{
@@ -1416,4 +1418,142 @@ func TestAwaitIdentityFail(t *testing.T) {
 		return fmt.Errorf("pop")
 	})
 	assert.Regexp(t, "pop", err)
+}
+
+func TestAwaitInvokeOpSucceeded(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		ID:     requestID,
+		Status: fftypes.OpStatusSucceeded,
+	}
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, requestID).Return(op, nil)
+
+	ret, err := sa.WaitForInvokeOperation(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeBlockchainInvokeOpSucceeded,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
+				},
+			})
+		}()
+		return nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, ret, op)
+}
+
+func TestAwaitInvokeOpSucceededLookupFail(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*requestID: &inflightRequest{
+				reqType: invokeOperationConfirm,
+			},
+		},
+	}
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, requestID).Return(nil, fmt.Errorf("pop"))
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:        fftypes.NewUUID(),
+				Type:      fftypes.EventTypeBlockchainInvokeOpSucceeded,
+				Reference: requestID,
+				Namespace: "ns1",
+			},
+		},
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestAwaitInvokeOpFailed(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	op := &fftypes.Operation{
+		ID:     requestID,
+		Status: fftypes.OpStatusFailed,
+		Error:  "pop",
+	}
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, requestID).Return(op, nil)
+
+	_, err := sa.WaitForInvokeOperation(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+		go func() {
+			sa.eventCallback(&fftypes.EventDelivery{
+				EnrichedEvent: fftypes.EnrichedEvent{
+					Event: fftypes.Event{
+						ID:        fftypes.NewUUID(),
+						Type:      fftypes.EventTypeBlockchainInvokeOpFailed,
+						Reference: requestID,
+						Namespace: "ns1",
+					},
+				},
+			})
+		}()
+		return nil
+	})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestAwaitInvokeOpFailedLookupFail(t *testing.T) {
+
+	sa, cancel := newTestSyncAsyncBridge(t)
+	defer cancel()
+
+	requestID := fftypes.NewUUID()
+	sa.inflight = map[string]map[fftypes.UUID]*inflightRequest{
+		"ns1": {
+			*requestID: &inflightRequest{
+				reqType: invokeOperationConfirm,
+			},
+		},
+	}
+
+	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
+	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
+
+	mdi := sa.database.(*databasemocks.Plugin)
+	mdi.On("GetOperationByID", sa.ctx, requestID).Return(nil, fmt.Errorf("pop"))
+
+	err := sa.eventCallback(&fftypes.EventDelivery{
+		EnrichedEvent: fftypes.EnrichedEvent{
+			Event: fftypes.Event{
+				ID:        fftypes.NewUUID(),
+				Type:      fftypes.EventTypeBlockchainInvokeOpFailed,
+				Reference: requestID,
+				Namespace: "ns1",
+			},
+		},
+	})
+	assert.EqualError(t, err, "pop")
 }

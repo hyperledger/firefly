@@ -53,6 +53,10 @@ var (
 	EventTypeContractAPIConfirmed = ffEnum("eventtype", "contract_api_confirmed")
 	// EventTypeBlockchainEventReceived occurs when a new event has been received from the blockchain
 	EventTypeBlockchainEventReceived = ffEnum("eventtype", "blockchain_event_received")
+	// EventTypeBlockchainInvokeOpSucceeded occurs when a blockchain "invoke" request has succeeded
+	EventTypeBlockchainInvokeOpSucceeded = ffEnum("eventtype", "blockchain_invoke_op_succeeded")
+	// EventTypeBlockchainInvokeOpFailed occurs when a blockchain "invoke" request has failed
+	EventTypeBlockchainInvokeOpFailed = ffEnum("eventtype", "blockchain_invoke_op_failed")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network

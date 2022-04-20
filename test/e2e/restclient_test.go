@@ -684,7 +684,7 @@ func InvokeContractMethod(t *testing.T, client *resty.Client, req *fftypes.Contr
 		SetResult(&res).
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 

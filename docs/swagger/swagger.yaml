@@ -907,10 +907,140 @@ paths:
             application/json:
               schema:
                 properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
                   id:
-                    description: The UUID of the operation created to track the transaction
-                      submission through to completion
+                    description: The UUID of the operation
                     format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
+                  id:
+                    description: The UUID of the operation
+                    format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
                     type: string
                 type: object
           description: Success
@@ -3380,10 +3510,140 @@ paths:
             application/json:
               schema:
                 properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
                   id:
-                    description: The UUID of the operation created to track the transaction
-                      submission through to completion
+                    description: The UUID of the operation
                     format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The time the operation was created
+                    format: date-time
+                    type: string
+                  error:
+                    description: Any error reported back from the plugin for this
+                      operation
+                    type: string
+                  id:
+                    description: The UUID of the operation
+                    format: uuid
+                    type: string
+                  input:
+                    additionalProperties:
+                      description: The input to this operation
+                    description: The input to this operation
+                    type: object
+                  namespace:
+                    description: The namespace of the operation
+                    type: string
+                  output:
+                    additionalProperties:
+                      description: Any output reported back from the plugin for this
+                        operation
+                    description: Any output reported back from the plugin for this
+                      operation
+                    type: object
+                  plugin:
+                    description: The plugin responsible for performing the operation
+                    type: string
+                  retry:
+                    description: If this operation was initiated as a retry to a previous
+                      operation, this field points to the UUID of the operation being
+                      retried
+                    format: uuid
+                    type: string
+                  status:
+                    description: The current status of the operation
+                    type: string
+                  tx:
+                    description: The UUID of the FireFly transaction the operation
+                      is part of
+                    format: uuid
+                    type: string
+                  type:
+                    description: The type of the operation
+                    enum:
+                    - blockchain_pin_batch
+                    - blockchain_invoke
+                    - sharedstorage_upload_batch
+                    - sharedstorage_upload_blob
+                    - sharedstorage_download_batch
+                    - sharedstorage_download_blob
+                    - dataexchange_send_batch
+                    - dataexchange_send_blob
+                    - token_create_pool
+                    - token_activate_pool
+                    - token_transfer
+                    - token_approval
+                    type: string
+                  updated:
+                    description: The last update time of the operation
+                    format: date-time
                     type: string
                 type: object
           description: Success
@@ -5449,6 +5709,8 @@ paths:
                       - contract_interface_confirmed
                       - contract_api_confirmed
                       - blockchain_event_received
+                      - blockchain_invoke_op_succeeded
+                      - blockchain_invoke_op_failed
                       type: string
                   type: object
                 type: array
@@ -5556,6 +5818,8 @@ paths:
                     - contract_interface_confirmed
                     - contract_api_confirmed
                     - blockchain_event_received
+                    - blockchain_invoke_op_succeeded
+                    - blockchain_invoke_op_failed
                     type: string
                 type: object
           description: Success
@@ -7251,6 +7515,8 @@ paths:
                       - contract_interface_confirmed
                       - contract_api_confirmed
                       - blockchain_event_received
+                      - blockchain_invoke_op_succeeded
+                      - blockchain_invoke_op_failed
                       type: string
                   type: object
                 type: array

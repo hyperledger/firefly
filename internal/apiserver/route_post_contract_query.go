@@ -41,6 +41,6 @@ var postContractQuery = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		req := r.Input.(*fftypes.ContractCallRequest)
 		req.Type = fftypes.CallTypeQuery
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req)
+		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req, true)
 	},
 }

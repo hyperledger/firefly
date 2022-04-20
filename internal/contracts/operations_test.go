@@ -17,9 +17,12 @@ package contracts
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -96,5 +99,53 @@ func TestRunOperationNotSupported(t *testing.T) {
 
 func TestOperationUpdate(t *testing.T) {
 	cm := newTestContractManager()
-	assert.NoError(t, cm.OnOperationUpdate(context.Background(), nil, nil))
+
+	op := &fftypes.Operation{}
+
+	err := cm.OnOperationUpdate(context.Background(), op, nil)
+	assert.NoError(t, err)
+}
+
+func TestOperationUpdateInvokeSucceed(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainInvoke,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusSucceeded,
+	}
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeBlockchainInvokeOpSucceeded && *event.Reference == *op.ID
+	})).Return(fmt.Errorf("pop"))
+
+	err := cm.OnOperationUpdate(context.Background(), op, update)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateInvokeFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainInvoke,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeBlockchainInvokeOpFailed && *event.Reference == *op.ID
+	})).Return(fmt.Errorf("pop"))
+
+	err := cm.OnOperationUpdate(context.Background(), op, update)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }
