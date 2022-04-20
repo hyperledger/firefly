@@ -93,8 +93,9 @@ func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *fftypes.Op
 
 func opBlockchainInvoke(op *fftypes.Operation, req *fftypes.ContractCallRequest) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: blockchainInvokeData{Request: req},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      blockchainInvokeData{Request: req},
 	}
 }

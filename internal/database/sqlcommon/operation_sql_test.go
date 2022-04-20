@@ -50,6 +50,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Updated:     fftypes.Now(),
 	}
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeUpdated, "ns1", operationID).Return()
 	hookCalled := false
 	err := s.InsertOperation(ctx, operation, func() {
 		hookCalled = true
@@ -94,7 +95,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(operations))
 
 	// Update
-	err = s.ResolveOperation(ctx, operation.ID, fftypes.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
+	err = s.ResolveOperation(ctx, operation.Namespace, operation.ID, fftypes.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
 	assert.NoError(t, err)
 
 	// Test find updated value

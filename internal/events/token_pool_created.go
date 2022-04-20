@@ -65,7 +65,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *fftypes.TokenPool
 		return err
 	} else if op == nil {
 		log.L(ctx).Warnf("No activate operation found for token pool transaction=%s", pool.TX.ID)
-	} else if err := em.database.ResolveOperation(ctx, op.ID, fftypes.OpStatusSucceeded, "", nil); err != nil {
+	} else if err := em.database.ResolveOperation(ctx, op.Namespace, op.ID, fftypes.OpStatusSucceeded, "", nil); err != nil {
 		return err
 	}
 	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, ev.BlockchainTXID); err != nil {

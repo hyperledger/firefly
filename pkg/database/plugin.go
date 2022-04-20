@@ -219,10 +219,10 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
+	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
 
 	// UpdateOperation - Update an operation
-	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update) (err error)
+	UpdateOperation(ctx context.Context, id *fftypes.UUID, update Update, hooks ...PostCompletionHook) (err error)
 
 	// GetOperationByID - Get an operation by ID
 	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error)

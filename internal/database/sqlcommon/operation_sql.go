@@ -160,7 +160,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 	return ops, s.queryRes(ctx, tx, "operations", fop, fi), err
 }
 
-func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update, hooks ...database.PostCompletionHook) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -180,15 +180,21 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 		return err
 	}
 
+	for _, hook := range hooks {
+		s.postCommitEvent(tx, hook)
+	}
+
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error) {
+func (s *SQLCommon) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error) {
 	update := database.OperationQueryFactory.NewUpdate(ctx).
 		Set("status", status).
 		Set("error", errorMsg)
 	if output != nil {
 		update.Set("output", output)
 	}
-	return s.UpdateOperation(ctx, id, update)
+	return s.UpdateOperation(ctx, id, update, func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeUpdated, ns, id)
+	})
 }

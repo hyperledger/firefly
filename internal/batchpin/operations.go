@@ -105,8 +105,9 @@ func (bp *batchPinSubmitter) OnOperationUpdate(ctx context.Context, op *fftypes.
 
 func opBatchPin(op *fftypes.Operation, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
 	}
 }

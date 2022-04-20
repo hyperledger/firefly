@@ -143,12 +143,13 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 
 	ctx := context.Background()
 	op := &fftypes.PreparedOperation{
-		ID:   fftypes.NewUUID(),
-		Type: fftypes.OpTypeBlockchainPinBatch,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      fftypes.OpTypeBlockchainPinBatch,
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
@@ -164,12 +165,13 @@ func TestRunOperationFail(t *testing.T) {
 
 	ctx := context.Background()
 	op := &fftypes.PreparedOperation{
-		ID:   fftypes.NewUUID(),
-		Type: fftypes.OpTypeBlockchainPinBatch,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      fftypes.OpTypeBlockchainPinBatch,
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
@@ -185,12 +187,13 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 
 	ctx := context.Background()
 	op := &fftypes.PreparedOperation{
-		ID:   fftypes.NewUUID(),
-		Type: fftypes.OpTypeBlockchainPinBatch,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      fftypes.OpTypeBlockchainPinBatch,
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
@@ -207,10 +210,11 @@ func TestRetryOperationSuccess(t *testing.T) {
 	ctx := context.Background()
 	opID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		ID:     opID,
-		Plugin: "blockchain",
-		Type:   fftypes.OpTypeBlockchainPinBatch,
-		Status: fftypes.OpStatusFailed,
+		ID:        opID,
+		Namespace: "ns1",
+		Plugin:    "blockchain",
+		Type:      fftypes.OpTypeBlockchainPinBatch,
+		Status:    fftypes.OpStatusFailed,
 	}
 	po := &fftypes.PreparedOperation{
 		ID:   op.ID,
@@ -379,9 +383,9 @@ func TestWriteOperationSuccess(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", ctx, "ns1", opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
 
-	om.writeOperationSuccess(ctx, opID, nil)
+	om.writeOperationSuccess(ctx, "ns1", opID, nil)
 
 	mdi.AssertExpectations(t)
 }
@@ -394,9 +398,9 @@ func TestWriteOperationFailure(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, opID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", ctx, "ns1", opID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
 
-	om.writeOperationFailure(ctx, opID, nil, fmt.Errorf("pop"), fftypes.OpStatusFailed)
+	om.writeOperationFailure(ctx, "ns1", opID, nil, fmt.Errorf("pop"), fftypes.OpStatusFailed)
 
 	mdi.AssertExpectations(t)
 }
@@ -431,14 +435,15 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:   opID1,
-			Type: fftypes.OpTypeDataExchangeSendBatch,
+			ID:        opID1,
+			Namespace: "ns1",
+			Type:      fftypes.OpTypeDataExchangeSendBatch,
 			Input: fftypes.JSONObject{
 				"batch": fftypes.NewUUID().String(),
 			},
 		},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
 		return strings.Contains(errorMsg, "FF10329")
 	}), fftypes.JSONObject{
 		"extra": "info",
@@ -479,14 +484,15 @@ func TestTransferResultHashMismatch(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
 		{
-			ID:   opID1,
-			Type: fftypes.OpTypeDataExchangeSendBlob,
+			ID:        opID1,
+			Namespace: "ns1",
+			Type:      fftypes.OpTypeDataExchangeSendBlob,
 			Input: fftypes.JSONObject{
 				"hash": "Bob",
 			},
 		},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
 		return strings.Contains(errorMsg, "FF10348")
 	}), fftypes.JSONObject{
 		"extra": "info",
@@ -558,17 +564,18 @@ func TestResolveOperationByIDOk(t *testing.T) {
 
 	ctx := context.Background()
 	op := &fftypes.Operation{
-		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
-		Status: fftypes.OpStatusSucceeded,
-		Error:  "my error",
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+		Type:      fftypes.OpTypeBlockchainPinBatch,
+		Status:    fftypes.OpStatusSucceeded,
+		Error:     "my error",
 		Output: fftypes.JSONObject{
 			"my": "data",
 		},
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "my error", fftypes.JSONObject{
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, fftypes.OpStatusSucceeded, "my error", fftypes.JSONObject{
 		"my": "data",
 	}).Return(nil)
 

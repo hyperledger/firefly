@@ -2504,13 +2504,13 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) 
 	return r0
 }
 
-// ResolveOperation provides a mock function with given fields: ctx, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
-	ret := _m.Called(ctx, id, status, errorMsg, output)
+// ResolveOperation provides a mock function with given fields: ctx, ns, id, status, errorMsg, output
+func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+	ret := _m.Called(ctx, ns, id, status, errorMsg, output)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, id, status, errorMsg, output)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, ns, id, status, errorMsg, output)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2686,13 +2686,20 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	return r0
 }
 
-// UpdateOperation provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateOperation provides a mock function with given fields: ctx, id, update, hooks
+func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, id, update)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, id, update, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}
