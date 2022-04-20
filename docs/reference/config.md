@@ -517,8 +517,25 @@ nav_order: 3
 |maxAge|The maximum time to retain old log files based on the timestamp encoded in their filename.|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxBackups|Maximum number of old log files to retain|`int`|`<nil>`
 |noColor|Force color to be disabled, event when TTY output is detected|`boolean`|`<nil>`
+|reportCaller|Enables the report caller for including the calling file and line number, as well as the calling function. Only works for JSON formatted logs.|`boolean`|`<nil>`
 |timeFormat|Custom time format for logs|[Time format](https://pkg.go.dev/time#pkg-constants) `string`|`<nil>`
 |utc|Use UTC timestamps for logs|`boolean`|`<nil>`
+
+## log.json
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Enables JSON formatted logs rather than text. All log color settings are ignored when enabled.|`boolean`|`<nil>`
+
+## log.json.fields
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|file|configures the JSON key containing the calling file|`string`|`<nil>`
+|func|Configures the JSON key containing the calling function|`string`|`<nil>`
+|level|Configures the JSON key containing the log level|`string`|`<nil>`
+|message|Configures the JSON key containing the log message|`string`|`<nil>`
+|timestamp|Configures the JSON key containing the timestamp of the log|`string`|`<nil>`
 
 ## message.cache
 
