@@ -497,13 +497,14 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	if res.StatusCode() == 200 {
-		// Handle synchronous response (202 will be handled by later websocket listener)
+		// HTTP 200: Creation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
 		return true, ft.handleTokenPoolCreate(ctx, obj)
 	}
+	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
 }
 
@@ -519,13 +520,18 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 	}
 	if res.StatusCode() == 200 {
-		// Handle synchronous response (202 will be handled by later websocket listener)
+		// HTTP 200: Activation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
 		return true, ft.handleTokenPoolCreate(ctx, obj)
+	} else if res.StatusCode() == 204 {
+		// HTTP 204: Activation was successful, but pool details are not available
+		// This will resolve the operation, but connector is responsible for re-delivering pool details on the websocket.
+		return true, nil
 	}
+	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
 }
 
