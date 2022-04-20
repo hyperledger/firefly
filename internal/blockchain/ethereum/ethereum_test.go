@@ -43,6 +43,7 @@ import (
 var utConfPrefix = config.NewPluginConfig("eth_unit_tests")
 var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
 var utAddressResolverConf = utConfPrefix.SubPrefix(AddressResolverConfigKey)
+var utFFTMConf = utConfPrefix.SubPrefix(FFTMConfigKey)
 
 func testFFIMethod() *fftypes.FFIMethod {
 	return &fftypes.FFIMethod{
@@ -139,7 +140,7 @@ func TestInitMissingTopic(t *testing.T) {
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
-func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
+func TestInitAllNewStreamsAndWSEventWithFFTM(t *testing.T) {
 
 	log.SetLevel("trace")
 	e, cancel := newTestEthereum()
@@ -175,9 +176,11 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://fftm.example.com:12345")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
+	assert.NotNil(t, e.fftmClient)
 
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, fftypes.VerifierTypeEthAddress, e.VerifierType())

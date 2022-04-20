@@ -55,6 +55,7 @@ type Ethereum struct {
 	capabilities *blockchain.Capabilities
 	callbacks    blockchain.Callbacks
 	client       *resty.Client
+	fftmClient   *resty.Client
 	streams      *streamManager
 	initInfo     struct {
 		stream *eventStream
@@ -153,6 +154,7 @@ func (e *Ethereum) VerifierType() fftypes.VerifierType {
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
+	fftmConf := prefix.SubPrefix(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
@@ -169,6 +171,11 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	e.client = ffresty.New(e.ctx, ethconnectConf)
+
+	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
+		e.fftmClient = ffresty.New(e.ctx, fftmConf)
+	}
+
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -533,7 +540,11 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 		Method: abi,
 		Params: input,
 	}
-	return e.client.R().
+	client := e.fftmClient
+	if client == nil {
+		client = e.client
+	}
+	return client.R().
 		SetContext(ctx).
 		SetBody(body).
 		Post("/")

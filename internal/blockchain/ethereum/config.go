@@ -67,6 +67,9 @@ const (
 	AddressResolverCacheSize = "cache.size"
 	// AddressResolverCacheTTL the TTL on cache entries
 	AddressResolverCacheTTL = "cache.ttl"
+
+	// FFTMConfigKey is a sub-key in the config that optionally contains FireFly transaction connection information
+	FFTMConfigKey = "fftm"
 )
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
@@ -78,6 +81,9 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
+
+	fftmConf := prefix.SubPrefix(FFTMConfigKey)
+	ffresty.InitPrefix(fftmConf)
 
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
 	ffresty.InitPrefix(addressResolverConf)
