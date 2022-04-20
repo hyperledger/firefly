@@ -17,8 +17,8 @@
 package ffdx
 
 import (
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 )
 
 func (h *FFDX) InitPrefix(prefix config.Prefix) {
-	wsconfig.InitPrefix(prefix)
+	wsclient.InitPrefix(prefix)
 	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
 	prefix.AddKnownKey(DataExchangeInitEnabled, false)
 }

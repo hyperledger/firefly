@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -203,7 +202,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
-	wsConfig := wsconfig.GenerateConfigFromPrefix(ethconnectConf)
+	wsConfig := wsclient.GenerateConfigFromPrefix(ethconnectConf)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"

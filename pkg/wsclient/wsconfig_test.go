@@ -1,4 +1,4 @@
-package wsconfig
+package wsclient
 
 import (
 	"testing"

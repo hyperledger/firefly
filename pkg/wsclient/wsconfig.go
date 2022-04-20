@@ -14,12 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package wsconfig
+package wsclient
 
 import (
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -54,8 +53,8 @@ func InitPrefix(prefix config.KeySet) {
 	prefix.AddKnownKey(WSConfigHeartbeatInterval, defaultHeartbeatInterval)
 }
 
-func GenerateConfigFromPrefix(prefix config.Prefix) *wsclient.WSConfig {
-	return &wsclient.WSConfig{
+func GenerateConfigFromPrefix(prefix config.Prefix) *WSConfig {
+	return &WSConfig{
 		HTTPURL:                prefix.GetString(ffresty.HTTPConfigURL),
 		WSKeyPath:              prefix.GetString(WSConfigKeyPath),
 		ReadBufferSize:         int(prefix.GetByteSize(WSConfigKeyReadBufferSize)),
