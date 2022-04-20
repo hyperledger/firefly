@@ -211,7 +211,7 @@ func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced)
 	for i, item := range items {
 		pins[i] = item.(*fftypes.Pin)
 		// if a batch is not in the cache it hasn't been persisted yet, so repoll
-		if batch := ag.batchCache.Get(pins[i].Batch.String()); batch == nil {
+		if batch := ag.batchCache.Get(ag.getBatchCacheKey(pins[i].Batch, pins[i].BatchHash)); batch == nil {
 			return true, nil
 		}
 	}
