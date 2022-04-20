@@ -210,6 +210,10 @@ func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced)
 	pins := make([]*fftypes.Pin, len(items))
 	for i, item := range items {
 		pins[i] = item.(*fftypes.Pin)
+		// if a batch is not in the cache it hasn't been persisted yet, so repoll
+		if batch := ag.batchCache.Get(pins[i].Batch.String()); batch == nil {
+			return true, nil
+		}
 	}
 
 	return false, ag.processWithBatchState(func(ctx context.Context, state *batchState) error {
