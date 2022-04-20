@@ -53,6 +53,8 @@ var (
 	}
 )
 
+const batchesTable = "batches"
+
 func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersisted) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -61,9 +63,9 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
-	batchRows, _, err := s.queryTx(ctx, tx,
+	batchRows, _, err := s.queryTx(ctx, batchesTable, tx,
 		sq.Select("hash").
-			From("batches").
+			From(batchesTable).
 			Where(sq.Eq{"id": batch.ID}),
 	)
 	if err != nil {
@@ -85,8 +87,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 	if existing {
 
 		// Update the batch
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("batches").
+		if _, err = s.updateTx(ctx, batchesTable, tx,
+			sq.Update(batchesTable).
 				Set("btype", string(batch.Type)).
 				Set("namespace", batch.Namespace).
 				Set("author", batch.Author).
@@ -108,8 +110,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 		}
 	} else {
 
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("batches").
+		if _, err = s.insertTx(ctx, batchesTable, tx,
+			sq.Insert(batchesTable).
 				Columns(batchColumns...).
 				Values(
 					batch.ID,
@@ -155,16 +157,16 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Node,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "batches")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, batchesTable)
 	}
 	return &batch, nil
 }
 
 func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.BatchPersisted, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, batchesTable,
 		sq.Select(batchColumns...).
-			From("batches").
+			From(batchesTable).
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -187,12 +189,12 @@ func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message
 
 func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.BatchPersisted, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From("batches"), filter, batchFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From(batchesTable), filter, batchFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, batchesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -207,7 +209,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 		batches = append(batches, batch)
 	}
 
-	return batches, s.queryRes(ctx, tx, "batches", fop, fi), err
+	return batches, s.queryRes(ctx, batchesTable, tx, fop, fi), err
 
 }
 
@@ -219,13 +221,13 @@ func (s *SQLCommon) UpdateBatch(ctx context.Context, id *fftypes.UUID, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("batches"), update, batchFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(batchesTable), update, batchFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events on filter update */)
+	_, err = s.updateTx(ctx, batchesTable, tx, query, nil /* no change events on filter update */)
 	if err != nil {
 		return err
 	}

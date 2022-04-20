@@ -28,6 +28,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
+const tokenbalanceTable = "tokenbalance"
+
 var (
 	tokenBalanceColumns = []string{
 		"pool_id",
@@ -64,8 +66,8 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 	}
 
 	if account != nil {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("tokenbalance").
+		if _, err = s.updateTx(ctx, tokenbalanceTable, tx,
+			sq.Update(tokenbalanceTable).
 				Set("uri", transfer.URI).
 				Set("balance", balance).
 				Set("updated", fftypes.Now()).
@@ -79,8 +81,8 @@ func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("tokenbalance").
+		if _, err = s.insertTx(ctx, tokenbalanceTable, tx,
+			sq.Insert(tokenbalanceTable).
 				Columns(tokenBalanceColumns...).
 				Values(
 					transfer.Pool,
@@ -135,15 +137,15 @@ func (s *SQLCommon) tokenBalanceResult(ctx context.Context, row *sql.Rows) (*fft
 		&account.Updated,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenbalance")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenbalanceTable)
 	}
 	return &account, nil
 }
 
 func (s *SQLCommon) getTokenBalancePred(ctx context.Context, desc string, pred interface{}) (*fftypes.TokenBalance, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, tokenbalanceTable,
 		sq.Select(tokenBalanceColumns...).
-			From("tokenbalance").
+			From(tokenbalanceTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -174,12 +176,12 @@ func (s *SQLCommon) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, t
 }
 
 func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenBalanceColumns...).From("tokenbalance"), filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenBalanceColumns...).From(tokenbalanceTable), filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, tokenbalanceTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -194,18 +196,18 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter
 		accounts = append(accounts, d)
 	}
 
-	return accounts, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
+	return accounts, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }
 
 func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select("key", "MAX(updated) AS updated", "MAX(seq) AS seq").From("tokenbalance").GroupBy("key"),
+		sq.Select("key", "MAX(updated) AS updated", "MAX(seq) AS seq").From(tokenbalanceTable).GroupBy("key"),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, tokenbalanceTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -217,24 +219,24 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 		var updated fftypes.FFTime
 		var seq int64
 		if err := rows.Scan(&account.Key, &updated, &seq); err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenbalance")
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenbalanceTable)
 		}
 		accounts = append(accounts, &account)
 	}
 
-	return accounts, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
+	return accounts, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }
 
 func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select("pool_id", "MAX(updated) AS updated", "MAX(seq) AS seq").From("tokenbalance").GroupBy("pool_id"),
+		sq.Select("pool_id", "MAX(updated) AS updated", "MAX(seq) AS seq").From(tokenbalanceTable).GroupBy("pool_id"),
 		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"},
 		sq.Eq{"key": key})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, tokenbalanceTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -246,10 +248,10 @@ func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter
 		var updated fftypes.FFTime
 		var seq int64
 		if err := rows.Scan(&pool.Pool, &updated, &seq); err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenbalance")
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenbalanceTable)
 		}
 		pools = append(pools, &pool)
 	}
 
-	return pools, s.queryRes(ctx, tx, "tokenbalance", fop, fi), err
+	return pools, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }

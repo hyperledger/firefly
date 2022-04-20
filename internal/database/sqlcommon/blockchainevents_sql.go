@@ -52,6 +52,8 @@ var (
 	}
 )
 
+const blockchaineventsTable = "blockchainevents"
+
 func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -59,8 +61,8 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.insertTx(ctx, tx,
-		sq.Insert("blockchainevents").
+	if _, err = s.insertTx(ctx, blockchaineventsTable, tx,
+		sq.Insert(blockchaineventsTable).
 			Columns(blockchainEventColumns...).
 			Values(
 				event.ID,
@@ -103,15 +105,15 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 		&event.TX.BlockchainID,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "blockchainevents")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, blockchaineventsTable)
 	}
 	return &event, nil
 }
 
 func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.BlockchainEvent, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, blockchaineventsTable,
 		sq.Select(blockchainEventColumns...).
-			From("blockchainevents").
+			From(blockchaineventsTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -147,13 +149,13 @@ func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns strin
 func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(blockchainEventColumns...).From("blockchainevents"),
+		sq.Select(blockchainEventColumns...).From(blockchaineventsTable),
 		filter, blockchainEventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, blockchaineventsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -168,5 +170,5 @@ func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Fil
 		events = append(events, event)
 	}
 
-	return events, s.queryRes(ctx, tx, "blockchainevents", fop, fi), err
+	return events, s.queryRes(ctx, blockchaineventsTable, tx, fop, fi), err
 }

@@ -39,6 +39,8 @@ var (
 	nextpinFilterFieldMap = map[string]string{}
 )
 
+const nextpinsTable = "nextpins"
+
 func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -46,8 +48,8 @@ func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin)
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	sequence, err := s.insertTx(ctx, tx,
-		sq.Insert("nextpins").
+	sequence, err := s.insertTx(ctx, nextpinsTable, tx,
+		sq.Insert(nextpinsTable).
 			Columns(nextpinColumns...).
 			Values(
 				nextpin.Context,
@@ -75,7 +77,7 @@ func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*fftypes.
 		&nextpin.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "nextpins")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, nextpinsTable)
 	}
 	return &nextpin, nil
 }
@@ -83,9 +85,9 @@ func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*fftypes.
 func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.NextPin, err error) {
 	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, nextpinsTable,
 		sq.Select(cols...).
-			From("nextpins").
+			From(nextpinsTable).
 			Where(pred).
 			Limit(1),
 	)
@@ -124,12 +126,12 @@ func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (me
 
 	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("nextpins"), filter, nextpinFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(nextpinsTable), filter, nextpinFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, nextpinsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -144,7 +146,7 @@ func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (me
 		nextpin = append(nextpin, d)
 	}
 
-	return nextpin, s.queryRes(ctx, tx, "nextpins", fop, fi), err
+	return nextpin, s.queryRes(ctx, nextpinsTable, tx, fop, fi), err
 
 }
 
@@ -156,13 +158,13 @@ func (s *SQLCommon) UpdateNextPin(ctx context.Context, sequence int64, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("nextpins"), update, pinFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(nextpinsTable), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{sequenceColumn: sequence})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events for next pins */)
+	_, err = s.updateTx(ctx, nextpinsTable, tx, query, nil /* no change events for next pins */)
 	if err != nil {
 		return err
 	}
@@ -178,7 +180,7 @@ func (s *SQLCommon) DeleteNextPin(ctx context.Context, sequence int64) (err erro
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("nextpins").Where(sq.Eq{
+	err = s.deleteTx(ctx, nextpinsTable, tx, sq.Delete(nextpinsTable).Where(sq.Eq{
 		sequenceColumn: sequence,
 	}), nil /* no change events for next pins */)
 	if err != nil {

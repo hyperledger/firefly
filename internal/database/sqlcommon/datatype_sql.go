@@ -46,6 +46,8 @@ var (
 	}
 )
 
+const datatypesTable = "datatypes"
+
 func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Datatype, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -56,9 +58,9 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		datatypeRows, _, err := s.queryTx(ctx, tx,
+		datatypeRows, _, err := s.queryTx(ctx, datatypesTable, tx,
 			sq.Select("id").
-				From("datatypes").
+				From(datatypesTable).
 				Where(sq.Eq{"id": datatype.ID}),
 		)
 		if err != nil {
@@ -71,8 +73,8 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 	if existing {
 
 		// Update the datatype
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("datatypes").
+		if _, err = s.updateTx(ctx, datatypesTable, tx,
+			sq.Update(datatypesTable).
 				Set("message_id", datatype.Message).
 				Set("validator", string(datatype.Validator)).
 				Set("namespace", datatype.Namespace).
@@ -89,8 +91,8 @@ func (s *SQLCommon) UpsertDatatype(ctx context.Context, datatype *fftypes.Dataty
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("datatypes").
+		if _, err = s.insertTx(ctx, datatypesTable, tx,
+			sq.Insert(datatypesTable).
 				Columns(datatypeColumns...).
 				Values(
 					datatype.ID,
@@ -128,16 +130,16 @@ func (s *SQLCommon) datatypeResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&datatype.Value,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "datatypes")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, datatypesTable)
 	}
 	return &datatype, nil
 }
 
 func (s *SQLCommon) getDatatypeEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Datatype, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, datatypesTable,
 		sq.Select(datatypeColumns...).
-			From("datatypes").
+			From(datatypesTable).
 			Where(eq),
 	)
 	if err != nil {
@@ -168,12 +170,12 @@ func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version str
 
 func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*fftypes.Datatype, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From("datatypes"), filter, datatypeFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From(datatypesTable), filter, datatypeFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, datatypesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -188,7 +190,7 @@ func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (m
 		datatypes = append(datatypes, datatype)
 	}
 
-	return datatypes, s.queryRes(ctx, tx, "datatypes", fop, fi), err
+	return datatypes, s.queryRes(ctx, datatypesTable, tx, fop, fi), err
 
 }
 
@@ -200,13 +202,13 @@ func (s *SQLCommon) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("datatypes"), update, datatypeFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(datatypesTable), update, datatypeFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, datatypesTable, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

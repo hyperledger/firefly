@@ -46,6 +46,8 @@ var (
 	}
 )
 
+const pinsTable = "pins"
+
 func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -54,9 +56,9 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Do a select within the transaction to detemine if the UUID already exists
-	pinRows, tx, err := s.queryTx(ctx, tx,
+	pinRows, tx, err := s.queryTx(ctx, pinsTable, tx,
 		sq.Select(sequenceColumn, "masked", "dispatched").
-			From("pins").
+			From(pinsTable).
 			Where(sq.Eq{
 				"hash":     pin.Hash,
 				"batch_id": pin.Batch,
@@ -71,7 +73,7 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 		err := pinRows.Scan(&pin.Sequence, &pin.Masked, &pin.Dispatched)
 		pinRows.Close()
 		if err != nil {
-			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "pins")
+			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, pinsTable)
 		}
 		// Pin's can only go from undispatched, to dispatched - so no update here.
 		log.L(ctx).Debugf("Existing pin returned at sequence %d", pin.Sequence)
@@ -87,8 +89,8 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 }
 
 func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *fftypes.Pin) (err error) {
-	pin.Sequence, err = s.insertTx(ctx, tx,
-		s.setPinInsertValues(sq.Insert("pins").Columns(pinColumns...), pin),
+	pin.Sequence, err = s.insertTx(ctx, pinsTable, tx,
+		s.setPinInsertValues(sq.Insert(pinsTable).Columns(pinColumns...), pin),
 		func() {
 			log.L(ctx).Debugf("Triggering creation event for pin %d", pin.Sequence)
 			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
@@ -118,12 +120,12 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
-		query := sq.Insert("pins").Columns(pinColumns...)
+		query := sq.Insert(pinsTable).Columns(pinColumns...)
 		for _, pin := range pins {
 			query = s.setPinInsertValues(query, pin)
 		}
 		sequences := make([]int64, len(pins))
-		err := s.insertTxRows(ctx, tx, query, func() {
+		err := s.insertTxRows(ctx, pinsTable, tx, query, func() {
 			for i, pin := range pins {
 				pin.Sequence = sequences[i]
 				s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
@@ -158,7 +160,7 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 		&pin.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "pins")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, pinsTable)
 	}
 	return &pin, nil
 }
@@ -167,12 +169,12 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 
 	cols := append([]string{}, pinColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("pins"), filter, pinFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(pinsTable), filter, pinFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, pinsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -187,7 +189,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 		pin = append(pin, d)
 	}
 
-	return pin, s.queryRes(ctx, tx, "pins", fop, fi), err
+	return pin, s.queryRes(ctx, pinsTable, tx, fop, fi), err
 
 }
 
@@ -199,7 +201,7 @@ func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, upda
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("pins"), update, pinFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(pinsTable), update, pinFilterFieldMap)
 	if err != nil {
 		return err
 	}
@@ -209,7 +211,7 @@ func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, upda
 		return err
 	}
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events filter based update */)
+	_, err = s.updateTx(ctx, pinsTable, tx, query, nil /* no change events filter based update */)
 	if err != nil {
 		return err
 	}
@@ -225,7 +227,7 @@ func (s *SQLCommon) DeletePin(ctx context.Context, sequence int64) (err error) {
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("pins").Where(sq.Eq{
+	err = s.deleteTx(ctx, pinsTable, tx, sq.Delete(pinsTable).Where(sq.Eq{
 		sequenceColumn: sequence,
 	}),
 		func() {

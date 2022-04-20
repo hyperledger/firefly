@@ -36,6 +36,8 @@ var (
 	nonceFilterFieldMap = map[string]string{}
 )
 
+const noncesTable = "nonces"
+
 func (s *SQLCommon) UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -44,8 +46,8 @@ func (s *SQLCommon) UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) (err 
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Update the nonce
-	if _, err = s.updateTx(ctx, tx,
-		sq.Update("nonces").
+	if _, err = s.updateTx(ctx, noncesTable, tx,
+		sq.Update(noncesTable).
 			Set("nonce", nonce.Nonce).
 			Where(sq.Eq{"hash": nonce.Hash}),
 		nil, // no change events for nonces
@@ -64,8 +66,8 @@ func (s *SQLCommon) InsertNonce(ctx context.Context, nonce *fftypes.Nonce) (err 
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	// Insert the nonce
-	if _, err = s.insertTx(ctx, tx,
-		sq.Insert("nonces").
+	if _, err = s.insertTx(ctx, noncesTable, tx,
+		sq.Insert(noncesTable).
 			Columns(nonceColumns...).
 			Values(
 				nonce.Hash,
@@ -86,16 +88,16 @@ func (s *SQLCommon) nonceResult(ctx context.Context, row *sql.Rows) (*fftypes.No
 		&nonce.Nonce,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "nonces")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, noncesTable)
 	}
 	return &nonce, nil
 }
 
 func (s *SQLCommon) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, noncesTable,
 		sq.Select(nonceColumns...).
-			From("nonces").
+			From(noncesTable).
 			Where(sq.Eq{"hash": hash}),
 	)
 	if err != nil {
@@ -118,12 +120,12 @@ func (s *SQLCommon) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (messag
 
 func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (message []*fftypes.Nonce, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From("nonces"), filter, nonceFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(nonceColumns...).From(noncesTable), filter, nonceFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, noncesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -138,7 +140,7 @@ func (s *SQLCommon) GetNonces(ctx context.Context, filter database.Filter) (mess
 		nonce = append(nonce, d)
 	}
 
-	return nonce, s.queryRes(ctx, tx, "nonces", fop, fi), err
+	return nonce, s.queryRes(ctx, noncesTable, tx, fop, fi), err
 
 }
 
@@ -150,7 +152,7 @@ func (s *SQLCommon) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) (err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("nonces").Where(sq.Eq{
+	err = s.deleteTx(ctx, noncesTable, tx, sq.Delete(noncesTable).Where(sq.Eq{
 		"hash": hash,
 	}), nil /* no change events for nonces */)
 	if err != nil {

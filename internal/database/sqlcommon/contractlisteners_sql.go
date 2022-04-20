@@ -49,6 +49,8 @@ var (
 	}
 )
 
+const contractlistenersTable = "contractlisteners"
+
 func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftypes.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -56,9 +58,9 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, contractlistenersTable, tx,
 		sq.Select("seq").
-			From("contractlisteners").
+			From(contractlistenersTable).
 			Where(sq.Eq{"backend_id": listener.BackendID}),
 	)
 	if err != nil {
@@ -73,8 +75,8 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 	}
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("contractlisteners").
+		if _, err = s.updateTx(ctx, contractlistenersTable, tx,
+			sq.Update(contractlistenersTable).
 				Set("id", listener.ID).
 				Set("interface_id", interfaceID).
 				Set("event", listener.Event).
@@ -93,8 +95,8 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 		}
 	} else {
 		listener.Created = fftypes.Now()
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contractlisteners").
+		if _, err = s.insertTx(ctx, contractlistenersTable, tx,
+			sq.Insert(contractlistenersTable).
 				Columns(contractListenerColumns...).
 				Values(
 					listener.ID,
@@ -138,15 +140,15 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 		&listener.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "contractlisteners")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, contractlistenersTable)
 	}
 	return &listener, nil
 }
 
 func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractListener, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, contractlistenersTable,
 		sq.Select(contractListenerColumns...).
-			From("contractlisteners").
+			From(contractlistenersTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -181,13 +183,13 @@ func (s *SQLCommon) GetContractListenerByBackendID(ctx context.Context, id strin
 
 func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Filter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
-		sq.Select(contractListenerColumns...).From("contractlisteners"),
+		sq.Select(contractListenerColumns...).From(contractlistenersTable),
 		filter, contractListenerFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, contractlistenersTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -202,7 +204,7 @@ func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Fi
 		subs = append(subs, sub)
 	}
 
-	return subs, s.queryRes(ctx, tx, "contractlisteners", fop, fi), err
+	return subs, s.queryRes(ctx, contractlistenersTable, tx, fop, fi), err
 }
 
 func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error) {
@@ -214,7 +216,7 @@ func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, id *fftypes.
 
 	sub, err := s.GetContractListenerByID(ctx, id)
 	if err == nil && sub != nil {
-		err = s.deleteTx(ctx, tx, sq.Delete("contractlisteners").Where(sq.Eq{"id": id}),
+		err = s.deleteTx(ctx, contractlistenersTable, tx, sq.Delete(contractlistenersTable).Where(sq.Eq{"id": id}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
 			},
