@@ -217,7 +217,9 @@ func (ep *eventPoller) eventLoop() {
 		}
 
 		// Once we run out of events, wait to be woken
-		if !repoll {
+		if repoll {
+			time.Sleep(10 * time.Millisecond)
+		} else {
 			if ok := ep.waitForShoulderTapOrPollTimeout(eventCount); !ok {
 				return
 			}

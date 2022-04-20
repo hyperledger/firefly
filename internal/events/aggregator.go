@@ -210,9 +210,10 @@ func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced)
 	pins := make([]*fftypes.Pin, len(items))
 	for i, item := range items {
 		pins[i] = item.(*fftypes.Pin)
-		// if a batch is not in the cache it hasn't been persisted yet, so repoll
+		// if a batch is not in the cache it hasn't been persisted yet, so queue for rewind
 		if batch := ag.batchCache.Get(ag.getBatchCacheKey(pins[i].Batch, pins[i].BatchHash)); batch == nil {
-			return true, nil
+			ag.queueBatchRewind(pins[i].Batch)
+			return false, nil
 		}
 	}
 
