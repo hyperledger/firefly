@@ -71,10 +71,17 @@ func SetLevel(level string) {
 }
 
 type Formatting struct {
-	DisableColor    bool
-	ForceColor      bool
-	TimestampFormat string
-	UTC             bool
+	DisableColor       bool
+	ForceColor         bool
+	TimestampFormat    string
+	UTC                bool
+	ReportCaller       bool
+	JSONEnabled        bool
+	JSONTimestampField string
+	JSONLevelField     string
+	JSONMessageField   string
+	JSONFuncField      string
+	JSONFileField      string
 }
 
 type utcFormat struct {
@@ -87,7 +94,9 @@ func (utc *utcFormat) Format(e *logrus.Entry) ([]byte, error) {
 }
 
 func SetFormatting(format Formatting) {
-	var formatter logrus.Formatter = &prefixed.TextFormatter{
+	var formatter logrus.Formatter
+
+	formatter = &prefixed.TextFormatter{
 		DisableColors:   format.DisableColor,
 		ForceColors:     format.ForceColor,
 		TimestampFormat: format.TimestampFormat,
@@ -95,8 +104,26 @@ func SetFormatting(format Formatting) {
 		ForceFormatting: true,
 		FullTimestamp:   true,
 	}
+	if format.JSONEnabled {
+		formatter = &logrus.JSONFormatter{
+			TimestampFormat: format.TimestampFormat,
+			FieldMap: logrus.FieldMap{
+				logrus.FieldKeyTime:  format.JSONTimestampField,
+				logrus.FieldKeyLevel: format.JSONLevelField,
+				logrus.FieldKeyMsg:   format.JSONMessageField,
+				logrus.FieldKeyFunc:  format.JSONFuncField,
+				logrus.FieldKeyFile:  format.JSONFileField,
+			},
+		}
+	}
+
 	if format.UTC {
 		formatter = &utcFormat{f: formatter}
 	}
+
+	if format.ReportCaller {
+		logrus.SetReportCaller(format.ReportCaller)
+	}
+
 	logrus.SetFormatter(formatter)
 }

@@ -65,6 +65,20 @@ var (
 	LogMaxAge = ffc("log.maxAge")
 	// LogCompress sets whether to compress backups
 	LogCompress = ffc("log.compress")
+	// LogReportCaller enables the report caller for including the calling file and line number
+	LogReportCaller = ffc("log.reportCaller")
+	// LogJSONEnabled enables JSON formatted logs rather than text
+	LogJSONEnabled = ffc("log.json.enabled")
+	// LogJSONTimestampField configures the JSON key containing the timestamp of the log
+	LogJSONTimestampField = ffc("log.json.fields.timestamp")
+	// LogJSONLevelField configures the JSON key containing the log level
+	LogJSONLevelField = ffc("log.json.fields.level")
+	// LogJSONLevelField configures the JSON key containing the log message
+	LogJSONMessageField = ffc("log.json.fields.message")
+	// LogJSONLevelField configures the JSON key containing the calling function
+	LogJSONFuncField = ffc("log.json.fields.func")
+	// LogJSONLevelField configures the JSON key containing the calling function
+	LogJSONFileField = ffc("log.json.fields.file")
 )
 
 type KeySet interface {
@@ -122,6 +136,13 @@ func RootConfigReset(setServiceDefaults ...func()) {
 	viper.SetDefault(string(LogFilesize), "100m")
 	viper.SetDefault(string(LogMaxAge), "24h")
 	viper.SetDefault(string(LogMaxBackups), 2)
+	viper.SetDefault(string(LogReportCaller), false)
+	viper.SetDefault(string(LogJSONEnabled), false)
+	viper.SetDefault(string(LogJSONTimestampField), "@timestamp")
+	viper.SetDefault(string(LogJSONLevelField), "level")
+	viper.SetDefault(string(LogJSONMessageField), "message")
+	viper.SetDefault(string(LogJSONFuncField), "func")
+	viper.SetDefault(string(LogJSONFileField), "file")
 
 	// We set the service defaults within our mutex
 	for _, fn := range setServiceDefaults {
@@ -480,10 +501,17 @@ func (c *configPrefix) Resolve(key string) string {
 // SetupLogging initializes logging
 func SetupLogging(ctx context.Context) {
 	log.SetFormatting(log.Formatting{
-		DisableColor:    GetBool(LogNoColor),
-		ForceColor:      GetBool(LogForceColor),
-		TimestampFormat: GetString(LogTimeFormat),
-		UTC:             GetBool(LogUTC),
+		DisableColor:       GetBool(LogNoColor),
+		ForceColor:         GetBool(LogForceColor),
+		TimestampFormat:    GetString(LogTimeFormat),
+		UTC:                GetBool(LogUTC),
+		ReportCaller:       GetBool(LogReportCaller),
+		JSONEnabled:        GetBool(LogJSONEnabled),
+		JSONTimestampField: GetString(LogJSONTimestampField),
+		JSONLevelField:     GetString(LogJSONLevelField),
+		JSONMessageField:   GetString(LogJSONMessageField),
+		JSONFuncField:      GetString(LogJSONFuncField),
+		JSONFileField:      GetString(LogJSONFileField),
 	})
 	logFilename := GetString(LogFilename)
 	if logFilename != "" {
