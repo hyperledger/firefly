@@ -522,7 +522,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
 	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
-	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s()")
+	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s(<nil>)")
 }
 
 func TestResolveSignerBadECertReturned(t *testing.T) {
