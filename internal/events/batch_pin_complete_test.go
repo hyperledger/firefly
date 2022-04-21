@@ -18,6 +18,7 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -133,7 +134,78 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	})).Return(nil).Times(1)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
 	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+
+func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	batchPin := &blockchain.BatchPin{
+		Namespace:       "ns1",
+		TransactionID:   batch.Payload.TX.ID,
+		BatchID:         batch.ID,
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts:        []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Event: blockchain.Event{
+			Name:           "BatchPin",
+			BlockchainTXID: "0x12345",
+			ProtocolID:     "10/20/30",
+		},
+	}
+	payloadBinary, jsonErr := json.Marshal(&batch.Payload)
+	assert.NoError(t, jsonErr)
+	batchPersisted := &fftypes.BatchPersisted{
+		TX:          batch.Payload.TX,
+		BatchHeader: batch.BatchHeader,
+		Manifest:    fftypes.JSONAnyPtr(string(payloadBinary)),
+		Hash:        batch.Payload.Hash(),
+	}
+
+	batch.Hash = batch.Payload.Hash()
+	batchPin.BatchHash = batch.Hash
+
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
+		Return(false, fmt.Errorf("pop")).Once()
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").
+		Return(true, nil)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	rag.RunFn = func(a mock.Arguments) {
+		// Call through to persistBatch - the hash of our batch will be invalid,
+		// which is swallowed without error as we cannot retry (it is logged of course)
+		rag.ReturnArguments = mock.Arguments{
+			a[1].(func(ctx context.Context) error)(a[0].(context.Context)),
+		}
+	}
+
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == batchPin.Event.Name
+	})).Return(fmt.Errorf("pop")).Once()
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+		return e.Name == batchPin.Event.Name
+	})).Return(nil).Times(1)
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
+		return e.Type == fftypes.EventTypeBlockchainEventReceived
+	})).Return(nil).Times(1)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(batchPersisted, nil)
 	mbi := &blockchainmocks.Plugin{}
 
 	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
@@ -171,6 +243,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
 
 	mbi := &blockchainmocks.Plugin{}
 
@@ -215,6 +288,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
 
 	mbi := &blockchainmocks.Plugin{}
 
@@ -227,6 +301,46 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 }
+
+func TestBatchPinCompleteLookupBatchFails(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel()
+
+	batchPin := &blockchain.BatchPin{
+		Namespace:     "ns1",
+		TransactionID: fftypes.NewUUID(),
+		BatchID:       fftypes.NewUUID(),
+		Contexts:      []*fftypes.Bytes32{fftypes.NewRandB32()},
+		Event: blockchain.Event{
+			BlockchainTXID: "0x12345",
+			ProtocolID:     "10/20/30",
+		},
+	}
+
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, fftypes.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
+
+	mbi := &blockchainmocks.Plugin{}
+
+	err := em.BatchPinComplete(mbi, batchPin, &fftypes.VerifierRef{
+		Type:  fftypes.VerifierTypeEthAddress,
+		Value: "0xffffeeee",
+	})
+	assert.Regexp(t, "FF10158", err)
+
+	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
+}
+
 func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 
@@ -253,6 +367,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
@@ -522,7 +637,7 @@ func TestPersistBatchGoodDataMessageFail(t *testing.T) {
 	mdi.On("UpsertBatch", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimzation miss"))
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("pop"))
 
 	bp, valid, err := em.persistBatch(context.Background(), batch)
 	assert.False(t, valid)

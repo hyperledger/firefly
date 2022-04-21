@@ -116,7 +116,7 @@ func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, mes
 	return err
 }
 
-func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization) (err error) {
+func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -181,6 +181,10 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 		if err = s.updateMessageDataRefs(ctx, tx, message, recreateDatarefs); err != nil {
 			return err
 		}
+	}
+
+	for _, hook := range hooks {
+		s.postCommitEvent(tx, hook)
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

@@ -70,7 +70,10 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 				return err
 			}
 
-			batch, err := em.database.GetBatchByID(ctx, batchPin.BatchID)
+			batch, _, err := em.aggregator.GetBatchForPin(ctx, &fftypes.Pin{
+				Batch:     batchPin.BatchID,
+				BatchHash: batchPin.BatchHash,
+			})
 			if err != nil {
 				return err
 			}

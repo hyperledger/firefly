@@ -97,7 +97,9 @@ func TestPersistBatchNoCacheDataNotInBatch(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip, mock.AnythingOfType("database.PostCompletionHook")).Return(nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
@@ -119,7 +121,9 @@ func TestPersistBatchExtraDataInBatch(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip, mock.AnythingOfType("database.PostCompletionHook")).Return(nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
@@ -233,7 +237,7 @@ func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(database.HashMismatch)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(database.HashMismatch)
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
