@@ -40,7 +40,7 @@ var (
 	ConfigLogNoColor            = FFC("config.log.noColor", "Force color to be disabled, event when TTY output is detected", BooleanType)
 	ConfigLogTimeFormat         = FFC("config.log.timeFormat", "Custom time format for logs", TimeFormatType)
 	ConfigLogUtc                = FFC("config.log.utc", "Use UTC timestamps for logs", BooleanType)
-	ConfigLogReportCaller       = FFC("config.log.reportCaller", "Enables the report caller for including the calling file and line number, as well as the calling function. Only works for JSON formatted logs.", BooleanType)
+	ConfigLogIncludeCodeInfo    = FFC("config.log.includeCodeInfo", "Enables the report caller for including the calling file and line number, and the calling function. If using text logs, it uses the logrus text format rather than the default prefix format.", BooleanType)
 	ConfigLogJSONEnabled        = FFC("config.log.json.enabled", "Enables JSON formatted logs rather than text. All log color settings are ignored when enabled.", BooleanType)
 	ConfigLogJSONTimestampField = FFC("config.log.json.fields.timestamp", "Configures the JSON key containing the timestamp of the log", StringType)
 	ConfigLogJSONLevelField     = FFC("config.log.json.fields.level", "Configures the JSON key containing the log level", StringType)

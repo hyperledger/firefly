@@ -65,8 +65,8 @@ var (
 	LogMaxAge = ffc("log.maxAge")
 	// LogCompress sets whether to compress backups
 	LogCompress = ffc("log.compress")
-	// LogReportCaller enables the report caller for including the calling file and line number
-	LogReportCaller = ffc("log.reportCaller")
+	// LogIncludeCodeInfo enables the report caller for including the calling file and line number
+	LogIncludeCodeInfo = ffc("log.includeCodeInfo")
 	// LogJSONEnabled enables JSON formatted logs rather than text
 	LogJSONEnabled = ffc("log.json.enabled")
 	// LogJSONTimestampField configures the JSON key containing the timestamp of the log
@@ -136,7 +136,7 @@ func RootConfigReset(setServiceDefaults ...func()) {
 	viper.SetDefault(string(LogFilesize), "100m")
 	viper.SetDefault(string(LogMaxAge), "24h")
 	viper.SetDefault(string(LogMaxBackups), 2)
-	viper.SetDefault(string(LogReportCaller), false)
+	viper.SetDefault(string(LogIncludeCodeInfo), false)
 	viper.SetDefault(string(LogJSONEnabled), false)
 	viper.SetDefault(string(LogJSONTimestampField), "@timestamp")
 	viper.SetDefault(string(LogJSONLevelField), "level")
@@ -505,7 +505,7 @@ func SetupLogging(ctx context.Context) {
 		ForceColor:         GetBool(LogForceColor),
 		TimestampFormat:    GetString(LogTimeFormat),
 		UTC:                GetBool(LogUTC),
-		ReportCaller:       GetBool(LogReportCaller),
+		IncludeCodeInfo:    GetBool(LogIncludeCodeInfo),
 		JSONEnabled:        GetBool(LogJSONEnabled),
 		JSONTimestampField: GetString(LogJSONTimestampField),
 		JSONLevelField:     GetString(LogJSONLevelField),

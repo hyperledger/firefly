@@ -67,11 +67,18 @@ func TestSetFormatting(t *testing.T) {
 	L(context.Background()).Infof("time in UTC")
 }
 
-func TestSetFormattingJSONEnabled(t *testing.T) {
+func TestSetFormattingIncludeCodeInfo(t *testing.T) {
 	SetFormatting(Formatting{
-		JSONEnabled:  true,
-		ReportCaller: true,
+		IncludeCodeInfo: true,
 	})
 
-	L(context.Background()).Infof("JSON logs with caller")
+	L(context.Background()).Infof("code info included")
+}
+
+func TestSetFormattingJSONEnabled(t *testing.T) {
+	SetFormatting(Formatting{
+		JSONEnabled: true,
+	})
+
+	L(context.Background()).Infof("JSON logs")
 }
