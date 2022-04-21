@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
@@ -262,7 +263,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
 	}
-
+	time.Sleep(10 * time.Second)
 	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "DataStored", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
