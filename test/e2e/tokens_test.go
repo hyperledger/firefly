@@ -64,7 +64,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	received2 := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
-	poolName := fmt.Sprintf("pool%d", len(pools))
+	rand.Seed(time.Now().UnixNano())
+	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &fftypes.TokenPool{
