@@ -165,7 +165,10 @@ func TestCreateTokenPoolError(t *testing.T) {
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
-		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
+		httpmock.NewJsonResponderOrPanic(400, fftypes.JSONObject{
+			"error":   "Bad Request",
+			"message": "Missing required field",
+		}))
 
 	complete, err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
 	assert.False(t, complete)

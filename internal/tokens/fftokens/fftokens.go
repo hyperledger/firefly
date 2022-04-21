@@ -477,6 +477,27 @@ func (ft *FFTokens) eventLoop() {
 	}
 }
 
+// Parse a JSON error of the form:
+//   {"error": "Bad Request", "message": "Field 'x' is required"}
+// into a message of the form:
+//   "Bad Request: Field 'x' is required"
+func wrapError(ctx context.Context, res *resty.Response, err error) error {
+	if res != nil {
+		var obj fftypes.JSONObject
+		if err := json.Unmarshal(res.Body(), &obj); err == nil {
+			message := obj.GetString("message")
+			if message != "" {
+				errorName := obj.GetString("error")
+				if errorName != "" {
+					message = errorName + ": " + message
+				}
+				return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, message)
+			}
+		}
+	}
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+}
+
 func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
 		TX:     pool.TX.ID,
@@ -494,7 +515,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 		}).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return false, wrapError(ctx, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Creation was successful, and pool details are in response body
@@ -517,7 +538,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 		}).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return false, wrapError(ctx, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Activation was successful, and pool details are in response body
@@ -554,7 +575,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 		}).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, res, err)
 	}
 	return nil
 }
@@ -578,7 +599,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 		}).
 		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, res, err)
 	}
 	return nil
 }
@@ -603,7 +624,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 		}).
 		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, res, err)
 	}
 	return nil
 }
@@ -625,7 +646,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, pool
 		}).
 		Post("/api/v1/approval")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, res, err)
 	}
 	return nil
 }
