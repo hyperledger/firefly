@@ -117,7 +117,6 @@ func SetFormatting(format Formatting) {
 			DisableSorting:  false,
 			FullTimestamp:   true,
 		}
-		break
 	default:
 		formatter = &prefixed.TextFormatter{
 			DisableColors:   format.DisableColor,
