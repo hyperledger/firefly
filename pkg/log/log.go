@@ -108,7 +108,6 @@ func SetFormatting(format Formatting) {
 				logrus.FieldKeyFile:  format.JSONFileField,
 			},
 		}
-		break
 	case format.IncludeCodeInfo:
 		formatter = &logrus.TextFormatter{
 			DisableColors:   format.DisableColor,
