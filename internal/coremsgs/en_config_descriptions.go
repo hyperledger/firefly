@@ -116,6 +116,9 @@ var (
 	ConfigBlockchainEthereumEthconnectTopic        = ffc("config.blockchain.ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectURL          = ffc("config.blockchain.ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
 
+	ConfigBlockchainEthereumFFTMURL      = ffc("config.blockchain.ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
+	ConfigBlockchainEthereumFFTMProxyURL = ffc("config.blockchain.ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
+
 	ConfigBlockchainEthereumEthconnectProxyURL = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
 
 	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.", i18n.IntType)
