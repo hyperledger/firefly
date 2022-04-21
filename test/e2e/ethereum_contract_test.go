@@ -46,7 +46,7 @@ type ethconnectOutput struct {
 }
 
 type simpleStorageBody struct {
-	X string `json:"x"`
+	NewValue string `json:"newValue"`
 }
 
 func simpleStorageFFIChanged() *fftypes.FFIEvent {
