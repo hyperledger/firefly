@@ -172,7 +172,49 @@ func TestCreateTokenPoolError(t *testing.T) {
 
 	complete, err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
 	assert.False(t, complete)
-	assert.Regexp(t, "FF10274", err)
+	assert.Regexp(t, "FF10274.*Bad Request: Missing required field", err)
+}
+
+func TestCreateTokenPoolErrorMessageOnly(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
+		httpmock.NewJsonResponderOrPanic(400, fftypes.JSONObject{
+			"message": "Missing required field",
+		}))
+
+	complete, err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
+	assert.False(t, complete)
+	assert.Regexp(t, "FF10274.*Missing required field", err)
+}
+
+func TestCreateTokenPoolUnexpectedError(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+		TX: fftypes.TransactionRef{
+			ID:   fftypes.NewUUID(),
+			Type: fftypes.TransactionTypeTokenPool,
+		},
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
+		httpmock.NewStringResponder(400, "Failed miserably"))
+
+	complete, err := h.CreateTokenPool(context.Background(), fftypes.NewUUID(), pool)
+	assert.False(t, complete)
+	assert.Regexp(t, "FF10274.*Failed miserably", err)
 }
 
 func TestCreateTokenPoolSynchronous(t *testing.T) {
