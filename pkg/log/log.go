@@ -18,10 +18,10 @@ package log
 
 import (
 	"context"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var (
@@ -96,15 +96,8 @@ func (utc *utcFormat) Format(e *logrus.Entry) ([]byte, error) {
 func SetFormatting(format Formatting) {
 	var formatter logrus.Formatter
 
-	if format.IncludeCodeInfo && !format.JSONEnabled {
-		formatter = &logrus.TextFormatter{
-			DisableColors:   format.DisableColor,
-			ForceColors:     format.ForceColor,
-			TimestampFormat: format.TimestampFormat,
-			DisableSorting:  false,
-			FullTimestamp:   true,
-		}
-	} else if format.JSONEnabled {
+	switch {
+	case format.JSONEnabled:
 		formatter = &logrus.JSONFormatter{
 			TimestampFormat: format.TimestampFormat,
 			FieldMap: logrus.FieldMap{
@@ -115,7 +108,17 @@ func SetFormatting(format Formatting) {
 				logrus.FieldKeyFile:  format.JSONFileField,
 			},
 		}
-	} else {
+		break
+	case format.IncludeCodeInfo:
+		formatter = &logrus.TextFormatter{
+			DisableColors:   format.DisableColor,
+			ForceColors:     format.ForceColor,
+			TimestampFormat: format.TimestampFormat,
+			DisableSorting:  false,
+			FullTimestamp:   true,
+		}
+		break
+	default:
 		formatter = &prefixed.TextFormatter{
 			DisableColors:   format.DisableColor,
 			ForceColors:     format.ForceColor,
