@@ -127,7 +127,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 
 		returnData = append(returnData, msgData)
 
-		assert.Equal(ts.t, "default", msgData.Namespace)
+		assert.Equal(ts.t, os.Getenv("NAMESPACE"), msgData.Namespace)
 		expectedHash, err := msgData.CalcHash(context.Background())
 		assert.NoError(ts.t, err)
 		assert.Equal(ts.t, *expectedHash, *msgData.Hash)
@@ -263,6 +263,8 @@ func beforeE2ETest(t *testing.T) *testState {
 		namespace := os.Getenv("NAMESPACE")
 		CreateNamespaces(ts.client1, namespace)
 		CreateNamespaces(ts.client2, namespace)
+	} else {
+		os.Setenv("NAMESPACE", "default")
 	}
 
 	t.Logf("Client 1: " + ts.client1.HostURL)
@@ -297,7 +299,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
-	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
+	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", os.Getenv("NAMESPACE"), eventNames)
 
 	wsUrl1 := url.URL{
 		Scheme:   websocketProtocolClient1,

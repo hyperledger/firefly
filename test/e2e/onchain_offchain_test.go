@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"image/png"
 	"math/big"
+	"os"
 	"strings"
 
 	image2ascii "github.com/qeesung/image2ascii/convert"
@@ -300,9 +301,9 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	received1 := wsReader(suite.testState.ws1, false)
 	received2 := wsReader(suite.testState.ws2, false)
 
-	subJSON := `{
+	subJSON := fmt.Sprintf(`{
 		"transport": "webhooks",
-		"namespace": "default",
+		"namespace": "%s",
 		"name": "myhook",
 		"options": {
 			"withData": true,
@@ -314,8 +315,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 		"filter": {
 			"tag": "myrequest"
 		}
-	}`
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, "default", "myhook")
+	}`, os.Getenv("NAMESPACE"))
+	CleanupExistingSubscription(suite.T(), suite.testState.client2, os.Getenv("NAMESPACE"), "myhook")
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
@@ -355,9 +356,9 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 	defer suite.testState.done()
 
-	subJSON := `{
+	subJSON := fmt.Sprintf(`{
 		"transport": "webhooks",
-		"namespace": "default",
+		"namespace": "%s",
 		"name": "myhook",
 		"options": {
 			"withData": true,
@@ -370,8 +371,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 		"filter": {
 			"tag": "myrequest"
 		}
-	}`
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, "default", "myhook")
+	}`, os.Getenv("NAMESPACE"))
+	CleanupExistingSubscription(suite.T(), suite.testState.client2, os.Getenv("NAMESPACE"), "myhook")
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
