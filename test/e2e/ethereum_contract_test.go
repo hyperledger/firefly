@@ -52,10 +52,14 @@ type simpleStorageBody struct {
 func simpleStorageFFIChanged() *fftypes.FFIEvent {
 	return &fftypes.FFIEvent{
 		FFIEventDefinition: fftypes.FFIEventDefinition{
-			Name: "DataStored",
+			Name: "Changed",
 			Params: fftypes.FFIParams{
 				{
-					Name:   "_x",
+					Name:   "_from",
+					Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "address", "indexed": true}}`),
+				},
+				{
+					Name:   "_value",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
@@ -82,7 +86,7 @@ func simpleStorageFFISet() *fftypes.FFIMethod {
 		Name: "set",
 		Params: fftypes.FFIParams{
 			{
-				Name:   "x",
+				Name:   "newValue",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
@@ -221,7 +225,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   simpleStorageFFISet(),
 		Input: map[string]interface{}{
-			"x": float64(2),
+			"newValue": float64(2),
 		},
 	}
 
@@ -264,7 +268,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		ID: suite.interfaceID,
 	}
 	time.Sleep(10 * time.Second)
-	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "DataStored", &fftypes.JSONObject{
+	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
@@ -279,7 +283,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	invokeContractRequest := &fftypes.ContractCallRequest{
 		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Input: map[string]interface{}{
-			"x": float64(42),
+			"newValue": float64(42),
 		},
 		Interface:  suite.interfaceID,
 		MethodPath: "set",
