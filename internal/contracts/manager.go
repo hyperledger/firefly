@@ -176,6 +176,10 @@ func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI)
 	if err != nil {
 		return err
 	}
+
+	for _, event := range ffi.Events {
+		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
+	}
 	return nil
 }
 

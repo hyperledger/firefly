@@ -70,6 +70,7 @@ type FFIEvent struct {
 	Interface *UUID  `ffstruct:"FFIEvent" json:"interface,omitempty" ffexcludeinput:"true"`
 	Namespace string `ffstruct:"FFIEvent" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Pathname  string `ffstruct:"FFIEvent" json:"pathname,omitempty" ffexcludeinput:"true"`
+	Signature string `ffstruct:"FFIEvent" json:"signature" ffexcludeinput:"true"`
 	FFIEventDefinition
 }
 

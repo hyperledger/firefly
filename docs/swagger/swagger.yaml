@@ -744,6 +744,10 @@ paths:
                             the FFI for use on URL paths. Supports contracts that
                             have multiple event overrides with the same name
                           type: string
+                        signature:
+                          description: The stringified signature of the event, as
+                            computed by the blockchain plugin
+                          type: string
                       type: object
                     type: array
                   id:
@@ -2419,6 +2423,10 @@ paths:
                               the FFI for use on URL paths. Supports contracts that
                               have multiple event overrides with the same name
                             type: string
+                          signature:
+                            description: The stringified signature of the event, as
+                              computed by the blockchain plugin
+                            type: string
                         type: object
                       type: array
                     id:
@@ -2693,6 +2701,10 @@ paths:
                             the FFI for use on URL paths. Supports contracts that
                             have multiple event overrides with the same name
                           type: string
+                        signature:
+                          description: The stringified signature of the event, as
+                            computed by the blockchain plugin
+                          type: string
                       type: object
                     type: array
                   id:
@@ -2872,6 +2884,10 @@ paths:
                           description: The unique name allocated to this event within
                             the FFI for use on URL paths. Supports contracts that
                             have multiple event overrides with the same name
+                          type: string
+                        signature:
+                          description: The stringified signature of the event, as
+                            computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -3058,6 +3074,10 @@ paths:
                           description: The unique name allocated to this event within
                             the FFI for use on URL paths. Supports contracts that
                             have multiple event overrides with the same name
+                          type: string
+                        signature:
+                          description: The stringified signature of the event, as
+                            computed by the blockchain plugin
                           type: string
                       type: object
                     type: array
@@ -3251,6 +3271,10 @@ paths:
                           description: The unique name allocated to this event within
                             the FFI for use on URL paths. Supports contracts that
                             have multiple event overrides with the same name
+                          type: string
+                        signature:
+                          description: The stringified signature of the event, as
+                            computed by the blockchain plugin
                           type: string
                       type: object
                     type: array

@@ -246,6 +246,7 @@ var (
 	FFIEventPathname    = ffm("FFIEvent.pathname", "The unique name allocated to this event within the FFI for use on URL paths. Supports contracts that have multiple event overrides with the same name")
 	FFIEventDescription = ffm("FFIEvent.description", "A description of the smart contract event")
 	FFIEventParams      = ffm("FFIEvent.params", "An array of event parameter/argument definitions")
+	FFIEventSignature   = ffm("FFIEvent.signature", "The stringified signature of the event, as computed by the blockchain plugin")
 
 	// FFIParam field descriptions
 	FFIParamName   = ffm("FFIParam.name", "The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract")
