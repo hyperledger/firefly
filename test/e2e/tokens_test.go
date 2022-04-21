@@ -144,7 +144,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			To:     suite.testState.org2key.Value,
 			Amount: *fftypes.NewFFBigInt(1),
 			From:   suite.testState.org1key.Value,
-			Key:    suite.testState.org2key.Value,
+			Key:    suite.testState.org1key.Value,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{

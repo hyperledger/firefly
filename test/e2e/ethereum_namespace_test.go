@@ -24,6 +24,6 @@ import (
 
 func TestEthereumNamespaceE2ESuite(t *testing.T) {
 	suite.Run(t, new(OnChainOffChainTestSuite))
-	// suite.Run(t, new(TokensTestSuite))
-	// suite.Run(t, new(EthereumContractTestSuite))
+	suite.Run(t, new(TokensTestSuite))
+	suite.Run(t, new(EthereumContractTestSuite))
 }
