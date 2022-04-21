@@ -418,6 +418,41 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 	assert.Regexp(t, "FF00127", err)
 }
 
+func TestActivateTokenPoolNoContent(t *testing.T) {
+	h, _, _, httpURL, done := newTestFFTokens(t)
+	defer done()
+
+	opID := fftypes.NewUUID()
+	poolConfig := map[string]interface{}{
+		"foo": "bar",
+	}
+	pool := &fftypes.TokenPool{
+		Locator: "N1",
+		Config:  poolConfig,
+	}
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
+		func(req *http.Request) (*http.Response, error) {
+			body := make(fftypes.JSONObject)
+			err := json.NewDecoder(req.Body).Decode(&body)
+			assert.NoError(t, err)
+			assert.Equal(t, fftypes.JSONObject{
+				"requestId":   opID.String(),
+				"poolLocator": "N1",
+				"config":      poolConfig,
+			}, body)
+
+			res := &http.Response{
+				StatusCode: 204,
+			}
+			return res, nil
+		})
+
+	complete, err := h.ActivateTokenPool(context.Background(), opID, pool)
+	assert.True(t, complete)
+	assert.NoError(t, err)
+}
+
 func TestMintTokens(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
