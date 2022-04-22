@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
@@ -119,7 +118,6 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	stack := readStackFile(suite.T())
 	suite.ethClient = NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
-
 	suite.ethIdentity = suite.testState.org1key.Value
 
 	if os.Getenv("CONTRACT_ADDRESS") != "" {
@@ -129,7 +127,6 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	} else {
 		suite.T().Fatal("CONTRACT_ADDRESS must be set")
 	}
-
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
 	res, err := CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
@@ -146,7 +143,6 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
 	received1 := wsReader(suite.testState.ws1, true)
-
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
@@ -179,7 +175,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 			"_value": "2",
 			"_from":  suite.testState.org1key.Value,
 		},
-		"subscription": listener.ID.String(),
+		"listener": listener.ID.String(),
 	}
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
@@ -205,7 +201,6 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
 	}
-	time.Sleep(10 * time.Second)
 	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
@@ -236,12 +231,11 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 			"address": suite.contractAddress,
 		},
 		"output": map[string]interface{}{
-			"_value": "3",
+			"_value": "42",
 			"_from":  suite.testState.org1key.Value,
 		},
-		"subscription": listener.ID.String(),
+		"listener": listener.ID.String(),
 	}
-
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 

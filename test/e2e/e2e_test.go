@@ -428,7 +428,7 @@ func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 		}
 	default:
 		expectedString, expectedIsString := expected.(string)
-		actualString, actualIsString := expected.(string)
+		actualString, actualIsString := actual.(string)
 		if expectedIsString && actualIsString {
 			return strings.ToLower(expectedString) == strings.ToLower(actualString)
 		}
