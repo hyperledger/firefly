@@ -119,12 +119,8 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.ethClient = NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	suite.ethIdentity = suite.testState.org1key.Value
-
-	if os.Getenv("CONTRACT_ADDRESS") != "" {
-		suite.contractAddress = os.Getenv("CONTRACT_ADDRESS")
-	} else if stack.ContractAddress != "" {
-		suite.contractAddress = stack.ContractAddress
-	} else {
+	suite.contractAddress = os.Getenv("CONTRACT_ADDRESS")
+	if suite.contractAddress == "" {
 		suite.T().Fatal("CONTRACT_ADDRESS must be set")
 	}
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
