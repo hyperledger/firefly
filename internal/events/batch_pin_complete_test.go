@@ -288,7 +288,6 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
 
 	mbi := &blockchainmocks.Plugin{}
 
@@ -302,7 +301,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mth.AssertExpectations(t)
 }
 
-func TestBatchPinCompleteLookupBatchFails(t *testing.T) {
+func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel()
 
@@ -323,7 +322,6 @@ func TestBatchPinCompleteLookupBatchFails(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertPin", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
