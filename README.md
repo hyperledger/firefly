@@ -68,7 +68,8 @@ Other repositories you might be interested in containing those microservice comp
   - Public EVM compatible chains: Learn more in the [documentation](https://hyperledger.github.io/firefly)
 - Corda connector starter: https://github.com/hyperledger/firefly-cordaconnect
   - CorDapp specific customization is required
-- Firefly Performance CLI: https://github.com/hyperledger/firefly-perf-cli
+- FireFly Performance CLI: https://github.com/hyperledger/firefly-perf-cli
+- Helm Charts for Deploying to Kubernetes: https://github.com/hyperledger/firefly-helm-charts
 
 ## FireFly Core code hierarchy
 
