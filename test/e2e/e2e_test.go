@@ -176,19 +176,18 @@ func readStackState(t *testing.T) *StackState {
 
 func beforeE2ETest(t *testing.T) *testState {
 	stack := readStackFile(t)
-	// TODO add stackstate back in
-	// stackState := readStackState(t)
+	stackState := readStackState(t)
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
 
 	ts := &testState{
-		t:         t,
-		startTime: time.Now(),
-		client1:   NewResty(t),
-		client2:   NewResty(t),
-		// stackState:           stackState,
-		// unregisteredAccounts: stackState.Accounts[2:],
+		t:                    t,
+		startTime:            time.Now(),
+		client1:              NewResty(t),
+		client2:              NewResty(t),
+		stackState:           stackState,
+		unregisteredAccounts: stackState.Accounts[2:],
 	}
 
 	httpProtocolClient1 := "http"

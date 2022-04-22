@@ -91,6 +91,7 @@ func ReadStack(filename string) (*Stack, error) {
 		if member.FireflyHostname == "" {
 			member.FireflyHostname = "127.0.0.1"
 		}
+
 	}
 
 	return stack, nil
