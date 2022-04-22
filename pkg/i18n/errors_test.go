@@ -19,6 +19,7 @@ package i18n
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,11 @@ import (
 
 func TestNewError(t *testing.T) {
 	err := NewError(context.Background(), MsgConfigFailed)
+	assert.Error(t, err)
+}
+
+func TestNewErrorTruncate(t *testing.T) {
+	err := NewError(context.Background(), MsgUnknownFieldValue, "field", strings.Repeat("x", 3000))
 	assert.Error(t, err)
 }
 
