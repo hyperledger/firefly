@@ -1270,7 +1270,7 @@ func TestAddSubscription(t *testing.T) {
 				},
 			},
 			Options: &fftypes.ContractListenerOptions{
-				FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+				FirstEvent: string(fftypes.SubOptsFirstEventOldest),
 			},
 		},
 	}

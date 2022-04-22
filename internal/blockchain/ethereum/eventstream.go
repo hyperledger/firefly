@@ -31,6 +31,8 @@ import (
 
 type streamManager struct {
 	client *resty.Client
+
+	fireFlySubscriptionFromBlock string
 }
 
 type eventStream struct {
@@ -170,7 +172,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, stream string, abi ABIElementMarshaling) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, instancePath, stream string, abi ABIElementMarshaling) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -198,7 +200,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, instancePath, st
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, string(fftypes.SubOptsFirstEventOldest), abi); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, s.fireFlySubscriptionFromBlock, abi); err != nil {
 			return nil, err
 		}
 	}
