@@ -42,12 +42,6 @@ type Member struct {
 	UseHTTPS             bool        `json:"useHttps,omitempty"`
 	ExposedConnectorPort int         `json:"exposedConnectorPort,omitempty"`
 	OrgName              string      `json:"orgName,omitempty"`
-	BlockchainHostname   string      `json:"blockchainHostname,omitempty"`
-	BlockchainUsername   string      `json:"blockchainUsername,omitempty"`
-	BlockchainPassword   string      `json:"blockchainPassword,omitempty"`
-	EthConnectHostname   string      `json:"ethConnectHostname"`
-	EthConnectUsername   string      `json:"ethConnectUsername"`
-	EthConnectPassword   string      `json:"ethConnectPassword"`
 	Account              interface{} `json:"account,omitempty"`
 }
 
@@ -97,9 +91,6 @@ func ReadStack(filename string) (*Stack, error) {
 	for _, member := range stack.Members {
 		if member.FireflyHostname == "" {
 			member.FireflyHostname = "127.0.0.1"
-		}
-		if member.BlockchainHostname == "" {
-			member.BlockchainHostname = "127.0.0.1"
 		}
 	}
 
