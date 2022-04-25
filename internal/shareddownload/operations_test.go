@@ -18,6 +18,7 @@ package shareddownload
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -122,7 +123,7 @@ func TestDownloadBlobDownloadDataReadFail(t *testing.T) {
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
 	mdx := dm.dataexchange.(*dataexchangemocks.Plugin)
-	mdx.On("UploadBLOB", mock.Anything, "ns1", mock.Anything, reader).Return("", nil, int64(-1), fmt.Errorf("pop"))
+	mdx.On("UploadBlob", mock.Anything, "ns1", mock.Anything, reader).Return("", nil, int64(-1), fmt.Errorf("pop"))
 
 	_, _, err := dm.downloadBlob(dm.ctx, downloadBlobData{
 		Namespace:  "ns1",
@@ -133,4 +134,10 @@ func TestDownloadBlobDownloadDataReadFail(t *testing.T) {
 
 	mss.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+}
+
+func TestOperationUpdate(t *testing.T) {
+	dm, cancel := newTestDownloadManager(t)
+	defer cancel()
+	assert.NoError(t, dm.OnOperationUpdate(context.Background(), nil, nil))
 }

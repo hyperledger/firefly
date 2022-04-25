@@ -17,87 +17,28 @@
 package apiserver
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
-
-var broadcastSchema = `{
-	"properties": {
-		 "data": {
-				"items": {
-					 "properties": {
-							"id": {"type": "string"},
-							"hash": {"type": "string"},
-							"validator": {"type": "string"},
-							"datatype": {
-								"type": "object",
-								"properties": {
-									"name": {"type": "string"},
-									"version": {"type": "string"}
-								}
-							},
-							"value": {
-								"type": "object"
-							}
-					 },
-					 "type": "object"
-				},
-				"type": "array"
-		 },
-		 "header": {
-				"properties": {
-					 "author": {
-							"type": "string"
-					 },
-					 "cid": {},
-					 "context": {
-							"type": "string"
-					 },
-					 "group": {},
-					 "tag": {
-							"type": "string"
-					 },
-					 "topics": {
-						 	"items": {
-								 "type": "string"
-							 }
-					 },
-					 "tx": {
-							"properties": {
-								 "type": {
-										"type": "string",
-										"default": "pin"
-								 }
-							},
-							"type": "object"
-					 }
-				},
-				"type": "object"
-		 }
-	},
-	"type": "object"
-}`
 
 var postNewMessageBroadcast = &oapispec.Route{
 	Name:   "postNewMessageBroadcast",
 	Path:   "namespaces/{ns}/messages/broadcast",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: i18n.MsgConfirmQueryParam, IsBool: true},
+		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
 	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-	JSONInputSchema: func(ctx context.Context) string { return broadcastSchema },
 	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {

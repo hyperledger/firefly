@@ -19,8 +19,8 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -31,10 +31,10 @@ var getTokenApprovals = &oapispec.Route{
 	Path:   "namespaces/{ns}/tokens/approvals",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
-	FilterFactory:   database.TokenApprovalQueryFacory,
-	Description:     i18n.MsgTBD,
+	FilterFactory:   database.TokenApprovalQueryFactory,
+	Description:     coremsgs.APIEndpointsGetTokenApprovals,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.TokenApproval{} },
 	JSONOutputCodes: []int{http.StatusOK},

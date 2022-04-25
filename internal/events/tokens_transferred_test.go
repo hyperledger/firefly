@@ -32,7 +32,7 @@ import (
 
 func newTransfer() *tokens.TokenTransfer {
 	return &tokens.TokenTransfer{
-		PoolProtocolID: "F1",
+		PoolLocator: "F1",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
 			TokenIndex: "0",
@@ -63,18 +63,21 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	transfer := newTransfer()
 	transfer.TX = fftypes.TransactionRef{}
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(4)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(3)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(4)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil).Times(3)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil).Times(3)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -93,6 +96,7 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTokensTransferredIgnoreExisting(t *testing.T) {
@@ -103,8 +107,13 @@ func TestTokensTransferredIgnoreExisting(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 
 	transfer := newTransfer()
+	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(&fftypes.TokenTransfer{}, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(&fftypes.TokenTransfer{}, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 
 	err := em.TokensTransferred(mti, transfer)
 	assert.NoError(t, err)
@@ -121,11 +130,12 @@ func TestPersistTransferOpFail(t *testing.T) {
 
 	transfer := newTransfer()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -144,6 +154,7 @@ func TestPersistTransferBadOp(t *testing.T) {
 
 	transfer := newTransfer()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	ops := []*fftypes.Operation{{
@@ -153,8 +164,8 @@ func TestPersistTransferBadOp(t *testing.T) {
 		Transaction: fftypes.NewUUID(),
 	}}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, fftypes.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
@@ -163,6 +174,7 @@ func TestPersistTransferBadOp(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestPersistTransferTxFail(t *testing.T) {
@@ -174,6 +186,7 @@ func TestPersistTransferTxFail(t *testing.T) {
 
 	transfer := newTransfer()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
@@ -183,8 +196,8 @@ func TestPersistTransferTxFail(t *testing.T) {
 		},
 	}}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, fftypes.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
@@ -204,20 +217,23 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 
 	transfer := newTransfer()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localId": localID.String(),
+			"localId":   localID.String(),
+			"connector": transfer.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, fftypes.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenTransfer", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
@@ -235,21 +251,25 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 
 	transfer := newTransfer()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
 	ops := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localId": localID.String(),
+			"localId":   localID.String(),
+			"connector": transfer.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, fftypes.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenTransfer", em.ctx, localID).Return(nil, nil)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(nil, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(fmt.Errorf("pop"))
 
@@ -270,21 +290,25 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 
 	transfer := newTransfer()
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	localID := fftypes.NewUUID()
 	operations := []*fftypes.Operation{{
 		Input: fftypes.JSONObject{
-			"localId": localID.String(),
+			"localId":   localID.String(),
+			"connector": transfer.Connector,
+			"pool":      pool.ID.String(),
 		},
 	}}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, fftypes.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
-	mdi.On("GetTokenTransfer", em.ctx, localID).Return(&fftypes.TokenTransfer{}, nil)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(&fftypes.TokenTransfer{}, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -312,8 +336,7 @@ func TestTokensTransferredBadPool(t *testing.T) {
 
 	transfer := newTransfer()
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, nil)
 
 	err := em.TokensTransferred(mti, transfer)
 	assert.NoError(t, err)
@@ -328,11 +351,12 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	uri := "firefly://token/1"
 	info := fftypes.JSONObject{"some": "info"}
 	transfer := &tokens.TokenTransfer{
-		PoolProtocolID: "F1",
+		PoolLocator: "F1",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
 			TokenIndex: "0",
@@ -352,15 +376,17 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 		},
 	}
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	message := &fftypes.Message{
 		BatchID: fftypes.NewUUID(),
 	}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil).Times(2)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -379,6 +405,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestTokensTransferredWithMessageSend(t *testing.T) {
@@ -387,11 +414,12 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
 	uri := "firefly://token/1"
 	info := fftypes.JSONObject{"some": "info"}
 	transfer := &tokens.TokenTransfer{
-		PoolProtocolID: "F1",
+		PoolLocator: "F1",
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:       fftypes.TokenTransferTypeTransfer,
 			TokenIndex: "0",
@@ -411,6 +439,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		},
 	}
 	pool := &fftypes.TokenPool{
+		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}
 	message := &fftypes.Message{
@@ -418,9 +447,10 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 		State:   fftypes.MessageStateStaged,
 	}
 
-	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetTokenPoolByProtocolID", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
-	mdi.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mdi.On("GetTokenTransferByProtocolID", em.ctx, pool.ID, "123").Return(nil, nil).Times(2)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
 	})).Return(nil).Times(2)
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *fftypes.Event) bool {
@@ -441,4 +471,5 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mti.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }

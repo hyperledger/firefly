@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -42,7 +43,9 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("InsertMessages", em.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
+		args[2].(database.PostCompletionHook)()
+	})
 	mss.On("Name").Return("utdx").Maybe()
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
@@ -51,7 +54,8 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, batch.ID, bid)
 
-	assert.Equal(t, *batch.ID, <-em.aggregator.rewindBatches)
+	brw := <-em.aggregator.rewinder.rewindRequests
+	assert.Equal(t, *batch.ID, brw.uuid)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)
@@ -115,29 +119,22 @@ func TestSharedStorageBatchDownloadedBadData(t *testing.T) {
 
 }
 
-func TestSharedStorageBLOBDownloadedOk(t *testing.T) {
+func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	dataID := fftypes.NewUUID()
-	batchID := fftypes.NewUUID()
-
 	mdi := em.database.(*databasemocks.Plugin)
 	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mss.On("Name").Return("utsd")
-	mdi.On("InsertBlob", em.ctx, mock.Anything).Return(nil, nil)
-	mdi.On("GetDataRefs", em.ctx, mock.Anything).Return(fftypes.DataRefs{
-		{ID: dataID},
-	}, nil, nil)
-	mdi.On("GetMessagesForData", em.ctx, dataID, mock.Anything).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}, BatchID: batchID},
-	}, nil, nil)
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)
 
-	err := em.SharedStorageBLOBDownloaded(mss, *fftypes.NewRandB32(), 12345, "payload1")
-	assert.NoError(t, err)
+	hash := fftypes.NewRandB32()
+	em.SharedStorageBlobDownloaded(mss, *hash, 12345, "payload1")
 
-	assert.Equal(t, *batchID, <-em.aggregator.rewindBatches)
+	brw := <-em.aggregator.rewinder.rewindRequests
+	assert.Equal(t, rewind{hash: *hash, rewindType: rewindBlob}, brw)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)

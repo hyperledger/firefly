@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -23,7 +23,28 @@ const (
 	ChangeEventTypeCreated ChangeEventType = "created"
 	ChangeEventTypeUpdated ChangeEventType = "updated" // note bulk updates might not results in change events.
 	ChangeEventTypeDeleted ChangeEventType = "deleted"
+	ChangeEventTypeDropped ChangeEventType = "dropped" // See ChangeEventDropped structure, sent to client instead of ChangeEvent when dropping notifications
 )
+
+type WSChangeEventCommandType = FFEnum
+
+var (
+	// WSChangeEventCommandTypeStart is the command to start listening
+	WSChangeEventCommandTypeStart = ffEnum("changeevent_cmd_type", "start")
+)
+
+// WSChangeEventCommand is the WebSocket command to send to start listening for change events.
+// Replaces any previous start requests.
+type WSChangeEventCommand struct {
+	Type        WSChangeEventCommandType `json:"type" ffenum:"changeevent_cmd_type"`
+	Collections []string                 `json:"collections"`
+	Filter      ChangeEventFilter        `json:"filter"`
+}
+
+type ChangeEventFilter struct {
+	Types      []ChangeEventType `json:"types,omitempty"`
+	Namespaces []string          `json:"namespaces,omitempty"`
+}
 
 // ChangeEvent is a change to the local FireFly core node.
 type ChangeEvent struct {
@@ -39,4 +60,8 @@ type ChangeEvent struct {
 	Hash *Bytes32 `json:"hash,omitempty"`
 	// Sequence is set if there is a local ordered sequence associated with the changed resource
 	Sequence *int64 `json:"sequence,omitempty"`
+	// DroppedSince only for ChangeEventTypeDropped. When the first miss happened
+	DroppedSince *FFTime `json:"droppedSince,omitempty"`
+	// DroppedCount only for ChangeEventTypeDropped. How many events dropped
+	DroppedCount int64 `json:"droppedCount,omitempty"`
 }

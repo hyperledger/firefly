@@ -19,9 +19,9 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type messageAndData struct {
@@ -109,7 +109,7 @@ func (em *eventManager) validateAndPersistBatchContent(ctx context.Context, batc
 	}
 
 	// We require that the batch contains exactly the set of data that is in the messages - no more or less.
-	// While this means an edge case inefficiencly of re-transmission of data when sent in multiple messages,
+	// While this means an edge case inefficiency of re-transmission of data when sent in multiple messages,
 	// that is outweighed by the efficiency it allows in the insertion logic in the majority case.
 	matchedData := make(map[fftypes.UUID]bool)
 	matchedMsgs := make([]*messageAndData, len(batch.Payload.Messages))
@@ -246,6 +246,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 	// If we are sure we wrote the batch, then we do a cached lookup of each in turn - which is efficient
 	// because all of those should be in the cache as we wrote them recently.
 	if em.sentByUs(ctx, batch) {
+		log.L(ctx).Debugf("Batch %s sent by us", batch.ID)
 		allStored, err := em.verifyAlreadyStored(ctx, batch)
 		if err != nil {
 			return false, err
@@ -277,12 +278,24 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 	// Then the same one-shot insert of all the mesages, on the basis they are likely unique (even if
 	// one of the data elements wasn't unique). Likely reasons for exceptions here are idempotent replay,
 	// or a root broadcast where "em.sentByUs" returned false, but we actually sent it.
-	err = em.database.InsertMessages(ctx, batch.Payload.Messages)
+	err = em.database.InsertMessages(ctx, batch.Payload.Messages, func() {
+		// If all is well, update the cache when the runAsGroup closes out.
+		// It isn't safe to do this before the messages themselves are safely in the database, because the aggregator
+		// might wake up and notice the cache before we're written the messages. Meaning we'll clash and override the
+		// confirmed updates with un-confirmed batch messages.
+		for _, mm := range matchedMsgs {
+			em.data.UpdateMessageCache(mm.message, mm.data)
+		}
+	})
 	if err != nil {
 		log.L(ctx).Debugf("Batch message insert optimization failed for batch '%s': %s", batch.ID, err)
 		// Fall back to individual upserts
 		for i, msg := range batch.Payload.Messages {
-			if err = em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting); err != nil {
+			postHookUpdateMessageCache := func() {
+				mm := matchedMsgs[i]
+				em.data.UpdateMessageCache(mm.message, mm.data)
+			}
+			if err = em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting, postHookUpdateMessageCache); err != nil {
 				if err == database.HashMismatch {
 					log.L(ctx).Errorf("Invalid message entry %d in batch'%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
 					return false, nil // This is not retryable. skip this data entry
@@ -293,9 +306,5 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 		}
 	}
 
-	// If all is well, update the cache before we return
-	for _, mm := range matchedMsgs {
-		em.data.UpdateMessageCache(mm.message, mm.data)
-	}
 	return true, nil
 }

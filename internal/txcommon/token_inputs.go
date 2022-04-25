@@ -20,8 +20,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func AddTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
@@ -41,17 +41,15 @@ func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation) (
 	return &pool, nil
 }
 
-func AddTokenPoolActivateInputs(op *fftypes.Operation, poolID *fftypes.UUID, blockchainInfo fftypes.JSONObject) {
+func AddTokenPoolActivateInputs(op *fftypes.Operation, poolID *fftypes.UUID) {
 	op.Input = fftypes.JSONObject{
-		"id":   poolID.String(),
-		"info": blockchainInfo,
+		"id": poolID.String(),
 	}
 }
 
-func RetrieveTokenPoolActivateInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.UUID, fftypes.JSONObject, error) {
+func RetrieveTokenPoolActivateInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.UUID, error) {
 	id, err := fftypes.ParseUUID(ctx, op.Input.GetString("id"))
-	info := op.Input.GetObject("info")
-	return id, info, err
+	return id, err
 }
 
 func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {

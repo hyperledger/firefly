@@ -20,9 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type createPoolData struct {
@@ -30,8 +33,7 @@ type createPoolData struct {
 }
 
 type activatePoolData struct {
-	Pool           *fftypes.TokenPool `json:"pool"`
-	BlockchainInfo fftypes.JSONObject `json:"blockchainInfo"`
+	Pool *fftypes.TokenPool `json:"pool"`
 }
 
 type transferData struct {
@@ -54,7 +56,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		return opCreatePool(op, pool), nil
 
 	case fftypes.OpTypeTokenActivatePool:
-		poolID, blockchainInfo, err := txcommon.RetrieveTokenPoolActivateInputs(ctx, op)
+		poolID, err := txcommon.RetrieveTokenPoolActivateInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
@@ -62,9 +64,9 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		return opActivatePool(op, pool, blockchainInfo), nil
+		return opActivatePool(op, pool), nil
 
 	case fftypes.OpTypeTokenTransfer:
 		transfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
@@ -75,7 +77,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opTransfer(op, pool, transfer), nil
 
@@ -88,12 +90,12 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opApproval(op, pool, approval), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -112,7 +114,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 		if err != nil {
 			return nil, false, err
 		}
-		complete, err = plugin.ActivateTokenPool(ctx, op.ID, data.Pool, data.BlockchainInfo)
+		complete, err = plugin.ActivateTokenPool(ctx, op.ID, data.Pool)
 		return nil, complete, err
 
 	case transferData:
@@ -122,11 +124,11 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 		}
 		switch data.Transfer.Type {
 		case fftypes.TokenTransferTypeMint:
-			return nil, false, plugin.MintTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
+			return nil, false, plugin.MintTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
 		case fftypes.TokenTransferTypeTransfer:
-			return nil, false, plugin.TransferTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
+			return nil, false, plugin.TransferTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
 		case fftypes.TokenTransferTypeBurn:
-			return nil, false, plugin.BurnTokens(ctx, op.ID, data.Pool.ProtocolID, data.Transfer)
+			return nil, false, plugin.BurnTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
@@ -136,11 +138,69 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 		if err != nil {
 			return nil, false, err
 		}
-		return nil, false, plugin.TokensApproval(ctx, op.ID, data.Pool.ProtocolID, data.Approval)
+		return nil, false, plugin.TokensApproval(ctx, op.ID, data.Pool.Locator, data.Approval)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	// Write an event for failed pool operations
+	if op.Type == fftypes.OpTypeTokenCreatePool && update.Status == fftypes.OpStatusFailed {
+		tokenPool, err := txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
+		topic := ""
+		if tokenPool != nil {
+			topic = tokenPool.ID.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypePoolOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenPool.ID == nil {
+			log.L(ctx).Warnf("Could not parse token pool: %s (%+v)", err, op.Input)
+		} else {
+			event.Correlator = tokenPool.ID
+		}
+		if err := am.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	// Write an event for failed transfer operations
+	if op.Type == fftypes.OpTypeTokenTransfer && update.Status == fftypes.OpStatusFailed {
+		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
+		topic := ""
+		if tokenTransfer != nil {
+			topic = tokenTransfer.Pool.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
+			log.L(ctx).Warnf("Could not parse token transfer: %s (%+v)", err, op.Input)
+		} else {
+			event.Correlator = tokenTransfer.LocalID
+		}
+		if err := am.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	// Write an event for failed approval operations
+	if op.Type == fftypes.OpTypeTokenApproval && update.Status == fftypes.OpStatusFailed {
+		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
+		topic := ""
+		if tokenApproval != nil {
+			topic = tokenApproval.Pool.String()
+		}
+		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		if err != nil || tokenApproval.LocalID == nil {
+			log.L(ctx).Warnf("Could not parse token approval: %s (%+v)", err, op.Input)
+		} else {
+			event.Correlator = tokenApproval.LocalID
+		}
+		if err := am.database.InsertEvent(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func opCreatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {
@@ -151,11 +211,11 @@ func opCreatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.Prepa
 	}
 }
 
-func opActivatePool(op *fftypes.Operation, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) *fftypes.PreparedOperation {
+func opActivatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,
-		Data: activatePoolData{Pool: pool, BlockchainInfo: blockchainInfo},
+		Data: activatePoolData{Pool: pool},
 	}
 }
 

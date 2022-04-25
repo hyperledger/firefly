@@ -19,8 +19,8 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -30,18 +30,17 @@ var postContractQuery = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/query",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsPostContractQuery,
 	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
-	JSONInputMask:   []string{"Type"},
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		req := r.Input.(*fftypes.ContractCallRequest)
 		req.Type = fftypes.CallTypeQuery
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req)
+		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req, true)
 	},
 }

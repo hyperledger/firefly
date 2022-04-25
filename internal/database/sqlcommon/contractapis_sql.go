@@ -21,17 +21,17 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
 	contractAPIsColumns = []string{
 		"id",
 		"interface_id",
-		"ledger",
 		"location",
 		"name",
 		"namespace",
@@ -53,12 +53,22 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 	rows, _, err := s.queryTx(ctx, tx,
 		sq.Select("id").
 			From("contractapis").
-			Where(sq.And{sq.Eq{"id": api.ID}}),
+			Where(sq.And{sq.Eq{"namespace": api.Namespace}, sq.Eq{"name": api.Name}}),
 	)
 	if err != nil {
 		return err
 	}
 	existing := rows.Next()
+
+	if existing {
+		var id fftypes.UUID
+		_ = rows.Scan(&id)
+		if api.ID != nil && *api.ID != id {
+			rows.Close()
+			return database.IDMismatch
+		}
+		api.ID = &id // Update on returned object
+	}
 	rows.Close()
 
 	if existing {
@@ -66,7 +76,6 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 			sq.Update("contractapis").
 				Set("id", api.ID).
 				Set("interface_id", api.Interface.ID).
-				Set("ledger", api.Ledger).
 				Set("location", api.Location).
 				Set("name", api.Name).
 				Set("namespace", api.Namespace).
@@ -84,7 +93,6 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 				Values(
 					api.ID,
 					api.Interface.ID,
-					api.Ledger,
 					api.Location,
 					api.Name,
 					api.Namespace,
@@ -108,14 +116,13 @@ func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*ffty
 	err := row.Scan(
 		&api.ID,
 		&api.Interface.ID,
-		&api.Ledger,
 		&api.Location,
 		&api.Name,
 		&api.Namespace,
 		&api.Message,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "contract")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "contract")
 	}
 	return &api, nil
 }

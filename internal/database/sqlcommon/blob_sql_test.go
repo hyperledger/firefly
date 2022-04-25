@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,7 +79,7 @@ func TestBlobsE2EWithDB(t *testing.T) {
 
 }
 
-func TestUpsertBlobFailBegin(t *testing.T) {
+func TestInsertBlobFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertBlob(context.Background(), &fftypes.Blob{})
@@ -87,7 +87,7 @@ func TestUpsertBlobFailBegin(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertBlobFailInsert(t *testing.T) {
+func TestInsertBlobFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
@@ -97,7 +97,7 @@ func TestUpsertBlobFailInsert(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestUpsertBlobFailCommit(t *testing.T) {
+func TestInsertBlobFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -105,6 +105,59 @@ func TestUpsertBlobFailCommit(t *testing.T) {
 	err := s.InsertBlob(context.Background(), &fftypes.Blob{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestInsertBlobsBeginFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertBlobs(context.Background(), []*fftypes.Blob{})
+	assert.Regexp(t, "FF10114", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertBlobsMultiRowOK(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+
+	blob1 := &fftypes.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay1"}
+	blob2 := &fftypes.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay2"}
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
+		AddRow(int64(1001)).
+		AddRow(int64(1002)),
+	)
+	mock.ExpectCommit()
+	err := s.InsertBlobs(context.Background(), []*fftypes.Blob{blob1, blob2})
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertBlobsMultiRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	s.features.MultiRowInsert = true
+	s.fakePSQLInsert = true
+	blob1 := &fftypes.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay1"}
+	mock.ExpectBegin()
+	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertBlobs(context.Background(), []*fftypes.Blob{blob1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
+}
+
+func TestInsertBlobsSingleRowFail(t *testing.T) {
+	s, mock := newMockProvider().init()
+	blob1 := &fftypes.Blob{Hash: fftypes.NewRandB32(), PayloadRef: "pay1"}
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
+	err := s.InsertBlobs(context.Background(), []*fftypes.Blob{blob1})
+	assert.Regexp(t, "FF10116", err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+	s.callbacks.AssertExpectations(t)
 }
 
 func TestGetBlobByIDSelectFail(t *testing.T) {
@@ -145,7 +198,7 @@ func TestGetBlobBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BlobQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
 	_, _, err := s.GetBlobs(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetBlobReadMessageFail(t *testing.T) {

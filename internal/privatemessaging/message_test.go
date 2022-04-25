@@ -81,7 +81,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	localNode := newTestNode("node1", intermediateOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 	mim.On("GetNodeOwnerOrg", pm.ctx).Return(intermediateOrg, nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "org1").Return(intermediateOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
@@ -183,7 +183,7 @@ func TestSendMessageBadGroup(t *testing.T) {
 		},
 		Group: &fftypes.InputGroup{},
 	}, true)
-	assert.Regexp(t, "FF10219", err)
+	assert.Regexp(t, "FF00115", err)
 
 	mim.AssertExpectations(t)
 
@@ -228,7 +228,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
@@ -326,7 +326,7 @@ func TestSealFail(t *testing.T) {
 	})
 
 	err := message.(*messageSender).sendInternal(pm.ctx, methodSend)
-	assert.Regexp(t, "FF10145", err)
+	assert.Regexp(t, "FF00129", err)
 
 }
 
@@ -345,7 +345,7 @@ func TestMessagePrepare(t *testing.T) {
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookup", pm.ctx, "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*fftypes.Identity{localNode}, nil, nil).Once()
@@ -664,7 +664,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == fftypes.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: fftypes.BatchPersisted{
@@ -762,7 +762,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(batchSendData)
 		return op.Type == fftypes.OpTypeDataExchangeSendBatch && *data.Node.ID == *node2.ID
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.sendData(pm.ctx, &fftypes.TransportWrapper{
 		Batch: &fftypes.Batch{

@@ -59,8 +59,8 @@ func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1, false)
-	received2, _ := wsReader(suite.testState.ws2, false)
+	received1 := wsReader(suite.testState.ws1, false)
+	received2 := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
 	poolName := fmt.Sprintf("pool%d", len(pools))
@@ -85,7 +85,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
-	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
 
 	waitForEvent(suite.T(), received2, fftypes.EventTypePoolConfirmed, poolID)
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
@@ -94,7 +94,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
-	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
 
 	approval := &fftypes.TokenApprovalInput{
 		TokenApproval: fftypes.TokenApproval{
@@ -229,8 +229,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	defer suite.testState.done()
 
-	received1, _ := wsReader(suite.testState.ws1, false)
-	received2, _ := wsReader(suite.testState.ws2, false)
+	received1 := wsReader(suite.testState.ws1, false)
+	received2 := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
 	poolName := fmt.Sprintf("pool%d", len(pools))
@@ -249,7 +249,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), "default", poolOut.Namespace)
 	assert.Equal(suite.T(), poolName, poolOut.Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, poolOut.Type)
-	assert.NotEmpty(suite.T(), poolOut.ProtocolID)
+	assert.NotEmpty(suite.T(), poolOut.Locator)
 
 	poolID := poolOut.ID
 
@@ -260,7 +260,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	assert.Equal(suite.T(), "default", pools[0].Namespace)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, pools[0].Type)
-	assert.NotEmpty(suite.T(), pools[0].ProtocolID)
+	assert.NotEmpty(suite.T(), pools[0].Locator)
 
 	approval := &fftypes.TokenApprovalInput{
 		TokenApproval: fftypes.TokenApproval{
@@ -310,7 +310,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 			To:         suite.testState.org2key.Value,
 			Amount:     *fftypes.NewFFBigInt(1),
 			From:       suite.testState.org1key.Value,
-			Key:        suite.testState.org2key.Value,
+			Key:        suite.testState.org1key.Value,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{

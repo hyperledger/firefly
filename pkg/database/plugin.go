@@ -19,18 +19,19 @@ package database
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 var (
 	// HashMismatch sentinel error
-	HashMismatch = i18n.NewError(context.Background(), i18n.MsgHashMismatch)
+	HashMismatch = i18n.NewError(context.Background(), coremsgs.MsgHashMismatch)
 	// IDMismatch sentinel error
-	IDMismatch = i18n.NewError(context.Background(), i18n.MsgIDMismatch)
+	IDMismatch = i18n.NewError(context.Background(), coremsgs.MsgIDMismatch)
 	// DeleteRecordNotFound sentinel error
-	DeleteRecordNotFound = i18n.NewError(context.Background(), i18n.Msg404NotFound)
+	DeleteRecordNotFound = i18n.NewError(context.Background(), coremsgs.Msg404NotFound)
 )
 
 type UpsertOptimization int
@@ -78,10 +79,10 @@ type iMessageCollection interface {
 	// UpsertMessage - Upsert a message, with all the embedded data references.
 	//                 The database layer must ensure that if a record already exists, the hash of that existing record
 	//                 must match the hash of the record that is being inserted.
-	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
+	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization, hooks ...PostCompletionHook) (err error)
 
 	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
-	InsertMessages(ctx context.Context, messages []*fftypes.Message) (err error)
+	InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...PostCompletionHook) (err error)
 
 	// UpdateMessage - Update message
 	UpdateMessage(ctx context.Context, id *fftypes.UUID, update Update) (err error)
@@ -104,6 +105,12 @@ type iMessageCollection interface {
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*fftypes.Message, res *FilterResult, err error)
+
+	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
+	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
+
+	// GetBatchIDsForDataAttachments - an optimized query to retrieve any non-null batch IDs for a list of data IDs that might be attached to messages in batches
+	GetBatchIDsForDataAttachments(ctx context.Context, dataIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
 }
 
 type iDataCollection interface {
@@ -314,8 +321,11 @@ type iGroupCollection interface {
 }
 
 type iNonceCollection interface {
-	// UpsertNonceNext - Upsert a context, assigning zero if not found, or the next nonce if it is
-	UpsertNonceNext(ctx context.Context, context *fftypes.Nonce) (err error)
+	// InsertNonce - Inserts a new nonce. Caller (batch processor) is responsible for ensuring it is the only active thread charge of assigning nonces to this context
+	InsertNonce(ctx context.Context, nonce *fftypes.Nonce) (err error)
+
+	// UpdateNonce - Updates an existing nonce. Caller (batch processor) is responsible for ensuring it is the only active thread charge of assigning nonces to this context
+	UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) (err error)
 
 	// GetNonce - Get a context by hash
 	GetNonce(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Nonce, err error)
@@ -350,6 +360,9 @@ type iNextPinCollection interface {
 type iBlobCollection interface {
 	// InsertBlob - insert a blob
 	InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error)
+
+	// InsertBlobs performs a batch insert of blobs assured to be new records - fails if they already exist, so caller can fall back to upsert individually
+	InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err error)
 
 	// GetBlobMatchingHash - lookup first blob batching a hash
 	GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error)
@@ -386,8 +399,8 @@ type iTokenPoolCollection interface {
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error)
 
-	// GetTokenPoolByID - Get a token pool by protocol ID
-	GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error)
+	// GetTokenPoolByID - Get a token pool by locator
+	GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*fftypes.TokenPool, error)
 
 	// GetTokenPools - Get token pools
 	GetTokenPools(ctx context.Context, filter Filter) ([]*fftypes.TokenPool, *FilterResult, error)
@@ -414,11 +427,11 @@ type iTokenTransferCollection interface {
 	// UpsertTokenTransfer - Upsert a token transfer
 	UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error
 
-	// GetTokenTransfer - Get a token transfer by ID
-	GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
+	// GetTokenTransferByID - Get a token transfer by ID
+	GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
 	GetTokenTransfers(ctx context.Context, filter Filter) ([]*fftypes.TokenTransfer, *FilterResult, error)
@@ -428,11 +441,14 @@ type iTokenApprovalCollection interface {
 	// UpsertTokenApproval - Upsert a token approval
 	UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error
 
-	// GetTokenApproval - Get a token approval by ID
-	GetTokenApproval(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
+	// UpdateTokenApprovals - Update multiple token approvals
+	UpdateTokenApprovals(ctx context.Context, filter Filter, update Update) (err error)
 
-	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenApproval, error)
+	// GetTokenApprovalByID - Get a token approval by ID
+	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error)
+
+	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
+	GetTokenApprovalByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
 	GetTokenApprovals(ctx context.Context, filter Filter) ([]*fftypes.TokenApproval, *FilterResult, error)
@@ -475,8 +491,8 @@ type iContractListenerCollection interface {
 	// GetContractListenerByID - get smart contract subscription by ID
 	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractListener, err error)
 
-	// GetContractListenerByProtocolID - get smart contract subscription by protocol ID
-	GetContractListenerByProtocolID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error)
+	// GetContractListenerByBackendID - get smart contract subscription by backend ID
+	GetContractListenerByBackendID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error)
 
 	// GetContractListeners - get smart contract subscriptions
 	GetContractListeners(ctx context.Context, filter Filter) ([]*fftypes.ContractListener, *FilterResult, error)
@@ -486,13 +502,16 @@ type iContractListenerCollection interface {
 }
 
 type iBlockchainEventCollection interface {
-	// InsertBlockchainEvent - insert an event from an external smart contract
+	// InsertBlockchainEvent - insert an event from the blockchain
 	InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error)
 
-	// GetBlockchainEventByID - get smart contract event by ID
+	// GetBlockchainEventByID - get blockchain event by ID
 	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
 
-	// GetBlockchainEvents - get smart contract events
+	// GetBlockchainEventByID - get blockchain event by protocol ID
+	GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error)
+
+	// GetBlockchainEvents - get blockchain events
 	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*fftypes.BlockchainEvent, *FilterResult, error)
 }
 
@@ -578,9 +597,8 @@ type CollectionName string
 type OrderedUUIDCollectionNS CollectionName
 
 const (
-	CollectionMessages         OrderedUUIDCollectionNS = "messages"
-	CollectionEvents           OrderedUUIDCollectionNS = "events"
-	CollectionBlockchainEvents OrderedUUIDCollectionNS = "blockchainevents"
+	CollectionMessages OrderedUUIDCollectionNS = "messages"
+	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
 // OrderedCollection is a collection that is ordered, and that sequence is the only key
@@ -597,17 +615,20 @@ type UUIDCollectionNS CollectionName
 
 const (
 	CollectionBatches           UUIDCollectionNS = "batches"
+	CollectionBlockchainEvents  UUIDCollectionNS = "blockchainevents"
 	CollectionData              UUIDCollectionNS = "data"
 	CollectionDataTypes         UUIDCollectionNS = "datatypes"
 	CollectionOperations        UUIDCollectionNS = "operations"
 	CollectionSubscriptions     UUIDCollectionNS = "subscriptions"
 	CollectionTransactions      UUIDCollectionNS = "transactions"
 	CollectionTokenPools        UUIDCollectionNS = "tokenpools"
+	CollectionTokenTransfers    UUIDCollectionNS = "tokentransfers"
+	CollectionTokenApprovals    UUIDCollectionNS = "tokenapprovals"
 	CollectionFFIs              UUIDCollectionNS = "ffi"
 	CollectionFFIMethods        UUIDCollectionNS = "ffimethods"
 	CollectionFFIEvents         UUIDCollectionNS = "ffievents"
 	CollectionContractAPIs      UUIDCollectionNS = "contractapis"
-	CollectionContractListeners UUIDCollectionNS = "contractsubscriptions"
+	CollectionContractListeners UUIDCollectionNS = "contractlisteners"
 	CollectionIdentities        UUIDCollectionNS = "identities"
 )
 
@@ -625,9 +646,7 @@ const (
 type UUIDCollection CollectionName
 
 const (
-	CollectionNamespaces     UUIDCollection = "namespaces"
-	CollectionTokenTransfers UUIDCollection = "tokentransfers"
-	CollectionTokenApprovals UUIDCollection = "tokenapprovals"
+	CollectionNamespaces UUIDCollection = "namespaces"
 )
 
 // OtherCollection are odd balls, that don't fit any of the categories above.
@@ -865,10 +884,8 @@ var GroupQueryFactory = &queryFields{
 
 // NonceQueryFactory filter fields for nodes
 var NonceQueryFactory = &queryFields{
-	"context": &StringField{},
-	"nonce":   &Int64Field{},
-	"group":   &Bytes32Field{},
-	"topic":   &StringField{},
+	"hash":  &StringField{},
+	"nonce": &Int64Field{},
 }
 
 // NextPinQueryFactory filter fields for nodes
@@ -895,19 +912,20 @@ var BlobQueryFactory = &queryFields{
 
 // TokenPoolQueryFactory filter fields for token pools
 var TokenPoolQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"type":       &StringField{},
-	"namespace":  &StringField{},
-	"name":       &StringField{},
-	"standard":   &StringField{},
-	"protocolid": &StringField{},
-	"symbol":     &StringField{},
-	"message":    &UUIDField{},
-	"state":      &StringField{},
-	"created":    &TimeField{},
-	"connector":  &StringField{},
-	"tx.type":    &StringField{},
-	"tx.id":      &UUIDField{},
+	"id":        &UUIDField{},
+	"type":      &StringField{},
+	"namespace": &StringField{},
+	"name":      &StringField{},
+	"standard":  &StringField{},
+	"locator":   &StringField{},
+	"symbol":    &StringField{},
+	"decimals":  &Int64Field{},
+	"message":   &UUIDField{},
+	"state":     &StringField{},
+	"created":   &TimeField{},
+	"connector": &StringField{},
+	"tx.type":   &StringField{},
+	"tx.id":     &UUIDField{},
 }
 
 // TokenBalanceQueryFactory filter fields for token balances
@@ -958,7 +976,7 @@ var TokenTransferQueryFactory = &queryFields{
 	"type":            &StringField{},
 }
 
-var TokenApprovalQueryFacory = &queryFields{
+var TokenApprovalQueryFactory = &queryFields{
 	"localid":         &StringField{},
 	"pool":            &UUIDField{},
 	"connector":       &StringField{},
@@ -967,6 +985,8 @@ var TokenApprovalQueryFacory = &queryFields{
 	"operator":        &StringField{},
 	"approved":        &BoolField{},
 	"protocolid":      &StringField{},
+	"subject":         &StringField{},
+	"active":          &BoolField{},
 	"created":         &TimeField{},
 	"tx.type":         &StringField{},
 	"tx.id":           &UUIDField{},
@@ -1003,24 +1023,28 @@ var FFIEventQueryFactory = &queryFields{
 
 // ContractListenerQueryFactory filter fields for contract listeners
 var ContractListenerQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"interface":  &UUIDField{},
-	"namespace":  &StringField{},
-	"protocolid": &StringField{},
-	"created":    &TimeField{},
+	"id":        &UUIDField{},
+	"interface": &UUIDField{},
+	"namespace": &StringField{},
+	"location":  &JSONField{},
+	"topic":     &StringField{},
+	"signature": &StringField{},
+	"backendid": &StringField{},
+	"created":   &TimeField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events
 var BlockchainEventQueryFactory = &queryFields{
-	"id":         &UUIDField{},
-	"source":     &StringField{},
-	"namespace":  &StringField{},
-	"name":       &StringField{},
-	"protocolid": &StringField{},
-	"listener":   &StringField{},
-	"tx.type":    &StringField{},
-	"tx.id":      &UUIDField{},
-	"timestamp":  &TimeField{},
+	"id":              &UUIDField{},
+	"source":          &StringField{},
+	"namespace":       &StringField{},
+	"name":            &StringField{},
+	"protocolid":      &StringField{},
+	"listener":        &StringField{},
+	"tx.type":         &StringField{},
+	"tx.id":           &UUIDField{},
+	"tx.blockchainid": &StringField{},
+	"timestamp":       &TimeField{},
 }
 
 // ContractAPIQueryFactory filter fields for Contract APIs

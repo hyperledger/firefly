@@ -21,7 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 const (
@@ -68,31 +68,31 @@ var (
 // MessageHeader contains all fields that contribute to the hash
 // The order of the serialization mut not change, once released
 type MessageHeader struct {
-	ID     *UUID           `json:"id,omitempty"`
-	CID    *UUID           `json:"cid,omitempty"`
-	Type   MessageType     `json:"type" ffenum:"messagetype"`
-	TxType TransactionType `json:"txtype,omitempty"`
+	ID     *UUID           `ffstruct:"MessageHeader" json:"id,omitempty" ffexcludeinput:"true"`
+	CID    *UUID           `ffstruct:"MessageHeader" json:"cid,omitempty"`
+	Type   MessageType     `ffstruct:"MessageHeader" json:"type" ffenum:"messagetype"`
+	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty"`
 	SignerRef
-	Created   *FFTime       `json:"created,omitempty"`
-	Namespace string        `json:"namespace,omitempty"`
-	Group     *Bytes32      `json:"group,omitempty"`
-	Topics    FFStringArray `json:"topics,omitempty"`
-	Tag       string        `json:"tag,omitempty"`
-	DataHash  *Bytes32      `json:"datahash,omitempty"`
+	Created   *FFTime       `ffstruct:"MessageHeader" json:"created,omitempty" ffexcludeinput:"true"`
+	Namespace string        `ffstruct:"MessageHeader" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Group     *Bytes32      `ffstruct:"MessageHeader" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
+	Topics    FFStringArray `ffstruct:"MessageHeader" json:"topics,omitempty"`
+	Tag       string        `ffstruct:"MessageHeader" json:"tag,omitempty"`
+	DataHash  *Bytes32      `ffstruct:"MessageHeader" json:"datahash,omitempty" ffexcludeinput:"true"`
 }
 
 // Message is the envelope by which coordinated data exchange can happen between parties in the network
 // Data is passed by reference in these messages, and a chain of hashes covering the data and the
 // details of the message, provides a verification against tampering.
 type Message struct {
-	Header    MessageHeader `json:"header"`
-	Hash      *Bytes32      `json:"hash,omitempty"`
-	BatchID   *UUID         `json:"batch,omitempty"`
-	State     MessageState  `json:"state,omitempty" ffenum:"messagestate"`
-	Confirmed *FFTime       `json:"confirmed,omitempty"`
-	Data      DataRefs      `json:"data"`
-	Pins      FFStringArray `json:"pins,omitempty"`
-	Sequence  int64         `json:"-"` // Local database sequence used internally for batch assembly
+	Header    MessageHeader `ffstruct:"Message" json:"header"`
+	Hash      *Bytes32      `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
+	BatchID   *UUID         `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
+	State     MessageState  `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate"`
+	Confirmed *FFTime       `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
+	Data      DataRefs      `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
+	Pins      FFStringArray `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
+	Sequence  int64         `ffstruct:"Message" json:"-"` // Local database sequence used internally for batch assembly
 }
 
 // BatchMessage is the fields in a message record that are assured to be consistent on all parties.
@@ -111,15 +111,14 @@ func (m *Message) BatchMessage() *Message {
 // will be broken out and stored separately during the call.
 type MessageInOut struct {
 	Message
-	InlineData InlineData  `json:"data"`
-	Group      *InputGroup `json:"group,omitempty"`
+	InlineData InlineData  `ffstruct:"MessageInOut" json:"data"`
+	Group      *InputGroup `ffstruct:"MessageInOut" json:"group,omitempty" ffexclude:"postNewMessageBroadcast"`
 }
 
-// InputGroup declares a group in-line for auotmatic resolution, without having to define a group up-front
+// InputGroup declares a group in-line for automatic resolution, without having to define a group up-front
 type InputGroup struct {
-	Name    string        `json:"name,omitempty"`
-	Ledger  *UUID         `json:"ledger,omitempty"`
-	Members []MemberInput `json:"members"`
+	Name    string        `ffstruct:"InputGroup" json:"name,omitempty"`
+	Members []MemberInput `ffstruct:"InputGroup" json:"members"`
 }
 
 // InlineData is an array of data references or values
@@ -130,16 +129,16 @@ type InlineData []*DataRefOrValue
 type DataRefOrValue struct {
 	DataRef
 
-	Validator ValidatorType `json:"validator,omitempty"`
-	Datatype  *DatatypeRef  `json:"datatype,omitempty"`
-	Value     *JSONAny      `json:"value,omitempty"`
-	Blob      *BlobRef      `json:"blob,omitempty"`
+	Validator ValidatorType `ffstruct:"DataRefOrValue" json:"validator,omitempty"`
+	Datatype  *DatatypeRef  `ffstruct:"DataRefOrValue" json:"datatype,omitempty"`
+	Value     *JSONAny      `ffstruct:"DataRefOrValue" json:"value,omitempty"`
+	Blob      *BlobRef      `ffstruct:"DataRefOrValue" json:"blob,omitempty" ffexcludeinput:"true"`
 }
 
 // MessageRef is a lightweight data structure that can be used to refer to a message
 type MessageRef struct {
-	ID   *UUID    `json:"id,omitempty"`
-	Hash *Bytes32 `json:"hash,omitempty"`
+	ID   *UUID    `ffstruct:"MessageRef" json:"id,omitempty"`
+	Hash *Bytes32 `ffstruct:"MessageRef" json:"hash,omitempty"`
 }
 
 func (h *MessageHeader) Hash() *Bytes32 {

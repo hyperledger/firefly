@@ -77,37 +77,28 @@ func TestRetrieveTokenPoolCreateInputsBadID(t *testing.T) {
 	}
 
 	_, err := RetrieveTokenPoolCreateInputs(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestAddTokenPoolActivateInputs(t *testing.T) {
 	op := &fftypes.Operation{}
 	poolID := fftypes.NewUUID()
-	info := fftypes.JSONObject{
-		"some": "info",
-	}
 
-	AddTokenPoolActivateInputs(op, poolID, info)
+	AddTokenPoolActivateInputs(op, poolID)
 	assert.Equal(t, poolID.String(), op.Input.GetString("id"))
-	assert.Equal(t, info, op.Input.GetObject("info"))
 }
 
 func TestRetrieveTokenPoolActivateInputs(t *testing.T) {
 	id := fftypes.NewUUID()
-	info := fftypes.JSONObject{
-		"foo": "bar",
-	}
 	op := &fftypes.Operation{
 		Input: fftypes.JSONObject{
-			"id":   id.String(),
-			"info": info,
+			"id": id.String(),
 		},
 	}
 
-	poolID, newInfo, err := RetrieveTokenPoolActivateInputs(context.Background(), op)
+	poolID, err := RetrieveTokenPoolActivateInputs(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *poolID)
-	assert.Equal(t, info, newInfo)
 }
 
 func TestAddTokenTransferInputs(t *testing.T) {
@@ -157,7 +148,7 @@ func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
 	}
 
 	_, err := RetrieveTokenTransferInputs(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestAddTokenApprovalInputs(t *testing.T) {
@@ -210,5 +201,5 @@ func TestRetrieveTokenApprovalInputsBadID(t *testing.T) {
 	}
 
 	_, err := RetrieveTokenApprovalInputs(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }

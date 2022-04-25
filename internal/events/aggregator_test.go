@@ -23,24 +23,27 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
-	config.Reset()
+	coreconfig.Reset()
+	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
@@ -54,7 +57,10 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
 	ag := newAggregator(ctx, mdi, mbi, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
-	return ag, cancel
+	return ag, func() {
+		cancel()
+		ag.batchCache.Stop()
+	}
 }
 
 func newTestAggregatorWithMetrics() (*aggregator, func()) {
@@ -210,6 +216,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -334,6 +341,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -433,6 +441,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -527,6 +536,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
 	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
@@ -707,6 +717,8 @@ func TestShutdownOnCancel(t *testing.T) {
 	ag.eventPoller.eventNotifier.newEvents <- 12345
 	cancel()
 	<-ag.eventPoller.closed
+	<-ag.rewinder.loop1Done
+	<-ag.rewinder.loop2Done
 }
 
 func TestProcessPinsDBGroupFail(t *testing.T) {
@@ -1762,7 +1774,7 @@ func TestDefinitionBroadcastRejectBadSigner(t *testing.T) {
 
 }
 
-func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) {
+func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
@@ -1775,9 +1787,10 @@ func TestDefinitionBroadcastRejectUnregisteredSignerIdentityClaim(t *testing.T) 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
+	assert.Empty(t, newState)
 
 	mim.AssertExpectations(t)
 	msh.AssertExpectations(t)
@@ -1886,60 +1899,67 @@ func TestRewindOffchainBatchesNoBatches(t *testing.T) {
 }
 
 func TestRewindOffchainBatchesBatchesNoRewind(t *testing.T) {
-	config.Set(config.EventAggregatorBatchSize, 10)
+	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	go ag.batchRewindListener()
-
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-
-	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)
 	assert.Equal(t, int64(0), offset)
 }
 
-func TestRewindOffchainBatchesBatchesRewind(t *testing.T) {
-	config.Set(config.EventAggregatorBatchSize, 10)
+func TestRewindOffchainBatchesAndTXRewind(t *testing.T) {
+	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	defer cancel()
-	go ag.batchRewindListener()
 
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
-	ag.rewindBatches <- *fftypes.NewUUID()
+	batchID := fftypes.NewUUID()
+	ag.rewinder.readyRewinds = map[fftypes.UUID]bool{
+		*batchID: true,
+	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
+		fftypes.NewUUID(),
+	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
-		{Sequence: 12345},
+		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, nil)
 
 	rewind, offset := ag.rewindOffchainBatches()
 	assert.True(t, rewind)
 	assert.Equal(t, int64(12344) /* one before the batch */, offset)
+
 }
 
-func TestRewindOffchainBatchesBatchesError(t *testing.T) {
-	config.Set(config.EventAggregatorBatchSize, 10)
+func TestRewindOffchainBatchesError(t *testing.T) {
+	config.Set(coreconfig.EventAggregatorBatchSize, 10)
 
 	ag, cancel := newTestAggregator()
 	cancel()
 
-	ag.queuedRewinds <- *fftypes.NewUUID()
+	batchID := fftypes.NewUUID()
+	ag.rewinder.readyRewinds = map[fftypes.UUID]bool{
+		*batchID: true,
+	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mockRunAsGroupPassthrough(mdi)
+	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
+		fftypes.NewUUID(),
+	}, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
+		{Sequence: 12345, Batch: fftypes.NewUUID()},
+	}, nil, fmt.Errorf("pop"))
 
-	rewind, _ := ag.rewindOffchainBatches()
+	// We will return 0, as context ended so retry will exit after error
+	rewind, offset := ag.rewindOffchainBatches()
 	assert.False(t, rewind)
+	assert.Equal(t, int64(0), offset)
+
 }
 
 func TestResolveBlobsNoop(t *testing.T) {
@@ -2083,6 +2103,41 @@ func TestProcessWithBatchActionsSuccess(t *testing.T) {
 		return nil
 	})
 	assert.NoError(t, err)
+}
+
+func TestProcessWithBatchRewindsSuccess(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
+		actions.DIDClaimConfirmed("did:firefly:org/test")
+		return nil
+	})
+	assert.NoError(t, err)
+}
+
+func TestProcessWithBatchActionsFail(t *testing.T) {
+	ag, cancel := newTestAggregator()
+	defer cancel()
+
+	mdi := ag.database.(*databasemocks.Plugin)
+	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Once()
+	rag.RunFn = func(a mock.Arguments) {
+		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
+	}
+	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
+		actions.AddPreFinalize(func(ctx context.Context) error { return nil })
+		return nil
+	})
+	assert.EqualError(t, err, "pop")
 }
 
 func TestExtractManifestFail(t *testing.T) {

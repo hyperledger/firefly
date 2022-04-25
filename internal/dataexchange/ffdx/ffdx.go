@@ -26,13 +26,13 @@ import (
 	"sync"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
@@ -46,20 +46,7 @@ type FFDX struct {
 	initialized  bool
 	initMutex    sync.Mutex
 	nodes        []fftypes.JSONObject
-}
-
-type wsEvent struct {
-	Type      msgType            `json:"type"`
-	Sender    string             `json:"sender"`
-	Recipient string             `json:"recipient"`
-	RequestID string             `json:"requestId"`
-	Path      string             `json:"path"`
-	Message   string             `json:"message"`
-	Hash      string             `json:"hash"`
-	Size      int64              `json:"size"`
-	Error     string             `json:"error"`
-	Manifest  string             `json:"manifest"`
-	Info      fftypes.JSONObject `json:"info"`
+	ackChannel   chan *ack
 }
 
 const (
@@ -104,11 +91,17 @@ type transferBlob struct {
 
 type wsAck struct {
 	Action   string `json:"action"`
+	ID       string `json:"id"`
 	Manifest string `json:"manifest,omitempty"` // FireFly core determined that DX should propagate opaquely to TransferResult, if this DX supports delivery acknowledgements.
 }
 
 type dxStatus struct {
 	Status string `json:"status"`
+}
+
+type ack struct {
+	eventID  string
+	manifest string
 }
 
 func (h *FFDX) Name() string {
@@ -118,27 +111,29 @@ func (h *FFDX) Name() string {
 func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.callbacks = callbacks
+	h.ackChannel = make(chan *ack)
 
 	h.needsInit = prefix.GetBool(DataExchangeInitEnabled)
 
-	if prefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
+	if prefix.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
 
 	h.nodes = nodes
 
-	h.client = restclient.New(h.ctx, prefix)
+	h.client = ffresty.New(h.ctx, prefix)
 	h.capabilities = &dataexchange.Capabilities{
 		Manifest: prefix.GetBool(DataExchangeManifestEnabled),
 	}
 
-	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
+	wsConfig := wsclient.GenerateConfigFromPrefix(prefix)
 
 	h.wsconn, err = wsclient.New(ctx, wsConfig, h.beforeConnect, nil)
 	if err != nil {
 		return err
 	}
 	go h.eventLoop()
+	go h.ackLoop()
 	return nil
 }
 
@@ -162,7 +157,7 @@ func (h *FFDX) beforeConnect(ctx context.Context) error {
 			SetResult(&status).
 			Post("/api/v1/init")
 		if err != nil || !res.IsSuccess() {
-			return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+			return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 		}
 		if status.Status != "ready" {
 			return fmt.Errorf("DX returned non-ready status: %s", status.Status)
@@ -177,7 +172,7 @@ func (h *FFDX) checkInitialized(ctx context.Context) error {
 	defer h.initMutex.Unlock()
 
 	if !h.initialized {
-		return i18n.NewError(ctx, i18n.MsgDXNotInitialized)
+		return i18n.NewError(ctx, coremsgs.MsgDXNotInitialized)
 	}
 	return nil
 }
@@ -191,12 +186,12 @@ func (h *FFDX) GetEndpointInfo(ctx context.Context) (peer fftypes.JSONObject, er
 		SetResult(&peer).
 		Get("/api/v1/id")
 	if err != nil || !res.IsSuccess() {
-		return peer, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return peer, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	id := peer.GetString("id")
 	if id == "" {
 		log.L(ctx).Errorf("Invalid DX info: %s", peer.String())
-		return nil, i18n.NewError(ctx, i18n.MsgDXInfoMissingID)
+		return nil, i18n.NewError(ctx, coremsgs.MsgDXInfoMissingID)
 	}
 	h.nodes = append(h.nodes, peer)
 	return peer, nil
@@ -211,12 +206,12 @@ func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error)
 		SetBody(peer).
 		Put(fmt.Sprintf("/api/v1/peers/%s", peer.GetString("id")))
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
 }
 
-func (h *FFDX) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
+func (h *FFDX) UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
 	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
 	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
@@ -224,16 +219,16 @@ func (h *FFDX) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, conte
 		SetResult(&upload).
 		Put(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
 	if err != nil || !res.IsSuccess() {
-		err = restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		err = ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 		return "", nil, -1, err
 	}
 	if hash, err = fftypes.ParseBytes32(ctx, upload.Hash); err != nil {
-		return "", nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", upload.Hash)
+		return "", nil, -1, i18n.WrapError(ctx, err, coremsgs.MsgDXBadResponse, "hash", upload.Hash)
 	}
 	return payloadRef, hash, upload.Size, nil
 }
 
-func (h *FFDX) DownloadBLOB(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
+func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.ReadCloser, err error) {
 	res, err := h.client.R().SetContext(ctx).
 		SetDoNotParseResponse(true).
 		Get(fmt.Sprintf("/api/v1/blobs/%s", payloadRef))
@@ -241,7 +236,7 @@ func (h *FFDX) DownloadBLOB(ctx context.Context, payloadRef string) (content io.
 		if err == nil {
 			_ = res.RawBody().Close()
 		}
-		return nil, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return res.RawBody(), nil
 }
@@ -261,12 +256,12 @@ func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID strin
 		SetResult(&responseData).
 		Post("/api/v1/messages")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
 }
 
-func (h *FFDX) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
+func (h *FFDX) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -281,12 +276,12 @@ func (h *FFDX) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID, pay
 		SetResult(&responseData).
 		Post("/api/v1/transfers")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	return nil
 }
 
-func (h *FFDX) CheckBLOBReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
+func (h *FFDX) CheckBlobReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error) {
 	var responseData responseWithRequestID
 	res, err := h.client.R().SetContext(ctx).
 		SetResult(&responseData).
@@ -295,19 +290,41 @@ func (h *FFDX) CheckBLOBReceived(ctx context.Context, peerID, ns string, id ffty
 		return nil, -1, nil
 	}
 	if err != nil || !res.IsSuccess() {
-		return nil, -1, restclient.WrapRestErr(ctx, res, err, i18n.MsgDXRESTErr)
+		return nil, -1, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgDXRESTErr)
 	}
 	hashString := res.Header().Get(dxHTTPHeaderHash)
 	if hash, err = fftypes.ParseBytes32(ctx, hashString); err != nil {
-		return nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "hash", hashString)
+		return nil, -1, i18n.WrapError(ctx, err, coremsgs.MsgDXBadResponse, "hash", hashString)
 	}
 	sizeString := res.Header().Get(dxHTTPHeaderSize)
 	if sizeString != "" {
 		if size, err = strconv.ParseInt(sizeString, 10, 64); err != nil {
-			return nil, -1, i18n.WrapError(ctx, err, i18n.MsgDXBadResponse, "size", sizeString)
+			return nil, -1, i18n.WrapError(ctx, err, coremsgs.MsgDXBadResponse, "size", sizeString)
 		}
 	}
 	return hash, size, nil
+}
+
+func (h *FFDX) ackLoop() {
+	for {
+		select {
+		case <-h.ctx.Done():
+			log.L(h.ctx).Debugf("Ack loop exiting")
+			return
+		case ack := <-h.ackChannel:
+			// Send the ack
+			ackBytes, _ := json.Marshal(&wsAck{
+				Action:   "ack",
+				ID:       ack.eventID,
+				Manifest: ack.manifest,
+			})
+			err := h.wsconn.Send(h.ctx, ackBytes)
+			if err != nil {
+				// Note we only get the error in the case we're closing down, so no need to retry
+				log.L(h.ctx).Warnf("Ack loop send failed: %s", err)
+			}
+		}
+	}
 }
 
 func (h *FFDX) eventLoop() {
@@ -333,72 +350,7 @@ func (h *FFDX) eventLoop() {
 				continue // Swallow this and move on
 			}
 			l.Debugf("Received %s event from DX sender=%s", msg.Type, msg.Sender)
-			var manifest string
-			switch msg.Type {
-			case messageFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
-					Error: msg.Error,
-					Info:  msg.Info,
-				})
-			case messageDelivered:
-				status := fftypes.OpStatusSucceeded
-				if h.capabilities.Manifest {
-					status = fftypes.OpStatusPending
-				}
-				err = h.callbacks.TransferResult(msg.RequestID, status, fftypes.TransportStatusUpdate{
-					Info: msg.Info,
-				})
-			case messageAcknowledged:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-					Manifest: msg.Manifest,
-					Info:     msg.Info,
-				})
-			case messageReceived:
-				manifest, err = h.callbacks.MessageReceived(msg.Sender, []byte(msg.Message))
-			case blobFailed:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusFailed, fftypes.TransportStatusUpdate{
-					Error: msg.Error,
-					Info:  msg.Info,
-				})
-			case blobDelivered:
-				status := fftypes.OpStatusSucceeded
-				if h.capabilities.Manifest {
-					status = fftypes.OpStatusPending
-				}
-				err = h.callbacks.TransferResult(msg.RequestID, status, fftypes.TransportStatusUpdate{
-					Info: msg.Info,
-				})
-			case blobReceived:
-				var hash *fftypes.Bytes32
-				hash, err = fftypes.ParseBytes32(ctx, msg.Hash)
-				if err != nil {
-					l.Errorf("Invalid hash received in DX event: '%s'", msg.Hash)
-					err = nil // still confirm the message
-				} else {
-					err = h.callbacks.PrivateBLOBReceived(msg.Sender, *hash, msg.Size, msg.Path)
-				}
-			case blobAcknowledged:
-				err = h.callbacks.TransferResult(msg.RequestID, fftypes.OpStatusSucceeded, fftypes.TransportStatusUpdate{
-					Hash: msg.Hash,
-					Info: msg.Info,
-				})
-			default:
-				l.Errorf("Message unexpected: %s", msg.Type)
-			}
-
-			// Send the ack - as long as we didn't fail processing (which should only happen in core
-			// if core itself is shutting down)
-			if err == nil {
-				ackBytes, _ := json.Marshal(&wsAck{
-					Action:   "commit",
-					Manifest: manifest,
-				})
-				err = h.wsconn.Send(ctx, ackBytes)
-			}
-			if err != nil {
-				l.Errorf("Event loop exiting: %s", err)
-				return
-			}
+			h.dispatchEvent(&msg)
 		}
 	}
 }

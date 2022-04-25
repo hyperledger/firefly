@@ -20,12 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.TransactionRef) *fftypes.BlockchainEvent {
+func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.BlockchainTransactionRef) *fftypes.BlockchainEvent {
 	ev := &fftypes.BlockchainEvent{
 		ID:         fftypes.NewUUID(),
 		Namespace:  ns,
@@ -45,7 +45,7 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 
 func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*fftypes.ContractListener, error) {
 	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*fftypes.ContractListener, error) {
-		return em.database.GetContractListenerByProtocolID(ctx, protocolID)
+		return em.database.GetContractListenerByBackendID(ctx, protocolID)
 	})
 }
 
@@ -86,8 +86,16 @@ func (em *eventManager) getTopicForChainListener(ctx context.Context, listenerID
 	return topic, nil
 }
 
-func (em *eventManager) persistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
-	if err := em.database.InsertBlockchainEvent(ctx, chainEvent); err != nil {
+func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+	if existing, err := em.database.GetBlockchainEventByProtocolID(ctx, chainEvent.Namespace, chainEvent.Listener, chainEvent.ProtocolID); err != nil {
+		return err
+	} else if existing != nil {
+		log.L(ctx).Debugf("Ignoring duplicate blockchain event %s", chainEvent.ProtocolID)
+		// Return the ID of the existing event
+		chainEvent.ID = existing.ID
+		return nil
+	}
+	if err := em.txHelper.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
 	topic, err := em.getTopicForChainListener(ctx, chainEvent.Listener)
@@ -119,8 +127,10 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 				return nil // no retry
 			}
 
-			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, nil)
-			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, &fftypes.BlockchainTransactionRef{
+				BlockchainID: event.BlockchainTXID,
+			})
+			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
 			em.emitBlockchainEventMetric(&event.Event)

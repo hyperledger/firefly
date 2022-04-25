@@ -140,18 +140,16 @@ func (suite *FabricContractTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 
-	received1, changes1 := wsReader(suite.testState.ws1, true)
+	received1 := wsReader(suite.testState.ws1, true)
 
 	sub := CreateContractListener(suite.T(), suite.testState.client1, assetCreatedEvent, &fftypes.JSONObject{
 		"channel":   "firefly",
 		"chaincode": suite.chaincodeName,
 	})
 
-	<-changes1 // only expect database change events
-
 	subs := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(subs))
-	assert.Equal(suite.T(), sub.ProtocolID, subs[0].ProtocolID)
+	assert.Equal(suite.T(), sub.BackendID, subs[0].BackendID)
 
 	assetName := nanoid.New()
 	location := map[string]interface{}{
@@ -172,7 +170,6 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	assert.NoError(suite.T(), err)
 
 	<-received1
-	<-changes1 // also expect database change events
 
 	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime, sub.ID)
 	assert.Equal(suite.T(), 1, len(events))
@@ -196,5 +193,4 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	subs = GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 0, len(subs))
 
-	<-changes1 // only expect database change events
 }

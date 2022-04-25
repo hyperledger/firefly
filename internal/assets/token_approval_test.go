@@ -39,7 +39,7 @@ func TestGetTokenApprovals(t *testing.T) {
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	fb := database.TokenApprovalQueryFacory.NewFilter(context.Background())
+	fb := database.TokenApprovalQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	mdi.On("GetTokenApprovals", context.Background(), f).Return([]*fftypes.TokenApproval{}, nil, nil)
 	_, _, err := am.GetTokenApprovals(context.Background(), "ns1", f)
@@ -59,8 +59,8 @@ func TestTokenApprovalSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -74,7 +74,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.NoError(t, err)
@@ -97,8 +97,8 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -112,7 +112,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.NoError(t, err)
@@ -178,7 +178,7 @@ func TestApprovalUnknownConnectorBadNamespace(t *testing.T) {
 	am.tokens = make(map[string]tokens.Plugin)
 
 	_, err := am.TokenApproval(context.Background(), "", approval, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 }
 
 func TestApprovalBadConnector(t *testing.T) {
@@ -223,9 +223,9 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 	f.Limit(1).Count(true)
 	tokenPools := []*fftypes.TokenPool{
 		{
-			Name:       "pool1",
-			ProtocolID: "F1",
-			State:      fftypes.TokenPoolStateConfirmed,
+			Name:    "pool1",
+			Locator: "F1",
+			State:   fftypes.TokenPoolStateConfirmed,
 		},
 	}
 	totalCount := int64(1)
@@ -243,7 +243,7 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == tokenPools[0] && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.NoError(t, err)
@@ -318,8 +318,8 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStatePending,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStatePending,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -366,8 +366,8 @@ func TestApprovalFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -381,7 +381,7 @@ func TestApprovalFail(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(fmt.Errorf("pop"))
+	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.EqualError(t, err, "pop")
@@ -404,8 +404,8 @@ func TestApprovalTransactionFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -435,8 +435,8 @@ func TestApprovalOperationsFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -465,8 +465,8 @@ func TestTokenApprovalConfirm(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		ProtocolID: "F1",
-		State:      fftypes.TokenPoolStateConfirmed,
+		Locator: "F1",
+		State:   fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -482,7 +482,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
 		data := op.Data.(approvalData)
 		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
-	})).Return(nil)
+	})).Return(nil, nil)
 
 	msa.On("WaitForTokenApproval", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {

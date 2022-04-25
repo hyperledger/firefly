@@ -22,8 +22,9 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []interface{}, preconditions ...sq.Sqlizer) (sq.SelectBuilder, sq.Sqlizer, *database.FilterInfo, error) {
@@ -101,11 +102,11 @@ func (s *SQLCommon) buildUpdate(sel sq.UpdateBuilder, update database.Update, ty
 	return sel, nil
 }
 
-func (s *SQLCommon) filterUpdate(ctx context.Context, tableName string, update sq.UpdateBuilder, filter database.Filter, typeMap map[string]string) (sq.UpdateBuilder, error) {
+func (s *SQLCommon) filterUpdate(ctx context.Context, update sq.UpdateBuilder, filter database.Filter, typeMap map[string]string) (sq.UpdateBuilder, error) {
 	fi, err := filter.Finalize()
 	var fop sq.Sqlizer
 	if err == nil {
-		fop, err = s.filterOp(ctx, tableName, fi, typeMap)
+		fop, err = s.filterOp(ctx, "", fi, typeMap)
 	}
 	if err != nil {
 		return update, err
@@ -208,7 +209,7 @@ func (s *SQLCommon) filterOp(ctx context.Context, tableName string, op *database
 	case database.FilterOpLte:
 		return sq.LtOrEq{s.mapField(tableName, op.Field, tm): op.Value}, nil
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnsupportedSQLOpInFilter, op.Op)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnsupportedSQLOpInFilter, op.Op)
 	}
 }
 

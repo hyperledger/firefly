@@ -25,14 +25,15 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
@@ -66,7 +67,7 @@ func testFFIMethod() *fftypes.FFIMethod {
 }
 
 func resetConf() {
-	config.Reset()
+	coreconfig.Reset()
 	e := &Ethereum{}
 	e.InitPrefix(utConfPrefix)
 }
@@ -120,7 +121,7 @@ func TestInitMissingInstance(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
@@ -131,7 +132,7 @@ func TestInitMissingTopic(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
@@ -170,8 +171,8 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 		})
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, httpURL)
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -209,12 +210,12 @@ func TestWSInitFail(t *testing.T) {
 	defer cancel()
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "!!!://")
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "!!!://")
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.Regexp(t, "FF10162", err)
+	assert.Regexp(t, "FF00149", err)
 
 }
 
@@ -250,8 +251,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -299,8 +300,8 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 	)
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -333,8 +334,8 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 		})
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -370,8 +371,8 @@ func TestInitOldInstancePathError(t *testing.T) {
 	)
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -393,9 +394,9 @@ func TestStreamQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -421,9 +422,9 @@ func TestStreamCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -449,9 +450,9 @@ func TestStreamUpdateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -479,9 +480,9 @@ func TestSubQueryError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -511,9 +512,9 @@ func TestSubQueryCreateError(t *testing.T) {
 		httpmock.NewStringResponder(500, `pop`))
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPConfigRetryEnabled, false)
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
@@ -623,8 +624,37 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
 
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10111.*pop", err)
+
+}
+
+func TestSubmitBatchPinError(t *testing.T) {
+
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(fftypes.NewRandB32())
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
+			"error": "Unknown error",
+		}))
+
+	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
+
+	assert.Regexp(t, "FF10111.*Unknown error", err)
 
 }
 
@@ -1067,6 +1097,7 @@ func TestEventLoopContextCancelled(t *testing.T) {
 	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+	wsm.AssertExpectations(t)
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
@@ -1079,19 +1110,24 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+	wsm.AssertExpectations(t)
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
 	e, cancel := newTestEthereum()
-	cancel()
+	s := make(chan []byte, 1)
+	s <- []byte(`[]`)
 	r := make(chan []byte)
 	wsm := e.wsconn.(*wsmocks.WSClient)
-	close(r)
-	wsm.On("Receive").Return((<-chan []byte)(r))
-	wsm.On("Send", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	wsm.On("Receive").Return((<-chan []byte)(s))
+	wsm.On("Send", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+		go cancel()
+		close(r)
+	}).Return(fmt.Errorf("pop"))
 	wsm.On("Close").Return()
 	e.closed = make(chan struct{})
 	e.eventLoop() // we're simply looking for it exiting
+	wsm.AssertExpectations(t)
 }
 
 func TestHandleReceiptTXSuccess(t *testing.T) {
@@ -1130,6 +1166,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
   }`)
 
 	em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
@@ -1138,8 +1175,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = e.handleReceipt(context.Background(), reply)
-	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
 
 }
 
@@ -1170,6 +1206,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
+		e,
 		operationID,
 		fftypes.OpStatusFailed,
 		"",
@@ -1187,7 +1224,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	<-done
 }
 
-func TestHandleReceiptNoRequestID(t *testing.T) {
+func TestHandleMsgBatchBadDAta(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
@@ -1201,8 +1238,7 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = e.handleReceipt(context.Background(), reply)
-	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
 }
 
 func TestHandleReceiptBadRequestID(t *testing.T) {
@@ -1219,8 +1255,7 @@ func TestHandleReceiptBadRequestID(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
-	err = e.handleReceipt(context.Background(), reply)
-	assert.NoError(t, err)
+	e.handleReceipt(context.Background(), reply)
 }
 
 func TestFormatNil(t *testing.T) {
@@ -1386,7 +1421,7 @@ func TestDeleteSubscription(t *testing.T) {
 	}
 
 	sub := &fftypes.ContractListener{
-		ProtocolID: "sb-1",
+		BackendID: "sb-1",
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
@@ -1411,7 +1446,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	}
 
 	sub := &fftypes.ContractListener{
-		ProtocolID: "sb-1",
+		BackendID: "sb-1",
 	}
 
 	httpmock.RegisterResponder("DELETE", `http://localhost:12345/subscriptions/sb-1`,
@@ -1518,7 +1553,7 @@ func TestHandleMessageContractEventNoTimestamp(t *testing.T) {
 	err := json.Unmarshal(data.Bytes(), &events)
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
-	assert.Regexp(t, "FF10165", err)
+	assert.Regexp(t, "FF00136", err)
 }
 
 func TestHandleMessageContractEventError(t *testing.T) {
@@ -1772,16 +1807,39 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 	assert.Regexp(t, "invalid character", err)
 }
 
-func TestValidateContractLocation(t *testing.T) {
+func TestNormalizeContractLocation(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	location := &Location{
-		Address: "0x12345",
+		Address: "3081D84FD367044F4ED453F2024709242470388C",
 	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.ValidateContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	result, err := e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
 	assert.NoError(t, err)
+	assert.Equal(t, "0x3081d84fd367044f4ed453f2024709242470388c", result.JSONObject()["address"])
+}
+
+func TestNormalizeContractLocationInvalid(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{
+		Address: "bad",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Regexp(t, "FF10141", err)
+}
+
+func TestNormalizeContractLocationBlank(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	location := &Location{}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	_, err = e.NormalizeContractLocation(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes))
+	assert.Regexp(t, "FF10310", err)
 }
 
 func TestGetContractAddressBadJSON(t *testing.T) {
@@ -1797,12 +1855,12 @@ func TestGetContractAddressBadJSON(t *testing.T) {
 	)
 
 	resetConf()
-	utEthconnectConf.Set(restclient.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(restclient.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utEthconnectConf.Set(EthconnectConfigInstancePath, "0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	e.client = restclient.New(e.ctx, utEthconnectConf)
+	e.client = ffresty.New(e.ctx, utEthconnectConf)
 
 	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
 
@@ -2381,4 +2439,67 @@ func TestGetFFIType(t *testing.T) {
 	assert.Equal(t, e.getFFIType("string[]"), "array")
 	assert.Equal(t, e.getFFIType("tuple"), "object")
 	assert.Equal(t, e.getFFIType("foobar"), "")
+}
+
+func TestGenerateEventSignature(t *testing.T) {
+	e, _ := newTestEthereum()
+	complexParam := fftypes.JSONObject{
+		"type": "object",
+		"details": fftypes.JSONObject{
+			"type": "tuple",
+		},
+		"properties": fftypes.JSONObject{
+			"prop1": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 0,
+				},
+			},
+			"prop2": fftypes.JSONObject{
+				"type": "integer",
+				"details": fftypes.JSONObject{
+					"type":  "uint256",
+					"index": 1,
+				},
+			},
+		},
+	}.String()
+
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "y",
+				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+			},
+			{
+				Name:   "z",
+				Schema: fftypes.JSONAnyPtr(complexParam),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "Changed(uint256,uint256,(uint256,uint256))", signature)
+}
+
+func TestGenerateEventSignatureInvalid(t *testing.T) {
+	e, _ := newTestEthereum()
+	event := &fftypes.FFIEventDefinition{
+		Name: "Changed",
+		Params: []*fftypes.FFIParam{
+			{
+				Name:   "x",
+				Schema: fftypes.JSONAnyPtr(`{"!bad": "bad"`),
+			},
+		},
+	}
+
+	signature := e.GenerateEventSignature(context.Background(), event)
+	assert.Equal(t, "", signature)
 }

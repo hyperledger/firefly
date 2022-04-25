@@ -12,20 +12,6 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// SharedStorageBLOBDownloaded provides a mock function with given fields: hash, size, payloadRef
-func (_m *Callbacks) SharedStorageBLOBDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) error {
-	ret := _m.Called(hash, size, payloadRef)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(fftypes.Bytes32, int64, string) error); ok {
-		r0 = rf(hash, size, payloadRef)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // SharedStorageBatchDownloaded provides a mock function with given fields: ns, payloadRef, data
 func (_m *Callbacks) SharedStorageBatchDownloaded(ns string, payloadRef string, data []byte) (*fftypes.UUID, error) {
 	ret := _m.Called(ns, payloadRef, data)
@@ -47,4 +33,9 @@ func (_m *Callbacks) SharedStorageBatchDownloaded(ns string, payloadRef string, 
 	}
 
 	return r0, r1
+}
+
+// SharedStorageBlobDownloaded provides a mock function with given fields: hash, size, payloadRef
+func (_m *Callbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) {
+	_m.Called(hash, size, payloadRef)
 }

@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -33,20 +33,19 @@ var postData = &oapispec.Route{
 	Path:   "namespaces/{ns}/data",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams: nil,
 	FormParams: []*oapispec.FormParam{
-		{Name: "autometa", Description: i18n.MsgTBD},
-		{Name: "metadata", Description: i18n.MsgTBD},
-		{Name: "validator", Description: i18n.MsgTBD},
-		{Name: "datatype.name", Description: i18n.MsgTBD},
-		{Name: "datatype.version", Description: i18n.MsgTBD},
+		{Name: "autometa", Description: coremsgs.APIParamsAutometa},
+		{Name: "metadata", Description: coremsgs.APIParamsMetadata},
+		{Name: "validator", Description: coremsgs.APIParamsValidator},
+		{Name: "datatype.name", Description: coremsgs.APIParamsDatatypeName},
+		{Name: "datatype.version", Description: coremsgs.APIParamsDatatypeVersion},
 	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsPostData,
 	JSONInputValue:  func() interface{} { return &fftypes.DataRefOrValue{} },
-	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
@@ -74,7 +73,7 @@ var postData = &oapispec.Route{
 			}
 			data.Value = fftypes.JSONAnyPtr(metadata)
 		}
-		output, err = getOr(r.Ctx).Data().UploadBLOB(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
+		output, err = getOr(r.Ctx).Data().UploadBlob(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err
 	},
 }

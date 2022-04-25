@@ -22,13 +22,15 @@ import (
 	"math"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -72,12 +74,12 @@ type downloadWork struct {
 
 type Callbacks interface {
 	SharedStorageBatchDownloaded(ns string, payloadRef string, data []byte) (batchID *fftypes.UUID, err error)
-	SharedStorageBLOBDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) error
+	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string)
 }
 
 func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
 	if di == nil || dx == nil || ss == nil || cb == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 
 	dmCtx, cancelFunc := context.WithCancel(ctx)
@@ -89,15 +91,15 @@ func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorag
 		dataexchange:               dx,
 		operations:                 om,
 		callbacks:                  cb,
-		broadcastBatchPayloadLimit: config.GetByteSize(config.BroadcastBatchPayloadLimit),
-		workerCount:                config.GetInt(config.DownloadWorkerCount),
-		retryMaxAttempts:           config.GetInt(config.DownloadRetryMaxAttempts),
-		retryInitDelay:             config.GetDuration(config.DownloadRetryInitDelay),
-		retryMaxDelay:              config.GetDuration(config.DownloadRetryMaxDelay),
-		retryFactor:                config.GetFloat64(config.DownloadRetryFactor),
+		broadcastBatchPayloadLimit: config.GetByteSize(coreconfig.BroadcastBatchPayloadLimit),
+		workerCount:                config.GetInt(coreconfig.DownloadWorkerCount),
+		retryMaxAttempts:           config.GetInt(coreconfig.DownloadRetryMaxAttempts),
+		retryInitDelay:             config.GetDuration(coreconfig.DownloadRetryInitDelay),
+		retryMaxDelay:              config.GetDuration(coreconfig.DownloadRetryMaxDelay),
+		retryFactor:                config.GetFloat64(coreconfig.DownloadRetryFactor),
 	}
 	// Work queue is twice the size of the worker count
-	workQueueLength := config.GetInt(config.DownloadWorkerQueueLength)
+	workQueueLength := config.GetInt(coreconfig.DownloadWorkerQueueLength)
 	if workQueueLength <= 0 {
 		workQueueLength = 2 * dm.workerCount
 	}

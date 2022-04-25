@@ -46,6 +46,29 @@ func (_m *Bridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UU
 	return r0, r1
 }
 
+// WaitForInvokeOperation provides a mock function with given fields: ctx, ns, id, send
+func (_m *Bridge) WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Operation, error) {
+	ret := _m.Called(ctx, ns, id, send)
+
+	var r0 *fftypes.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.Operation); ok {
+		r0 = rf(ctx, ns, id, send)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) error); ok {
+		r1 = rf(ctx, ns, id, send)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // WaitForMessage provides a mock function with given fields: ctx, ns, id, send
 func (_m *Bridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Message, error) {
 	ret := _m.Called(ctx, ns, id, send)

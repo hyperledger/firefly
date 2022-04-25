@@ -24,9 +24,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -67,7 +67,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -107,7 +107,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
 		assert.Equal(t, `{"filename":"anything"}`, string(*d.Value))
 		assert.Equal(t, fftypes.ValidatorTypeJSON, d.Validator)
 		assert.Equal(t, "fileinfo", d.Datatype.Name)
@@ -141,7 +141,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.MatchedBy(func(d *fftypes.DataRefOrValue) bool {
 		assert.Equal(t, `"string metadata"`, string(*d.Value))
 		assert.Equal(t, "", string(d.Validator))
 		assert.Nil(t, d.Datatype)
@@ -174,7 +174,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.Anything, mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.Anything, mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -201,7 +201,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -221,7 +221,7 @@ func TestPostDataBadForm(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBLOB", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.DataRefOrValue"), mock.AnythingOfType("*fftypes.Multipart"), false).
 		Return(&fftypes.Data{}, nil)
 	r.ServeHTTP(res, req)
 

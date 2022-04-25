@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftypes.MessageInOut) error {
@@ -34,7 +35,7 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 			return err
 		}
 		if group == nil {
-			return i18n.NewError(ctx, i18n.MsgGroupNotFound, in.Header.Group)
+			return i18n.NewError(ctx, coremsgs.MsgGroupNotFound, in.Header.Group)
 		}
 		// We have a group already resolved
 		return nil
@@ -77,7 +78,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *ff
 func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
-		node, retryable, err = pm.identity.CachedIdentityLookup(ctx, nodeInput)
+		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, nodeInput)
 	} else {
 		// Find any node owned by this organization
 		inputIdentityDebugInfo := fmt.Sprintf("%s (%s)", identity.DID, identity.ID)
@@ -90,7 +91,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.I
 				// This identity has a parent, maybe that org owns a node
 				identity, err = pm.identity.CachedIdentityLookupByID(ctx, identity.Parent)
 			default:
-				return nil, i18n.NewError(ctx, i18n.MsgNodeNotFoundInOrg, inputIdentityDebugInfo)
+				return nil, i18n.NewError(ctx, coremsgs.MsgNodeNotFoundInOrg, inputIdentityDebugInfo)
 			}
 		}
 	}
@@ -98,7 +99,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.I
 		return nil, err
 	}
 	if node == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeNotFound, nodeInput)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeNotFound, nodeInput)
 	}
 	return node, nil
 }
@@ -114,12 +115,11 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	gi = &fftypes.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
 		Name:      in.Group.Name,
-		Ledger:    in.Group.Ledger,
 		Members:   make(fftypes.Members, len(in.Group.Members)),
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the identity
-		identity, _, err := pm.identity.CachedIdentityLookup(ctx, rInput.Identity)
+		identity, _, err := pm.identity.CachedIdentityLookupMustExist(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +165,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *ffty
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, i18n.NewError(ctx, i18n.MsgLocalNodeResolveFailed)
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalNodeResolveFailed)
 	}
 	pm.localNodeID = nodes[0].ID
 	return pm.localNodeID, nil

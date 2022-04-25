@@ -19,53 +19,16 @@ package sqlcommon
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
-
-func (s *SQLCommon) getCaseQueriesByInterval(ns string, intervals []fftypes.ChartHistogramInterval) (caseQueries []sq.CaseBuilder) {
-	for _, interval := range intervals {
-		caseQueries = append(caseQueries, sq.Case().
-			When(
-				sq.And{
-					// Querying by 'timestamp' field for blockchain events
-					// If more tables are supported that have no "type" field,
-					// and a different date field name,
-					// this method will need to be refactored
-					sq.GtOrEq{"timestamp": interval.StartTime},
-					sq.Lt{"timestamp": interval.EndTime},
-					sq.Eq{"namespace": ns},
-				},
-				"1",
-			).
-			Else("0"))
-	}
-
-	return caseQueries
-}
-
-func (s *SQLCommon) getCaseQueriesByType(ns string, dataTypes []string, interval fftypes.ChartHistogramInterval, typeColName string) (caseQueries []sq.CaseBuilder) {
-	for _, dataType := range dataTypes {
-		caseQueries = append(caseQueries, sq.Case().
-			When(
-				sq.And{
-					sq.GtOrEq{"created": interval.StartTime},
-					sq.Lt{"created": interval.EndTime},
-					sq.Eq{typeColName: dataType},
-					sq.Eq{"namespace": ns},
-				},
-				"1",
-			).
-			Else("0"))
-	}
-
-	return caseQueries
-}
 
 func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection database.CollectionName) (tableName string, fieldMap map[string]string, err error) {
 	switch collection {
@@ -82,153 +45,61 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 	case database.CollectionName(database.CollectionBlockchainEvents):
 		return "blockchainevents", blockchainEventFilterFieldMap, nil
 	default:
-		return "", nil, i18n.NewError(ctx, i18n.MsgUnsupportedCollection, collection)
+		return "", nil, i18n.NewError(ctx, coremsgs.MsgUnsupportedCollection, collection)
 	}
 }
 
-func (s *SQLCommon) getDistinctTypesFromTable(ctx context.Context, tableName string, fieldMap map[string]string) ([]string, error) {
-	if _, ok := fieldMap["type"]; !ok {
-		return []string{}, nil
-	}
-	qb := sq.Select(fieldMap["type"]).Distinct().From(tableName)
-
-	rows, _, err := s.query(ctx, qb.From(tableName))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var dataTypes []string
-	for rows.Next() {
-		var dataType string
-		err := rows.Scan(&dataType)
-		if err != nil {
-			return []string{}, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, tableName)
-		}
-		dataTypes = append(dataTypes, dataType)
-	}
-	rows.Close()
-
-	return dataTypes, nil
-}
-
-func (s *SQLCommon) getBucketTotal(typeBuckets []*fftypes.ChartHistogramType) (string, error) {
-	total := 0
-	for _, typeBucket := range typeBuckets {
-		typeBucketInt, err := strconv.Atoi(typeBucket.Count)
-		if err != nil {
-			return "", err
-		}
-		total += typeBucketInt
-	}
-	return strconv.Itoa(total), nil
-}
-
-func (s *SQLCommon) histogramResultWithTypes(ctx context.Context, rows *sql.Rows, cols []*fftypes.ChartHistogramType, tableName string) ([]*fftypes.ChartHistogramType, error) {
-	results := []interface{}{}
-
-	for i := range cols {
-		results = append(results, &cols[i].Count)
-	}
-	err := rows.Scan(results...)
-	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgDBReadErr, tableName)
-	}
-
-	return cols, nil
-}
-
-func (s *SQLCommon) histogramResultNoType(ctx context.Context, rows *sql.Rows, cols []*fftypes.ChartHistogram, tableName string) ([]*fftypes.ChartHistogram, error) {
-	results := []interface{}{}
-
-	for i := range cols {
-		results = append(results, &cols[i].Count)
-	}
-	err := rows.Scan(results...)
-	if err != nil {
-		return nil, i18n.NewError(ctx, i18n.MsgDBReadErr, tableName)
-	}
-
-	return cols, nil
-}
-
-func (s *SQLCommon) getHistogramNoTypes(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, tableName string) (histogramList []*fftypes.ChartHistogram, err error) {
-	qb := sq.Select()
-
-	for i, caseQuery := range s.getCaseQueriesByInterval(ns, intervals) {
-		query, args, _ := caseQuery.ToSql()
-
-		histogramList = append(histogramList, &fftypes.ChartHistogram{
-			Count:     "0",
-			Timestamp: intervals[i].StartTime,
-			Types:     make([]*fftypes.ChartHistogramType, 0),
-		})
-
-		qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), fmt.Sprintf("case_%d", i)))
-
-	}
-
-	rows, _, err := s.query(ctx, qb.From(tableName))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return histogramList, nil
-	}
-
-	return s.histogramResultNoType(ctx, rows, histogramList, tableName)
-}
-
-func (s *SQLCommon) getHistogramWithTypes(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, dataTypes []string, fieldMap map[string]string, tableName string) (histogramList []*fftypes.ChartHistogram, err error) {
+func (s *SQLCommon) getSelectStatements(ns string, tableName string, intervals []fftypes.ChartHistogramInterval, timestampKey string, sql sq.SelectBuilder) (queries []sq.SelectBuilder) {
 	for _, interval := range intervals {
-		qb := sq.Select()
-		histogramTypes := make([]*fftypes.ChartHistogramType, 0)
-
-		for i, caseQuery := range s.getCaseQueriesByType(ns, dataTypes, interval, fieldMap["type"]) {
-			query, args, _ := caseQuery.ToSql()
-			histogramTypes = append(histogramTypes, &fftypes.ChartHistogramType{
-				Count: "",
-				Type:  dataTypes[i],
-			})
-
-			qb = qb.Column(sq.Alias(sq.Expr("SUM("+query+")", args...), fmt.Sprintf("case_%d", i)))
-		}
-
-		rows, _, err := s.query(ctx, qb.From(tableName))
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-
-		if rows.Next() {
-			hist, err := s.histogramResultWithTypes(ctx, rows, histogramTypes, tableName)
-			rows.Close()
-			if err != nil {
-				return nil, err
-			}
-
-			total, err := s.getBucketTotal(hist)
-			if err != nil {
-				return nil, err
-			}
-
-			histogramList = append(histogramList, &fftypes.ChartHistogram{
-				Count:     total,
-				Timestamp: interval.StartTime,
-				Types:     hist,
-			})
-		} else {
-			histogramList = append(histogramList, &fftypes.ChartHistogram{
-				Count:     "0",
-				Timestamp: interval.StartTime,
-				Types:     make([]*fftypes.ChartHistogramType, 0),
-			})
-		}
+		queries = append(queries, sql.
+			From(tableName).
+			Where(
+				sq.And{
+					sq.GtOrEq{timestampKey: interval.StartTime},
+					sq.Lt{timestampKey: interval.EndTime},
+					sq.Eq{"namespace": ns},
+				}).
+			OrderBy(timestampKey).
+			Limit(uint64(config.GetInt(coreconfig.HistogramsMaxChartRows))))
 	}
 
-	return histogramList, nil
+	return queries
+}
+
+func (s *SQLCommon) histogramResult(ctx context.Context, tableName string, rows *sql.Rows, onlyTimestamp bool) (map[string]int, string, error) {
+	total := 0
+	if onlyTimestamp {
+		countMap := map[string]int{}
+		for rows.Next() {
+			var timestamp string
+			err := rows.Scan(&timestamp)
+			if err != nil {
+				return nil, "", i18n.NewError(ctx, coremsgs.MsgDBReadErr, tableName)
+			}
+			total++
+		}
+		return countMap, strconv.Itoa(total), nil
+	}
+
+	typeMap := map[string]int{}
+	for rows.Next() {
+		var timestamp string
+		var typeStr string
+		err := rows.Scan(&timestamp, &typeStr)
+		if err != nil {
+			return nil, "", i18n.NewError(ctx, coremsgs.MsgDBReadErr, tableName)
+		}
+
+		if _, ok := typeMap[typeStr]; !ok {
+			typeMap[typeStr] = 1
+		} else {
+			typeMap[typeStr]++
+		}
+
+		total++
+	}
+
+	return typeMap, strconv.Itoa(total), nil
 }
 
 func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogramList []*fftypes.ChartHistogram, err error) {
@@ -237,23 +108,58 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 		return nil, err
 	}
 
-	dataTypes, err := s.getDistinctTypesFromTable(ctx, tableName, fieldMap)
-	if err != nil {
-		return nil, err
+	// Timestamp column name
+	timestampKey := "created"
+	if tableName == "blockchainevents" {
+		// Blockchain Events have a `timestamp` column name
+		timestampKey = "timestamp"
 	}
 
-	if len(dataTypes) > 0 {
-		histogramList, err = s.getHistogramWithTypes(ctx, ns, intervals, dataTypes, fieldMap, tableName)
+	// Number of columns to read.
+	// Some tables don't have a `type` field and therefore
+	// a `type` field will not be queried
+	onlyTimestamp := true
+	cols := []string{timestampKey}
+	if typeStr, ok := fieldMap["type"]; ok {
+		cols = append(cols, typeStr)
+		onlyTimestamp = false
+	}
+
+	queries := s.getSelectStatements(ns, tableName, intervals, timestampKey, sq.Select(cols...))
+
+	for i, query := range queries {
+		// Query bucket's data
+		rows, _, err := s.query(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		data, total, err := s.histogramResult(ctx, tableName, rows, onlyTimestamp)
 		if err != nil {
 			return nil, err
 		}
 
-		return histogramList, nil
-	}
+		histTypes := make([]*fftypes.ChartHistogramType, 0)
+		histBucket := fftypes.ChartHistogram{
+			Count:     total,
+			Timestamp: intervals[i].StartTime,
+			Types:     histTypes,
+			IsCapped:  total == config.GetString(coreconfig.HistogramsMaxChartRows),
+		}
 
-	histogramList, err = s.getHistogramNoTypes(ctx, ns, intervals, tableName)
-	if err != nil {
-		return nil, err
+		// If the bucket has types, add their counts
+		if !onlyTimestamp {
+			for k, v := range data {
+				histBucket.Types = append(histBucket.Types,
+					&fftypes.ChartHistogramType{
+						Count: strconv.Itoa(v),
+						Type:  k,
+					})
+			}
+		}
+
+		histogramList = append(histogramList, &histBucket)
 	}
 
 	return histogramList, nil

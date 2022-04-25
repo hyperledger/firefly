@@ -21,13 +21,13 @@ import (
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/hyperledger/firefly/pkg/wsclient"
 )
@@ -75,51 +75,56 @@ type createPool struct {
 	Symbol    string             `json:"symbol"`
 }
 
-type tokenApproval struct {
-	Signer    string             `json:"signer"`
-	Operator  string             `json:"operator"`
-	Approved  bool               `json:"approved"`
-	PoolID    string             `json:"poolId"`
-	RequestID string             `json:"requestId,omitempty"`
-	Data      string             `json:"data,omitempty"`
-	Config    fftypes.JSONObject `json:"config"`
-}
-
 type activatePool struct {
-	PoolID      string             `json:"poolId"`
-	Transaction fftypes.JSONObject `json:"transaction"`
+	PoolLocator string             `json:"poolLocator"`
+	Config      fftypes.JSONObject `json:"config"`
 	RequestID   string             `json:"requestId,omitempty"`
 }
 
 type mintTokens struct {
-	PoolID     string `json:"poolId"`
-	TokenIndex string `json:"tokenIndex,omitempty"`
-	To         string `json:"to"`
-	Amount     string `json:"amount"`
-	RequestID  string `json:"requestId,omitempty"`
-	Signer     string `json:"signer"`
-	Data       string `json:"data,omitempty"`
+	PoolLocator string `json:"poolLocator"`
+	TokenIndex  string `json:"tokenIndex,omitempty"`
+	To          string `json:"to"`
+	Amount      string `json:"amount"`
+	RequestID   string `json:"requestId,omitempty"`
+	Signer      string `json:"signer"`
+	Data        string `json:"data,omitempty"`
 }
 
 type burnTokens struct {
-	PoolID     string `json:"poolId"`
-	TokenIndex string `json:"tokenIndex,omitempty"`
-	From       string `json:"from"`
-	Amount     string `json:"amount"`
-	RequestID  string `json:"requestId,omitempty"`
-	Signer     string `json:"signer"`
-	Data       string `json:"data,omitempty"`
+	PoolLocator string `json:"poolLocator"`
+	TokenIndex  string `json:"tokenIndex,omitempty"`
+	From        string `json:"from"`
+	Amount      string `json:"amount"`
+	RequestID   string `json:"requestId,omitempty"`
+	Signer      string `json:"signer"`
+	Data        string `json:"data,omitempty"`
 }
 
 type transferTokens struct {
-	PoolID     string `json:"poolId"`
-	TokenIndex string `json:"tokenIndex,omitempty"`
-	From       string `json:"from"`
-	To         string `json:"to"`
-	Amount     string `json:"amount"`
-	RequestID  string `json:"requestId,omitempty"`
-	Signer     string `json:"signer"`
-	Data       string `json:"data,omitempty"`
+	PoolLocator string `json:"poolLocator"`
+	TokenIndex  string `json:"tokenIndex,omitempty"`
+	From        string `json:"from"`
+	To          string `json:"to"`
+	Amount      string `json:"amount"`
+	RequestID   string `json:"requestId,omitempty"`
+	Signer      string `json:"signer"`
+	Data        string `json:"data,omitempty"`
+}
+
+type tokenApproval struct {
+	Signer      string             `json:"signer"`
+	Operator    string             `json:"operator"`
+	Approved    bool               `json:"approved"`
+	PoolLocator string             `json:"poolLocator"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Data        string             `json:"data,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
+}
+
+type tokenError struct {
+	Error   string `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 func (ft *FFTokens) Name() string {
@@ -131,14 +136,14 @@ func (ft *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix,
 	ft.callbacks = callbacks
 	ft.configuredName = name
 
-	if prefix.GetString(restclient.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, i18n.MsgMissingPluginConfig, "url", "tokens.fftokens")
+	if prefix.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
-	ft.client = restclient.New(ft.ctx, prefix)
+	ft.client = ffresty.New(ft.ctx, prefix)
 	ft.capabilities = &tokens.Capabilities{}
 
-	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
+	wsConfig := wsclient.GenerateConfigFromPrefix(prefix)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/api/ws"
@@ -162,7 +167,7 @@ func (ft *FFTokens) Capabilities() *tokens.Capabilities {
 	return ft.capabilities
 }
 
-func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) error {
+func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) {
 	l := log.L(ctx)
 
 	requestID := data.GetString("id")
@@ -171,42 +176,42 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 	transactionHash := data.GetString("transactionHash")
 	if requestID == "" {
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
-		return nil // Swallow this and move on
+		return
 	}
 	opID, err := fftypes.ParseUUID(ctx, requestID)
 	if err != nil {
 		l.Errorf("Reply cannot be processed - bad ID: %+v", data)
-		return nil // Swallow this and move on
+		return
 	}
 	replyType := fftypes.OpStatusSucceeded
 	if !success {
 		replyType = fftypes.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	return ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
+	ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
-	eventProtocolID := data.GetString("id")
 	tokenType := data.GetString("type")
-	protocolID := data.GetString("poolId")
-	standard := data.GetString("standard")   // optional
-	symbol := data.GetString("symbol")       // optional
-	rawOutput := data.GetObject("rawOutput") // optional
-	tx := data.GetObject("transaction")
-	txHash := tx.GetString("transactionHash") // optional
-	location := data.GetString("location")
-	signature := data.GetString("signature")
-	info := data.GetObject("info") // optional
+	poolLocator := data.GetString("poolLocator")
+	standard := data.GetString("standard") // optional
+	symbol := data.GetString("symbol")     // optional
+	decimals := data.GetInt64("decimals")  // optional
+	info := data.GetObject("info")         // optional
 
-	timestampStr := data.GetString("timestamp")
+	// All blockchain items below are optional
+	blockchainEvent := data.GetObject("blockchain")
+	blockchainID := blockchainEvent.GetString("id")
+	blockchainInfo := blockchainEvent.GetObject("info")
+	txHash := blockchainInfo.GetString("transactionHash")
+	timestampStr := blockchainEvent.GetString("timestamp")
+
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		timestamp = fftypes.Now()
 	}
 
-	if tokenType == "" ||
-		protocolID == "" {
+	if tokenType == "" || poolLocator == "" {
 		log.L(ctx).Errorf("TokenPool event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
@@ -226,8 +231,8 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	pool := &tokens.TokenPool{
-		Type:       fftypes.FFEnum(tokenType),
-		ProtocolID: protocolID,
+		Type:        fftypes.FFEnum(tokenType),
+		PoolLocator: poolLocator,
 		TX: fftypes.TransactionRef{
 			ID:   poolData.TX,
 			Type: txType,
@@ -235,18 +240,23 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 		Connector: ft.configuredName,
 		Standard:  standard,
 		Symbol:    symbol,
+		Decimals:  int(decimals),
 		Info:      info,
-		Event: blockchain.Event{
+	}
+
+	// Only include a blockchain event if there was some significant blockchain info
+	if blockchainID != "" || txHash != "" {
+		pool.Event = blockchain.Event{
+			ProtocolID:     blockchainID,
 			BlockchainTXID: txHash,
 			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           "TokenPool",
-			ProtocolID:     eventProtocolID,
-			Output:         rawOutput,
-			Info:           tx,
+			Name:           blockchainEvent.GetString("name"),
+			Output:         blockchainEvent.GetObject("output"),
+			Location:       blockchainEvent.GetString("location"),
+			Signature:      blockchainEvent.GetString("signature"),
+			Info:           blockchainInfo,
 			Timestamp:      timestamp,
-			Location:       location,
-			Signature:      signature,
-		},
+		}
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
@@ -254,43 +264,33 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
-	eventProtocolID := data.GetString("id")
-	poolProtocolID := data.GetString("poolId")
+	protocolID := data.GetString("id")
+	poolLocator := data.GetString("poolLocator")
 	signerAddress := data.GetString("signer")
 	fromAddress := data.GetString("from")
 	toAddress := data.GetString("to")
 	value := data.GetString("amount")
 	tokenIndex := data.GetString("tokenIndex") // optional
 	uri := data.GetString("uri")               // optional
-	rawOutput := data.GetObject("rawOutput")   // optional
-	tx := data.GetObject("transaction")
-	txHash := tx.GetString("transactionHash") // optional
-	location := data.GetString("location")
-	signature := data.GetString("signature")
 
-	timestampStr := data.GetString("timestamp")
+	blockchainEvent := data.GetObject("blockchain")
+	blockchainID := blockchainEvent.GetString("id")
+	blockchainInfo := blockchainEvent.GetObject("info")
+	txHash := blockchainInfo.GetString("transactionHash")  // optional
+	timestampStr := blockchainEvent.GetString("timestamp") // optional
+
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		timestamp = fftypes.Now()
 	}
 
-	var eventName string
-	switch t {
-	case fftypes.TokenTransferTypeMint:
-		eventName = "Mint"
-	case fftypes.TokenTransferTypeBurn:
-		eventName = "Burn"
-	default:
-		eventName = "Transfer"
-	}
-
-	if eventProtocolID == "" ||
-		poolProtocolID == "" ||
+	if protocolID == "" ||
+		poolLocator == "" ||
 		signerAddress == "" ||
 		value == "" ||
 		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
 		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
-		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
+		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", t, data)
 		return nil // move on
 	}
 
@@ -299,14 +299,14 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	transferDataString := data.GetString("data")
 	var transferData tokenData
 	if err = json.Unmarshal([]byte(transferDataString), &transferData); err != nil {
-		log.L(ctx).Infof("%s event data could not be parsed - continuing anyway (%s): %+v", eventName, err, data)
+		log.L(ctx).Infof("%s event data could not be parsed - continuing anyway (%s): %+v", t, err, data)
 		transferData = tokenData{}
 	}
 
 	var amount fftypes.FFBigInt
 	_, ok := amount.Int().SetString(value, 10)
 	if !ok {
-		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", eventName, data)
+		log.L(ctx).Errorf("%s event is not valid - invalid amount: %+v", t, data)
 		return nil // move on
 	}
 
@@ -316,7 +316,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 	}
 
 	transfer := &tokens.TokenTransfer{
-		PoolProtocolID: poolProtocolID,
+		PoolLocator: poolLocator,
 		TokenTransfer: fftypes.TokenTransfer{
 			Type:        t,
 			TokenIndex:  tokenIndex,
@@ -325,7 +325,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			From:        fromAddress,
 			To:          toAddress,
 			Amount:      amount,
-			ProtocolID:  eventProtocolID,
+			ProtocolID:  protocolID,
 			Key:         signerAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
@@ -335,15 +335,15 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			},
 		},
 		Event: blockchain.Event{
+			ProtocolID:     blockchainID,
 			BlockchainTXID: txHash,
 			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           eventName,
-			ProtocolID:     eventProtocolID,
-			Output:         rawOutput,
-			Info:           tx,
+			Name:           blockchainEvent.GetString("name"),
+			Output:         blockchainEvent.GetObject("output"),
+			Location:       blockchainEvent.GetString("location"),
+			Signature:      blockchainEvent.GetString("signature"),
+			Info:           blockchainInfo,
 			Timestamp:      timestamp,
-			Location:       location,
-			Signature:      signature,
 		},
 	}
 
@@ -352,37 +352,38 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 }
 
 func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
-	eventProtocolID := data.GetString("id")
+	protocolID := data.GetString("id")
+	subject := data.GetString("subject")
 	signerAddress := data.GetString("signer")
-	poolProtocolID := data.GetString("poolId")
+	poolLocator := data.GetString("poolLocator")
 	operatorAddress := data.GetString("operator")
 	approved := data.GetBool("approved")
-	rawOutput := data.GetObject("rawOutput") // optional
-	tx := data.GetObject("transaction")
-	txHash := tx.GetString("transactionHash") // optional
-	location := data.GetString("location")
-	signature := data.GetString("signature")
 
-	timestampStr := data.GetString("timestamp")
+	blockchainEvent := data.GetObject("blockchain")
+	blockchainID := blockchainEvent.GetString("id")
+	blockchainInfo := blockchainEvent.GetObject("info")
+	txHash := blockchainInfo.GetString("transactionHash")  // optional
+	timestampStr := blockchainEvent.GetString("timestamp") // optional
+
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
 		timestamp = fftypes.Now()
 	}
 
-	eventName := "TokenApproval"
-	if eventProtocolID == "" ||
-		poolProtocolID == "" ||
+	if protocolID == "" ||
+		subject == "" ||
+		poolLocator == "" ||
 		signerAddress == "" ||
 		operatorAddress == "" {
-		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", eventName, data)
+		log.L(ctx).Errorf("Approval event is not valid - missing data: %+v", data)
 		return nil // move on
 	}
 
 	// We want to process all events, even those not initiated by FireFly.
 	// The "data" argument is optional, so it's important not to fail if it's missing or malformed.
-	transferDataString := data.GetString("data")
+	approvalDataString := data.GetString("data")
 	var transferData tokenData
-	if err = json.Unmarshal([]byte(transferDataString), &transferData); err != nil {
+	if err = json.Unmarshal([]byte(approvalDataString), &transferData); err != nil {
 		log.L(ctx).Infof("TokenApproval event data could not be parsed - continuing anyway (%s): %+v", err, data)
 		transferData = tokenData{}
 	}
@@ -393,28 +394,29 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	}
 
 	approval := &tokens.TokenApproval{
-		PoolProtocolID: poolProtocolID,
+		PoolLocator: poolLocator,
 		TokenApproval: fftypes.TokenApproval{
 			Connector:  ft.configuredName,
 			Key:        signerAddress,
 			Operator:   operatorAddress,
 			Approved:   approved,
-			ProtocolID: eventProtocolID,
+			ProtocolID: protocolID,
+			Subject:    subject,
 			TX: fftypes.TransactionRef{
 				ID:   transferData.TX,
 				Type: txType,
 			},
 		},
 		Event: blockchain.Event{
+			ProtocolID:     blockchainID,
 			BlockchainTXID: txHash,
 			Source:         ft.Name() + ":" + ft.configuredName,
-			Name:           eventName,
-			ProtocolID:     eventProtocolID,
-			Output:         rawOutput,
-			Info:           tx,
+			Name:           blockchainEvent.GetString("name"),
+			Output:         blockchainEvent.GetObject("output"),
+			Location:       blockchainEvent.GetString("location"),
+			Signature:      blockchainEvent.GetString("signature"),
+			Info:           blockchainInfo,
 			Timestamp:      timestamp,
-			Location:       location,
-			Signature:      signature,
 		},
 	}
 
@@ -445,7 +447,7 @@ func (ft *FFTokens) eventLoop() {
 			l.Debugf("Received %s event %s", msg.Event, msg.ID)
 			switch msg.Event {
 			case messageReceipt:
-				err = ft.handleReceipt(ctx, msg.Data)
+				ft.handleReceipt(ctx, msg.Data)
 			case messageTokenPool:
 				err = ft.handleTokenPoolCreate(ctx, msg.Data)
 			case messageTokenMint:
@@ -479,11 +481,26 @@ func (ft *FFTokens) eventLoop() {
 	}
 }
 
+// Parse a JSON error of the form:
+//   {"error": "Bad Request", "message": "Field 'x' is required"}
+// into a message of the form:
+//   "Bad Request: Field 'x' is required"
+func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err error) error {
+	if errRes != nil && errRes.Message != "" {
+		if errRes.Error != "" {
+			return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Error+": "+errRes.Message)
+		}
+		return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Message)
+	}
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+}
+
 func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
 			Type:      pool.Type,
@@ -494,134 +511,151 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 			Name:      pool.Name,
 			Symbol:    pool.Symbol,
 		}).
+		SetError(&errRes).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return false, restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return false, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
-		// Handle synchronous response (202 will be handled by later websocket listener)
+		// HTTP 200: Creation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
 		return true, ft.handleTokenPoolCreate(ctx, obj)
 	}
+	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool, blockchainInfo fftypes.JSONObject) (complete bool, err error) {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   opID.String(),
-			PoolID:      pool.ProtocolID,
-			Transaction: blockchainInfo,
+			PoolLocator: pool.Locator,
+			Config:      pool.Config,
 		}).
+		SetError(&errRes).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return false, restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return false, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
-		// Handle synchronous response (202 will be handled by later websocket listener)
+		// HTTP 200: Activation was successful, and pool details are in response body
 		var obj fftypes.JSONObject
 		if err := json.Unmarshal(res.Body(), &obj); err != nil {
 			return false, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, res.Body())
 		}
 		return true, ft.handleTokenPoolCreate(ctx, obj)
+	} else if res.StatusCode() == 204 {
+		// HTTP 204: Activation was successful, but pool details are not available
+		// This will resolve the operation, but connector is responsible for re-delivering pool details on the websocket.
+		return true, nil
 	}
+	// Default (HTTP 202): Request was accepted, and success/failure status will be delivered via websocket
 	return false, nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, mint *fftypes.TokenTransfer) error {
+func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
 		TXType:      mint.TX.Type,
 		Message:     mint.Message,
 		MessageHash: mint.MessageHash,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
-			PoolID:     poolProtocolID,
-			TokenIndex: mint.TokenIndex,
-			To:         mint.To,
-			Amount:     mint.Amount.Int().String(),
-			RequestID:  opID.String(),
-			Signer:     mint.Key,
-			Data:       string(data),
+			PoolLocator: poolLocator,
+			TokenIndex:  mint.TokenIndex,
+			To:          mint.To,
+			Amount:      mint.Amount.Int().String(),
+			RequestID:   opID.String(),
+			Signer:      mint.Key,
+			Data:        string(data),
 		}).
+		SetError(&errRes).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, burn *fftypes.TokenTransfer) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
 		TXType:      burn.TX.Type,
 		Message:     burn.Message,
 		MessageHash: burn.MessageHash,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
-			PoolID:     poolProtocolID,
-			TokenIndex: burn.TokenIndex,
-			From:       burn.From,
-			Amount:     burn.Amount.Int().String(),
-			RequestID:  opID.String(),
-			Signer:     burn.Key,
-			Data:       string(data),
+			PoolLocator: poolLocator,
+			TokenIndex:  burn.TokenIndex,
+			From:        burn.From,
+			Amount:      burn.Amount.Int().String(),
+			RequestID:   opID.String(),
+			Signer:      burn.Key,
+			Data:        string(data),
 		}).
+		SetError(&errRes).
 		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, transfer *fftypes.TokenTransfer) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *fftypes.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
 		TXType:      transfer.TX.Type,
 		Message:     transfer.Message,
 		MessageHash: transfer.MessageHash,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
-			PoolID:     poolProtocolID,
-			TokenIndex: transfer.TokenIndex,
-			From:       transfer.From,
-			To:         transfer.To,
-			Amount:     transfer.Amount.Int().String(),
-			RequestID:  opID.String(),
-			Signer:     transfer.Key,
-			Data:       string(data),
+			PoolLocator: poolLocator,
+			TokenIndex:  transfer.TokenIndex,
+			From:        transfer.From,
+			To:          transfer.To,
+			Amount:      transfer.Amount.Int().String(),
+			RequestID:   opID.String(),
+			Signer:      transfer.Key,
+			Data:        string(data),
 		}).
+		SetError(&errRes).
 		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }
 
-func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolProtocolID string, approval *fftypes.TokenApproval) error {
+func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *fftypes.TokenApproval) error {
 	data, _ := json.Marshal(tokenData{
 		TX:     approval.TX.ID,
 		TXType: approval.TX.Type,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{
-			PoolID:    poolProtocolID,
-			Signer:    approval.Key,
-			Operator:  approval.Operator,
-			Approved:  approval.Approved,
-			RequestID: opID.String(),
-			Data:      string(data),
-			Config:    approval.Config,
+			PoolLocator: poolLocator,
+			Signer:      approval.Key,
+			Operator:    approval.Operator,
+			Approved:    approval.Approved,
+			RequestID:   opID.String(),
+			Data:        string(data),
+			Config:      approval.Config,
 		}).
+		SetError(&errRes).
 		Post("/api/v1/approval")
 	if err != nil || !res.IsSuccess() {
-		return restclient.WrapRestErr(ctx, res, err, i18n.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }

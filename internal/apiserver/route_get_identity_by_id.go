@@ -18,9 +18,10 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -30,15 +31,20 @@ var getIdentityByID = &oapispec.Route{
 	Path:   "namespaces/{ns}/identities/{iid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "iid", Example: "id", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
-	QueryParams:     nil,
-	Description:     i18n.MsgTBD,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
+	},
+	Description:     coremsgs.APIEndpointsGetIdentityByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+			return getOr(r.Ctx).NetworkMap().GetIdentityByIDWithVerifiers(r.Ctx, r.PP["ns"], r.PP["iid"])
+		}
 		return getOr(r.Ctx).NetworkMap().GetIdentityByID(r.Ctx, r.PP["ns"], r.PP["iid"])
 	},
 }

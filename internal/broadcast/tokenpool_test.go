@@ -36,12 +36,12 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "mypool",
-			Type:       fftypes.TokenTypeNonFungible,
-			ProtocolID: "N1",
-			Symbol:     "COIN",
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "mypool",
+			Type:      fftypes.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
 		},
 	}
 
@@ -61,17 +61,17 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "",
-			Name:       "",
-			Type:       fftypes.TokenTypeNonFungible,
-			ProtocolID: "N1",
-			Symbol:     "COIN",
+			ID:        fftypes.NewUUID(),
+			Namespace: "",
+			Name:      "",
+			Type:      fftypes.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
 		},
 	}
 
 	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
-	assert.Regexp(t, "FF10131", err)
+	assert.Regexp(t, "FF00140", err)
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
@@ -85,12 +85,12 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "mypool",
-			Type:       fftypes.TokenTypeNonFungible,
-			ProtocolID: "N1",
-			Symbol:     "COIN",
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "mypool",
+			Type:      fftypes.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
 		},
 	}
 
@@ -113,12 +113,12 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
-			ID:         fftypes.NewUUID(),
-			Namespace:  "ns1",
-			Name:       "mypool",
-			Type:       fftypes.TokenTypeNonFungible,
-			ProtocolID: "N1",
-			Symbol:     "COIN",
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "mypool",
+			Type:      fftypes.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
 		},
 	}
 

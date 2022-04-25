@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -201,7 +201,7 @@ func TestGetNamespaceBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.NamespaceQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, _, err := s.GetNamespaces(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetNamespaceByIDQueryFail(t *testing.T) {

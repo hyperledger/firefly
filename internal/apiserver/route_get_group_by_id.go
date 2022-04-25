@@ -19,28 +19,28 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getGroupByHash = &oapispec.Route{
 	Name:   "getGroupByHash",
-	Path:   "namespaces/{ns}/groups/{groupid}",
+	Path:   "namespaces/{ns}/groups/{hash}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "groupid", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "hash", Description: coremsgs.APIParamsGroupHash},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsGetGroupByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.PrivateMessaging().GetGroupByID(r.Ctx, r.PP["groupid"])
+		output, err = r.Or.PrivateMessaging().GetGroupByID(r.Ctx, r.PP["hash"])
 		return output, err
 	},
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,12 +16,9 @@
 
 package fftypes
 
-// Nonce is this local node's state record for the context of a group+topic combination.
-// It records the node's latest allocated sequence number for the context.
-// A context is a hash of a GroupID and a topic, concattenated together
+// Nonce is this local node's state record for the context of a group+topic+author combination.
+// The Hash is the state of the hash before the nonce is added on to make it unique to the message.
 type Nonce struct {
-	Context *Bytes32 `json:"hash"`
-	Nonce   int64    `json:"nonce"`
-	Group   *Bytes32 `json:"group,omitempty"`
-	Topic   string   `json:"topic"`
+	Hash  *Bytes32 `json:"hash"`
+	Nonce int64    `json:"nonce"`
 }

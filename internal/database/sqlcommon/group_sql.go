@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -32,7 +33,6 @@ var (
 		"message_id",
 		"namespace",
 		"name",
-		"ledger",
 		"hash",
 		"created",
 	}
@@ -103,7 +103,6 @@ func (s *SQLCommon) attemptGroupUpdate(ctx context.Context, tx *txWrapper, group
 			Set("message_id", group.Message).
 			Set("namespace", group.Namespace).
 			Set("name", group.Name).
-			Set("ledger", group.Ledger).
 			Set("hash", group.Hash).
 			Set("created", group.Created).
 			Where(sq.Eq{"hash": group.Hash}),
@@ -121,7 +120,6 @@ func (s *SQLCommon) attemptGroupInsert(ctx context.Context, tx *txWrapper, group
 				group.Message,
 				group.Namespace,
 				group.Name,
-				group.Ledger,
 				group.Hash,
 				group.Created,
 			),
@@ -209,7 +207,7 @@ func (s *SQLCommon) loadMembers(ctx context.Context, groups []*fftypes.Group) er
 		member := &fftypes.Member{}
 		var idx int
 		if err = members.Scan(&groupID, &member.Identity, &member.Node, &idx); err != nil {
-			return i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "members")
+			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "members")
 		}
 		for _, g := range groups {
 			if g.Hash.Equals(&groupID) {
@@ -233,12 +231,11 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*fftypes.Gr
 		&group.Message,
 		&group.Namespace,
 		&group.Name,
-		&group.Ledger,
 		&group.Hash,
 		&group.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "groups")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "groups")
 	}
 	return &group, nil
 }
@@ -321,7 +318,7 @@ func (s *SQLCommon) UpdateGroups(ctx context.Context, filter database.Filter, up
 		return err
 	}
 
-	query, err = s.filterUpdate(ctx, "", query, filter, opFilterFieldMap)
+	query, err = s.filterUpdate(ctx, query, filter, opFilterFieldMap)
 	if err != nil {
 		return err
 	}

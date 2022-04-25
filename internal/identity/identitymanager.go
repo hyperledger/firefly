@@ -22,14 +22,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/identity"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/karlseguin/ccache"
 )
 
@@ -45,7 +47,8 @@ type Manager interface {
 	FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.IdentityType, namespace string, verifier *fftypes.VerifierRef) (identity *fftypes.Identity, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *fftypes.Identity) (parentSigner *fftypes.SignerRef, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error)
-	CachedIdentityLookup(ctx context.Context, did string) (identity *fftypes.Identity, retryable bool, err error)
+	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *fftypes.Identity, retryable bool, err error)
+	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *fftypes.Identity, retryable bool, err error)
 	CachedVerifierLookup(ctx context.Context, vType fftypes.VerifierType, ns, value string) (verifier *fftypes.Verifier, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*fftypes.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identity, error)
@@ -68,22 +71,22 @@ type identityManager struct {
 
 func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || ii == nil || bi == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	im := &identityManager{
 		database:           di,
 		plugin:             ii,
 		blockchain:         bi,
 		data:               dm,
-		identityCacheTTL:   config.GetDuration(config.IdentityManagerCacheTTL),
-		signingKeyCacheTTL: config.GetDuration(config.IdentityManagerCacheTTL),
+		identityCacheTTL:   config.GetDuration(coreconfig.IdentityManagerCacheTTL),
+		signingKeyCacheTTL: config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 	}
 	// For the identity and signingkey caches, we just treat them all equally sized and the max items
 	im.identityCache = ccache.New(
-		ccache.Configure().MaxSize(config.GetInt64(config.IdentityManagerCacheLimit)),
+		ccache.Configure().MaxSize(config.GetInt64(coreconfig.IdentityManagerCacheLimit)),
 	)
 	im.signingKeyCache = ccache.New(
-		ccache.Configure().MaxSize(config.GetInt64(config.IdentityManagerCacheLimit)),
+		ccache.Configure().MaxSize(config.GetInt64(coreconfig.IdentityManagerCacheLimit)),
 	)
 
 	return im, nil
@@ -154,21 +157,21 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, name
 				msgSignerRef.Author = identity.DID
 			}
 			if msgSignerRef.Author != identity.DID {
-				return i18n.NewError(ctx, i18n.MsgAuthorRegistrationMismatch, verifier.Value, msgSignerRef.Author, identity.DID)
+				return i18n.NewError(ctx, coremsgs.MsgAuthorRegistrationMismatch, verifier.Value, msgSignerRef.Author, identity.DID)
 			}
 		case msgSignerRef.Author != "":
-			identity, _, err := im.CachedIdentityLookup(ctx, msgSignerRef.Author)
+			identity, _, err := im.CachedIdentityLookupMustExist(ctx, msgSignerRef.Author)
 			if err != nil {
 				return err
 			}
 			msgSignerRef.Author = identity.DID
 		default:
-			return i18n.NewError(ctx, i18n.MsgAuthorMissingForKey, msgSignerRef.Key)
+			return i18n.NewError(ctx, coremsgs.MsgAuthorMissingForKey, msgSignerRef.Key)
 		}
 	case msgSignerRef.Author != "":
 		// Author must be non-empty (see above), so we want to find that identity and then
 		// use the first blockchain key that's associated with it.
-		identity, _, err := im.CachedIdentityLookup(ctx, msgSignerRef.Author)
+		identity, _, err := im.CachedIdentityLookupMustExist(ctx, msgSignerRef.Author)
 		if err != nil {
 			return err
 		}
@@ -197,7 +200,7 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType f
 		return nil, true /* DB Error */, err
 	}
 	if len(verifiers) == 0 {
-		return nil, false, i18n.NewError(ctx, i18n.MsgNoVerifierForIdentity, vType, identity.DID)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgNoVerifierForIdentity, vType, identity.DID)
 	}
 	return &verifiers[0].VerifierRef, false, nil
 }
@@ -223,15 +226,15 @@ func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context) (*ffty
 		return im.nodeOwnerBlockchainKey, nil
 	}
 
-	orgKey := config.GetString(config.OrgKey)
+	orgKey := config.GetString(coreconfig.OrgKey)
 	if orgKey == "" {
-		orgKey = config.GetString(config.OrgIdentityDeprecated)
+		orgKey = config.GetString(coreconfig.OrgIdentityDeprecated)
 		if orgKey != "" {
-			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", config.OrgIdentityDeprecated, config.OrgKey)
+			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", coreconfig.OrgIdentityDeprecated, coreconfig.OrgKey)
 		}
 	}
 	if orgKey == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgNodeMissingBlockchainKey)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
 	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, orgKey)
@@ -245,7 +248,7 @@ func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context) (*ffty
 // normalizeKeyViaBlockchainPlugin does a cached lookup of the fully qualified key, associated with a key reference string
 func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, inputKey string) (verifier *fftypes.VerifierRef, err error) {
 	if inputKey == "" {
-		return nil, i18n.NewError(ctx, i18n.MsgBlockchainKeyNotSet)
+		return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
 	}
 	if cached := im.signingKeyCache.Get(inputKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
@@ -289,14 +292,14 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*fftypes.Identi
 	if err != nil {
 		return nil, err
 	}
-	orgName := config.GetString(config.OrgName)
+	orgName := config.GetString(coreconfig.OrgName)
 	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, fftypes.SystemNamespace, verifierRef)
 	if err != nil || identity == nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
 	// Confirm that the specified blockchain key is associated with the correct org
 	if identity.Type != fftypes.IdentityTypeOrg || identity.Name != orgName {
-		return nil, i18n.NewError(ctx, i18n.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
 	im.nodeOwningOrgIdentity = identity
 	return im.nodeOwningOrgIdentity, nil
@@ -318,20 +321,20 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 			return immediateParent, false, nil
 		}
 		if _, ok := loopDetect[*parentID]; ok {
-			return nil, false, i18n.NewError(ctx, i18n.MsgIdentityChainLoop, parentID, current.DID, current.ID)
+			return nil, false, i18n.NewError(ctx, coremsgs.MsgIdentityChainLoop, parentID, current.DID, current.ID)
 		}
 		parent, err := im.CachedIdentityLookupByID(ctx, parentID)
 		if err != nil {
 			return nil, true /* DB Error */, err
 		}
 		if parent == nil {
-			return nil, false, i18n.NewError(ctx, i18n.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
+			return nil, false, i18n.NewError(ctx, coremsgs.MsgParentIdentityNotFound, parentID, current.DID, current.ID)
 		}
 		if err := im.validateParentType(ctx, current, parent); err != nil {
 			return nil, false, err
 		}
 		if parent.Messages.Claim == nil {
-			return nil, false, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
+			return nil, false, i18n.NewError(ctx, coremsgs.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
 		}
 		current = parent
 		if immediateParent == nil {
@@ -348,7 +351,7 @@ func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *
 		return nil, err
 	}
 	if msg == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgParentIdentityMissingClaim, identity.DID, identity.ID)
+		return nil, i18n.NewError(ctx, coremsgs.MsgParentIdentityMissingClaim, identity.DID, identity.ID)
 	}
 	// Return the signing identity from that claim
 	return &msg.Header.SignerRef, nil
@@ -359,12 +362,12 @@ func (im *identityManager) validateParentType(ctx context.Context, child *fftype
 	switch child.Type {
 	case fftypes.IdentityTypeNode, fftypes.IdentityTypeOrg:
 		if parent.Type != fftypes.IdentityTypeOrg {
-			return i18n.NewError(ctx, i18n.MsgInvalidIdentityParentType, parent.DID, parent.ID, parent.Type, child.DID, child.ID, child.Type)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidIdentityParentType, parent.DID, parent.ID, parent.Type, child.DID, child.ID, child.Type)
 		}
 		return nil
 	case fftypes.IdentityTypeCustom:
 		if parent.Type != fftypes.IdentityTypeOrg && parent.Type != fftypes.IdentityTypeCustom {
-			return i18n.NewError(ctx, i18n.MsgInvalidIdentityParentType, parent.DID, parent.ID, parent.Type, child.DID, child.ID, child.Type)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidIdentityParentType, parent.DID, parent.ID, parent.Type, child.DID, child.ID, child.Type)
 		}
 		return nil
 	default:
@@ -395,11 +398,17 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	return identity, nil
 }
 
-func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupStr string) (identity *fftypes.Identity, retryable bool, err error) {
+func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLookupStr string) (identity *fftypes.Identity, retryable bool, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("did=%s", didLookupStr)
 	defer func() {
-		log.L(ctx).Debugf("Resolved DID '%s' to identity: %v (err=%v)", didLookupStr, identity, err)
+		didResolved := ""
+		var uuidResolved *fftypes.UUID
+		if identity != nil {
+			didResolved = identity.DID
+			uuidResolved = identity.ID
+		}
+		log.L(ctx).Debugf("Resolved DID '%s' to identity: %s / %s (err=%v)", didLookupStr, uuidResolved, didResolved, err)
 	}()
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
@@ -407,7 +416,7 @@ func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupSt
 	} else {
 		if strings.HasPrefix(didLookupStr, fftypes.DIDPrefix) {
 			if !strings.HasPrefix(didLookupStr, fftypes.FireFlyDIDPrefix) {
-				return nil, false, i18n.NewError(ctx, i18n.MsgDIDResolverUnknown, didLookupStr)
+				return nil, false, i18n.NewError(ctx, coremsgs.MsgDIDResolverUnknown, didLookupStr)
 			}
 			// Look up by the full DID
 			if identity, err = im.database.GetIdentityByDID(ctx, didLookupStr); err != nil {
@@ -422,21 +431,28 @@ func (im *identityManager) CachedIdentityLookup(ctx context.Context, didLookupSt
 					}
 				}
 			}
-			if identity == nil {
-				return nil, false, i18n.NewError(ctx, i18n.MsgIdentityNotFoundByString, didLookupStr)
-			}
 		} else {
 			// If there is just a name in there, then it could be an Org type identity (from the very original usage of the field)
 			if identity, err = im.database.GetIdentityByName(ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, didLookupStr); err != nil {
 				return nil, true /* DB Error */, err
 			}
-			if identity == nil {
-				return nil, false, i18n.NewError(ctx, i18n.MsgAuthorOrgNotFoundByName, didLookupStr)
-			}
 		}
 
-		// Cache the result
-		im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+		if identity != nil {
+			// Cache the result
+			im.identityCache.Set(cacheKey, identity, im.identityCacheTTL)
+		}
+	}
+	return identity, false, nil
+}
+
+func (im *identityManager) CachedIdentityLookupMustExist(ctx context.Context, didLookupStr string) (identity *fftypes.Identity, retryable bool, err error) {
+	identity, retryable, err = im.CachedIdentityLookupNilOK(ctx, didLookupStr)
+	if err != nil {
+		return nil, retryable, err
+	}
+	if identity == nil {
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgIdentityNotFoundByString, didLookupStr)
 	}
 	return identity, false, nil
 }

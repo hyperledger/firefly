@@ -40,3 +40,18 @@ func TestGetIdentityByDID(t *testing.T) {
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
+
+func TestGetIdentityByDIDWithVerifiers(t *testing.T) {
+	o, r := newTestAPIServer()
+	nmn := &networkmapmocks.Manager{}
+	o.On("NetworkMap").Return(nmn)
+	req := httptest.NewRequest("GET", "/api/v1/network/identities/did:firefly:org/org_1?fetchverifiers", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "did:firefly:org/org_1").
+		Return(&fftypes.IdentityWithVerifiers{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
+}

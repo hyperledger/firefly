@@ -83,38 +83,38 @@ func testCustom(ns, name string) *Identity {
 func TestIdentityValidationOrgs(t *testing.T) {
 
 	ctx := context.Background()
-	assert.Regexp(t, "FF10368", (*Identity)(nil).Validate(ctx))
+	assert.Regexp(t, "FF00125", (*Identity)(nil).Validate(ctx))
 
 	o := testOrg()
 	assert.NoError(t, o.Validate(ctx))
 
 	o = testOrg()
 	o.ID = nil
-	assert.Regexp(t, "FF10203", o.Validate(ctx))
+	assert.Regexp(t, "FF00114", o.Validate(ctx))
 
 	o = testOrg()
 	o.Namespace = "!namespace"
-	assert.Regexp(t, "FF10131", o.Validate(ctx))
+	assert.Regexp(t, "FF00140", o.Validate(ctx))
 
 	o = testOrg()
 	o.Name = "!name"
-	assert.Regexp(t, "FF10131", o.Validate(ctx))
+	assert.Regexp(t, "FF00140", o.Validate(ctx))
 
 	o = testOrg()
 	o.Type = IdentityType("wrong")
-	assert.Regexp(t, "FF10362", o.Validate(ctx))
+	assert.Regexp(t, "FF00126", o.Validate(ctx))
 
 	o = testOrg()
 	o.Description = string(make([]byte, 4097))
-	assert.Regexp(t, "FF10188", o.Validate(ctx))
+	assert.Regexp(t, "FF00135", o.Validate(ctx))
 
 	o = testOrg()
 	o.DID = "did:firefly:node/node1"
-	assert.Regexp(t, "FF10363", o.Validate(ctx))
+	assert.Regexp(t, "FF00120", o.Validate(ctx))
 
 	o = testOrg()
 	o.Namespace = "nonsystem"
-	assert.Regexp(t, "FF10361", o.Validate(ctx))
+	assert.Regexp(t, "FF00122", o.Validate(ctx))
 
 }
 
@@ -126,15 +126,15 @@ func TestIdentityValidationNodes(t *testing.T) {
 
 	n = testNode()
 	n.Parent = nil
-	assert.Regexp(t, "FF10360", n.Validate(ctx))
+	assert.Regexp(t, "FF00124", n.Validate(ctx))
 
 	n = testNode()
 	n.DID = "did:firefly:org/org1"
-	assert.Regexp(t, "FF10363", n.Validate(ctx))
+	assert.Regexp(t, "FF00120", n.Validate(ctx))
 
 	n = testNode()
 	n.Namespace = "nonsystem"
-	assert.Regexp(t, "FF10361", n.Validate(ctx))
+	assert.Regexp(t, "FF00122", n.Validate(ctx))
 
 }
 
@@ -146,15 +146,15 @@ func TestIdentityValidationCustom(t *testing.T) {
 
 	c = testCustom("ns1", "custom1")
 	c.Parent = nil
-	assert.Regexp(t, "FF10360", c.Validate(ctx))
+	assert.Regexp(t, "FF00124", c.Validate(ctx))
 
 	c = testCustom("ns1", "custom1")
 	c.DID = "did:firefly:ns/ns2/custom1"
-	assert.Regexp(t, "FF10363", c.Validate(ctx))
+	assert.Regexp(t, "FF00120", c.Validate(ctx))
 
 	c = testCustom("ns1", "custom1")
 	c.Namespace = SystemNamespace
-	assert.Regexp(t, "FF10359", c.Validate(ctx))
+	assert.Regexp(t, "FF00121", c.Validate(ctx))
 
 }
 

@@ -20,8 +20,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/stretchr/testify/assert"
 )

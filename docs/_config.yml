@@ -8,8 +8,8 @@ aux_links:
     - "//github.com/hyperledger/firefly"
   "Wiki":
     - "https://wiki.hyperledger.org/display/FIR"
-  "Chat":
-    - "https://chat.hyperledger.org/channel/firefly"
+  "Discord":
+    - "https://discord.gg/hyperledger"
   "Mailing List":
     - "https://lists.hyperledger.org/g/firefly"
   "Calendar":

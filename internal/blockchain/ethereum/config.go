@@ -17,9 +17,9 @@
 package ethereum
 
 import (
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/config/wsconfig"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/ffresty"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -53,7 +53,7 @@ const (
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
-	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to EthConnect as the from address
+	// AddressResolverRetainOriginal when true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address
 	AddressResolverRetainOriginal = "retainOriginal"
 	// AddressResolverMethod the HTTP method to use to call the address resolver (default GET)
 	AddressResolverMethod = "method"
@@ -71,7 +71,7 @@ const (
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
-	wsconfig.InitPrefix(ethconnectConf)
+	wsclient.InitPrefix(ethconnectConf)
 	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
@@ -80,7 +80,7 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
 
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
-	restclient.InitPrefix(addressResolverConf)
+	ffresty.InitPrefix(addressResolverConf)
 	addressResolverConf.AddKnownKey(AddressResolverRetainOriginal)
 	addressResolverConf.AddKnownKey(AddressResolverMethod, defaultAddressResolverMethod)
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)

@@ -19,8 +19,8 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -30,12 +30,12 @@ var getEventByID = &oapispec.Route{
 	Path:   "namespaces/{ns}/events/{eid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "eid", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "eid", Description: coremsgs.APIParamsEventID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsGetEventByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},

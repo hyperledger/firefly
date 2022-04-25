@@ -20,9 +20,10 @@ import (
 	"context"
 	"sort"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func updateStatus(result *fftypes.TransactionStatus, newStatus fftypes.OpStatus) {
@@ -71,7 +72,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 	if err != nil {
 		return nil, err
 	} else if tx == nil {
-		return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 
 	ops, _, err := or.GetTransactionOperations(ctx, ns, id)
@@ -117,10 +118,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		}
 
 	case fftypes.TransactionTypeTokenPool:
-		if len(events) == 0 {
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
-			updateStatus(result, fftypes.OpStatusPending)
-		}
+		// Note: no assumptions about blockchain events here (may or may not contain one)
 		f := database.TokenPoolQueryFactory.NewFilter(ctx)
 		switch pools, _, err := or.database.GetTokenPools(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
@@ -135,6 +133,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 				SubType: pools[0].Type.String(),
 				ID:      pools[0].ID,
 			})
+			updateStatus(result, fftypes.OpStatusPending)
 		default:
 			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
 				Status:    fftypes.OpStatusSucceeded,
@@ -172,7 +171,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
 			updateStatus(result, fftypes.OpStatusPending)
 		}
-		f := database.TokenApprovalQueryFacory.NewFilter(ctx)
+		f := database.TokenApprovalQueryFactory.NewFilter(ctx)
 		switch approvals, _, err := or.database.GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
@@ -192,7 +191,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		// no blockchain events or other objects
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgUnknownTransactionType, tx.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownTransactionType, tx.Type)
 	}
 
 	// Sort with nil timestamps first (ie Pending), then descending by timestamp

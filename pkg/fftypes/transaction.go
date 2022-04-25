@@ -39,18 +39,25 @@ var (
 
 // TransactionRef refers to a transaction, in other types
 type TransactionRef struct {
-	Type TransactionType `json:"type"`
-	ID   *UUID           `json:"id,omitempty"`
+	Type TransactionType `ffstruct:"Transaction" json:"type"`
+	ID   *UUID           `ffstruct:"Transaction" json:"id,omitempty"`
+}
+
+// BlockchainTransactionRef refers to a transaction and a transaction blockchain ID, in other types
+type BlockchainTransactionRef struct {
+	Type         TransactionType `ffstruct:"Transaction" json:"type"`
+	ID           *UUID           `ffstruct:"Transaction" json:"id,omitempty"`
+	BlockchainID string          `ffstruct:"Transaction" json:"blockchainId,omitempty"`
 }
 
 // Transaction is a unit of work sent or received by this node
 // It serves as a container for one or more Operations, BlockchainEvents, and other related objects
 type Transaction struct {
-	ID            *UUID           `json:"id,omitempty"`
-	Namespace     string          `json:"namespace,omitempty"`
-	Type          TransactionType `json:"type" ffenum:"txtype"`
-	Created       *FFTime         `json:"created"`
-	BlockchainIDs FFStringArray   `json:"blockchainIds,omitempty"`
+	ID            *UUID           `ffstruct:"Transaction" json:"id,omitempty"`
+	Namespace     string          `ffstruct:"Transaction" json:"namespace,omitempty"`
+	Type          TransactionType `ffstruct:"Transaction" json:"type" ffenum:"txtype"`
+	Created       *FFTime         `ffstruct:"Transaction" json:"created"`
+	BlockchainIDs FFStringArray   `ffstruct:"Transaction" json:"blockchainIds,omitempty"`
 }
 
 type TransactionStatusType string
@@ -65,18 +72,18 @@ var (
 )
 
 type TransactionStatusDetails struct {
-	Type      TransactionStatusType `json:"type"`
-	SubType   string                `json:"subtype,omitempty"`
-	Status    OpStatus              `json:"status"`
-	Timestamp *FFTime               `json:"timestamp,omitempty"`
-	ID        *UUID                 `json:"id,omitempty"`
-	Error     string                `json:"error,omitempty"`
-	Info      JSONObject            `json:"info,omitempty"`
+	Type      TransactionStatusType `ffstruct:"TransactionStatusDetails" json:"type"`
+	SubType   string                `ffstruct:"TransactionStatusDetails" json:"subtype,omitempty"`
+	Status    OpStatus              `ffstruct:"TransactionStatusDetails" json:"status"`
+	Timestamp *FFTime               `ffstruct:"TransactionStatusDetails" json:"timestamp,omitempty"`
+	ID        *UUID                 `ffstruct:"TransactionStatusDetails" json:"id,omitempty"`
+	Error     string                `ffstruct:"TransactionStatusDetails" json:"error,omitempty"`
+	Info      JSONObject            `ffstruct:"TransactionStatusDetails" json:"info,omitempty"`
 }
 
 type TransactionStatus struct {
-	Status  OpStatus                    `json:"status"`
-	Details []*TransactionStatusDetails `json:"details"`
+	Status  OpStatus                    `ffstruct:"TransactionStatus" json:"status"`
+	Details []*TransactionStatusDetails `ffstruct:"TransactionStatus" json:"details"`
 }
 
 func (tx *Transaction) Size() int64 {

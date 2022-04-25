@@ -50,7 +50,7 @@ This is deliberately a simple flow, and all kinds of additional layers might wel
 
 ## Broadcast Public Description of Binary Data Asset (Member 1)
 
-- Upload BLOB of the actual data
+- Upload Blob of the actual data
   - Returns a hash of the payload
 - Upload JSON containing the public index data 
   - Includes the hash of the full payload

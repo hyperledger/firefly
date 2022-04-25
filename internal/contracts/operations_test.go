@@ -1,24 +1,28 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package contracts
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -81,7 +85,7 @@ func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
 	}
 
 	_, err := cm.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {
@@ -91,4 +95,57 @@ func TestRunOperationNotSupported(t *testing.T) {
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
+}
+
+func TestOperationUpdate(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &fftypes.Operation{}
+
+	err := cm.OnOperationUpdate(context.Background(), op, nil)
+	assert.NoError(t, err)
+}
+
+func TestOperationUpdateInvokeSucceed(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainInvoke,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusSucceeded,
+	}
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeBlockchainInvokeOpSucceeded && *event.Reference == *op.ID
+	})).Return(fmt.Errorf("pop"))
+
+	err := cm.OnOperationUpdate(context.Background(), op, update)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateInvokeFail(t *testing.T) {
+	cm := newTestContractManager()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeBlockchainInvoke,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := cm.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeBlockchainInvokeOpFailed && *event.Reference == *op.ID
+	})).Return(fmt.Errorf("pop"))
+
+	err := cm.OnOperationUpdate(context.Background(), op, update)
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }

@@ -42,16 +42,7 @@ func (_m *Callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) er
 	return r0
 }
 
-// BlockchainOpUpdate provides a mock function with given fields: operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *Callbacks) BlockchainOpUpdate(operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(operationID, txState, blockchainTXID, errorMessage, opOutput)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*fftypes.UUID, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(operationID, txState, blockchainTXID, errorMessage, opOutput)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+// BlockchainOpUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
+func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
+	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }

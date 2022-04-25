@@ -28,20 +28,20 @@ func TestDatatypeValidation(t *testing.T) {
 	dt := &Datatype{
 		Validator: ValidatorType("wrong"),
 	}
-	assert.Regexp(t, "FF10132.*wrong", dt.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00111.*wrong", dt.Validate(context.Background(), false))
 
 	dt = &Datatype{
 		Validator: ValidatorTypeJSON,
 		Namespace: "!wrong",
 	}
-	assert.Regexp(t, "FF10131.*namespace", dt.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00140.*namespace", dt.Validate(context.Background(), false))
 
 	dt = &Datatype{
 		Validator: ValidatorTypeJSON,
 		Namespace: "ok",
 		Name:      "!wrong",
 	}
-	assert.Regexp(t, "FF10131.*name", dt.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00140.*name", dt.Validate(context.Background(), false))
 
 	dt = &Datatype{
 		Validator: ValidatorTypeJSON,
@@ -49,7 +49,7 @@ func TestDatatypeValidation(t *testing.T) {
 		Name:      "ok",
 		Version:   "!wrong",
 	}
-	assert.Regexp(t, "FF10131.*version", dt.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00140.*version", dt.Validate(context.Background(), false))
 
 	dt = &Datatype{
 		Validator: ValidatorTypeJSON,
@@ -57,7 +57,7 @@ func TestDatatypeValidation(t *testing.T) {
 		Name:      "ok",
 		Version:   "ok",
 	}
-	assert.Regexp(t, "FF10140.*value", dt.Validate(context.Background(), false))
+	assert.Regexp(t, "FF00112.*value", dt.Validate(context.Background(), false))
 
 	dt = &Datatype{
 		Validator: ValidatorTypeJSON,
@@ -68,11 +68,11 @@ func TestDatatypeValidation(t *testing.T) {
 	}
 	assert.NoError(t, dt.Validate(context.Background(), false))
 
-	assert.Regexp(t, "FF10203", dt.Validate(context.Background(), true))
+	assert.Regexp(t, "FF00114", dt.Validate(context.Background(), true))
 
 	dt.ID = NewUUID()
 	dt.Hash = NewRandB32()
-	assert.Regexp(t, "FF10201", dt.Validate(context.Background(), true))
+	assert.Regexp(t, "FF00113", dt.Validate(context.Background(), true))
 
 	var def Definition = dt
 	assert.Equal(t, "8e23c0a7fa9ec15c68a662e0e502933facb3d249409efa2b4f89d479b9f990cb", def.Topic())

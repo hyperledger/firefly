@@ -19,26 +19,26 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getVerifierByID = &oapispec.Route{
 	Name:   "getVerifierByID",
-	Path:   "namespaces/{ns}/verifiers/{vid}",
+	Path:   "namespaces/{ns}/verifiers/{hash}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "vid", Example: "id", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "hash", Example: "hash", Description: coremsgs.APIParamsVerifierHash},
 	},
 	QueryParams:     nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsGetVerifierByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetVerifierByHash(r.Ctx, r.PP["ns"], r.PP["vid"])
+		return getOr(r.Ctx).NetworkMap().GetVerifierByHash(r.Ctx, r.PP["ns"], r.PP["hash"])
 	},
 }

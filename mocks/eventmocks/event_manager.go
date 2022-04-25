@@ -67,22 +67,6 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return r0
 }
 
-// ChangeEvents provides a mock function with given fields:
-func (_m *EventManager) ChangeEvents() chan<- *fftypes.ChangeEvent {
-	ret := _m.Called()
-
-	var r0 chan<- *fftypes.ChangeEvent
-	if rf, ok := ret.Get(0).(func() chan<- *fftypes.ChangeEvent); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan<- *fftypes.ChangeEvent)
-		}
-	}
-
-	return r0
-}
-
 // CreateUpdateDurableSubscription provides a mock function with given fields: ctx, subDef, mustNew
 func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) error {
 	ret := _m.Called(ctx, subDef, mustNew)
@@ -95,6 +79,11 @@ func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	}
 
 	return r0
+}
+
+// DXEvent provides a mock function with given fields: dx, event
+func (_m *EventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+	_m.Called(dx, event)
 }
 
 // DeleteDurableSubscription provides a mock function with given fields: ctx, subDef
@@ -127,25 +116,36 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
-// MessageReceived provides a mock function with given fields: dx, peerID, data
-func (_m *EventManager) MessageReceived(dx dataexchange.Plugin, peerID string, data []byte) (string, error) {
-	ret := _m.Called(dx, peerID, data)
+// GetPlugins provides a mock function with given fields:
+func (_m *EventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
+	ret := _m.Called()
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, []byte) string); ok {
-		r0 = rf(dx, peerID, data)
+	var r0 []*fftypes.NodeStatusPlugin
+	if rf, ok := ret.Get(0).(func() []*fftypes.NodeStatusPlugin); ok {
+		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*fftypes.NodeStatusPlugin)
+		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(dataexchange.Plugin, string, []byte) error); ok {
-		r1 = rf(dx, peerID, data)
+	return r0
+}
+
+// GetWebSocketStatus provides a mock function with given fields:
+func (_m *EventManager) GetWebSocketStatus() *fftypes.WebSocketStatus {
+	ret := _m.Called()
+
+	var r0 *fftypes.WebSocketStatus
+	if rf, ok := ret.Get(0).(func() *fftypes.WebSocketStatus); ok {
+		r0 = rf()
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.WebSocketStatus)
+		}
 	}
 
-	return r0, r1
+	return r0
 }
 
 // NewEvents provides a mock function with given fields:
@@ -196,48 +196,6 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
-// OperationUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *EventManager) OperationUpdate(plugin fftypes.Named, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) error {
-	ret := _m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(fftypes.Named, *fftypes.UUID, fftypes.OpStatus, string, string, fftypes.JSONObject) error); ok {
-		r0 = rf(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// PrivateBLOBReceived provides a mock function with given fields: dx, peerID, hash, size, payloadRef
-func (_m *EventManager) PrivateBLOBReceived(dx dataexchange.Plugin, peerID string, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	ret := _m.Called(dx, peerID, hash, size, payloadRef)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.Bytes32, int64, string) error); ok {
-		r0 = rf(dx, peerID, hash, size, payloadRef)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SharedStorageBLOBDownloaded provides a mock function with given fields: ss, hash, size, payloadRef
-func (_m *EventManager) SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error {
-	ret := _m.Called(ss, hash, size, payloadRef)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(sharedstorage.Plugin, fftypes.Bytes32, int64, string) error); ok {
-		r0 = rf(ss, hash, size, payloadRef)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // SharedStorageBatchDownloaded provides a mock function with given fields: ss, ns, payloadRef, data
 func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns string, payloadRef string, data []byte) (*fftypes.UUID, error) {
 	ret := _m.Called(ss, ns, payloadRef, data)
@@ -259,6 +217,11 @@ func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	}
 
 	return r0, r1
+}
+
+// SharedStorageBlobDownloaded provides a mock function with given fields: ss, hash, size, payloadRef
+func (_m *EventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) {
+	_m.Called(ss, hash, size, payloadRef)
 }
 
 // Start provides a mock function with given fields:
@@ -326,20 +289,6 @@ func (_m *EventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 	var r0 error
 	if rf, ok := ret.Get(0).(func(tokens.Plugin, *tokens.TokenTransfer) error); ok {
 		r0 = rf(ti, transfer)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TransferResult provides a mock function with given fields: dx, trackingID, status, update
-func (_m *EventManager) TransferResult(dx dataexchange.Plugin, trackingID string, status fftypes.OpStatus, update fftypes.TransportStatusUpdate) error {
-	ret := _m.Called(dx, trackingID, status, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(dataexchange.Plugin, string, fftypes.OpStatus, fftypes.TransportStatusUpdate) error); ok {
-		r0 = rf(dx, trackingID, status, update)
 	} else {
 		r0 = ret.Error(0)
 	}

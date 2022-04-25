@@ -25,9 +25,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -216,7 +216,7 @@ func TestGetOffsetBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.OffsetQueryFactory.NewFilter(context.Background()).Eq("type", map[bool]bool{true: false})
 	_, _, err := s.GetOffsets(context.Background(), f)
-	assert.Regexp(t, "FF10149.*type", err)
+	assert.Regexp(t, "FF00143.*type", err)
 }
 
 func TestGetOffsetReadMessageFail(t *testing.T) {
@@ -241,7 +241,7 @@ func TestOffsetUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.OffsetQueryFactory.NewUpdate(context.Background()).Set("name", map[bool]bool{true: false})
 	err := s.UpdateOffset(context.Background(), 12345, u)
-	assert.Regexp(t, "FF10149.*name", err)
+	assert.Regexp(t, "FF00143.*name", err)
 }
 
 func TestOffsetUpdateFail(t *testing.T) {

@@ -21,16 +21,18 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 const (
@@ -61,14 +63,12 @@ type eventDispatcher struct {
 	namespace     string
 	readAhead     int
 	subscription  *subscription
-	cel           *changeEventListener
-	changeEvents  chan *fftypes.ChangeEvent
 	txHelper      txcommon.Helper
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, cel *changeEventListener, txHelper txcommon.Helper) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
-	readAhead := config.GetUint(config.SubscriptionDefaultsReadAhead)
+	readAhead := config.GetUint(coreconfig.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
 		readAhead = uint(*sub.definition.Options.ReadAhead)
 	}
@@ -89,23 +89,21 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		namespace:     sub.definition.Namespace,
 		inflight:      make(map[fftypes.UUID]*fftypes.Event),
 		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
-		changeEvents:  make(chan *fftypes.ChangeEvent),
 		readAhead:     int(readAhead),
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
-		cel:           cel,
 		txHelper:      txHelper,
 	}
 
 	pollerConf := &eventPollerConf{
-		eventBatchSize:             config.GetInt(config.EventDispatcherBufferLength),
-		eventBatchTimeout:          config.GetDuration(config.EventDispatcherBatchTimeout),
-		eventPollTimeout:           config.GetDuration(config.EventDispatcherPollTimeout),
+		eventBatchSize:             config.GetInt(coreconfig.EventDispatcherBufferLength),
+		eventBatchTimeout:          config.GetDuration(coreconfig.EventDispatcherBatchTimeout),
+		eventPollTimeout:           config.GetDuration(coreconfig.EventDispatcherPollTimeout),
 		startupOffsetRetryAttempts: 0, // We need to keep trying to start indefinitely
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.EventDispatcherRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.EventDispatcherRetryMaxDelay),
-			Factor:       config.GetFloat64(config.EventDispatcherRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.EventDispatcherRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.EventDispatcherRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.EventDispatcherRetryFactor),
 		},
 		namespace:  sub.definition.Namespace,
 		offsetType: fftypes.OffsetTypeSubscription,
@@ -314,7 +312,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (
 		// Block until we're closed, or woken due to a delivery response
 		select {
 		case <-ed.ctx.Done():
-			return false, i18n.NewError(ed.ctx, i18n.MsgDispatcherClosing)
+			return false, i18n.NewError(ed.ctx, coremsgs.MsgDispatcherClosing)
 		case an := <-ed.acksNacks:
 			if an.isNack {
 				nacks++
@@ -361,21 +359,7 @@ func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
 	}
 }
 
-func (ed *eventDispatcher) dispatchChangeEvent(ce *fftypes.ChangeEvent) {
-	select {
-	case ed.changeEvents <- ce:
-		log.L(ed.ctx).Tracef("Dispatched change event %+v", ce)
-		break
-	case <-ed.eventPoller.closed:
-		log.L(ed.ctx).Warnf("Dispatcher closed before dispatching change event")
-	}
-}
-
 func (ed *eventDispatcher) deliverEvents() {
-	if ed.transport.Capabilities().ChangeEvents && ed.subscription.definition.Options.ChangeEvents {
-		ed.cel.addDispatcher(*ed.subscription.definition.ID, ed)
-		defer ed.cel.removeDispatcher(*ed.subscription.definition.ID)
-	}
 	withData := ed.subscription.definition.Options.WithData != nil && *ed.subscription.definition.Options.WithData
 	for {
 		select {
@@ -395,13 +379,6 @@ func (ed *eventDispatcher) deliverEvents() {
 			if err != nil {
 				ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
 			}
-		case changeEvent := <-ed.changeEvents:
-			ws, ok := ed.transport.(events.ChangeEventListener)
-			if !ok {
-				log.L(ed.ctx).Warnf("Change event received for transport that does not support change events '%s'", ed.transport.Name())
-				break
-			}
-			ws.ChangeEvent(ed.connID, changeEvent)
 		case <-ed.ctx.Done():
 			return
 		}

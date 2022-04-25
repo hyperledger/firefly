@@ -19,9 +19,9 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
@@ -74,7 +74,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool
 	// This will ultimately trigger a pool creation event and a rewind
 	state.AddPreFinalize(func(ctx context.Context) error {
-		if err := dh.assets.ActivateTokenPool(ctx, pool, announce.Event.Info); err != nil {
+		if err := dh.assets.ActivateTokenPool(ctx, pool); err != nil {
 			log.L(ctx).Errorf("Failed to activate token pool '%s': %s", pool.ID, err)
 			return err
 		}

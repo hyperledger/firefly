@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type blockchainInvokeData struct {
@@ -55,7 +57,7 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 		return opBlockchainInvoke(op, req), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -66,8 +68,27 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 		return nil, false, cm.blockchain.InvokeContract(ctx, op.ID, req.Key, req.Location, req.Method, req.Input)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	// Special handling for OpTypeBlockchainInvoke, which writes an event when it succeeds or fails
+	if op.Type == fftypes.OpTypeBlockchainInvoke {
+		if update.Status == fftypes.OpStatusSucceeded {
+			event := fftypes.NewEvent(fftypes.EventTypeBlockchainInvokeOpSucceeded, op.Namespace, op.ID, op.Transaction, "")
+			if err := cm.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
+		}
+		if update.Status == fftypes.OpStatusFailed {
+			event := fftypes.NewEvent(fftypes.EventTypeBlockchainInvokeOpFailed, op.Namespace, op.ID, op.Transaction, "")
+			if err := cm.database.InsertEvent(ctx, event); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func opBlockchainInvoke(op *fftypes.Operation, req *fftypes.ContractCallRequest) *fftypes.PreparedOperation {

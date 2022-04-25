@@ -19,7 +19,7 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -29,11 +29,11 @@ var getNetworkNode = &oapispec.Route{
 	Path:   "network/nodes/{nameOrId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "nameOrId", Description: i18n.MsgTBD},
+		{Name: "nameOrId", Description: coremsgs.APIParamsNodeNameOrID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsGetNetworkNode,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -25,27 +25,27 @@ var (
 )
 
 type TokenTransfer struct {
-	Type            TokenTransferType `json:"type" ffenum:"tokentransfertype"`
-	LocalID         *UUID             `json:"localId,omitempty"`
-	Pool            *UUID             `json:"pool,omitempty"`
-	TokenIndex      string            `json:"tokenIndex,omitempty"`
-	URI             string            `json:"uri,omitempty"`
-	Connector       string            `json:"connector,omitempty"`
-	Namespace       string            `json:"namespace,omitempty"`
-	Key             string            `json:"key,omitempty"`
-	From            string            `json:"from,omitempty"`
-	To              string            `json:"to,omitempty"`
-	Amount          FFBigInt          `json:"amount"`
-	ProtocolID      string            `json:"protocolId,omitempty"`
-	Message         *UUID             `json:"message,omitempty"`
-	MessageHash     *Bytes32          `json:"messageHash,omitempty"`
-	Created         *FFTime           `json:"created,omitempty"`
-	TX              TransactionRef    `json:"tx"`
-	BlockchainEvent *UUID             `json:"blockchainEvent,omitempty"`
+	Type            TokenTransferType `ffstruct:"TokenTransfer" json:"type" ffenum:"tokentransfertype" ffexcludeinput:"true"`
+	LocalID         *UUID             `ffstruct:"TokenTransfer" json:"localId,omitempty" ffexcludeinput:"true"`
+	Pool            *UUID             `ffstruct:"TokenTransfer" json:"pool,omitempty"`
+	TokenIndex      string            `ffstruct:"TokenTransfer" json:"tokenIndex,omitempty"`
+	URI             string            `ffstruct:"TokenTransfer" json:"uri,omitempty" ffexcludeinput:"true"`
+	Connector       string            `ffstruct:"TokenTransfer" json:"connector,omitempty"`
+	Namespace       string            `ffstruct:"TokenTransfer" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Key             string            `ffstruct:"TokenTransfer" json:"key,omitempty"`
+	From            string            `ffstruct:"TokenTransfer" json:"from,omitempty" ffexcludeinput:"postTokenMint"`
+	To              string            `ffstruct:"TokenTransfer" json:"to,omitempty" ffexcludeinput:"postTokenBurn"`
+	Amount          FFBigInt          `ffstruct:"TokenTransfer" json:"amount"`
+	ProtocolID      string            `ffstruct:"TokenTransfer" json:"protocolId,omitempty" ffexcludeinput:"true"`
+	Message         *UUID             `ffstruct:"TokenTransfer" json:"message,omitempty"`
+	MessageHash     *Bytes32          `ffstruct:"TokenTransfer" json:"messageHash,omitempty" ffexcludeinput:"true"`
+	Created         *FFTime           `ffstruct:"TokenTransfer" json:"created,omitempty" ffexcludeinput:"true"`
+	TX              TransactionRef    `ffstruct:"TokenTransfer" json:"tx" ffexcludeinput:"true"`
+	BlockchainEvent *UUID             `ffstruct:"TokenTransfer" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`
 }
 
 type TokenTransferInput struct {
 	TokenTransfer
-	Message *MessageInOut `json:"message,omitempty"`
-	Pool    string        `json:"pool,omitempty"`
+	Message *MessageInOut `ffstruct:"TokenTransferInput" json:"message,omitempty"`
+	Pool    string        `ffstruct:"TokenTransferInput" json:"pool,omitempty"`
 }

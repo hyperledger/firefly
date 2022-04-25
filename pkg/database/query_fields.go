@@ -26,8 +26,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // QueryFactory creates a filter builder in the given context, and contains the rules on
@@ -119,7 +119,7 @@ func (f *stringField) Scan(src interface{}) error {
 			// This is helpful for status enums
 			f.s = reflect.ValueOf(tv).String()
 		} else {
-			return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.s)
+			return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.s)
 		}
 	}
 	return nil
@@ -162,7 +162,7 @@ func (f *uuidField) Scan(src interface{}) (err error) {
 	case nil:
 		f.u = nil
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.u)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.u)
 	}
 	return nil
 }
@@ -192,7 +192,7 @@ func (f *bytes32Field) Scan(src interface{}) (err error) {
 	case nil:
 		f.b32 = nil
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b32)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.b32)
 	}
 	return nil
 }
@@ -222,12 +222,12 @@ func (f *int64Field) Scan(src interface{}) (err error) {
 	case string:
 		f.i, err = strconv.ParseInt(src.(string), 10, 64)
 		if err != nil {
-			return i18n.WrapError(context.Background(), err, i18n.MsgScanFailed, src, int64(0))
+			return i18n.WrapError(context.Background(), err, i18n.MsgTypeRestoreFailed, src, int64(0))
 		}
 	case nil:
 		f.i = 0
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.i)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.i)
 	}
 	return nil
 }
@@ -258,7 +258,7 @@ func (f *timeField) Scan(src interface{}) (err error) {
 	case nil:
 		f.t = nil
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.t)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.t)
 	}
 	return nil
 }
@@ -287,7 +287,7 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 	case nil:
 		f.b = nil
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.b)
 	}
 	return err
 }
@@ -333,7 +333,7 @@ func (f *boolField) Scan(src interface{}) (err error) {
 	case nil:
 		f.b = false
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgScanFailed, src, f.b)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.b)
 	}
 	return nil
 }

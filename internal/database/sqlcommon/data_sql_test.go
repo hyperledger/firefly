@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -318,7 +318,7 @@ func TestGetDataBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetData(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetDataReadMessageFail(t *testing.T) {
@@ -343,7 +343,7 @@ func TestGetDataRefsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.DataQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetDataRefs(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetDataRefsReadMessageFail(t *testing.T) {
@@ -368,7 +368,7 @@ func TestDataUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.DataQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateData(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestDataUpdateFail(t *testing.T) {

@@ -25,12 +25,12 @@ import (
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // DefinitionHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
@@ -91,6 +91,9 @@ type DefinitionBatchState interface {
 
 	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
 	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
+
+	// Notify of a DID claim locking in, so a rewind gets queued for it to go back and process any dependent child identities/messages
+	DIDClaimConfirmed(did string)
 }
 
 type definitionHandlers struct {

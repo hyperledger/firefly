@@ -177,13 +177,14 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
+	assert.Equal(t, bs.confirmedDIDClaims, []string{custom1.DID})
 
 	err = bs.finalizers[0](ctx)
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -563,7 +564,7 @@ func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
-	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
+	assert.Equal(t, HandlerResult{Action: ActionWait}, action)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)

@@ -19,47 +19,52 @@ package batchpin
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type batchPinData struct {
-	Batch    *fftypes.BatchPersisted `json:"batch"`
-	Contexts []*fftypes.Bytes32      `json:"contexts"`
+	Batch      *fftypes.BatchPersisted `json:"batch"`
+	Contexts   []*fftypes.Bytes32      `json:"contexts"`
+	PayloadRef string                  `json:"payloadRef"`
 }
 
-func addBatchPinInputs(op *fftypes.Operation, batchID *fftypes.UUID, contexts []*fftypes.Bytes32) {
+func addBatchPinInputs(op *fftypes.Operation, batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string) {
 	contextStr := make([]string, len(contexts))
 	for i, c := range contexts {
 		contextStr[i] = c.String()
 	}
 	op.Input = fftypes.JSONObject{
-		"batch":    batchID.String(),
-		"contexts": contextStr,
+		"batch":      batchID.String(),
+		"contexts":   contextStr,
+		"payloadRef": payloadRef,
 	}
 }
 
-func retrieveBatchPinInputs(ctx context.Context, op *fftypes.Operation) (batchID *fftypes.UUID, contexts []*fftypes.Bytes32, err error) {
+func retrieveBatchPinInputs(ctx context.Context, op *fftypes.Operation) (batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string, err error) {
 	batchID, err = fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 	contextStr := op.Input.GetStringArray("contexts")
 	contexts = make([]*fftypes.Bytes32, len(contextStr))
 	for i, c := range contextStr {
 		contexts[i], err = fftypes.ParseBytes32(ctx, c)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, "", err
 		}
 	}
-	return batchID, contexts, nil
+	payloadRef = op.Input.GetString("payloadRef")
+	return batchID, contexts, payloadRef, nil
 }
 
 func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	switch op.Type {
 	case fftypes.OpTypeBlockchainPinBatch:
-		batchID, contexts, err := retrieveBatchPinInputs(ctx, op)
+		batchID, contexts, payloadRef, err := retrieveBatchPinInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
@@ -67,12 +72,12 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.O
 		if err != nil {
 			return nil, err
 		} else if batch == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		return opBatchPin(op, batch, contexts), nil
+		return opBatchPin(op, batch, contexts, payloadRef), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
@@ -85,19 +90,23 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
 			BatchHash:       batch.Hash,
-			BatchPayloadRef: batch.PayloadRef,
+			BatchPayloadRef: data.PayloadRef,
 			Contexts:        data.Contexts,
 		})
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
-func opBatchPin(op *fftypes.Operation, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32) *fftypes.PreparedOperation {
+func (bp *batchPinSubmitter) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
+}
+
+func opBatchPin(op *fftypes.Operation, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
 		ID:   op.ID,
 		Type: op.Type,
-		Data: batchPinData{Batch: batch, Contexts: contexts},
+		Data: batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
 	}
 }

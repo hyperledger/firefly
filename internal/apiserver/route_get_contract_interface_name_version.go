@@ -18,9 +18,10 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
@@ -30,18 +31,22 @@ var getContractInterfaceNameVersion = &oapispec.Route{
 	Path:   "namespaces/{ns}/contracts/interfaces/{name}/{version}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: config.NamespacesDefault, Description: i18n.MsgTBD},
-		{Name: "name", Description: i18n.MsgTBD},
-		{Name: "version", Description: i18n.MsgTBD},
+		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
+		{Name: "name", Description: coremsgs.APIParamsContractInterfaceName},
+		{Name: "version", Description: coremsgs.APIParamsContractInterfaceVersion},
 	},
-	QueryParams:     nil,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIParamsContractInterfaceFetchChildren, IsBool: true},
+	},
 	FilterFactory:   nil,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsGetContractInterfaceNameVersion,
 	JSONInputValue:  nil,
-	JSONInputMask:   nil,
 	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		if strings.EqualFold(r.QP["fetchchildren"], "true") {
+			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		}
 		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
 	},
 }

@@ -5,7 +5,7 @@ package dataexchangemocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/internal/config"
+	config "github.com/hyperledger/firefly/pkg/config"
 
 	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 
@@ -51,8 +51,8 @@ func (_m *Plugin) Capabilities() *dataexchange.Capabilities {
 	return r0
 }
 
-// CheckBLOBReceived provides a mock function with given fields: ctx, peerID, ns, id
-func (_m *Plugin) CheckBLOBReceived(ctx context.Context, peerID string, ns string, id fftypes.UUID) (*fftypes.Bytes32, int64, error) {
+// CheckBlobReceived provides a mock function with given fields: ctx, peerID, ns, id
+func (_m *Plugin) CheckBlobReceived(ctx context.Context, peerID string, ns string, id fftypes.UUID) (*fftypes.Bytes32, int64, error) {
 	ret := _m.Called(ctx, peerID, ns, id)
 
 	var r0 *fftypes.Bytes32
@@ -81,8 +81,8 @@ func (_m *Plugin) CheckBLOBReceived(ctx context.Context, peerID string, ns strin
 	return r0, r1, r2
 }
 
-// DownloadBLOB provides a mock function with given fields: ctx, payloadRef
-func (_m *Plugin) DownloadBLOB(ctx context.Context, payloadRef string) (io.ReadCloser, error) {
+// DownloadBlob provides a mock function with given fields: ctx, payloadRef
+func (_m *Plugin) DownloadBlob(ctx context.Context, payloadRef string) (io.ReadCloser, error) {
 	ret := _m.Called(ctx, payloadRef)
 
 	var r0 io.ReadCloser
@@ -188,8 +188,8 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBLOB provides a mock function with given fields: ctx, opID, peerID, payloadRef
-func (_m *Plugin) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) error {
+// TransferBlob provides a mock function with given fields: ctx, opID, peerID, payloadRef
+func (_m *Plugin) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) error {
 	ret := _m.Called(ctx, opID, peerID, payloadRef)
 
 	var r0 error
@@ -202,8 +202,8 @@ func (_m *Plugin) TransferBLOB(ctx context.Context, opID *fftypes.UUID, peerID s
 	return r0
 }
 
-// UploadBLOB provides a mock function with given fields: ctx, ns, id, content
-func (_m *Plugin) UploadBLOB(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (string, *fftypes.Bytes32, int64, error) {
+// UploadBlob provides a mock function with given fields: ctx, ns, id, content
+func (_m *Plugin) UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (string, *fftypes.Bytes32, int64, error) {
 	ret := _m.Called(ctx, ns, id, content)
 
 	var r0 string

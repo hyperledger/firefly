@@ -79,7 +79,6 @@ func TestBatch2EWithDB(t *testing.T) {
 	// and does not account for the verification that happens at the higher level)
 	txid := fftypes.NewUUID()
 	msgID2 := fftypes.NewUUID()
-	payloadRef := ""
 	batchUpdated := &fftypes.BatchPersisted{
 		BatchHeader: fftypes.BatchHeader{
 			ID:   batchID,
@@ -103,8 +102,7 @@ func TestBatch2EWithDB(t *testing.T) {
 				{MessageRef: fftypes.MessageRef{ID: msgID2}},
 			},
 		}).String()),
-		PayloadRef: payloadRef,
-		Confirmed:  fftypes.Now(),
+		Confirmed: fftypes.Now(),
 	}
 
 	// Rejects hash change
@@ -262,7 +260,7 @@ func TestGetBatchesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.BatchQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetBatches(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetBatchesReadMessageFail(t *testing.T) {
@@ -287,7 +285,7 @@ func TestBatchUpdateBuildQueryFail(t *testing.T) {
 	mock.ExpectBegin()
 	u := database.BatchQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
 	err := s.UpdateBatch(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestBatchUpdateFail(t *testing.T) {

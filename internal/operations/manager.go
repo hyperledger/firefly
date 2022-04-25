@@ -18,25 +18,35 @@ package operations
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type OperationHandler interface {
 	fftypes.Named
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *OperationUpdate) error
 }
 
 type Manager interface {
 	RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType)
 	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error
+	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
 	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
+	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate)
+	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
+	ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error)
+	Start() error
+	WaitStop()
 }
 
 type RunOperationOption int
@@ -49,17 +59,20 @@ type operationsManager struct {
 	ctx      context.Context
 	database database.Plugin
 	handlers map[fftypes.OpType]OperationHandler
+	updater  *operationUpdater
 }
 
-func NewOperationsManager(ctx context.Context, di database.Plugin) (Manager, error) {
-	if di == nil {
-		return nil, i18n.NewError(ctx, i18n.MsgInitializationNilDepError)
+func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
+	if di == nil || txHelper == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	om := &operationsManager{
 		ctx:      ctx,
 		database: di,
 		handlers: make(map[fftypes.OpType]OperationHandler),
 	}
+	updater := newOperationUpdater(ctx, om, di, txHelper)
+	om.updater = updater
 	return om, nil
 }
 
@@ -73,12 +86,12 @@ func (om *operationsManager) RegisterHandler(ctx context.Context, handler Operat
 func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) error {
+func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
 	failState := fftypes.OpStatusFailed
 	for _, o := range options {
 		if o == RemainPendingOnFailure {
@@ -88,17 +101,18 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 
 	handler, ok := om.handlers[op.Type]
 	if !ok {
-		return i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 	log.L(ctx).Infof("Executing %s operation %s via handler %s", op.Type, op.ID, handler.Name())
 	log.L(ctx).Tracef("Operation detail: %+v", op)
-	if outputs, complete, err := handler.RunOperation(ctx, op); err != nil {
+	outputs, complete, err := handler.RunOperation(ctx, op)
+	if err != nil {
 		om.writeOperationFailure(ctx, op.ID, outputs, err, failState)
-		return err
+		return nil, err
 	} else if complete {
 		om.writeOperationSuccess(ctx, op.ID, outputs)
 	}
-	return nil
+	return outputs, nil
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
@@ -144,7 +158,44 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 		return nil, err
 	}
 
-	return op, om.RunOperation(ctx, po)
+	_, err = om.RunOperation(ctx, po)
+	return op, err
+}
+
+func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent) {
+
+	tr := event.TransferResult()
+
+	log.L(om.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", tr.TrackingID, tr.Status, tr.Error, tr.Manifest, tr.Info)
+	opID, err := fftypes.ParseUUID(om.ctx, tr.TrackingID)
+	if err != nil {
+		log.L(om.ctx).Errorf("Invalid UUID for tracking ID from DX: %s", tr.TrackingID)
+		return
+	}
+
+	opUpdate := &OperationUpdate{
+		ID:             opID,
+		Status:         tr.Status,
+		VerifyManifest: dx.Capabilities().Manifest,
+		ErrorMessage:   tr.Error,
+		Output:         tr.Info,
+		OnComplete: func() {
+			event.Ack()
+		},
+	}
+
+	// Pass manifest verification code to the background worker, for once it has loaded the operation
+	if opUpdate.VerifyManifest {
+		if tr.Manifest != "" {
+			// For batches DX passes us a manifest to compare.
+			opUpdate.DXManifest = tr.Manifest
+		} else if tr.Hash != "" {
+			// For blobs DX passes us a hash to compare.
+			opUpdate.DXHash = tr.Hash
+		}
+	}
+
+	om.SubmitOperationUpdate(dx, opUpdate)
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {
@@ -153,8 +204,35 @@ func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *ff
 	}
 }
 
-func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newState fftypes.OpStatus) {
-	if err := om.database.ResolveOperation(ctx, opID, newState, err.Error(), outputs); err != nil {
+func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus fftypes.OpStatus) {
+	if err := om.database.ResolveOperation(ctx, opID, newStatus, err.Error(), outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
+}
+
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	err = om.database.ResolveOperation(ctx, u, op.Status, op.Error, op.Output)
+	return op, err
+}
+
+func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) {
+	errString := ""
+	if update.ErrorMessage != "" {
+		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)
+	}
+	log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", plugin.Name(), update.ID, update.Status, errString)
+	om.updater.SubmitOperationUpdate(om.ctx, update)
+}
+
+func (om *operationsManager) Start() error {
+	om.updater.start()
+	return nil
+}
+
+func (om *operationsManager) WaitStop() {
+	om.updater.close()
 }

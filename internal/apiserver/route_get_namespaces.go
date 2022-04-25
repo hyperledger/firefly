@@ -19,7 +19,7 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -32,7 +32,7 @@ var getNamespaces = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.NamespaceQueryFactory,
-	Description:     i18n.MsgTBD,
+	Description:     coremsgs.APIEndpointsGetNamespaces,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*fftypes.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},

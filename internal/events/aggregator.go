@@ -19,21 +19,21 @@ package events
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql/driver"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/karlseguin/ccache"
 )
 
@@ -49,12 +49,11 @@ type aggregator struct {
 	data          data.Manager
 	eventPoller   *eventPoller
 	verifierType  fftypes.VerifierType
-	rewindBatches chan fftypes.UUID
-	queuedRewinds chan fftypes.UUID
 	retry         *retry.Retry
 	metrics       metrics.Manager
 	batchCache    *ccache.Cache
 	batchCacheTTL time.Duration
+	rewinder      *rewinder
 }
 
 type batchCacheEntry struct {
@@ -63,7 +62,7 @@ type batchCacheEntry struct {
 }
 
 func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
-	batchSize := config.GetInt(config.EventAggregatorBatchSize)
+	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
 		database:      di,
@@ -71,26 +70,24 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 		identity:      im,
 		data:          dm,
 		verifierType:  bi.VerifierType(),
-		rewindBatches: make(chan fftypes.UUID, 1), // hops to queuedRewinds with a shouldertab on the event poller
-		queuedRewinds: make(chan fftypes.UUID, batchSize),
 		metrics:       mm,
-		batchCacheTTL: config.GetDuration(config.BatchCacheTTL),
+		batchCacheTTL: config.GetDuration(coreconfig.BatchCacheTTL),
 	}
 	ag.batchCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
-			MaxSize(config.GetByteSize(config.BatchCacheSize)),
+			MaxSize(config.GetByteSize(coreconfig.BatchCacheSize)),
 	)
-	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(config.EventAggregatorFirstEvent))
+	firstEvent := fftypes.SubOptsFirstEvent(config.GetString(coreconfig.EventAggregatorFirstEvent))
 	ag.eventPoller = newEventPoller(ctx, di, en, &eventPollerConf{
 		eventBatchSize:             batchSize,
-		eventBatchTimeout:          config.GetDuration(config.EventAggregatorBatchTimeout),
-		eventPollTimeout:           config.GetDuration(config.EventAggregatorPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(config.OrchestratorStartupAttempts),
+		eventBatchTimeout:          config.GetDuration(coreconfig.EventAggregatorBatchTimeout),
+		eventPollTimeout:           config.GetDuration(coreconfig.EventAggregatorPollTimeout),
+		startupOffsetRetryAttempts: config.GetInt(coreconfig.OrchestratorStartupAttempts),
 		retry: retry.Retry{
-			InitialDelay: config.GetDuration(config.EventAggregatorRetryInitDelay),
-			MaximumDelay: config.GetDuration(config.EventAggregatorRetryMaxDelay),
-			Factor:       config.GetFloat64(config.EventAggregatorRetryFactor),
+			InitialDelay: config.GetDuration(coreconfig.EventAggregatorRetryInitDelay),
+			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),
+			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		firstEvent:       &firstEvent,
 		namespace:        fftypes.SystemNamespace,
@@ -105,59 +102,77 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 		maybeRewind: ag.rewindOffchainBatches,
 	})
 	ag.retry = &ag.eventPoller.conf.retry
+	ag.rewinder = newRewinder(ag)
 	return ag
 }
 
 func (ag *aggregator) start() {
-	go ag.batchRewindListener()
+	ag.rewinder.start()
 	ag.eventPoller.start()
 }
 
-func (ag *aggregator) batchRewindListener() {
-	for {
-		select {
-		case uuid := <-ag.rewindBatches:
-			ag.queuedRewinds <- uuid
-			ag.eventPoller.shoulderTap()
-		case <-ag.ctx.Done():
-			return
-		}
+func (ag *aggregator) queueBatchRewind(batchID *fftypes.UUID) {
+	log.L(ag.ctx).Debugf("Queuing rewind for batch %s", batchID)
+	ag.rewinder.rewindRequests <- rewind{
+		rewindType: rewindBatch,
+		uuid:       *batchID,
 	}
 }
 
-func (ag *aggregator) rewindOffchainBatches() (rewind bool, offset int64) {
-	l := log.L(ag.ctx)
-	var batchIDs []driver.Value
-	draining := true
-	for draining {
-		select {
-		case batchID := <-ag.queuedRewinds:
-			batchIDs = append(batchIDs, batchID)
-			l.Debugf("Rewinding for batch %s", &batchID)
-		default:
-			draining = false
-		}
+func (ag *aggregator) queueMessageRewind(msgID *fftypes.UUID) {
+	log.L(ag.ctx).Debugf("Queuing rewind for message %s", msgID)
+	ag.rewinder.rewindRequests <- rewind{
+		rewindType: rewindMessage,
+		uuid:       *msgID,
 	}
+}
+
+func (ag *aggregator) queueBlobRewind(hash *fftypes.Bytes32) {
+	log.L(ag.ctx).Debugf("Queuing rewind for blob %s", hash)
+	ag.rewinder.rewindRequests <- rewind{
+		rewindType: rewindBlob,
+		hash:       *hash,
+	}
+}
+
+func (ag *aggregator) queueDIDRewind(did string) {
+	log.L(ag.ctx).Debugf("Queuing rewind for author DID %s", did)
+	ag.rewinder.rewindRequests <- rewind{
+		rewindType: rewindDIDConfirmed,
+		did:        did,
+	}
+}
+
+func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
+
+	batchIDs := ag.rewinder.popRewinds()
+	if len(batchIDs) == 0 {
+		return false, 0
+	}
+
 	// Retry idefinitely for database errors (until the context closes)
+	var rewindBatch *fftypes.UUID
+	var offset int64
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
-		if len(batchIDs) > 0 {
-			fb := database.PinQueryFactory.NewFilter(ag.ctx)
-			filter := fb.And(
-				fb.In("batch", batchIDs),
-				fb.Eq("dispatched", false),
-			).Sort("sequence").Limit(1) // only need the one oldest sequence
-			sequences, _, err := ag.database.GetPins(ag.ctx, filter)
-			if err != nil {
-				return true, err
-			}
-			if len(sequences) > 0 {
-				rewind = true
-				offset = sequences[0].Sequence - 1 // offset is set to the last event we saw (so one behind the next pin we want)
-			}
+		pfb := database.PinQueryFactory.NewFilter(ag.ctx)
+		pinFilter := pfb.And(
+			pfb.In("batch", batchIDs),
+			pfb.Eq("dispatched", false),
+		).Sort("sequence").Limit(1) // only need the one oldest sequence
+		sequences, _, err := ag.database.GetPins(ag.ctx, pinFilter)
+		if err != nil {
+			return true, err
+		}
+		if len(sequences) > 0 {
+			rewindBatch = sequences[0].Batch
+			offset = sequences[0].Sequence - 1 // offset is set to the last event we saw (so one behind the next pin we want)
 		}
 		return false, nil
 	})
-	return rewind, offset
+	if rewindBatch != nil {
+		log.L(ag.ctx).Debugf("Aggregator popped rewind to pin %d for batch %s", offset, rewindBatch)
+	}
+	return rewindBatch != nil, offset
 }
 
 func (ag *aggregator) processWithBatchState(callback func(ctx context.Context, state *batchState) error) error {
@@ -176,16 +191,19 @@ func (ag *aggregator) processWithBatchState(callback func(ctx context.Context, s
 		return err
 	}
 
-	if len(state.PreFinalize) == 0 {
-		return err
+	if len(state.PreFinalize) > 0 {
+		if err := state.RunPreFinalize(ag.ctx); err != nil {
+			return err
+		}
+		err = ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
+			return state.RunFinalize(ctx)
+		})
+		if err != nil {
+			return err
+		}
 	}
-
-	if err := state.RunPreFinalize(ag.ctx); err != nil {
-		return err
-	}
-	return ag.database.RunAsGroup(ag.ctx, func(ctx context.Context) error {
-		return state.RunFinalize(ctx)
-	})
+	state.queueRewinds(ag)
+	return nil
 }
 
 func (ag *aggregator) processPinsEventsHandler(items []fftypes.LocallySequenced) (repoll bool, err error) {
@@ -590,45 +608,4 @@ func (ag *aggregator) resolveBlobs(ctx context.Context, data fftypes.DataArray) 
 
 	return true, nil
 
-}
-
-func (ag *aggregator) rewindForBlobArrival(ctx context.Context, blobHash *fftypes.Bytes32) error {
-
-	batchIDs := make(map[fftypes.UUID]bool)
-
-	// We need to work out what pins potentially are unblocked by the arrival of this data
-
-	// Find any data associated with this blob
-	var data []*fftypes.DataRef
-	filter := database.DataQueryFactory.NewFilter(ctx).Eq("blob.hash", blobHash)
-	data, _, err := ag.database.GetDataRefs(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	// Find the messages assocated with that data
-	var messages []*fftypes.Message
-	for _, data := range data {
-		fb := database.MessageQueryFactory.NewFilter(ctx)
-		filter := fb.And(fb.Eq("confirmed", nil))
-		messages, _, err = ag.database.GetMessagesForData(ctx, data.ID, filter)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Find the unique batch IDs for all the messages
-	for _, msg := range messages {
-		if msg.BatchID != nil {
-			batchIDs[*msg.BatchID] = true
-		}
-	}
-
-	// Initiate rewinds for all the batchIDs that are potentially completed by the arrival of this data
-	for bid := range batchIDs {
-		var batchID = bid // cannot use the address of the loop var
-		log.L(ag.ctx).Infof("Batch '%s' contains reference to received blob %s", &bid, blobHash)
-		ag.rewindBatches <- batchID
-	}
-	return nil
 }

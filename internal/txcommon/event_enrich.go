@@ -41,7 +41,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 		}
 		e.Message = msg
 	case fftypes.EventTypeBlockchainEventReceived:
-		be, err := t.database.GetBlockchainEventByID(ctx, event.Reference)
+		be, err := t.GetBlockchainEventByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
@@ -83,13 +83,13 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Even
 		}
 		e.TokenPool = tokenPool
 	case fftypes.EventTypeApprovalConfirmed, fftypes.EventTypeApprovalOpFailed:
-		approval, err := t.database.GetTokenApproval(ctx, event.Reference)
+		approval, err := t.database.GetTokenApprovalByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenApproval = approval
 	case fftypes.EventTypeTransferConfirmed, fftypes.EventTypeTransferOpFailed:
-		transfer, err := t.database.GetTokenTransfer(ctx, event.Reference)
+		transfer, err := t.database.GetTokenTransferByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}

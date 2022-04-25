@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,9 +19,10 @@ package fftypes
 import (
 	"context"
 	"database/sql/driver"
+	"encoding/binary"
 
 	"github.com/google/uuid"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // UUID is a wrapper on a UUID implementation, ensuring Value handles nil
@@ -67,6 +68,16 @@ func (u UUID) MarshalBinary() ([]byte, error) {
 
 func (u *UUID) UnmarshalBinary(b []byte) error {
 	return (*uuid.UUID)(u).UnmarshalBinary(b)
+}
+
+func (u *UUID) HashBucket(buckets int) int {
+	if u == nil {
+		return 0
+	}
+	// Take the last random 4 bytes and mod it against the bucket count to generate
+	// a deterministic hash bucket allocation for the UUID V4
+	return int(binary.BigEndian.Uint64((*u)[8:]) % uint64(buckets))
+
 }
 
 func (u *UUID) Value() (driver.Value, error) {

@@ -9,7 +9,6 @@ CREATE TABLE batches (
   hash        CHAR(64),
   created     BIGINT          NOT NULL,
   payload     TEXT            NOT NULL,
-  payload_ref CHAR(64),
   confirmed   BIGINT,
   tx_type     VARCHAR(64)     NOT NULL,
   tx_id       UUID

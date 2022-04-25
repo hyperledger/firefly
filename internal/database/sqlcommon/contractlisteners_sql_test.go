@@ -46,11 +46,11 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 				Name: "event1",
 			},
 		},
-		Namespace:  "ns",
-		Name:       "sub1",
-		ProtocolID: "sb-123",
-		Location:   fftypes.JSONAnyPtrBytes(locationJson),
-		Topic:      "topic1",
+		Namespace: "ns",
+		Name:      "sub1",
+		BackendID: "sb-123",
+		Location:  fftypes.JSONAnyPtrBytes(locationJson),
+		Topic:     "topic1",
 		Options: &fftypes.ContractListenerOptions{
 			FirstEvent: "0",
 		},
@@ -68,7 +68,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	// Query back the listener (by query filter)
 	fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("protocolid", sub.ProtocolID),
+		fb.Eq("backendid", sub.BackendID),
 	)
 	subs, res, err := s.GetContractListeners(ctx, filter.Count(true))
 	assert.NoError(t, err)
@@ -90,7 +90,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Query back the listener (by protocol ID)
-	subRead, err = s.GetContractListenerByProtocolID(ctx, sub.ProtocolID)
+	subRead, err = s.GetContractListenerByBackendID(ctx, sub.BackendID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
@@ -103,7 +103,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 
 	// Query back the listener (by query filter)
 	filter = fb.And(
-		fb.Eq("protocolid", sub.ProtocolID),
+		fb.Eq("backendid", sub.BackendID),
 	)
 	subs, res, err = s.GetContractListeners(ctx, filter.Count(true))
 	assert.NoError(t, err)
@@ -151,7 +151,7 @@ func TestUpsertContractListenerFailInsert(t *testing.T) {
 func TestUpsertContractListenerFailUpdate(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("1"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
@@ -162,7 +162,7 @@ func TestUpsertContractListenerFailUpdate(t *testing.T) {
 func TestUpsertContractListenerFailCommit(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
@@ -180,7 +180,7 @@ func TestGetContractListenerByIDSelectFail(t *testing.T) {
 
 func TestGetContractListenerByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}))
 	msg, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
@@ -189,7 +189,7 @@ func TestGetContractListenerByIDNotFound(t *testing.T) {
 
 func TestGetContractListenerByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}).AddRow("only one"))
 	_, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -198,7 +198,7 @@ func TestGetContractListenerByIDScanFail(t *testing.T) {
 func TestGetContractListenersQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", "")
 	_, _, err := s.GetContractListeners(context.Background(), f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -206,15 +206,15 @@ func TestGetContractListenersQueryFail(t *testing.T) {
 
 func TestGetContractListenersBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
-	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", map[bool]bool{true: false})
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", map[bool]bool{true: false})
 	_, _, err := s.GetContractListeners(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetContractListenersScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"protocolid"}).AddRow("only one"))
-	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("protocolid", "")
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}).AddRow("only one"))
+	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", "")
 	_, _, err := s.GetContractListeners(context.Background(), f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -231,7 +231,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
-		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "topic1", nil, fftypes.Now()),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())

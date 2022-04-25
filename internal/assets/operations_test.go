@@ -1,17 +1,18 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package assets
 
 import (
@@ -19,11 +20,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestPrepareAndRunCreatePool(t *testing.T) {
@@ -34,8 +37,8 @@ func TestPrepareAndRunCreatePool(t *testing.T) {
 		Type: fftypes.OpTypeTokenCreatePool,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	err := txcommon.AddTokenPoolCreateInputs(op, pool)
 	assert.NoError(t, err)
@@ -63,24 +66,20 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 		Type: fftypes.OpTypeTokenActivatePool,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ID:         fftypes.NewUUID(),
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		ID:        fftypes.NewUUID(),
+		Locator:   "F1",
 	}
-	info := fftypes.JSONObject{
-		"some": "info",
-	}
-	txcommon.AddTokenPoolActivateInputs(op, pool.ID, info)
+	txcommon.AddTokenPoolActivateInputs(op, pool.ID)
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("ActivateTokenPool", context.Background(), op.ID, pool, info).Return(true, nil)
+	mti.On("ActivateTokenPool", context.Background(), op.ID, pool).Return(true, nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, pool, po.Data.(activatePoolData).Pool)
-	assert.Equal(t, info, po.Data.(activatePoolData).BlockchainInfo)
 
 	_, complete, err := am.RunOperation(context.Background(), po)
 
@@ -99,8 +98,8 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 		Type: fftypes.OpTypeTokenTransfer,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		LocalID: fftypes.NewUUID(),
@@ -136,8 +135,8 @@ func TestPrepareAndRunApproval(t *testing.T) {
 		Type: fftypes.OpTypeTokenApproval,
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	approval := &fftypes.TokenApproval{
 		LocalID:  fftypes.NewUUID(),
@@ -185,7 +184,7 @@ func TestPrepareOperationCreatePoolBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationActivatePoolBadInput(t *testing.T) {
@@ -198,7 +197,7 @@ func TestPrepareOperationActivatePoolBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationActivatePoolError(t *testing.T) {
@@ -249,7 +248,7 @@ func TestPrepareOperationTransferBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationTransferError(t *testing.T) {
@@ -300,7 +299,7 @@ func TestPrepareOperationApprovalBadInput(t *testing.T) {
 	}
 
 	_, err := am.PrepareOperation(context.Background(), op)
-	assert.Regexp(t, "FF10151", err)
+	assert.Regexp(t, "FF00127", err)
 }
 
 func TestPrepareOperationApprovalError(t *testing.T) {
@@ -392,9 +391,8 @@ func TestRunOperationActivatePoolBadPlugin(t *testing.T) {
 
 	op := &fftypes.Operation{}
 	pool := &fftypes.TokenPool{}
-	info := fftypes.JSONObject{}
 
-	_, complete, err := am.RunOperation(context.Background(), opActivatePool(op, pool, info))
+	_, complete, err := am.RunOperation(context.Background(), opActivatePool(op, pool))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10272", err)
@@ -455,8 +453,8 @@ func TestRunOperationTransferMint(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		Type: fftypes.TokenTransferTypeMint,
@@ -481,8 +479,8 @@ func TestRunOperationTransferBurn(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		Type: fftypes.TokenTransferTypeBurn,
@@ -507,8 +505,8 @@ func TestRunOperationTransfer(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 	pool := &fftypes.TokenPool{
-		Connector:  "magic-tokens",
-		ProtocolID: "F1",
+		Connector: "magic-tokens",
+		Locator:   "F1",
 	}
 	transfer := &fftypes.TokenTransfer{
 		Type: fftypes.TokenTransferTypeTransfer,
@@ -523,4 +521,235 @@ func TestRunOperationTransfer(t *testing.T) {
 	assert.NoError(t, err)
 
 	mti.AssertExpectations(t)
+}
+
+func TestOperationUpdatePool(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	pool := &fftypes.TokenPool{
+		ID: fftypes.NewUUID(),
+	}
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenCreatePool,
+	}
+	err := txcommon.AddTokenPoolCreateInputs(op, pool)
+	assert.NoError(t, err)
+
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypePoolOpFailed && *event.Reference == *op.ID && *event.Correlator == *pool.ID
+	})).Return(nil)
+
+	err = am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdatePoolBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenCreatePool,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypePoolOpFailed && *event.Reference == *op.ID && event.Correlator == nil
+	})).Return(nil)
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdatePoolEventFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenCreatePool,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransfer(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	transfer := &fftypes.TokenTransfer{
+		LocalID: fftypes.NewUUID(),
+		Pool:    fftypes.NewUUID(),
+		Type:    fftypes.TokenTransferTypeTransfer,
+	}
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenTransfer,
+	}
+	err := txcommon.AddTokenTransferInputs(op, transfer)
+	assert.NoError(t, err)
+
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeTransferOpFailed && *event.Reference == *op.ID && *event.Correlator == *transfer.LocalID
+	})).Return(nil)
+
+	err = am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransferBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenTransfer,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeTransferOpFailed && *event.Reference == *op.ID && event.Correlator == nil
+	})).Return(nil)
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateTransferEventFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenTransfer,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApproval(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	approval := &fftypes.TokenApproval{
+		LocalID: fftypes.NewUUID(),
+		Pool:    fftypes.NewUUID(),
+	}
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	err := txcommon.AddTokenApprovalInputs(op, approval)
+	assert.NoError(t, err)
+
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeApprovalOpFailed && *event.Reference == *op.ID && *event.Correlator == *approval.LocalID
+	})).Return(nil)
+
+	err = am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalBadInput(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
+		return event.Type == fftypes.EventTypeApprovalOpFailed && *event.Reference == *op.ID && event.Correlator == nil
+	})).Return(nil)
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestOperationUpdateApprovalEventFail(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+
+	op := &fftypes.Operation{
+		ID:   fftypes.NewUUID(),
+		Type: fftypes.OpTypeTokenApproval,
+	}
+	update := &operations.OperationUpdate{
+		Status: fftypes.OpStatusFailed,
+	}
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mdi.On("InsertEvent", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	err := am.OnOperationUpdate(context.Background(), op, update)
+
+	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
 }

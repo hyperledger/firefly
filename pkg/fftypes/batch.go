@@ -38,13 +38,13 @@ const (
 
 // BatchHeader is the common fields between the serialized batch, and the batch manifest
 type BatchHeader struct {
-	ID        *UUID     `json:"id"`
-	Type      BatchType `json:"type" ffenum:"batchtype"`
-	Namespace string    `json:"namespace"`
-	Node      *UUID     `json:"node,omitempty"`
+	ID        *UUID     `ffstruct:"BatchHeader" json:"id"`
+	Type      BatchType `ffstruct:"BatchHeader" json:"type" ffenum:"batchtype"`
+	Namespace string    `ffstruct:"BatchHeader" json:"namespace"`
+	Node      *UUID     `ffstruct:"BatchHeader" json:"node,omitempty"`
+	Group     *Bytes32  `ffstruct:"BatchHeader" json:"group,omitempty"`
+	Created   *FFTime   `ffstruct:"BatchHeader" json:"created"`
 	SignerRef
-	Group   *Bytes32 `jdon:"group,omitempty"`
-	Created *FFTime  `json:"created"`
 }
 
 type MessageManifestEntry struct {
@@ -69,18 +69,18 @@ type BatchManifest struct {
 // Batch is the full payload object used in-flight.
 type Batch struct {
 	BatchHeader
-	Hash    *Bytes32     `json:"hash"`
-	Payload BatchPayload `json:"payload"`
+	Hash    *Bytes32     `ffstruct:"Batch" json:"hash"`
+	Payload BatchPayload `ffstruct:"Batch" json:"payload"`
 }
 
 // BatchPersisted is the structure written to the database
 type BatchPersisted struct {
 	BatchHeader
-	Hash       *Bytes32       `json:"hash"`
-	Manifest   *JSONAny       `json:"manifest"`
-	TX         TransactionRef `json:"tx"`
-	PayloadRef string         `json:"payloadRef,omitempty"`
-	Confirmed  *FFTime        `json:"confirmed"`
+	Hash       *Bytes32       `ffstruct:"BatchPersisted" json:"hash"`
+	Manifest   *JSONAny       `ffstruct:"BatchPersisted" json:"manifest"`
+	TX         TransactionRef `ffstruct:"BatchPersisted" json:"tx"`
+	PayloadRef string         `ffstruct:"BatchPersisted" json:"payloadRef,omitempty"`
+	Confirmed  *FFTime        `ffstruct:"BatchPersisted" json:"confirmed"`
 }
 
 // BatchPayload contains the full JSON of the messages and data, but
@@ -92,9 +92,9 @@ type BatchPersisted struct {
 // calculating the hash).
 // - See Message.BatchMessage() and Data.BatchData()
 type BatchPayload struct {
-	TX       TransactionRef `json:"tx"`
-	Messages []*Message     `json:"messages"`
-	Data     DataArray      `json:"data"`
+	TX       TransactionRef `ffstruct:"BatchPayload" json:"tx"`
+	Messages []*Message     `ffstruct:"BatchPayload" json:"messages"`
+	Data     DataArray      `ffstruct:"BatchPayload" json:"data"`
 }
 
 func (bm *BatchManifest) String() string {

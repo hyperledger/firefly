@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type transferBlobData struct {
@@ -79,13 +81,13 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		} else if node == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		blob, err := pm.database.GetBlobMatchingHash(ctx, blobHash)
 		if err != nil {
 			return nil, err
 		} else if blob == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opSendBlob(op, node, blob), nil
 
@@ -98,19 +100,19 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		if err != nil {
 			return nil, err
 		} else if node == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		group, err := pm.database.GetGroupByHash(ctx, groupHash)
 		if err != nil {
 			return nil, err
 		} else if group == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		bp, err := pm.database.GetBatchByID(ctx, batchID)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {
-			return nil, i18n.NewError(ctx, i18n.Msg404NotFound)
+			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		batch, err := pm.data.HydrateBatch(ctx, bp)
 		if err != nil {
@@ -120,25 +122,29 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *fftypes.Op
 		return opSendBatch(op, node, transport), nil
 
 	default:
-		return nil, i18n.NewError(ctx, i18n.MsgOperationNotSupported, op.Type)
+		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
 	}
 }
 
 func (pm *privateMessaging) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
-		return nil, false, pm.exchange.TransferBLOB(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
+		return nil, false, pm.exchange.TransferBlob(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
 
 	case batchSendData:
 		payload, err := json.Marshal(data.Transport)
 		if err != nil {
-			return nil, false, i18n.WrapError(ctx, err, i18n.MsgSerializationFailed)
+			return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 		}
 		return nil, false, pm.exchange.SendMessage(ctx, op.ID, data.Node.Profile.GetString("id"), payload)
 
 	default:
-		return nil, false, i18n.NewError(ctx, i18n.MsgOperationDataIncorrect, op.Data)
+		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
+}
+
+func (pm *privateMessaging) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+	return nil
 }
 
 func opSendBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes.Blob) *fftypes.PreparedOperation {

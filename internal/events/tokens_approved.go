@@ -19,17 +19,24 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.UUID, approval *fftypes.TokenApproval) error {
-	approval.LocalID = nil
-
-	// find a matching operation within the transaction
+// Determine if this approval event should use a LocalID that was pre-assigned to an operation submitted by this node.
+// This will ensure that the original LocalID provided to the user can later be used in a lookup, and also causes requests that
+// use "confirm=true" to resolve as expected.
+// Must follow these rules to reuse the LocalID:
+// - The transaction ID on the approval must match a transaction+operation initiated by this node.
+// - The connector and pool for this event must match the connector and pool targeted by the initial operation. Connectors are
+//   allowed to trigger side-effects in other pools, but only the event from the targeted pool should use the original LocalID.
+// - The LocalID must not have been used yet. Connectors are allowed to emit multiple events in response to a single operation,
+//   but only the first of them can use the original LocalID.
+func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, approval *fftypes.TokenApproval) (*fftypes.UUID, error) {
+	// Find a matching operation within the transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
@@ -37,63 +44,90 @@ func (em *eventManager) loadApprovalOperation(ctx context.Context, tx *fftypes.U
 	)
 	operations, _, err := em.database.GetOperations(ctx, filter)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	if len(operations) > 0 {
-		if origApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, operations[0]); err != nil {
-			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.ProtocolID, err)
-		} else if origApproval != nil {
-			approval.LocalID = origApproval.LocalID
+		// This approval matches an approval transaction+operation submitted by this node.
+		// Check the operation inputs to see if they match the connector and pool on this event.
+		if input, err := txcommon.RetrieveTokenApprovalInputs(ctx, operations[0]); err != nil {
+			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.Subject, err)
+		} else if input != nil && input.Connector == approval.Connector && input.Pool.Equals(approval.Pool) {
+			// Check if the LocalID has already been used
+			if existing, err := em.database.GetTokenApprovalByID(ctx, input.LocalID); err != nil {
+				return nil, err
+			} else if existing == nil {
+				// Everything matches - use the LocalID that was assigned up-front when the operation was submitted
+				return input.LocalID, nil
+			}
 		}
 	}
 
-	if approval.LocalID == nil {
-		approval.LocalID = fftypes.NewUUID()
-	}
-	return nil
+	return fftypes.NewUUID(), nil
 }
 
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
-	pool, err := em.database.GetTokenPoolByProtocolID(ctx, approval.Connector, approval.PoolProtocolID)
+	// Check that this is from a known pool
+	// TODO: should cache this lookup for efficiency
+	pool, err := em.database.GetTokenPoolByLocator(ctx, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
 	}
 	if pool == nil {
-		log.L(ctx).Infof("Token approval received for unknown pool '%s' - ignoring: %s", approval.PoolProtocolID, approval.Event.ProtocolID)
+		log.L(ctx).Infof("Token approval received for unknown pool '%s' - ignoring: %s", approval.PoolLocator, approval.Event.ProtocolID)
 		return false, nil
 	}
 	approval.Namespace = pool.Namespace
 	approval.Pool = pool.ID
 
-	if approval.TX.ID != nil {
-		if err := em.loadApprovalOperation(ctx, approval.TX.ID, &approval.TokenApproval); err != nil {
+	// Check that approval has not already been recorded
+	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, approval.Pool, approval.ProtocolID); err != nil {
+		return false, err
+	} else if existing != nil {
+		log.L(ctx).Warnf("Token approval '%s' has already been recorded - ignoring", approval.ProtocolID)
+		return false, nil
+	}
+
+	if approval.TX.ID == nil {
+		approval.LocalID = fftypes.NewUUID()
+	} else {
+		if approval.LocalID, err = em.loadApprovalID(ctx, approval.TX.ID, &approval.TokenApproval); err != nil {
 			return false, err
 		}
-
 		if valid, err := em.txHelper.PersistTransaction(ctx, approval.Namespace, approval.TX.ID, approval.TX.Type, approval.Event.BlockchainTXID); err != nil || !valid {
 			return valid, err
 		}
-
-		if existing, err := em.database.GetTokenApproval(ctx, approval.LocalID); err != nil {
-			return false, err
-		} else if existing != nil {
-			approval.LocalID = fftypes.NewUUID()
-		}
-	} else {
-		approval.LocalID = fftypes.NewUUID()
 	}
 
-	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &approval.TX)
-	approval.BlockchainEvent = chainEvent.ID
-	if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &fftypes.BlockchainTransactionRef{
+		ID:           approval.TX.ID,
+		Type:         approval.TX.Type,
+		BlockchainID: approval.Event.BlockchainTXID,
+	})
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&approval.Event)
-	if err := em.database.UpsertTokenApproval(ctx, &approval.TokenApproval); err != nil {
-		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.ProtocolID, err)
+	approval.BlockchainEvent = chainEvent.ID
+
+	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+	filter := fb.And(
+		fb.Eq("pool", approval.Pool),
+		fb.Eq("subject", approval.Subject),
+	)
+	update := database.TokenApprovalQueryFactory.NewUpdate(ctx).Set("active", false)
+	if err := em.database.UpdateTokenApprovals(ctx, filter, update); err != nil {
+		log.L(ctx).Errorf("Failed to update prior token approvals for '%s': %s", approval.Subject, err)
 		return false, err
 	}
-	log.L(ctx).Infof("Token approval recorded id=%s author=%s", approval.ProtocolID, approval.Key)
+
+	approval.Active = true
+	if err := em.database.UpsertTokenApproval(ctx, &approval.TokenApproval); err != nil {
+		log.L(ctx).Errorf("Failed to record token approval '%s': %s", approval.Subject, err)
+		return false, err
+	}
+
+	log.L(ctx).Infof("Token approval recorded id=%s author=%s", approval.Subject, approval.Key)
 	return true, nil
 }
 

@@ -18,8 +18,6 @@ package apiserver
 
 import "github.com/hyperledger/firefly/internal/oapispec"
 
-const emptyObjectSchema = `{"type": "object"}`
-
 var routes = []*oapispec.Route{
 	deleteContractListener,
 	deleteSubscription,
@@ -29,7 +27,9 @@ var routes = []*oapispec.Route{
 	getBlockchainEvents,
 	getChartHistogram,
 	getContractAPIByName,
+	getContractAPIInterface,
 	getContractAPIs,
+	getContractAPIListeners,
 	getContractInterface,
 	getContractInterfaceNameVersion,
 	getContractInterfaces,
@@ -41,13 +41,14 @@ var routes = []*oapispec.Route{
 	getDataMsgs,
 	getDatatypeByName,
 	getDatatypes,
+	getDIDDocByDID,
 	getEventByID,
 	getEvents,
 	getGroupByHash,
 	getGroups,
 	getIdentities,
-	getIdentityByID,
 	getIdentityByDID,
+	getIdentityByID,
 	getIdentityDID,
 	getIdentityVerifiers,
 	getMsgByID,
@@ -57,6 +58,7 @@ var routes = []*oapispec.Route{
 	getMsgTxn,
 	getNamespace,
 	getNamespaces,
+	getNetworkIdentities,
 	getNetworkNode,
 	getNetworkNodes,
 	getNetworkOrg,
@@ -66,6 +68,7 @@ var routes = []*oapispec.Route{
 	getStatus,
 	getStatusBatchManager,
 	getStatusPins,
+	getStatusWebSockets,
 	getSubscriptionByID,
 	getSubscriptions,
 	getTokenAccountPools,
@@ -87,9 +90,8 @@ var routes = []*oapispec.Route{
 	patchUpdateIdentity,
 	postContractAPIInvoke,
 	postContractAPIQuery,
+	postContractAPIListeners,
 	postContractInterfaceGenerate,
-	postContractInterfaceInvoke,
-	postContractInterfaceQuery,
 	postContractInvoke,
 	postContractQuery,
 	postData,

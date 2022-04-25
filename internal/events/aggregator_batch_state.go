@@ -22,10 +22,11 @@ import (
 	"database/sql/driver"
 	"encoding/binary"
 
+	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,6 +34,7 @@ func newBatchState(ag *aggregator) *batchState {
 	return &batchState{
 		database:           ag.database,
 		definitions:        ag.definitions,
+		data:               ag.data,
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
 		dispatchedMessages: make([]*dispatchedMessage, 0),
@@ -94,10 +96,12 @@ type dispatchedMessage struct {
 type batchState struct {
 	database           database.Plugin
 	definitions        definitions.DefinitionHandlers
+	data               data.Manager
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
 	pendingConfirms    map[fftypes.UUID]*fftypes.Message
+	confirmedDIDClaims []string
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
 	// - Will execute after all batch messages have been processed
@@ -144,6 +148,16 @@ func (bs *batchState) RunFinalize(ctx context.Context) error {
 		}
 	}
 	return bs.flushPins(ctx)
+}
+
+func (bs *batchState) DIDClaimConfirmed(did string) {
+	bs.confirmedDIDClaims = append(bs.confirmedDIDClaims, did)
+}
+
+func (bs *batchState) queueRewinds(ag *aggregator) {
+	for _, did := range bs.confirmedDIDClaims {
+		ag.queueDIDRewind(did)
+	}
 }
 
 func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *fftypes.Message, topic string, firstMsgPinSequence int64) (bool, error) {
@@ -272,7 +286,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	// Note that this might include pins not in the batch we read from the database, as the page size
 	// cannot be guaranteed to overlap with the set of indexes of a message within a batch.
 	pinsDispatched := make(map[fftypes.UUID][]driver.Value)
-	msgStateUpdates := make(map[fftypes.MessageState][]driver.Value)
+	msgStateUpdates := make(map[fftypes.MessageState][]*fftypes.UUID)
 	for _, dm := range bs.dispatchedMessages {
 		batchDispatched := pinsDispatched[*dm.batchID]
 		l.Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d topics=%d pins=%s", dm.batchID, dm.msgID, dm.firstPinIndex, dm.topicCount, dm.msgPins)
@@ -304,8 +318,13 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	// Also do the same for each type of state update, to mark messages dispatched with a new state
 	confirmTime := fftypes.Now() // All messages get the same confirmed timestamp the Events (not Messages directly) should be used for confirm sequence
 	for msgState, msgIDs := range msgStateUpdates {
+		values := make([]driver.Value, len(msgIDs))
+		for i, msgID := range msgIDs {
+			bs.data.UpdateMessageStateIfCached(ctx, msgID, msgState, confirmTime)
+			values[i] = msgID
+		}
 		fb := database.MessageQueryFactory.NewFilter(ctx)
-		filter := fb.In("id", msgIDs)
+		filter := fb.In("id", values)
 		setConfirmed := database.MessageQueryFactory.NewUpdate(ctx).
 			Set("confirmed", confirmTime).
 			Set("state", msgState)

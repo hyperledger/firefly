@@ -37,6 +37,8 @@ var (
 	EventTypeIdentityUpdated = ffEnum("eventtype", "identity_updated")
 	// EventTypePoolConfirmed occurs when a new token pool is ready for use
 	EventTypePoolConfirmed = ffEnum("eventtype", "token_pool_confirmed")
+	// EventTypePoolOpFailed occurs when a token pool creation initiated by this node has failed (based on feedback from connector)
+	EventTypePoolOpFailed = ffEnum("eventtype", "token_pool_op_failed")
 	// EventTypeTransferConfirmed occurs when a token transfer has been confirmed
 	EventTypeTransferConfirmed = ffEnum("eventtype", "token_transfer_confirmed")
 	// EventTypeTransferOpFailed occurs when a token transfer submitted by this node has failed (based on feedback from connector)
@@ -51,35 +53,39 @@ var (
 	EventTypeContractAPIConfirmed = ffEnum("eventtype", "contract_api_confirmed")
 	// EventTypeBlockchainEventReceived occurs when a new event has been received from the blockchain
 	EventTypeBlockchainEventReceived = ffEnum("eventtype", "blockchain_event_received")
+	// EventTypeBlockchainInvokeOpSucceeded occurs when a blockchain "invoke" request has succeeded
+	EventTypeBlockchainInvokeOpSucceeded = ffEnum("eventtype", "blockchain_invoke_op_succeeded")
+	// EventTypeBlockchainInvokeOpFailed occurs when a blockchain "invoke" request has failed
+	EventTypeBlockchainInvokeOpFailed = ffEnum("eventtype", "blockchain_invoke_op_failed")
 )
 
 // Event is an activity in the system, delivered reliably to applications, that indicates something has happened in the network
 type Event struct {
-	ID          *UUID     `json:"id"`
-	Sequence    int64     `json:"sequence"`
-	Type        EventType `json:"type" ffenum:"eventtype"`
-	Namespace   string    `json:"namespace"`
-	Reference   *UUID     `json:"reference"`
-	Correlator  *UUID     `json:"correlator,omitempty"`
-	Transaction *UUID     `json:"tx,omitempty"`
-	Topic       string    `json:"topic,omitempty"`
-	Created     *FFTime   `json:"created"`
+	ID          *UUID     `ffstruct:"Event" json:"id"`
+	Sequence    int64     `ffstruct:"Event" json:"sequence"`
+	Type        EventType `ffstruct:"Event" json:"type" ffenum:"eventtype"`
+	Namespace   string    `ffstruct:"Event" json:"namespace"`
+	Reference   *UUID     `ffstruct:"Event" json:"reference"`
+	Correlator  *UUID     `ffstruct:"Event" json:"correlator,omitempty"`
+	Transaction *UUID     `ffstruct:"Event" json:"tx,omitempty"`
+	Topic       string    `ffstruct:"Event" json:"topic,omitempty"`
+	Created     *FFTime   `ffstruct:"Event" json:"created"`
 }
 
 // EnrichedEvent adds the referred object to an event
 type EnrichedEvent struct {
 	Event
-	BlockchainEvent   *BlockchainEvent `json:"blockchainevent,omitempty"`
-	ContractAPI       *ContractAPI     `json:"contractAPI,omitempty"`
-	ContractInterface *FFI             `json:"contractInterface,omitempty"`
-	Datatype          *Datatype        `json:"datatype,omitempty"`
-	Identity          *Identity        `json:"identity,omitempty"`
-	Message           *Message         `json:"message,omitempty"`
-	NamespaceDetails  *Namespace       `json:"namespaceDetails,omitempty"`
-	TokenApproval     *TokenApproval   `json:"tokenApproval,omitempty"`
-	TokenPool         *TokenPool       `json:"tokenPool,omitempty"`
-	Transaction       *Transaction     `json:"transaction,omitempty"`
-	TokenTransfer     *TokenTransfer   `json:"tokenTransfer,omitempty"`
+	BlockchainEvent   *BlockchainEvent `ffstruct:"EnrichedEvent" json:"blockchainEvent,omitempty"`
+	ContractAPI       *ContractAPI     `ffstruct:"EnrichedEvent" json:"contractAPI,omitempty"`
+	ContractInterface *FFI             `ffstruct:"EnrichedEvent" json:"contractInterface,omitempty"`
+	Datatype          *Datatype        `ffstruct:"EnrichedEvent" json:"datatype,omitempty"`
+	Identity          *Identity        `ffstruct:"EnrichedEvent" json:"identity,omitempty"`
+	Message           *Message         `ffstruct:"EnrichedEvent" json:"message,omitempty"`
+	NamespaceDetails  *Namespace       `ffstruct:"EnrichedEvent" json:"namespaceDetails,omitempty"`
+	TokenApproval     *TokenApproval   `ffstruct:"EnrichedEvent" json:"tokenApproval,omitempty"`
+	TokenPool         *TokenPool       `ffstruct:"EnrichedEvent" json:"tokenPool,omitempty"`
+	TokenTransfer     *TokenTransfer   `ffstruct:"EnrichedEvent" json:"tokenTransfer,omitempty"`
+	Transaction       *Transaction     `ffstruct:"EnrichedEvent" json:"transaction,omitempty"`
 }
 
 // EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to

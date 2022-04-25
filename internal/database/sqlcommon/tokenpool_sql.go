@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -33,10 +34,11 @@ var (
 		"namespace",
 		"name",
 		"standard",
-		"protocol_id",
+		"locator",
 		"type",
 		"connector",
 		"symbol",
+		"decimals",
 		"message_id",
 		"state",
 		"created",
@@ -45,10 +47,9 @@ var (
 		"info",
 	}
 	tokenPoolFilterFieldMap = map[string]string{
-		"protocolid": "protocol_id",
-		"message":    "message_id",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
+		"message": "message_id",
+		"tx.type": "tx_type",
+		"tx.id":   "tx_id",
 	}
 )
 
@@ -86,10 +87,11 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
 				Set("standard", pool.Standard).
-				Set("protocol_id", pool.ProtocolID).
+				Set("locator", pool.Locator).
 				Set("type", pool.Type).
 				Set("connector", pool.Connector).
 				Set("symbol", pool.Symbol).
+				Set("decimals", pool.Decimals).
 				Set("message_id", pool.Message).
 				Set("state", pool.State).
 				Set("tx_type", pool.TX.Type).
@@ -112,10 +114,11 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 					pool.Namespace,
 					pool.Name,
 					pool.Standard,
-					pool.ProtocolID,
+					pool.Locator,
 					pool.Type,
 					pool.Connector,
 					pool.Symbol,
+					pool.Decimals,
 					pool.Message,
 					pool.State,
 					pool.Created,
@@ -141,10 +144,11 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Namespace,
 		&pool.Name,
 		&pool.Standard,
-		&pool.ProtocolID,
+		&pool.Locator,
 		&pool.Type,
 		&pool.Connector,
 		&pool.Symbol,
+		&pool.Decimals,
 		&pool.Message,
 		&pool.State,
 		&pool.Created,
@@ -153,7 +157,7 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Info,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokenpool")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenpool")
 	}
 	return &pool, nil
 }
@@ -190,14 +194,14 @@ func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (mes
 	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetTokenPoolByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenPool, error) {
-	return s.getTokenPoolPred(ctx, protocolID, sq.And{
+func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*fftypes.TokenPool, error) {
+	return s.getTokenPoolPred(ctx, locator, sq.And{
 		sq.Eq{"connector": connector},
-		sq.Eq{"protocol_id": protocolID},
+		sq.Eq{"locator": locator},
 	})
 }
 
-func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, tokenPoolFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err

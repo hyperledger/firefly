@@ -34,7 +34,7 @@ func TestDatabaseSerialization(t *testing.T) {
 	assert.Equal(t, "", u.String())
 
 	u, err = ParseUUID(context.Background(), "!not an id")
-	assert.Regexp(t, "FF10142", err)
+	assert.Regexp(t, "FF00138", err)
 	u, err = ParseUUID(context.Background(), "03D31DFB-9DBB-43F2-9E0B-84DD3D293499")
 	assert.NoError(t, err)
 	v, err = u.Value()
@@ -71,5 +71,23 @@ func TestSafeEquals(t *testing.T) {
 	assert.True(t, u1.Equals(u2))
 	u2 = NewUUID()
 	assert.False(t, u1.Equals(u2))
+
+}
+
+func TestHashBucket(t *testing.T) {
+
+	u1 := MustParseUUID("03D31DFB-9DBB-43F2-9E0B-84DD3D293499")
+	assert.Equal(t, 64, u1.HashBucket(255))
+	assert.Equal(t, 9, u1.HashBucket(16))
+
+	u2 := MustParseUUID("8a57d469-d123-4cd1-81b2-6371afb87c21")
+	assert.Equal(t, 15, u2.HashBucket(255))
+	assert.Equal(t, 1, u2.HashBucket(4))
+
+	u3 := MustParseUUID("8a57d469-d123-4cd1-0000-000000000000")
+	assert.Equal(t, 0, u3.HashBucket(2))
+	assert.Equal(t, 0, u3.HashBucket(2))
+
+	assert.Equal(t, 0, ((*UUID)(nil)).HashBucket(12345))
 
 }

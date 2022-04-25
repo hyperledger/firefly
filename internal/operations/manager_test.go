@@ -1,37 +1,45 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package operations
 
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/config"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 type mockHandler struct {
-	Complete bool
-	Err      error
-	Prepared *fftypes.PreparedOperation
-	Outputs  fftypes.JSONObject
+	Complete  bool
+	RunErr    error
+	Prepared  *fftypes.PreparedOperation
+	Outputs   fftypes.JSONObject
+	UpdateErr error
 }
 
 func (m *mockHandler) Name() string {
@@ -39,16 +47,26 @@ func (m *mockHandler) Name() string {
 }
 
 func (m *mockHandler) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
-	return m.Prepared, m.Err
+	return m.Prepared, m.RunErr
 }
 
 func (m *mockHandler) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
-	return m.Outputs, m.Complete, m.Err
+	return m.Outputs, m.Complete, m.RunErr
+}
+
+func (m *mockHandler) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *OperationUpdate) error {
+	return m.UpdateErr
 }
 
 func newTestOperations(t *testing.T) (*operationsManager, func()) {
-	config.Reset()
+	coreconfig.Reset()
+	config.Set(coreconfig.OpUpdateWorkerCount, 1)
 	mdi := &databasemocks.Plugin{}
+	mdi.On("Capabilities").Return(&database.Capabilities{
+		Concurrency: true,
+	})
+	mdm := &datamocks.Manager{}
+	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
@@ -58,13 +76,13 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	om, err := NewOperationsManager(ctx, mdi)
+	om, err := NewOperationsManager(ctx, mdi, txHelper)
 	assert.NoError(t, err)
 	return om.(*operationsManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewOperationsManager(context.Background(), nil)
+	_, err := NewOperationsManager(context.Background(), nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -99,7 +117,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 
 	op := &fftypes.PreparedOperation{}
 
-	err := om.RunOperation(context.Background(), op)
+	_, err := om.RunOperation(context.Background(), op)
 	assert.Regexp(t, "FF10371", err)
 }
 
@@ -112,8 +130,9 @@ func TestRunOperationSuccess(t *testing.T) {
 		Type: fftypes.OpTypeBlockchainPinBatch,
 	}
 
-	om.RegisterHandler(ctx, &mockHandler{}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(context.Background(), op)
+	om.RegisterHandler(ctx, &mockHandler{Outputs: fftypes.JSONObject{"test": "output"}}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	outputs, err := om.RunOperation(context.Background(), op)
+	assert.Equal(t, "output", outputs.GetString("test"))
 
 	assert.NoError(t, err)
 }
@@ -132,7 +151,7 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(ctx, op)
+	_, err := om.RunOperation(ctx, op)
 
 	assert.NoError(t, err)
 
@@ -152,8 +171,8 @@ func TestRunOperationFail(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusFailed, "pop", mock.Anything).Return(nil)
 
-	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(ctx, op)
+	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op)
 
 	assert.EqualError(t, err, "pop")
 
@@ -173,8 +192,8 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusPending, "pop", mock.Anything).Return(nil)
 
-	om.RegisterHandler(ctx, &mockHandler{Err: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
-	err := om.RunOperation(ctx, op, RemainPendingOnFailure)
+	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
+	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
 
 	assert.EqualError(t, err, "pop")
 
@@ -380,4 +399,195 @@ func TestWriteOperationFailure(t *testing.T) {
 	om.writeOperationFailure(ctx, opID, nil, fmt.Errorf("pop"), fftypes.OpStatusFailed)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestTransferResultBadUUID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: "wrongun",
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info:     fftypes.JSONObject{"extra": "info"},
+			Manifest: "Sally",
+		},
+	})
+	om.TransferResult(mdx, mde)
+}
+
+func TestTransferResultManifestMismatch(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+	om.updater.conf.workerCount = 0
+
+	opID1 := fftypes.NewUUID()
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   opID1,
+			Type: fftypes.OpTypeDataExchangeSendBatch,
+			Input: fftypes.JSONObject{
+				"batch": fftypes.NewUUID().String(),
+			},
+		},
+	}, nil, nil)
+	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+		return strings.Contains(errorMsg, "FF10329")
+	}), fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(&fftypes.BatchPersisted{
+		Manifest: fftypes.JSONAnyPtr("my-manifest"),
+	}, nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("Ack").Return()
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID1.String(),
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info:     fftypes.JSONObject{"extra": "info"},
+			Manifest: "Sally",
+		},
+	})
+	om.TransferResult(mdx, mde)
+
+	mde.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestTransferResultHashMismatch(t *testing.T) {
+
+	om, cancel := newTestOperations(t)
+	cancel()
+	om.updater.conf.workerCount = 0
+
+	opID1 := fftypes.NewUUID()
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   opID1,
+			Type: fftypes.OpTypeDataExchangeSendBlob,
+			Input: fftypes.JSONObject{
+				"hash": "Bob",
+			},
+		},
+	}, nil, nil)
+	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
+		return strings.Contains(errorMsg, "FF10348")
+	}), fftypes.JSONObject{
+		"extra": "info",
+	}).Return(nil)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("Ack").Return()
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID1.String(),
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info: fftypes.JSONObject{"extra": "info"},
+			Hash: "Sally",
+		},
+	})
+	om.TransferResult(mdx, mde)
+
+	mde.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestTransferResultBatchLookupFail(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	cancel()
+	om.updater.conf.workerCount = 0
+
+	opID1 := fftypes.NewUUID()
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{
+		{
+			ID:   opID1,
+			Type: fftypes.OpTypeDataExchangeSendBatch,
+			Input: fftypes.JSONObject{
+				"batch": fftypes.NewUUID().String(),
+			},
+		},
+	}, nil, nil)
+	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
+		Manifest: true,
+	})
+	mde := &dataexchangemocks.DXEvent{}
+	mde.On("TransferResult").Return(&dataexchange.TransferResult{
+		TrackingID: opID1.String(),
+		Status:     fftypes.OpStatusSucceeded,
+		TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Info:     fftypes.JSONObject{"extra": "info"},
+			Manifest: "Sally",
+		},
+	})
+	om.TransferResult(mdx, mde)
+
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveOperationByIDOk(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.Operation{
+		ID:     fftypes.NewUUID(),
+		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Status: fftypes.OpStatusSucceeded,
+		Error:  "my error",
+		Output: fftypes.JSONObject{
+			"my": "data",
+		},
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, op.ID, fftypes.OpStatusSucceeded, "my error", fftypes.JSONObject{
+		"my": "data",
+	}).Return(nil)
+
+	_, err := om.ResolveOperationByID(ctx, op.ID.String(), op)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResolveOperationBadID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &fftypes.Operation{}
+
+	_, err := om.ResolveOperationByID(ctx, "badness", op)
+
+	assert.Regexp(t, "FF00138", err)
+
 }

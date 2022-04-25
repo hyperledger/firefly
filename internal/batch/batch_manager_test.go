@@ -1,17 +1,18 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in comdiliance with the License.
+// you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or imdilied.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package batch
 
 import (
@@ -22,20 +23,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func testConfigReset() {
-	config.Reset()
+	coreconfig.Reset()
+	config.Set(coreconfig.BatchManagerMinimumPollDelay, "0")
 	log.SetLevel("debug")
 }
 
@@ -87,6 +90,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	bmi, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
 	bm := bmi.(*batchManager)
+	bm.readOffset = 1000
 
 	bm.RegisterDispatcher("utdispatcher", fftypes.TransactionTypeBatchPin, []fftypes.MessageType{fftypes.MessageTypeBroadcast}, handler, DispatcherOptions{
 		BatchMaxSize:   2,
@@ -108,6 +112,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 		Data: fftypes.DataRefs{
 			{ID: dataID1, Hash: dataHash},
 		},
+		Sequence: 500,
 	}
 	data := &fftypes.Data{
 		ID:   dataID1,
@@ -155,7 +160,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	// Wait for the reaping
 	for len(bm.getProcessors()) > 0 {
 		time.Sleep(1 * time.Millisecond)
-		bm.NewMessages() <- msg.Sequence
+		bm.shoulderTap <- true
 	}
 
 	cancel()
@@ -192,8 +197,8 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 
 		h = sha256.New()
 		nonceBytes, _ = hex.DecodeString(
-			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "000000000000303a",
-		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12346) */
+			"746f70696332" + "44dc0861e69d9bab17dd5e90a8898c2ea156ad04e5fabf83119cc010486e6c1b" + "6469643a66697265666c793a6f72672f61626364" + "0000000000003039",
+		/*|   topic2  |    | ---- group id -------------------------------------------------|   |author'"did:firefly:org/abcd'            |  |i64 nonce (12345) */
 		/*|               context                                                           |   |          sender + nonce             */
 		) // little endian 12345 in 8 byte hex
 		h.Write(nonceBytes)
@@ -250,12 +255,10 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("( id IN ['%s'] ) && ( state == 'ready' )", msg.Header.ID.String()), fi.String())
 		return true
 	}), mock.Anything).Return(nil)
-	ugcn := mdi.On("UpsertNonceNext", mock.Anything, mock.Anything).Return(nil)
-	nextNonce := int64(12345)
-	ugcn.RunFn = func(a mock.Arguments) {
-		a[1].(*fftypes.Nonce).Nonce = nextNonce
-		nextNonce++
-	}
+	mdi.On("GetNonce", mock.Anything, mock.Anything).Return(&fftypes.Nonce{
+		Nonce: int64(12344),
+	}, nil).Twice()
+	mdi.On("UpdateNonce", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertTransaction", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil) // transaction submit
 
@@ -553,7 +556,7 @@ func TestRewindForNewMessage(t *testing.T) {
 		assert.Equal(t, int64(12344), v)
 		return true
 	})).Return(nil, nil)
-	_, err := bm.readPage()
+	_, _, err := bm.readPage(false)
 	assert.NoError(t, err)
 }
 
@@ -592,4 +595,18 @@ func TestGetMessageNotFound(t *testing.T) {
 	bm.Close()
 	_, _, err := bm.(*batchManager).assembleMessageData(fftypes.NewUUID())
 	assert.Regexp(t, "FF10133", err)
+}
+
+func TestDoubleTap(t *testing.T) {
+	bm, cancel := newTestBatchManager(t)
+	defer cancel()
+	bm.readOffset = 3000
+	go bm.newMessageNotifier()
+
+	bm.NewMessages() <- 2000
+	bm.NewMessages() <- 1000
+
+	for bm.rewindOffset != int64(999) {
+		time.Sleep(1 * time.Microsecond)
+	}
 }

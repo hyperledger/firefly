@@ -28,12 +28,13 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
-	"github.com/hyperledger/firefly/internal/restclient"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
+	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type WebHooks struct {
@@ -66,7 +67,7 @@ func (wh *WebHooks) Init(ctx context.Context, prefix config.Prefix, callbacks ev
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
-		client:       restclient.New(ctx, prefix),
+		client:       ffresty.New(ctx, prefix),
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions
@@ -150,21 +151,21 @@ func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
 			}
 		}
 	}`,
-		i18n.Expand(ctx, i18n.MsgWebhooksOptFastAck),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptURL),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptMethod),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptJSON),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptReply),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptReplyTag),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptReplyTx),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptHeaders),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptQuery),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptInput),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptInputQuery),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptInputHeaders),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptInputBody),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptInputPath),
-		i18n.Expand(ctx, i18n.MsgWebhooksOptInputReplyTx),
+		i18n.Expand(ctx, coremsgs.WebhooksOptFastAck),
+		i18n.Expand(ctx, coremsgs.WebhooksOptURL),
+		i18n.Expand(ctx, coremsgs.WebhooksOptMethod),
+		i18n.Expand(ctx, coremsgs.WebhooksOptJSON),
+		i18n.Expand(ctx, coremsgs.WebhooksOptReply),
+		i18n.Expand(ctx, coremsgs.WebhooksOptReplyTag),
+		i18n.Expand(ctx, coremsgs.WebhooksOptReplyTx),
+		i18n.Expand(ctx, coremsgs.WebhooksOptHeaders),
+		i18n.Expand(ctx, coremsgs.WebhooksOptQuery),
+		i18n.Expand(ctx, coremsgs.WebhooksOptInput),
+		i18n.Expand(ctx, coremsgs.WebhooksOptInputQuery),
+		i18n.Expand(ctx, coremsgs.WebhooksOptInputHeaders),
+		i18n.Expand(ctx, coremsgs.WebhooksOptInputBody),
+		i18n.Expand(ctx, coremsgs.WebhooksOptInputPath),
+		i18n.Expand(ctx, coremsgs.WebhooksOptInputReplyTx),
 	)
 }
 
@@ -177,7 +178,7 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 		replyTx:   options.GetString("replytx"),
 	}
 	if req.url == "" {
-		return nil, i18n.NewError(wh.ctx, i18n.MsgWebhookURLEmpty)
+		return nil, i18n.NewError(wh.ctx, coremsgs.MsgWebhookURLEmpty)
 	}
 	if req.method == "" {
 		req.method = http.MethodPost
@@ -186,7 +187,7 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 	for h, v := range headers {
 		s, ok := v.(string)
 		if !ok {
-			return nil, i18n.NewError(wh.ctx, i18n.MsgWebhookInvalidStringMap, "headers", h, v)
+			return nil, i18n.NewError(wh.ctx, coremsgs.MsgWebhookInvalidStringMap, "headers", h, v)
 		}
 		_ = req.r.SetHeader(h, s)
 	}
@@ -198,7 +199,7 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 	for q, v := range query {
 		s, ok := v.(string)
 		if !ok {
-			return nil, i18n.NewError(wh.ctx, i18n.MsgWebhookInvalidStringMap, "query", q, v)
+			return nil, i18n.NewError(wh.ctx, coremsgs.MsgWebhookInvalidStringMap, "query", q, v)
 		}
 		_ = req.r.SetQueryParam(q, s)
 	}
@@ -332,7 +333,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 		var resData interface{}
 		err = json.NewDecoder(resp.RawBody()).Decode(&resData)
 		if err != nil {
-			return nil, nil, i18n.WrapError(wh.ctx, err, i18n.MsgWebhooksReplyBadJSON)
+			return nil, nil, i18n.WrapError(wh.ctx, err, coremsgs.MsgWebhooksReplyBadJSON)
 		}
 		b, _ := json.Marshal(&resData) // we know we can re-marshal It
 		res.Body = fftypes.JSONAnyPtrBytes(b)

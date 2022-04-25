@@ -19,9 +19,9 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // BatchPinComplete is called in-line with a particular ledger's stream of events, so while we
@@ -35,6 +35,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
+
 	if err := fftypes.ValidateFFNameField(em.ctx, batchPin.Namespace, "namespace"); err != nil {
 		log.L(em.ctx).Errorf("Invalid transaction ID='%s' - invalid namespace '%s': %a", batchPin.TransactionID, batchPin.Namespace, err)
 		return nil // move on
@@ -55,11 +56,12 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 			if err := em.persistBatchTransaction(ctx, batchPin); err != nil {
 				return err
 			}
-			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &fftypes.TransactionRef{
-				Type: fftypes.TransactionTypeBatchPin,
-				ID:   batchPin.TransactionID,
+			chainEvent := buildBlockchainEvent(batchPin.Namespace, nil, &batchPin.Event, &fftypes.BlockchainTransactionRef{
+				Type:         fftypes.TransactionTypeBatchPin,
+				ID:           batchPin.TransactionID,
+				BlockchainID: batchPin.Event.BlockchainTXID,
 			})
-			if err := em.persistBlockchainEvent(ctx, chainEvent); err != nil {
+			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}
 			em.emitBlockchainEventMetric(&batchPin.Event)
@@ -67,8 +69,16 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 			if err := em.persistContexts(ctx, batchPin, signingKey, private); err != nil {
 				return err
 			}
-			// Kick off a download for broadcast batches
-			if !private {
+
+			batch, _, err := em.aggregator.GetBatchForPin(ctx, &fftypes.Pin{
+				Batch:     batchPin.BatchID,
+				BatchHash: batchPin.BatchHash,
+			})
+			if err != nil {
+				return err
+			}
+			// Kick off a download for broadcast batches if the batch isn't already persisted
+			if !private && batch == nil {
 				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
 					return err
 				}

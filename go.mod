@@ -9,7 +9,7 @@ require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59 // indirect
 	github.com/containerd/containerd v1.5.10 // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/getkin/kin-openapi v0.87.0
+	github.com/getkin/kin-openapi v0.94.1-0.20220401165309-136a868a30c2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-resty/resty/v2 v2.7.0
@@ -26,7 +26,6 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
-	github.com/microcosm-cc/bluemonday v1.0.16
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/onsi/ginkgo v1.16.1 // indirect
 	github.com/onsi/gomega v1.11.0 // indirect

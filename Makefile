@@ -13,7 +13,7 @@ GOGC=30
 
 all: build test go-mod-tidy
 test: deps lint
-		$(VGO) test ./internal/... ./pkg/... ./cmd/... -cover -coverprofile=coverage.txt -covermode=atomic -timeout=10s
+		$(VGO) test ./internal/... ./pkg/... ./cmd/... ./docs -cover -coverprofile=coverage.txt -covermode=atomic -timeout=30s
 coverage.html:
 		$(VGO) tool cover -html=coverage.txt
 coverage: test coverage.html
@@ -38,15 +38,17 @@ $(eval $(call makemock, pkg/database,              Callbacks,          databasem
 $(eval $(call makemock, pkg/sharedstorage,         Plugin,             sharedstoragemocks))
 $(eval $(call makemock, pkg/sharedstorage,         Callbacks,          sharedstoragemocks))
 $(eval $(call makemock, pkg/events,                Plugin,             eventsmocks))
-$(eval $(call makemock, pkg/events,                PluginAll,          eventsmocks))
+$(eval $(call makemock, pkg/events,                Plugin,             eventsmocks))
 $(eval $(call makemock, pkg/events,                Callbacks,          eventsmocks))
 $(eval $(call makemock, pkg/identity,              Plugin,             identitymocks))
 $(eval $(call makemock, pkg/identity,              Callbacks,          identitymocks))
 $(eval $(call makemock, pkg/dataexchange,          Plugin,             dataexchangemocks))
+$(eval $(call makemock, pkg/dataexchange,          DXEvent,            dataexchangemocks))
 $(eval $(call makemock, pkg/dataexchange,          Callbacks,          dataexchangemocks))
 $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
 $(eval $(call makemock, pkg/wsclient,              WSClient,           wsmocks))
+$(eval $(call makemock, pkg/httpserver,            GoHTTPServer,       httpservermocks))
 $(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
 $(eval $(call makemock, internal/batchpin,         Submitter,          batchpinmocks))
@@ -65,10 +67,10 @@ $(eval $(call makemock, internal/events,           EventManager,       eventmock
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))
 $(eval $(call makemock, internal/contracts,        Manager,            contractmocks))
+$(eval $(call makemock, internal/adminevents,      Manager,            admineventsmocks))
 $(eval $(call makemock, internal/oapiffi,          FFISwaggerGen,      oapiffimocks))
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
-$(eval $(call makemock, internal/apiserver,        IServer,            apiservermocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 
@@ -89,8 +91,8 @@ clean:
 		rm -f *.so ${BINARY_NAME}
 deps:
 		$(VGO) get
-swagger:
-		$(VGO) test ./internal/apiserver -timeout=10s -tags swagger
+reference:
+		$(VGO) test ./internal/apiserver ./docs -timeout=10s -tags reference
 manifest:
 		./manifestgen.sh
 docker:

@@ -38,16 +38,17 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	// Create a new token pool entry
 	poolID := fftypes.NewUUID()
 	pool := &fftypes.TokenPool{
-		ID:         poolID,
-		Namespace:  "ns1",
-		Name:       "my-pool",
-		Standard:   "ERC1155",
-		Type:       fftypes.TokenTypeFungible,
-		ProtocolID: "12345",
-		Connector:  "erc1155",
-		Symbol:     "COIN",
-		Message:    fftypes.NewUUID(),
-		State:      fftypes.TokenPoolStateConfirmed,
+		ID:        poolID,
+		Namespace: "ns1",
+		Name:      "my-pool",
+		Standard:  "ERC1155",
+		Type:      fftypes.TokenTypeFungible,
+		Locator:   "12345",
+		Connector: "erc1155",
+		Symbol:    "COIN",
+		Decimals:  18,
+		Message:   fftypes.NewUUID(),
+		State:     fftypes.TokenPoolStateConfirmed,
 		TX: fftypes.TransactionRef{
 			Type: fftypes.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
@@ -82,8 +83,8 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	poolReadJson, _ = json.Marshal(&poolRead)
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
-	// Query back the token pool (by protocol ID)
-	poolRead, err = s.GetTokenPoolByProtocolID(ctx, pool.Connector, pool.ProtocolID)
+	// Query back the token pool (by locator)
+	poolRead, err = s.GetTokenPoolByLocator(ctx, pool.Connector, pool.Locator)
 	assert.NoError(t, err)
 	assert.NotNil(t, poolRead)
 	poolReadJson, _ = json.Marshal(&poolRead)
@@ -95,7 +96,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		fb.Eq("id", pool.ID.String()),
 		fb.Eq("namespace", pool.Namespace),
 		fb.Eq("name", pool.Name),
-		fb.Eq("protocolid", pool.ProtocolID),
+		fb.Eq("locator", pool.Locator),
 		fb.Eq("message", pool.Message),
 		fb.Eq("created", pool.Created),
 	)
@@ -107,7 +108,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(poolJson), string(poolReadJson))
 
 	// Update the token pool
-	pool.ProtocolID = "67890"
+	pool.Locator = "67890"
 	pool.Type = fftypes.TokenTypeNonFungible
 	err = s.UpsertTokenPool(ctx, pool)
 	assert.NoError(t, err)
@@ -230,7 +231,7 @@ func TestGetTokenPoolsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.TokenPoolQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
 	_, _, err := s.GetTokenPools(context.Background(), f)
-	assert.Regexp(t, "FF10149.*id", err)
+	assert.Regexp(t, "FF00143.*id", err)
 }
 
 func TestGetTokenPoolsScanFail(t *testing.T) {

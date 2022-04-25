@@ -30,16 +30,19 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
-	"github.com/hyperledger/firefly/internal/config"
-	"github.com/hyperledger/firefly/internal/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 type SwaggerGenConfig struct {
-	BaseURL     string
-	Title       string
-	Version     string
-	Description string
+	BaseURL                   string
+	Title                     string
+	Version                   string
+	Description               string
+	PanicOnMissingDescription bool
 }
 
 var customRegexRemoval = regexp.MustCompile(`{(\w+)\:[^}]+}`)
@@ -65,7 +68,7 @@ func SwaggerGen(ctx context.Context, routes []*Route, conf *SwaggerGenConfig) *o
 		if route.Name == "" || opIds[route.Name] {
 			log.Panicf("Duplicate/invalid name (used as operation ID in swagger): %s", route.Name)
 		}
-		addRoute(ctx, doc, route)
+		addRoute(ctx, doc, route, conf)
 		opIds[route.Name] = true
 	}
 	return doc
@@ -96,30 +99,100 @@ func initInput(op *openapi3.Operation) {
 	}
 }
 
-func ffTagHandler(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+func isTrue(str string) bool {
+	return strings.EqualFold(str, "true")
+}
+
+func ffInputTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema, conf *SwaggerGenConfig) error {
+	if isTrue(tag.Get("ffexcludeinput")) {
+		return &openapi3gen.ExcludeSchemaSentinel{}
+	}
+	if taggedRoutes, ok := tag.Lookup("ffexcludeinput"); ok {
+		for _, r := range strings.Split(taggedRoutes, ",") {
+			if route.Name == r {
+				return &openapi3gen.ExcludeSchemaSentinel{}
+			}
+		}
+	}
+	return ffTagHandler(ctx, route, name, tag, schema, conf)
+}
+
+func ffOutputTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema, conf *SwaggerGenConfig) error {
+	if isTrue(tag.Get("ffexcludeoutput")) {
+		return &openapi3gen.ExcludeSchemaSentinel{}
+	}
+	return ffTagHandler(ctx, route, name, tag, schema, conf)
+}
+
+func ffTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema, conf *SwaggerGenConfig) error {
 	if ffEnum := tag.Get("ffenum"); ffEnum != "" {
 		schema.Enum = fftypes.FFEnumValues(ffEnum)
+	}
+	if isTrue(tag.Get("ffexclude")) {
+		return &openapi3gen.ExcludeSchemaSentinel{}
+	}
+	if taggedRoutes, ok := tag.Lookup("ffexclude"); ok {
+		for _, r := range strings.Split(taggedRoutes, ",") {
+			if route.Name == r {
+				return &openapi3gen.ExcludeSchemaSentinel{}
+			}
+		}
+	}
+	if name != "_root" {
+		if structName, ok := tag.Lookup("ffstruct"); ok {
+			key := fmt.Sprintf("%s.%s", structName, name)
+			description := i18n.Expand(ctx, i18n.MessageKey(key))
+			if description == key && conf.PanicOnMissingDescription {
+				return i18n.NewError(ctx, coremsgs.MsgFieldDescriptionMissing, key, route.Name)
+			}
+			schema.Description = description
+		} else if conf.PanicOnMissingDescription {
+			return i18n.NewError(ctx, coremsgs.MsgFFStructTagMissing, name, route.Name)
+		}
 	}
 	return nil
 }
 
-func genSchemaRef(ctx context.Context, doc *openapi3.T, obj interface{}, mask []string, schemaDef func(context.Context) string) *openapi3.SchemaRef {
-	var schemaRef *openapi3.SchemaRef
-	if schemaDef != nil {
-		err := json.Unmarshal([]byte(schemaDef(ctx)), &schemaRef)
-		if err != nil {
-			panic(fmt.Sprintf("invalid schema for %T: %s", obj, err))
-		}
+func addCustomType(t reflect.Type, schema *openapi3.Schema) {
+	typeString := "string"
+	switch t.Name() {
+	case "UUID":
+		schema.Type = typeString
+		schema.Format = "uuid"
+	case "FFTime":
+		schema.Type = typeString
+		schema.Format = "date-time"
+	case "Bytes32":
+		schema.Type = typeString
+		schema.Format = "byte"
+	case "FFBigInt":
+		schema.Type = typeString
+	case "JSONAny":
+		schema.Type = ""
 	}
-	if schemaRef == nil {
-		schemaRef, _ = openapi3gen.NewSchemaRefForValue(maskFields(obj, mask), doc.Components.Schemas, openapi3gen.SchemaCustomizer(ffTagHandler))
-	}
-	return schemaRef
 }
 
-func addInput(ctx context.Context, doc *openapi3.T, input interface{}, mask []string, schemaDef func(context.Context) string, op *openapi3.Operation) {
+func addInput(ctx context.Context, doc *openapi3.T, route *Route, op *openapi3.Operation, conf *SwaggerGenConfig) {
+	var schemaRef *openapi3.SchemaRef
+	var err error
+	schemaCustomizer := func(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+		addCustomType(t, schema)
+		return ffInputTagHandler(ctx, route, name, tag, schema, conf)
+	}
+	switch {
+	case route.JSONInputSchema != nil:
+		err = json.Unmarshal([]byte(route.JSONInputSchema(ctx)), &schemaRef)
+		if err != nil {
+			panic(fmt.Sprintf("invalid schema: %s", err))
+		}
+	case route.JSONInputValue != nil:
+		schemaRef, err = openapi3gen.NewSchemaRefForValue(route.JSONInputValue(), doc.Components.Schemas, openapi3gen.SchemaCustomizer(schemaCustomizer))
+		if err != nil {
+			panic(fmt.Sprintf("invalid schema: %s", err))
+		}
+	}
 	op.RequestBody.Value.Content["application/json"] = &openapi3.MediaType{
-		Schema: genSchemaRef(ctx, doc, input, mask, schemaDef),
+		Schema: schemaRef,
 	}
 }
 
@@ -135,7 +208,7 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 	for _, fp := range formParams {
 		props[fp.Name] = &openapi3.SchemaRef{
 			Value: &openapi3.Schema{
-				Description: i18n.Expand(ctx, i18n.MsgSuccessResponse),
+				Description: i18n.Expand(ctx, coremsgs.APISuccessResponse),
 				Type:        "string",
 			},
 		}
@@ -151,15 +224,36 @@ func addFormInput(ctx context.Context, op *openapi3.Operation, formParams []*For
 	}
 }
 
-func addOutput(ctx context.Context, doc *openapi3.T, route *Route, output interface{}, schemaDef func(context.Context) string, op *openapi3.Operation) {
-	s := i18n.Expand(ctx, i18n.MsgSuccessResponse)
+func addOutput(ctx context.Context, doc *openapi3.T, route *Route, op *openapi3.Operation, conf *SwaggerGenConfig) {
+	var schemaRef *openapi3.SchemaRef
+	var err error
+	s := i18n.Expand(ctx, coremsgs.APISuccessResponse)
+	schemaCustomizer := func(name string, t reflect.Type, tag reflect.StructTag, schema *openapi3.Schema) error {
+		addCustomType(t, schema)
+		return ffOutputTagHandler(ctx, route, name, tag, schema, conf)
+	}
+	switch {
+	case route.JSONOutputSchema != nil:
+		err := json.Unmarshal([]byte(route.JSONOutputSchema(ctx)), &schemaRef)
+		if err != nil {
+			panic(fmt.Sprintf("invalid schema: %s", err))
+		}
+	case route.JSONOutputValue != nil:
+		outputValue := route.JSONOutputValue()
+		if outputValue != nil {
+			schemaRef, err = openapi3gen.NewSchemaRefForValue(outputValue, doc.Components.Schemas, openapi3gen.SchemaCustomizer(schemaCustomizer))
+			if err != nil {
+				panic(fmt.Sprintf("invalid schema: %s", err))
+			}
+		}
+	}
 	for _, code := range route.JSONOutputCodes {
 		op.Responses[strconv.FormatInt(int64(code), 10)] = &openapi3.ResponseRef{
 			Value: &openapi3.Response{
 				Description: &s,
 				Content: openapi3.Content{
 					"application/json": &openapi3.MediaType{
-						Schema: genSchemaRef(ctx, doc, output, nil, schemaDef),
+						Schema: schemaRef,
 					},
 				},
 			},
@@ -198,34 +292,26 @@ func addParam(ctx context.Context, op *openapi3.Operation, in, name, def, exampl
 	})
 }
 
-func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
+func addRoute(ctx context.Context, doc *openapi3.T, route *Route, conf *SwaggerGenConfig) {
 	pi := getPathItem(doc, route.Path)
+	routeDescription := i18n.Expand(ctx, route.Description)
+	if routeDescription == "" && conf.PanicOnMissingDescription {
+		log.Panicf(i18n.NewError(ctx, coremsgs.MsgRouteDescriptionMissing, route.Name).Error())
+	}
 	op := &openapi3.Operation{
-		Description: i18n.Expand(ctx, route.Description),
+		Description: routeDescription,
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
 		Deprecated:  route.Deprecated,
 	}
 	if route.Method != http.MethodGet && route.Method != http.MethodDelete {
-		var input interface{}
-		if route.JSONInputValue != nil {
-			input = route.JSONInputValue()
-		}
 		initInput(op)
-		if input != nil || route.JSONInputSchema != nil {
-			addInput(ctx, doc, input, route.JSONInputMask, route.JSONInputSchema, op)
-		}
+		addInput(ctx, doc, route, op, conf)
 		if route.FormUploadHandler != nil {
 			addFormInput(ctx, op, route.FormParams)
 		}
 	}
-	var output interface{}
-	if route.JSONOutputValue != nil {
-		output = route.JSONOutputValue()
-	}
-	if output != nil || route.JSONOutputSchema != nil {
-		addOutput(ctx, doc, route, output, route.JSONOutputSchema, op)
-	}
+	addOutput(ctx, doc, route, op, conf)
 	for _, p := range route.PathParams {
 		example := p.Example
 		if p.ExampleFromConf != "" {
@@ -240,19 +326,19 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 		}
 		addParam(ctx, op, "query", q.Name, q.Default, example, q.Description, q.Deprecated)
 	}
-	addParam(ctx, op, "header", "Request-Timeout", config.GetString(config.APIRequestTimeout), "", i18n.MsgRequestTimeoutDesc, false)
+	addParam(ctx, op, "header", "Request-Timeout", config.GetString(coreconfig.APIRequestTimeout), "", coremsgs.APIRequestTimeoutDesc, false)
 	if route.FilterFactory != nil {
 		fields := route.FilterFactory.NewFilter(ctx).Fields()
 		sort.Strings(fields)
 		for _, field := range fields {
-			addParam(ctx, op, "query", field, "", "", i18n.MsgFilterParamDesc, false)
+			addParam(ctx, op, "query", field, "", "", coremsgs.APIFilterParamDesc, false)
 		}
-		addParam(ctx, op, "query", "sort", "", "", i18n.MsgFilterSortDesc, false)
-		addParam(ctx, op, "query", "ascending", "", "", i18n.MsgFilterAscendingDesc, false)
-		addParam(ctx, op, "query", "descending", "", "", i18n.MsgFilterDescendingDesc, false)
-		addParam(ctx, op, "query", "skip", "", "", i18n.MsgFilterSkipDesc, false, config.GetUint(config.APIMaxFilterSkip))
-		addParam(ctx, op, "query", "limit", "", config.GetString(config.APIDefaultFilterLimit), i18n.MsgFilterLimitDesc, false, config.GetUint(config.APIMaxFilterLimit))
-		addParam(ctx, op, "query", "count", "", "", i18n.MsgFilterCountDesc, false)
+		addParam(ctx, op, "query", "sort", "", "", coremsgs.APIFilterSortDesc, false)
+		addParam(ctx, op, "query", "ascending", "", "", coremsgs.APIFilterAscendingDesc, false)
+		addParam(ctx, op, "query", "descending", "", "", coremsgs.APIFilterDescendingDesc, false)
+		addParam(ctx, op, "query", "skip", "", "", coremsgs.APIFilterSkipDesc, false, config.GetUint(coreconfig.APIMaxFilterSkip))
+		addParam(ctx, op, "query", "limit", "", config.GetString(coreconfig.APIDefaultFilterLimit), coremsgs.APIFilterLimitDesc, false, config.GetUint(coreconfig.APIMaxFilterLimit))
+		addParam(ctx, op, "query", "count", "", "", coremsgs.APIFilterCountDesc, false)
 	}
 	switch route.Method {
 	case http.MethodGet:
@@ -264,29 +350,4 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route) {
 	case http.MethodDelete:
 		pi.Delete = op
 	}
-}
-
-func maskFieldsOnStruct(t reflect.Type, mask []string) reflect.Type {
-	if mask == nil {
-		return t
-	}
-	fieldCount := t.NumField()
-	newFields := make([]reflect.StructField, fieldCount)
-	for i := 0; i < fieldCount; i++ {
-		field := t.FieldByIndex([]int{i})
-		for _, m := range mask {
-			if strings.EqualFold(field.Name, m) {
-				field.Tag = "`json:-`"
-			}
-		}
-		newFields[i] = field
-	}
-	return reflect.StructOf(newFields)
-}
-
-func maskFields(input interface{}, mask []string) interface{} {
-	t := reflect.TypeOf(input)
-	newStruct := maskFieldsOnStruct(t.Elem(), mask)
-	i := reflect.New(newStruct).Interface()
-	return i
 }

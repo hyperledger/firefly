@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -103,7 +104,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 				Set("blockchain_event", transfer.BlockchainEvent).
 				Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
 			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeUpdated, transfer.Namespace, transfer.LocalID)
 			},
 		); err != nil {
 			return err
@@ -134,7 +135,7 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 					transfer.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenTransfers, fftypes.ChangeEventTypeCreated, transfer.Namespace, transfer.LocalID)
 			},
 		); err != nil {
 			return err
@@ -167,7 +168,7 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "tokentransfer")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokentransfer")
 	}
 	return &transfer, nil
 }
@@ -196,13 +197,13 @@ func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred 
 	return transfer, nil
 }
 
-func (s *SQLCommon) GetTokenTransfer(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+func (s *SQLCommon) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
-func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error) {
+func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, protocolID, sq.And{
-		sq.Eq{"connector": connector},
+		sq.Eq{"pool_id": poolID},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }

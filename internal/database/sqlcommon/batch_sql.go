@@ -21,10 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -38,19 +39,17 @@ var (
 		"created",
 		"hash",
 		"manifest",
-		"payload_ref",
 		"confirmed",
 		"tx_type",
 		"tx_id",
 		"node_id",
 	}
 	batchFilterFieldMap = map[string]string{
-		"type":       "btype",
-		"payloadref": "payload_ref",
-		"tx.type":    "tx_type",
-		"tx.id":      "tx_id",
-		"group":      "group_hash",
-		"node":       "node_id",
+		"type":    "btype",
+		"tx.type": "tx_type",
+		"tx.id":   "tx_id",
+		"group":   "group_hash",
+		"node":    "node_id",
 	}
 )
 
@@ -96,7 +95,6 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 				Set("created", batch.Created).
 				Set("hash", batch.Hash).
 				Set("manifest", batch.Manifest).
-				Set("payload_ref", batch.PayloadRef).
 				Set("confirmed", batch.Confirmed).
 				Set("tx_type", batch.TX.Type).
 				Set("tx_id", batch.TX.ID).
@@ -123,7 +121,6 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 					batch.Created,
 					batch.Hash,
 					batch.Manifest,
-					batch.PayloadRef,
 					batch.Confirmed,
 					batch.TX.Type,
 					batch.TX.ID,
@@ -152,14 +149,13 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 		&batch.Created,
 		&batch.Hash,
 		&batch.Manifest,
-		&batch.PayloadRef,
 		&batch.Confirmed,
 		&batch.TX.Type,
 		&batch.TX.ID,
 		&batch.Node,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgDBReadErr, "batches")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "batches")
 	}
 	return &batch, nil
 }

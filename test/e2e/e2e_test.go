@@ -37,18 +37,20 @@ import (
 )
 
 type testState struct {
-	startTime time.Time
-	t         *testing.T
-	client1   *resty.Client
-	client2   *resty.Client
-	ethNode   *resty.Client
-	ws1       *websocket.Conn
-	ws2       *websocket.Conn
-	org1      *fftypes.Identity
-	org1key   *fftypes.Verifier
-	org2      *fftypes.Identity
-	org2key   *fftypes.Verifier
-	done      func()
+	startTime            time.Time
+	t                    *testing.T
+	client1              *resty.Client
+	client2              *resty.Client
+	ethNode              *resty.Client
+	ws1                  *websocket.Conn
+	ws2                  *websocket.Conn
+	org1                 *fftypes.Identity
+	org1key              *fftypes.Verifier
+	org2                 *fftypes.Identity
+	org2key              *fftypes.Verifier
+	done                 func()
+	stackState           *StackState
+	unregisteredAccounts []interface{}
 }
 
 var widgetSchemaJSON = []byte(`{
@@ -163,17 +165,30 @@ func readStackFile(t *testing.T) *Stack {
 	return stack
 }
 
+func readStackState(t *testing.T) *StackState {
+	stackFile := os.Getenv("STACK_STATE")
+	if stackFile == "" {
+		t.Fatal("STACK_STATE must be set")
+	}
+	stackState, err := ReadStackState(stackFile)
+	assert.NoError(t, err)
+	return stackState
+}
+
 func beforeE2ETest(t *testing.T) *testState {
 	stack := readStackFile(t)
+	stackState := readStackState(t)
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
 
 	ts := &testState{
-		t:         t,
-		startTime: time.Now(),
-		client1:   NewResty(t),
-		client2:   NewResty(t),
+		t:                    t,
+		startTime:            time.Now(),
+		client1:              NewResty(t),
+		client2:              NewResty(t),
+		stackState:           stackState,
+		unregisteredAccounts: stackState.Accounts[2:],
 	}
 
 	httpProtocolClient1 := "http"
@@ -256,7 +271,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org1: ID=%s DID=%s Key=%s", ts.org1.DID, ts.org1.ID, ts.org1key.Value)
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
-	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event|token_approval_confirmed|identity_confirmed"
+	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
 	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
 
 	wsUrl1 := url.URL{
@@ -293,12 +308,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery, chan *fftypes.ChangeEvent) {
+func wsReader(conn *websocket.Conn, dbChanges bool) chan *fftypes.EventDelivery {
 	events := make(chan *fftypes.EventDelivery, 100)
-	var changeEvents chan *fftypes.ChangeEvent
-	if dbChanges {
-		changeEvents = make(chan *fftypes.ChangeEvent, 100)
-	}
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
@@ -312,19 +323,6 @@ func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery
 				panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
 			}
 			switch wsa.Type {
-			case fftypes.WSClientActionChangeNotifcation:
-				var wscn fftypes.WSChangeNotification
-				err = json.Unmarshal(b, &wscn)
-				if err != nil {
-					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
-				}
-				if err == nil {
-					// Throw away DB changes if the caller doesn't want them
-					fmt.Printf("Websocket %s change event: %s/%s/%s\n", conn.RemoteAddr(), wscn.ChangeEvent.Namespace, wscn.ChangeEvent.Collection, wscn.ChangeEvent.Type)
-					if dbChanges {
-						changeEvents <- wscn.ChangeEvent
-					}
-				}
 			default:
 				var ed fftypes.EventDelivery
 				err = json.Unmarshal(b, &ed)
@@ -338,7 +336,7 @@ func wsReader(conn *websocket.Conn, dbChanges bool) (chan *fftypes.EventDelivery
 			}
 		}
 	}()
-	return events, changeEvents
+	return events
 }
 
 func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {

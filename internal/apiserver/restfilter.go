@@ -26,9 +26,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type filterResultsWithCount struct {
@@ -105,7 +106,7 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 	if len(skipVals) > 0 {
 		s, _ := strconv.ParseUint(skipVals[0], 10, 64)
 		if as.maxFilterSkip != 0 && s > as.maxFilterSkip {
-			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterSkip, as.maxFilterSkip)
+			return nil, i18n.NewError(req.Context(), coremsgs.MsgMaxFilterSkip, as.maxFilterSkip)
 		}
 		filter.Skip(s)
 	}
@@ -113,7 +114,7 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 	if len(limitVals) > 0 {
 		l, _ := strconv.ParseUint(limitVals[0], 10, 64)
 		if as.maxFilterLimit != 0 && l > as.maxFilterLimit {
-			return nil, i18n.NewError(req.Context(), i18n.MsgMaxFilterLimit, as.maxFilterLimit)
+			return nil, i18n.NewError(req.Context(), coremsgs.MsgMaxFilterLimit, as.maxFilterLimit)
 		}
 		filter.Limit(l)
 	}
@@ -142,7 +143,7 @@ func (as *apiServer) buildFilter(req *http.Request, ff database.QueryFactory) (d
 func (as *apiServer) checkNoMods(ctx context.Context, mods filterModifiers, field, op string, filter database.Filter) (database.Filter, error) {
 	emptyModifiers := filterModifiers{}
 	if mods != emptyModifiers {
-		return nil, i18n.NewError(ctx, i18n.MsgQueryOpUnsupportedMod, op, field)
+		return nil, i18n.NewError(ctx, coremsgs.MsgQueryOpUnsupportedMod, op, field)
 	}
 	return filter, nil
 }

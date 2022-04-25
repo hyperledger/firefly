@@ -20,8 +20,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -29,7 +29,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 
 	l := log.L(em.ctx)
 
-	// De-serializae the batch
+	// De-serialize the batch
 	var batch *fftypes.Batch
 	err := json.Unmarshal(data, &batch)
 	if err != nil {
@@ -58,14 +58,22 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	}
 
 	// Rewind the aggregator to this batch - after the DB updates are complete
-	log.L(em.ctx).Errorf("Rewinding for downloaded broadcast batch %s", batch.ID)
-	em.aggregator.rewindBatches <- *batch.ID
+	em.aggregator.queueBatchRewind(batch.ID)
 	return batch.ID, nil
 }
 
-func (em *eventManager) SharedStorageBLOBDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) error {
+func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string) {
 	l := log.L(em.ctx)
 	l.Infof("Blob received event from public storage %s: Hash='%v'", ss.Name(), hash)
 
-	return em.blobReceivedCommon("", hash, size, payloadRef)
+	// Dispatch to the blob receiver for efficient batch DB operations
+	blobHash := hash
+	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
+		blob: &fftypes.Blob{
+			PayloadRef: payloadRef,
+			Hash:       &blobHash,
+			Size:       size,
+			Created:    fftypes.Now(),
+		},
+	})
 }

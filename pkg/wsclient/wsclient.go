@@ -27,10 +27,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/internal/i18n"
-	"github.com/hyperledger/firefly/internal/log"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type WSConfig struct {
@@ -244,7 +244,8 @@ func (w *wsClient) readLoop() {
 	for {
 		mt, message, err := w.wsconn.ReadMessage()
 		if err != nil {
-			l.Errorf("WS %s closed: %s", w.url, err)
+			// We treat this as informational, as it's normal for the client to disconnect here
+			l.Infof("WS %s closed: %s", w.url, err)
 			return
 		}
 

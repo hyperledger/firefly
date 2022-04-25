@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPutConfigRecord(t *testing.T) {
+func TestAdminPutConfigRecord(t *testing.T) {
 	o, r := newTestAdminServer()
 	input := &fftypes.ConfigRecord{
 		Key:   "foo",
