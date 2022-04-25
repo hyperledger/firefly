@@ -145,7 +145,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			To:     suite.testState.org2key.Value,
 			Amount: *fftypes.NewFFBigInt(1),
 			From:   suite.testState.org1key.Value,
-			Key:    suite.testState.org1key.Value,
+			Key:    suite.testState.org2key.Value,
 		},
 		Pool: poolName,
 		Message: &fftypes.MessageInOut{
@@ -156,7 +156,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			},
 		},
 	}
-	transferOut = TransferTokens(suite.T(), suite.testState.client1, transfer, false)
+	transferOut = TransferTokens(suite.T(), suite.testState.client2, transfer, false)
 
 	waitForEvent(suite.T(), received1, fftypes.EventTypeMessageConfirmed, transferOut.Message)
 	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
