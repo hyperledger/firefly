@@ -57,9 +57,16 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID, mock.Anything).
 		Return().Once()
 
-	err := s.UpsertTokenApproval(ctx, approval)
+	// Initial list is empty
+	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
+	approvals, _, err := s.GetTokenApprovals(ctx, fb.And())
 	assert.NoError(t, err)
+	assert.NotNil(t, approvals)
+	assert.Equal(t, 0, len(approvals))
 
+	// Add one approval
+	err = s.UpsertTokenApproval(ctx, approval)
+	assert.NoError(t, err)
 	assert.NotNil(t, approval.Created)
 	approvalJson, _ := json.Marshal(&approval)
 
@@ -78,7 +85,6 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
 	// Query back token approval by query filter
-	fb := database.TokenApprovalQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("pool", approval.Pool),
 		fb.Eq("key", approval.Key),

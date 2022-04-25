@@ -201,7 +201,7 @@ func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, connector, locato
 	})
 }
 
-func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, tokenPoolFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err

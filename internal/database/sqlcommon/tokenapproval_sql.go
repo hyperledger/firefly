@@ -195,7 +195,7 @@ func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, poolID *ff
 	})
 }
 
-func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filter) (approvals []*fftypes.TokenApproval, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filter) ([]*fftypes.TokenApproval, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenApprovalColumns...).From("tokenapproval"), filter, tokenApprovalFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
@@ -207,6 +207,7 @@ func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filte
 	}
 	defer rows.Close()
 
+	approvals := []*fftypes.TokenApproval{}
 	for rows.Next() {
 		d, err := s.tokenApprovalResult(ctx, rows)
 		if err != nil {
