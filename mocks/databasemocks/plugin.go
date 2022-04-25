@@ -2938,7 +2938,7 @@ func (_m *Plugin) UpsertIdentity(ctx context.Context, data *fftypes.Identity, op
 	return r0
 }
 
-// UpsertMessage provides a mock function with given fields: ctx, message, optimization
+// UpsertMessage provides a mock function with given fields: ctx, message, optimization, hooks
 func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) error {
 	_va := make([]interface{}, len(hooks))
 	for _i := range hooks {
@@ -2950,8 +2950,8 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, o
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization) error); ok {
-		r0 = rf(ctx, message, optimization)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, message, optimization, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

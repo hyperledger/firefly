@@ -49,7 +49,7 @@ type TokenPool struct {
 	Locator   string         `ffstruct:"TokenPool" json:"locator,omitempty" ffexcludeinput:"true"`
 	Key       string         `ffstruct:"TokenPool" json:"key,omitempty"`
 	Symbol    string         `ffstruct:"TokenPool" json:"symbol,omitempty"`
-	Decimals  int            `ffstruct:"TokenPool" json:"decimals,omitempty"`
+	Decimals  int            `ffstruct:"TokenPool" json:"decimals,omitempty" ffexcludeinput:"true"`
 	Connector string         `ffstruct:"TokenPool" json:"connector,omitempty"`
 	Message   *UUID          `ffstruct:"TokenPool" json:"message,omitempty" ffexcludeinput:"true"`
 	State     TokenPoolState `ffstruct:"TokenPool" json:"state,omitempty" ffenum:"tokenpoolstate" ffexcludeinput:"true"`
