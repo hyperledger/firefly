@@ -178,7 +178,7 @@ func (s *SQLCommon) queryTx(ctx context.Context, table string, tx *txWrapper, q 
 		return nil, tx, i18n.WrapError(ctx, err, coremsgs.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> query %s`, table)
-	l.Tracef(`SQL-> query args: %+v`, args)
+	l.Tracef(`SQL-> query: %s (args: %+v)`, sqlQuery, args)
 	var rows *sql.Rows
 	if tx != nil {
 		rows, err = tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
@@ -214,7 +214,7 @@ func (s *SQLCommon) countQuery(ctx context.Context, table string, tx *txWrapper,
 		return count, i18n.WrapError(ctx, err, coremsgs.MsgDBQueryBuildFailed)
 	}
 	l.Debugf(`SQL-> count query %s`, table)
-	l.Tracef(`SQL-> count query args: %+v`, args)
+	l.Tracef(`SQL-> count query: %s (args: %+v)`, sqlQuery, args)
 	var rows *sql.Rows
 	if tx != nil {
 		rows, err = tx.sqlTX.QueryContext(ctx, sqlQuery, args...)
