@@ -9,6 +9,6 @@ has_children: true
 
 Find answers to the most commonly asked FireFly questions.
 
-This content is coming soon and will be guided by community interactions via RocketChat, meetups, webinars and other technical forums.
+This content is coming soon and will be guided by community interactions via Discord, meetups, webinars and other technical forums.
 
-If you have immediate questions please don't hesitate to reach out to us on our [FireFly RocketChat Channel](https://chat.hyperledger.org/channel/firefly).
+If you have immediate questions please don't hesitate to reach out to us on the [Hyperledger Discord](https://discord.gg/hyperledger) in the `#firefly` channel.
