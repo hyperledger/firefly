@@ -37,7 +37,7 @@ So if there aren't yet instructions for making FireFly a Supernode for your favo
 don't worry. There is almost certainly a straightforward path to plugging it in that will save you re-building
 all the plumbing for your blockchain application from scratch.
 
-[![Hyperledger FireFly Architecture Overview](./images/firefly_technical_architecture.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/readme/images/firefly_technical_architecture.jpg)
+[![Hyperledger FireFly Architecture Overview](./docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/docs/images/firefly_architecture_overview.jpg)
 
 ## Start contributing to Hyperledger FireFy
 
