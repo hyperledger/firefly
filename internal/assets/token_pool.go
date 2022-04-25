@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
@@ -104,13 +105,29 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 		return err
 	}
 
-	op := fftypes.NewOperation(
-		plugin,
-		pool.Namespace,
-		pool.TX.ID,
-		fftypes.OpTypeTokenActivatePool)
-	txcommon.AddTokenPoolActivateInputs(op, pool.ID)
-	if err := am.database.InsertOperation(ctx, op); err != nil {
+	var op *fftypes.Operation
+	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		fb := database.OperationQueryFactory.NewFilter(ctx)
+		filter := fb.And(
+			fb.Eq("tx", pool.TX.ID),
+			fb.Eq("type", fftypes.OpTypeTokenActivatePool),
+		)
+		if existing, _, err := am.database.GetOperations(ctx, filter); err != nil {
+			return err
+		} else if len(existing) > 0 {
+			log.L(ctx).Debugf("Dropping duplicate token pool activation request for pool %s", pool.ID)
+			return nil
+		}
+
+		op = fftypes.NewOperation(
+			plugin,
+			pool.Namespace,
+			pool.TX.ID,
+			fftypes.OpTypeTokenActivatePool)
+		txcommon.AddTokenPoolActivateInputs(op, pool.ID)
+		return am.database.InsertOperation(ctx, op)
+	})
+	if err != nil || op == nil {
 		return err
 	}
 
