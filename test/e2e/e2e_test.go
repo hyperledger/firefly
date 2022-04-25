@@ -125,8 +125,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 		}
 
 		returnData = append(returnData, msgData)
-
-		assert.Equal(ts.t, os.Getenv("NAMESPACE"), msgData.Namespace)
+		assert.Equal(ts.t, ts.namespace, msgData.Namespace)
 		expectedHash, err := msgData.CalcHash(context.Background())
 		assert.NoError(ts.t, err)
 		assert.Equal(ts.t, *expectedHash, *msgData.Hash)
