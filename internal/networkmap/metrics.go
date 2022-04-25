@@ -55,10 +55,11 @@ func (nm *networkMap) networkMetricsLoop() {
 	log.L(ctx).Info("Starting network metrics loop")
 	loop := true
 	for loop {
-		log.L(ctx).Debug("Sleeping for networkmap metrics loop")
+		log.L(ctx).Trace("Sleeping for networkmap metrics loop")
 		select {
 		case <-time.After(30 * time.Second):
 			if nm.metrics.IsMetricsEnabled() {
+				log.L(ctx).Trace("Updating networkmap metrics")
 				if err := nm.updateIdentityGauges(ctx); err != nil {
 					log.L(ctx).Error("Failed to observe network metrics", err)
 				}
