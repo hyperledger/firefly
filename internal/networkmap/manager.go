@@ -56,9 +56,7 @@ type Manager interface {
 	GetVerifierByHash(ctx context.Context, ns, hash string) (*fftypes.Verifier, error)
 	GetDIDDocForIdentityByID(ctx context.Context, ns, id string) (*DIDDocument, error)
 	GetDIDDocForIdentityByDID(ctx context.Context, did string) (*DIDDocument, error)
-
-	Start() error
-	WaitStop()
+	UpdateIdentityGauges(ctx context.Context)
 }
 
 type networkMap struct {
@@ -89,13 +87,4 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager
 	)
 
 	return nm, nil
-}
-
-func (nm *networkMap) Start() error {
-	go nm.networkMetricsLoop()
-	return nil
-}
-
-func (nm *networkMap) WaitStop() {
-	nm.cancelCtx()
 }

@@ -18,55 +18,27 @@ package networkmap
 
 import (
 	"context"
-	"time"
-
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (nm *networkMap) updateIdentityGauges(ctx context.Context) error {
-	_, iRes, iErr := nm.GetIdentitiesGlobal(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
-	if iErr != nil {
-		nm.metrics.SetNetworkIdentities(-1, "any")
-		return iErr
-	}
-	nm.metrics.SetNetworkIdentities(*iRes.TotalCount, "any")
-
-	_, oRes, oErr := nm.GetOrganizations(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
-	if oErr != nil {
-		nm.metrics.SetNetworkIdentities(-1, "organization")
-		return oErr
-	}
-	nm.metrics.SetNetworkIdentities(*oRes.TotalCount, "organization")
-
-	_, nRes, nErr := nm.GetNodes(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
-	if nErr != nil {
-		nm.metrics.SetNetworkIdentities(-1, "node")
-		return nErr
-	}
-	nm.metrics.SetNetworkIdentities(*nRes.TotalCount, "node")
-
-	return nil
-}
-
-func (nm *networkMap) networkMetricsLoop() {
-	ctx := log.WithLogField(nm.ctx, "loop", "metrics")
-
-	log.L(ctx).Info("Starting network metrics loop")
-	loop := true
-	for loop {
-		log.L(ctx).Trace("Sleeping for networkmap metrics loop")
-		select {
-		case <-time.After(30 * time.Second):
-			if nm.metrics.IsMetricsEnabled() {
-				log.L(ctx).Trace("Updating networkmap metrics")
-				if err := nm.updateIdentityGauges(ctx); err != nil {
-					log.L(ctx).Error("Failed to observe network metrics", err)
-				}
-			}
-		case <-ctx.Done():
-			log.L(ctx).Warn("Stopping network metrics loop (context cancelled)")
-			loop = false
+func (nm *networkMap) UpdateIdentityGauges(ctx context.Context) {
+	if nm.metrics.IsMetricsEnabled() {
+		_, iRes, iErr := nm.GetIdentitiesGlobal(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
+		if iErr != nil {
+			nm.metrics.SetNetworkIdentities(-1, "any")
 		}
+		nm.metrics.SetNetworkIdentities(*iRes.TotalCount, "any")
+
+		_, oRes, oErr := nm.GetOrganizations(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
+		if oErr != nil {
+			nm.metrics.SetNetworkIdentities(-1, "organization")
+		}
+		nm.metrics.SetNetworkIdentities(*oRes.TotalCount, "organization")
+
+		_, nRes, nErr := nm.GetNodes(ctx, database.IdentityQueryFactory.NewFilter(ctx).And())
+		if nErr != nil {
+			nm.metrics.SetNetworkIdentities(-1, "node")
+		}
+		nm.metrics.SetNetworkIdentities(*nRes.TotalCount, "node")
 	}
 }

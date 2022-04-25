@@ -17,7 +17,9 @@
 package orchestrator
 
 import (
+	"context"
 	"github.com/hyperledger/firefly/internal/events"
+	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -32,6 +34,7 @@ type boundCallbacks struct {
 	ss sharedstorage.Plugin
 	ei events.EventManager
 	om operations.Manager
+	nm networkmap.Manager
 }
 
 func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
@@ -89,4 +92,8 @@ func (bc *boundCallbacks) SharedStorageBatchDownloaded(ns, payloadRef string, da
 
 func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) {
 	bc.ei.SharedStorageBlobDownloaded(bc.ss, hash, size, payloadRef)
+}
+
+func (bc *boundCallbacks) IdentityClaimConfirmed(ctx context.Context) {
+	bc.nm.UpdateIdentityGauges(ctx)
 }

@@ -26,7 +26,7 @@ var NetworkIdentitiesGaugeName = "ff_network_identities"
 func InitNetworkMetrics() {
 	NetworkIdentitiesGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: NetworkIdentitiesGaugeName,
-		Help: "Number of identities registered",
+		Help: "Number of identities confirmed",
 	}, []string{"type"})
 }
 

@@ -213,6 +213,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.dx = or.dataexchange
 	or.bc.ss = or.sharedstorage
 	or.bc.om = or.operations
+	or.bc.nm = or.networkmap
 	return err
 }
 
@@ -239,9 +240,6 @@ func (or *orchestrator) Start() error {
 	}
 	if err == nil {
 		err = or.sharedDownload.Start()
-	}
-	if err == nil {
-		err = or.networkmap.Start()
 	}
 	if err == nil {
 		for _, el := range or.tokens {
@@ -284,10 +282,6 @@ func (or *orchestrator) WaitStop() {
 	if or.adminEvents != nil {
 		or.adminEvents.WaitStop()
 		or.adminEvents = nil
-	}
-	if or.networkmap != nil {
-		or.networkmap.WaitStop()
-		or.networkmap = nil
 	}
 	or.started = false
 }
