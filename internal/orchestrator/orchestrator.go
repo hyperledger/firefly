@@ -285,6 +285,10 @@ func (or *orchestrator) WaitStop() {
 		or.adminEvents.WaitStop()
 		or.adminEvents = nil
 	}
+	if or.networkmap != nil {
+		or.networkmap.WaitStop()
+		or.networkmap = nil
+	}
 	or.started = false
 }
 

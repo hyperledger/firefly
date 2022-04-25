@@ -18,6 +18,7 @@ package networkmap
 
 import (
 	"context"
+	"github.com/hyperledger/firefly/pkg/log"
 
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -31,8 +32,6 @@ import (
 )
 
 type Manager interface {
-	Start() error
-
 	RegisterOrganization(ctx context.Context, org *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error)
 	RegisterNode(ctx context.Context, waitConfirm bool) (node *fftypes.Identity, err error)
 	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *fftypes.Identity, err error)
@@ -57,10 +56,14 @@ type Manager interface {
 	GetVerifierByHash(ctx context.Context, ns, hash string) (*fftypes.Verifier, error)
 	GetDIDDocForIdentityByID(ctx context.Context, ns, id string) (*DIDDocument, error)
 	GetDIDDocForIdentityByDID(ctx context.Context, did string) (*DIDDocument, error)
+
+	Start() error
+	WaitStop()
 }
 
 type networkMap struct {
 	ctx       context.Context
+	cancelCtx func()
 	database  database.Plugin
 	broadcast broadcast.Manager
 	exchange  dataexchange.Plugin
@@ -73,9 +76,7 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager
 	if di == nil || bm == nil || dx == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
-
 	nm := &networkMap{
-		ctx:       ctx,
 		database:  di,
 		broadcast: bm,
 		exchange:  dx,
@@ -83,13 +84,18 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager
 		syncasync: sa,
 		metrics:   mm,
 	}
+	nm.ctx, nm.cancelCtx = context.WithCancel(
+		log.WithLogField(ctx, "role", "networkmap"),
+	)
 
 	return nm, nil
 }
 
 func (nm *networkMap) Start() error {
-	if nm.metrics.IsMetricsEnabled() {
-		go nm.networkMetricsLoop()
-	}
+	go nm.networkMetricsLoop()
 	return nil
+}
+
+func (nm *networkMap) WaitStop() {
+	nm.cancelCtx()
 }

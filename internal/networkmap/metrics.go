@@ -50,16 +50,22 @@ func (nm *networkMap) updateIdentityGauges(ctx context.Context) error {
 }
 
 func (nm *networkMap) networkMetricsLoop() {
-	ctx := log.WithLogField(nm.ctx, "role", "networkmap")
-	ctx = log.WithLogField(ctx, "loop", "metrics")
+	ctx := log.WithLogField(nm.ctx, "loop", "metrics")
 
-	for {
+	log.L(ctx).Info("Starting network metrics loop")
+	loop := true
+	for loop {
 		log.L(ctx).Debug("Sleeping for networkmap metrics loop")
-		time.Sleep(30 * time.Second)
-		if nm.metrics.IsMetricsEnabled() {
-			if err := nm.updateIdentityGauges(ctx); err != nil {
-				log.L(ctx).Error("Failed to observe network metrics", err)
+		select {
+		case <-time.After(30 * time.Second):
+			if nm.metrics.IsMetricsEnabled() {
+				if err := nm.updateIdentityGauges(ctx); err != nil {
+					log.L(ctx).Error("Failed to observe network metrics", err)
+				}
 			}
+		case <-ctx.Done():
+			log.L(ctx).Warn("Stopping network metrics loop (context cancelled)")
+			loop = false
 		}
 	}
 }
