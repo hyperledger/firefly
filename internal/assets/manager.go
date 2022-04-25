@@ -58,7 +58,7 @@ type Manager interface {
 	BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 	TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (*fftypes.TokenTransfer, error)
 
-	GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error)
+	GetTokenConnectors(ctx context.Context, ns string) []*fftypes.TokenConnector
 
 	NewApproval(ns string, approve *fftypes.TokenApprovalInput) sysmessaging.MessageSender
 	TokenApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput, waitConfirm bool) (*fftypes.TokenApproval, error)
@@ -140,11 +140,7 @@ func (am *assetManager) GetTokenAccountPools(ctx context.Context, ns, key string
 	return am.database.GetTokenAccountPools(ctx, key, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*fftypes.TokenConnector, error) {
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, err
-	}
-
+func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) []*fftypes.TokenConnector {
 	connectors := []*fftypes.TokenConnector{}
 	for token := range am.tokens {
 		connectors = append(
@@ -154,30 +150,26 @@ func (am *assetManager) GetTokenConnectors(ctx context.Context, ns string) ([]*f
 			},
 		)
 	}
-
-	return connectors, nil
+	return connectors
 }
 
-func (am *assetManager) getTokenConnectorName(ctx context.Context, ns string) (string, error) {
-	tokenConnectors, err := am.GetTokenConnectors(ctx, ns)
-	if err != nil {
-		return "", err
-	}
+func (am *assetManager) getDefaultTokenConnector(ctx context.Context, ns string) (string, error) {
+	tokenConnectors := am.GetTokenConnectors(ctx, ns)
 	if len(tokenConnectors) != 1 {
 		return "", i18n.NewError(ctx, coremsgs.MsgFieldNotSpecified, "connector")
 	}
 	return tokenConnectors[0].Name, nil
 }
 
-func (am *assetManager) getTokenPoolName(ctx context.Context, ns string) (string, error) {
+func (am *assetManager) getDefaultTokenPool(ctx context.Context, ns string) (*fftypes.TokenPool, error) {
 	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
 	f.Limit(1).Count(true)
 	tokenPools, fr, err := am.GetTokenPools(ctx, ns, f)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if *fr.TotalCount != 1 {
-		return "", i18n.NewError(ctx, coremsgs.MsgFieldNotSpecified, "pool")
+		return nil, i18n.NewError(ctx, coremsgs.MsgFieldNotSpecified, "pool")
 	}
-	return tokenPools[0].Name, nil
+	return tokenPools[0], nil
 }
