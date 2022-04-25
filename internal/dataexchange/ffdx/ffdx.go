@@ -26,7 +26,6 @@ import (
 	"sync"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -127,7 +126,7 @@ func (h *FFDX) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.J
 		Manifest: prefix.GetBool(DataExchangeManifestEnabled),
 	}
 
-	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
+	wsConfig := wsclient.GenerateConfigFromPrefix(prefix)
 
 	h.wsconn, err = wsclient.New(ctx, wsConfig, h.beforeConnect, nil)
 	if err != nil {
