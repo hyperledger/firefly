@@ -127,7 +127,11 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, database.HashMismatch, err)
 
 	msgUpdated.Hash = msg.Hash
-	err = s.UpsertMessage(context.Background(), msgUpdated, database.UpsertOptimizationExisting)
+	hookCalled := make(chan struct{}, 1)
+	err = s.UpsertMessage(context.Background(), msgUpdated, database.UpsertOptimizationExisting, func() {
+		close(hookCalled)
+	})
+	<-hookCalled
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
