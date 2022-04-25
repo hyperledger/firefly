@@ -19,13 +19,17 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 
-	"github.com/hyperledger/firefly/internal/version"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var shortened, output = false, "yaml"
+
+var BuildDate string
+var BuildCommit string
+var BuildVersionOverride string
 
 type Info struct {
 	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -38,30 +42,40 @@ type Info struct {
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Prints the version info",
-	Long: "Prints the version info of the Core binary",
+	Long:  "Prints the version info of the Core binary",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if shortened {
-			fmt.Println(version.Version)
-		} else {
-			info := &Info{
-				Version: version.Version,
-				Commit: version.Commit,
-				Date: version.Date,
-				License: version.License,
+		info := &Info{
+			Date:    BuildDate,
+			Commit:  BuildCommit,
+			Version: BuildVersionOverride,
+			License: "Apache-2.0",
+		}
+
+		// Where you are using go install, we will get good version information usefully from Go
+		// When we're in go-releaser in a Github action, we will have the version passed in explicitly
+		if info.Version == "" {
+			buildInfo, ok := debug.ReadBuildInfo()
+			if ok {
+				info.Version = buildInfo.Main.Version
 			}
+		}
+
+		if shortened {
+			fmt.Println(info.Version)
+		} else {
 
 			var (
 				bytes []byte
-				err error
+				err   error
 			)
 
 			switch output {
-				case "json":
-					bytes, err = json.MarshalIndent(info, "", "  ")
-				case "yaml":
-					bytes, err = yaml.Marshal(info)
-				default:
-					return fmt.Errorf("invalid output '%s'", output)
+			case "json":
+				bytes, err = json.MarshalIndent(info, "", "  ")
+			case "yaml":
+				bytes, err = yaml.Marshal(info)
+			default:
+				return fmt.Errorf("invalid output '%s'", output)
 			}
 
 			if err != nil {
