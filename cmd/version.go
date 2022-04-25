@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -36,6 +36,12 @@ type Info struct {
 	Commit  string `json:"Commit,omitempty" yaml:"Commit,omitempty"`
 	Date    string `json:"Date,omitempty" yaml:"Date,omitempty"`
 	License string `json:"License,omitempty" yaml:"License,omitempty"`
+}
+
+func setBuildInfo(info *Info, buildInfo *debug.BuildInfo, ok bool) {
+	if ok {
+		info.Version = buildInfo.Main.Version
+	}
 }
 
 // versionCmd represents the version command
