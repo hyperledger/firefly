@@ -37,6 +37,7 @@ type Manager interface {
 	BlockchainTransaction(location, methodName string)
 	BlockchainQuery(location, methodName string)
 	BlockchainEvent(location, signature string)
+	SetNetworkIdentities(count int64, iType string)
 	AddTime(id string)
 	GetTime(id string) time.Time
 	DeleteTime(id string)
@@ -162,6 +163,10 @@ func (mm *metricsManager) DeleteTime(id string) {
 	mutex.Lock()
 	delete(mm.timeMap, id)
 	mutex.Unlock()
+}
+
+func (mm *metricsManager) SetNetworkIdentities(count int64, iType string) {
+	NetworkIdentitiesGauge.WithLabelValues(iType).Set(float64(count))
 }
 
 func (mm *metricsManager) IsMetricsEnabled() bool {

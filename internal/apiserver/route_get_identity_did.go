@@ -39,6 +39,6 @@ var getIdentityDID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByID(r.Ctx, r.PP["ns"], r.PP["iid"])
+		return getOr(r.Ctx).NetworkMap().GetDIDDocForIdentityByID(r.Ctx, r.PP["ns"], r.PP["iid"])
 	},
 }

@@ -203,7 +203,6 @@ func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (iden
 }
 
 func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (identities []*fftypes.Identity, fr *database.FilterResult, err error) {
-
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From("identities"), filter, identityFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err

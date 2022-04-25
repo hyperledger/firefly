@@ -201,7 +201,7 @@ func (nm *networkMap) GetIdentityVerifiers(ctx context.Context, ns, id string, f
 	return nm.database.GetVerifiers(ctx, filter)
 }
 
-func (nm *networkMap) GetDIDDocForIndentityByID(ctx context.Context, ns, id string) (*DIDDocument, error) {
+func (nm *networkMap) GetDIDDocForIdentityByID(ctx context.Context, ns, id string) (*DIDDocument, error) {
 	identity, err := nm.GetIdentityByID(ctx, ns, id)
 	if err != nil {
 		return nil, err
@@ -209,7 +209,7 @@ func (nm *networkMap) GetDIDDocForIndentityByID(ctx context.Context, ns, id stri
 	return nm.generateDIDDocument(ctx, identity)
 }
 
-func (nm *networkMap) GetDIDDocForIndentityByDID(ctx context.Context, did string) (*DIDDocument, error) {
+func (nm *networkMap) GetDIDDocForIdentityByDID(ctx context.Context, did string) (*DIDDocument, error) {
 	identity, err := nm.GetIdentityByDID(ctx, did)
 	if err != nil {
 		return nil, err

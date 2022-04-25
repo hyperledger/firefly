@@ -241,6 +241,9 @@ func (or *orchestrator) Start() error {
 		err = or.sharedDownload.Start()
 	}
 	if err == nil {
+		err = or.networkmap.Start()
+	}
+	if err == nil {
 		for _, el := range or.tokens {
 			if err = el.Start(); err != nil {
 				break
@@ -582,7 +585,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync, or.metrics)
 		if err != nil {
 			return err
 		}

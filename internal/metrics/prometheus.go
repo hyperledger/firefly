@@ -81,6 +81,7 @@ func initMetricsCollectors() {
 	InitTokenBurnMetrics()
 	InitBatchPinMetrics()
 	InitBlockchainMetrics()
+	InitNetworkMetrics()
 }
 
 func registerMetricsCollectors() {
@@ -94,4 +95,5 @@ func registerMetricsCollectors() {
 	RegisterTokenTransferMetrics()
 	RegisterTokenBurnMetrics()
 	RegisterBlockchainMetrics()
+	RegisterNetworkMetrics()
 }
