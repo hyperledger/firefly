@@ -98,7 +98,6 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mdm := em.data.(*datamocks.Manager)
 
-	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
 	info1 := fftypes.JSONObject{"pool": "info"}
 	info2 := fftypes.JSONObject{"block": "info"}
@@ -140,10 +139,6 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{{
-		ID: opID,
-	}}, nil, nil)
-	mdi.On("ResolveOperation", em.ctx, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -289,7 +284,6 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
@@ -341,88 +335,6 @@ func TestConfirmPoolBlockchainEventFail(t *testing.T) {
 	mth.AssertExpectations(t)
 }
 
-func TestConfirmPoolGetOpsFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	mdi := em.database.(*databasemocks.Plugin)
-	mth := em.txHelper.(*txcommonmocks.Helper)
-
-	txID := fftypes.NewUUID()
-	storedPool := &fftypes.TokenPool{
-		Namespace: "ns1",
-		ID:        fftypes.NewUUID(),
-		Key:       "0x0",
-		State:     fftypes.TokenPoolStatePending,
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenPool,
-			ID:   txID,
-		},
-	}
-	event := &blockchain.Event{
-		BlockchainTXID: "0xffffeeee",
-		Name:           "TokenPool",
-		ProtocolID:     "tx1",
-	}
-
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.Name == event.Name
-	})).Return(nil)
-	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeBlockchainEventReceived
-	})).Return(nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-
-	err := em.confirmPool(em.ctx, storedPool, event)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mth.AssertExpectations(t)
-}
-
-func TestConfirmPoolResolveOpFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-	mdi := em.database.(*databasemocks.Plugin)
-	mth := em.txHelper.(*txcommonmocks.Helper)
-
-	opID := fftypes.NewUUID()
-	txID := fftypes.NewUUID()
-	storedPool := &fftypes.TokenPool{
-		Namespace: "ns1",
-		ID:        fftypes.NewUUID(),
-		Key:       "0x0",
-		State:     fftypes.TokenPoolStatePending,
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenPool,
-			ID:   txID,
-		},
-	}
-	event := &blockchain.Event{
-		BlockchainTXID: "0xffffeeee",
-		Name:           "TokenPool",
-		ProtocolID:     "tx1",
-	}
-
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), event.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
-		return e.Name == event.Name
-	})).Return(nil)
-	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeBlockchainEventReceived
-	})).Return(nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{{
-		ID: opID,
-	}}, nil, nil)
-	mdi.On("ResolveOperation", em.ctx, opID, fftypes.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
-
-	err := em.confirmPool(em.ctx, storedPool, event)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
-	mth.AssertExpectations(t)
-}
-
 func TestConfirmPoolTxFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -453,7 +365,6 @@ func TestConfirmPoolTxFail(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event)
@@ -492,7 +403,6 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
 		return e.Type == fftypes.EventTypeBlockchainEventReceived
 	})).Return(nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, "ns1", txID, fftypes.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 

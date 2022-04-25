@@ -79,7 +79,7 @@ type iMessageCollection interface {
 	// UpsertMessage - Upsert a message, with all the embedded data references.
 	//                 The database layer must ensure that if a record already exists, the hash of that existing record
 	//                 must match the hash of the record that is being inserted.
-	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization) (err error)
+	UpsertMessage(ctx context.Context, message *fftypes.Message, optimization UpsertOptimization, hooks ...PostCompletionHook) (err error)
 
 	// InsertMessages performs a batch insert of messages assured to be new records - fails if they already exist, so caller can fall back to upsert individually
 	InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...PostCompletionHook) (err error)

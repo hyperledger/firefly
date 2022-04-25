@@ -476,8 +476,37 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
 
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10284.*pop", err)
+
+}
+
+func TestSubmitBatchPinError(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signer := "signer001"
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
+			"error": "Invalid",
+		}))
+
+	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+
+	assert.Regexp(t, "FF10284.*Invalid", err)
 
 }
 
@@ -522,7 +551,7 @@ func TestResolveSignerFailedFabricCARequest(t *testing.T) {
 	responder, _ := httpmock.NewJsonResponder(503, res)
 	httpmock.RegisterResponder("GET", `http://localhost:12345/identities/signer001`, responder)
 	_, err := e.NormalizeSigningKey(context.Background(), "signer001")
-	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s()")
+	assert.EqualError(t, err, "FF10284: Error from fabconnect: %!!(MISSING)s(<nil>)")
 }
 
 func TestResolveSignerBadECertReturned(t *testing.T) {

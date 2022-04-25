@@ -1127,6 +1127,7 @@ func TestGetFFI(t *testing.T) {
 func TestGetFFIWithChildren(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	cid := fftypes.NewUUID()
 	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{ID: cid}, nil)
@@ -1136,11 +1137,15 @@ func TestGetFFIWithChildren(t *testing.T) {
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
+		return ev.Name == "event1"
+	})).Return("event1Sig")
 
 	_, err := cm.GetFFIWithChildren(context.Background(), "ns1", "ffi", "v1.0.0")
 	assert.NoError(t, err)
 
 	mdb.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestGetFFIByID(t *testing.T) {
@@ -1155,6 +1160,7 @@ func TestGetFFIByID(t *testing.T) {
 func TestGetFFIByIDWithChildren(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	cid := fftypes.NewUUID()
 	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
@@ -1166,11 +1172,15 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
+		return ev.Name == "event1"
+	})).Return("event1Sig")
 
 	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
 	assert.NoError(t, err)
 	mdb.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 
 	assert.Equal(t, "method1", ffi.Methods[0].Name)
 	assert.Equal(t, "event1", ffi.Events[0].Name)
@@ -1876,6 +1886,7 @@ func TestGetContractAPIs(t *testing.T) {
 func TestGetContractAPIInterface(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
+	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	interfaceID := fftypes.NewUUID()
 	api := &fftypes.ContractAPI{
@@ -1892,6 +1903,9 @@ func TestGetContractAPIInterface(t *testing.T) {
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
+		return ev.Name == "event1"
+	})).Return("event1Sig")
 
 	result, err := cm.GetContractAPIInterface(context.Background(), "ns1", "banana")
 
@@ -1899,6 +1913,7 @@ func TestGetContractAPIInterface(t *testing.T) {
 	assert.NotNil(t, result)
 
 	mdb.AssertExpectations(t)
+	mbi.AssertExpectations(t)
 }
 
 func TestGetContractAPIInterfaceFail(t *testing.T) {
@@ -1908,83 +1923,6 @@ func TestGetContractAPIInterfaceFail(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetContractAPIInterface(context.Background(), "ns1", "banana")
-
-	assert.EqualError(t, err, "pop")
-
-	mdb.AssertExpectations(t)
-}
-
-func TestGetContractAPIMethod(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	interfaceID := fftypes.NewUUID()
-	api := &fftypes.ContractAPI{
-		Namespace: "ns1",
-		Name:      "banana",
-		Interface: &fftypes.FFIReference{ID: interfaceID},
-	}
-
-	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mdb.On("GetFFIMethod", mock.Anything, "ns1", interfaceID, "peel").Return(&fftypes.FFIMethod{
-		ID:   fftypes.NewUUID(),
-		Name: "peel",
-	}, nil)
-
-	result, err := cm.GetContractAPIMethod(context.Background(), "ns1", "banana", "peel")
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-
-	mdb.AssertExpectations(t)
-}
-
-func TestGetContractAPIMethodFail(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
-
-	_, err := cm.GetContractAPIMethod(context.Background(), "ns1", "banana", "peel")
-
-	assert.EqualError(t, err, "pop")
-
-	mdb.AssertExpectations(t)
-}
-
-func TestGetContractAPIEvent(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	interfaceID := fftypes.NewUUID()
-	api := &fftypes.ContractAPI{
-		Namespace: "ns1",
-		Name:      "banana",
-		Interface: &fftypes.FFIReference{ID: interfaceID},
-	}
-
-	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mdb.On("GetFFIEvent", mock.Anything, "ns1", interfaceID, "peeled").Return(&fftypes.FFIEvent{
-		FFIEventDefinition: fftypes.FFIEventDefinition{
-			Name: "peeled",
-		},
-	}, nil)
-
-	result, err := cm.GetContractAPIEvent(context.Background(), "ns1", "banana", "peeled")
-
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-
-	mdb.AssertExpectations(t)
-}
-
-func TestGetContractAPIEventFail(t *testing.T) {
-	cm := newTestContractManager()
-	mdb := cm.database.(*databasemocks.Plugin)
-
-	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
-
-	_, err := cm.GetContractAPIEvent(context.Background(), "ns1", "banana", "peeled")
 
 	assert.EqualError(t, err, "pop")
 

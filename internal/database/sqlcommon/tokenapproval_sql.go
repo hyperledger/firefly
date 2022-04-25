@@ -209,6 +209,7 @@ func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filte
 	}
 	defer rows.Close()
 
+	approvals = []*fftypes.TokenApproval{}
 	for rows.Next() {
 		d, err := s.tokenApprovalResult(ctx, rows)
 		if err != nil {

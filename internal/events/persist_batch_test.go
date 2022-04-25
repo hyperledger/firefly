@@ -97,7 +97,7 @@ func TestPersistBatchNoCacheDataNotInBatch(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip, mock.AnythingOfType("database.PostCompletionHook")).Return(nil)
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
@@ -119,7 +119,7 @@ func TestPersistBatchExtraDataInBatch(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil)
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip).Return(nil)
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationSkip, mock.AnythingOfType("database.PostCompletionHook")).Return(nil)
 
 	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
@@ -233,7 +233,7 @@ func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
-	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting).Return(database.HashMismatch)
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(database.HashMismatch)
 
 	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{})
 	assert.NoError(t, err)
@@ -242,6 +242,36 @@ func TestPersistBatchContentSentByUsFoundMismatch(t *testing.T) {
 	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 
+}
+
+func TestPersistBatchContentInsertMessagesFail(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil)
+	mdi.On("InsertMessages", mock.Anything, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization miss"))
+	mdi.On("UpsertMessage", mock.Anything, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(nil).Run(func(args mock.Arguments) {
+		args[3].(database.PostCompletionHook)()
+	})
+
+	mdm := em.data.(*datamocks.Manager)
+	msgData := &messageAndData{
+		message: batch.Payload.Messages[0],
+		data:    batch.Payload.Data,
+	}
+	mdm.On("UpdateMessageCache", msgData.message, msgData.data).Return()
+
+	ok, err := em.persistBatchContent(em.ctx, batch, []*messageAndData{msgData})
+	assert.NoError(t, err)
+	assert.True(t, ok)
+
+	mdm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestPersistBatchContentSentByUsFoundError(t *testing.T) {
