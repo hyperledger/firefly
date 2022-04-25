@@ -721,9 +721,10 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	resp, err := client.R().
 		SetBody(ffi).
 		SetResult(&res).
+		SetQueryParam("confirm", "true").
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 
