@@ -50,6 +50,7 @@ type testState struct {
 	done                 func()
 	stackState           *StackState
 	unregisteredAccounts []interface{}
+	namespace            string
 }
 
 var widgetSchemaJSON = []byte(`{
@@ -177,6 +178,7 @@ func readStackState(t *testing.T) *StackState {
 func beforeE2ETest(t *testing.T) *testState {
 	stack := readStackFile(t)
 	stackState := readStackState(t)
+	namespace := "default"
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
@@ -188,6 +190,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		client2:              NewResty(t),
 		stackState:           stackState,
 		unregisteredAccounts: stackState.Accounts[2:],
+		namespace:            namespace,
 	}
 
 	httpProtocolClient1 := "http"
@@ -236,10 +239,9 @@ func beforeE2ETest(t *testing.T) *testState {
 	// If no namespace is set to run tests against, use the default namespace
 	if os.Getenv("NAMESPACE") != "" {
 		namespace := os.Getenv("NAMESPACE")
+		ts.namespace = namespace
 		CreateNamespaces(ts.client1, namespace)
 		CreateNamespaces(ts.client2, namespace)
-	} else {
-		os.Setenv("NAMESPACE", "default")
 	}
 
 	t.Logf("Client 1: " + ts.client1.HostURL)
@@ -274,7 +276,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
-	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", os.Getenv("NAMESPACE"), eventNames)
+	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
 
 	wsUrl1 := url.URL{
 		Scheme:   websocketProtocolClient1,

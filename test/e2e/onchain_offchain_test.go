@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"image/png"
 	"math/big"
-	"os"
 	"strings"
 
 	image2ascii "github.com/qeesung/image2ascii/convert"
@@ -315,8 +314,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 		"filter": {
 			"tag": "myrequest"
 		}
-	}`, os.Getenv("NAMESPACE"))
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, os.Getenv("NAMESPACE"), "myhook")
+	}`, suite.testState.namespace)
+	CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
@@ -371,8 +370,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 		"filter": {
 			"tag": "myrequest"
 		}
-	}`, os.Getenv("NAMESPACE"))
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, os.Getenv("NAMESPACE"), "myhook")
+	}`, suite.testState.namespace)
+	CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
