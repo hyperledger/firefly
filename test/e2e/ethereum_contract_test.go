@@ -20,14 +20,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"testing"
-	"time"
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -107,17 +104,6 @@ func simpleStorageFFIGet() *fftypes.FFIMethod {
 	}
 }
 
-func invokeEthContract(t *testing.T, client *resty.Client, identity, contractAddress, method string, body interface{}) {
-	path := "/contracts/" + contractAddress + "/" + method
-	resp, err := client.R().
-		SetHeader("x-firefly-from", identity).
-		SetHeader("x-firefly-sync", "true").
-		SetBody(body).
-		Post(path)
-	require.NoError(t, err)
-	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-}
-
 type EthereumContractTestSuite struct {
 	suite.Suite
 	testState       *testState
@@ -149,50 +135,10 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
-func (suite *EthereumContractTestSuite) TestE2EContractEvents() {
-	defer suite.testState.done()
-
-	received1 := wsReader(suite.testState.ws1, true)
-
-	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
-		"address": suite.contractAddress,
-	})
-
-	<-received1
-
-	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
-	assert.Equal(suite.T(), 1, len(listeners))
-	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
-
-	startTime := time.Now()
-	suite.T().Log(startTime.UTC().UnixNano())
-
-	invokeEthContract(suite.T(), suite.ethClient, suite.ethIdentity, suite.contractAddress, "set", &simpleStorageBody{
-		NewValue: "1",
-	})
-
-	match := map[string]interface{}{
-		"info": map[string]interface{}{
-			"address": suite.contractAddress,
-		},
-		"output": map[string]interface{}{
-			"_value": "1",
-			"_from":  suite.testState.org1key.Value,
-		},
-		"listener": listener.ID.String(),
-	}
-
-	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
-	assert.NotNil(suite.T(), event)
-
-	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
-}
-
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 	defer suite.testState.done()
 
 	received1 := wsReader(suite.testState.ws1, true)
-
 	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
@@ -225,7 +171,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 			"_value": "2",
 			"_from":  suite.testState.org1key.Value,
 		},
-		"subscription": listener.ID.String(),
+		"listener": listener.ID.String(),
 	}
 
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
@@ -251,7 +197,6 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
 	}
-
 	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
@@ -282,12 +227,11 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 			"address": suite.contractAddress,
 		},
 		"output": map[string]interface{}{
-			"_value": "3",
+			"_value": "42",
 			"_from":  suite.testState.org1key.Value,
 		},
-		"subscription": listener.ID.String(),
+		"listener": listener.ID.String(),
 	}
-
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 

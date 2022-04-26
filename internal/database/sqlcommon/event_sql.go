@@ -83,6 +83,8 @@ func (s *SQLCommon) setEventInsertValues(query sq.InsertBuilder, event *fftypes.
 	)
 }
 
+const eventsTable = "events"
+
 func (s *SQLCommon) eventInserted(ctx context.Context, event *fftypes.Event) {
 	s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
 	log.L(ctx).Infof("Emitted %s event %s for %s:%s (correlator=%v,topic=%s)", event.Type, event.ID, event.Namespace, event.Reference, event.Correlator, event.Topic)
@@ -93,17 +95,17 @@ func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, ev
 	// We take the cost of a full table lock on the events table.
 	// This allows us to rely on the sequence to always be increasing, even when writing events
 	// concurrently (it does not guarantee we won't get a gap in the sequences).
-	if err = s.lockTableExclusiveTx(ctx, tx, "events"); err != nil {
+	if err = s.lockTableExclusiveTx(ctx, eventsTable, tx); err != nil {
 		return err
 	}
 
 	if s.features.MultiRowInsert {
-		query := sq.Insert("events").Columns(eventColumns...)
+		query := sq.Insert(eventsTable).Columns(eventColumns...)
 		for _, event := range events {
 			query = s.setEventInsertValues(query, event)
 		}
 		sequences := make([]int64, len(events))
-		err := s.insertTxRows(ctx, tx, query, func() {
+		err := s.insertTxRows(ctx, eventsTable, tx, query, func() {
 			for i, event := range events {
 				event.Sequence = sequences[i]
 				s.eventInserted(ctx, event)
@@ -115,8 +117,8 @@ func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, ev
 	} else {
 		// Fall back to individual inserts grouped in a TX
 		for _, event := range events {
-			query := s.setEventInsertValues(sq.Insert("events").Columns(eventColumns...), event)
-			event.Sequence, err = s.insertTx(ctx, tx, query, func() {
+			query := s.setEventInsertValues(sq.Insert(eventsTable).Columns(eventColumns...), event)
+			event.Sequence, err = s.insertTx(ctx, eventsTable, tx, query, func() {
 				s.eventInserted(ctx, event)
 			})
 			if err != nil {
@@ -143,7 +145,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 		&event.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "events")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, eventsTable)
 	}
 	return &event, nil
 }
@@ -152,9 +154,9 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, eventsTable,
 		sq.Select(cols...).
-			From("events").
+			From(eventsTable).
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -179,12 +181,12 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("events"), filter, eventFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(eventsTable), filter, eventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, eventsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -199,7 +201,7 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 		events = append(events, event)
 	}
 
-	return events, s.queryRes(ctx, tx, "events", fop, fi), err
+	return events, s.queryRes(ctx, eventsTable, tx, fop, fi), err
 
 }
 
@@ -211,13 +213,13 @@ func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update da
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("events"), update, eventFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(eventsTable), update, eventFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events on filter based update */)
+	_, err = s.updateTx(ctx, eventsTable, tx, query, nil /* no change events on filter based update */)
 	if err != nil {
 		return err
 	}

@@ -127,7 +127,9 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 				return nil // no retry
 			}
 
-			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, nil)
+			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, &fftypes.BlockchainTransactionRef{
+				BlockchainID: event.BlockchainTXID,
+			})
 			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
 				return err
 			}

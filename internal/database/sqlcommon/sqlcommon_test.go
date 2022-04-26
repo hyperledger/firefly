@@ -75,7 +75,7 @@ func TestMigrationUpDown(t *testing.T) {
 func TestQueryTxBadSQL(t *testing.T) {
 	tp, cleanup := newSQLiteTestProvider(t)
 	defer cleanup()
-	_, _, err := tp.queryTx(context.Background(), nil, sq.SelectBuilder{})
+	_, _, err := tp.queryTx(context.Background(), "table1", nil, sq.SelectBuilder{})
 	assert.Regexp(t, "FF10113", err)
 }
 
@@ -87,7 +87,7 @@ func TestInsertTxPostgreSQLReturnedSyntax(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	sequence, err := s.insertTx(ctx, tx, sb, nil)
+	sequence, err := s.insertTx(ctx, "table1", tx, sb, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(12345), sequence)
 }
@@ -100,25 +100,25 @@ func TestInsertTxPostgreSQLReturnedSyntaxFail(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	_, err = s.insertTx(ctx, tx, sb, nil)
+	_, err = s.insertTx(ctx, "table1", tx, sb, nil)
 	assert.Regexp(t, "FF10116", err)
 }
 
 func TestInsertTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	_, err := s.insertTx(context.Background(), nil, sq.InsertBuilder{}, nil)
+	_, err := s.insertTx(context.Background(), "table1", nil, sq.InsertBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 
 func TestUpdateTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	_, err := s.updateTx(context.Background(), nil, sq.UpdateBuilder{}, nil)
+	_, err := s.updateTx(context.Background(), "table1", nil, sq.UpdateBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 
 func TestDeleteTxBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	err := s.deleteTx(context.Background(), nil, sq.DeleteBuilder{}, nil)
+	err := s.deleteTx(context.Background(), "table1", nil, sq.DeleteBuilder{}, nil)
 	assert.Regexp(t, "FF10113", err)
 }
 
@@ -130,7 +130,7 @@ func TestDeleteTxZeroRowsAffected(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Delete("table")
-	err = s.deleteTx(ctx, tx, sb, nil)
+	err = s.deleteTx(ctx, "table1", tx, sb, nil)
 	assert.Regexp(t, "FF10109", err)
 }
 
@@ -146,7 +146,7 @@ func TestRunAsGroup(t *testing.T) {
 		// First insert
 		ctx, tx, ac, err := s.beginOrUseTx(ctx)
 		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"), nil)
+		_, err = s.insertTx(ctx, "table1", tx, sq.Insert("test").Columns("test").Values("test"), nil)
 		assert.NoError(t, err)
 		err = s.commitTx(ctx, tx, ac)
 		assert.NoError(t, err)
@@ -154,13 +154,13 @@ func TestRunAsGroup(t *testing.T) {
 		// Second insert
 		ctx, tx, ac, err = s.beginOrUseTx(ctx)
 		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"), nil)
+		_, err = s.insertTx(ctx, "table1", tx, sq.Insert("test").Columns("test").Values("test"), nil)
 		assert.NoError(t, err)
 		err = s.commitTx(ctx, tx, ac)
 		assert.NoError(t, err)
 
 		// Query, not specifying a transaction
-		_, _, err = s.query(ctx, sq.Select("test").From("test"))
+		_, _, err = s.query(ctx, "table1", sq.Select("test").From("test"))
 		assert.NoError(t, err)
 
 		// Nested call
@@ -195,7 +195,7 @@ func TestRunAsGroupFunctionFails(t *testing.T) {
 	err := s.RunAsGroup(context.Background(), func(ctx context.Context) (err error) {
 		ctx, tx, ac, err := s.beginOrUseTx(ctx)
 		assert.NoError(t, err)
-		_, err = s.insertTx(ctx, tx, sq.Insert("test").Columns("test").Values("test"), nil)
+		_, err = s.insertTx(ctx, "table1", tx, sq.Insert("test").Columns("test").Values("test"), nil)
 		assert.NoError(t, err)
 		s.rollbackTx(ctx, tx, ac) // won't actually rollback
 		assert.NoError(t, err)
@@ -251,7 +251,7 @@ func TestTXConcurrency(t *testing.T) {
 				ctx, tx, ac, err := s.beginOrUseTx(context.Background())
 				assert.NoError(t, err)
 				val := fmt.Sprintf("%s/%d", name, i)
-				sequence, err := s.insertTx(ctx, tx, sq.Insert("testconc").Columns("val").Values(val), nil)
+				sequence, err := s.insertTx(ctx, "table1", tx, sq.Insert("testconc").Columns("val").Values(val), nil)
 				assert.NoError(t, err)
 				t.Logf("%s = %d", val, sequence)
 				err = s.commitTx(ctx, tx, ac)
@@ -272,14 +272,14 @@ func TestTXConcurrency(t *testing.T) {
 
 func TestCountQueryBadSQL(t *testing.T) {
 	s, _ := newMockProvider().init()
-	_, err := s.countQuery(context.Background(), nil, "", sq.Insert("wrong"), "")
+	_, err := s.countQuery(context.Background(), "table1", nil, sq.Insert("wrong"), "")
 	assert.Regexp(t, "FF10113", err)
 }
 
 func TestCountQueryQueryFailed(t *testing.T) {
 	s, mdb := newMockProvider().init()
 	mdb.ExpectQuery("^SELECT COUNT\\(\\*\\)").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.countQuery(context.Background(), nil, "table1", sq.Eq{"col1": "val1"}, "")
+	_, err := s.countQuery(context.Background(), "table1", nil, sq.Eq{"col1": "val1"}, "")
 	assert.Regexp(t, "FF10115.*pop", err)
 }
 
@@ -289,21 +289,21 @@ func TestCountQueryScanFailTx(t *testing.T) {
 	mdb.ExpectQuery("^SELECT COUNT\\(\\*\\)").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow("not a number"))
 	ctx, tx, _, err := s.beginOrUseTx(context.Background())
 	assert.NoError(t, err)
-	_, err = s.countQuery(ctx, tx, "table1", sq.Eq{"col1": "val1"}, "")
+	_, err = s.countQuery(ctx, "table1", tx, sq.Eq{"col1": "val1"}, "")
 	assert.Regexp(t, "FF10121", err)
 }
 
 func TestCountQueryWithExpr(t *testing.T) {
 	s, mdb := newMockProvider().init()
 	mdb.ExpectQuery("^SELECT COUNT\\(DISTINCT key\\)").WillReturnRows(sqlmock.NewRows([]string{"col1"}).AddRow(10))
-	_, err := s.countQuery(context.Background(), nil, "table1", sq.Eq{"col1": "val1"}, "DISTINCT key")
+	_, err := s.countQuery(context.Background(), "table1", nil, sq.Eq{"col1": "val1"}, "DISTINCT key")
 	assert.NoError(t, err)
 	assert.NoError(t, mdb.ExpectationsWereMet())
 }
 
 func TestQueryResSwallowError(t *testing.T) {
 	s, _ := newMockProvider().init()
-	res := s.queryRes(context.Background(), nil, "", sq.Insert("wrong"), &database.FilterInfo{
+	res := s.queryRes(context.Background(), "table1", nil, sq.Insert("wrong"), &database.FilterInfo{
 		Count: true,
 	})
 	assert.Equal(t, int64(-1), *res.TotalCount)
@@ -315,9 +315,9 @@ func TestDoubleLock(t *testing.T) {
 	mdb.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
 	ctx, tx, _, err := s.beginOrUseTx(context.Background())
 	assert.NoError(t, err)
-	err = s.lockTableExclusiveTx(ctx, tx, "table1")
+	err = s.lockTableExclusiveTx(ctx, "table1", tx)
 	assert.NoError(t, err)
-	err = s.lockTableExclusiveTx(ctx, tx, "table1")
+	err = s.lockTableExclusiveTx(ctx, "table1", tx)
 	assert.NoError(t, err)
 	assert.NoError(t, mdb.ExpectationsWereMet())
 }
@@ -329,7 +329,7 @@ func TestInsertTxRowsBadConfig(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = false
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	err = s.insertTxRows(ctx, tx, sb, nil, []int64{1, 2}, false)
+	err = s.insertTxRows(ctx, "table1", tx, sb, nil, []int64{1, 2}, false)
 	assert.Regexp(t, "FF10374", err)
 }
 
@@ -341,6 +341,6 @@ func TestInsertTxRowsIncompleteReturn(t *testing.T) {
 	assert.NoError(t, err)
 	s.fakePSQLInsert = true
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
-	err = s.insertTxRows(ctx, tx, sb, nil, []int64{1, 2}, false)
+	err = s.insertTxRows(ctx, "table1", tx, sb, nil, []int64{1, 2}, false)
 	assert.Regexp(t, "FF10116", err)
 }

@@ -3,6 +3,8 @@ ARG FABRIC_BUILDER_TAG
 ARG FABRIC_BUILDER_PLATFORM
 ARG SOLIDITY_BUILDER_TAG
 ARG BASE_TAG
+ARG BUILD_VERSION
+ARG GIT_REF
 
 FROM $FIREFLY_BUILDER_TAG AS firefly-builder
 ARG UI_TAG
@@ -15,7 +17,7 @@ ENV UI_RELEASE https://github.com/hyperledger/firefly-ui/releases/download/$UI_T
 RUN mkdir /firefly/frontend \
  && curl -sLo - $UI_RELEASE | tar -C /firefly/frontend -zxvf -
 ADD . .
-RUN make build
+RUN make build BUILD_VERSION=$BUILD_VERSION GIT_REF=$GIT_REF
 
 FROM --platform=$FABRIC_BUILDER_PLATFORM $FABRIC_BUILDER_TAG AS fabric-builder
 RUN apk add libc6-compat
@@ -36,7 +38,7 @@ RUN apk add jq \
  && cd contracts \
  && solc --combined-json abi,bin,devdoc -o ../build/contracts Firefly.sol \
  && cd ../build/contracts \
- && jq '{"contractName":"FireFly", "abi":.contracts."Firefly.sol:Firefly".abi, "bytecode":("0x" + .contracts."Firefly.sol:Firefly".bin) }' combined.json > Firefly.json
+ && mv combined.json Firefly.json
 
 FROM $BASE_TAG
 WORKDIR /firefly

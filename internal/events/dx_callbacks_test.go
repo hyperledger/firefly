@@ -611,7 +611,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("optimization fail"))
-	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting).Return(fmt.Errorf("pop"))
+	mdi.On("UpsertMessage", em.ctx, mock.Anything, database.UpsertOptimizationExisting, mock.AnythingOfType("database.PostCompletionHook")).Return(fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
 	mde := newMessageReceivedNoAck("peer1", b)

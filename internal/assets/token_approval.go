@@ -64,10 +64,6 @@ func (am *assetManager) NewApproval(ns string, approval *fftypes.TokenApprovalIn
 }
 
 func (am *assetManager) TokenApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput, waitConfirm bool) (out *fftypes.TokenApproval, err error) {
-	if err := am.validateApproval(ctx, ns, approval); err != nil {
-		return nil, err
-	}
-
 	sender := am.NewApproval(ns, approval)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
@@ -77,7 +73,7 @@ func (am *assetManager) TokenApproval(ctx context.Context, ns string, approval *
 	return &approval.TokenApproval, err
 }
 
-func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) error {
+func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
 	if method == methodSendAndWait {
 		out, err := s.mgr.syncasync.WaitForTokenApproval(ctx, s.namespace, s.approval.LocalID, s.Send)
 		if out != nil {
@@ -86,34 +82,29 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 		return err
 	}
 
-	plugin, err := s.mgr.selectTokenPlugin(ctx, s.approval.Connector)
-	if err != nil {
-		return err
-	}
-
-	if method == methodPrepare {
-		return nil
-	}
-
-	var pool *fftypes.TokenPool
 	var op *fftypes.Operation
+	var pool *fftypes.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.GetTokenPoolByNameOrID(ctx, s.namespace, s.approval.Pool)
+		pool, err = s.mgr.validateApproval(ctx, s.namespace, s.approval)
 		if err != nil {
 			return err
 		}
-		if pool.State != fftypes.TokenPoolStateConfirmed {
-			return i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
+
+		plugin, err := s.mgr.selectTokenPlugin(ctx, s.approval.Connector)
+		if err != nil {
+			return err
+		}
+
+		if method == methodPrepare {
+			return nil
 		}
 
 		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenApproval)
 		if err != nil {
 			return err
 		}
-
 		s.approval.TX.ID = txid
 		s.approval.TX.Type = fftypes.TransactionTypeTokenApproval
-		s.approval.TokenApproval.Pool = pool.ID
 
 		op = fftypes.NewOperation(
 			plugin,
@@ -127,27 +118,32 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) err
 	})
 	if err != nil {
 		return err
+	} else if method == methodPrepare {
+		return nil
 	}
 
 	_, err = s.mgr.operations.RunOperation(ctx, opApproval(op, pool, &s.approval.TokenApproval))
 	return err
 }
 
-func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) (err error) {
-	if approval.Connector == "" {
-		connector, err := am.getTokenConnectorName(ctx, ns)
-		if err != nil {
-			return err
-		}
-		approval.Connector = connector
-	}
+func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *fftypes.TokenApprovalInput) (pool *fftypes.TokenPool, err error) {
 	if approval.Pool == "" {
-		pool, err := am.getTokenPoolName(ctx, ns)
+		pool, err = am.getDefaultTokenPool(ctx, ns)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		approval.Pool = pool
+	} else {
+		pool, err = am.GetTokenPoolByNameOrID(ctx, ns, approval.Pool)
+		if err != nil {
+			return nil, err
+		}
+	}
+	approval.TokenApproval.Pool = pool.ID
+	approval.TokenApproval.Connector = pool.Connector
+
+	if pool.State != fftypes.TokenPoolStateConfirmed {
+		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
 	approval.Key, err = am.identity.NormalizeSigningKey(ctx, approval.Key, am.keyNormalization)
-	return err
+	return pool, err
 }

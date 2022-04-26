@@ -80,6 +80,10 @@ type ethWSCommandPayload struct {
 	Topic string `json:"topic,omitempty"`
 }
 
+type ethError struct {
+	Error string `json:"error,omitempty"`
+}
+
 type Location struct {
 	Address string `json:"address"`
 }
@@ -527,7 +531,14 @@ func (e *Ethereum) NormalizeSigningKey(ctx context.Context, key string) (string,
 	return resolved, err
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) (*resty.Response, error) {
+func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err error) error {
+	if errRes != nil && errRes.Error != "" {
+		return i18n.WrapError(ctx, err, coremsgs.MsgEthconnectRESTErr, errRes.Error)
+	}
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+}
+
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) error {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
@@ -545,10 +556,16 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	if client == nil {
 		client = e.client
 	}
-	return client.R().
+	var resErr ethError
+	res, err := client.R().
 		SetContext(ctx).
 		SetBody(body).
+		SetError(&resErr).
 		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return wrapError(ctx, &resErr, res, err)
+	}
+	return nil
 }
 
 func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}) (*resty.Response, error) {
@@ -584,11 +601,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
-	res, err := e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
-	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
-	}
-	return nil
+	return e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
@@ -600,11 +613,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	if err != nil {
 		return err
 	}
-	res, err := e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
-	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
-	}
-	return nil
+	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 }
 
 func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {

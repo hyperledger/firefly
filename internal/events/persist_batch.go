@@ -246,6 +246,7 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 	// If we are sure we wrote the batch, then we do a cached lookup of each in turn - which is efficient
 	// because all of those should be in the cache as we wrote them recently.
 	if em.sentByUs(ctx, batch) {
+		log.L(ctx).Debugf("Batch %s sent by us", batch.ID)
 		allStored, err := em.verifyAlreadyStored(ctx, batch)
 		if err != nil {
 			return false, err
@@ -290,7 +291,11 @@ func (em *eventManager) persistBatchContent(ctx context.Context, batch *fftypes.
 		log.L(ctx).Debugf("Batch message insert optimization failed for batch '%s': %s", batch.ID, err)
 		// Fall back to individual upserts
 		for i, msg := range batch.Payload.Messages {
-			if err = em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting); err != nil {
+			postHookUpdateMessageCache := func() {
+				mm := matchedMsgs[i]
+				em.data.UpdateMessageCache(mm.message, mm.data)
+			}
+			if err = em.database.UpsertMessage(ctx, msg, database.UpsertOptimizationExisting, postHookUpdateMessageCache); err != nil {
 				if err == database.HashMismatch {
 					log.L(ctx).Errorf("Invalid message entry %d in batch'%s'. Hash mismatch with existing record with same UUID '%s' Hash=%s", i, batch.ID, msg.Header.ID, msg.Hash)
 					return false, nil // This is not retryable. skip this data entry

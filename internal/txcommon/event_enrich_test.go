@@ -534,8 +534,8 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenApprovalByID", mock.Anything, ref1).Return(&fftypes.TokenApproval{
-		LocalID: ref1,
+	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&fftypes.Operation{
+		ID: ref1,
 	}, nil)
 
 	event := &fftypes.Event{
@@ -546,7 +546,7 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 
 	enriched, err := txHelper.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
-	assert.Equal(t, ref1, enriched.TokenApproval.LocalID)
+	assert.Equal(t, ref1, enriched.Operation.ID)
 }
 
 func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
@@ -609,8 +609,8 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
-		LocalID: ref1,
+	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&fftypes.Operation{
+		ID: ref1,
 	}, nil)
 
 	event := &fftypes.Event{
@@ -621,7 +621,7 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 
 	enriched, err := txHelper.EnrichEvent(ctx, event)
 	assert.NoError(t, err)
-	assert.Equal(t, ref1, enriched.TokenTransfer.LocalID)
+	assert.Equal(t, ref1, enriched.Operation.ID)
 }
 
 func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
@@ -640,6 +640,29 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 	event := &fftypes.Event{
 		ID:        ev1,
 		Type:      fftypes.EventTypeTransferConfirmed,
+		Reference: ref1,
+	}
+
+	_, err := txHelper.EnrichEvent(ctx, event)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestEnrichOperationFail(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	txHelper := NewTransactionHelper(mdi, mdm)
+	ctx := context.Background()
+
+	// Setup the IDs
+	ref1 := fftypes.NewUUID()
+	ev1 := fftypes.NewUUID()
+
+	// Setup enrichment
+	mdi.On("GetOperationByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+
+	event := &fftypes.Event{
+		ID:        ev1,
+		Type:      fftypes.EventTypeApprovalOpFailed,
 		Reference: ref1,
 	}
 

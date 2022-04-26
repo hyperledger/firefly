@@ -14,20 +14,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package i18n
+package e2e
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestSanitizeShort(t *testing.T) {
-	assert.Equal(t, "'testing'", SanitizeLimit("'testing', testing, 123", 9))
-}
-
-func TestSanitizeLong(t *testing.T) {
-	assert.Equal(t,
-		"0123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456...",
-		SanitizeLimit("0123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789", 80))
+func TestEthereumNamespaceE2ESuite(t *testing.T) {
+	suite.Run(t, new(OnChainOffChainTestSuite))
+	suite.Run(t, new(TokensTestSuite))
+	suite.Run(t, new(EthereumContractTestSuite))
 }

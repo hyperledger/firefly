@@ -627,8 +627,37 @@ func TestSubmitBatchPinFail(t *testing.T) {
 
 	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
 
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10111.*pop", err)
+
+}
+
+func TestSubmitBatchPinError(t *testing.T) {
+
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(fftypes.NewRandB32())
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
+			"error": "Unknown error",
+		}))
+
+	err := e.SubmitBatchPin(context.Background(), nil, nil, addr, batch)
+
+	assert.Regexp(t, "FF10111.*Unknown error", err)
 
 }
 

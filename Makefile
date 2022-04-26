@@ -4,6 +4,7 @@ GOFILES := $(shell find cmd internal pkg -name '*.go' -print)
 GOBIN := $(shell $(VGO) env GOPATH)/bin
 LINT := $(GOBIN)/golangci-lint
 MOCKERY := $(GOBIN)/mockery
+DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Expect that FireFly compiles with CGO disabled
 CGO_ENABLED=0
@@ -75,9 +76,9 @@ $(eval $(call makemock, internal/metrics,          Manager,            metricsmo
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
 
 firefly-nocgo: ${GOFILES}
-		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
+		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=$(DATE) -X main.buildVersion=$(BUILD_VERSION) -X 'github.com/hyperledger/firefly/cmd.BuildVersionOverride=$(BUILD_VERSION)' -X 'github.com/hyperledger/firefly/cmd.BuildDate=$(DATE)' -X 'github.com/hyperledger/firefly/cmd.BuildCommit=$(GIT_REF)'" -tags=prod -tags=prod -v
 firefly: ${GOFILES}
-		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=`date -u +\"%Y-%m-%dT%H:%M:%SZ\"` -X main.buildVersion=$(BUILD_VERSION)" -tags=prod -tags=prod -v
+		$(VGO) build -o ${BINARY_NAME} -ldflags "-X main.buildDate=$(DATE) -X main.buildVersion=$(BUILD_VERSION) -X 'github.com/hyperledger/firefly/cmd.BuildVersionOverride=$(BUILD_VERSION)' -X 'github.com/hyperledger/firefly/cmd.BuildDate=$(DATE)' -X 'github.com/hyperledger/firefly/cmd.BuildCommit=$(GIT_REF)'" -tags=prod -tags=prod -v
 go-mod-tidy: .ALWAYS
 		$(VGO) mod tidy
 build: firefly-nocgo firefly

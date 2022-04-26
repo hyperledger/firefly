@@ -77,6 +77,10 @@ type fabTxInputHeaders struct {
 	Chaincode     string         `json:"chaincode,omitempty"`
 }
 
+type fabError struct {
+	Error string `json:"error,omitempty"`
+}
+
 type PayloadSchema struct {
 	Type        string        `json:"type"`
 	PrefixItems []*PrefixItem `json:"prefixItems"`
@@ -513,7 +517,14 @@ func (f *Fabric) NormalizeSigningKey(ctx context.Context, signingKeyInput string
 	return signingKeyInput, nil
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]string) (*resty.Response, error) {
+func wrapError(ctx context.Context, errRes *fabError, res *resty.Response, err error) error {
+	if errRes != nil && errRes.Error != "" {
+		return i18n.WrapError(ctx, err, coremsgs.MsgFabconnectRESTErr, errRes.Error)
+	}
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+}
+
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]string) error {
 	in := &fabTxNamedInput{
 		Headers: &fabTxInputHeaders{
 			ID: requestID,
@@ -529,10 +540,16 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 		Args: input,
 	}
 
-	return f.client.R().
+	var resErr fabError
+	res, err := f.client.R().
 		SetContext(ctx).
 		SetBody(in).
+		SetError(&resErr).
 		Post("/transactions")
+	if err != nil || !res.IsSuccess() {
+		return wrapError(ctx, &resErr, res, err)
+	}
+	return nil
 }
 
 func getUserName(fullIDString string) string {
@@ -571,12 +588,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	}
 
 	input, _ := jsonEncodeInput(pinInput)
-
-	res, err := f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
-	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
-	}
-	return nil
+	return f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
 func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
@@ -605,12 +617,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		}
 	}
 
-	res, err := f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
-
-	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
-	}
-	return nil
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
 }
 
 func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {

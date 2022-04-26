@@ -30,7 +30,7 @@ type TokenTransfer struct {
 	Pool            *UUID             `ffstruct:"TokenTransfer" json:"pool,omitempty"`
 	TokenIndex      string            `ffstruct:"TokenTransfer" json:"tokenIndex,omitempty"`
 	URI             string            `ffstruct:"TokenTransfer" json:"uri,omitempty" ffexcludeinput:"true"`
-	Connector       string            `ffstruct:"TokenTransfer" json:"connector,omitempty"`
+	Connector       string            `ffstruct:"TokenTransfer" json:"connector,omitempty" ffexcludeinput:"true"`
 	Namespace       string            `ffstruct:"TokenTransfer" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Key             string            `ffstruct:"TokenTransfer" json:"key,omitempty"`
 	From            string            `ffstruct:"TokenTransfer" json:"from,omitempty" ffexcludeinput:"postTokenMint"`

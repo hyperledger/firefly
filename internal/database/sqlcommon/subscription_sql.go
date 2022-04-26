@@ -43,6 +43,8 @@ var (
 	subscriptionFilterFieldMap = map[string]string{}
 )
 
+const subscriptionsTable = "subscriptions"
+
 func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftypes.Subscription, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -53,9 +55,9 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 	existing := false
 	if allowExisting {
 		// Do a select within the transaction to detemine if the UUID already exists
-		subscriptionRows, _, err := s.queryTx(ctx, tx,
+		subscriptionRows, _, err := s.queryTx(ctx, subscriptionsTable, tx,
 			sq.Select("id").
-				From("subscriptions").
+				From(subscriptionsTable).
 				Where(sq.Eq{
 					"namespace": subscription.Namespace,
 					"name":      subscription.Name,
@@ -82,8 +84,8 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 
 	if existing {
 		// Update the subscription
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("subscriptions").
+		if _, err = s.updateTx(ctx, subscriptionsTable, tx,
+			sq.Update(subscriptionsTable).
 				// Note we do not update ID
 				Set("namespace", subscription.Namespace).
 				Set("name", subscription.Name).
@@ -107,8 +109,8 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 			subscription.ID = fftypes.NewUUID()
 		}
 
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("subscriptions").
+		if _, err = s.insertTx(ctx, subscriptionsTable, tx,
+			sq.Insert(subscriptionsTable).
 				Columns(subscriptionColumns...).
 				Values(
 					subscription.ID,
@@ -145,16 +147,16 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 		&subscription.Updated,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "subscriptions")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, subscriptionsTable)
 	}
 	return &subscription, nil
 }
 
 func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Subscription, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, subscriptionsTable,
 		sq.Select(subscriptionColumns...).
-			From("subscriptions").
+			From(subscriptionsTable).
 			Where(eq),
 	)
 	if err != nil {
@@ -185,12 +187,12 @@ func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) 
 
 func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From("subscriptions"), filter, subscriptionFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From(subscriptionsTable), filter, subscriptionFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, subscriptionsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -205,7 +207,7 @@ func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter
 		subscription = append(subscription, d)
 	}
 
-	return subscription, s.queryRes(ctx, tx, "subscriptions", fop, fi), err
+	return subscription, s.queryRes(ctx, subscriptionsTable, tx, fop, fi), err
 
 }
 
@@ -225,13 +227,13 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 
-	query, err := s.buildUpdate(sq.Update("subscriptions"), update, subscriptionFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(subscriptionsTable), update, subscriptionFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": subscription.ID})
 
-	_, err = s.updateTx(ctx, tx, query,
+	_, err = s.updateTx(ctx, subscriptionsTable, tx, query,
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
 		})
@@ -252,7 +254,7 @@ func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID
 
 	subscription, err := s.GetSubscriptionByID(ctx, id)
 	if err == nil && subscription != nil {
-		err = s.deleteTx(ctx, tx, sq.Delete("subscriptions").Where(sq.Eq{
+		err = s.deleteTx(ctx, subscriptionsTable, tx, sq.Delete(subscriptionsTable).Where(sq.Eq{
 			"id": id,
 		}),
 			func() {

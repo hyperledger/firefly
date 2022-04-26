@@ -37,7 +37,7 @@ So if there aren't yet instructions for making FireFly a Supernode for your favo
 don't worry. There is almost certainly a straightforward path to plugging it in that will save you re-building
 all the plumbing for your blockchain application from scratch.
 
-[![Hyperledger FireFly Architecture Overview](./images/firefly_technical_architecture.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/readme/images/firefly_technical_architecture.jpg)
+[![Hyperledger FireFly Architecture Overview](./docs/images/firefly_architecture_overview.jpg)](https://raw.githubusercontent.com/kaleido-io/firefly/main/docs/images/firefly_architecture_overview.jpg)
 
 ## Start contributing to Hyperledger FireFy
 
@@ -68,7 +68,8 @@ Other repositories you might be interested in containing those microservice comp
   - Public EVM compatible chains: Learn more in the [documentation](https://hyperledger.github.io/firefly)
 - Corda connector starter: https://github.com/hyperledger/firefly-cordaconnect
   - CorDapp specific customization is required
-- Firefly Performance CLI: https://github.com/hyperledger/firefly-perf-cli
+- FireFly Performance CLI: https://github.com/hyperledger/firefly-perf-cli
+- Helm Charts for Deploying to Kubernetes: https://github.com/hyperledger/firefly-helm-charts
 
 ## FireFly Core code hierarchy
 

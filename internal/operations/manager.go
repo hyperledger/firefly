@@ -147,7 +147,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 
 		// Update the old operation to point to the new one
 		update := database.OperationQueryFactory.NewUpdate(ctx).Set("retry", op.ID)
-		if err = om.database.UpdateOperation(ctx, opID, update); err != nil {
+		if err = om.database.UpdateOperation(ctx, ns, opID, update); err != nil {
 			return err
 		}
 

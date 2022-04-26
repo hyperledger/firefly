@@ -42,6 +42,8 @@ var (
 	}
 )
 
+const ffiTable = "ffi"
+
 func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -49,9 +51,9 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, ffiTable, tx,
 		sq.Select("id").
-			From("ffi").
+			From(ffiTable).
 			Where(sq.And{sq.Eq{"id": ffi.ID}}),
 	)
 	if err != nil {
@@ -61,8 +63,8 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("ffi").
+		if _, err = s.updateTx(ctx, ffiTable, tx,
+			sq.Update(ffiTable).
 				Set("namespace", ffi.Namespace).
 				Set("name", ffi.Name).
 				Set("version", ffi.Version).
@@ -75,8 +77,8 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("ffi").
+		if _, err = s.insertTx(ctx, ffiTable, tx,
+			sq.Insert(ffiTable).
 				Columns(ffiColumns...).
 				Values(
 					ffi.ID,
@@ -108,15 +110,15 @@ func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI,
 		&ffi.Message,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "ffi")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, ffiTable)
 	}
 	return &ffi, nil
 }
 
 func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFI, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, ffiTable,
 		sq.Select(ffiColumns...).
-			From("ffi").
+			From(ffiTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -139,12 +141,12 @@ func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{
 
 func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filter) (ffis []*fftypes.FFI, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From("ffi").Where(sq.Eq{"namespace": ns}), filter, ffiFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From(ffiTable).Where(sq.Eq{"namespace": ns}), filter, ffiFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, ffiTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -159,7 +161,7 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filt
 		ffis = append(ffis, cd)
 	}
 
-	return ffis, s.queryRes(ctx, tx, "ffi", fop, fi), err
+	return ffis, s.queryRes(ctx, ffiTable, tx, fop, fi), err
 
 }
 

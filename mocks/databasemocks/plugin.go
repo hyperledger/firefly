@@ -2686,20 +2686,13 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	return r0
 }
 
-// UpdateOperation provides a mock function with given fields: ctx, id, update, hooks
-func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update, hooks ...database.PostCompletionHook) error {
-	_va := make([]interface{}, len(hooks))
-	for _i := range hooks {
-		_va[_i] = hooks[_i]
-	}
-	var _ca []interface{}
-	_ca = append(_ca, ctx, id, update)
-	_ca = append(_ca, _va...)
-	ret := _m.Called(_ca...)
+// UpdateOperation provides a mock function with given fields: ctx, ns, id, update
+func (_m *Plugin) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, ns, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update, ...database.PostCompletionHook) error); ok {
-		r0 = rf(ctx, id, update, hooks...)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, ns, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2945,13 +2938,20 @@ func (_m *Plugin) UpsertIdentity(ctx context.Context, data *fftypes.Identity, op
 	return r0
 }
 
-// UpsertMessage provides a mock function with given fields: ctx, message, optimization
-func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization) error {
-	ret := _m.Called(ctx, message, optimization)
+// UpsertMessage provides a mock function with given fields: ctx, message, optimization, hooks
+func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) error {
+	_va := make([]interface{}, len(hooks))
+	for _i := range hooks {
+		_va[_i] = hooks[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, message, optimization)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization) error); ok {
-		r0 = rf(ctx, message, optimization)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, message, optimization, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

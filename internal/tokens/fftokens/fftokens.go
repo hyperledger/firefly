@@ -122,6 +122,11 @@ type tokenApproval struct {
 	Config      fftypes.JSONObject `json:"config"`
 }
 
+type tokenError struct {
+	Error   string `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
 func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
@@ -476,11 +481,26 @@ func (ft *FFTokens) eventLoop() {
 	}
 }
 
+// Parse a JSON error of the form:
+//   {"error": "Bad Request", "message": "Field 'x' is required"}
+// into a message of the form:
+//   "Bad Request: Field 'x' is required"
+func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err error) error {
+	if errRes != nil && errRes.Message != "" {
+		if errRes.Error != "" {
+			return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Error+": "+errRes.Message)
+		}
+		return i18n.WrapError(ctx, err, coremsgs.MsgTokensRESTErr, errRes.Message)
+	}
+	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+}
+
 func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
 			Type:      pool.Type,
@@ -491,9 +511,10 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 			Name:      pool.Name,
 			Symbol:    pool.Symbol,
 		}).
+		SetError(&errRes).
 		Post("/api/v1/createpool")
 	if err != nil || !res.IsSuccess() {
-		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return false, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Creation was successful, and pool details are in response body
@@ -508,15 +529,17 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 }
 
 func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
 			RequestID:   opID.String(),
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
 		}).
+		SetError(&errRes).
 		Post("/api/v1/activatepool")
 	if err != nil || !res.IsSuccess() {
-		return false, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return false, wrapError(ctx, &errRes, res, err)
 	}
 	if res.StatusCode() == 200 {
 		// HTTP 200: Activation was successful, and pool details are in response body
@@ -541,6 +564,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 		Message:     mint.Message,
 		MessageHash: mint.MessageHash,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&mintTokens{
 			PoolLocator: poolLocator,
@@ -551,9 +575,10 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 			Signer:      mint.Key,
 			Data:        string(data),
 		}).
+		SetError(&errRes).
 		Post("/api/v1/mint")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }
@@ -565,6 +590,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 		Message:     burn.Message,
 		MessageHash: burn.MessageHash,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&burnTokens{
 			PoolLocator: poolLocator,
@@ -575,9 +601,10 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 			Signer:      burn.Key,
 			Data:        string(data),
 		}).
+		SetError(&errRes).
 		Post("/api/v1/burn")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }
@@ -589,6 +616,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 		Message:     transfer.Message,
 		MessageHash: transfer.MessageHash,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&transferTokens{
 			PoolLocator: poolLocator,
@@ -600,9 +628,10 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 			Signer:      transfer.Key,
 			Data:        string(data),
 		}).
+		SetError(&errRes).
 		Post("/api/v1/transfer")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }
@@ -612,6 +641,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, pool
 		TX:     approval.TX.ID,
 		TXType: approval.TX.Type,
 	})
+	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&tokenApproval{
 			PoolLocator: poolLocator,
@@ -622,9 +652,10 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, pool
 			Data:        string(data),
 			Config:      approval.Config,
 		}).
+		SetError(&errRes).
 		Post("/api/v1/approval")
 	if err != nil || !res.IsSuccess() {
-		return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
+		return wrapError(ctx, &errRes, res, err)
 	}
 	return nil
 }

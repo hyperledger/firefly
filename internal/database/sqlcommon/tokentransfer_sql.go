@@ -65,6 +65,8 @@ var (
 	}
 )
 
+const tokentransferTable = "tokentransfer"
+
 func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -72,9 +74,9 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, tokentransferTable, tx,
 		sq.Select("seq").
-			From("tokentransfer").
+			From(tokentransferTable).
 			Where(sq.Eq{"protocol_id": transfer.ProtocolID}),
 	)
 	if err != nil {
@@ -84,8 +86,8 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("tokentransfer").
+		if _, err = s.updateTx(ctx, tokentransferTable, tx,
+			sq.Update(tokentransferTable).
 				Set("type", transfer.Type).
 				Set("local_id", transfer.LocalID).
 				Set("pool_id", transfer.Pool).
@@ -111,8 +113,8 @@ func (s *SQLCommon) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.T
 		}
 	} else {
 		transfer.Created = fftypes.Now()
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("tokentransfer").
+		if _, err = s.insertTx(ctx, tokentransferTable, tx,
+			sq.Insert(tokentransferTable).
 				Columns(tokenTransferColumns...).
 				Values(
 					transfer.Type,
@@ -168,15 +170,15 @@ func (s *SQLCommon) tokenTransferResult(ctx context.Context, row *sql.Rows) (*ff
 		&transfer.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokentransfer")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokentransferTable)
 	}
 	return &transfer, nil
 }
 
 func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred interface{}) (*fftypes.TokenTransfer, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, tokentransferTable,
 		sq.Select(tokenTransferColumns...).
-			From("tokentransfer").
+			From(tokentransferTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -209,12 +211,12 @@ func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, poolID *ff
 }
 
 func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*fftypes.TokenTransfer, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From("tokentransfer"), filter, tokenTransferFilterFieldMap, []interface{}{"seq"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From(tokentransferTable), filter, tokenTransferFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, tokentransferTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -229,5 +231,5 @@ func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filte
 		transfers = append(transfers, d)
 	}
 
-	return transfers, s.queryRes(ctx, tx, "tokentransfer", fop, fi), err
+	return transfers, s.queryRes(ctx, tokentransferTable, tx, fop, fi), err
 }

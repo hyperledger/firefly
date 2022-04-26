@@ -43,6 +43,8 @@ var (
 	}
 )
 
+const namespacesTable = "namespaces"
+
 func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Namespace, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -52,10 +54,10 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 
 	existing := false
 	if allowExisting {
-		// Do a select within the transaction to detemine if the UUID already exists
-		namespaceRows, _, err := s.queryTx(ctx, tx,
+		// Do a select within the transaction to determine if the UUID already exists
+		namespaceRows, _, err := s.queryTx(ctx, namespacesTable, tx,
 			sq.Select("id").
-				From("namespaces").
+				From(namespacesTable).
 				Where(sq.Eq{"name": namespace.Name}),
 		)
 		if err != nil {
@@ -79,8 +81,8 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 
 	if existing {
 		// Update the namespace
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("namespaces").
+		if _, err = s.updateTx(ctx, namespacesTable, tx,
+			sq.Update(namespacesTable).
 				// Note we do not update ID
 				Set("message_id", namespace.Message).
 				Set("ntype", string(namespace.Type)).
@@ -99,8 +101,8 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *fftypes.Name
 			namespace.ID = fftypes.NewUUID()
 		}
 
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("namespaces").
+		if _, err = s.insertTx(ctx, namespacesTable, tx,
+			sq.Insert(namespacesTable).
 				Columns(namespaceColumns...).
 				Values(
 					namespace.ID,
@@ -132,15 +134,15 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*fftype
 		&namespace.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "namespaces")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, namespacesTable)
 	}
 	return &namespace, nil
 }
 
 func (s *SQLCommon) getNamespaceEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Namespace, err error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, namespacesTable,
 		sq.Select(namespaceColumns...).
-			From("namespaces").
+			From(namespacesTable).
 			Where(eq),
 	)
 	if err != nil {
@@ -171,12 +173,12 @@ func (s *SQLCommon) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (ns 
 
 func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*fftypes.Namespace, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From("namespaces"), filter, namespaceFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From(namespacesTable), filter, namespaceFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, namespacesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -191,7 +193,7 @@ func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (
 		namespace = append(namespace, d)
 	}
 
-	return namespace, s.queryRes(ctx, tx, "namespaces", fop, fi), err
+	return namespace, s.queryRes(ctx, namespacesTable, tx, fop, fi), err
 
 }
 
@@ -203,7 +205,7 @@ func (s *SQLCommon) DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	err = s.deleteTx(ctx, tx, sq.Delete("namespaces").Where(sq.Eq{
+	err = s.deleteTx(ctx, namespacesTable, tx, sq.Delete(namespacesTable).Where(sq.Eq{
 		"id": id,
 	}),
 		func() {

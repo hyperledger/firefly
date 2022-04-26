@@ -48,8 +48,6 @@ type Manager interface {
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*fftypes.ContractAPI, error)
 	GetContractAPIInterface(ctx context.Context, ns, apiName string) (*fftypes.FFI, error)
-	GetContractAPIMethod(ctx context.Context, ns, apiName, methodPath string) (*fftypes.FFIMethod, error)
-	GetContractAPIEvent(ctx context.Context, ns, apiName, eventPath string) (*fftypes.FFIEvent, error)
 	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error)
 	BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *fftypes.ContractAPI, waitConfirm bool) (output *fftypes.ContractAPI, err error)
 
@@ -177,6 +175,10 @@ func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *fftypes.FFI)
 	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interface", ffi.ID))
 	if err != nil {
 		return err
+	}
+
+	for _, event := range ffi.Events {
+		event.Signature = cm.blockchain.GenerateEventSignature(ctx, &event.FFIEventDefinition)
 	}
 	return nil
 }
@@ -307,22 +309,6 @@ func (cm *contractManager) GetContractAPIInterface(ctx context.Context, ns, apiN
 		return nil, err
 	}
 	return cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
-}
-
-func (cm *contractManager) GetContractAPIMethod(ctx context.Context, ns, apiName, methodPath string) (*fftypes.FFIMethod, error) {
-	api, err := cm.GetContractAPI(ctx, "", ns, apiName)
-	if err != nil || api == nil {
-		return nil, err
-	}
-	return cm.database.GetFFIMethod(ctx, ns, api.Interface.ID, methodPath)
-}
-
-func (cm *contractManager) GetContractAPIEvent(ctx context.Context, ns, apiName, eventPath string) (*fftypes.FFIEvent, error) {
-	api, err := cm.GetContractAPI(ctx, "", ns, apiName)
-	if err != nil || api == nil {
-		return nil, err
-	}
-	return cm.database.GetFFIEvent(ctx, ns, api.Interface.ID, eventPath)
 }
 
 func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
@@ -556,10 +542,11 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 			listener.Interface = nil
 		}
 
-		// Topic + Location + Signature must be unique
+		// Namespace + Topic + Location + Signature must be unique
 		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		fb := database.ContractListenerQueryFactory.NewFilter(ctx)
 		if existing, _, err := cm.database.GetContractListeners(ctx, fb.And(
+			fb.Eq("namespace", listener.Namespace),
 			fb.Eq("topic", listener.Topic),
 			fb.Eq("location", listener.Location.Bytes()),
 			fb.Eq("signature", listener.Signature),
@@ -568,8 +555,6 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 		} else if len(existing) > 0 {
 			return i18n.NewError(ctx, coremsgs.MsgContractListenerExists)
 		}
-
-		listener.Signature = cm.blockchain.GenerateEventSignature(ctx, &listener.Event.FFIEventDefinition)
 		return nil
 	})
 	if err != nil {

@@ -43,7 +43,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	pool.Namespace = ns
 
 	if pool.Connector == "" {
-		connector, err := am.getTokenConnectorName(ctx, ns)
+		connector, err := am.getDefaultTokenConnector(ctx, ns)
 		if err != nil {
 			return nil, err
 		}

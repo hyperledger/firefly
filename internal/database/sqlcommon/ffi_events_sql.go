@@ -43,6 +43,8 @@ var (
 	}
 )
 
+const ffieventsTable = "ffievents"
+
 func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -50,9 +52,9 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent)
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, ffieventsTable, tx,
 		sq.Select("id").
-			From("ffievents").
+			From(ffieventsTable).
 			Where(sq.And{sq.Eq{"interface_id": event.Interface}, sq.Eq{"namespace": event.Namespace}, sq.Eq{"pathname": event.Pathname}}),
 	)
 	if err != nil {
@@ -62,8 +64,8 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent)
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("ffievents").
+		if _, err = s.updateTx(ctx, ffieventsTable, tx,
+			sq.Update(ffieventsTable).
 				Set("params", event.Params).
 				Where(sq.And{sq.Eq{"interface_id": event.Interface}, sq.Eq{"namespace": event.Namespace}, sq.Eq{"pathname": event.Pathname}}),
 			func() {
@@ -73,8 +75,8 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *fftypes.FFIEvent)
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("ffievents").
+		if _, err = s.insertTx(ctx, ffieventsTable, tx,
+			sq.Insert(ffieventsTable).
 				Columns(ffiEventsColumns...).
 				Values(
 					event.ID,
@@ -108,15 +110,15 @@ func (s *SQLCommon) ffiEventResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&event.Params,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "ffievents")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, ffieventsTable)
 	}
 	return &event, nil
 }
 
 func (s *SQLCommon) getFFIEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIEvent, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, ffieventsTable,
 		sq.Select(ffiEventsColumns...).
-			From("ffievents").
+			From(ffieventsTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -138,12 +140,12 @@ func (s *SQLCommon) getFFIEventPred(ctx context.Context, desc string, pred inter
 }
 
 func (s *SQLCommon) GetFFIEvents(ctx context.Context, filter database.Filter) (events []*fftypes.FFIEvent, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiEventsColumns...).From("ffievents"), filter, ffiEventFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiEventsColumns...).From(ffieventsTable), filter, ffiEventFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, ffieventsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -157,7 +159,7 @@ func (s *SQLCommon) GetFFIEvents(ctx context.Context, filter database.Filter) (e
 		events = append(events, ci)
 	}
 
-	return events, s.queryRes(ctx, tx, "ffievents", fop, fi), err
+	return events, s.queryRes(ctx, ffieventsTable, tx, fop, fi), err
 
 }
 

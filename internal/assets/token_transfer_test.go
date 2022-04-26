@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -83,7 +82,8 @@ func TestMintTokensSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -108,7 +108,7 @@ func TestMintTokensSuccess(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
+func TestMintTokensBadConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -119,67 +119,23 @@ func TestMintTokenUnknownConnectorSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "bad",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mth := am.txHelper.(*txcommonmocks.Helper)
-	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
-	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
-		data := op.Data.(transferData)
-		return op.Type == fftypes.OpTypeTokenTransfer && data.Pool == pool && data.Transfer == &mint.TokenTransfer
-	})).Return(nil, nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
-	assert.NoError(t, err)
+	assert.Regexp(t, "FF10272.*bad", err)
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
-	mth.AssertExpectations(t)
-	mom.AssertExpectations(t)
 }
 
-func TestMintTokenUnknownConnectorNoConnectors(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mint := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewFFBigInt(5),
-		},
-		Pool: "pool1",
-	}
-
-	am.tokens = make(map[string]tokens.Plugin)
-
-	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
-	assert.Regexp(t, "FF10292", err)
-}
-
-func TestMintTokenUnknownConnectorMultipleConnectors(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mint := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			Amount: *fftypes.NewFFBigInt(5),
-		},
-		Pool: "pool1",
-	}
-
-	am.tokens["magic-tokens"] = nil
-	am.tokens["magic-tokens2"] = nil
-
-	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
-	assert.Regexp(t, "FF10292", err)
-}
-
-func TestMintTokenUnknownConnectorBadNamespace(t *testing.T) {
+func TestMintTokenBadNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -194,28 +150,7 @@ func TestMintTokenUnknownConnectorBadNamespace(t *testing.T) {
 	assert.Regexp(t, "FF00140", err)
 }
 
-func TestMintTokenBadConnector(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	mint := &fftypes.TokenTransferInput{
-		TokenTransfer: fftypes.TokenTransfer{
-			Connector: "bad",
-			Amount:    *fftypes.NewFFBigInt(5),
-		},
-		Pool: "pool1",
-	}
-
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-
-	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
-	assert.Regexp(t, "FF10272", err)
-
-	mim.AssertExpectations(t)
-}
-
-func TestMintTokenUnknownPoolSuccess(t *testing.T) {
+func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -234,8 +169,9 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 	f.Limit(1).Count(true)
 	tokenPools := []*fftypes.TokenPool{
 		{
-			Name:  "pool1",
-			State: fftypes.TokenPoolStateConfirmed,
+			Name:      "pool1",
+			Connector: "magic-tokens",
+			State:     fftypes.TokenPoolStateConfirmed,
 		},
 	}
 	totalCount := int64(1)
@@ -247,7 +183,6 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(tokenPools[0], nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenTransfer).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
@@ -264,7 +199,7 @@ func TestMintTokenUnknownPoolSuccess(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestMintTokenUnknownPoolNoPools(t *testing.T) {
+func TestMintTokenDefaultPoolNoPools(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -294,7 +229,7 @@ func TestMintTokenUnknownPoolNoPools(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestMintTokenUnknownPoolMultiplePools(t *testing.T) {
+func TestMintTokenDefaultPoolMultiplePools(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -331,7 +266,7 @@ func TestMintTokenUnknownPoolMultiplePools(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestMintTokenUnknownPoolBadNamespace(t *testing.T) {
+func TestMintTokenDefaultPoolBadNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -376,15 +311,12 @@ func TestMintTokensBadPool(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestMintTokensIdentityFail(t *testing.T) {
@@ -397,13 +329,20 @@ func TestMintTokensIdentityFail(t *testing.T) {
 		},
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.MintTokens(context.Background(), "ns1", mint, false)
 	assert.EqualError(t, err, "pop")
 
+	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
@@ -418,7 +357,8 @@ func TestMintTokensFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -454,8 +394,9 @@ func TestMintTokensOperationFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -485,7 +426,8 @@ func TestMintTokensConfirm(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -529,7 +471,8 @@ func TestBurnTokensSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -564,13 +507,20 @@ func TestBurnTokensIdentityFail(t *testing.T) {
 		},
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.BurnTokens(context.Background(), "ns1", burn, false)
 	assert.EqualError(t, err, "pop")
 
+	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
@@ -585,7 +535,8 @@ func TestBurnTokensConfirm(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -632,7 +583,8 @@ func TestTransferTokensSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -670,19 +622,17 @@ func TestTransferTokensUnconfirmedPool(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStatePending,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStatePending,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.Regexp(t, "FF10293", err)
 
-	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -698,13 +648,20 @@ func TestTransferTokensIdentityFail(t *testing.T) {
 		},
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.EqualError(t, err, "pop")
 
+	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
@@ -715,13 +672,20 @@ func TestTransferTokensNoFromOrTo(t *testing.T) {
 	transfer := &fftypes.TokenTransferInput{
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.Regexp(t, "FF10280", err)
 
+	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
@@ -738,8 +702,9 @@ func TestTransferTokensTransactionFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -785,7 +750,8 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 		},
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -847,7 +813,8 @@ func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
 		},
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -897,10 +864,8 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 		},
 	}
 
-	mim := am.identity.(*identitymanagermocks.Manager)
 	mbm := am.broadcast.(*broadcastmocks.Manager)
 	mms := &sysmessagingmocks.MessageSender{}
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mbm.On("NewBroadcast", "ns1", transfer.Message).Return(mms)
 	mms.On("Prepare", context.Background()).Return(fmt.Errorf("pop"))
 
@@ -908,7 +873,6 @@ func TestTransferTokensWithBroadcastPrepareFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mbm.AssertExpectations(t)
-	mim.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
 
@@ -941,7 +905,8 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 		},
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1000,13 +965,8 @@ func TestTransferTokensWithInvalidMessage(t *testing.T) {
 		},
 	}
 
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.Regexp(t, "FF10287", err)
-
-	mim.AssertExpectations(t)
 }
 
 func TestTransferTokensConfirm(t *testing.T) {
@@ -1022,7 +982,8 @@ func TestTransferTokensConfirm(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1085,7 +1046,8 @@ func TestTransferTokensWithBroadcastConfirm(t *testing.T) {
 		},
 	}
 	pool := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -1146,14 +1108,11 @@ func TestTransferTokensPoolNotFound(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(nil, nil)
 
 	_, err := am.TransferTokens(context.Background(), "ns1", transfer, false)
 	assert.Regexp(t, "FF10109", err)
 
-	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -1163,16 +1122,28 @@ func TestTransferPrepare(t *testing.T) {
 
 	transfer := &fftypes.TokenTransferInput{
 		TokenTransfer: fftypes.TokenTransfer{
-			Type:      fftypes.TokenTransferTypeTransfer,
-			From:      "A",
-			To:        "B",
-			Connector: "magic-tokens",
-			Amount:    *fftypes.NewFFBigInt(5),
+			Type:   fftypes.TokenTransferTypeTransfer,
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewFFBigInt(5),
 		},
+		Pool: "pool1",
+	}
+	pool := &fftypes.TokenPool{
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	sender := am.NewTransfer("ns1", transfer)
 
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
 	err := sender.Prepare(context.Background())
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }

@@ -230,7 +230,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, newOp.Type)
 		return true
 	})).Return(nil)
-	mdi.On("UpdateOperation", ctx, op.ID, mock.MatchedBy(func(update database.Update) bool {
+	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.MatchedBy(func(update database.Update) bool {
 		info, err := update.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(info.SetOperations))
@@ -352,10 +352,11 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 	ctx := context.Background()
 	opID := fftypes.NewUUID()
 	op := &fftypes.Operation{
-		ID:     opID,
-		Plugin: "blockchain",
-		Type:   fftypes.OpTypeBlockchainPinBatch,
-		Status: fftypes.OpStatusFailed,
+		ID:        opID,
+		Namespace: "ns1",
+		Plugin:    "blockchain",
+		Type:      fftypes.OpTypeBlockchainPinBatch,
+		Status:    fftypes.OpStatusFailed,
 	}
 	po := &fftypes.PreparedOperation{
 		ID:   op.ID,
@@ -365,7 +366,7 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperationByID", ctx, opID).Return(op, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(nil)
-	mdi.On("UpdateOperation", ctx, op.ID, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []fftypes.OpType{fftypes.OpTypeBlockchainPinBatch})
 	_, err := om.RetryOperation(ctx, "ns1", op.ID)

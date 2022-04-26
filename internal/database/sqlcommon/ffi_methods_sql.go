@@ -44,6 +44,8 @@ var (
 	}
 )
 
+const ffimethodsTable = "ffimethods"
+
 func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -51,9 +53,9 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMeth
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, ffimethodsTable, tx,
 		sq.Select("id").
-			From("ffimethods").
+			From(ffimethodsTable).
 			Where(sq.And{sq.Eq{"interface_id": method.Interface}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
 	)
 	if err != nil {
@@ -63,8 +65,8 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMeth
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("ffimethods").
+		if _, err = s.updateTx(ctx, ffimethodsTable, tx,
+			sq.Update(ffimethodsTable).
 				Set("params", method.Params).
 				Set("returns", method.Returns).
 				Where(sq.And{sq.Eq{"interface_id": method.Interface}, sq.Eq{"namespace": method.Namespace}, sq.Eq{"pathname": method.Pathname}}),
@@ -75,8 +77,8 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMeth
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("ffimethods").
+		if _, err = s.insertTx(ctx, ffimethodsTable, tx,
+			sq.Insert(ffimethodsTable).
 				Columns(ffiMethodsColumns...).
 				Values(
 					method.ID,
@@ -112,15 +114,15 @@ func (s *SQLCommon) ffiMethodResult(ctx context.Context, row *sql.Rows) (*fftype
 		&method.Returns,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "ffimethods")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, ffimethodsTable)
 	}
 	return &method, nil
 }
 
 func (s *SQLCommon) getFFIMethodPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFIMethod, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, ffimethodsTable,
 		sq.Select(ffiMethodsColumns...).
-			From("ffimethods").
+			From(ffimethodsTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -142,12 +144,12 @@ func (s *SQLCommon) getFFIMethodPred(ctx context.Context, desc string, pred inte
 }
 
 func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (methods []*fftypes.FFIMethod, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiMethodsColumns...).From("ffimethods"), filter, ffiMethodFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiMethodsColumns...).From(ffimethodsTable), filter, ffiMethodFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, ffimethodsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -161,7 +163,7 @@ func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (
 		methods = append(methods, ci)
 	}
 
-	return methods, s.queryRes(ctx, tx, "ffimethods", fop, fi), err
+	return methods, s.queryRes(ctx, ffimethodsTable, tx, fop, fi), err
 
 }
 

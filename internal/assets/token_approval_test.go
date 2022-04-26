@@ -59,8 +59,9 @@ func TestTokenApprovalSuccess(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -97,8 +98,9 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -123,46 +125,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestApprovalUnknownConnectorNoConnectors(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
-			Approved: true,
-			Operator: "operator",
-			Key:      "key",
-		},
-		Pool: "pool1",
-	}
-
-	am.tokens = make(map[string]tokens.Plugin)
-
-	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
-	assert.Regexp(t, "FF10292", err)
-}
-
-func TestApprovalUnknownConnectorMultipleConnectors(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
-			Approved: true,
-			Operator: "operator",
-			Key:      "key",
-		},
-		Pool: "pool1",
-	}
-
-	am.tokens["magic-tokens"] = nil
-	am.tokens["magic-tokens2"] = nil
-
-	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
-	assert.Regexp(t, "FF10292", err)
-}
-
-func TestApprovalUnknownConnectorBadNamespace(t *testing.T) {
+func TestApprovalBadNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -187,22 +150,31 @@ func TestApprovalBadConnector(t *testing.T) {
 
 	approval := &fftypes.TokenApprovalInput{
 		TokenApproval: fftypes.TokenApproval{
-			Approved:  true,
-			Operator:  "operator",
-			Key:       "key",
-			Connector: "bad",
+			Approved: true,
+			Operator: "operator",
+			Key:      "key",
 		},
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Locator:   "F1",
+		Connector: "bad",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.Regexp(t, "FF10272", err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
-func TestApprovalUnknownPoolSuccess(t *testing.T) {
+func TestApprovalDefaultPoolSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -223,9 +195,10 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 	f.Limit(1).Count(true)
 	tokenPools := []*fftypes.TokenPool{
 		{
-			Name:    "pool1",
-			Locator: "F1",
-			State:   fftypes.TokenPoolStateConfirmed,
+			Name:      "pool1",
+			Locator:   "F1",
+			Connector: "magic-tokens",
+			State:     fftypes.TokenPoolStateConfirmed,
 		},
 	}
 	totalCount := int64(1)
@@ -237,7 +210,6 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(tokenPools[0], nil)
 	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
@@ -254,7 +226,7 @@ func TestApprovalUnknownPoolSuccess(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestApprovalUnknownPoolNoPool(t *testing.T) {
+func TestApprovalDefaultPoolNoPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -318,19 +290,17 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStatePending,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStatePending,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mim := am.identity.(*identitymanagermocks.Manager)
-	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.Regexp(t, "FF10293", err)
 
-	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -345,12 +315,22 @@ func TestApprovalIdentityFail(t *testing.T) {
 		},
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
+	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.EqualError(t, err, "pop")
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestApprovalFail(t *testing.T) {
@@ -366,8 +346,9 @@ func TestApprovalFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -404,8 +385,9 @@ func TestApprovalTransactionFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -435,8 +417,9 @@ func TestApprovalOperationsFail(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -465,8 +448,9 @@ func TestTokenApprovalConfirm(t *testing.T) {
 		Pool: "pool1",
 	}
 	pool := &fftypes.TokenPool{
-		Locator: "F1",
-		State:   fftypes.TokenPoolStateConfirmed,
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -507,15 +491,28 @@ func TestApprovalPrepare(t *testing.T) {
 
 	approval := &fftypes.TokenApprovalInput{
 		TokenApproval: fftypes.TokenApproval{
-			Approved:  true,
-			Operator:  "operator",
-			Key:       "key",
-			Connector: "magic-tokens",
+			Approved: true,
+			Operator: "operator",
+			Key:      "key",
 		},
 		Pool: "pool1",
 	}
+	pool := &fftypes.TokenPool{
+		Locator:   "F1",
+		Connector: "magic-tokens",
+		State:     fftypes.TokenPoolStateConfirmed,
+	}
 
 	sender := am.NewApproval("ns1", approval)
+
+	mdi := am.database.(*databasemocks.Plugin)
+	mim := am.identity.(*identitymanagermocks.Manager)
+	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
+
 	err := sender.Prepare(context.Background())
 	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
