@@ -10431,11 +10431,6 @@ paths:
                     of the approval.  See your chosen token connector documentation
                     for details
                   type: object
-                connector:
-                  description: The name of the token connector, as specified in the
-                    FireFly core configuration file. Required on input when there
-                    are more than one token connectors configured
-                  type: string
                 info:
                   additionalProperties:
                     description: Token connector specific information about the approval
@@ -10820,11 +10815,6 @@ paths:
                     for the token pool should be considered when inputting the amount.
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
-                  type: string
-                connector:
-                  description: The name of the token connector, as specified in the
-                    FireFly core configuration file. Required on input when there
-                    are more than one token connectors configured
                   type: string
                 from:
                   description: The source account for the transfer. On input defaults
@@ -11244,11 +11234,6 @@ paths:
                     for the token pool should be considered when inputting the amount.
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
-                  type: string
-                connector:
-                  description: The name of the token connector, as specified in the
-                    FireFly core configuration file. Required on input when there
-                    are more than one token connectors configured
                   type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
@@ -12450,11 +12435,6 @@ paths:
                     for the token pool should be considered when inputting the amount.
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
-                  type: string
-                connector:
-                  description: The name of the token connector, as specified in the
-                    FireFly core configuration file. Required on input when there
-                    are more than one token connectors configured
                   type: string
                 from:
                   description: The source account for the transfer. On input defaults

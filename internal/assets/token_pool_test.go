@@ -85,7 +85,7 @@ func TestCreateTokenPoolDuplicateName(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
+func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -118,7 +118,7 @@ func TestCreateTokenPoolUnknownConnectorSuccess(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
-func TestCreateTokenPoolUnknownConnectorNoConnectors(t *testing.T) {
+func TestCreateTokenPoolDefaultConnectorNoConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
@@ -140,7 +140,7 @@ func TestCreateTokenPoolUnknownConnectorNoConnectors(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
-func TestCreateTokenPoolUnknownConnectorMultipleConnectors(t *testing.T) {
+func TestCreateTokenPoolDefaultConnectorMultipleConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 

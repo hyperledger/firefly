@@ -125,14 +125,7 @@ func TestGetTokenConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	_, err := am.GetTokenConnectors(context.Background(), "ns1")
-	assert.NoError(t, err)
-}
-
-func TestGetTokenConnectorsBadNamespace(t *testing.T) {
-	am, cancel := newTestAssets(t)
-	defer cancel()
-
-	_, err := am.GetTokenConnectors(context.Background(), "")
-	assert.Regexp(t, "FF00140", err)
+	connectors := am.GetTokenConnectors(context.Background(), "ns1")
+	assert.Equal(t, 1, len(connectors))
+	assert.Equal(t, "magic-tokens", connectors[0].Name)
 }
