@@ -15,6 +15,8 @@ jobs:
       - name: Build
         run: |
           make DOCKER_ARGS="\
+            --build-arg BUILD_VERSION=${GITHUB_REF##*/} \
+            --build-arg GIT_REF=$GITHUB_SHA \
             --label commit=$GITHUB_SHA \
             --label build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
             --label tag=${GITHUB_REF##*/} \
