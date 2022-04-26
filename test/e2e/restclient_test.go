@@ -23,7 +23,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -67,6 +69,9 @@ var (
 func NewResty(t *testing.T) *resty.Client {
 	client := resty.New()
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
+		if os.Getenv("NAMESPACE") != "" {
+			req.URL = strings.Replace(req.URL, "/namespaces/default", "/namespaces/"+os.Getenv("NAMESPACE"), 1)
+		}
 		t.Logf("==> %s %s %s", req.Method, req.URL, req.QueryParam)
 		return nil
 	})
@@ -89,6 +94,16 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 	return client.R().
 		SetResult(&[]fftypes.Namespace{}).
 		Get(urlGetNamespaces)
+}
+
+func CreateNamespaces(client *resty.Client, namespace string) (*resty.Response, error) {
+	namespaceJSON := map[string]interface{}{
+		"description": "Firefly test namespace",
+		"name":        namespace,
+	}
+	return client.R().
+		SetBody(namespaceJSON).
+		Post(urlGetNamespaces)
 }
 
 func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, topic string, expectedStatus int) (events []*fftypes.EnrichedEvent) {
@@ -706,9 +721,10 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	resp, err := client.R().
 		SetBody(ffi).
 		SetResult(&res).
+		SetQueryParam("confirm", "true").
 		Post(path)
 	require.NoError(t, err)
-	require.Equal(t, 202, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
 }
 

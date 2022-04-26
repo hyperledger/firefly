@@ -300,9 +300,9 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	received1 := wsReader(suite.testState.ws1, false)
 	received2 := wsReader(suite.testState.ws2, false)
 
-	subJSON := `{
+	subJSON := fmt.Sprintf(`{
 		"transport": "webhooks",
-		"namespace": "default",
+		"namespace": "%s",
 		"name": "myhook",
 		"options": {
 			"withData": true,
@@ -314,8 +314,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 		"filter": {
 			"tag": "myrequest"
 		}
-	}`
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, "default", "myhook")
+	}`, suite.testState.namespace)
+	CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
@@ -355,9 +355,9 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 	defer suite.testState.done()
 
-	subJSON := `{
+	subJSON := fmt.Sprintf(`{
 		"transport": "webhooks",
-		"namespace": "default",
+		"namespace": "%s",
 		"name": "myhook",
 		"options": {
 			"withData": true,
@@ -370,8 +370,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 		"filter": {
 			"tag": "myrequest"
 		}
-	}`
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, "default", "myhook")
+	}`, suite.testState.namespace)
+	CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 

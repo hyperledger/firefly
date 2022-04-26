@@ -41,7 +41,6 @@ type testState struct {
 	t                    *testing.T
 	client1              *resty.Client
 	client2              *resty.Client
-	ethNode              *resty.Client
 	ws1                  *websocket.Conn
 	ws2                  *websocket.Conn
 	org1                 *fftypes.Identity
@@ -51,6 +50,7 @@ type testState struct {
 	done                 func()
 	stackState           *StackState
 	unregisteredAccounts []interface{}
+	namespace            string
 }
 
 var widgetSchemaJSON = []byte(`{
@@ -125,8 +125,7 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 		}
 
 		returnData = append(returnData, msgData)
-
-		assert.Equal(ts.t, "default", msgData.Namespace)
+		assert.Equal(ts.t, ts.namespace, msgData.Namespace)
 		expectedHash, err := msgData.CalcHash(context.Background())
 		assert.NoError(ts.t, err)
 		assert.Equal(ts.t, *expectedHash, *msgData.Hash)
@@ -178,6 +177,7 @@ func readStackState(t *testing.T) *StackState {
 func beforeE2ETest(t *testing.T) *testState {
 	stack := readStackFile(t)
 	stackState := readStackState(t)
+	namespace := "default"
 
 	var authHeader1 http.Header
 	var authHeader2 http.Header
@@ -189,6 +189,7 @@ func beforeE2ETest(t *testing.T) *testState {
 		client2:              NewResty(t),
 		stackState:           stackState,
 		unregisteredAccounts: stackState.Accounts[2:],
+		namespace:            namespace,
 	}
 
 	httpProtocolClient1 := "http"
@@ -217,12 +218,6 @@ func beforeE2ETest(t *testing.T) *testState {
 	ts.client2.SetBaseURL(fmt.Sprintf("%s://%s%s/api/v1", httpProtocolClient2, stack.Members[1].FireflyHostname, member1WithPort))
 
 	t.Logf("Blockchain provider: %s", stack.BlockchainProvider)
-	if stack.BlockchainProvider == "geth" {
-		ethNodeURL := fmt.Sprintf("%s://%s:%d", httpProtocolClient1, stack.Members[0].FireflyHostname, stack.ExposedBlockchainPort)
-		t.Logf("Ethereum node URL: %s", ethNodeURL)
-		ts.ethNode = NewResty(t)
-		ts.ethNode.SetBaseURL(ethNodeURL)
-	}
 
 	if stack.Members[0].Username != "" && stack.Members[0].Password != "" {
 		t.Log("Setting auth for user 1")
@@ -238,6 +233,14 @@ func beforeE2ETest(t *testing.T) *testState {
 		authHeader2 = http.Header{
 			"Authorization": []string{fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", stack.Members[1].Username, stack.Members[1].Password))))},
 		}
+	}
+
+	// If no namespace is set to run tests against, use the default namespace
+	if os.Getenv("NAMESPACE") != "" {
+		namespace := os.Getenv("NAMESPACE")
+		ts.namespace = namespace
+		CreateNamespaces(ts.client1, namespace)
+		CreateNamespaces(ts.client2, namespace)
 	}
 
 	t.Logf("Client 1: " + ts.client1.HostURL)
@@ -272,7 +275,7 @@ func beforeE2ETest(t *testing.T) *testState {
 	t.Logf("Org2: ID=%s DID=%s Key=%s", ts.org2.DID, ts.org2.ID, ts.org2key.Value)
 
 	eventNames := "message_confirmed|token_pool_confirmed|token_transfer_confirmed|blockchain_event_received|token_approval_confirmed|identity_confirmed"
-	queryString := fmt.Sprintf("namespace=default&ephemeral&autoack&filter.events=%s&changeevents=.*", eventNames)
+	queryString := fmt.Sprintf("namespace=%s&ephemeral&autoack&filter.events=%s&changeevents=.*", ts.namespace, eventNames)
 
 	wsUrl1 := url.URL{
 		Scheme:   websocketProtocolClient1,
@@ -425,7 +428,7 @@ func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 		}
 	default:
 		expectedString, expectedIsString := expected.(string)
-		actualString, actualIsString := expected.(string)
+		actualString, actualIsString := actual.(string)
 		if expectedIsString && actualIsString {
 			return strings.ToLower(expectedString) == strings.ToLower(actualString)
 		}

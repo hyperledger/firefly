@@ -18,6 +18,7 @@ package e2e
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -63,7 +64,8 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	received2 := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
-	poolName := fmt.Sprintf("pool%d", len(pools))
+	rand.Seed(time.Now().UnixNano())
+	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &fftypes.TokenPool{
@@ -81,7 +83,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	waitForEvent(suite.T(), received1, fftypes.EventTypePoolConfirmed, poolID)
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
-	assert.Equal(suite.T(), "default", pools[0].Namespace)
+	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
@@ -90,7 +92,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 	waitForEvent(suite.T(), received2, fftypes.EventTypePoolConfirmed, poolID)
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
-	assert.Equal(suite.T(), "default", pools[0].Namespace)
+	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), suite.connector, pools[0].Connector)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeFungible, pools[0].Type)
@@ -154,7 +156,7 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 			},
 		},
 	}
-	transferOut = TransferTokens(suite.T(), suite.testState.client1, transfer, false)
+	transferOut = TransferTokens(suite.T(), suite.testState.client2, transfer, false)
 
 	waitForEvent(suite.T(), received1, fftypes.EventTypeMessageConfirmed, transferOut.Message)
 	transfers = GetTokenTransfers(suite.T(), suite.testState.client1, poolID)
@@ -233,7 +235,8 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	received2 := wsReader(suite.testState.ws2, false)
 
 	pools := GetTokenPools(suite.T(), suite.testState.client1, time.Unix(0, 0))
-	poolName := fmt.Sprintf("pool%d", len(pools))
+	rand.Seed(time.Now().UnixNano())
+	poolName := fmt.Sprintf("pool%d", rand.Intn(10000))
 	suite.T().Logf("Pool name: %s", poolName)
 
 	pool := &fftypes.TokenPool{
@@ -246,7 +249,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	}
 
 	poolOut := CreateTokenPool(suite.T(), suite.testState.client1, pool, true)
-	assert.Equal(suite.T(), "default", poolOut.Namespace)
+	assert.Equal(suite.T(), suite.testState.namespace, poolOut.Namespace)
 	assert.Equal(suite.T(), poolName, poolOut.Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, poolOut.Type)
 	assert.NotEmpty(suite.T(), poolOut.Locator)
@@ -257,7 +260,7 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 	waitForEvent(suite.T(), received2, fftypes.EventTypePoolConfirmed, poolID)
 	pools = GetTokenPools(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(pools))
-	assert.Equal(suite.T(), "default", pools[0].Namespace)
+	assert.Equal(suite.T(), suite.testState.namespace, pools[0].Namespace)
 	assert.Equal(suite.T(), poolName, pools[0].Name)
 	assert.Equal(suite.T(), fftypes.TokenTypeNonFungible, pools[0].Type)
 	assert.NotEmpty(suite.T(), pools[0].Locator)
