@@ -17,11 +17,14 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"runtime/debug"
 
 	"github.com/ghodss/yaml"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/spf13/cobra"
 )
 
@@ -79,9 +82,8 @@ var versionCmd = &cobra.Command{
 			case "yaml":
 				bytes, err = yaml.Marshal(info)
 			default:
-				return fmt.Errorf("invalid output '%s'", output)
+				err = i18n.NewError(context.Background(), coremsgs.MsgInvalidOutputOption, output)
 			}
-
 			if err != nil {
 				return err
 			}
