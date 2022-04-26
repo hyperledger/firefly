@@ -21,6 +21,7 @@ var (
 		"FF00":  "FireFly Common Utilities",
 		"FF10":  "FireFly Core",
 		"FF201": "FireFly Transaction Manager",
+		"FF202": "FireFly Signer",
 		"FF99":  "Test prefix",
 	}
 )
