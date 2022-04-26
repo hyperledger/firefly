@@ -205,32 +205,36 @@ func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Opera
 
 func opCreatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: createPoolData{Pool: pool},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      createPoolData{Pool: pool},
 	}
 }
 
 func opActivatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: activatePoolData{Pool: pool},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      activatePoolData{Pool: pool},
 	}
 }
 
 func opTransfer(op *fftypes.Operation, pool *fftypes.TokenPool, transfer *fftypes.TokenTransfer) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: transferData{Pool: pool, Transfer: transfer},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      transferData{Pool: pool, Transfer: transfer},
 	}
 }
 
 func opApproval(op *fftypes.Operation, pool *fftypes.TokenPool, approval *fftypes.TokenApproval) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: approvalData{Pool: pool, Approval: approval},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      approvalData{Pool: pool, Approval: approval},
 	}
 }
