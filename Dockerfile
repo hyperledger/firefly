@@ -36,7 +36,7 @@ RUN apk add jq \
  && cd contracts \
  && solc --combined-json abi,bin,devdoc -o ../build/contracts Firefly.sol \
  && cd ../build/contracts \
- && jq '{"contractName":"FireFly", "abi":.contracts."Firefly.sol:Firefly".abi, "bytecode":("0x" + .contracts."Firefly.sol:Firefly".bin) }' combined.json > Firefly.json
+ && mv combined.json Firefly.json
 
 FROM $BASE_TAG
 WORKDIR /firefly
