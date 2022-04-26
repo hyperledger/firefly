@@ -53,6 +53,8 @@ var (
 	}
 )
 
+const tokenpoolTable = "tokenpool"
+
 func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -60,9 +62,9 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, tokenpoolTable, tx,
 		sq.Select("id").
-			From("tokenpool").
+			From(tokenpoolTable).
 			Where(sq.And{sq.Eq{"namespace": pool.Namespace}, sq.Eq{"name": pool.Name}}),
 	)
 	if err != nil {
@@ -82,8 +84,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("tokenpool").
+		if _, err = s.updateTx(ctx, tokenpoolTable, tx,
+			sq.Update(tokenpoolTable).
 				Set("namespace", pool.Namespace).
 				Set("name", pool.Name).
 				Set("standard", pool.Standard).
@@ -106,8 +108,8 @@ func (s *SQLCommon) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool
 		}
 	} else {
 		pool.Created = fftypes.Now()
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("tokenpool").
+		if _, err = s.insertTx(ctx, tokenpoolTable, tx,
+			sq.Insert(tokenpoolTable).
 				Columns(tokenPoolColumns...).
 				Values(
 					pool.ID,
@@ -157,15 +159,15 @@ func (s *SQLCommon) tokenPoolResult(ctx context.Context, row *sql.Rows) (*fftype
 		&pool.Info,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "tokenpool")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, tokenpoolTable)
 	}
 	return &pool, nil
 }
 
 func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred interface{}) (*fftypes.TokenPool, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, tokenpoolTable,
 		sq.Select(tokenPoolColumns...).
-			From("tokenpool").
+			From(tokenpoolTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -201,13 +203,13 @@ func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, connector, locato
 	})
 }
 
-func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
+func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*fftypes.TokenPool, fr *database.FilterResult, err error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, tokenPoolFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, tokenpoolTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,5 +224,5 @@ func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (
 		pools = append(pools, d)
 	}
 
-	return pools, s.queryRes(ctx, tx, "tokenpool", fop, fi), err
+	return pools, s.queryRes(ctx, tokenpoolTable, tx, fop, fi), err
 }

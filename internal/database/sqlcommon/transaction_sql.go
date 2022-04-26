@@ -42,6 +42,8 @@ var (
 	}
 )
 
+const transactionsTable = "transactions"
+
 func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *fftypes.Transaction) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -50,8 +52,8 @@ func (s *SQLCommon) InsertTransaction(ctx context.Context, transaction *fftypes.
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	transaction.Created = fftypes.Now()
-	if _, err = s.insertTx(ctx, tx,
-		sq.Insert("transactions").
+	if _, err = s.insertTx(ctx, transactionsTable, tx,
+		sq.Insert(transactionsTable).
 			Columns(transactionColumns...).
 			Values(
 				transaction.ID,
@@ -80,16 +82,16 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*ffty
 		&transaction.BlockchainIDs,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "transactions")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, transactionsTable)
 	}
 	return &transaction, nil
 }
 
 func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Transaction, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, transactionsTable,
 		sq.Select(transactionColumns...).
-			From("transactions").
+			From(transactionsTable).
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -112,12 +114,12 @@ func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (m
 
 func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*fftypes.Transaction, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From("transactions"), filter, transactionFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From(transactionsTable), filter, transactionFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, transactionsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -132,7 +134,7 @@ func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter)
 		transactions = append(transactions, transaction)
 	}
 
-	return transactions, s.queryRes(ctx, tx, "transactions", fop, fi), err
+	return transactions, s.queryRes(ctx, transactionsTable, tx, fop, fi), err
 
 }
 
@@ -144,13 +146,13 @@ func (s *SQLCommon) UpdateTransaction(ctx context.Context, id *fftypes.UUID, upd
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("transactions"), update, transactionFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(transactionsTable), update, transactionFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change evnents for filter based updates */)
+	_, err = s.updateTx(ctx, transactionsTable, tx, query, nil /* no change evnents for filter based updates */)
 	if err != nil {
 		return err
 	}

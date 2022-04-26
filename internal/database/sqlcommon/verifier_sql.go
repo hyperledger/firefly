@@ -42,9 +42,11 @@ var (
 	}
 )
 
+const verifiersTable = "verifiers"
+
 func (s *SQLCommon) attemptVerifierUpdate(ctx context.Context, tx *txWrapper, verifier *fftypes.Verifier) (int64, error) {
-	return s.updateTx(ctx, tx,
-		sq.Update("verifiers").
+	return s.updateTx(ctx, verifiersTable, tx,
+		sq.Update(verifiersTable).
 			Set("identity", verifier.Identity).
 			Set("vtype", verifier.Type).
 			Set("namespace", verifier.Namespace).
@@ -59,8 +61,8 @@ func (s *SQLCommon) attemptVerifierUpdate(ctx context.Context, tx *txWrapper, ve
 
 func (s *SQLCommon) attemptVerifierInsert(ctx context.Context, tx *txWrapper, verifier *fftypes.Verifier, requestConflictEmptyResult bool) (err error) {
 	verifier.Created = fftypes.Now()
-	_, err = s.insertTxExt(ctx, tx,
-		sq.Insert("verifiers").
+	_, err = s.insertTxExt(ctx, verifiersTable, tx,
+		sq.Insert(verifiersTable).
 			Columns(verifierColumns...).
 			Values(
 				verifier.Hash,
@@ -94,9 +96,9 @@ func (s *SQLCommon) UpsertVerifier(ctx context.Context, verifier *fftypes.Verifi
 
 	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
-		msgRows, _, err := s.queryTx(ctx, tx,
+		msgRows, _, err := s.queryTx(ctx, verifiersTable, tx,
 			sq.Select("hash").
-				From("verifiers").
+				From(verifiersTable).
 				Where(sq.Eq{"hash": verifier.Hash}),
 		)
 		if err != nil {
@@ -131,16 +133,16 @@ func (s *SQLCommon) verifierResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&verifier.Created,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "verifiers")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, verifiersTable)
 	}
 	return &verifier, nil
 }
 
 func (s *SQLCommon) getVerifierPred(ctx context.Context, desc string, pred interface{}) (verifier *fftypes.Verifier, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, verifiersTable,
 		sq.Select(verifierColumns...).
-			From("verifiers").
+			From(verifiersTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -166,12 +168,12 @@ func (s *SQLCommon) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32
 
 func (s *SQLCommon) GetVerifiers(ctx context.Context, filter database.Filter) (verifiers []*fftypes.Verifier, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(verifierColumns...).From("verifiers"), filter, verifierFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(verifierColumns...).From(verifiersTable), filter, verifierFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, verifiersTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -186,7 +188,7 @@ func (s *SQLCommon) GetVerifiers(ctx context.Context, filter database.Filter) (v
 		verifiers = append(verifiers, d)
 	}
 
-	return verifiers, s.queryRes(ctx, tx, "verifiers", fop, fi), err
+	return verifiers, s.queryRes(ctx, verifiersTable, tx, fop, fi), err
 
 }
 
@@ -198,13 +200,13 @@ func (s *SQLCommon) UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, u
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("verifiers"), update, verifierFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(verifiersTable), update, verifierFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"hash": hash})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, verifiersTable, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

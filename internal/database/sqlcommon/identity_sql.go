@@ -53,10 +53,12 @@ var (
 	}
 )
 
+const identitiesTable = "identities"
+
 func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (int64, error) {
 	identity.Updated = fftypes.Now()
-	return s.updateTx(ctx, tx,
-		sq.Update("identities").
+	return s.updateTx(ctx, identitiesTable, tx,
+		sq.Update(identitiesTable).
 			Set("did", identity.DID).
 			Set("parent", identity.Parent).
 			Set("itype", identity.Type).
@@ -79,8 +81,8 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *fftypes.Identity, requestConflictEmptyResult bool) (err error) {
 	identity.Created = fftypes.Now()
 	identity.Updated = identity.Created
-	_, err = s.insertTxExt(ctx, tx,
-		sq.Insert("identities").
+	_, err = s.insertTxExt(ctx, identitiesTable, tx,
+		sq.Insert(identitiesTable).
 			Columns(identityColumns...).
 			Values(
 				identity.ID,
@@ -121,9 +123,9 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identi
 
 	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
-		msgRows, _, err := s.queryTx(ctx, tx,
+		msgRows, _, err := s.queryTx(ctx, identitiesTable, tx,
 			sq.Select("id").
-				From("identities").
+				From(identitiesTable).
 				Where(sq.Eq{"id": identity.ID}),
 		)
 		if err != nil {
@@ -165,16 +167,16 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes
 		&identity.Updated,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "identities")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, identitiesTable)
 	}
 	return &identity, nil
 }
 
 func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred interface{}) (identity *fftypes.Identity, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, identitiesTable,
 		sq.Select(identityColumns...).
-			From("identities").
+			From(identitiesTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -204,12 +206,12 @@ func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (iden
 
 func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (identities []*fftypes.Identity, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From("identities"), filter, identityFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From(identitiesTable), filter, identityFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, identitiesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -224,7 +226,7 @@ func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (
 		identities = append(identities, d)
 	}
 
-	return identities, s.queryRes(ctx, tx, "identities", fop, fi), err
+	return identities, s.queryRes(ctx, identitiesTable, tx, fop, fi), err
 
 }
 
@@ -236,13 +238,13 @@ func (s *SQLCommon) UpdateIdentity(ctx context.Context, id *fftypes.UUID, update
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("identities"), update, identityFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(identitiesTable), update, identityFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, identitiesTable, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}

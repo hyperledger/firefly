@@ -43,6 +43,8 @@ var (
 	}
 )
 
+const contractapisTable = "contractapis"
+
 func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.ContractAPI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -50,9 +52,9 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, tx,
+	rows, _, err := s.queryTx(ctx, contractapisTable, tx,
 		sq.Select("id").
-			From("contractapis").
+			From(contractapisTable).
 			Where(sq.And{sq.Eq{"namespace": api.Namespace}, sq.Eq{"name": api.Name}}),
 	)
 	if err != nil {
@@ -72,8 +74,8 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 	rows.Close()
 
 	if existing {
-		if _, err = s.updateTx(ctx, tx,
-			sq.Update("contractapis").
+		if _, err = s.updateTx(ctx, contractapisTable, tx,
+			sq.Update(contractapisTable).
 				Set("id", api.ID).
 				Set("interface_id", api.Interface.ID).
 				Set("location", api.Location).
@@ -87,8 +89,8 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 			return err
 		}
 	} else {
-		if _, err = s.insertTx(ctx, tx,
-			sq.Insert("contractapis").
+		if _, err = s.insertTx(ctx, contractapisTable, tx,
+			sq.Insert(contractapisTable).
 				Columns(contractAPIsColumns...).
 				Values(
 					api.ID,
@@ -128,9 +130,9 @@ func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*ffty
 }
 
 func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractAPI, error) {
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, contractapisTable,
 		sq.Select(contractAPIsColumns...).
-			From("contractapis").
+			From(contractapisTable).
 			Where(pred),
 	)
 	if err != nil {
@@ -153,12 +155,12 @@ func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred in
 
 func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (contractAPIs []*fftypes.ContractAPI, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractAPIsColumns...).From("contractapis").Where(sq.Eq{"namespace": ns}), filter, contractAPIsFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractAPIsColumns...).From(contractapisTable).Where(sq.Eq{"namespace": ns}), filter, contractAPIsFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, contractapisTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -173,7 +175,7 @@ func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter datab
 		apis = append(apis, api)
 	}
 
-	return apis, s.queryRes(ctx, tx, "contract_interfaces", fop, fi), err
+	return apis, s.queryRes(ctx, contractapisTable, tx, fop, fi), err
 
 }
 

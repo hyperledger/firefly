@@ -57,9 +57,12 @@ var (
 	}
 )
 
+const messagesTable = "messages"
+const messagesDataJoinTable = "messages_data"
+
 func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, message *fftypes.Message) (int64, error) {
-	return s.updateTx(ctx, tx,
-		sq.Update("messages").
+	return s.updateTx(ctx, messagesTable, tx,
+		sq.Update(messagesTable).
 			Set("cid", message.Header.CID).
 			Set("mtype", string(message.Header.Type)).
 			Set("author", message.Header.Author).
@@ -108,8 +111,8 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *ffty
 }
 
 func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message, requestConflictEmptyResult bool) (err error) {
-	message.Sequence, err = s.insertTxExt(ctx, tx,
-		s.setMessageInsertValues(sq.Insert("messages").Columns(msgColumns...), message),
+	message.Sequence, err = s.insertTxExt(ctx, messagesTable, tx,
+		s.setMessageInsertValues(sq.Insert(messagesTable).Columns(msgColumns...), message),
 		func() {
 			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
 		}, requestConflictEmptyResult)
@@ -140,9 +143,9 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 
 	if !optimized {
 		// Do a select within the transaction to detemine if the UUID already exists
-		msgRows, _, err := s.queryTx(ctx, tx,
+		msgRows, _, err := s.queryTx(ctx, messagesTable, tx,
 			sq.Select("hash", sequenceColumn).
-				From("messages").
+				From(messagesTable).
 				Where(sq.Eq{"id": message.Header.ID}),
 		)
 		if err != nil {
@@ -199,8 +202,8 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
-		msgQuery := sq.Insert("messages").Columns(msgColumns...)
-		dataRefQuery := sq.Insert("messages_data").Columns(
+		msgQuery := sq.Insert(messagesTable).Columns(msgColumns...)
+		dataRefQuery := sq.Insert(messagesDataJoinTable).Columns(
 			"message_id",
 			"data_id",
 			"data_hash",
@@ -217,7 +220,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 		sequences := make([]int64, len(messages))
 
 		// Use a single multi-row insert for the messages
-		err := s.insertTxRows(ctx, tx, msgQuery, func() {
+		err := s.insertTxRows(ctx, messagesTable, tx, msgQuery, func() {
 			for i, message := range messages {
 				message.Sequence = sequences[i]
 				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
@@ -230,7 +233,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 		// Use a single multi-row insert for the data refs
 		if dataRefCount > 0 {
 			dataRefSeqs := make([]int64, dataRefCount)
-			err = s.insertTxRows(ctx, tx, dataRefQuery, nil, dataRefSeqs, false)
+			err = s.insertTxRows(ctx, messagesDataJoinTable, tx, dataRefQuery, nil, dataRefSeqs, false)
 			if err != nil {
 				return err
 			}
@@ -265,8 +268,8 @@ func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *fftypes.Message
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if err := s.deleteTx(ctx, tx,
-		sq.Delete("messages").
+	if err := s.deleteTx(ctx, messagesTable, tx,
+		sq.Delete(messagesTable).
 			Where(sq.And{
 				sq.Eq{"id": message.Header.ID},
 			}),
@@ -289,8 +292,8 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 
 	if recreateDatarefs {
 		// Delete all the existing references, to replace them with new ones below
-		if err := s.deleteTx(ctx, tx,
-			sq.Delete("messages_data").
+		if err := s.deleteTx(ctx, messagesDataJoinTable, tx,
+			sq.Delete(messagesDataJoinTable).
 				Where(sq.And{
 					sq.Eq{"message_id": message.Header.ID},
 				}),
@@ -308,8 +311,8 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 			return i18n.NewError(ctx, coremsgs.MsgMissingDataHashIndex, msgDataRefIDx)
 		}
 		// Add the linkage
-		if _, err := s.insertTx(ctx, tx,
-			sq.Insert("messages_data").
+		if _, err := s.insertTx(ctx, messagesDataJoinTable, tx,
+			sq.Insert(messagesDataJoinTable).
 				Columns(
 					"message_id",
 					"data_id",
@@ -346,14 +349,14 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) e
 		}
 	}
 
-	existingRefs, _, err := s.query(ctx,
+	existingRefs, _, err := s.query(ctx, messagesDataJoinTable,
 		sq.Select(
 			"message_id",
 			"data_id",
 			"data_hash",
 			"data_idx",
 		).
-			From("messages_data").
+			From(messagesDataJoinTable).
 			Where(sq.Eq{"message_id": msgIDs}).
 			OrderBy("data_idx"),
 	)
@@ -368,7 +371,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) e
 		var dataHash fftypes.Bytes32
 		var dataIDx int
 		if err = existingRefs.Scan(&msgID, &dataID, &dataHash, &dataIDx); err != nil {
-			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages_data")
+			return i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesDataJoinTable)
 		}
 		for _, m := range msgs {
 			if *m.Header.ID == msgID {
@@ -413,7 +416,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 		&msg.Sequence,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesTable)
 	}
 	return &msg, nil
 }
@@ -422,9 +425,9 @@ func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (messa
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, messagesTable,
 		sq.Select(cols...).
-			From("messages").
+			From(messagesTable).
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -455,7 +458,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgFilterCountNotSupported)
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, messagesTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -476,11 +479,11 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 			return nil, nil, err
 		}
 	}
-	return msgs, s.queryRes(ctx, tx, "messages", fop, fi), err
+	return msgs, s.queryRes(ctx, messagesTable, tx, fop, fi), err
 }
 
 func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (ids []*fftypes.IDAndSequence, err error) {
-	query, _, _, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn).From("messages"), filter, msgFilterFieldMap,
+	query, _, _, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn).From(messagesTable), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
 			"created",
@@ -489,7 +492,7 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 		return nil, err
 	}
 
-	rows, _, err := s.query(ctx, query)
+	rows, _, err := s.query(ctx, messagesTable, query)
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +503,7 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 		var id fftypes.IDAndSequence
 		err = rows.Scan(&id.ID, &id.Sequence)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages")
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesTable)
 		}
 		ids = append(ids, &id)
 	}
@@ -513,11 +516,11 @@ func (s *SQLCommon) GetBatchIDsForDataAttachments(ctx context.Context, dataIDs [
 }
 
 func (s *SQLCommon) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error) {
-	return s.queryBatchIDs(ctx, sq.Select("batch_id").From("messages").Where(sq.Eq{"id": msgIDs}))
+	return s.queryBatchIDs(ctx, sq.Select("batch_id").From(messagesTable).Where(sq.Eq{"id": msgIDs}))
 }
 
 func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (batchIDs []*fftypes.UUID, err error) {
-	rows, _, err := s.query(ctx, query)
+	rows, _, err := s.query(ctx, messagesTable, query)
 	if err != nil {
 		return nil, err
 	}
@@ -528,7 +531,7 @@ func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (
 		var batchID *fftypes.UUID
 		err = rows.Scan(&batchID)
 		if err != nil {
-			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "messages")
+			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesTable)
 		}
 		// Only append non-nil batch IDs
 		if batchID != nil {
@@ -541,7 +544,7 @@ func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (
 func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From("messages"), filter, msgFilterFieldMap,
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(messagesTable), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
 			&database.SortField{Field: "created", Descending: true},
@@ -580,7 +583,7 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("messages"), update, msgFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(messagesTable), update, msgFilterFieldMap)
 	if err != nil {
 		return err
 	}
@@ -590,7 +593,7 @@ func (s *SQLCommon) UpdateMessages(ctx context.Context, filter database.Filter, 
 		return err
 	}
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events filter based update */)
+	_, err = s.updateTx(ctx, messagesTable, tx, query, nil /* no change events filter based update */)
 	if err != nil {
 		return err
 	}

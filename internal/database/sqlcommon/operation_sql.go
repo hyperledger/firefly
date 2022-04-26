@@ -51,6 +51,8 @@ var (
 	}
 )
 
+const operationsTable = "operations"
+
 func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...database.PostCompletionHook) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -58,8 +60,8 @@ func (s *SQLCommon) InsertOperation(ctx context.Context, operation *fftypes.Oper
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	if _, err = s.insertTx(ctx, tx,
-		sq.Insert("operations").
+	if _, err = s.insertTx(ctx, operationsTable, tx,
+		sq.Insert(operationsTable).
 			Columns(opColumns...).
 			Values(
 				operation.ID,
@@ -105,16 +107,16 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*fftypes.Opera
 		&op.Retry,
 	)
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "operations")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, operationsTable)
 	}
 	return &op, nil
 }
 
 func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *fftypes.Operation, err error) {
 
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, operationsTable,
 		sq.Select(opColumns...).
-			From("operations").
+			From(operationsTable).
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -137,12 +139,12 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (ope
 
 func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*fftypes.Operation, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From("operations"), filter, opFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From(operationsTable), filter, opFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, operationsTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -157,7 +159,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 		ops = append(ops, op)
 	}
 
-	return ops, s.queryRes(ctx, tx, "operations", fop, fi), err
+	return ops, s.queryRes(ctx, operationsTable, tx, fop, fi), err
 }
 
 func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) (err error) {
@@ -168,7 +170,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("operations"), update, opFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(operationsTable), update, opFilterFieldMap)
 	if err != nil {
 		return err
 	}
@@ -178,7 +180,7 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 		sq.Eq{"namespace": ns},
 	})
 
-	_, err = s.updateTx(ctx, tx, query, func() {
+	_, err = s.updateTx(ctx, operationsTable, tx, query, func() {
 		s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeUpdated, ns, id)
 	})
 	if err != nil {

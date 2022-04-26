@@ -55,6 +55,8 @@ var (
 	}
 )
 
+const dataTable = "data"
+
 func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *fftypes.Data) (int64, error) {
 	datatype := data.Datatype
 	if datatype == nil {
@@ -64,8 +66,8 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 	if blob == nil {
 		blob = &fftypes.BlobRef{}
 	}
-	return s.updateTx(ctx, tx,
-		sq.Update("data").
+	return s.updateTx(ctx, dataTable, tx,
+		sq.Update(dataTable).
 			Set("validator", string(data.Validator)).
 			Set("namespace", data.Namespace).
 			Set("datatype_name", datatype.Name).
@@ -114,8 +116,8 @@ func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *fftypes.Da
 }
 
 func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, requestConflictEmptyResult bool) (int64, error) {
-	return s.insertTxExt(ctx, tx,
-		s.setDataInsertValues(sq.Insert("data").Columns(dataColumnsWithValue...), data),
+	return s.insertTxExt(ctx, dataTable, tx,
+		s.setDataInsertValues(sq.Insert(dataTable).Columns(dataColumnsWithValue...), data),
 		func() {
 			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
 		}, requestConflictEmptyResult)
@@ -144,9 +146,9 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 
 	if !optimized {
 		// Do a select within the transaction to determine if the UUID already exists
-		dataRows, _, err := s.queryTx(ctx, tx,
+		dataRows, _, err := s.queryTx(ctx, dataTable, tx,
 			sq.Select("hash").
-				From("data").
+				From(dataTable).
 				Where(sq.Eq{"id": data.ID}),
 		)
 		if err != nil {
@@ -188,12 +190,12 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray fftypes.DataA
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
 	if s.features.MultiRowInsert {
-		query := sq.Insert("data").Columns(dataColumnsWithValue...)
+		query := sq.Insert(dataTable).Columns(dataColumnsWithValue...)
 		for _, data := range dataArray {
 			query = s.setDataInsertValues(query, data)
 		}
 		sequences := make([]int64, len(dataArray))
-		err := s.insertTxRows(ctx, tx, query, func() {
+		err := s.insertTxRows(ctx, dataTable, tx, query, func() {
 			for _, data := range dataArray {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
 			}
@@ -245,7 +247,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 		data.Datatype = nil
 	}
 	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "data")
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, dataTable)
 	}
 	return &data, nil
 }
@@ -258,9 +260,9 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	} else {
 		cols = dataColumnsNoValue
 	}
-	rows, _, err := s.query(ctx,
+	rows, _, err := s.query(ctx, dataTable,
 		sq.Select(cols...).
-			From("data").
+			From(dataTable).
 			Where(sq.Eq{"id": id}),
 	)
 	if err != nil {
@@ -283,12 +285,12 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 
 func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message fftypes.DataArray, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From("data"), filter, dataFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From(dataTable), filter, dataFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, dataTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -303,18 +305,18 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 		data = append(data, d)
 	}
 
-	return data, s.queryRes(ctx, tx, "data", fop, fi), err
+	return data, s.queryRes(ctx, dataTable, tx, fop, fi), err
 
 }
 
 func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From("data"), filter, dataFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From(dataTable), filter, dataFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	rows, tx, err := s.query(ctx, query)
+	rows, tx, err := s.query(ctx, dataTable, query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -328,12 +330,12 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (me
 			&ref.Hash,
 		)
 		if err != nil {
-			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, "data")
+			return nil, nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, dataTable)
 		}
 		refs = append(refs, &ref)
 	}
 
-	return refs, s.queryRes(ctx, tx, "data", fop, fi), err
+	return refs, s.queryRes(ctx, dataTable, tx, fop, fi), err
 
 }
 
@@ -345,13 +347,13 @@ func (s *SQLCommon) UpdateData(ctx context.Context, id *fftypes.UUID, update dat
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	query, err := s.buildUpdate(sq.Update("data"), update, dataFilterFieldMap)
+	query, err := s.buildUpdate(sq.Update(dataTable), update, dataFilterFieldMap)
 	if err != nil {
 		return err
 	}
 	query = query.Where(sq.Eq{"id": id})
 
-	_, err = s.updateTx(ctx, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, dataTable, tx, query, nil /* no change events for filter based updates */)
 	if err != nil {
 		return err
 	}
