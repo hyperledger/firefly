@@ -2504,13 +2504,13 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) 
 	return r0
 }
 
-// ResolveOperation provides a mock function with given fields: ctx, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
-	ret := _m.Called(ctx, id, status, errorMsg, output)
+// ResolveOperation provides a mock function with given fields: ctx, ns, id, status, errorMsg, output
+func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+	ret := _m.Called(ctx, ns, id, status, errorMsg, output)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, id, status, errorMsg, output)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, ns, id, status, errorMsg, output)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2686,13 +2686,13 @@ func (_m *Plugin) UpdateOffset(ctx context.Context, rowID int64, update database
 	return r0
 }
 
-// UpdateOperation provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
+// UpdateOperation provides a mock function with given fields: ctx, ns, id, update
+func (_m *Plugin) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) error {
+	ret := _m.Called(ctx, ns, id, update)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, database.Update) error); ok {
+		r0 = rf(ctx, ns, id, update)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2938,7 +2938,7 @@ func (_m *Plugin) UpsertIdentity(ctx context.Context, data *fftypes.Identity, op
 	return r0
 }
 
-// UpsertMessage provides a mock function with given fields: ctx, message, optimization
+// UpsertMessage provides a mock function with given fields: ctx, message, optimization, hooks
 func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) error {
 	_va := make([]interface{}, len(hooks))
 	for _i := range hooks {
@@ -2950,8 +2950,8 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, o
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization) error); ok {
-		r0 = rf(ctx, message, optimization)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization, ...database.PostCompletionHook) error); ok {
+		r0 = rf(ctx, message, optimization, hooks...)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -172,8 +172,9 @@ func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *fftypes.Op
 
 func opDownloadBatch(op *fftypes.Operation, ns string, payloadRef string) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
 		Data: downloadBatchData{
 			Namespace:  ns,
 			PayloadRef: payloadRef,
@@ -183,8 +184,9 @@ func opDownloadBatch(op *fftypes.Operation, ns string, payloadRef string) *fftyp
 
 func opDownloadBlob(op *fftypes.Operation, ns string, dataID *fftypes.UUID, payloadRef string) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
 		Data: downloadBlobData{
 			Namespace:  ns,
 			DataID:     dataID,

@@ -149,16 +149,18 @@ func (pm *privateMessaging) OnOperationUpdate(ctx context.Context, op *fftypes.O
 
 func opSendBlob(op *fftypes.Operation, node *fftypes.Identity, blob *fftypes.Blob) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: transferBlobData{Node: node, Blob: blob},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      transferBlobData{Node: node, Blob: blob},
 	}
 }
 
 func opSendBatch(op *fftypes.Operation, node *fftypes.Identity, transport *fftypes.TransportWrapper) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: batchSendData{Node: node, Transport: transport},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      batchSendData{Node: node, Transport: transport},
 	}
 }

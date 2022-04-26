@@ -27,7 +27,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/events"
@@ -55,13 +54,13 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	svr := httptest.NewServer(ws)
 
 	clientPrefix := config.NewPluginConfig("ut.wsclient")
-	wsconfig.InitPrefix(clientPrefix)
+	wsclient.InitPrefix(clientPrefix)
 	qs := ""
 	if len(queryParams) > 0 {
 		qs = fmt.Sprintf("?%s", strings.Join(queryParams, "&"))
 	}
 	clientPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
-	wsConfig := wsconfig.GenerateConfigFromPrefix(clientPrefix)
+	wsConfig := wsclient.GenerateConfigFromPrefix(clientPrefix)
 
 	wsc, err := wsclient.New(ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)

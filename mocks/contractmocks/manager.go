@@ -169,29 +169,6 @@ func (_m *Manager) GetContractAPI(ctx context.Context, httpServerURL string, ns 
 	return r0, r1
 }
 
-// GetContractAPIEvent provides a mock function with given fields: ctx, ns, apiName, eventPath
-func (_m *Manager) GetContractAPIEvent(ctx context.Context, ns string, apiName string, eventPath string) (*fftypes.FFIEvent, error) {
-	ret := _m.Called(ctx, ns, apiName, eventPath)
-
-	var r0 *fftypes.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFIEvent); ok {
-		r0 = rf(ctx, ns, apiName, eventPath)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIEvent)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, apiName, eventPath)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetContractAPIInterface provides a mock function with given fields: ctx, ns, apiName
 func (_m *Manager) GetContractAPIInterface(ctx context.Context, ns string, apiName string) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, ns, apiName)
@@ -245,29 +222,6 @@ func (_m *Manager) GetContractAPIListeners(ctx context.Context, ns string, apiNa
 	}
 
 	return r0, r1, r2
-}
-
-// GetContractAPIMethod provides a mock function with given fields: ctx, ns, apiName, methodPath
-func (_m *Manager) GetContractAPIMethod(ctx context.Context, ns string, apiName string, methodPath string) (*fftypes.FFIMethod, error) {
-	ret := _m.Called(ctx, ns, apiName, methodPath)
-
-	var r0 *fftypes.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFIMethod); ok {
-		r0 = rf(ctx, ns, apiName, methodPath)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIMethod)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, apiName, methodPath)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetContractAPIs provides a mock function with given fields: ctx, httpServerURL, ns, filter

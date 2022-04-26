@@ -17,8 +17,8 @@
 package fabric
 
 import (
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 const (
@@ -53,7 +53,7 @@ const (
 
 func (f *Fabric) InitPrefix(prefix config.Prefix) {
 	fabconnectConf := prefix.SubPrefix(FabconnectConfigKey)
-	wsconfig.InitPrefix(fabconnectConf)
+	wsclient.InitPrefix(fabconnectConf)
 	fabconnectConf.AddKnownKey(FabconnectConfigDefaultChannel)
 	fabconnectConf.AddKnownKey(FabconnectConfigChaincode)
 	fabconnectConf.AddKnownKey(FabconnectConfigSigner)

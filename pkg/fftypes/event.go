@@ -86,6 +86,7 @@ type EnrichedEvent struct {
 	TokenPool         *TokenPool       `ffstruct:"EnrichedEvent" json:"tokenPool,omitempty"`
 	TokenTransfer     *TokenTransfer   `ffstruct:"EnrichedEvent" json:"tokenTransfer,omitempty"`
 	Transaction       *Transaction     `ffstruct:"EnrichedEvent" json:"transaction,omitempty"`
+	Operation         *Operation       `ffstruct:"EnrichedEvent" json:"operation,omitempty"`
 }
 
 // EventDelivery adds the referred object to an event, as well as details of the subscription that caused the event to

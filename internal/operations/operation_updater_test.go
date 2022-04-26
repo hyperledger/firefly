@@ -114,15 +114,15 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: tx1.ID},
-		{ID: opID2, Type: fftypes.OpTypeTokenTransfer, Input: fftypes.JSONObject{"test": "test"}},
-		{ID: opID3, Type: fftypes.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
+		{ID: opID1, Namespace: "ns1", Type: fftypes.OpTypeBlockchainInvoke, Transaction: tx1.ID},
+		{ID: opID2, Namespace: "ns1", Type: fftypes.OpTypeTokenTransfer, Input: fftypes.JSONObject{"test": "test"}},
+		{ID: opID3, Namespace: "ns1", Type: fftypes.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
 	}, nil, nil)
 	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Transaction{tx1}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, opID1, fftypes.OpStatusSucceeded, "", fftypes.JSONObject(nil)).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, fftypes.OpStatusSucceeded, "", fftypes.JSONObject(nil)).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, tx1.ID, mock.Anything).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, opID2, fftypes.OpStatusFailed, "err1", fftypes.JSONObject{"test": true}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, opID3, fftypes.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil).
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, fftypes.OpStatusFailed, "err1", fftypes.JSONObject{"test": true}).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID3, fftypes.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil).
 		Run(func(args mock.Arguments) {
 			close(done)
 		})
@@ -178,9 +178,9 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke},
+		{ID: opID1, Namespace: "ns1", Type: fftypes.OpTypeBlockchainInvoke},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ou.initQueues()
 

@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/ffresty"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -42,9 +41,9 @@ func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, ws *webSock
 	svr := httptest.NewServer(http.HandlerFunc(ae.ServeHTTPWebSocketListener))
 
 	clientPrefix := config.NewPluginConfig("ut.wsclient")
-	wsconfig.InitPrefix(clientPrefix)
+	wsclient.InitPrefix(clientPrefix)
 	clientPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
-	wsConfig := wsconfig.GenerateConfigFromPrefix(clientPrefix)
+	wsConfig := wsclient.GenerateConfigFromPrefix(clientPrefix)
 
 	wsc, err := wsclient.New(ae.ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)

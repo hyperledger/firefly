@@ -100,7 +100,8 @@ type Operation struct {
 // PreparedOperation from an Operation. Data is defined by the Manager, but should be JSON-serializable
 // to support inspection and debugging.
 type PreparedOperation struct {
-	ID   *UUID       `json:"id"`
-	Type OpType      `json:"type" ffenum:"optype"`
-	Data interface{} `json:"data"`
+	ID        *UUID       `json:"id"`
+	Namespace string      `json:"namespace"`
+	Type      OpType      `json:"type" ffenum:"optype"`
+	Data      interface{} `json:"data"`
 }

@@ -162,7 +162,7 @@ func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (
 	return ops, s.queryRes(ctx, operationsTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
+func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update database.Update) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -175,9 +175,14 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 		return err
 	}
 	query = query.Set("updated", fftypes.Now())
-	query = query.Where(sq.Eq{"id": id})
+	query = query.Where(sq.And{
+		sq.Eq{"id": id},
+		sq.Eq{"namespace": ns},
+	})
 
-	_, err = s.updateTx(ctx, operationsTable, tx, query, nil /* no change events for filter based updates */)
+	_, err = s.updateTx(ctx, operationsTable, tx, query, func() {
+		s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, fftypes.ChangeEventTypeUpdated, ns, id)
+	})
 	if err != nil {
 		return err
 	}
@@ -185,12 +190,12 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, id *fftypes.UUID, updat
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) ResolveOperation(ctx context.Context, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error) {
+func (s *SQLCommon) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) (err error) {
 	update := database.OperationQueryFactory.NewUpdate(ctx).
 		Set("status", status).
 		Set("error", errorMsg)
 	if output != nil {
 		update.Set("output", output)
 	}
-	return s.UpdateOperation(ctx, id, update)
+	return s.UpdateOperation(ctx, ns, id, update)
 }

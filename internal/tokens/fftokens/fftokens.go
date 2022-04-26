@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/internal/coreconfig/wsconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/config"
@@ -144,7 +143,7 @@ func (ft *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix,
 	ft.client = ffresty.New(ft.ctx, prefix)
 	ft.capabilities = &tokens.Capabilities{}
 
-	wsConfig := wsconfig.GenerateConfigFromPrefix(prefix)
+	wsConfig := wsclient.GenerateConfigFromPrefix(prefix)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/api/ws"

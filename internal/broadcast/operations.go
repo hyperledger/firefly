@@ -174,16 +174,18 @@ func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *fftypes.O
 
 func opUploadBatch(op *fftypes.Operation, batch *fftypes.Batch, batchPersisted *fftypes.BatchPersisted) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: uploadBatchData{Batch: batch, BatchPersisted: batchPersisted},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      uploadBatchData{Batch: batch, BatchPersisted: batchPersisted},
 	}
 }
 
 func opUploadBlob(op *fftypes.Operation, data *fftypes.Data, blob *fftypes.Blob) *fftypes.PreparedOperation {
 	return &fftypes.PreparedOperation{
-		ID:   op.ID,
-		Type: op.Type,
-		Data: uploadBlobData{Data: data, Blob: blob},
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data:      uploadBlobData{Data: data, Blob: blob},
 	}
 }
