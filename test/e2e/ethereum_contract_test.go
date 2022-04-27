@@ -247,3 +247,57 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 	assert.Equal(suite.testState.t, `{"output":"42"}`, string(resJSON))
 	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }
+
+func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
+	defer suite.testState.done()
+
+	received1 := wsReader(suite.testState.ws1, true)
+	APIName := fftypes.NewUUID().String()
+
+	ffiReference := &fftypes.FFIReference{
+		ID: suite.interfaceID,
+	}
+
+	location := map[string]interface{}{
+		"address": suite.contractAddress,
+	}
+	locationBytes, _ := json.Marshal(location)
+
+	createContractAPIResult, err := CreateContractAPI(suite.T(), suite.testState.client1, APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)))
+	assert.NoError(suite.testState.t, err)
+
+	listener, err := CreateContractAPIListener(suite.T(), suite.testState.client1, APIName, "Changed", "firefly_e2e")
+	assert.NoError(suite.T(), err)
+
+	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	assert.Equal(suite.T(), 1, len(listeners))
+	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
+
+	input := fftypes.JSONAny(`{"newValue": 42}`)
+	invokeResult, err := InvokeContractAPIMethod(suite.T(), suite.testState.client1, APIName, "set", &input)
+	assert.NoError(suite.testState.t, err)
+	assert.NotNil(suite.T(), invokeResult)
+
+	match := map[string]interface{}{
+		"info": map[string]interface{}{
+			"address": suite.contractAddress,
+		},
+		"output": map[string]interface{}{
+			"_value": "42",
+			"_from":  suite.testState.org1key.Value,
+		},
+		"listener": listener.ID.String(),
+	}
+	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
+	assert.NotNil(suite.T(), event)
+	assert.NoError(suite.testState.t, err)
+	fmt.Println(createContractAPIResult)
+
+	res, err := QueryContractAPIMethod(suite.T(), suite.testState.client1, APIName, "get", fftypes.JSONAnyPtr("{}"))
+	assert.NoError(suite.testState.t, err)
+	resJSON, err := json.Marshal(res)
+	assert.NoError(suite.testState.t, err)
+	assert.Equal(suite.testState.t, `{"output":"42"}`, string(resJSON))
+
+	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
+}

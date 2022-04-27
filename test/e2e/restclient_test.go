@@ -61,6 +61,7 @@ var (
 	urlContractQuery     = "/namespaces/default/contracts/query"
 	urlContractInterface = "/namespaces/default/contracts/interfaces"
 	urlContractListeners = "/namespaces/default/contracts/listeners"
+	urlContractAPI       = "/namespaces/default/apis"
 	urlBlockchainEvents  = "/namespaces/default/blockchainevents"
 	urlGetOrganizations  = "/network/organizations"
 	urlGetOrgKeys        = "/namespaces/ff_system/identities/%s/verifiers"
@@ -650,15 +651,15 @@ func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference 
 		},
 		EventPath: eventPath,
 	}
-	var sub fftypes.ContractListener
+	var listener fftypes.ContractListener
 	path := urlContractListeners
 	resp, err := client.R().
 		SetBody(&body).
-		SetResult(&sub).
+		SetResult(&listener).
 		Post(path)
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
-	return &sub
+	return &listener
 }
 
 func GetContractListeners(t *testing.T, client *resty.Client, startTime time.Time) (subs []*fftypes.ContractListener) {
@@ -726,6 +727,71 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
+}
+
+func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIReference *fftypes.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
+	apiReqBody := &fftypes.ContractAPI{
+		Name:      name,
+		Interface: FFIReference,
+		Location:  location,
+	}
+
+	var res interface{}
+	path := urlContractAPI
+	resp, err := client.R().
+		SetBody(apiReqBody).
+		SetResult(&res).
+		SetQueryParam("confirm", "true").
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func InvokeContractAPIMethod(t *testing.T, client *resty.Client, APIName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {
+	apiReqBody := map[string]interface{}{
+		"input": input,
+	}
+	var res interface{}
+	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractAPI, APIName, methodName)
+	resp, err := client.R().
+		SetBody(apiReqBody).
+		SetResult(&res).
+		SetQueryParam("confirm", "true").
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func QueryContractAPIMethod(t *testing.T, client *resty.Client, APIName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {
+	apiReqBody := map[string]interface{}{
+		"input": input,
+	}
+	var res interface{}
+	path := fmt.Sprintf("%s/%s/query/%s", urlContractAPI, APIName, methodName)
+	resp, err := client.R().
+		SetBody(apiReqBody).
+		SetResult(&res).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return res, err
+}
+
+func CreateContractAPIListener(t *testing.T, client *resty.Client, APIName, eventName, topic string) (*fftypes.ContractListener, error) {
+	apiReqBody := map[string]interface{}{
+		"topic": topic,
+	}
+	var listener fftypes.ContractListener
+	path := fmt.Sprintf("%s/%s/listeners/%s", urlContractAPI, APIName, eventName)
+	resp, err := client.R().
+		SetBody(apiReqBody).
+		SetResult(&listener).
+		Post(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "POST %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return &listener, err
 }
 
 func GetEvent(t *testing.T, client *resty.Client, eventID string) (interface{}, error) {
