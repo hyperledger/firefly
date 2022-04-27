@@ -264,7 +264,8 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	locationBytes, _ := json.Marshal(location)
 
 	createContractAPIResult, err := CreateContractAPI(suite.T(), suite.testState.client1, APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)))
-	assert.NoError(suite.testState.t, err)
+	assert.NotNil(suite.T(), createContractAPIResult)
+	assert.NoError(suite.T(), err)
 
 	listener, err := CreateContractAPIListener(suite.T(), suite.testState.client1, APIName, "Changed", "firefly_e2e")
 	assert.NoError(suite.T(), err)
@@ -291,7 +292,6 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 	assert.NoError(suite.testState.t, err)
-	fmt.Println(createContractAPIResult)
 
 	res, err := QueryContractAPIMethod(suite.T(), suite.testState.client1, APIName, "get", fftypes.JSONAnyPtr("{}"))
 	assert.NoError(suite.testState.t, err)
