@@ -1,0 +1,3 @@
+BEGIN;
+ALTER TABLE contractapis ADD COLUMN message_id UUID NOT NULL;
+COMMIT;

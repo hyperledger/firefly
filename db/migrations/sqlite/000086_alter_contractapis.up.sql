@@ -1,0 +1,1 @@
+-- SQLite doesn't need any change here because it already had the correct columns
