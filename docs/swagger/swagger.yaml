@@ -10367,10 +10367,6 @@ paths:
                       description: A string identifying the parties and entities in
                         the scope of this approval, as provided by the token connector
                       type: string
-                    tokenIndex:
-                      description: The index of the token within the pool that this
-                        approval applies to
-                      type: string
                     tx:
                       description: If submitted via FireFly, this will reference the
                         UUID of the FireFly transaction (if the token connector in
@@ -10431,25 +10427,10 @@ paths:
                     of the approval.  See your chosen token connector documentation
                     for details
                   type: object
-                info:
-                  additionalProperties:
-                    description: Token connector specific information about the approval
-                      operation, such as whether it applied to a limited balance of
-                      a fungible token. See your chosen token connector documentation
-                      for details
-                  description: Token connector specific information about the approval
-                    operation, such as whether it applied to a limited balance of
-                    a fungible token. See your chosen token connector documentation
-                    for details
-                  type: object
                 key:
                   description: The blockchain signing key for the approval request.
                     On input defaults to the first signing key of the organization
                     that operates the node
-                  type: string
-                namespace:
-                  description: The namespace for the approval, which must match the
-                    namespace of the token pool
                   type: string
                 operator:
                   description: The blockchain identity that is granted the approval
@@ -10457,10 +10438,6 @@ paths:
                 pool:
                   description: The UUID the token pool this approval applies to
                   format: uuid
-                  type: string
-                tokenIndex:
-                  description: The index of the token within the pool that this approval
-                    applies to
                   type: string
               type: object
       responses:
@@ -10530,10 +10507,6 @@ paths:
                   subject:
                     description: A string identifying the parties and entities in
                       the scope of this approval, as provided by the token connector
-                    type: string
-                  tokenIndex:
-                    description: The index of the token within the pool that this
-                      approval applies to
                     type: string
                   tx:
                     description: If submitted via FireFly, this will reference the
@@ -10616,10 +10589,6 @@ paths:
                   subject:
                     description: A string identifying the parties and entities in
                       the scope of this approval, as provided by the token connector
-                    type: string
-                  tokenIndex:
-                    description: The index of the token within the pool that this
-                      approval applies to
                     type: string
                   tx:
                     description: If submitted via FireFly, this will reference the
