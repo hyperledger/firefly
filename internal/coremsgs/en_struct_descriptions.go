@@ -476,7 +476,6 @@ var (
 	// TokenApproval field descriptions
 	TokenApprovalLocalID         = ffm("TokenApproval.localId", "The UUID of this token approval, in the local FireFly node")
 	TokenApprovalPool            = ffm("TokenApproval.pool", "The UUID the token pool this approval applies to")
-	TokenApprovalTokenIndex      = ffm("TokenApproval.tokenIndex", "The index of the token within the pool that this approval applies to")
 	TokenApprovalConnector       = ffm("TokenApproval.connector", "The name of the token connector, as specified in the FireFly core configuration file. Required on input when there are more than one token connectors configured")
 	TokenApprovalKey             = ffm("TokenApproval.key", "The blockchain signing key for the approval request. On input defaults to the first signing key of the organization that operates the node")
 	TokenApprovalOperator        = ffm("TokenApproval.operator", "The blockchain identity that is granted the approval")
