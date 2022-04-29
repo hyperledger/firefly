@@ -358,6 +358,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	poolLocator := data.GetString("poolLocator")
 	operatorAddress := data.GetString("operator")
 	approved := data.GetBool("approved")
+	info := data.GetObject("info") // optional
 
 	blockchainEvent := data.GetObject("blockchain")
 	blockchainID := blockchainEvent.GetString("id")
@@ -402,6 +403,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 			Approved:   approved,
 			ProtocolID: protocolID,
 			Subject:    subject,
+			Info:       info,
 			TX: fftypes.TransactionRef{
 				ID:   transferData.TX,
 				Type: txType,
