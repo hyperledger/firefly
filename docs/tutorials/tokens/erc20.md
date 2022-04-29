@@ -263,7 +263,7 @@ You can also approve other wallets to transfer tokens on your behalf with the `/
 
 - `approved`: Sets whether another account is allowed to transfer tokens out of this wallet or not. If not specified, will default to `false`.
 - `operator`: The other account that is allowed to transfer tokens out of the wallet specified in the `key` field
-- `config.amount`: The amount of tokens the other account is allowed to transfer. If `0` or not set, the approval is valid for any number.
+- `config.allowance`: The number of tokens the other account is allowed to transfer. If `0` or not set, the approval is valid for any number.
 - `key`: The wallet address for the approval. If not set, it defaults to the address of the FireFly node submitting the transaction
 
 Here is an example request that would let the signing account `0x634ee8c7d0894d086c7af1fc8514736aed251528` transfer up to 10×10<sup>18</sup> (`10000000000000000000`) tokens from my wallet
@@ -275,7 +275,7 @@ Here is an example request that would let the signing account `0x634ee8c7d0894d0
   "approved": true,
   "operator": "0x634ee8c7d0894d086c7af1fc8514736aed251528",
   "config": {
-      "amount": "10000000000000000000"
+      "allowance": "10000000000000000000"
   }
 }
 ```
@@ -294,7 +294,7 @@ Here is an example request that would let the signing account `0x634ee8c7d0894d0
         "id": "00faa011-f42c-403d-a047-2df7318967cd"
     },
     "config": {
-        "amount": "10000000000000000000"
+        "allowance": "10000000000000000000"
     }
 }
 ```
