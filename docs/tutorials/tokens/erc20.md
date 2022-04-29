@@ -18,25 +18,25 @@ nav_order: 1
 ---
 
 ## Previous steps: Start your environment
-If you haven't started a FireFly stack already, please go back to the previous step and read the guide on how to [Start your environment](./setup_env.md).
+If you haven't started a FireFly stack already, please go to the Getting Started guide on how to [Start your environment](./setup_env.md). This will set up a token connector that works with both ERC-20 and ERC-721 by default.
 
 [← ② Start your environment](setup_env.md){: .btn .btn-purple .mb-5}
 
-The default Token Connector that the FireFly CLI sets up is for ERC-20 and ERC-721. If you would like to use one of these contracts, all you need to do is go through the first two steps in the Getting Started guide.
-
-## Use the Sandbox (optional)
-At this point you could open the Sandbox to [http://127.0.0.1:5109/home?action=tokens.pools](http://127.0.0.1:5109/home?action=tokens.pools) and perform the functions outlined in the rest of this guide. Or you can keep reading to learn how to build HTTP requests to work with tokens in FireFly.
-![Tokens Sandbox](../../images/sandbox/sandbox_token_pool.png) 
-
-## Create a pool
-After you stack is up and running, the first thing you need to do is create a Token Pool. Every application will need at least one Token Pool. At a minimum, you must always
-specify a `name` and `type` (`fungible` or `nonfungible`) for the pool.
-
-### Create a new token using the sample token factory
+## Use the built in sample token factory
 
 If you are using the default ERC-20 / ERC-721 token connector, when the FireFly CLI set up your FireFly stack, it also deployed a token factory contract. When you create a token pool through FireFly's token APIs, the token factory contract will automatically deploy an ERC-20 or ERC-721 contract, based on the pool `type` in the API request.
 
 <div style="color: #ffffff; background: #ff7700; padding: 1em; border-radius: 5px;">⚠️ <span style="font-weight: bold;">WARNING</span>: The default token contract that was deployed by the FireFly CLI is only provided for the purpose of learning about FireFly. It is <span style="font-weight: bold;">not</span> a production grade contract. If you intend to deploy a production application using tokens FireFly you should research token contract best practices. For details, <a style="color: #ffffff;" href="https://github.com/hyperledger/firefly-tokens-erc20-erc721/blob/main/solidity/contracts/TokenFactory.sol">please see the source code</a> for the contract that was deployed.</div>
+
+## Use the Sandbox (optional)
+At this point you could open the Sandbox at [http://127.0.0.1:5109/home?action=tokens.pools](http://127.0.0.1:5109/home?action=tokens.pools) and perform the functions outlined in the rest of this guide. Or you can keep reading to learn how to build HTTP requests to work with tokens in FireFly.
+![Tokens Sandbox](../../images/sandbox/sandbox_token_pool.png) 
+
+## Create a pool
+After you stack is up and running, the first thing you need to do is create a Token Pool. Every application will need at least one Token Pool. At a minimum, you must always
+specify a `name` and `type` for the pool.
+
+If you're using the default ERC-20 / ERC-721 token connector and its sample token factory, it will automatically deploy a new token contract, based on the `type` in the request to create the token pool.
 
 #### Request
 `POST` `http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools`
@@ -69,7 +69,9 @@ Other parameters:
 - You may pass through a `config` object of additional parameters, if supported by your token connector
 - You may specify a `key` understood by the connector (i.e. an Ethereum address) if you'd like to use a non-default signing identity
 
-To lookup the address of the new contract, you can lookup the Token Pool by its ID on the API:
+### Get the address of the deployed contract
+
+To lookup the address of the new contract, you can lookup the Token Pool by its ID on the API. Creating the token pool will also emit an event which will contain the address. To query the token pool you can make a `GET` request to the pool's ID:
 
 #### Request
 `GET` `http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools/5811e8d5-52d0-44b1-8b75-73f5ff88f598`
@@ -100,7 +102,7 @@ To lookup the address of the new contract, you can lookup the Token Pool by its 
 }
 ```
 
-### Creating a pool for an existing contract
+### Create a pool for an existing contract
 If you wish to use a contract that is already on the chain, you can pass the address in a `config` object with an `address` when you make the request to create the Token Pool.
 
 `POST` `http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools`
@@ -117,7 +119,7 @@ If you wish to use a contract that is already on the chain, you can pass the add
 
 ## Mint tokens
 
-Once you have a token pool, you can mint tokens within it.With a token contract deployed by the default token factory, only the creator of a pool is allowed to mint, but a different contract may define its own permission model.
+Once you have a token pool, you can mint tokens within it. With a token contract deployed by the default token factory, only the creator of a pool is allowed to mint, but a different contract may define its own permission model.
 
 > **NOTE:** The default token factory creates an ERC-20 with 18 decimal places. This means that if you want to create 100 tokens, the number submitted to the API / blockchain should actually be 100×10<sup>18</sup> = `100000000000000000000`. This allows users to work with "fractional" tokens even though Ethereum virtual machines only support integer arithmetic.
 
@@ -154,7 +156,7 @@ Other parameters:
 
 ## Transfer tokens
 
-You may transfer tokens within a pool by specifying an amount and a destination understood by the connector (i.e. an Ethereum address). With a token contract deployed by the default token factory, only the owner of a token may transfer it away, but a different contract may define its own permission model.
+You may transfer tokens within a pool by specifying an amount and a destination understood by the connector (i.e. an Ethereum address). With a token contract deployed by the default token factory, only the owner of the tokens or another approved account may transfer their tokens, but a different contract may define its own permission model.
 
 #### Request
 `POST` `http://127.0.0.1:5000/api/v1/namespaces/default/tokens/transfers`
@@ -250,8 +252,6 @@ burn it, but a different contract may define its own permission model.
 }
 ```
 
-> **NOTE:** When burning a non-fungible token, the amount must always be `1`. The `tokenIndex` field is also required when burning a non-fungible token.
-
 Other parameters:
 - You must specify a `pool` name if you've created more than one pool
 - You may specify a `key` understood by the connector (i.e. an Ethereum address) if you'd like to use a non-default signing identity
@@ -259,10 +259,10 @@ Other parameters:
 
 
 ## Token approvals
-You can also approve other wallets to spend tokens on your behalf with the `/approvals` API. The important fields in a token approval API request are as follows:
+You can also approve other wallets to transfer tokens on your behalf with the `/approvals` API. The important fields in a token approval API request are as follows:
 
-- `approved`: Sets whether another account is allowed to transfer tokens out of this wallet or not. Defaults to `false`.
-- `operator`: The other account that is allowed to transfer tokens on behalf of this wallet
+- `approved`: Sets whether another account is allowed to transfer tokens out of this wallet or not. If not specified, will default to `false`.
+- `operator`: The other account that is allowed to transfer tokens out of the wallet specified in the `key` field
 - `config.amount`: The amount of tokens the other account is allowed to transfer. If `0` or not set, the approval is valid for any number.
 - `key`: The wallet address for the approval. If not set, it defaults to the address of the FireFly node submitting the transaction
 
@@ -300,7 +300,7 @@ Here is an example request that would let the signing account `0x634ee8c7d0894d0
 ```
 
 ## Use Metamask
-Now that you have an ERC-20 contract up and running, you may be wondering how to use Metamask (or some other wallet) with this contract. This section will walk you through how to do that.
+Now that you have an ERC-20 contract up and running, you may be wondering how to use Metamask (or some other wallet) with this contract. This section will walk you through how to connect Metamask to the blockchain and token contract that FireFly is using.
 
 ### Configure a new network
 The first thing we need to do is tell Metamask how to connect to our local blockchain node. To do that:
