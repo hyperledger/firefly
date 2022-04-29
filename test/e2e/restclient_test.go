@@ -578,6 +578,7 @@ func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 	path := urlTokenApprovals
 	resp, err := client.R().
 		SetQueryParam("pool", poolID.String()).
+		SetQueryParam("active", "true").
 		SetResult(&approvals).
 		Get(path)
 	require.NoError(t, err)
