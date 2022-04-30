@@ -27,6 +27,7 @@ const (
 	defaultBatchTimeout = 500
 	defaultPrefixShort  = "fly"
 	defaultPrefixLong   = "firefly"
+	defaultFromBlock    = "0"
 
 	defaultAddressResolverMethod        = "GET"
 	defaultAddressResolverResponseField = "address"
@@ -50,6 +51,8 @@ const (
 	EthconnectPrefixShort = "prefixShort"
 	// EthconnectPrefixLong is used in HTTP headers in requests to ethconnect
 	EthconnectPrefixLong = "prefixLong"
+	// EthconnectConfigFromBlock is the configuration of the first block to listen to when creating the listener for the FireFly contract
+	EthconnectConfigFromBlock = "fromBlock"
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
@@ -67,6 +70,9 @@ const (
 	AddressResolverCacheSize = "cache.size"
 	// AddressResolverCacheTTL the TTL on cache entries
 	AddressResolverCacheTTL = "cache.ttl"
+
+	// FFTMConfigKey is a sub-key in the config that optionally contains FireFly transaction connection information
+	FFTMConfigKey = "fftm"
 )
 
 func (e *Ethereum) InitPrefix(prefix config.Prefix) {
@@ -78,6 +84,10 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
+	ethconnectConf.AddKnownKey(EthconnectConfigFromBlock, defaultFromBlock)
+
+	fftmConf := prefix.SubPrefix(FFTMConfigKey)
+	ffresty.InitPrefix(fftmConf)
 
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
 	ffresty.InitPrefix(addressResolverConf)

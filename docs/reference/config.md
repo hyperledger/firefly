@@ -164,6 +164,7 @@ nav_order: 3
 |batchTimeout|How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream.|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`0`
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
 |instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
@@ -206,6 +207,41 @@ nav_order: 3
 |path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## blockchain.ethereum.fftm
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the FireFly Transaction Manager runtime, if enabled|`string`|`<nil>`
+
+## blockchain.ethereum.fftm.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## blockchain.ethereum.fftm.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Transaction Manager|`string`|`<nil>`
+
+## blockchain.ethereum.fftm.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## blockchain.fabric.fabconnect
 

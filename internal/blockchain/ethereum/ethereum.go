@@ -55,6 +55,7 @@ type Ethereum struct {
 	capabilities *blockchain.Capabilities
 	callbacks    blockchain.Callbacks
 	client       *resty.Client
+	fftmClient   *resty.Client
 	streams      *streamManager
 	initInfo     struct {
 		stream *eventStream
@@ -157,6 +158,7 @@ func (e *Ethereum) VerifierType() fftypes.VerifierType {
 func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
 	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
+	fftmConf := prefix.SubPrefix(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
@@ -173,6 +175,11 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	e.client = ffresty.New(e.ctx, ethconnectConf)
+
+	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
+		e.fftmClient = ffresty.New(e.ctx, fftmConf)
+	}
+
 	e.capabilities = &blockchain.Capabilities{
 		GlobalSequencer: true,
 	}
@@ -218,7 +225,8 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	e.streams = &streamManager{
-		client: e.client,
+		client:                       e.client,
+		fireFlySubscriptionFromBlock: ethconnectConf.GetString(EthconnectConfigFromBlock),
 	}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
@@ -226,7 +234,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.initInfo.stream.ID, e.topic)
-	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureFireFlySubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
 		return err
 	}
 
@@ -544,8 +552,12 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 		Method: abi,
 		Params: input,
 	}
+	client := e.fftmClient
+	if client == nil {
+		client = e.client
+	}
 	var resErr ethError
-	res, err := e.client.R().
+	res, err := client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
