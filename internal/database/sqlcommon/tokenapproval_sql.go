@@ -72,8 +72,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 	rows, _, err := s.queryTx(ctx, tokenapprovalTable, tx,
 		sq.Select("seq").
 			From(tokenapprovalTable).
-			Where(sq.Eq{"subject": approval.Subject}).
-			Where(sq.Eq{"pool_id": approval.Pool}),
+			Where(sq.Eq{"protocol_id": approval.ProtocolID}),
 	)
 	if err != nil {
 		return err
@@ -85,7 +84,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 		if _, err = s.updateTx(ctx, tokenapprovalTable, tx,
 			sq.Update(tokenapprovalTable).
 				Set("local_id", approval.LocalID).
-				Set("protocol_id", approval.ProtocolID).
+				Set("subject", approval.Subject).
 				Set("active", approval.Active).
 				Set("key", approval.Key).
 				Set("operator_key", approval.Operator).
@@ -97,8 +96,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 				Set("tx_type", approval.TX.Type).
 				Set("tx_id", approval.TX.ID).
 				Set("blockchain_event", approval.BlockchainEvent).
-				Where(sq.Eq{"subject": approval.Subject}).
-				Where(sq.Eq{"pool_id": approval.Pool}),
+				Where(sq.Eq{"protocol_id": approval.ProtocolID}),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID)
 			},
