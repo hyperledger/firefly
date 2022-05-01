@@ -81,7 +81,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	approval.Pool = pool.ID
 
 	// Check that approval has not already been recorded
-	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, approval.Pool, approval.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, approval.Connector, approval.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token approval '%s' has already been recorded - ignoring", approval.ProtocolID)
