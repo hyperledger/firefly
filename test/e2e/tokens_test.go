@@ -19,7 +19,6 @@ package e2e
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -29,28 +28,14 @@ import (
 
 type TokensTestSuite struct {
 	suite.Suite
-	testState     *testState
-	connector     string
-	erc20Address  string
-	erc721Address string
+	testState *testState
+	connector string
 }
 
 func (suite *TokensTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := readStackFile(suite.T())
 	suite.connector = stack.TokenProviders[0]
-	if suite.connector == "erc20_erc721" {
-		suite.erc20Address = os.Getenv("ERC20_CONTRACT_ADDRESS")
-		if suite.erc20Address == "" {
-			suite.T().Fatal("ERC20_CONTRACT_ADDRESS must be set")
-		}
-		suite.T().Logf("ERC20 address: %s", suite.erc20Address)
-		suite.erc721Address = os.Getenv("ERC721_CONTRACT_ADDRESS")
-		if suite.erc20Address == "" {
-			suite.T().Fatal("ERC721_CONTRACT_ADDRESS must be set")
-		}
-		suite.T().Logf("ERC721 address: %s", suite.erc721Address)
-	}
 }
 
 func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
@@ -72,9 +57,6 @@ func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {
 		Name:   poolName,
 		Type:   fftypes.TokenTypeFungible,
 		Config: fftypes.JSONObject{},
-	}
-	if suite.erc20Address != "" {
-		pool.Config["address"] = suite.erc20Address
 	}
 
 	poolResp := CreateTokenPool(suite.T(), suite.testState.client1, pool, false)
@@ -243,9 +225,6 @@ func (suite *TokensTestSuite) TestE2ENonFungibleTokensSync() {
 		Name:   poolName,
 		Type:   fftypes.TokenTypeNonFungible,
 		Config: fftypes.JSONObject{},
-	}
-	if suite.erc721Address != "" {
-		pool.Config["address"] = suite.erc721Address
 	}
 
 	poolOut := CreateTokenPool(suite.T(), suite.testState.client1, pool, true)
