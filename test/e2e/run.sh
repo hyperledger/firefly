@@ -74,7 +74,7 @@ if [ -z "${BLOCKCHAIN_PROVIDER}" ]; then
 fi
 
 if [ -z "${TOKENS_PROVIDER}" ]; then
-  TOKENS_PROVIDER=erc1155
+  TOKENS_PROVIDER=erc20_erc721
 fi
 
 if [ -z "${TEST_SUITE}" ]; then
@@ -110,11 +110,6 @@ fi
 
 if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
     export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
-fi
-
-if [ "$TOKENS_PROVIDER" == "erc20_erc721" ]; then
-    export ERC20_CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/erc20/ERC20WithData.json | jq -r '.address')
-    export ERC721_CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/erc721/ERC721WithData.json | jq -r '.address')
 fi
 
 create_accounts
