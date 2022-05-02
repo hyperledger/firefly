@@ -18,22 +18,22 @@ nav_order: 1
 ---
 
 ## Previous steps: Start your environment
-If you haven't started a FireFly stack already, please go to the Getting Started guide on how to [Start your environment](./setup_env.md). This will set up a token connector that works with both ERC-20 and ERC-721 by default.
+If you haven't started a FireFly stack already, please go to the Getting Started guide on how to [Start your environment](../../gettingstarted/setup_env.md). This will set up a token connector that works with both ERC-20 and ERC-721 by default.
 
-[← ② Start your environment](setup_env.md){: .btn .btn-purple .mb-5}
+[← ② Start your environment](../../gettingstarted/setup_env.md){: .btn .btn-purple .mb-5}
 
 ## Use the built in sample token factory
 
 If you are using the default ERC-20 / ERC-721 token connector, when the FireFly CLI set up your FireFly stack, it also deployed a token factory contract. When you create a token pool through FireFly's token APIs, the token factory contract will automatically deploy an ERC-20 or ERC-721 contract, based on the pool `type` in the API request.
 
-<div style="color: #ffffff; background: #ff7700; padding: 1em; border-radius: 5px;">⚠️ <span style="font-weight: bold;">WARNING</span>: The default token contract that was deployed by the FireFly CLI is only provided for the purpose of learning about FireFly. It is <span style="font-weight: bold;">not</span> a production grade contract. If you intend to deploy a production application using tokens FireFly you should research token contract best practices. For details, <a style="color: #ffffff;" href="https://github.com/hyperledger/firefly-tokens-erc20-erc721/blob/main/solidity/contracts/TokenFactory.sol">please see the source code</a> for the contract that was deployed.</div>
+<div style="color: #ffffff; background: #ff7700; padding: 1em; border-radius: 5px;">⚠️ <span style="font-weight: bold;">WARNING</span>: The default token contract that was deployed by the FireFly CLI is only provided for the purpose of learning about FireFly. It is <span style="font-weight: bold;">not</span> a production grade contract. If you intend to deploy a production application using tokens FireFly you should research token contract best practices. For details, <a style="color: #ffffff;" href="https://github.com/hyperledger/firefly-tokens-erc20-erc721/blob/main/samples/solidity/contracts/TokenFactory.sol">please see the source code</a> for the contract that was deployed.</div>
 
 ## Use the Sandbox (optional)
 At this point you could open the Sandbox at [http://127.0.0.1:5109/home?action=tokens.pools](http://127.0.0.1:5109/home?action=tokens.pools) and perform the functions outlined in the rest of this guide. Or you can keep reading to learn how to build HTTP requests to work with tokens in FireFly.
 ![Tokens Sandbox](../../images/sandbox/sandbox_token_pool.png) 
 
 ## Create a pool
-After you stack is up and running, the first thing you need to do is create a Token Pool. Every application will need at least one Token Pool. At a minimum, you must always
+After your stack is up and running, the first thing you need to do is create a Token Pool. Every application will need at least one Token Pool. At a minimum, you must always
 specify a `name` and `type` for the pool.
 
 If you're using the default ERC-20 / ERC-721 token connector and its sample token factory, it will automatically deploy a new token contract, based on the `type` in the request to create the token pool.
@@ -195,14 +195,14 @@ Other parameters:
 All transfers (as well as mint/burn operations) support an optional `message` parameter that contains a broadcast or private
 message to be sent along with the transfer. This message follows the same convention as other FireFly messages, and may be comprised
 of text or blob data, and can provide context, metadata, or other supporting information about the transfer. The message will be
-batched, hashed, and pinned to the primary blockchain as described in [key concepts](../keyconcepts/broadcast.html).
+batched, hashed, and pinned to the primary blockchain.
 
 The message ID and hash will also be sent to the token connector as part of the transfer operation, to be written to the token blockchain
 when the transaction is submitted. All recipients of the message will then be able to correlate the message with the token transfer.
 
 `POST` `http://127.0.0.1:5000/api/v1/namespaces/default/tokens/transfers`
 
-### Broadcast message:
+### Broadcast message
 ```json
 {
   "amount": 1,
@@ -215,7 +215,7 @@ when the transaction is submitted. All recipients of the message will then be ab
 }
 ```
 
-### Private message:
+### Private message
 ```json
 {
   "amount": 1,
