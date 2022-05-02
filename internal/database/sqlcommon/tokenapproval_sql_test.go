@@ -78,7 +78,7 @@ func TestApprovalE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(approvalJson), string(approvalReadJson))
 
 	// Query back token approval by protocol ID
-	approvalRead, err = s.GetTokenApprovalByProtocolID(ctx, approval.Pool, approval.ProtocolID)
+	approvalRead, err = s.GetTokenApprovalByProtocolID(ctx, approval.Connector, approval.ProtocolID)
 	assert.NoError(t, err)
 	assert.NotNil(t, approvalRead)
 	approvalReadJson, _ = json.Marshal(&approvalRead)
