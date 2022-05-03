@@ -35,7 +35,6 @@ import (
 
 type DefinitionHandlers interface {
 	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
-	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
 type HandlerResult struct {

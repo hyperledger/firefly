@@ -36,8 +36,3 @@ func (_m *DefinitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 
 	return r0, r1
 }
-
-// SendReply provides a mock function with given fields: ctx, event, reply
-func (_m *DefinitionHandlers) SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
-	_m.Called(ctx, event, reply)
-}

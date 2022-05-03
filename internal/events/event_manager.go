@@ -147,7 +147,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 	em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh, txHelper); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, bm, pm, txHelper); err != nil {
 		return nil, err
 	}
 
