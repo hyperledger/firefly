@@ -32,7 +32,7 @@ import (
 )
 
 func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -80,7 +80,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationIncompleteClaimData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, claimMsg, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -106,7 +106,7 @@ func TestHandleDefinitionIdentityVerificationIncompleteClaimData(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationClaimDataFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, claimMsg, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -132,7 +132,7 @@ func TestHandleDefinitionIdentityVerificationClaimDataFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationClaimHashMismatchl(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, claimMsg, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -155,7 +155,7 @@ func TestHandleDefinitionIdentityVerificationClaimHashMismatchl(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationBeforeClaim(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, claimMsg, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -176,7 +176,7 @@ func TestHandleDefinitionIdentityVerificationBeforeClaim(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationClaimLookupFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, claimMsg, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -197,7 +197,7 @@ func TestHandleDefinitionIdentityVerificationClaimLookupFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationWrongSigner(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, _, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -215,7 +215,7 @@ func TestHandleDefinitionIdentityVerificationWrongSigner(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationCheckParentNotFound(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, _, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -232,7 +232,7 @@ func TestHandleDefinitionIdentityVerificationCheckParentNotFound(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationCheckParentFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, _, _, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -249,7 +249,7 @@ func TestHandleDefinitionIdentityVerificationCheckParentFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationInvalidPayload(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	iv := fftypes.IdentityVerification{
@@ -276,7 +276,7 @@ func TestHandleDefinitionIdentityVerificationInvalidPayload(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerificationInvalidData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, &fftypes.Message{

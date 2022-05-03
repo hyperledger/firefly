@@ -23,7 +23,7 @@ import (
 	"encoding/binary"
 
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/log"
@@ -33,7 +33,7 @@ import (
 func newBatchState(ag *aggregator) *batchState {
 	return &batchState{
 		database:           ag.database,
-		definitions:        ag.definitions,
+		messaging:          ag.messaging,
 		data:               ag.data,
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
@@ -95,7 +95,7 @@ type dispatchedMessage struct {
 //              are no pre-finalize handlers registered.
 type batchState struct {
 	database           database.Plugin
-	definitions        definitions.DefinitionHandlers
+	messaging          privatemessaging.Manager
 	data               data.Manager
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
@@ -401,7 +401,7 @@ func (bs *batchState) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 
 	// It might be the system topic/context initializing the group
 	// - This performs the actual database updates in-line, as it is idempotent
-	group, err := bs.definitions.ResolveInitGroup(ctx, msg)
+	group, err := bs.messaging.ResolveInitGroup(ctx, msg)
 	if err != nil || group == nil {
 		return nil, err
 	}

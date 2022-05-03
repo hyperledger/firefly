@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
@@ -80,6 +81,7 @@ type testOrchestrator struct {
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
 	mae *admineventsmocks.Manager
+	mdh *definitionsmocks.DefinitionHandler
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -111,6 +113,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
 		mae: &admineventsmocks.Manager{},
+		mdh: &definitionsmocks.DefinitionHandler{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -133,6 +136,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.adminEvents = tor.mae
 	tor.orchestrator.txHelper = tor.mth
+	tor.orchestrator.definitions = tor.mdh
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -578,6 +582,14 @@ func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
 	or.contracts = nil
+	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitDefinitionsComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.database = nil
+	or.definitions = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

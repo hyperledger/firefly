@@ -66,7 +66,7 @@ func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftyp
 }
 
 func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -92,7 +92,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -111,7 +111,7 @@ func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -136,7 +136,7 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -157,7 +157,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -179,7 +179,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -201,7 +201,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := newPoolAnnouncement()
 	pool := announce.Pool
@@ -227,7 +227,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	announce := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{},
@@ -242,7 +242,7 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
-	sh, bs := newTestDefinitionHandlers(t)
+	sh, bs := newTestDefinitionHandler(t)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{

@@ -87,7 +87,7 @@ func testContractAPI() *fftypes.ContractAPI {
 }
 
 func TestHandleFFIBroadcastOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
@@ -116,7 +116,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 }
 
 func TestPersistFFIValidateFFIFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	valid, err := dh.persistFFI(context.Background(), testFFI())
@@ -126,7 +126,7 @@ func TestPersistFFIValidateFFIFail(t *testing.T) {
 }
 
 func TestHandleFFIBroadcastReject(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
@@ -142,7 +142,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 }
 
 func TestPersistFFIUpsertFFIFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
@@ -154,7 +154,7 @@ func TestPersistFFIUpsertFFIFail(t *testing.T) {
 }
 
 func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -167,7 +167,7 @@ func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
 }
 
 func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
@@ -181,7 +181,7 @@ func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
 }
 
 func TestHandleFFIBroadcastValidateFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ffi := testFFI()
 	ffi.Name = "*%^!$%^&*"
 	b, err := json.Marshal(ffi)
@@ -202,7 +202,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 }
 
 func TestHandleFFIBroadcastPersistFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ffi := testFFI()
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
@@ -225,7 +225,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 }
 
 func TestHandleContractAPIBroadcastOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
@@ -250,7 +250,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 }
 
 func TestPersistContractAPIGetFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	_, err := dh.persistContractAPI(context.Background(), testContractAPI())
@@ -261,7 +261,7 @@ func TestPersistContractAPIGetFail(t *testing.T) {
 func TestPersistContractAPIDifferentLocation(t *testing.T) {
 	existing := testContractAPI()
 	existing.Location = fftypes.JSONAnyPtr(`{"existing": true}`)
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(existing, nil)
 	valid, err := dh.persistContractAPI(context.Background(), testContractAPI())
@@ -271,7 +271,7 @@ func TestPersistContractAPIDifferentLocation(t *testing.T) {
 }
 
 func TestPersistContractAPIUpsertFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -281,7 +281,7 @@ func TestPersistContractAPIUpsertFail(t *testing.T) {
 }
 
 func TestPersistContractAPIIDMismatch(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(database.IDMismatch)
@@ -292,7 +292,7 @@ func TestPersistContractAPIIDMismatch(t *testing.T) {
 }
 
 func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	api := testContractAPI()
 	api.Name = "*%^!$%^&*"
 	b, err := json.Marshal(api)
@@ -313,7 +313,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 }
 
 func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ffi := testFFI()
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)

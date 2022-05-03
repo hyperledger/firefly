@@ -24,10 +24,12 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
@@ -43,10 +45,11 @@ func newTestEventDispatcher(sub *subscription) (*eventDispatcher, func()) {
 	mei.On("Capabilities").Return(&events.Capabilities{}).Maybe()
 	mei.On("Name").Return("ut").Maybe()
 	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandlers{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	ctx, cancel := context.WithCancel(context.Background())
-	return newEventDispatcher(ctx, mei, mdi, mdm, msh, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
+	return newEventDispatcher(ctx, mei, mdi, mdm, mbm, mpm, fftypes.NewUUID().String(), sub, newEventNotifier(ctx, "ut"), txHelper), func() {
 		cancel()
 		coreconfig.Reset()
 	}
@@ -1016,19 +1019,17 @@ func TestEventDispatcherWithReply(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(sub)
 	cancel()
 	ed.acksNacks = make(chan ackNack, 2)
-	msh := ed.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("SendReply", ed.ctx, mock.Anything, mock.Anything).Return(&fftypes.Message{}, nil)
 
 	event1 := fftypes.NewUUID()
-	event2 := fftypes.NewUUID()
 	ed.inflight[*event1] = &fftypes.Event{
 		ID:        event1,
 		Namespace: "ns1",
 	}
-	ed.inflight[*event2] = &fftypes.Event{
-		ID:        event2,
-		Namespace: "ns1",
-	}
+
+	mms := &sysmessagingmocks.MessageSender{}
+	mbm := ed.broadcast.(*broadcastmocks.Manager)
+	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", mock.Anything).Return(nil)
 
 	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
 		ID: event1,
@@ -1045,22 +1046,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 			},
 		},
 	})
-	ed.deliveryResponse(&fftypes.EventDeliveryResponse{
-		ID: event2,
-		Reply: &fftypes.MessageInOut{
-			Message: fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Tag:   "myreplytag2",
-					CID:   fftypes.NewUUID(),
-					Type:  fftypes.MessageTypePrivate,
-					Group: fftypes.NewRandB32(),
-				},
-			},
-			InlineData: fftypes.InlineData{
-				{Value: fftypes.JSONAnyPtr(`"my reply"`)},
-			},
-		},
-	})
 
-	msh.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }

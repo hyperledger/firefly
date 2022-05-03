@@ -83,7 +83,7 @@ func testDeprecatedRootOrg(t *testing.T) (*fftypes.DeprecatedOrganization, *ffty
 }
 
 func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org, msg, data := testDeprecatedRootOrg(t)
@@ -121,7 +121,7 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 }
 
 func TestHandleDeprecatedOrgDefinitionBadData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, bs, &fftypes.Message{}, fftypes.DataArray{})

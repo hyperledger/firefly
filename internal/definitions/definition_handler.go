@@ -21,24 +21,20 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/assets"
-	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/contracts"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
-// DefinitionHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
-type DefinitionHandlers interface {
-	privatemessaging.GroupManager
-
+type DefinitionHandler interface {
 	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
-	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
 
 type HandlerResult struct {
@@ -102,40 +98,23 @@ type definitionHandlers struct {
 	exchange   dataexchange.Plugin
 	data       data.Manager
 	identity   identity.Manager
-	broadcast  broadcast.Manager
-	messaging  privatemessaging.Manager
 	assets     assets.Manager
 	contracts  contracts.Manager
 }
 
-func NewDefinitionHandlers(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
+func NewDefinitionHandler(ctx context.Context, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
+	if di == nil || bi == nil || dx == nil || dm == nil || im == nil || am == nil || cm == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+	}
 	return &definitionHandlers{
 		database:   di,
 		blockchain: bi,
 		exchange:   dx,
 		data:       dm,
 		identity:   im,
-		broadcast:  bm,
-		messaging:  pm,
 		assets:     am,
 		contracts:  cm,
-	}
-}
-
-func (dh *definitionHandlers) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
-	return dh.messaging.GetGroupByID(ctx, id)
-}
-
-func (dh *definitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
-	return dh.messaging.GetGroupsNS(ctx, ns, filter)
-}
-
-func (dh *definitionHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
-	return dh.messaging.ResolveInitGroup(ctx, msg)
-}
-
-func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
-	return dh.messaging.EnsureLocalGroup(ctx, group)
+	}, nil
 }
 
 func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {

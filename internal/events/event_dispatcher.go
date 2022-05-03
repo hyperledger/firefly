@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/config"
@@ -54,7 +55,8 @@ type eventDispatcher struct {
 	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
-	definitions   definitions.DefinitionHandlers
+	broadcast     broadcast.Manager
+	messaging     privatemessaging.Manager
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*fftypes.Event
@@ -66,7 +68,7 @@ type eventDispatcher struct {
 	txHelper      txcommon.Helper
 }
 
-func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, sh definitions.DefinitionHandlers, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
+func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugin, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, connID string, sub *subscription, en *eventNotifier, txHelper txcommon.Helper) *eventDispatcher {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	readAhead := config.GetUint(coreconfig.SubscriptionDefaultsReadAhead)
 	if sub.definition.Options.ReadAhead != nil {
@@ -81,7 +83,8 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			"sub", fmt.Sprintf("%s/%s:%s", sub.definition.ID, sub.definition.Namespace, sub.definition.Name)),
 		database:      di,
 		transport:     ei,
-		definitions:   sh,
+		broadcast:     bm,
+		messaging:     pm,
 		data:          dm,
 		connID:        connID,
 		cancelCtx:     cancelCtx,
@@ -384,6 +387,7 @@ func (ed *eventDispatcher) deliverEvents() {
 		}
 	}
 }
+
 func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) {
 	l := log.L(ed.ctx)
 
@@ -406,7 +410,7 @@ func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryRespo
 	// We might have a message to send, do that before we dispatch the ack
 	// Note a failure to send the reply does not invalidate the ack
 	if response.Reply != nil {
-		ed.definitions.SendReply(ed.ctx, event, response.Reply)
+		ed.sendReply(ed.ctx, event, response.Reply)
 	}
 
 	l.Debugf("Response for %s event: %.10d/%s [%s]: ref=%s/%s rejected=%t info='%s'", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference, response.Rejected, response.Info)

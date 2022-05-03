@@ -162,7 +162,7 @@ type orchestrator struct {
 	batch          batch.Manager
 	broadcast      broadcast.Manager
 	messaging      privatemessaging.Manager
-	definitions    definitions.DefinitionHandlers
+	definitions    definitions.DefinitionHandler
 	data           data.Manager
 	syncasync      syncasync.Bridge
 	batchpin       batchpin.Submitter
@@ -561,7 +561,12 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.definitions = definitions.NewDefinitionHandlers(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.broadcast, or.messaging, or.assets, or.contracts)
+	if or.definitions == nil {
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.assets, or.contracts)
+		if err != nil {
+			return err
+		}
+	}
 
 	if or.sharedDownload == nil {
 		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database, or.sharedstorage, or.dataexchange, or.operations, &or.bc)
