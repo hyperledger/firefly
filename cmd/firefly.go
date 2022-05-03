@@ -104,8 +104,8 @@ func run() error {
 	ctx = log.WithLogger(ctx, logrus.WithField("prefix", config.GetString(coreconfig.NodeName)))
 
 	config.SetupLogging(ctx)
-	log.L(ctx).Infof("Project Firefly")
-	log.L(ctx).Infof("© Copyright 2021 Kaleido, Inc.")
+	log.L(ctx).Infof("Hyperledger FireFly")
+	log.L(ctx).Infof("© Copyright 2022 Kaleido, Inc.")
 
 	// Deferred error return from reading config
 	if err != nil {
