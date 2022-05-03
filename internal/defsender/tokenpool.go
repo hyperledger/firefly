@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package defsender
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *definitionSender) BroadcastTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error) {
 	if err := pool.Pool.Validate(ctx); err != nil {
 		return nil, err
 	}

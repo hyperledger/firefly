@@ -23,8 +23,8 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/defsender"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -71,7 +71,7 @@ type contractManager struct {
 	namespace         string
 	database          database.Plugin
 	txHelper          txcommon.Helper
-	broadcast         broadcast.Manager
+	defsender         defsender.Sender
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
 	ffiParamValidator core.FFIParamValidator
@@ -79,8 +79,8 @@ type contractManager struct {
 	syncasync         syncasync.Bridge
 }
 
-func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, bm broadcast.Manager, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
-	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
+func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, ds defsender.Sender, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
+	if di == nil || ds == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
@@ -92,7 +92,7 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 		namespace:         ns,
 		database:          di,
 		txHelper:          txHelper,
-		broadcast:         bm,
+		defsender:         ds,
 		identity:          im,
 		blockchain:        bi,
 		ffiParamValidator: v,
@@ -139,7 +139,7 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ffi *core.FFI, wait
 	}
 
 	output = ffi
-	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
+	msg, err := cm.defsender.BroadcastDefinitionAsNode(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerU
 		return nil, err
 	}
 
-	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
+	msg, err := cm.defsender.BroadcastDefinitionAsNode(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}

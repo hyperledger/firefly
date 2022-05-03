@@ -56,7 +56,7 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 	}
 
 	// Send the update
-	updateMsg, err := nm.broadcast.BroadcastDefinition(ctx, &core.IdentityUpdate{
+	updateMsg, err := nm.defsender.BroadcastDefinition(ctx, &core.IdentityUpdate{
 		Identity: identity.IdentityBase,
 		Updates:  dto.IdentityProfile,
 	}, updateSigner, core.SystemTagIdentityUpdate, waitConfirm)

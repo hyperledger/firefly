@@ -27,6 +27,7 @@ import (
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/defsender"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -55,6 +56,7 @@ type Orchestrator interface {
 	Assets() assets.Manager
 	BatchManager() batch.Manager
 	Broadcast() broadcast.Manager
+	DefinitionSender() defsender.Sender
 	Contracts() contracts.Manager
 	MultiParty() multiparty.Manager
 	Data() data.Manager
@@ -172,7 +174,8 @@ type orchestrator struct {
 	batch          batch.Manager
 	broadcast      broadcast.Manager
 	messaging      privatemessaging.Manager
-	definitions    definitions.DefinitionHandler
+	defhandler     definitions.DefinitionHandler
+	defsender      defsender.Sender
 	data           data.Manager
 	syncasync      syncasync.Bridge
 	assets         assets.Manager
@@ -318,6 +321,10 @@ func (or *orchestrator) PrivateMessaging() privatemessaging.Manager {
 	return or.messaging
 }
 
+func (or *orchestrator) DefinitionSender() defsender.Sender {
+	return or.defsender
+}
+
 func (or *orchestrator) Events() events.EventManager {
 	return or.events
 }
@@ -378,14 +385,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) initComponents(ctx context.Context) (err error) {
-
-	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange())
-		if err != nil {
-			return err
-		}
-	}
+func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.txHelper == nil {
 		or.txHelper = txcommon.NewTransactionHelper(or.namespace, or.database(), or.data)
@@ -432,8 +432,18 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
+	if or.defsender == nil {
+		or.defsender, err = defsender.NewDefinitionSender(ctx, or.namespace, or.broadcast, or.identity, or.data)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.database(), or.dataexchange(), or.broadcast, or.identity, or.syncasync, or.multiparty)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
+		if err != nil {
+			return err
+		}
 	}
 
 	if or.assets == nil {
@@ -444,14 +454,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.blockchain(), or.broadcast, or.identity, or.operations, or.txHelper, or.syncasync)
-		if err != nil {
-			return err
-		}
-	}
-
-	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
+		or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.blockchain(), or.defsender, or.identity, or.operations, or.txHelper, or.syncasync)
 		if err != nil {
 			return err
 		}
@@ -464,15 +467,46 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
+	return nil
+}
+
+func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
+	if or.defhandler == nil {
+		or.defhandler, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
 	}
 
+	if or.events == nil {
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (or *orchestrator) initComponents(ctx context.Context) (err error) {
+	if or.data == nil {
+		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange())
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := or.initManagers(ctx); err != nil {
+		return err
+	}
+
+	if err := or.initHandlers(ctx); err != nil {
+		return err
+	}
+
 	or.syncasync.Init(or.events)
-	return err
+
+	return nil
 }
 
 func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {

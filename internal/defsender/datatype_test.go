@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package defsender
 
 import (
 	"context"
@@ -22,32 +22,32 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestBroadcastDatatypeBadType(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
 	}, false)
 	assert.Regexp(t, "FF00111.*validator", err)
 }
 
 func TestBroadcastDatatypeBadValue(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
+	mdm := ds.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mim := bm.identity.(*identitymanagermocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -56,40 +56,16 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	assert.Regexp(t, "FF10137.*value", err)
 }
 
-func TestBroadcastUpsertFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
-
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-
-	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
-		Namespace: "ns1",
-		Name:      "ent1",
-		Version:   "0.0.1",
-		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
-	}, false)
-	assert.EqualError(t, err, "pop")
-
-	mim.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-}
-
 func TestBroadcastDatatypeInvalid(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
+	mdm := ds.data.(*datamocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
 
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -99,16 +75,19 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 }
 
 func TestBroadcastOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
+	mdm := ds.data.(*datamocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -118,4 +97,6 @@ func TestBroadcastOk(t *testing.T) {
 
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }

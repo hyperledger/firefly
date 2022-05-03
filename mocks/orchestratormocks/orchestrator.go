@@ -18,6 +18,8 @@ import (
 
 	database "github.com/hyperledger/firefly/pkg/database"
 
+	defsender "github.com/hyperledger/firefly/internal/defsender"
+
 	events "github.com/hyperledger/firefly/internal/events"
 
 	mock "github.com/stretchr/testify/mock"
@@ -156,6 +158,22 @@ func (_m *Orchestrator) Data() data.Manager {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(data.Manager)
+		}
+	}
+
+	return r0
+}
+
+// DefinitionSender provides a mock function with given fields:
+func (_m *Orchestrator) DefinitionSender() defsender.Sender {
+	ret := _m.Called()
+
+	var r0 defsender.Sender
+	if rf, ok := ret.Get(0).(func() defsender.Sender); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(defsender.Sender)
 		}
 	}
 

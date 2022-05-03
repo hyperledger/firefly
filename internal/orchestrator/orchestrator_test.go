@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
@@ -77,6 +78,7 @@ type testOrchestrator struct {
 	mae *spieventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
 	mmp *multipartymocks.Manager
+	mds *defsendermocks.Sender
 }
 
 func (tor *testOrchestrator) cleanup(t *testing.T) {
@@ -135,6 +137,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mae: &spieventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 		mmp: &multipartymocks.Manager{},
+		mds: &defsendermocks.Sender{},
 	}
 	tor.orchestrator.multiparty = tor.mmp
 	tor.orchestrator.data = tor.mdm
@@ -150,7 +153,8 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
-	tor.orchestrator.definitions = tor.mdh
+	tor.orchestrator.defhandler = tor.mdh
+	tor.orchestrator.defsender = tor.mds
 	tor.orchestrator.plugins.Blockchain.Plugin = tor.mbi
 	tor.orchestrator.plugins.SharedStorage.Plugin = tor.mps
 	tor.orchestrator.plugins.DataExchange.Plugin = tor.mdx
@@ -199,6 +203,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mba, or.BatchManager())
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
+	assert.Equal(t, or.mds, or.DefinitionSender())
 	assert.Equal(t, or.mem, or.Events())
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mdm, or.Data())
@@ -297,6 +302,15 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitDefSenderComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.data = nil
+	or.defsender = nil
+	err := or.initManagers(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestInitDataComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -337,7 +351,7 @@ func TestInitDefinitionsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
-	or.definitions = nil
+	or.defhandler = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

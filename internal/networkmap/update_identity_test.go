@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -41,9 +41,9 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
+	mds := nm.defsender.(*defsendermocks.Sender)
 
-	mbm.On("BroadcastDefinition", nm.ctx,
+	mds.On("BroadcastDefinition", nm.ctx,
 		mock.AnythingOfType("*core.IdentityUpdate"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -60,7 +60,7 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 	assert.Equal(t, *mockMsg1.Header.ID, *org.Messages.Update)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
@@ -75,8 +75,8 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 	signerRef := &core.SignerRef{Key: "0x12345"}
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastDefinition", nm.ctx,
+	mds := nm.defsender.(*defsendermocks.Sender)
+	mds.On("BroadcastDefinition", nm.ctx,
 		mock.AnythingOfType("*core.IdentityUpdate"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -92,7 +92,7 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestUpdateIdentityProfileBadProfile(t *testing.T) {

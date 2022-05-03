@@ -23,8 +23,8 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -55,8 +55,8 @@ func TestRegisterNodeOk(t *testing.T) {
 	}, nil)
 
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds := nm.defsender.(*defsendermocks.Sender)
+	mds.On("BroadcastIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
@@ -67,7 +67,7 @@ func TestRegisterNodeOk(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mdx.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestRegisterNodePeerInfoFail(t *testing.T) {
