@@ -42,11 +42,11 @@ var sigs = make(chan os.Signal, 1)
 
 var rootCmd = &cobra.Command{
 	Use:   "firefly",
-	Short: "Firefly is an API toolkit for building enterprise grade multi-party systems",
-	Long: `You build great user experiences and business logic in your favorite language,
-and let Firefly take care of the REST. The event-driven programming model gives you the
-building blocks needed for high performance, scalable multi-party systems, and the power
-to digital transformation your business ecosystem.`,
+	Short: "FireFly is a complete stack for enterprises to build and scale secure Web3 applications",
+	Long: `Hyperledger FireFly is the first open source Supernode: a complete stack for
+enterprises to build and scale secure Web3 applications. The FireFly API for digital
+assets, data flows, and blockchain transactions makes it radically faster to build
+production-ready apps on popular chains and protocols.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run()
 	},
