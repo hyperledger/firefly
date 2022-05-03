@@ -21,11 +21,9 @@ import (
 	"encoding/json"
 
 	"github.com/hyperledger/firefly/internal/assets"
-	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -98,21 +96,17 @@ type definitionHandlers struct {
 	exchange   dataexchange.Plugin
 	data       data.Manager
 	identity   identity.Manager
-	broadcast  broadcast.Manager
-	messaging  privatemessaging.Manager
 	assets     assets.Manager
 	contracts  contracts.Manager
 }
 
-func NewDefinitionHandler(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandler {
+func NewDefinitionHandler(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandler {
 	return &definitionHandlers{
 		database:   di,
 		blockchain: bi,
 		exchange:   dx,
 		data:       dm,
 		identity:   im,
-		broadcast:  bm,
-		messaging:  pm,
 		assets:     am,
 		contracts:  cm,
 	}

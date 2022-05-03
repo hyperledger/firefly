@@ -561,7 +561,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.definitions = definitions.NewDefinitionHandler(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.broadcast, or.messaging, or.assets, or.contracts)
+	or.definitions = definitions.NewDefinitionHandler(or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.assets, or.contracts)
 
 	if or.sharedDownload == nil {
 		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database, or.sharedstorage, or.dataexchange, or.operations, &or.bc)

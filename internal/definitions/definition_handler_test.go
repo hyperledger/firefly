@@ -23,13 +23,11 @@ import (
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,12 +38,10 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitio
 	mdx := &dataexchangemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
-	return NewDefinitionHandler(mdi, mbi, mdx, mdm, mim, mbm, mpm, mam, mcm).(*definitionHandlers), newTestDefinitionBatchState(t)
+	return NewDefinitionHandler(mdi, mbi, mdx, mdm, mim, mam, mcm).(*definitionHandlers), newTestDefinitionBatchState(t)
 }
 
 type testDefinitionBatchState struct {
