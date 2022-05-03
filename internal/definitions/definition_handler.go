@@ -22,12 +22,14 @@ import (
 
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/contracts"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
@@ -100,7 +102,10 @@ type definitionHandlers struct {
 	contracts  contracts.Manager
 }
 
-func NewDefinitionHandler(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandler {
+func NewDefinitionHandler(ctx context.Context, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
+	if di == nil || bi == nil || dx == nil || dm == nil || im == nil || am == nil || cm == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+	}
 	return &definitionHandlers{
 		database:   di,
 		blockchain: bi,
@@ -109,7 +114,7 @@ func NewDefinitionHandler(di database.Plugin, bi blockchain.Plugin, dx dataexcha
 		identity:   im,
 		assets:     am,
 		contracts:  cm,
-	}
+	}, nil
 }
 
 func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
