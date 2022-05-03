@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestDefinitionHandlers(t *testing.T) (*definitionHandlers, *testDefinitionBatchState) {
+func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitionBatchState) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
@@ -45,7 +45,7 @@ func newTestDefinitionHandlers(t *testing.T) (*definitionHandlers, *testDefiniti
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
-	return NewDefinitionHandlers(mdi, mbi, mdx, mdm, mim, mbm, mpm, mam, mcm).(*definitionHandlers), newTestDefinitionBatchState(t)
+	return NewDefinitionHandler(mdi, mbi, mdx, mdm, mim, mbm, mpm, mam, mcm).(*definitionHandlers), newTestDefinitionBatchState(t)
 }
 
 type testDefinitionBatchState struct {
@@ -85,7 +85,7 @@ func (bs *testDefinitionBatchState) assertNoFinalizers() {
 }
 
 func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
@@ -97,7 +97,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",
@@ -107,7 +107,7 @@ func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	dh, _ := newTestDefinitionHandler(t)
 	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
 		Header: fftypes.MessageHeader{
 			Tag: "unknown",

@@ -33,7 +33,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
-type DefinitionHandlers interface {
+type DefinitionHandler interface {
 	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 }
 
@@ -104,7 +104,7 @@ type definitionHandlers struct {
 	contracts  contracts.Manager
 }
 
-func NewDefinitionHandlers(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandlers {
+func NewDefinitionHandler(di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, cm contracts.Manager) DefinitionHandler {
 	return &definitionHandlers{
 		database:   di,
 		blockchain: bi,

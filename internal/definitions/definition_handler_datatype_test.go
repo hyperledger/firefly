@@ -30,7 +30,7 @@ import (
 )
 
 func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -68,7 +68,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -106,7 +106,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		Validator: fftypes.ValidatorTypeJSON,
@@ -133,7 +133,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -165,7 +165,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -188,7 +188,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -224,7 +224,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),
@@ -260,7 +260,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	dt := &fftypes.Datatype{
 		ID:        fftypes.NewUUID(),

@@ -67,7 +67,7 @@ func testIdentityUpdate(t *testing.T) (*fftypes.Identity, *fftypes.Message, *fft
 }
 
 func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1, updateMsg, updateData, iu := testIdentityUpdate(t)
@@ -98,7 +98,7 @@ func TestHandleDefinitionIdentityUpdateOk(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
@@ -119,7 +119,7 @@ func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
@@ -137,7 +137,7 @@ func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityNotFound(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
@@ -154,7 +154,7 @@ func TestHandleDefinitionIdentityNotFound(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityLookupFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
@@ -171,7 +171,7 @@ func TestHandleDefinitionIdentityLookupFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityValidateFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1 := testOrgIdentity(t, "org1")
@@ -207,7 +207,7 @@ func TestHandleDefinitionIdentityValidateFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityMissingData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org1 := testOrgIdentity(t, "org1")

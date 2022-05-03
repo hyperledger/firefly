@@ -63,7 +63,7 @@ $(eval $(call makemock, internal/broadcast,        Manager,            broadcast
 $(eval $(call makemock, internal/privatemessaging, Manager,            privatemessagingmocks))
 $(eval $(call makemock, internal/shareddownload,   Manager,            shareddownloadmocks))
 $(eval $(call makemock, internal/shareddownload,   Callbacks,          shareddownloadmocks))
-$(eval $(call makemock, internal/definitions,      DefinitionHandlers, definitionsmocks))
+$(eval $(call makemock, internal/definitions,      DefinitionHandler,  definitionsmocks))
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))
