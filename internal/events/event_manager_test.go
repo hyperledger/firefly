@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -74,6 +75,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandler{}
+	mds := &defsendermocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mam := &assetmocks.Manager{}
@@ -89,7 +91,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper)
+	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -124,7 +126,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -138,6 +140,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mpi := &sharedstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandler{}
+	mds := &defsendermocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
@@ -147,7 +150,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false}).Maybe()
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
-	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)
+	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
 

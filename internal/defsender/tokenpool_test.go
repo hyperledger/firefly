@@ -14,25 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package defsender
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
+	mdm := ds.data.(*datamocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
@@ -47,17 +48,16 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := ds.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolInvalid(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
+	mdm := ds.data.(*datamocks.Manager)
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
@@ -70,46 +70,20 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 		},
 	}
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := ds.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "FF00140", err)
 
-	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
-}
-
-func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
-
-	pool := &fftypes.TokenPoolAnnouncement{
-		Pool: &fftypes.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-			Name:      "mypool",
-			Type:      fftypes.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-		},
-	}
-
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
-	assert.EqualError(t, err, "pop")
-
-	mdm.AssertExpectations(t)
-	mim.AssertExpectations(t)
 }
 
 func TestBroadcastTokenPoolOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	mdm := ds.data.(*datamocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
 
 	pool := &fftypes.TokenPoolAnnouncement{
 		Pool: &fftypes.TokenPool{
@@ -124,11 +98,14 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := ds.BroadcastTokenPool(context.Background(), "ns1", pool, false)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }

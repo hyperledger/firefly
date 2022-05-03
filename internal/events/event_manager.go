@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/defsender"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity"
@@ -91,7 +92,8 @@ type eventManager struct {
 	database              database.Plugin
 	txHelper              txcommon.Helper
 	identity              identity.Manager
-	definitions           definitions.DefinitionHandler
+	defsender             defsender.Sender
+	defhandler            definitions.DefinitionHandler
 	data                  data.Manager
 	subManager            *subscriptionManager
 	retry                 retry.Retry
@@ -110,8 +112,8 @@ type eventManager struct {
 	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
-	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, ds defsender.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
+	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || ds == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -123,7 +125,8 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 		database:       di,
 		txHelper:       txHelper,
 		identity:       im,
-		definitions:    dh,
+		defsender:      ds,
+		defhandler:     dh,
 		data:           dm,
 		broadcast:      bm,
 		messaging:      pm,

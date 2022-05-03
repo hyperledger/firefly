@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package defsender
 
 import (
 	"context"
@@ -22,17 +22,18 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error) {
-	if err := pool.Pool.Validate(ctx); err != nil {
-		return nil, err
-	}
-	if err := bm.data.VerifyNamespaceExists(ctx, pool.Pool.Namespace); err != nil {
-		return nil, err
-	}
+func (bm *definitionSender) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (*fftypes.Message, error) {
 
-	msg, err = bm.BroadcastDefinitionAsNode(ctx, ns, pool, fftypes.SystemTagDefinePool, waitConfirm)
+	// Validate the input data definition data
+	ns.ID = fftypes.NewUUID()
+	ns.Created = fftypes.Now()
+	ns.Type = fftypes.NamespaceTypeBroadcast
+	if err := ns.Validate(ctx, false); err != nil {
+		return nil, err
+	}
+	msg, err := bm.BroadcastDefinitionAsNode(ctx, fftypes.SystemNamespace, ns, fftypes.SystemTagDefineNamespace, waitConfirm)
 	if msg != nil {
-		pool.Pool.Message = msg.Header.ID
+		ns.Message = msg.Header.ID
 	}
 	return msg, err
 }

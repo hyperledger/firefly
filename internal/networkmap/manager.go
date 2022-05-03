@@ -19,8 +19,8 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/defsender"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -59,21 +59,21 @@ type Manager interface {
 type networkMap struct {
 	ctx       context.Context
 	database  database.Plugin
-	broadcast broadcast.Manager
+	defsender defsender.Sender
 	exchange  dataexchange.Plugin
 	identity  identity.Manager
 	syncasync syncasync.Bridge
 }
 
-func NewNetworkMap(ctx context.Context, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
-	if di == nil || bm == nil || dx == nil || im == nil {
+func NewNetworkMap(ctx context.Context, di database.Plugin, ds defsender.Sender, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
+	if di == nil || ds == nil || dx == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 
 	nm := &networkMap{
 		ctx:       ctx,
 		database:  di,
-		broadcast: bm,
+		defsender: ds,
 		exchange:  dx,
 		identity:  im,
 		syncasync: sa,

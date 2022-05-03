@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package defsender
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
-func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (*fftypes.Message, error) {
+func (bm *definitionSender) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (*fftypes.Message, error) {
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()

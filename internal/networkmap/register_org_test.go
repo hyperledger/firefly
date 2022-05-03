@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -67,8 +67,8 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds := nm.defsender.(*defsendermocks.Sender)
+	mds.On("BroadcastIdentityClaim", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {

@@ -14,45 +14,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package broadcast
+package defsender
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestBroadcastNamespaceBadName(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
-	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
+	_, err := ds.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name: "!ns",
 	}, false)
 	assert.Regexp(t, "FF00140.*name", err)
 }
 
 func TestBroadcastNamespaceDescriptionTooLong(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
 	buff := strings.Builder{}
 	buff.Grow(4097)
 	for i := 0; i < 4097; i++ {
 		buff.WriteByte(byte('a' + i%26))
 	}
-	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
+	_, err := ds.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name:        "ns1",
 		Description: buff.String(),
 	}, false)
@@ -60,25 +56,28 @@ func TestBroadcastNamespaceDescriptionTooLong(t *testing.T) {
 }
 
 func TestBroadcastNamespaceBroadcastOk(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
+	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	mdi := bm.database.(*databasemocks.Plugin)
-	mdm := bm.data.(*datamocks.Manager)
-	mim := bm.identity.(*identitymanagermocks.Manager)
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(nil)
-	mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{Name: "ns1"}, nil)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
-	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
-	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
+	mbm.On("NewBroadcast", fftypes.SystemNamespace, mock.Anything).Return(mms)
+	mms.On("Send", context.Background()).Return(nil)
+
 	buff := strings.Builder{}
 	buff.Grow(4097)
 	for i := 0; i < 4097; i++ {
 		buff.WriteByte(byte('a' + i%26))
 	}
-	_, err := bm.BroadcastNamespace(context.Background(), &fftypes.Namespace{
+	_, err := ds.BroadcastNamespace(context.Background(), &fftypes.Namespace{
 		Name:        "ns1",
 		Description: "my namespace",
 	}, false)
 	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }

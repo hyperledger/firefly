@@ -26,9 +26,9 @@ import (
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
@@ -43,7 +43,7 @@ import (
 func newTestContractManager() *contractManager {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mbm := &broadcastmocks.Manager{}
+	mds := &defsendermocks.Sender{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
@@ -60,7 +60,7 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper, msa)
+	cm, _ := NewContractManager(context.Background(), mdi, mds, mim, mbi, mom, txHelper, msa)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
@@ -78,21 +78,21 @@ func TestName(t *testing.T) {
 func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mbm := &broadcastmocks.Manager{}
+	mds := &defsendermocks.Sender{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), mdi, mds, mim, mbi, mom, txHelper, msa)
 	assert.Regexp(t, "pop", err)
 }
 
 func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	mbm := &broadcastmocks.Manager{}
+	mds := &defsendermocks.Sender{}
 	mim := &identitymanagermocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
@@ -100,7 +100,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	_, err := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), mdi, mds, mim, mbi, mom, txHelper, msa)
 	assert.NoError(t, err)
 }
 
@@ -108,7 +108,7 @@ func TestBroadcastFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	mim := cm.identity.(*identitymanagermocks.Manager)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
@@ -118,7 +118,7 @@ func TestBroadcastFFI(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -143,7 +143,7 @@ func TestBroadcastFFI(t *testing.T) {
 func TestBroadcastFFIInvalid(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 
@@ -152,7 +152,7 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -176,7 +176,7 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 func TestBroadcastFFIExists(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := &defsendermocks.Sender{}
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(&fftypes.FFI{}, nil)
 
@@ -185,7 +185,7 @@ func TestBroadcastFFIExists(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -198,13 +198,13 @@ func TestBroadcastFFIExists(t *testing.T) {
 func TestBroadcastFFIFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 	mim := cm.identity.(*identitymanagermocks.Manager)
 
 	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), fftypes.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
 	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -1933,7 +1933,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -1953,7 +1953,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 
@@ -1964,7 +1964,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdb.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestBroadcastContractAPIBadLocation(t *testing.T) {
@@ -1994,7 +1994,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -2024,7 +2024,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 
@@ -2032,7 +2032,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdb.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
@@ -2075,7 +2075,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -2097,7 +2097,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 
@@ -2106,14 +2106,14 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdb.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestBroadcastContractAPIFail(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mdb := cm.database.(*databasemocks.Plugin)
-	mbm := cm.broadcast.(*broadcastmocks.Manager)
+	mds := cm.defsender.(*defsendermocks.Sender)
 
 	api := &fftypes.ContractAPI{
 		ID:        fftypes.NewUUID(),
@@ -2128,7 +2128,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
+	mds.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.ContractAPI"), fftypes.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 
@@ -2136,7 +2136,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdb.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestBroadcastContractAPINoInterface(t *testing.T) {
@@ -2331,7 +2331,7 @@ func TestCheckParamSchemaCompileFail(t *testing.T) {
 func TestAddJSONSchemaExtension(t *testing.T) {
 	cm := &contractManager{
 		database:          &databasemocks.Plugin{},
-		broadcast:         &broadcastmocks.Manager{},
+		defsender:         &defsendermocks.Sender{},
 		identity:          &identitymanagermocks.Manager{},
 		blockchain:        &blockchainmocks.Plugin{},
 		ffiParamValidator: &MockFFIParamValidator{},

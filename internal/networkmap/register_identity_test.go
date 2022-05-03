@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -45,9 +45,9 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 
 	mockMsg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
+	mds := nm.defsender.(*defsendermocks.Sender)
 
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("BroadcastIdentityClaim", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -55,7 +55,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		}),
 		fftypes.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
 
-	mbm.On("BroadcastDefinition", nm.ctx,
+	mds.On("BroadcastDefinition", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityVerification"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -73,7 +73,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 	assert.Equal(t, *mockMsg2.Header.ID, *org.Messages.Verification)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
@@ -103,9 +103,9 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 
 	mockMsg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
+	mds := nm.defsender.(*defsendermocks.Sender)
 
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("BroadcastIdentityClaim", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -113,7 +113,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		}),
 		fftypes.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
 
-	mbm.On("BroadcastDefinition", nm.ctx,
+	mds.On("BroadcastDefinition", nm.ctx,
 		fftypes.SystemNamespace,
 		mock.AnythingOfType("*fftypes.IdentityVerification"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -129,7 +129,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 	msa.AssertExpectations(t)
 }
 
@@ -153,9 +153,9 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	}, nil)
 
 	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
+	mds := nm.defsender.(*defsendermocks.Sender)
 
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("BroadcastIdentityClaim", nm.ctx,
 		"ns1",
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -163,7 +163,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		}),
 		fftypes.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	mbm.On("BroadcastDefinition", nm.ctx,
+	mds.On("BroadcastDefinition", nm.ctx,
 		"ns1",
 		mock.AnythingOfType("*fftypes.IdentityVerification"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -179,7 +179,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
@@ -211,8 +211,8 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
 
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds := nm.defsender.(*defsendermocks.Sender)
+	mds.On("BroadcastIdentityClaim", nm.ctx,
 		"ns1",
 		mock.AnythingOfType("*fftypes.IdentityClaim"),
 		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
@@ -228,7 +228,7 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestRegisterIdentityMissingKey(t *testing.T) {

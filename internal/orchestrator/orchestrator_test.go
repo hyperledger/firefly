@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -82,6 +83,7 @@ type testOrchestrator struct {
 	msd *shareddownloadmocks.Manager
 	mae *admineventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
+	mds *defsendermocks.Sender
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -114,6 +116,7 @@ func newTestOrchestrator() *testOrchestrator {
 		msd: &shareddownloadmocks.Manager{},
 		mae: &admineventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
+		mds: &defsendermocks.Sender{},
 	}
 	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
@@ -136,7 +139,8 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.adminEvents = tor.mae
 	tor.orchestrator.txHelper = tor.mth
-	tor.orchestrator.definitions = tor.mdh
+	tor.orchestrator.defhandler = tor.mdh
+	tor.orchestrator.defsender = tor.mds
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -589,8 +593,16 @@ func TestInitContractsComponentFail(t *testing.T) {
 func TestInitDefinitionsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.database = nil
-	or.definitions = nil
+	or.defhandler = nil
 	err := or.initComponents(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInitDefinitionSenderComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.data = nil
+	or.defsender = nil
+	err := or.initManagers(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -744,6 +756,7 @@ func TestInitOK(t *testing.T) {
 	assert.False(t, or.IsPreInit())
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
+	assert.Equal(t, or.mds, or.DefinitionSender())
 	assert.Equal(t, or.mem, or.Events())
 	assert.Equal(t, or.mba, or.BatchManager())
 	assert.Equal(t, or.mnm, or.NetworkMap())

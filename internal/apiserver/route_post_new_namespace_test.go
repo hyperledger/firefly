@@ -22,7 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,8 +30,8 @@ import (
 
 func TestPostNewNamespace(t *testing.T) {
 	o, r := newTestAPIServer()
-	mbm := &broadcastmocks.Manager{}
-	o.On("Broadcast").Return(mbm)
+	mds := &defsendermocks.Sender{}
+	o.On("DefinitionSender").Return(mds)
 	input := fftypes.Namespace{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -39,7 +39,7 @@ func TestPostNewNamespace(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace"), false).
+	mds.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace"), false).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -48,8 +48,8 @@ func TestPostNewNamespace(t *testing.T) {
 
 func TestPostNewNamespaceSync(t *testing.T) {
 	o, r := newTestAPIServer()
-	mbm := &broadcastmocks.Manager{}
-	o.On("Broadcast").Return(mbm)
+	mds := &defsendermocks.Sender{}
+	o.On("DefinitionSender").Return(mds)
 	input := fftypes.Namespace{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -57,7 +57,7 @@ func TestPostNewNamespaceSync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace"), true).
+	mds.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*fftypes.Namespace"), true).
 		Return(&fftypes.Message{}, nil)
 	r.ServeHTTP(res, req)
 

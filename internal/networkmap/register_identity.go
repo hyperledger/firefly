@@ -113,7 +113,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes.Identity, claimSigner *fftypes.SignerRef, parentSigner *fftypes.SignerRef) error {
 
 	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
-	claimMsg, err := nm.broadcast.BroadcastIdentityClaim(ctx, identity.Namespace, &fftypes.IdentityClaim{
+	claimMsg, err := nm.defsender.BroadcastIdentityClaim(ctx, identity.Namespace, &fftypes.IdentityClaim{
 		Identity: identity,
 	}, claimSigner, fftypes.SystemTagIdentityClaim, false)
 	if err != nil {
@@ -123,7 +123,7 @@ func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes
 
 	// Send the verification if one is required.
 	if parentSigner != nil {
-		verifyMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityVerification{
+		verifyMsg, err := nm.defsender.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityVerification{
 			Claim: fftypes.MessageRef{
 				ID:   claimMsg.Header.ID,
 				Hash: claimMsg.Hash,
