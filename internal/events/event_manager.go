@@ -137,7 +137,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
-		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
+		aggregator:            newAggregator(ctx, di, bi, pm, dh, im, dm, newPinNotifier, mm),
 		metrics:               mm,
 		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),

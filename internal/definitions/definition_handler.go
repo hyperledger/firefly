@@ -33,10 +33,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/log"
 )
 
-// DefinitionHandlers interface allows components to call broadcast/private messaging functions internally (without import cycles)
 type DefinitionHandlers interface {
-	privatemessaging.GroupManager
-
 	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 	SendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut)
 }
@@ -120,22 +117,6 @@ func NewDefinitionHandlers(di database.Plugin, bi blockchain.Plugin, dx dataexch
 		assets:     am,
 		contracts:  cm,
 	}
-}
-
-func (dh *definitionHandlers) GetGroupByID(ctx context.Context, id string) (*fftypes.Group, error) {
-	return dh.messaging.GetGroupByID(ctx, id)
-}
-
-func (dh *definitionHandlers) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Group, *database.FilterResult, error) {
-	return dh.messaging.GetGroupsNS(ctx, ns, filter)
-}
-
-func (dh *definitionHandlers) ResolveInitGroup(ctx context.Context, msg *fftypes.Message) (*fftypes.Group, error) {
-	return dh.messaging.ResolveInitGroup(ctx, msg)
-}
-
-func (dh *definitionHandlers) EnsureLocalGroup(ctx context.Context, group *fftypes.Group) (ok bool, err error) {
-	return dh.messaging.EnsureLocalGroup(ctx, group)
 }
 
 func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {

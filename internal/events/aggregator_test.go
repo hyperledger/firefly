@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -46,6 +47,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandlers{}
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
@@ -56,7 +58,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, mbi, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
+	ag := newAggregator(ctx, mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
 	return ag, func() {
 		cancel()
 		ag.batchCache.Stop()
@@ -152,7 +154,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
@@ -192,7 +194,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Look for existing nextpins - none found, first on context
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{}, nil, nil).Once()
 	// Get the group members
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
 				{Identity: member1org.DID},
@@ -265,6 +267,8 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
@@ -1145,8 +1149,8 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	bs := newBatchState(ag)
 	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -1161,14 +1165,15 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.EqualError(t, err, "pop")
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
 
 	bs := newBatchState(ag)
 	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
@@ -1183,6 +1188,7 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitAuthorMismatch(t *testing.T) {
@@ -1192,8 +1198,8 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author2", 0)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
 				{Identity: "author2"},
@@ -1214,6 +1220,7 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.NoError(t, err)
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitNoMatch(t *testing.T) {
@@ -1221,8 +1228,8 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
 				{Identity: "author2"},
@@ -1243,6 +1250,7 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitGetPinsFail(t *testing.T) {
@@ -1252,9 +1260,9 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author1", 0)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
 				{Identity: "author1"},
@@ -1276,6 +1284,8 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.EqualError(t, err, "pop")
 
+	mpm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
@@ -1286,8 +1296,8 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
 				{Identity: "author1"},
@@ -1312,6 +1322,8 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, np)
 
+	mpm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestAttemptContextInitInsertPinsFail(t *testing.T) {
@@ -1322,8 +1334,8 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
 		GroupIdentity: fftypes.GroupIdentity{
 			Members: fftypes.Members{
 				{Identity: "author1"},
@@ -1349,6 +1361,8 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	err = bs.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
+	mpm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestAttemptMessageDispatchFailValidateData(t *testing.T) {

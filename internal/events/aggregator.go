@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/config"
@@ -44,6 +45,7 @@ const (
 type aggregator struct {
 	ctx           context.Context
 	database      database.Plugin
+	messaging     privatemessaging.Manager
 	definitions   definitions.DefinitionHandlers
 	identity      identity.Manager
 	data          data.Manager
@@ -61,11 +63,12 @@ type batchCacheEntry struct {
 	manifest *fftypes.BatchManifest
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandlers, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
 		database:      di,
+		messaging:     pm,
 		definitions:   sh,
 		identity:      im,
 		data:          dm,
