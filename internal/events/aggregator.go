@@ -25,7 +25,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/defhandler"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -46,7 +46,7 @@ type aggregator struct {
 	ctx           context.Context
 	database      database.Plugin
 	messaging     privatemessaging.Manager
-	definitions   definitions.DefinitionHandler
+	definitions   defhandler.DefinitionHandler
 	identity      identity.Manager
 	data          data.Manager
 	eventPoller   *eventPoller
@@ -63,7 +63,7 @@ type batchCacheEntry struct {
 	manifest *fftypes.BatchManifest
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh defhandler.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
@@ -532,14 +532,14 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *fftypes.M
 		// dispatched subsequent events before we have processed the definition events they depend on.
 		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
-		if handlerResult.Action == definitions.ActionRetry {
+		if handlerResult.Action == defhandler.ActionRetry {
 			return "", false, err
 		}
-		if handlerResult.Action == definitions.ActionWait {
+		if handlerResult.Action == defhandler.ActionWait {
 			return "", false, nil
 		}
 		customCorrelator = handlerResult.CustomCorrelator
-		valid = handlerResult.Action == definitions.ActionConfirm
+		valid = handlerResult.Action == defhandler.ActionConfirm
 
 	case msg.Header.Type == fftypes.MessageTypeGroupInit:
 		// Already handled as part of resolving the context - do nothing.

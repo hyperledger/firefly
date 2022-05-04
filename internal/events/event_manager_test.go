@@ -29,8 +29,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/defhandlermocks"
 	"github.com/hyperledger/firefly/mocks/defsendermocks"
-	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
@@ -74,7 +74,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mpi := &sharedstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
+	msh := &defhandlermocks.DefinitionHandler{}
 	mds := &defsendermocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
@@ -139,7 +139,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mim := &identitymanagermocks.Manager{}
 	mpi := &sharedstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
+	msh := &defhandlermocks.DefinitionHandler{}
 	mds := &defsendermocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}

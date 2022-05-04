@@ -32,7 +32,7 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
-	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/defhandler"
 	"github.com/hyperledger/firefly/internal/defsender"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/identity"
@@ -165,7 +165,7 @@ type orchestrator struct {
 	broadcast      broadcast.Manager
 	messaging      privatemessaging.Manager
 	defsender      defsender.Sender
-	defhandler     definitions.DefinitionHandler
+	defhandler     defhandler.DefinitionHandler
 	data           data.Manager
 	syncasync      syncasync.Bridge
 	batchpin       batchpin.Submitter
@@ -588,7 +588,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 func (or *orchestrator) initEventHandlers(ctx context.Context) (err error) {
 
 	if or.defhandler == nil {
-		or.defhandler, err = definitions.NewDefinitionHandler(ctx, or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.assets, or.contracts)
+		or.defhandler, err = defhandler.NewDefinitionHandler(ctx, or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}

@@ -25,11 +25,11 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/defhandler"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/definitionsmocks"
+	"github.com/hyperledger/firefly/mocks/defhandlermocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
@@ -48,7 +48,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
+	msh := &defhandlermocks.DefinitionHandler{}
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -1515,9 +1515,9 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	customCorrelator := fftypes.NewUUID()
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
+	msh := ag.definitions.(*defhandlermocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		Return(definitions.HandlerResult{Action: definitions.ActionReject, CustomCorrelator: customCorrelator}, nil)
+		Return(defhandler.HandlerResult{Action: defhandler.ActionReject, CustomCorrelator: customCorrelator}, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(fftypes.DataArray{}, true, nil)
@@ -1732,8 +1732,9 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionRetry}, fmt.Errorf("pop"))
+	msh := ag.definitions.(*defhandlermocks.DefinitionHandler)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(defhandler.HandlerResult{Action: defhandler.ActionRetry}, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg1, fftypes.DataArray{}, true, nil)
@@ -1798,8 +1799,9 @@ func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
+	msh := ag.definitions.(*defhandlermocks.DefinitionHandler)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(defhandler.HandlerResult{Action: defhandler.ActionWait}, nil)
 
 	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
@@ -1835,8 +1837,9 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
-	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
+	msh := ag.definitions.(*defhandlermocks.DefinitionHandler)
+	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(defhandler.HandlerResult{Action: defhandler.ActionWait}, nil)
 
 	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)

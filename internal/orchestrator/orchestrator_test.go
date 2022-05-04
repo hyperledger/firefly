@@ -34,8 +34,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/defhandlermocks"
 	"github.com/hyperledger/firefly/mocks/defsendermocks"
-	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
@@ -82,7 +82,7 @@ type testOrchestrator struct {
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
 	mae *admineventsmocks.Manager
-	mdh *definitionsmocks.DefinitionHandler
+	mdh *defhandlermocks.DefinitionHandler
 	mds *defsendermocks.Sender
 }
 
@@ -115,7 +115,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
 		mae: &admineventsmocks.Manager{},
-		mdh: &definitionsmocks.DefinitionHandler{},
+		mdh: &defhandlermocks.DefinitionHandler{},
 		mds: &defsendermocks.Sender{},
 	}
 	tor.orchestrator.database = tor.mdi
