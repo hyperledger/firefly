@@ -24,14 +24,17 @@ ${MOCKERY}:
 		$(VGO) install github.com/vektra/mockery/cmd/mockery@latest
 ${LINT}:
 		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+ffcommon:
+		$(eval FFCOMMON_PATH := $(shell $(VGO) list -f '{{.Dir}}' github.com/hyperledger/firefly-common/pkg/wsclient))
 
 
 define makemock
 mocks: mocks-$(strip $(1))-$(strip $(2))
-mocks-$(strip $(1))-$(strip $(2)): ${MOCKERY}
+mocks-$(strip $(1))-$(strip $(2)): ${MOCKERY} ffcommon
 	${MOCKERY} --case underscore --dir $(1) --name $(2) --outpkg $(3) --output mocks/$(strip $(3))
 endef
 
+$(eval $(call makemock, $$(FFCOMMON_PATH),         WSClient,           wsmocks))
 $(eval $(call makemock, pkg/blockchain,            Plugin,             blockchainmocks))
 $(eval $(call makemock, pkg/blockchain,            Callbacks,          blockchainmocks))
 $(eval $(call makemock, pkg/database,              Plugin,             databasemocks))
@@ -48,8 +51,6 @@ $(eval $(call makemock, pkg/dataexchange,          DXEvent,            dataexcha
 $(eval $(call makemock, pkg/dataexchange,          Callbacks,          dataexchangemocks))
 $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmocks))
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
-$(eval $(call makemock, pkg/wsclient,              WSClient,           wsmocks))
-$(eval $(call makemock, pkg/httpserver,            GoHTTPServer,       httpservermocks))
 $(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
 $(eval $(call makemock, internal/batchpin,         Submitter,          batchpinmocks))

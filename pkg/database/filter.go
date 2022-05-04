@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
 // Filter is the output of the builder

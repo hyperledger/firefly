@@ -22,11 +22,12 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -60,7 +61,7 @@ var (
 const messagesTable = "messages"
 const messagesDataJoinTable = "messages_data"
 
-func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, message *fftypes.Message) (int64, error) {
+func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, message *core.Message) (int64, error) {
 	return s.updateTx(ctx, messagesTable, tx,
 		sq.Update(messagesTable).
 			Set("cid", message.Header.CID).
@@ -84,11 +85,11 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 				"hash": message.Hash,
 			}),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, -1 /* not applicable on update */)
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, -1 /* not applicable on update */)
 		})
 }
 
-func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *fftypes.Message) sq.InsertBuilder {
+func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core.Message) sq.InsertBuilder {
 	return query.Values(
 		message.Header.ID,
 		message.Header.CID,
@@ -110,16 +111,16 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *ffty
 	)
 }
 
-func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *fftypes.Message, requestConflictEmptyResult bool) (err error) {
+func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, message *core.Message, requestConflictEmptyResult bool) (err error) {
 	message.Sequence, err = s.insertTxExt(ctx, messagesTable, tx,
 		s.setMessageInsertValues(sq.Insert(messagesTable).Columns(msgColumns...), message),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
 		}, requestConflictEmptyResult)
 	return err
 }
 
-func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) (err error) {
+func (s *SQLCommon) UpsertMessage(ctx context.Context, message *core.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -193,7 +194,7 @@ func (s *SQLCommon) UpsertMessage(ctx context.Context, message *fftypes.Message,
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...database.PostCompletionHook) (err error) {
+func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*core.Message, hooks ...database.PostCompletionHook) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -223,7 +224,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 		err := s.insertTxRows(ctx, messagesTable, tx, msgQuery, func() {
 			for i, message := range messages {
 				message.Sequence = sequences[i]
-				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, fftypes.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
 			}
 		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
@@ -261,7 +262,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*fftypes.Mess
 }
 
 // In SQL update+bump is a delete+insert within a TX
-func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *fftypes.Message) (err error) {
+func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *core.Message) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -288,7 +289,7 @@ func (s *SQLCommon) ReplaceMessage(ctx context.Context, message *fftypes.Message
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *fftypes.Message, recreateDatarefs bool) error {
+func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, message *core.Message, recreateDatarefs bool) error {
 
 	if recreateDatarefs {
 		// Delete all the existing references, to replace them with new ones below
@@ -340,7 +341,7 @@ func (s *SQLCommon) updateMessageDataRefs(ctx context.Context, tx *txWrapper, me
 // way for a single-query option. So a two-query option ended up being simplest.
 // See commit e304161a30b8044a42b5bac3fcfca7e7bd8f8ab7 for the abandoned changeset
 // that implemented LEFT JOIN
-func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) error {
+func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*core.Message) error {
 
 	msgIDs := make([]string, len(msgs))
 	for i, m := range msgs {
@@ -375,7 +376,7 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) e
 		}
 		for _, m := range msgs {
 			if *m.Header.ID == msgID {
-				m.Data = append(m.Data, &fftypes.DataRef{
+				m.Data = append(m.Data, &core.DataRef{
 					ID:   &dataID,
 					Hash: &dataHash,
 				})
@@ -385,15 +386,15 @@ func (s *SQLCommon) loadDataRefs(ctx context.Context, msgs []*fftypes.Message) e
 	// Ensure we return an empty array if no entries, and a consistent order for the data
 	for _, m := range msgs {
 		if m.Data == nil {
-			m.Data = fftypes.DataRefs{}
+			m.Data = core.DataRefs{}
 		}
 	}
 
 	return nil
 }
 
-func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Message, error) {
-	var msg fftypes.Message
+func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message, error) {
+	var msg core.Message
 	err := row.Scan(
 		&msg.Header.ID,
 		&msg.Header.CID,
@@ -421,7 +422,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*fftypes.Mess
 	return &msg, nil
 }
 
-func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Message, err error) {
+func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *core.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
@@ -446,14 +447,14 @@ func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (messa
 	}
 
 	rows.Close()
-	if err = s.loadDataRefs(ctx, []*fftypes.Message{msg}); err != nil {
+	if err = s.loadDataRefs(ctx, []*core.Message{msg}); err != nil {
 		return nil, err
 	}
 
 	return msg, nil
 }
 
-func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder, fop sq.Sqlizer, fi *database.FilterInfo, allowCount bool) (message []*fftypes.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder, fop sq.Sqlizer, fi *database.FilterInfo, allowCount bool) (message []*core.Message, fr *database.FilterResult, err error) {
 	if fi.Count && !allowCount {
 		return nil, nil, i18n.NewError(ctx, coremsgs.MsgFilterCountNotSupported)
 	}
@@ -464,7 +465,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 	}
 	defer rows.Close()
 
-	msgs := []*fftypes.Message{}
+	msgs := []*core.Message{}
 	for rows.Next() {
 		msg, err := s.msgResult(ctx, rows)
 		if err != nil {
@@ -482,7 +483,7 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 	return msgs, s.queryRes(ctx, messagesTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (ids []*fftypes.IDAndSequence, err error) {
+func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (ids []*core.IDAndSequence, err error) {
 	query, _, _, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn).From(messagesTable), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
@@ -498,9 +499,9 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (
 	}
 	defer rows.Close()
 
-	ids = []*fftypes.IDAndSequence{}
+	ids = []*core.IDAndSequence{}
 	for rows.Next() {
-		var id fftypes.IDAndSequence
+		var id core.IDAndSequence
 		err = rows.Scan(&id.ID, &id.Sequence)
 		if err != nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, messagesTable)
@@ -541,7 +542,7 @@ func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (
 	return batchIDs, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(messagesTable), filter, msgFilterFieldMap,
@@ -555,7 +556,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (me
 	return s.getMessagesQuery(ctx, query, fop, fi, true)
 }
 
-func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) (message []*fftypes.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
 	cols := make([]string, len(msgColumns)+1)
 	for i, col := range msgColumns {
 		cols[i] = fmt.Sprintf("m.%s", col)

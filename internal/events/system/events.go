@@ -20,9 +20,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 const (
@@ -41,7 +42,7 @@ type Events struct {
 	readAhead    uint16
 }
 
-type EventListener func(event *fftypes.EventDelivery) error
+type EventListener func(event *core.EventDelivery) error
 
 func (se *Events) Name() string { return SystemEventsTransport }
 
@@ -55,7 +56,7 @@ func (se *Events) Init(ctx context.Context, prefix config.Prefix, callbacks even
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions
-	return callbacks.RegisterConnection(se.connID, func(sr fftypes.SubscriptionRef) bool { return true })
+	return callbacks.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
 }
 
 func (se *Events) Capabilities() *events.Capabilities {
@@ -66,15 +67,15 @@ func (se *Events) GetOptionsSchema(ctx context.Context) string {
 	return `{}`
 }
 
-func (se *Events) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+func (se *Events) ValidateOptions(options *core.SubscriptionOptions) error {
 	return nil
 }
 
 func (se *Events) AddListener(ns string, el EventListener) error {
 	no := false
-	newest := fftypes.SubOptsFirstEventNewest
-	err := se.callbacks.EphemeralSubscription(se.connID, ns, &fftypes.SubscriptionFilter{ /* all events */ }, &fftypes.SubscriptionOptions{
-		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	newest := core.SubOptsFirstEventNewest
+	err := se.callbacks.EphemeralSubscription(se.connID, ns, &core.SubscriptionFilter{ /* all events */ }, &core.SubscriptionOptions{
+		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 			WithData:   &no,
 			ReadAhead:  &se.readAhead,
 			FirstEvent: &newest,
@@ -89,7 +90,7 @@ func (se *Events) AddListener(ns string, el EventListener) error {
 	return nil
 }
 
-func (se *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
+func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	se.mux.Lock()
 	defer se.mux.Unlock()
 	for ns, listeners := range se.listeners {
@@ -101,7 +102,7 @@ func (se *Events) DeliveryRequest(connID string, sub *fftypes.Subscription, even
 			}
 		}
 	}
-	se.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+	se.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
 		ID:           event.ID,
 		Rejected:     false,
 		Subscription: event.Subscription,

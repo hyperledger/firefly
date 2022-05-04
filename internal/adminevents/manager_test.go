@@ -26,11 +26,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -71,8 +71,8 @@ func toJSON(t *testing.T, obj interface{}) []byte {
 	return b
 }
 
-func unmarshalChangeEvent(t *testing.T, msgBytes []byte) *fftypes.ChangeEvent {
-	var event fftypes.ChangeEvent
+func unmarshalChangeEvent(t *testing.T, msgBytes []byte) *core.ChangeEvent {
+	var event core.ChangeEvent
 	err := json.Unmarshal(msgBytes, &event)
 	assert.NoError(t, err)
 	return &event
@@ -81,7 +81,7 @@ func unmarshalChangeEvent(t *testing.T, msgBytes []byte) *fftypes.ChangeEvent {
 func TestAdminEventsE2E(t *testing.T) {
 	ae, _, wsc, cancel := newTestAdminEventsManager(t)
 
-	events := make(chan *fftypes.ChangeEvent)
+	events := make(chan *core.ChangeEvent)
 	go func() {
 		for msgBytes := range wsc.Receive() {
 			events <- unmarshalChangeEvent(t, msgBytes)
@@ -91,11 +91,11 @@ func TestAdminEventsE2E(t *testing.T) {
 	// Send some garbage first, to be discarded
 	wsc.Send(ae.ctx, toJSON(t, map[string]string{"wrong": "data"}))
 	// Then send the actual command to start with a filter
-	wsc.Send(ae.ctx, toJSON(t, &fftypes.WSChangeEventCommand{
-		Type:        fftypes.WSChangeEventCommandTypeStart,
+	wsc.Send(ae.ctx, toJSON(t, &core.WSChangeEventCommand{
+		Type:        core.WSChangeEventCommandTypeStart,
 		Collections: []string{"collection1"},
-		Filter: fftypes.ChangeEventFilter{
-			Types:      []fftypes.ChangeEventType{fftypes.ChangeEventTypeCreated},
+		Filter: core.ChangeEventFilter{
+			Types:      []core.ChangeEventType{core.ChangeEventTypeCreated},
 			Namespaces: []string{"ns1"},
 		},
 	}))
@@ -103,27 +103,27 @@ func TestAdminEventsE2E(t *testing.T) {
 		time.Sleep(1 * time.Microsecond)
 	}
 
-	ignoreDueToWrongCollection := &fftypes.ChangeEvent{
+	ignoreDueToWrongCollection := &core.ChangeEvent{
 		Collection: "collection2",
-		Type:       fftypes.ChangeEventTypeCreated,
+		Type:       core.ChangeEventTypeCreated,
 		Namespace:  "ns1",
 	}
 	ae.Dispatch(ignoreDueToWrongCollection)
-	ignoreDueToWrongType := &fftypes.ChangeEvent{
+	ignoreDueToWrongType := &core.ChangeEvent{
 		Collection: "collection1",
-		Type:       fftypes.ChangeEventTypeDeleted,
+		Type:       core.ChangeEventTypeDeleted,
 		Namespace:  "ns1",
 	}
 	ae.Dispatch(ignoreDueToWrongType)
-	ignoreDueToWrongNamespace := &fftypes.ChangeEvent{
+	ignoreDueToWrongNamespace := &core.ChangeEvent{
 		Collection: "collection1",
-		Type:       fftypes.ChangeEventTypeCreated,
+		Type:       core.ChangeEventTypeCreated,
 		Namespace:  "ns2",
 	}
 	ae.Dispatch(ignoreDueToWrongNamespace)
-	match := &fftypes.ChangeEvent{
+	match := &core.ChangeEvent{
 		Collection: "collection1",
-		Type:       fftypes.ChangeEventTypeCreated,
+		Type:       core.ChangeEventTypeCreated,
 		Namespace:  "ns1",
 	}
 	ae.Dispatch(match)

@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -38,10 +40,9 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -87,7 +88,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	}
 	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
-	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper)
 	em := emi.(*eventManager)
@@ -108,14 +109,14 @@ func mockRunAsGroupPassthrough(mdi *databasemocks.Plugin) {
 func TestStartStop(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
-		Type:    fftypes.OffsetTypeAggregator,
+	mdi.On("GetOffset", mock.Anything, core.OffsetTypeAggregator, aggregatorOffsetName).Return(&core.Offset{
+		Type:    core.OffsetTypeAggregator,
 		Name:    aggregatorOffsetName,
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
 	em.NewPins() <- 12345
@@ -146,7 +147,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mm := &metricsmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false}).Maybe()
-	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
@@ -154,14 +155,14 @@ func TestStartStopBadTransports(t *testing.T) {
 func TestEmitSubscriptionEventsNoops(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
-		Type:    fftypes.OffsetTypeAggregator,
+	mdi.On("GetOffset", mock.Anything, core.OffsetTypeAggregator, aggregatorOffsetName).Return(&core.Offset{
+		Type:    core.OffsetTypeAggregator,
 		Name:    aggregatorOffsetName,
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 
 	getSubCallReady := make(chan bool, 1)
 	getSubCalled := make(chan bool)
@@ -194,7 +195,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 func TestCreateDurableSubscriptionBadSub(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	err := em.CreateUpdateDurableSubscription(em.ctx, &fftypes.Subscription{}, false)
+	err := em.CreateUpdateDurableSubscription(em.ctx, &core.Subscription{}, false)
 	assert.Regexp(t, "FF10189", err)
 }
 
@@ -202,8 +203,8 @@ func TestCreateDurableSubscriptionDupName(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
@@ -218,13 +219,13 @@ func TestCreateDurableSubscriptionDefaultSubCannotParse(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
-		Filter: fftypes.SubscriptionFilter{
+		Filter: core.SubscriptionFilter{
 			Events: "![[[[[",
 		},
 	}
@@ -237,15 +238,15 @@ func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	wrongFirstEvent := fftypes.SubOptsFirstEvent("lobster")
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	wrongFirstEvent := core.SubOptsFirstEvent("lobster")
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				FirstEvent: &wrongFirstEvent,
 			},
 		},
@@ -258,16 +259,16 @@ func TestCreateDurableSubscriptionBadFirstEvent(t *testing.T) {
 func TestCreateDurableSubscriptionNegativeFirstEvent(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
-	wrongFirstEvent := fftypes.SubOptsFirstEvent("-12345")
+	wrongFirstEvent := core.SubOptsFirstEvent("-12345")
 	mdi := em.database.(*databasemocks.Plugin)
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				FirstEvent: &wrongFirstEvent,
 			},
 		},
@@ -281,8 +282,8 @@ func TestCreateDurableSubscriptionGetHighestSequenceFailure(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
@@ -298,15 +299,15 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
+	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{
 		{Sequence: 12345},
 	}, nil, nil)
 	mdi.On("UpsertSubscription", mock.Anything, mock.Anything, false).Return(nil)
@@ -322,20 +323,20 @@ func TestUpdateDurableSubscriptionOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
 	}
-	var firstEvent fftypes.SubOptsFirstEvent = "12345"
-	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(&fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	var firstEvent core.SubOptsFirstEvent = "12345"
+	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(&core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				FirstEvent: &firstEvent,
 			},
 		},
@@ -354,15 +355,15 @@ func TestUpdateDurableSubscriptionNoOp(t *testing.T) {
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	no := false
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
 		Transport: "websockets",
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &no,
 			},
 		},
@@ -381,7 +382,7 @@ func TestCreateDeleteDurableSubscriptionOk(t *testing.T) {
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	subId := fftypes.NewUUID()
-	sub := &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{ID: subId, Namespace: "ns1"}}
+	sub := &core.Subscription{SubscriptionRef: core.SubscriptionRef{ID: subId, Namespace: "ns1"}}
 	mdi.On("GetSubscriptionByID", mock.Anything, subId).Return(sub, nil)
 	mdi.On("DeleteSubscriptionByID", mock.Anything, subId).Return(nil)
 	err := em.DeleteDurableSubscription(em.ctx, sub)
@@ -401,7 +402,7 @@ func TestAddInternalListener(t *testing.T) {
 	ie.Init(em.ctx, conf, cbs)
 	em.internalEvents = ie
 	defer cancel()
-	err := em.AddSystemEventListener("ns1", func(event *fftypes.EventDelivery) error { return nil })
+	err := em.AddSystemEventListener("ns1", func(event *core.EventDelivery) error { return nil })
 	assert.NoError(t, err)
 
 	cbs.AssertExpectations(t)
@@ -410,7 +411,7 @@ func TestAddInternalListener(t *testing.T) {
 func TestGetPlugins(t *testing.T) {
 	em, _ := newTestEventManager(t)
 
-	expectedPlugins := []*fftypes.NodeStatusPlugin{
+	expectedPlugins := []*core.NodeStatusPlugin{
 		{
 			PluginType: "websockets",
 		},

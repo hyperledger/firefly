@@ -28,7 +28,8 @@ import (
 	image2ascii "github.com/qeesung/image2ascii/convert"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -52,10 +53,10 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	// Broadcast some messages, that should get batched, across two topics
 	totalMessages := 10
 	topics := []string{"topicA", "topicB"}
-	expectedData := make(map[string][]*fftypes.DataRefOrValue)
+	expectedData := make(map[string][]*core.DataRefOrValue)
 	for i := 0; i < 10; i++ {
 		value := fftypes.JSONAnyPtr(fmt.Sprintf(`"Hello number %d"`, i))
-		data := &fftypes.DataRefOrValue{
+		data := &core.DataRefOrValue{
 			Value: value,
 		}
 		topic := pickTopic(i, topics)
@@ -69,13 +70,13 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 
 	for i := 0; i < totalMessages; i++ {
 		// Wait for all the message-confirmed events, from both participants
-		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
-		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
+		waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+		waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 	}
 
 	for topic, dataArray := range expectedData {
-		receiver1data := validateReceivedMessages(suite.testState, suite.testState.client1, topic, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, len(dataArray))
-		receiver2data := validateReceivedMessages(suite.testState, suite.testState.client2, topic, fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, len(dataArray))
+		receiver1data := validateReceivedMessages(suite.testState, suite.testState.client1, topic, core.MessageTypeBroadcast, core.TransactionTypeBatchPin, len(dataArray))
+		receiver2data := validateReceivedMessages(suite.testState, suite.testState.client2, topic, core.MessageTypeBroadcast, core.TransactionTypeBatchPin, len(dataArray))
 		// Messages should be returned in exactly reverse send order (newest first)
 		for i := (len(dataArray) - 1); i >= 0; i-- {
 			assert.Equal(suite.T(), dataArray[i].Value, receiver1data[i].Value)
@@ -95,9 +96,9 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	value := fftypes.JSONAnyPtr(`"Hello"`)
 	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
 	version := fmt.Sprintf("0.0.%d", randVer.Int64())
-	data := fftypes.DataRefOrValue{
+	data := core.DataRefOrValue{
 		Value: value,
-		Datatype: &fftypes.DatatypeRef{
+		Datatype: &core.DatatypeRef{
 			Name:    "widget",
 			Version: version,
 		},
@@ -109,7 +110,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		Name:    "widget",
 		Version: version,
 		Value:   fftypes.JSONAnyPtrBytes(widgetSchemaJSON),
@@ -130,8 +131,8 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 }
 
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
@@ -144,9 +145,9 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	value := fftypes.JSONAnyPtr(`{"foo":"bar"}`)
 	randVer, _ := rand.Int(rand.Reader, big.NewInt(100000000))
 	version := fmt.Sprintf("0.0.%d", randVer.Int64())
-	data := fftypes.DataRefOrValue{
+	data := core.DataRefOrValue{
 		Value: value,
-		Datatype: &fftypes.DatatypeRef{
+		Datatype: &core.DatatypeRef{
 			Name:    "widget",
 			Version: version,
 		},
@@ -156,12 +157,12 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	resp, err := PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", fftypes.TransactionTypeBatchPin, true)
+	}, "", core.TransactionTypeBatchPin, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		Name:    "widget",
 		Version: version,
 		Value:   fftypes.JSONAnyPtrBytes(widgetSchemaJSON),
@@ -171,7 +172,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	resp, err = PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", fftypes.TransactionTypeBatchPin, false)
+	}, "", core.TransactionTypeBatchPin, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
@@ -184,12 +185,12 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	resp, err = PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "", fftypes.TransactionTypeBatchPin, true)
+	}, "", core.TransactionTypeBatchPin, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
@@ -202,10 +203,10 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 	// Send 10 messages, that should get batched, across two topics
 	totalMessages := 10
 	topics := []string{"topicA", "topicB"}
-	expectedData := make(map[string][]*fftypes.DataRefOrValue)
+	expectedData := make(map[string][]*core.DataRefOrValue)
 	for i := 0; i < 10; i++ {
 		value := fftypes.JSONAnyPtr(fmt.Sprintf(`"Hello number %d"`, i))
-		data := &fftypes.DataRefOrValue{
+		data := &core.DataRefOrValue{
 			Value: value,
 		}
 		topic := pickTopic(i, topics)
@@ -215,20 +216,20 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 		resp, err := PrivateMessage(suite.testState, suite.testState.client1, topic, data, []string{
 			suite.testState.org1.Name,
 			suite.testState.org2.Name,
-		}, "", fftypes.TransactionTypeBatchPin, false)
+		}, "", core.TransactionTypeBatchPin, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
 
 	for i := 0; i < totalMessages; i++ {
 		// Wait for all thel message-confirmed events, from both participants
-		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
-		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
+		waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+		waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 	}
 
 	for topic, dataArray := range expectedData {
-		receiver1data := validateReceivedMessages(suite.testState, suite.testState.client1, topic, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, len(dataArray))
-		receiver2data := validateReceivedMessages(suite.testState, suite.testState.client2, topic, fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, len(dataArray))
+		receiver1data := validateReceivedMessages(suite.testState, suite.testState.client1, topic, core.MessageTypePrivate, core.TransactionTypeBatchPin, len(dataArray))
+		receiver2data := validateReceivedMessages(suite.testState, suite.testState.client2, topic, core.MessageTypePrivate, core.TransactionTypeBatchPin, len(dataArray))
 		// Messages should be returned in exactly reverse send order (newest first)
 		for i := (len(dataArray) - 1); i >= 0; i-- {
 			assert.Equal(suite.T(), dataArray[i].Value, receiver1data[i].Value)
@@ -250,14 +251,14 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
-	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1)
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", core.MessageTypeBroadcast, core.TransactionTypeBatchPin, 1)
 	assert.Regexp(suite.T(), "myfile.txt", val1[0].Value.String())
 	assert.Equal(suite.T(), "myfile.txt", val1[0].Blob.Name)
 	assert.Equal(suite.T(), data.Blob.Size, val1[0].Blob.Size)
 
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
-	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", fftypes.MessageTypeBroadcast, fftypes.TransactionTypeBatchPin, 1)
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", core.MessageTypeBroadcast, core.TransactionTypeBatchPin, 1)
 	assert.Regexp(suite.T(), "myfile.txt", val2[0].Value.String())
 	assert.Equal(suite.T(), "myfile.txt", val2[0].Blob.Name)
 	assert.Equal(suite.T(), data.Blob.Size, val2[0].Blob.Size)
@@ -281,14 +282,14 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 	assert.Empty(suite.T(), data.Blob.Name)
 	assert.NotNil(suite.T(), data.Blob.Hash)
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
-	res1 := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1)
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+	res1 := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", core.MessageTypePrivate, core.TransactionTypeBatchPin, 1)
 	assert.Equal(suite.T(), data.Blob.Hash.String(), res1[0].Blob.Hash.String())
 	assert.Empty(suite.T(), res1[0].Blob.Name)
 	assert.Equal(suite.T(), data.Blob.Size, res1[0].Blob.Size)
 
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
-	res2 := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 1)
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
+	res2 := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", core.MessageTypePrivate, core.TransactionTypeBatchPin, 1)
 	assert.Equal(suite.T(), data.Blob.Hash.String(), res2[0].Blob.Hash.String())
 	assert.Empty(suite.T(), res2[0].Blob.Name)
 	assert.Equal(suite.T(), data.Blob.Size, res2[0].Blob.Size)
@@ -319,7 +320,7 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
-	data := fftypes.DataRefOrValue{
+	data := core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
@@ -327,25 +328,25 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	resp, err := PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "myrequest", fftypes.TransactionTypeBatchPin, false)
+	}, "myrequest", core.TransactionTypeBatchPin, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate) // request 1
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate) // request 2
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate) // response 1
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate) // response 2
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate) // request 1
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate) // request 2
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate) // response 1
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate) // response 2
 
 	// When we query the confirmed messages for each receiver, we will see the requests and responses.
 	// We just check the reponses (index 1)
 
-	receiver1vals := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2)
+	receiver1vals := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", core.MessageTypePrivate, core.TransactionTypeBatchPin, 2)
 	assert.Equal(suite.T(), float64(200), receiver1vals[1].Value.JSONObject()["status"])
 	decoded1, err := base64.StdEncoding.DecodeString(receiver1vals[1].Value.JSONObject().GetString("body"))
 	assert.NoError(suite.T(), err)
 	assert.Regexp(suite.T(), "Example YAML", string(decoded1))
 
-	receiver2vals := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", fftypes.MessageTypePrivate, fftypes.TransactionTypeBatchPin, 2)
+	receiver2vals := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", core.MessageTypePrivate, core.TransactionTypeBatchPin, 2)
 	assert.Equal(suite.T(), float64(200), receiver2vals[1].Value.JSONObject()["status"])
 	decoded2, err := base64.StdEncoding.DecodeString(receiver2vals[1].Value.JSONObject().GetString("body"))
 	assert.NoError(suite.T(), err)
@@ -375,14 +376,14 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
-	data := fftypes.DataRefOrValue{
+	data := core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
 	reply := RequestReply(suite.testState, suite.testState.client1, &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
-	}, "myrequest", fftypes.TransactionTypeUnpinned)
+	}, "myrequest", core.TransactionTypeUnpinned)
 	assert.NotNil(suite.T(), reply)
 
 	bodyData := reply.InlineData[0].Value.JSONObject().GetString("body")

@@ -21,19 +21,20 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
-	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 const (
@@ -59,8 +60,8 @@ type eventDispatcher struct {
 	messaging     privatemessaging.Manager
 	elected       bool
 	eventPoller   *eventPoller
-	inflight      map[fftypes.UUID]*fftypes.Event
-	eventDelivery chan *fftypes.EventDelivery
+	inflight      map[fftypes.UUID]*core.Event
+	eventDelivery chan *core.EventDelivery
 	mux           sync.Mutex
 	namespace     string
 	readAhead     int
@@ -90,8 +91,8 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 		cancelCtx:     cancelCtx,
 		subscription:  sub,
 		namespace:     sub.definition.Namespace,
-		inflight:      make(map[fftypes.UUID]*fftypes.Event),
-		eventDelivery: make(chan *fftypes.EventDelivery, readAhead+1),
+		inflight:      make(map[fftypes.UUID]*core.Event),
+		eventDelivery: make(chan *core.EventDelivery, readAhead+1),
 		readAhead:     int(readAhead),
 		acksNacks:     make(chan ackNack),
 		closed:        make(chan struct{}),
@@ -109,7 +110,7 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			Factor:       config.GetFloat64(coreconfig.EventDispatcherRetryFactor),
 		},
 		namespace:  sub.definition.Namespace,
-		offsetType: fftypes.OffsetTypeSubscription,
+		offsetType: core.OffsetTypeSubscription,
 		offsetName: sub.definition.ID.String(),
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
@@ -152,25 +153,25 @@ func (ed *eventDispatcher) electAndStart() {
 	<-ed.eventPoller.closed
 }
 
-func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]fftypes.LocallySequenced, error) {
+func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
 	events, _, err := ed.database.GetEvents(ctx, filter)
-	ls := make([]fftypes.LocallySequenced, len(events))
+	ls := make([]core.LocallySequenced, len(events))
 	for i, e := range events {
 		ls[i] = e
 	}
 	return ls, err
 }
 
-func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*fftypes.EventDelivery, error) {
-	enriched := make([]*fftypes.EventDelivery, len(events))
+func (ed *eventDispatcher) enrichEvents(events []core.LocallySequenced) ([]*core.EventDelivery, error) {
+	enriched := make([]*core.EventDelivery, len(events))
 	for i, ls := range events {
-		e := ls.(*fftypes.Event)
+		e := ls.(*core.Event)
 		enrichedEvent, err := ed.txHelper.EnrichEvent(ed.ctx, e)
 		if err != nil {
 			return nil, err
 		}
-		enriched[i] = &fftypes.EventDelivery{
+		enriched[i] = &core.EventDelivery{
 			EnrichedEvent: *enrichedEvent,
 			Subscription:  ed.subscription.definition.SubscriptionRef,
 		}
@@ -178,8 +179,8 @@ func (ed *eventDispatcher) enrichEvents(events []fftypes.LocallySequenced) ([]*f
 	return enriched, nil
 }
 
-func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*fftypes.EventDelivery {
-	matchingEvents := make([]*fftypes.EventDelivery, 0, len(candidates))
+func (ed *eventDispatcher) filterEvents(candidates []*core.EventDelivery) []*core.EventDelivery {
+	matchingEvents := make([]*core.EventDelivery, 0, len(candidates))
 	for _, event := range candidates {
 		filter := ed.subscription
 		if filter.eventMatcher != nil && !filter.eventMatcher.MatchString(string(event.Type)) {
@@ -256,7 +257,7 @@ func (ed *eventDispatcher) filterEvents(candidates []*fftypes.EventDelivery) []*
 	return matchingEvents
 }
 
-func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (bool, error) {
+func (ed *eventDispatcher) bufferedDelivery(events []core.LocallySequenced) (bool, error) {
 	// At this point, the page of messages we've been given are loaded from the DB into memory,
 	// but we can only make them in-flight and push them to the client up to the maximum
 	// readahead (which is likely lower than our page size - 1 by default)
@@ -282,7 +283,7 @@ func (ed *eventDispatcher) bufferedDelivery(events []fftypes.LocallySequenced) (
 	// or a reset event happens
 	for {
 		ed.mux.Lock()
-		var disapatchable []*fftypes.EventDelivery
+		var disapatchable []*core.EventDelivery
 		inflightCount := len(ed.inflight)
 		maxDispatch := 1 + ed.readAhead - inflightCount
 		if maxDispatch >= len(matching) {
@@ -342,7 +343,7 @@ func (ed *eventDispatcher) handleNackOffsetUpdate(nack ackNack) {
 	if ed.eventPoller.pollingOffset > nack.offset {
 		ed.eventPoller.rewindPollingOffset(nack.offset - 1)
 	}
-	ed.inflight = map[fftypes.UUID]*fftypes.Event{}
+	ed.inflight = map[fftypes.UUID]*core.Event{}
 }
 
 func (ed *eventDispatcher) handleAckOffsetUpdate(ack ackNack) {
@@ -371,7 +372,7 @@ func (ed *eventDispatcher) deliverEvents() {
 				return
 			}
 			log.L(ed.ctx).Debugf("Dispatching %s event: %.10d/%s [%s]: ref=%s/%s", ed.transport.Name(), event.Sequence, event.ID, event.Type, event.Namespace, event.Reference)
-			var data []*fftypes.Data
+			var data []*core.Data
 			var err error
 			if withData && event.Message != nil {
 				data, _, err = ed.data.GetMessageDataCached(ed.ctx, event.Message)
@@ -380,7 +381,7 @@ func (ed *eventDispatcher) deliverEvents() {
 				err = ed.transport.DeliveryRequest(ed.connID, ed.subscription.definition, event, data)
 			}
 			if err != nil {
-				ed.deliveryResponse(&fftypes.EventDeliveryResponse{ID: event.ID, Rejected: true})
+				ed.deliveryResponse(&core.EventDeliveryResponse{ID: event.ID, Rejected: true})
 			}
 		case <-ed.ctx.Done():
 			return
@@ -388,7 +389,7 @@ func (ed *eventDispatcher) deliverEvents() {
 	}
 }
 
-func (ed *eventDispatcher) deliveryResponse(response *fftypes.EventDeliveryResponse) {
+func (ed *eventDispatcher) deliveryResponse(response *core.EventDeliveryResponse) {
 	l := log.L(ed.ctx)
 
 	ed.mux.Lock()

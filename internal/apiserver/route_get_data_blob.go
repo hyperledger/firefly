@@ -23,8 +23,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getDataBlob = &oapispec.Route{
@@ -44,9 +44,9 @@ var getDataBlob = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		blob, reader, err := getOr(r.Ctx).Data().DownloadBlob(r.Ctx, r.PP["ns"], r.PP["dataid"])
 		if err == nil {
-			r.ResponseHeaders.Set(fftypes.HTTPHeadersBlobHashSHA256, blob.Hash.String())
+			r.ResponseHeaders.Set(core.HTTPHeadersBlobHashSHA256, blob.Hash.String())
 			if blob.Size > 0 {
-				r.ResponseHeaders.Set(fftypes.HTTPHeadersBlobSize, strconv.FormatInt(blob.Size, 10))
+				r.ResponseHeaders.Set(core.HTTPHeadersBlobSize, strconv.FormatInt(blob.Size, 10))
 			}
 		}
 		return reader, nil

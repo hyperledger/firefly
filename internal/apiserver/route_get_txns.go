@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getTxns = &oapispec.Route{
@@ -37,7 +37,7 @@ var getTxns = &oapispec.Route{
 	FilterFactory:   database.TransactionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTxns,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Transaction{} },
+	JSONOutputValue: func() interface{} { return []*core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetTransactions(r.Ctx, r.PP["ns"], r.Filter))

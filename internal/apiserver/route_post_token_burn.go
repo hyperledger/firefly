@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postTokenBurn = &oapispec.Route{
@@ -38,12 +38,12 @@ var postTokenBurn = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostTokenBurn,
-	JSONInputValue:  func() interface{} { return &fftypes.TokenTransferInput{} },
-	JSONOutputValue: func() interface{} { return &fftypes.TokenTransfer{} },
+	JSONInputValue:  func() interface{} { return &core.TokenTransferInput{} },
+	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Assets().BurnTokens(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenTransferInput), waitConfirm)
+		return getOr(r.Ctx).Assets().BurnTokens(r.Ctx, r.PP["ns"], r.Input.(*core.TokenTransferInput), waitConfirm)
 	},
 }

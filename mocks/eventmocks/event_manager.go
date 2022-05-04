@@ -7,9 +7,11 @@ import (
 
 	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
 
+	core "github.com/hyperledger/firefly/pkg/core"
+
 	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -40,11 +42,11 @@ func (_m *EventManager) AddSystemEventListener(ns string, el system.EventListene
 }
 
 // BatchPinComplete provides a mock function with given fields: bi, batch, signingKey
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
+func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
 	ret := _m.Called(bi, batch, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, *fftypes.VerifierRef) error); ok {
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, *core.VerifierRef) error); ok {
 		r0 = rf(bi, batch, signingKey)
 	} else {
 		r0 = ret.Error(0)
@@ -68,11 +70,11 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 }
 
 // CreateUpdateDurableSubscription provides a mock function with given fields: ctx, subDef, mustNew
-func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) error {
+func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) error {
 	ret := _m.Called(ctx, subDef, mustNew)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription, bool) error); ok {
 		r0 = rf(ctx, subDef, mustNew)
 	} else {
 		r0 = ret.Error(0)
@@ -87,11 +89,11 @@ func (_m *EventManager) DXEvent(dx dataexchange.Plugin, event dataexchange.DXEve
 }
 
 // DeleteDurableSubscription provides a mock function with given fields: ctx, subDef
-func (_m *EventManager) DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) error {
+func (_m *EventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) error {
 	ret := _m.Called(ctx, subDef)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription) error); ok {
 		r0 = rf(ctx, subDef)
 	} else {
 		r0 = ret.Error(0)
@@ -117,15 +119,15 @@ func (_m *EventManager) DeletedSubscriptions() chan<- *fftypes.UUID {
 }
 
 // GetPlugins provides a mock function with given fields:
-func (_m *EventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
+func (_m *EventManager) GetPlugins() []*core.NodeStatusPlugin {
 	ret := _m.Called()
 
-	var r0 []*fftypes.NodeStatusPlugin
-	if rf, ok := ret.Get(0).(func() []*fftypes.NodeStatusPlugin); ok {
+	var r0 []*core.NodeStatusPlugin
+	if rf, ok := ret.Get(0).(func() []*core.NodeStatusPlugin); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.NodeStatusPlugin)
+			r0 = ret.Get(0).([]*core.NodeStatusPlugin)
 		}
 	}
 
@@ -133,15 +135,15 @@ func (_m *EventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
 }
 
 // GetWebSocketStatus provides a mock function with given fields:
-func (_m *EventManager) GetWebSocketStatus() *fftypes.WebSocketStatus {
+func (_m *EventManager) GetWebSocketStatus() *core.WebSocketStatus {
 	ret := _m.Called()
 
-	var r0 *fftypes.WebSocketStatus
-	if rf, ok := ret.Get(0).(func() *fftypes.WebSocketStatus); ok {
+	var r0 *core.WebSocketStatus
+	if rf, ok := ret.Get(0).(func() *core.WebSocketStatus); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.WebSocketStatus)
+			r0 = ret.Get(0).(*core.WebSocketStatus)
 		}
 	}
 

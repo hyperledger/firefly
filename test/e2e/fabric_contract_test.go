@@ -25,7 +25,8 @@ import (
 
 	"github.com/aidarkhanov/nanoid"
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -44,35 +45,35 @@ type createAssetBody struct {
 	Args    []string          `json:"args"`
 }
 
-var assetCreatedEvent = &fftypes.FFIEvent{
-	FFIEventDefinition: fftypes.FFIEventDefinition{
+var assetCreatedEvent = &core.FFIEvent{
+	FFIEventDefinition: core.FFIEventDefinition{
 		Name: "AssetCreated",
 	},
 }
 
-func assetManagerCreateAsset() *fftypes.FFIMethod {
-	return &fftypes.FFIMethod{
+func assetManagerCreateAsset() *core.FFIMethod {
+	return &core.FFIMethod{
 		Name: "CreateAsset",
-		Params: fftypes.FFIParams{
+		Params: core.FFIParams{
 			{
 				Name:   "name",
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
 			},
 		},
-		Returns: fftypes.FFIParams{},
+		Returns: core.FFIParams{},
 	}
 }
 
-func assetManagerGetAsset() *fftypes.FFIMethod {
-	return &fftypes.FFIMethod{
+func assetManagerGetAsset() *core.FFIMethod {
+	return &core.FFIMethod{
 		Name: "GetAsset",
-		Params: fftypes.FFIParams{
+		Params: core.FFIParams{
 			{
 				Name:   "name",
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
 			},
 		},
-		Returns: fftypes.FFIParams{
+		Returns: core.FFIParams{
 			{
 				Name:   "name",
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
@@ -157,7 +158,7 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 		"channel":   "firefly",
 	}
 	locationBytes, _ := json.Marshal(location)
-	invokeContractRequest := &fftypes.ContractCallRequest{
+	invokeContractRequest := &core.ContractCallRequest{
 		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   assetManagerCreateAsset(),
 		Input: map[string]interface{}{
@@ -176,7 +177,7 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	assert.Equal(suite.T(), "AssetCreated", events[0].Name)
 	assert.Equal(suite.T(), assetName, events[0].Output.GetString("name"))
 
-	queryContractRequest := &fftypes.ContractCallRequest{
+	queryContractRequest := &core.ContractCallRequest{
 		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   assetManagerGetAsset(),
 		Input: map[string]interface{}{

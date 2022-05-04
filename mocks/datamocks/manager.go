@@ -6,7 +6,9 @@ import (
 	context "context"
 
 	data "github.com/hyperledger/firefly/internal/data"
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	io "io"
 
@@ -19,11 +21,11 @@ type Manager struct {
 }
 
 // CheckDatatype provides a mock function with given fields: ctx, ns, datatype
-func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype) error {
+func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *core.Datatype) error {
 	ret := _m.Called(ctx, ns, datatype)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Datatype) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Datatype) error); ok {
 		r0 = rf(ctx, ns, datatype)
 	} else {
 		r0 = ret.Error(0)
@@ -33,15 +35,15 @@ func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *fftyp
 }
 
 // DownloadBlob provides a mock function with given fields: ctx, ns, dataID
-func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
+func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (*core.Blob, io.ReadCloser, error) {
 	ret := _m.Called(ctx, ns, dataID)
 
-	var r0 *fftypes.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Blob); ok {
+	var r0 *core.Blob
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Blob); ok {
 		r0 = rf(ctx, ns, dataID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Blob)
+			r0 = ret.Get(0).(*core.Blob)
 		}
 	}
 
@@ -65,7 +67,7 @@ func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (
 }
 
 // GetMessageDataCached provides a mock function with given fields: ctx, msg, options
-func (_m *Manager) GetMessageDataCached(ctx context.Context, msg *fftypes.Message, options ...data.CacheReadOption) (fftypes.DataArray, bool, error) {
+func (_m *Manager) GetMessageDataCached(ctx context.Context, msg *core.Message, options ...data.CacheReadOption) (core.DataArray, bool, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -75,24 +77,24 @@ func (_m *Manager) GetMessageDataCached(ctx context.Context, msg *fftypes.Messag
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 fftypes.DataArray
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, ...data.CacheReadOption) fftypes.DataArray); ok {
+	var r0 core.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Message, ...data.CacheReadOption) core.DataArray); ok {
 		r0 = rf(ctx, msg, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataArray)
+			r0 = ret.Get(0).(core.DataArray)
 		}
 	}
 
 	var r1 bool
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Message, ...data.CacheReadOption) bool); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Message, ...data.CacheReadOption) bool); ok {
 		r1 = rf(ctx, msg, options...)
 	} else {
 		r1 = ret.Get(1).(bool)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.Message, ...data.CacheReadOption) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *core.Message, ...data.CacheReadOption) error); ok {
 		r2 = rf(ctx, msg, options...)
 	} else {
 		r2 = ret.Error(2)
@@ -102,7 +104,7 @@ func (_m *Manager) GetMessageDataCached(ctx context.Context, msg *fftypes.Messag
 }
 
 // GetMessageWithDataCached provides a mock function with given fields: ctx, msgID, options
-func (_m *Manager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...data.CacheReadOption) (*fftypes.Message, fftypes.DataArray, bool, error) {
+func (_m *Manager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...data.CacheReadOption) (*core.Message, core.DataArray, bool, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -112,21 +114,21 @@ func (_m *Manager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) *fftypes.Message); ok {
+	var r0 *core.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) *core.Message); ok {
 		r0 = rf(ctx, msgID, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
+			r0 = ret.Get(0).(*core.Message)
 		}
 	}
 
-	var r1 fftypes.DataArray
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) fftypes.DataArray); ok {
+	var r1 core.DataArray
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) core.DataArray); ok {
 		r1 = rf(ctx, msgID, options...)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(fftypes.DataArray)
+			r1 = ret.Get(1).(core.DataArray)
 		}
 	}
 
@@ -148,20 +150,20 @@ func (_m *Manager) GetMessageWithDataCached(ctx context.Context, msgID *fftypes.
 }
 
 // HydrateBatch provides a mock function with given fields: ctx, persistedBatch
-func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.BatchPersisted) (*fftypes.Batch, error) {
+func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *core.BatchPersisted) (*core.Batch, error) {
 	ret := _m.Called(ctx, persistedBatch)
 
-	var r0 *fftypes.Batch
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) *fftypes.Batch); ok {
+	var r0 *core.Batch
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted) *core.Batch); ok {
 		r0 = rf(ctx, persistedBatch)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Batch)
+			r0 = ret.Get(0).(*core.Batch)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.BatchPersisted) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BatchPersisted) error); ok {
 		r1 = rf(ctx, persistedBatch)
 	} else {
 		r1 = ret.Error(1)
@@ -171,7 +173,7 @@ func (_m *Manager) HydrateBatch(ctx context.Context, persistedBatch *fftypes.Bat
 }
 
 // PeekMessageCache provides a mock function with given fields: ctx, id, options
-func (_m *Manager) PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...data.CacheReadOption) (*fftypes.Message, fftypes.DataArray) {
+func (_m *Manager) PeekMessageCache(ctx context.Context, id *fftypes.UUID, options ...data.CacheReadOption) (*core.Message, core.DataArray) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -181,21 +183,21 @@ func (_m *Manager) PeekMessageCache(ctx context.Context, id *fftypes.UUID, optio
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) *fftypes.Message); ok {
+	var r0 *core.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) *core.Message); ok {
 		r0 = rf(ctx, id, options...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
+			r0 = ret.Get(0).(*core.Message)
 		}
 	}
 
-	var r1 fftypes.DataArray
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) fftypes.DataArray); ok {
+	var r1 core.DataArray
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, ...data.CacheReadOption) core.DataArray); ok {
 		r1 = rf(ctx, id, options...)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(fftypes.DataArray)
+			r1 = ret.Get(1).(core.DataArray)
 		}
 	}
 
@@ -217,35 +219,35 @@ func (_m *Manager) ResolveInlineData(ctx context.Context, msg *data.NewMessage) 
 }
 
 // UpdateMessageCache provides a mock function with given fields: msg, _a1
-func (_m *Manager) UpdateMessageCache(msg *fftypes.Message, _a1 fftypes.DataArray) {
+func (_m *Manager) UpdateMessageCache(msg *core.Message, _a1 core.DataArray) {
 	_m.Called(msg, _a1)
 }
 
 // UpdateMessageIfCached provides a mock function with given fields: ctx, msg
-func (_m *Manager) UpdateMessageIfCached(ctx context.Context, msg *fftypes.Message) {
+func (_m *Manager) UpdateMessageIfCached(ctx context.Context, msg *core.Message) {
 	_m.Called(ctx, msg)
 }
 
 // UpdateMessageStateIfCached provides a mock function with given fields: ctx, id, state, confirmed
-func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state fftypes.FFEnum, confirmed *fftypes.FFTime) {
+func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.FFEnum, confirmed *fftypes.FFTime) {
 	_m.Called(ctx, id, state, confirmed)
 }
 
 // UploadBlob provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
-func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, blob *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *core.Multipart, autoMeta bool) (*core.Data, error) {
 	ret := _m.Called(ctx, ns, inData, blob, autoMeta)
 
-	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.DataRefOrValue, *fftypes.Multipart, bool) *fftypes.Data); ok {
+	var r0 *core.Data
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.DataRefOrValue, *core.Multipart, bool) *core.Data); ok {
 		r0 = rf(ctx, ns, inData, blob, autoMeta)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Data)
+			r0 = ret.Get(0).(*core.Data)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.DataRefOrValue, *fftypes.Multipart, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.DataRefOrValue, *core.Multipart, bool) error); ok {
 		r1 = rf(ctx, ns, inData, blob, autoMeta)
 	} else {
 		r1 = ret.Error(1)
@@ -255,20 +257,20 @@ func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *fftypes.Da
 }
 
 // UploadJSON provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *fftypes.DataRefOrValue) (*fftypes.Data, error) {
+func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error) {
 	ret := _m.Called(ctx, ns, inData)
 
-	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.DataRefOrValue) *fftypes.Data); ok {
+	var r0 *core.Data
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.DataRefOrValue) *core.Data); ok {
 		r0 = rf(ctx, ns, inData)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Data)
+			r0 = ret.Get(0).(*core.Data)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.DataRefOrValue) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.DataRefOrValue) error); ok {
 		r1 = rf(ctx, ns, inData)
 	} else {
 		r1 = ret.Error(1)
@@ -278,18 +280,18 @@ func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *fftypes.Da
 }
 
 // ValidateAll provides a mock function with given fields: ctx, _a1
-func (_m *Manager) ValidateAll(ctx context.Context, _a1 fftypes.DataArray) (bool, error) {
+func (_m *Manager) ValidateAll(ctx context.Context, _a1 core.DataArray) (bool, error) {
 	ret := _m.Called(ctx, _a1)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DataArray) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.DataArray) bool); ok {
 		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.DataArray) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, core.DataArray) error); ok {
 		r1 = rf(ctx, _a1)
 	} else {
 		r1 = ret.Error(1)

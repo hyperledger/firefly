@@ -21,13 +21,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -54,7 +55,7 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)
 	logrus.SetLevel(logrus.DebugLevel)
 
-	mom := &operationsManager{handlers: make(map[fftypes.FFEnum]OperationHandler)}
+	mom := &operationsManager{handlers: make(map[core.FFEnum]OperationHandler)}
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCapabilities)
 	mdm := &datamocks.Manager{}
@@ -108,21 +109,21 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	opID1 := fftypes.NewUUID()
 	opID2 := fftypes.NewUUID()
 	opID3 := fftypes.NewUUID()
-	tx1 := &fftypes.Transaction{ID: fftypes.NewUUID()}
+	tx1 := &core.Transaction{ID: fftypes.NewUUID()}
 
 	done := make(chan struct{})
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID1, Namespace: "ns1", Type: fftypes.OpTypeBlockchainInvoke, Transaction: tx1.ID},
-		{ID: opID2, Namespace: "ns1", Type: fftypes.OpTypeTokenTransfer, Input: fftypes.JSONObject{"test": "test"}},
-		{ID: opID3, Namespace: "ns1", Type: fftypes.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
+	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Operation{
+		{ID: opID1, Namespace: "ns1", Type: core.OpTypeBlockchainInvoke, Transaction: tx1.ID},
+		{ID: opID2, Namespace: "ns1", Type: core.OpTypeTokenTransfer, Input: fftypes.JSONObject{"test": "test"}},
+		{ID: opID3, Namespace: "ns1", Type: core.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
 	}, nil, nil)
-	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Transaction{tx1}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, fftypes.OpStatusSucceeded, "", fftypes.JSONObject(nil)).Return(nil)
+	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Transaction{tx1}, nil, nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, "", fftypes.JSONObject(nil)).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, tx1.ID, mock.Anything).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, fftypes.OpStatusFailed, "err1", fftypes.JSONObject{"test": true}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID3, fftypes.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil).
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, core.OpStatusFailed, "err1", fftypes.JSONObject{"test": true}).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID3, core.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil).
 		Run(func(args mock.Arguments) {
 			close(done)
 		})
@@ -131,18 +132,18 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 
 	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:             opID1,
-		Status:         fftypes.OpStatusSucceeded,
+		Status:         core.OpStatusSucceeded,
 		BlockchainTXID: "tx12345",
 	})
 	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:           opID2,
-		Status:       fftypes.OpStatusFailed,
+		Status:       core.OpStatusFailed,
 		ErrorMessage: "err1",
 		Output:       fftypes.JSONObject{"test": true},
 	})
 	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
 		ID:           opID3,
-		Status:       fftypes.OpStatusFailed,
+		Status:       core.OpStatusFailed,
 		ErrorMessage: "err2",
 	})
 
@@ -177,15 +178,15 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID1, Namespace: "ns1", Type: fftypes.OpTypeBlockchainInvoke},
+	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Operation{
+		{ID: opID1, Namespace: "ns1", Type: core.OpTypeBlockchainInvoke},
 	}, nil, nil)
 	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{ID: opID1, Status: fftypes.OpStatusSucceeded},
+		{ID: opID1, Status: core.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -198,15 +199,15 @@ func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	mdi := ou.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: fftypes.NewUUID()},
+	mdi.On("GetOperations", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Operation{
+		{ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: fftypes.NewUUID()},
 	}, nil, nil)
 	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{ID: opID1, Status: fftypes.OpStatusSucceeded},
+		{ID: opID1, Status: core.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -224,7 +225,7 @@ func TestDoBatchUpdateFailGetOperations(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{ID: opID1, Status: fftypes.OpStatusSucceeded},
+		{ID: opID1, Status: core.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -243,10 +244,10 @@ func TestDoUpdateFailTransactionUpdate(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, Status: fftypes.OpStatusSucceeded, BlockchainTXID: "0x12345",
-	}, []*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: txID1},
-	}, []*fftypes.Transaction{
+		ID: opID1, Status: core.OpStatusSucceeded, BlockchainTXID: "0x12345",
+	}, []*core.Operation{
+		{ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1},
+	}, []*core.Transaction{
 		{ID: txID1},
 	})
 	assert.Regexp(t, "pop", err)
@@ -260,14 +261,14 @@ func TestDoUpdateFailExternalHandler(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	txID1 := fftypes.NewUUID()
-	ou.manager.handlers[fftypes.OpTypeBlockchainInvoke] = &mockHandler{UpdateErr: fmt.Errorf("pop")}
+	ou.manager.handlers[core.OpTypeBlockchainInvoke] = &mockHandler{UpdateErr: fmt.Errorf("pop")}
 
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		ID: opID1, Status: fftypes.OpStatusSucceeded,
-	}, []*fftypes.Operation{
-		{ID: opID1, Type: fftypes.OpTypeBlockchainInvoke, Transaction: txID1},
-	}, []*fftypes.Transaction{})
+		ID: opID1, Status: core.OpStatusSucceeded,
+	}, []*core.Operation{
+		{ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1},
+	}, []*core.Transaction{})
 	assert.Regexp(t, "pop", err)
 }

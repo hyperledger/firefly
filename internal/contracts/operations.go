@@ -20,17 +20,18 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type blockchainInvokeData struct {
-	Request *fftypes.ContractCallRequest `json:"request"`
+	Request *core.ContractCallRequest `json:"request"`
 }
 
-func addBlockchainInvokeInputs(op *fftypes.Operation, req *fftypes.ContractCallRequest) (err error) {
+func addBlockchainInvokeInputs(op *core.Operation, req *core.ContractCallRequest) (err error) {
 	var reqJSON []byte
 	if reqJSON, err = json.Marshal(req); err == nil {
 		err = json.Unmarshal(reqJSON, &op.Input)
@@ -38,8 +39,8 @@ func addBlockchainInvokeInputs(op *fftypes.Operation, req *fftypes.ContractCallR
 	return err
 }
 
-func retrieveBlockchainInvokeInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.ContractCallRequest, error) {
-	var req fftypes.ContractCallRequest
+func retrieveBlockchainInvokeInputs(ctx context.Context, op *core.Operation) (*core.ContractCallRequest, error) {
+	var req core.ContractCallRequest
 	s := op.Input.String()
 	if err := json.Unmarshal([]byte(s), &req); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
@@ -47,9 +48,9 @@ func retrieveBlockchainInvokeInputs(ctx context.Context, op *fftypes.Operation) 
 	return &req, nil
 }
 
-func (cm *contractManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (cm *contractManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypeBlockchainInvoke:
+	case core.OpTypeBlockchainInvoke:
 		req, err := retrieveBlockchainInvokeInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -61,7 +62,7 @@ func (cm *contractManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 	}
 }
 
-func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (cm *contractManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case blockchainInvokeData:
 		req := data.Request
@@ -72,17 +73,17 @@ func (cm *contractManager) RunOperation(ctx context.Context, op *fftypes.Prepare
 	}
 }
 
-func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
 	// Special handling for OpTypeBlockchainInvoke, which writes an event when it succeeds or fails
-	if op.Type == fftypes.OpTypeBlockchainInvoke {
-		if update.Status == fftypes.OpStatusSucceeded {
-			event := fftypes.NewEvent(fftypes.EventTypeBlockchainInvokeOpSucceeded, op.Namespace, op.ID, op.Transaction, "")
+	if op.Type == core.OpTypeBlockchainInvoke {
+		if update.Status == core.OpStatusSucceeded {
+			event := core.NewEvent(core.EventTypeBlockchainInvokeOpSucceeded, op.Namespace, op.ID, op.Transaction, "")
 			if err := cm.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
 		}
-		if update.Status == fftypes.OpStatusFailed {
-			event := fftypes.NewEvent(fftypes.EventTypeBlockchainInvokeOpFailed, op.Namespace, op.ID, op.Transaction, "")
+		if update.Status == core.OpStatusFailed {
+			event := core.NewEvent(core.EventTypeBlockchainInvokeOpFailed, op.Namespace, op.ID, op.Transaction, "")
 			if err := cm.database.InsertEvent(ctx, event); err != nil {
 				return err
 			}
@@ -91,8 +92,8 @@ func (cm *contractManager) OnOperationUpdate(ctx context.Context, op *fftypes.Op
 	return nil
 }
 
-func opBlockchainInvoke(op *fftypes.Operation, req *fftypes.ContractCallRequest) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opBlockchainInvoke(op *core.Operation, req *core.ContractCallRequest) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,

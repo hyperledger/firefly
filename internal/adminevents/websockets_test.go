@@ -20,7 +20,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,16 +41,16 @@ func TestWriteFail(t *testing.T) {
 func TestBlockedDispatch(t *testing.T) {
 	ws := &webSocket{
 		ctx:     context.Background(),
-		events:  make(chan *fftypes.ChangeEvent, 1),
+		events:  make(chan *core.ChangeEvent, 1),
 		manager: &adminEventManager{},
 	}
 	// Should not block us, and will warn
-	ws.dispatch(&fftypes.ChangeEvent{})
-	ws.dispatch(&fftypes.ChangeEvent{})
-	ws.dispatch(&fftypes.ChangeEvent{})
+	ws.dispatch(&core.ChangeEvent{})
+	ws.dispatch(&core.ChangeEvent{})
+	ws.dispatch(&core.ChangeEvent{})
 	// Should unblock if we free up
 	<-ws.events
-	ws.dispatch(&fftypes.ChangeEvent{})
+	ws.dispatch(&core.ChangeEvent{})
 	<-ws.events
 }
 
@@ -59,16 +60,16 @@ func TestBlockedConsume(t *testing.T) {
 
 	ws.mux.Lock()
 	ws.collections = []string{"collection1"}
-	ws.blocked = &fftypes.ChangeEvent{
-		Type:         fftypes.ChangeEventTypeDropped,
+	ws.blocked = &core.ChangeEvent{
+		Type:         core.ChangeEventTypeDropped,
 		DroppedSince: fftypes.Now(),
 		DroppedCount: 1,
 	}
 	ws.mux.Unlock()
 
 	// Dispatch an event - will be successful as we faked the block
-	ws.dispatch(&fftypes.ChangeEvent{
-		Type:       fftypes.ChangeEventTypeCreated,
+	ws.dispatch(&core.ChangeEvent{
+		Type:       core.ChangeEventTypeCreated,
 		Collection: "collection1",
 		Namespace:  "ns1",
 		ID:         fftypes.NewUUID(),
@@ -76,10 +77,10 @@ func TestBlockedConsume(t *testing.T) {
 
 	msg1 := <-wsc.Receive()
 	event1 := unmarshalChangeEvent(t, msg1)
-	assert.Equal(t, fftypes.ChangeEventTypeDropped, event1.Type)
+	assert.Equal(t, core.ChangeEventTypeDropped, event1.Type)
 	assert.Equal(t, int64(1), event1.DroppedCount)
 
 	msg2 := <-wsc.Receive()
 	event2 := unmarshalChangeEvent(t, msg2)
-	assert.Equal(t, fftypes.ChangeEventTypeCreated, event2.Type)
+	assert.Equal(t, core.ChangeEventTypeCreated, event2.Type)
 }

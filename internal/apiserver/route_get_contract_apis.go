@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getContractAPIs = &oapispec.Route{
@@ -37,7 +37,7 @@ var getContractAPIs = &oapispec.Route{
 	FilterFactory:   database.ContractAPIQueryFactory,
 	Description:     coremsgs.APIEndpointsGetContractAPIs,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.ContractAPI{} },
+	JSONOutputValue: func() interface{} { return []*core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Filter))

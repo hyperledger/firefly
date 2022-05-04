@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -55,7 +56,7 @@ var (
 
 const batchesTable = "batches"
 
-func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersisted) (err error) {
+func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *core.BatchPersisted) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -103,7 +104,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 				Set("node_id", batch.Node).
 				Where(sq.Eq{"id": batch.ID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, fftypes.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeUpdated, batch.Namespace, batch.ID)
 			},
 		); err != nil {
 			return err
@@ -129,7 +130,7 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 					batch.Node,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, fftypes.ChangeEventTypeCreated, batch.Namespace, batch.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionBatches, core.ChangeEventTypeCreated, batch.Namespace, batch.ID)
 			},
 		); err != nil {
 			return err
@@ -139,8 +140,8 @@ func (s *SQLCommon) UpsertBatch(ctx context.Context, batch *fftypes.BatchPersist
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.BatchPersisted, error) {
-	var batch fftypes.BatchPersisted
+func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*core.BatchPersisted, error) {
+	var batch core.BatchPersisted
 	err := row.Scan(
 		&batch.ID,
 		&batch.Type,
@@ -162,7 +163,7 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*fftypes.Ba
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.BatchPersisted, err error) {
+func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *core.BatchPersisted, err error) {
 
 	rows, _, err := s.query(ctx, batchesTable,
 		sq.Select(batchColumns...).
@@ -187,7 +188,7 @@ func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message
 	return batch, nil
 }
 
-func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*fftypes.BatchPersisted, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*core.BatchPersisted, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From(batchesTable), filter, batchFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -200,7 +201,7 @@ func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (mes
 	}
 	defer rows.Close()
 
-	batches := []*fftypes.BatchPersisted{}
+	batches := []*core.BatchPersisted{}
 	for rows.Next() {
 		batch, err := s.batchResult(ctx, rows)
 		if err != nil {

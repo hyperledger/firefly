@@ -19,15 +19,16 @@ package broadcast
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
+func (bm *broadcastManager) NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender {
 	broadcast := &broadcastSender{
 		mgr:       bm,
 		namespace: ns,
@@ -39,7 +40,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *fftypes.MessageInOut) sy
 	return broadcast
 }
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	broadcast := bm.NewBroadcast(ns, in)
 	if bm.metrics.IsMetricsEnabled() {
 		bm.metrics.MessageSubmitted(&in.Message)
@@ -88,12 +89,12 @@ func (s *broadcastSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
 	msg.Header.Namespace = s.namespace
-	msg.State = fftypes.MessageStateReady
+	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
-		msg.Header.Type = fftypes.MessageTypeBroadcast
+		msg.Header.Type = core.MessageTypeBroadcast
 	}
 	// We only have one transaction type for broadcast currently
-	msg.Header.TxType = fftypes.TransactionTypeBatchPin
+	msg.Header.TxType = core.TransactionTypeBatchPin
 }
 
 func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod) error {
@@ -115,7 +116,7 @@ func (s *broadcastSender) resolve(ctx context.Context) error {
 	msg := s.msg.Message
 
 	// Resolve the sending identity
-	if msg.Header.Type != fftypes.MessageTypeDefinition || msg.Header.Tag != fftypes.SystemTagIdentityClaim {
+	if msg.Header.Type != core.MessageTypeDefinition || msg.Header.Tag != core.SystemTagIdentityClaim {
 		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
 			return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 		}

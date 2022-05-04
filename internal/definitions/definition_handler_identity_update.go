@@ -19,13 +19,13 @@ package definitions
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
-	var update fftypes.IdentityUpdate
+func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
+	var update core.IdentityUpdate
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
 	if !valid {
 		return HandlerResult{Action: ActionReject}, nil
@@ -63,7 +63,7 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil, fftypes.SystemTopicDefinitions)
+		event := core.NewEvent(core.EventTypeIdentityUpdated, identity.Namespace, identity.ID, nil, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, err

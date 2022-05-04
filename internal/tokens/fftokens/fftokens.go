@@ -21,15 +21,16 @@ import (
 	"encoding/json"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
-	"github.com/hyperledger/firefly/pkg/wsclient"
 )
 
 type FFTokens struct {
@@ -59,14 +60,14 @@ const (
 )
 
 type tokenData struct {
-	TX          *fftypes.UUID           `json:"tx,omitempty"`
-	TXType      fftypes.TransactionType `json:"txtype,omitempty"`
-	Message     *fftypes.UUID           `json:"message,omitempty"`
-	MessageHash *fftypes.Bytes32        `json:"messageHash,omitempty"`
+	TX          *fftypes.UUID        `json:"tx,omitempty"`
+	TXType      core.TransactionType `json:"txtype,omitempty"`
+	Message     *fftypes.UUID        `json:"message,omitempty"`
+	MessageHash *fftypes.Bytes32     `json:"messageHash,omitempty"`
 }
 
 type createPool struct {
-	Type      fftypes.TokenType  `json:"type"`
+	Type      core.TokenType     `json:"type"`
 	RequestID string             `json:"requestId"`
 	Signer    string             `json:"signer"`
 	Data      string             `json:"data,omitempty"`
@@ -183,9 +184,9 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed - bad ID: %+v", data)
 		return
 	}
-	replyType := fftypes.OpStatusSucceeded
+	replyType := core.OpStatusSucceeded
 	if !success {
-		replyType = fftypes.OpStatusFailed
+		replyType = core.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
 	ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
@@ -227,13 +228,13 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 
 	txType := poolData.TXType
 	if txType == "" {
-		txType = fftypes.TransactionTypeTokenPool
+		txType = core.TransactionTypeTokenPool
 	}
 
 	pool := &tokens.TokenPool{
-		Type:        fftypes.FFEnum(tokenType),
+		Type:        core.FFEnum(tokenType),
 		PoolLocator: poolLocator,
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   poolData.TX,
 			Type: txType,
 		},
@@ -263,7 +264,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	return ft.callbacks.TokenPoolCreated(ft, pool)
 }
 
-func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTransferType, data fftypes.JSONObject) (err error) {
+func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, data fftypes.JSONObject) (err error) {
 	protocolID := data.GetString("id")
 	poolLocator := data.GetString("poolLocator")
 	signerAddress := data.GetString("signer")
@@ -288,8 +289,8 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 		poolLocator == "" ||
 		signerAddress == "" ||
 		value == "" ||
-		(t != fftypes.TokenTransferTypeMint && fromAddress == "") ||
-		(t != fftypes.TokenTransferTypeBurn && toAddress == "") {
+		(t != core.TokenTransferTypeMint && fromAddress == "") ||
+		(t != core.TokenTransferTypeBurn && toAddress == "") {
 		log.L(ctx).Errorf("%s event is not valid - missing data: %+v", t, data)
 		return nil // move on
 	}
@@ -312,12 +313,12 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 
 	txType := transferData.TXType
 	if txType == "" {
-		txType = fftypes.TransactionTypeTokenTransfer
+		txType = core.TransactionTypeTokenTransfer
 	}
 
 	transfer := &tokens.TokenTransfer{
 		PoolLocator: poolLocator,
-		TokenTransfer: fftypes.TokenTransfer{
+		TokenTransfer: core.TokenTransfer{
 			Type:        t,
 			TokenIndex:  tokenIndex,
 			URI:         uri,
@@ -329,7 +330,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t fftypes.TokenTran
 			Key:         signerAddress,
 			Message:     transferData.Message,
 			MessageHash: transferData.MessageHash,
-			TX: fftypes.TransactionRef{
+			TX: core.TransactionRef{
 				ID:   transferData.TX,
 				Type: txType,
 			},
@@ -391,12 +392,12 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 
 	txType := transferData.TXType
 	if txType == "" {
-		txType = fftypes.TransactionTypeTokenApproval
+		txType = core.TransactionTypeTokenApproval
 	}
 
 	approval := &tokens.TokenApproval{
 		PoolLocator: poolLocator,
-		TokenApproval: fftypes.TokenApproval{
+		TokenApproval: core.TokenApproval{
 			Connector:  ft.configuredName,
 			Key:        signerAddress,
 			Operator:   operatorAddress,
@@ -404,7 +405,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 			ProtocolID: protocolID,
 			Subject:    subject,
 			Info:       info,
-			TX: fftypes.TransactionRef{
+			TX: core.TransactionRef{
 				ID:   transferData.TX,
 				Type: txType,
 			},
@@ -453,11 +454,11 @@ func (ft *FFTokens) eventLoop() {
 			case messageTokenPool:
 				err = ft.handleTokenPoolCreate(ctx, msg.Data)
 			case messageTokenMint:
-				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeMint, msg.Data)
+				err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeMint, msg.Data)
 			case messageTokenBurn:
-				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeBurn, msg.Data)
+				err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeBurn, msg.Data)
 			case messageTokenTransfer:
-				err = ft.handleTokenTransfer(ctx, fftypes.TokenTransferTypeTransfer, msg.Data)
+				err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
 			case messageTokenApproval:
 				err = ft.handleTokenApproval(ctx, msg.Data)
 			default:
@@ -497,7 +498,7 @@ func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 }
 
-func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
@@ -530,7 +531,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 	return false, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error) {
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
@@ -559,7 +560,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 	return false, nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *fftypes.TokenTransfer) error {
+func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *core.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
 		TXType:      mint.TX.Type,
@@ -585,7 +586,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *fftypes.TokenTransfer) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *core.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
 		TXType:      burn.TX.Type,
@@ -611,7 +612,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *fftypes.TokenTransfer) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *core.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
 		TXType:      transfer.TX.Type,
@@ -638,7 +639,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 	return nil
 }
 
-func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *fftypes.TokenApproval) error {
+func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *core.TokenApproval) error {
 	data, _ := json.Marshal(tokenData{
 		TX:     approval.TX.ID,
 		TXType: approval.TX.Type,

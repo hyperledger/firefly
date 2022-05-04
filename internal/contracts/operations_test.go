@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,14 +32,14 @@ import (
 func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	cm := newTestContractManager()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainInvoke,
+	op := &core.Operation{
+		Type: core.OpTypeBlockchainInvoke,
 		ID:   fftypes.NewUUID(),
 	}
-	req := &fftypes.ContractCallRequest{
+	req := &core.ContractCallRequest{
 		Key:      "0x123",
 		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
-		Method: &fftypes.FFIMethod{
+		Method: &core.FFIMethod{
 			Name: "set",
 		},
 		Input: map[string]interface{}{
@@ -51,7 +52,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("InvokeContract", context.Background(), op.ID, "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
 		return loc.String() == req.Location.String()
-	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
+	}), mock.MatchedBy(func(method *core.FFIMethod) bool {
 		return method.Name == req.Method.Name
 	}), req.Input).Return(nil)
 
@@ -70,7 +71,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 func TestPrepareOperationNotSupported(t *testing.T) {
 	cm := newTestContractManager()
 
-	po, err := cm.PrepareOperation(context.Background(), &fftypes.Operation{})
+	po, err := cm.PrepareOperation(context.Background(), &core.Operation{})
 
 	assert.Nil(t, po)
 	assert.Regexp(t, "FF10371", err)
@@ -79,8 +80,8 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
 	cm := newTestContractManager()
 
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeBlockchainInvoke,
+	op := &core.Operation{
+		Type:  core.OpTypeBlockchainInvoke,
 		Input: fftypes.JSONObject{"interface": "bad"},
 	}
 
@@ -91,7 +92,7 @@ func TestPrepareOperationBlockchainInvokeBadInput(t *testing.T) {
 func TestRunOperationNotSupported(t *testing.T) {
 	cm := newTestContractManager()
 
-	_, complete, err := cm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := cm.RunOperation(context.Background(), &core.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
@@ -100,7 +101,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 func TestOperationUpdate(t *testing.T) {
 	cm := newTestContractManager()
 
-	op := &fftypes.Operation{}
+	op := &core.Operation{}
 
 	err := cm.OnOperationUpdate(context.Background(), op, nil)
 	assert.NoError(t, err)
@@ -109,17 +110,17 @@ func TestOperationUpdate(t *testing.T) {
 func TestOperationUpdateInvokeSucceed(t *testing.T) {
 	cm := newTestContractManager()
 
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		ID:   fftypes.NewUUID(),
-		Type: fftypes.OpTypeBlockchainInvoke,
+		Type: core.OpTypeBlockchainInvoke,
 	}
 	update := &operations.OperationUpdate{
-		Status: fftypes.OpStatusSucceeded,
+		Status: core.OpStatusSucceeded,
 	}
 
 	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypeBlockchainInvokeOpSucceeded && *event.Reference == *op.ID
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeBlockchainInvokeOpSucceeded && *event.Reference == *op.ID
 	})).Return(fmt.Errorf("pop"))
 
 	err := cm.OnOperationUpdate(context.Background(), op, update)
@@ -131,17 +132,17 @@ func TestOperationUpdateInvokeSucceed(t *testing.T) {
 func TestOperationUpdateInvokeFail(t *testing.T) {
 	cm := newTestContractManager()
 
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		ID:   fftypes.NewUUID(),
-		Type: fftypes.OpTypeBlockchainInvoke,
+		Type: core.OpTypeBlockchainInvoke,
 	}
 	update := &operations.OperationUpdate{
-		Status: fftypes.OpStatusFailed,
+		Status: core.OpStatusFailed,
 	}
 
 	mdi := cm.database.(*databasemocks.Plugin)
-	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypeBlockchainInvokeOpFailed && *event.Reference == *op.ID
+	mdi.On("InsertEvent", context.Background(), mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeBlockchainInvokeOpFailed && *event.Reference == *op.ID
 	})).Return(fmt.Errorf("pop"))
 
 	err := cm.OnOperationUpdate(context.Background(), op, update)

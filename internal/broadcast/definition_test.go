@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -38,7 +38,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mim.On("ResolveInputSigningIdentity", mock.Anything, "ff_system", mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, fftypes.SystemTagDefineNamespace, true)
+	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, core.SystemNamespace, &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
 	msa.AssertExpectations(t)
@@ -55,11 +55,11 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	msa.On("WaitForMessage", bm.ctx, "ff_system", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastIdentityClaim(bm.ctx, fftypes.SystemNamespace, &fftypes.IdentityClaim{
-		Identity: &fftypes.Identity{},
-	}, &fftypes.SignerRef{
+	_, err := bm.BroadcastIdentityClaim(bm.ctx, core.SystemNamespace, &core.IdentityClaim{
+		Identity: &core.Identity{},
+	}, &core.SignerRef{
 		Key: "0x1234",
-	}, fftypes.SystemTagDefineNamespace, true)
+	}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
 	msa.AssertExpectations(t)
@@ -74,11 +74,11 @@ func TestBroadcastIdentityClaimFail(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastIdentityClaim(bm.ctx, fftypes.SystemNamespace, &fftypes.IdentityClaim{
-		Identity: &fftypes.Identity{},
-	}, &fftypes.SignerRef{
+	_, err := bm.BroadcastIdentityClaim(bm.ctx, core.SystemNamespace, &core.IdentityClaim{
+		Identity: &core.Identity{},
+	}, &core.SignerRef{
 		Key: "0x1234",
-	}, fftypes.SystemTagDefineNamespace, true)
+	}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -95,7 +95,7 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mim.On("ResolveInputSigningIdentity", mock.Anything, ns, mock.Anything).Return(nil)
 	msa.On("WaitForMessage", bm.ctx, ns, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, ns, &fftypes.Datatype{}, fftypes.SystemTagDefineNamespace, true)
+	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, ns, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
 	msa.AssertExpectations(t)
@@ -107,10 +107,10 @@ func TestBroadcastDefinitionBadIdentity(t *testing.T) {
 	defer cancel()
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, fftypes.SystemNamespace, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := bm.BroadcastDefinition(bm.ctx, fftypes.SystemNamespace, &fftypes.Namespace{}, &fftypes.SignerRef{
+	mim.On("ResolveInputSigningIdentity", mock.Anything, core.SystemNamespace, mock.Anything).Return(fmt.Errorf("pop"))
+	_, err := bm.BroadcastDefinition(bm.ctx, core.SystemNamespace, &core.Namespace{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
-	}, fftypes.SystemTagDefineNamespace, false)
+	}, core.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
 }

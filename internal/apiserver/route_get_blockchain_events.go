@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getBlockchainEvents = &oapispec.Route{
@@ -37,7 +37,7 @@ var getBlockchainEvents = &oapispec.Route{
 	FilterFactory:   database.BlockchainEventQueryFactory,
 	Description:     coremsgs.APIEndpointsListBlockchainEvents,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.BlockchainEvent{} },
+	JSONOutputValue: func() interface{} { return []*core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetBlockchainEvents(r.Ctx, r.PP["ns"], r.Filter))

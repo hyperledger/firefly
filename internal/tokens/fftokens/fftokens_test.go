@@ -26,14 +26,15 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
-	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -101,11 +102,11 @@ func TestCreateTokenPool(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 		Namespace: "ns1",
 		Name:      "new-pool",
@@ -131,7 +132,7 @@ func TestCreateTokenPool(t *testing.T) {
 				},
 				"data": fftypes.JSONObject{
 					"tx":     pool.TX.ID.String(),
-					"txtype": fftypes.TransactionTypeTokenPool.String(),
+					"txtype": core.TransactionTypeTokenPool.String(),
 				}.String(),
 				"name":   "new-pool",
 				"symbol": "symbol",
@@ -156,11 +157,11 @@ func TestCreateTokenPoolError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 	}
 
@@ -179,11 +180,11 @@ func TestCreateTokenPoolErrorMessageOnly(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 	}
 
@@ -201,11 +202,11 @@ func TestCreateTokenPoolUnexpectedError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 	}
 
@@ -222,11 +223,11 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 		Namespace: "ns1",
 		Name:      "new-pool",
@@ -262,7 +263,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
 
 	complete, err := h.CreateTokenPool(context.Background(), opID, pool)
@@ -275,11 +276,11 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 		Namespace: "ns1",
 		Name:      "new-pool",
@@ -320,7 +321,7 @@ func TestActivateTokenPool(t *testing.T) {
 	poolConfig := map[string]interface{}{
 		"address": "0x12345",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator: "N1",
 		Config:  poolConfig,
 	}
@@ -355,11 +356,11 @@ func TestActivateTokenPoolError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenPool,
+			Type: core.TransactionTypeTokenPool,
 		},
 	}
 
@@ -379,7 +380,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 	poolConfig := map[string]interface{}{
 		"foo": "bar",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator: "N1",
 		Config:  poolConfig,
 	}
@@ -411,7 +412,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
 
 	complete, err := h.ActivateTokenPool(context.Background(), opID, pool)
@@ -427,7 +428,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 	poolConfig := map[string]interface{}{
 		"foo": "bar",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator: "N1",
 		Config:  poolConfig,
 	}
@@ -455,7 +456,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 
 	mcb := h.callbacks.(*tokenmocks.Callbacks)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
 
 	complete, err := h.ActivateTokenPool(context.Background(), opID, pool)
@@ -471,7 +472,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 	poolConfig := map[string]interface{}{
 		"foo": "bar",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator: "N1",
 		Config:  poolConfig,
 	}
@@ -502,14 +503,14 @@ func TestMintTokens(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	mint := &fftypes.TokenTransfer{
+	mint := &core.TokenTransfer{
 		LocalID: fftypes.NewUUID(),
 		To:      "user1",
 		Key:     "0x123",
 		Amount:  *fftypes.NewFFBigInt(10),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
+			Type: core.TransactionTypeTokenTransfer,
 		},
 	}
 	opID := fftypes.NewUUID()
@@ -527,7 +528,7 @@ func TestMintTokens(t *testing.T) {
 				"requestId":   opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
-					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
+					"txtype": core.TransactionTypeTokenTransfer.String(),
 				}.String(),
 			}, body)
 
@@ -549,7 +550,7 @@ func TestTokenApproval(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	approval := &fftypes.TokenApproval{
+	approval := &core.TokenApproval{
 		LocalID:  fftypes.NewUUID(),
 		Operator: "0x02",
 		Key:      "0x123",
@@ -557,9 +558,9 @@ func TestTokenApproval(t *testing.T) {
 		Config: fftypes.JSONObject{
 			"foo": "bar",
 		},
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenApproval,
+			Type: core.TransactionTypeTokenApproval,
 		},
 	}
 	opID := fftypes.NewUUID()
@@ -580,7 +581,7 @@ func TestTokenApproval(t *testing.T) {
 				"requestId": opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     approval.TX.ID.String(),
-					"txtype": fftypes.TransactionTypeTokenApproval.String(),
+					"txtype": core.TransactionTypeTokenApproval.String(),
 				}.String(),
 			}, body)
 
@@ -602,7 +603,7 @@ func TestTokenApprovalError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	approval := &fftypes.TokenApproval{}
+	approval := &core.TokenApproval{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/approval", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
@@ -615,7 +616,7 @@ func TestMintTokensError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	mint := &fftypes.TokenTransfer{}
+	mint := &core.TokenTransfer{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
@@ -628,15 +629,15 @@ func TestBurnTokens(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	burn := &fftypes.TokenTransfer{
+	burn := &core.TokenTransfer{
 		LocalID:    fftypes.NewUUID(),
 		TokenIndex: "1",
 		From:       "user1",
 		Key:        "0x123",
 		Amount:     *fftypes.NewFFBigInt(10),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
+			Type: core.TransactionTypeTokenTransfer,
 		},
 	}
 	opID := fftypes.NewUUID()
@@ -655,7 +656,7 @@ func TestBurnTokens(t *testing.T) {
 				"requestId":   opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
-					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
+					"txtype": core.TransactionTypeTokenTransfer.String(),
 				}.String(),
 			}, body)
 
@@ -677,7 +678,7 @@ func TestBurnTokensError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	burn := &fftypes.TokenTransfer{}
+	burn := &core.TokenTransfer{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
@@ -690,16 +691,16 @@ func TestTransferTokens(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	transfer := &fftypes.TokenTransfer{
+	transfer := &core.TokenTransfer{
 		LocalID:    fftypes.NewUUID(),
 		TokenIndex: "1",
 		From:       "user1",
 		To:         "user2",
 		Key:        "0x123",
 		Amount:     *fftypes.NewFFBigInt(10),
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.TransactionTypeTokenTransfer,
+			Type: core.TransactionTypeTokenTransfer,
 		},
 	}
 	opID := fftypes.NewUUID()
@@ -719,7 +720,7 @@ func TestTransferTokens(t *testing.T) {
 				"requestId":   opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
-					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
+					"txtype": core.TransactionTypeTokenTransfer.String(),
 				}.String(),
 			}, body)
 
@@ -741,7 +742,7 @@ func TestTransferTokensError(t *testing.T) {
 	h, _, _, httpURL, done := newTestFFTokens(t)
 	defer done()
 
-	transfer := &fftypes.TokenTransfer{}
+	transfer := &core.TokenTransfer{}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
@@ -780,7 +781,7 @@ func TestEvents(t *testing.T) {
 	}.String()
 
 	// receipt: success
-	mcb.On("TokenOpUpdate", h, opID, fftypes.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("TokenOpUpdate", h, opID, core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "4",
 		"event": "receipt",
@@ -792,7 +793,7 @@ func TestEvents(t *testing.T) {
 	}.String()
 
 	// receipt: failure
-	mcb.On("TokenOpUpdate", h, opID, fftypes.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("TokenOpUpdate", h, opID, core.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "5",
 		"event": "receipt",
@@ -813,7 +814,7 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: invalid uuid (success)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == "000000000010/000020/000030"
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "7",
@@ -837,7 +838,7 @@ func TestEvents(t *testing.T) {
 
 	// token-pool: success
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
-		return p.PoolLocator == "F1" && p.Type == fftypes.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "8",

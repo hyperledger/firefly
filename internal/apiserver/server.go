@@ -39,16 +39,17 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/httpserver"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/httpserver"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type orchestratorContextKey struct{}
@@ -59,6 +60,7 @@ var (
 	adminConfigPrefix   = config.NewPluginConfig("admin")
 	apiConfigPrefix     = config.NewPluginConfig("http")
 	metricsConfigPrefix = config.NewPluginConfig("metrics")
+	corsConfigPrefix    = config.NewPluginConfig("cors")
 )
 
 // Server is the external interface for the API Server
@@ -81,6 +83,7 @@ func InitConfig() {
 	httpserver.InitHTTPConfPrefix(apiConfigPrefix, 5000)
 	httpserver.InitHTTPConfPrefix(adminConfigPrefix, 5001)
 	httpserver.InitHTTPConfPrefix(metricsConfigPrefix, 6000)
+	httpserver.InitCORSConfig(corsConfigPrefix)
 	initMetricsConfPrefix(metricsConfigPrefix)
 }
 
@@ -107,7 +110,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	metricsErrChan := make(chan error)
 
 	if !o.IsPreInit() {
-		apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix)
+		apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix, corsConfigPrefix)
 		if err != nil {
 			return err
 		}
@@ -115,7 +118,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	}
 
 	if config.GetBool(coreconfig.AdminEnabled) {
-		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix)
+		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix, corsConfigPrefix)
 		if err != nil {
 			return err
 		}
@@ -123,7 +126,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	}
 
 	if as.metricsEnabled {
-		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfigPrefix)
+		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfigPrefix, corsConfigPrefix)
 		if err != nil {
 			return err
 		}
@@ -147,7 +150,7 @@ func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan, metricsErrChan
 type multipartState struct {
 	mpr        *multipart.Reader
 	formParams map[string]string
-	part       *fftypes.Multipart
+	part       *core.Multipart
 	close      func()
 }
 
@@ -170,7 +173,7 @@ func (as *apiServer) getFilePart(req *http.Request) (*multipartState, error) {
 			formParams[part.FormName()] = string(value)
 		} else {
 			l.Debugf("Processing multi-part upload. Field='%s' Filename='%s'", part.FormName(), part.FileName())
-			mp := &fftypes.Multipart{
+			mp := &core.Multipart{
 				Data:     part,
 				Filename: part.FileName(),
 				Mimetype: part.Header.Get("Content-Disposition"),

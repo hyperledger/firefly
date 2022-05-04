@@ -21,25 +21,26 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type uploadBatchData struct {
-	BatchPersisted *fftypes.BatchPersisted `json:"batchPersisted"`
-	Batch          *fftypes.Batch          `json:"batch"`
+	BatchPersisted *core.BatchPersisted `json:"batchPersisted"`
+	Batch          *core.Batch          `json:"batch"`
 }
 
 type uploadBlobData struct {
-	Data *fftypes.Data `json:"data"`
-	Blob *fftypes.Blob `json:"batch"`
+	Data *core.Data `json:"data"`
+	Blob *core.Blob `json:"batch"`
 }
 
-func addUploadBatchInputs(op *fftypes.Operation, batchID *fftypes.UUID) {
+func addUploadBatchInputs(op *core.Operation, batchID *fftypes.UUID) {
 	op.Input = fftypes.JSONObject{
 		"id": batchID.String(),
 	}
@@ -51,7 +52,7 @@ func getUploadBatchOutputs(payloadRef string) fftypes.JSONObject {
 	}
 }
 
-func addUploadBlobInputs(op *fftypes.Operation, dataID *fftypes.UUID) {
+func addUploadBlobInputs(op *core.Operation, dataID *fftypes.UUID) {
 	op.Input = fftypes.JSONObject{
 		"dataId": dataID.String(),
 	}
@@ -63,17 +64,17 @@ func getUploadBlobOutputs(payloadRef string) fftypes.JSONObject {
 	}
 }
 
-func retrieveUploadBatchInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.UUID, error) {
+func retrieveUploadBatchInputs(ctx context.Context, op *core.Operation) (*fftypes.UUID, error) {
 	return fftypes.ParseUUID(ctx, op.Input.GetString("id"))
 }
 
-func retrieveUploadBlobInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.UUID, error) {
+func retrieveUploadBlobInputs(ctx context.Context, op *core.Operation) (*fftypes.UUID, error) {
 	return fftypes.ParseUUID(ctx, op.Input.GetString("dataId"))
 }
 
-func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypeSharedStorageUploadBatch:
+	case core.OpTypeSharedStorageUploadBatch:
 		id, err := retrieveUploadBatchInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -90,7 +91,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 		}
 		return opUploadBatch(op, batch, bp), nil
 
-	case fftypes.OpTypeSharedStorageUploadBlob:
+	case core.OpTypeSharedStorageUploadBlob:
 		dataID, err := retrieveUploadBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -114,7 +115,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *fftypes.Op
 	}
 }
 
-func (bm *broadcastManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (bm *broadcastManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case uploadBatchData:
 		return bm.uploadBatch(ctx, data)
@@ -168,12 +169,12 @@ func (bm *broadcastManager) uploadBlob(ctx context.Context, data uploadBlobData)
 	return getUploadBlobOutputs(data.Data.Blob.Public), true, nil
 }
 
-func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+func (bm *broadcastManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
 	return nil
 }
 
-func opUploadBatch(op *fftypes.Operation, batch *fftypes.Batch, batchPersisted *fftypes.BatchPersisted) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opUploadBatch(op *core.Operation, batch *core.Batch, batchPersisted *core.BatchPersisted) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
@@ -181,8 +182,8 @@ func opUploadBatch(op *fftypes.Operation, batch *fftypes.Batch, batchPersisted *
 	}
 }
 
-func opUploadBlob(op *fftypes.Operation, data *fftypes.Data, blob *fftypes.Blob) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opUploadBlob(op *core.Operation, data *core.Data, blob *core.Blob) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,

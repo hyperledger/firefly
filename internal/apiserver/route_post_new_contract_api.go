@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewContractAPI = &oapispec.Route{
@@ -38,12 +38,12 @@ var postNewContractAPI = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewContractAPI,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractAPI{} },
-	JSONOutputValue: func() interface{} { return &fftypes.ContractAPI{} },
+	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
+	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Input.(*fftypes.ContractAPI), waitConfirm)
+		return getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Input.(*core.ContractAPI), waitConfirm)
 	},
 }

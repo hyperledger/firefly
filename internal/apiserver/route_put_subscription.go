@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var putSubscription = &oapispec.Route{
@@ -35,11 +35,11 @@ var putSubscription = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPutSubscription,
-	JSONInputValue:  func() interface{} { return &fftypes.Subscription{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
+	JSONInputValue:  func() interface{} { return &core.Subscription{} },
+	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).CreateUpdateSubscription(r.Ctx, r.PP["ns"], r.Input.(*fftypes.Subscription))
+		output, err = getOr(r.Ctx).CreateUpdateSubscription(r.Ctx, r.PP["ns"], r.Input.(*core.Subscription))
 		return output, err
 	},
 }

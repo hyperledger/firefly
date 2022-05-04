@@ -20,8 +20,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -30,7 +31,7 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	l := log.L(em.ctx)
 
 	// De-serialize the batch
-	var batch *fftypes.Batch
+	var batch *core.Batch
 	err := json.Unmarshal(data, &batch)
 	if err != nil {
 		l.Errorf("Invalid batch downloaded from %s '%s': %s", ss.Name(), payloadRef, err)
@@ -69,7 +70,7 @@ func (em *eventManager) SharedStorageBlobDownloaded(ss sharedstorage.Plugin, has
 	// Dispatch to the blob receiver for efficient batch DB operations
 	blobHash := hash
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
-		blob: &fftypes.Blob{
+		blob: &core.Blob{
 			PayloadRef: payloadRef,
 			Hash:       &blobHash,
 			Size:       size,

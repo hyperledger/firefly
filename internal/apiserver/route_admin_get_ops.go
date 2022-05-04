@@ -21,8 +21,8 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var adminGetOps = &oapispec.Route{
@@ -33,7 +33,7 @@ var adminGetOps = &oapispec.Route{
 	FilterFactory:   database.OperationQueryFactory,
 	Description:     coremsgs.APIEndpointsAdminGetOps,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Operation{} },
+	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetOperations(r.Ctx, r.Filter))

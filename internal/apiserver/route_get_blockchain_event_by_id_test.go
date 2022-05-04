@@ -20,7 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetBlockchainEventByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetBlockchainEventByID", mock.Anything, "mynamespace", "id12345").
-		Return(&fftypes.BlockchainEvent{}, nil)
+		Return(&core.BlockchainEvent{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

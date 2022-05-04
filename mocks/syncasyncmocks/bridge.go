@@ -5,7 +5,9 @@ package syncasyncmocks
 import (
 	context "context"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
 	mock "github.com/stretchr/testify/mock"
 
 	syncasync "github.com/hyperledger/firefly/internal/syncasync"
@@ -24,15 +26,15 @@ func (_m *Bridge) Init(sysevents sysmessaging.SystemEvents) {
 }
 
 // WaitForIdentity provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Identity, error) {
+func (_m *Bridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.Identity, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.Identity); ok {
+	var r0 *core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.Identity); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Identity)
+			r0 = ret.Get(0).(*core.Identity)
 		}
 	}
 
@@ -47,15 +49,15 @@ func (_m *Bridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UU
 }
 
 // WaitForInvokeOperation provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Operation, error) {
+func (_m *Bridge) WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.Operation, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.Operation); ok {
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.Operation); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Operation)
+			r0 = ret.Get(0).(*core.Operation)
 		}
 	}
 
@@ -70,15 +72,15 @@ func (_m *Bridge) WaitForInvokeOperation(ctx context.Context, ns string, id *fft
 }
 
 // WaitForMessage provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.Message, error) {
+func (_m *Bridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.Message, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.Message); ok {
+	var r0 *core.Message
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.Message); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
+			r0 = ret.Get(0).(*core.Message)
 		}
 	}
 
@@ -93,15 +95,15 @@ func (_m *Bridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUI
 }
 
 // WaitForReply provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.MessageInOut, error) {
+func (_m *Bridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.MessageInOut, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.MessageInOut
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.MessageInOut); ok {
+	var r0 *core.MessageInOut
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.MessageInOut); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.MessageInOut)
+			r0 = ret.Get(0).(*core.MessageInOut)
 		}
 	}
 
@@ -116,15 +118,15 @@ func (_m *Bridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID,
 }
 
 // WaitForTokenApproval provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.TokenApproval, error) {
+func (_m *Bridge) WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.TokenApproval, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.TokenApproval); ok {
+	var r0 *core.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.TokenApproval); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenApproval)
+			r0 = ret.Get(0).(*core.TokenApproval)
 		}
 	}
 
@@ -139,15 +141,15 @@ func (_m *Bridge) WaitForTokenApproval(ctx context.Context, ns string, id *fftyp
 }
 
 // WaitForTokenPool provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.TokenPool, error) {
+func (_m *Bridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.TokenPool); ok {
+	var r0 *core.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.TokenPool); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenPool)
+			r0 = ret.Get(0).(*core.TokenPool)
 		}
 	}
 
@@ -162,15 +164,15 @@ func (_m *Bridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.U
 }
 
 // WaitForTokenTransfer provides a mock function with given fields: ctx, ns, id, send
-func (_m *Bridge) WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*fftypes.TokenTransfer, error) {
+func (_m *Bridge) WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send syncasync.RequestSender) (*core.TokenTransfer, error) {
 	ret := _m.Called(ctx, ns, id, send)
 
-	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *fftypes.TokenTransfer); ok {
+	var r0 *core.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, syncasync.RequestSender) *core.TokenTransfer); ok {
 		r0 = rf(ctx, ns, id, send)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+			r0 = ret.Get(0).(*core.TokenTransfer)
 		}
 	}
 

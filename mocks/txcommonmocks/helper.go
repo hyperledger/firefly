@@ -5,7 +5,9 @@ package txcommonmocks
 import (
 	context "context"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,11 +17,11 @@ type Helper struct {
 }
 
 // AddBlockchainTX provides a mock function with given fields: ctx, tx, blockchainTXID
-func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error {
+func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error {
 	ret := _m.Called(ctx, tx, blockchainTXID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Transaction, string) error); ok {
 		r0 = rf(ctx, tx, blockchainTXID)
 	} else {
 		r0 = ret.Error(0)
@@ -29,20 +31,20 @@ func (_m *Helper) AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, 
 }
 
 // EnrichEvent provides a mock function with given fields: ctx, event
-func (_m *Helper) EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error) {
+func (_m *Helper) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
 	ret := _m.Called(ctx, event)
 
-	var r0 *fftypes.EnrichedEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) *fftypes.EnrichedEvent); ok {
+	var r0 *core.EnrichedEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Event) *core.EnrichedEvent); ok {
 		r0 = rf(ctx, event)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.EnrichedEvent)
+			r0 = ret.Get(0).(*core.EnrichedEvent)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Event) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Event) error); ok {
 		r1 = rf(ctx, event)
 	} else {
 		r1 = ret.Error(1)
@@ -52,15 +54,15 @@ func (_m *Helper) EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftyp
 }
 
 // GetBlockchainEventByIDCached provides a mock function with given fields: ctx, id
-func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
+	var r0 *core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.BlockchainEvent); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+			r0 = ret.Get(0).(*core.BlockchainEvent)
 		}
 	}
 
@@ -75,15 +77,15 @@ func (_m *Helper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.
 }
 
 // GetTransactionByIDCached provides a mock function with given fields: ctx, id
-func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
+func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Transaction); ok {
+	var r0 *core.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Transaction); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Transaction)
+			r0 = ret.Get(0).(*core.Transaction)
 		}
 	}
 
@@ -98,11 +100,11 @@ func (_m *Helper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID
 }
 
 // InsertBlockchainEvent provides a mock function with given fields: ctx, chainEvent
-func (_m *Helper) InsertBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+func (_m *Helper) InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
 	ret := _m.Called(ctx, chainEvent)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BlockchainEvent) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) error); ok {
 		r0 = rf(ctx, chainEvent)
 	} else {
 		r0 = ret.Error(0)
@@ -112,18 +114,18 @@ func (_m *Helper) InsertBlockchainEvent(ctx context.Context, chainEvent *fftypes
 }
 
 // PersistTransaction provides a mock function with given fields: ctx, ns, id, txType, blockchainTXID
-func (_m *Helper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.FFEnum, blockchainTXID string) (bool, error) {
+func (_m *Helper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType core.FFEnum, blockchainTXID string) (bool, error) {
 	ret := _m.Called(ctx, ns, id, txType, blockchainTXID)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, fftypes.FFEnum, string) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.FFEnum, string) bool); ok {
 		r0 = rf(ctx, ns, id, txType, blockchainTXID)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, fftypes.FFEnum, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID, core.FFEnum, string) error); ok {
 		r1 = rf(ctx, ns, id, txType, blockchainTXID)
 	} else {
 		r1 = ret.Error(1)
@@ -133,11 +135,11 @@ func (_m *Helper) PersistTransaction(ctx context.Context, ns string, id *fftypes
 }
 
 // SubmitNewTransaction provides a mock function with given fields: ctx, ns, txType
-func (_m *Helper) SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.FFEnum) (*fftypes.UUID, error) {
+func (_m *Helper) SubmitNewTransaction(ctx context.Context, ns string, txType core.FFEnum) (*fftypes.UUID, error) {
 	ret := _m.Called(ctx, ns, txType)
 
 	var r0 *fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context, string, fftypes.FFEnum) *fftypes.UUID); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, core.FFEnum) *fftypes.UUID); ok {
 		r0 = rf(ctx, ns, txType)
 	} else {
 		if ret.Get(0) != nil {
@@ -146,7 +148,7 @@ func (_m *Helper) SubmitNewTransaction(ctx context.Context, ns string, txType ff
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, fftypes.FFEnum) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, core.FFEnum) error); ok {
 		r1 = rf(ctx, ns, txType)
 	} else {
 		r1 = ret.Error(1)

@@ -26,14 +26,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
-	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -81,8 +82,8 @@ func TestValidateOptionsFail(t *testing.T) {
 	defer cancel()
 
 	yes := true
-	err := ws.ValidateOptions(&fftypes.SubscriptionOptions{
-		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	err := ws.ValidateOptions(&core.SubscriptionOptions{
+		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 			WithData: &yes,
 		},
 	})
@@ -94,7 +95,7 @@ func TestValidateOptionsOk(t *testing.T) {
 	ws, _, cancel := newTestWebsockets(t, cbs)
 	defer cancel()
 
-	opts := &fftypes.SubscriptionOptions{}
+	opts := &core.SubscriptionOptions{}
 	err := ws.ValidateOptions(opts)
 	assert.NoError(t, err)
 	assert.False(t, *opts.WithData)
@@ -110,10 +111,10 @@ func TestSendBadData(t *testing.T) {
 	err := wsc.Send(context.Background(), []byte(`!json`))
 	assert.NoError(t, err)
 	b := <-wsc.Receive()
-	var res fftypes.WSProtocolErrorPayload
+	var res core.WSProtocolErrorPayload
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.WSProtocolErrorEventType, res.Type)
+	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
 	assert.Regexp(t, "FF10176", res.Error)
 }
 
@@ -126,10 +127,10 @@ func TestSendBadAction(t *testing.T) {
 	err := wsc.Send(context.Background(), []byte(`{"type":"lobster"}`))
 	assert.NoError(t, err)
 	b := <-wsc.Receive()
-	var res fftypes.WSProtocolErrorPayload
+	var res core.WSProtocolErrorPayload
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.WSProtocolErrorEventType, res.Type)
+	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
 	assert.Regexp(t, "FF10176", res.Error)
 }
 
@@ -142,10 +143,10 @@ func TestSendEmptyStartAction(t *testing.T) {
 	err := wsc.Send(context.Background(), []byte(`{"type":"start"}`))
 	assert.NoError(t, err)
 	b := <-wsc.Receive()
-	var res fftypes.WSProtocolErrorPayload
+	var res core.WSProtocolErrorPayload
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.WSProtocolErrorEventType, res.Type)
+	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
 	assert.Regexp(t, "FF10176", res.Error)
 }
 
@@ -177,15 +178,15 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{ID: fftypes.NewUUID()},
+	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
+		Subscription: core.SubscriptionRef{ID: fftypes.NewUUID()},
 	}, nil)
 
 	b := <-wsc.Receive()
-	var res fftypes.EventDelivery
+	var res core.EventDelivery
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 
@@ -204,9 +205,9 @@ func TestStartReceiveDurable(t *testing.T) {
 	sub := cbs.On("RegisterConnection",
 		mock.MatchedBy(func(s string) bool { connID = s; return true }),
 		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
-			return subMatch(fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
-				!subMatch(fftypes.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
-				!subMatch(fftypes.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
+			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
+				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
+				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
 		}),
 	).Return(nil)
 	ack := cbs.On("DeliveryResponse",
@@ -227,22 +228,22 @@ func TestStartReceiveDurable(t *testing.T) {
 	assert.NoError(t, err)
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{ID: fftypes.NewUUID()},
+	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub1",
 		},
 	}, nil)
 	// Put a second in flight
-	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{ID: fftypes.NewUUID()},
+	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "sub2",
@@ -250,7 +251,7 @@ func TestStartReceiveDurable(t *testing.T) {
 	}, nil)
 
 	b := <-wsc.Receive()
-	var res fftypes.EventDelivery
+	var res core.EventDelivery
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 
@@ -300,15 +301,15 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	defer cancel()
 
 	<-waitSubscribed
-	ws.DeliveryRequest(connID, nil, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{ID: fftypes.NewUUID()},
+	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID()},
+		Subscription: core.SubscriptionRef{ID: fftypes.NewUUID()},
 	}, nil)
 
 	b := <-wsc.Receive()
-	var res fftypes.EventDelivery
+	var res core.EventDelivery
 	err := json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 
@@ -325,7 +326,7 @@ func TestAutoStartBadOptions(t *testing.T) {
 	defer cancel()
 
 	b := <-wsc.Receive()
-	var res fftypes.WSProtocolErrorPayload
+	var res core.WSProtocolErrorPayload
 	err := json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 	assert.Regexp(t, "FF10178", res.Error)
@@ -338,12 +339,12 @@ func TestHandleAckWithAutoAck(t *testing.T) {
 		ctx:          context.Background(),
 		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
-		inflight: []*fftypes.EventDeliveryResponse{
+		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
 		},
 		autoAck: true,
 	}
-	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{
+	err := wsc.handleAck(&core.WSClientActionAckPayload{
 		ID: eventUUID,
 	})
 	assert.Regexp(t, "FF10180", err)
@@ -355,13 +356,13 @@ func TestHandleStartFlippingAutoAck(t *testing.T) {
 		ctx:          context.Background(),
 		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
-		inflight: []*fftypes.EventDeliveryResponse{
+		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
 		},
 		autoAck: true,
 	}
 	no := false
-	err := wsc.handleStart(&fftypes.WSClientActionStartPayload{
+	err := wsc.handleStart(&core.WSClientActionStartPayload{
 		AutoAck: &no,
 	})
 	assert.Regexp(t, "FF10179", err)
@@ -377,11 +378,11 @@ func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
 			{ephemeral: false, name: "name3", namespace: "ns1"},
 		},
 		sendMessages: make(chan interface{}, 1),
-		inflight: []*fftypes.EventDeliveryResponse{
+		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
 		},
 	}
-	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{
+	err := wsc.handleAck(&core.WSClientActionAckPayload{
 		ID: eventUUID,
 	})
 	assert.Regexp(t, "FF10175", err)
@@ -400,11 +401,11 @@ func TestHandleAckMultipleStartedNoSubSingleMatch(t *testing.T) {
 		},
 		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
-		inflight: []*fftypes.EventDeliveryResponse{
+		inflight: []*core.EventDeliveryResponse{
 			{ID: eventUUID},
 		},
 	}
-	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{
+	err := wsc.handleAck(&core.WSClientActionAckPayload{
 		ID: eventUUID,
 	})
 	assert.NoError(t, err)
@@ -415,9 +416,9 @@ func TestHandleAckNoneInflight(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx:          context.Background(),
 		sendMessages: make(chan interface{}, 1),
-		inflight:     []*fftypes.EventDeliveryResponse{},
+		inflight:     []*core.EventDeliveryResponse{},
 	}
-	err := wsc.handleAck(&fftypes.WSClientActionAckPayload{})
+	err := wsc.handleAck(&core.WSClientActionAckPayload{})
 	assert.Regexp(t, "FF10175", err)
 }
 
@@ -475,7 +476,7 @@ func TestConnectionDispatchAfterClose(t *testing.T) {
 	wsc := &websocketConnection{
 		ctx: ctx,
 	}
-	err := wsc.dispatch(&fftypes.EventDelivery{})
+	err := wsc.dispatch(&core.EventDelivery{})
 	assert.Regexp(t, "FF00147", err)
 }
 
@@ -484,7 +485,7 @@ func TestWebsocketDispatchAfterClose(t *testing.T) {
 		ctx:         context.Background(),
 		connections: make(map[string]*websocketConnection),
 	}
-	err := ws.DeliveryRequest("gone", nil, &fftypes.EventDelivery{}, nil)
+	err := ws.DeliveryRequest("gone", nil, &core.EventDelivery{}, nil)
 	assert.Regexp(t, "FF10173", err)
 }
 
@@ -504,11 +505,11 @@ func TestDispatchAutoAck(t *testing.T) {
 		autoAck:      true,
 	}
 	wsc.ws.connections[wsc.connID] = wsc
-	err := wsc.ws.DeliveryRequest(wsc.connID, nil, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{ID: fftypes.NewUUID()},
+	err := wsc.ws.DeliveryRequest(wsc.connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: fftypes.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
+		Subscription: core.SubscriptionRef{ID: fftypes.NewUUID(), Namespace: "ns1", Name: "sub1"},
 	}, nil)
 	assert.NoError(t, err)
 	cbs.AssertExpectations(t)

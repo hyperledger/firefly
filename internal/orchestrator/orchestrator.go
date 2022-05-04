@@ -20,6 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/adminevents"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
@@ -46,14 +51,10 @@ import (
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
 	idplugin "github.com/hyperledger/firefly/pkg/identity"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
@@ -88,52 +89,52 @@ type Orchestrator interface {
 	IsPreInit() bool
 
 	// Status
-	GetStatus(ctx context.Context) (*fftypes.NodeStatus, error)
+	GetStatus(ctx context.Context) (*core.NodeStatus, error)
 
 	// Subscription management
-	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, *database.FilterResult, error)
-	GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error)
-	CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
-	CreateUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error)
+	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
+	GetSubscriptionByID(ctx context.Context, ns, id string) (*core.Subscription, error)
+	CreateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
+	CreateUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, ns, id string) error
 
 	// Data Query
-	GetNamespace(ctx context.Context, ns string) (*fftypes.Namespace, error)
-	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*fftypes.Namespace, *database.FilterResult, error)
-	GetTransactionByID(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
-	GetTransactionOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error)
-	GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
-	GetTransactionStatus(ctx context.Context, ns, id string) (*fftypes.TransactionStatus, error)
-	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Transaction, *database.FilterResult, error)
-	GetMessageByID(ctx context.Context, ns, id string) (*fftypes.Message, error)
-	GetMessageByIDWithData(ctx context.Context, ns, id string) (*fftypes.MessageInOut, error)
-	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error)
-	GetMessagesWithData(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.MessageInOut, *database.FilterResult, error)
-	GetMessageTransaction(ctx context.Context, ns, id string) (*fftypes.Transaction, error)
-	GetMessageOperations(ctx context.Context, ns, id string) ([]*fftypes.Operation, *database.FilterResult, error)
-	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
-	GetMessageData(ctx context.Context, ns, id string) (fftypes.DataArray, error)
-	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*fftypes.Message, *database.FilterResult, error)
-	GetBatchByID(ctx context.Context, ns, id string) (*fftypes.BatchPersisted, error)
-	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BatchPersisted, *database.FilterResult, error)
-	GetDataByID(ctx context.Context, ns, id string) (*fftypes.Data, error)
-	GetData(ctx context.Context, ns string, filter database.AndFilter) (fftypes.DataArray, *database.FilterResult, error)
-	GetDatatypeByID(ctx context.Context, ns, id string) (*fftypes.Datatype, error)
-	GetDatatypeByName(ctx context.Context, ns, name, version string) (*fftypes.Datatype, error)
-	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Datatype, *database.FilterResult, error)
-	GetOperationByIDNamespaced(ctx context.Context, ns, id string) (*fftypes.Operation, error)
-	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
-	GetOperationByID(ctx context.Context, id string) (*fftypes.Operation, error)
-	GetOperations(ctx context.Context, filter database.AndFilter) ([]*fftypes.Operation, *database.FilterResult, error)
-	GetEventByID(ctx context.Context, ns, id string) (*fftypes.Event, error)
-	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Event, *database.FilterResult, error)
-	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.EnrichedEvent, *database.FilterResult, error)
-	GetBlockchainEventByID(ctx context.Context, ns, id string) (*fftypes.BlockchainEvent, error)
-	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error)
-	GetPins(ctx context.Context, filter database.AndFilter) ([]*fftypes.Pin, *database.FilterResult, error)
+	GetNamespace(ctx context.Context, ns string) (*core.Namespace, error)
+	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error)
+	GetTransactionByID(ctx context.Context, ns, id string) (*core.Transaction, error)
+	GetTransactionOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error)
+	GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*core.BlockchainEvent, *database.FilterResult, error)
+	GetTransactionStatus(ctx context.Context, ns, id string) (*core.TransactionStatus, error)
+	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error)
+	GetMessageByID(ctx context.Context, ns, id string) (*core.Message, error)
+	GetMessageByIDWithData(ctx context.Context, ns, id string) (*core.MessageInOut, error)
+	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
+	GetMessagesWithData(ctx context.Context, ns string, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error)
+	GetMessageTransaction(ctx context.Context, ns, id string) (*core.Transaction, error)
+	GetMessageOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error)
+	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
+	GetMessageData(ctx context.Context, ns, id string) (core.DataArray, error)
+	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
+	GetBatchByID(ctx context.Context, ns, id string) (*core.BatchPersisted, error)
+	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error)
+	GetDataByID(ctx context.Context, ns, id string) (*core.Data, error)
+	GetData(ctx context.Context, ns string, filter database.AndFilter) (core.DataArray, *database.FilterResult, error)
+	GetDatatypeByID(ctx context.Context, ns, id string) (*core.Datatype, error)
+	GetDatatypeByName(ctx context.Context, ns, name, version string) (*core.Datatype, error)
+	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
+	GetOperationByIDNamespaced(ctx context.Context, ns, id string) (*core.Operation, error)
+	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
+	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
+	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
+	GetEventByID(ctx context.Context, ns, id string) (*core.Event, error)
+	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
+	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error)
+	GetBlockchainEventByID(ctx context.Context, ns, id string) (*core.BlockchainEvent, error)
+	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error)
+	GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
 
 	// Charts
-	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*fftypes.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
 
 	// Config Management
 	GetConfig(ctx context.Context) fftypes.JSONObject
@@ -144,7 +145,7 @@ type Orchestrator interface {
 	ResetConfig(ctx context.Context)
 
 	// Message Routing
-	RequestReply(ctx context.Context, ns string, msg *fftypes.MessageInOut) (reply *fftypes.MessageInOut, err error)
+	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 }
 
 type orchestrator struct {
@@ -368,8 +369,8 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
-		fb.Eq("type", fftypes.IdentityTypeNode),
-		fb.Eq("namespace", fftypes.SystemNamespace),
+		fb.Eq("type", core.IdentityTypeNode),
+		fb.Eq("namespace", core.SystemNamespace),
 	))
 	if err != nil {
 		return err
@@ -460,7 +461,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			if name == "" {
 				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 			}
-			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
+			if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
 				return err
 			}
 			if pluginName == "" {
@@ -598,20 +599,20 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftypes.Namespace, error) {
+func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*core.Namespace, error) {
 	defaultNS := config.GetString(coreconfig.NamespacesDefault)
 	predefined := config.GetObjectArray(coreconfig.NamespacesPredefined)
-	namespaces := []*fftypes.Namespace{
+	namespaces := []*core.Namespace{
 		{
-			Name:        fftypes.SystemNamespace,
-			Type:        fftypes.NamespaceTypeSystem,
+			Name:        core.SystemNamespace,
+			Type:        core.NamespaceTypeSystem,
 			Description: i18n.Expand(ctx, coremsgs.CoreSystemNSDescription),
 		},
 	}
 	foundDefault := false
 	for i, nsObject := range predefined {
 		name := nsObject.GetString("name")
-		err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
+		err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
 		if err != nil {
 			return nil, err
 		}
@@ -625,8 +626,8 @@ func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*fftype
 			}
 		}
 		if !dup {
-			namespaces = append(namespaces, &fftypes.Namespace{
-				Type:        fftypes.NamespaceTypeLocal,
+			namespaces = append(namespaces, &core.Namespace{
+				Type:        core.NamespaceTypeLocal,
 				Name:        name,
 				Description: description,
 			})
@@ -655,7 +656,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 			newNS.Created = fftypes.Now()
 		} else {
 			// Only update if the description has changed, and the one in our DB is locally defined
-			updated = ns.Description != newNS.Description && ns.Type == fftypes.NamespaceTypeLocal
+			updated = ns.Description != newNS.Description && ns.Type == core.NamespaceTypeLocal
 		}
 		if updated {
 			if err := or.database.UpsertNamespace(ctx, newNS, true); err != nil {

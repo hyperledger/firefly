@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewMessageBroadcast = &oapispec.Route{
@@ -38,13 +38,13 @@ var postNewMessageBroadcast = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
-	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Message{} },
+	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
+	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		output, err = getOr(r.Ctx).Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut), waitConfirm)
+		output, err = getOr(r.Ctx).Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*core.MessageInOut), waitConfirm)
 		return output, err
 	},
 }

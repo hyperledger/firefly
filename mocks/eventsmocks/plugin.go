@@ -5,11 +5,11 @@ package eventsmocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/pkg/config"
+	config "github.com/hyperledger/firefly-common/pkg/config"
+
+	core "github.com/hyperledger/firefly/pkg/core"
 
 	events "github.com/hyperledger/firefly/pkg/events"
-
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -36,11 +36,11 @@ func (_m *Plugin) Capabilities() *events.Capabilities {
 }
 
 // DeliveryRequest provides a mock function with given fields: connID, sub, event, data
-func (_m *Plugin) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
+func (_m *Plugin) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	ret := _m.Called(connID, sub, event, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *fftypes.Subscription, *fftypes.EventDelivery, fftypes.DataArray) error); ok {
+	if rf, ok := ret.Get(0).(func(string, *core.Subscription, *core.EventDelivery, core.DataArray) error); ok {
 		r0 = rf(connID, sub, event, data)
 	} else {
 		r0 = ret.Error(0)
@@ -97,11 +97,11 @@ func (_m *Plugin) Name() string {
 }
 
 // ValidateOptions provides a mock function with given fields: options
-func (_m *Plugin) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+func (_m *Plugin) ValidateOptions(options *core.SubscriptionOptions) error {
 	ret := _m.Called(options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*fftypes.SubscriptionOptions) error); ok {
+	if rf, ok := ret.Get(0).(func(*core.SubscriptionOptions) error); ok {
 		r0 = rf(options)
 	} else {
 		r0 = ret.Error(0)

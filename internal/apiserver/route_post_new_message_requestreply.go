@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewMessageRequestReply = &oapispec.Route{
@@ -35,11 +35,11 @@ var postNewMessageRequestReply = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewMessageRequestReply,
-	JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-	JSONOutputValue: func() interface{} { return &fftypes.MessageInOut{} },
+	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
+	JSONOutputValue: func() interface{} { return &core.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).RequestReply(r.Ctx, r.PP["ns"], r.Input.(*fftypes.MessageInOut))
+		output, err = getOr(r.Ctx).RequestReply(r.Ctx, r.PP["ns"], r.Input.(*core.MessageInOut))
 		return output, err
 	},
 }

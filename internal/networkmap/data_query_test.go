@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -33,7 +34,7 @@ func TestGetOrganizationByNameOrIDOk(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg}}, nil)
 	res, err := nm.GetOrganizationByNameOrID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
@@ -44,7 +45,7 @@ func TestGetOrganizationByNameOrIDNotOrg(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeNode}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeNode}}, nil)
 	res, err := nm.GetOrganizationByNameOrID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Nil(t, res)
@@ -78,7 +79,7 @@ func TestGetOrganizationByNameBadName(t *testing.T) {
 func TestGetOrganizationByNameError(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetIdentityByName", nm.ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, "bad").Return(nil, fmt.Errorf("pop"))
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByName", nm.ctx, core.IdentityTypeOrg, core.SystemNamespace, "bad").Return(nil, fmt.Errorf("pop"))
 	_, err := nm.GetOrganizationByNameOrID(nm.ctx, "bad")
 	assert.Regexp(t, "pop", err)
 }
@@ -88,7 +89,7 @@ func TestGetNodeByNameOrIDOk(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeNode}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeNode}}, nil)
 	res, err := nm.GetNodeByNameOrID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
@@ -99,7 +100,7 @@ func TestGetNodeByNameOrIDWrongType(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg}}, nil)
 	res, err := nm.GetNodeByNameOrID(nm.ctx, id.String())
 	assert.NoError(t, err)
 	assert.Nil(t, res)
@@ -133,7 +134,7 @@ func TestGetNodeByNameBadName(t *testing.T) {
 func TestGetNodeByNameError(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetIdentityByName", nm.ctx, fftypes.IdentityTypeNode, fftypes.SystemNamespace, "bad").Return(nil, fmt.Errorf("pop"))
+	nm.database.(*databasemocks.Plugin).On("GetIdentityByName", nm.ctx, core.IdentityTypeNode, core.SystemNamespace, "bad").Return(nil, fmt.Errorf("pop"))
 	_, err := nm.GetNodeByNameOrID(nm.ctx, "bad")
 	assert.Regexp(t, "pop", err)
 }
@@ -141,7 +142,7 @@ func TestGetNodeByNameError(t *testing.T) {
 func TestGetOrganizations(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	res, _, err := nm.GetOrganizations(nm.ctx, database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
@@ -150,7 +151,7 @@ func TestGetOrganizations(t *testing.T) {
 func TestGetNodes(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	res, _, err := nm.GetNodes(nm.ctx, database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
@@ -161,7 +162,7 @@ func TestGetIdentityByIDOk(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg, Namespace: "ns1"}}, nil)
 	res, err := nm.GetIdentityByID(nm.ctx, "ns1", id.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *id, *res.ID)
@@ -199,7 +200,7 @@ func TestGetIdentityByIDBadNS(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg, Namespace: "ns1"}}, nil)
 	_, err := nm.GetIdentityByID(nm.ctx, "ns2", id.String())
 	assert.Regexp(t, "FF10109", err)
 }
@@ -216,10 +217,10 @@ func TestGetIdentityByIDWithVerifiers(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
-	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{
-		{Hash: fftypes.NewRandB32(), VerifierRef: fftypes.VerifierRef{
-			Type:  fftypes.VerifierTypeEthAddress,
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}, Identity: id},
 	}, nil, nil)
@@ -233,7 +234,7 @@ func TestGetIdentityByIDWithVerifiersFail(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg, Namespace: "ns1"}}, nil)
 	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	_, err := nm.GetIdentityByIDWithVerifiers(nm.ctx, "ns1", id.String())
 	assert.Regexp(t, "pop", err)
@@ -242,7 +243,7 @@ func TestGetIdentityByIDWithVerifiersFail(t *testing.T) {
 func TestGetIdentities(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	res, _, err := nm.GetIdentities(nm.ctx, "ns1", database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
@@ -251,7 +252,7 @@ func TestGetIdentities(t *testing.T) {
 func TestGetIdentitiesGlobal(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	res, _, err := nm.GetIdentitiesGlobal(nm.ctx, database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
@@ -262,8 +263,8 @@ func TestGetIdentityVerifiers(t *testing.T) {
 	defer cancel()
 	id := fftypes.NewUUID()
 	nm.database.(*databasemocks.Plugin).On("GetIdentityByID", nm.ctx, id).
-		Return(&fftypes.Identity{IdentityBase: fftypes.IdentityBase{ID: id, Type: fftypes.IdentityTypeOrg, Namespace: "ns1"}}, nil)
-	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{}, nil, nil)
+		Return(&core.Identity{IdentityBase: core.IdentityBase{ID: id, Type: core.IdentityTypeOrg, Namespace: "ns1"}}, nil)
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{}, nil, nil)
 	res, _, err := nm.GetIdentityVerifiers(nm.ctx, "ns1", id.String(), database.IdentityQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
@@ -282,7 +283,7 @@ func TestGetIdentityVerifiersIdentityFail(t *testing.T) {
 func TestGetVerifiers(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{}, nil, nil)
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{}, nil, nil)
 	res, _, err := nm.GetVerifiers(nm.ctx, "ns1", database.VerifierQueryFactory.NewFilter(nm.ctx).And())
 	assert.NoError(t, err)
 	assert.Empty(t, res)
@@ -293,7 +294,7 @@ func TestGetVerifierByHashOk(t *testing.T) {
 	defer cancel()
 	hash := fftypes.NewRandB32()
 	nm.database.(*databasemocks.Plugin).On("GetVerifierByHash", nm.ctx, hash).
-		Return(&fftypes.Verifier{Hash: hash, Namespace: "ns1"}, nil)
+		Return(&core.Verifier{Hash: hash, Namespace: "ns1"}, nil)
 	res, err := nm.GetVerifierByHash(nm.ctx, "ns1", hash.String())
 	assert.NoError(t, err)
 	assert.Equal(t, *hash, *res.Hash)
@@ -322,7 +323,7 @@ func TestGetVerifierByHashBadNS(t *testing.T) {
 	defer cancel()
 	hash := fftypes.NewRandB32()
 	nm.database.(*databasemocks.Plugin).On("GetVerifierByHash", nm.ctx, hash).
-		Return(&fftypes.Verifier{Hash: hash, Namespace: "ns1"}, nil)
+		Return(&core.Verifier{Hash: hash, Namespace: "ns1"}, nil)
 	_, err := nm.GetVerifierByHash(nm.ctx, "ns2", hash.String())
 	assert.Regexp(t, "FF10109", err)
 }
@@ -349,9 +350,9 @@ func TestGetVerifierByDIDWithVerifiersOk(t *testing.T) {
 	defer cancel()
 	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(testOrg("abc"), true, nil)
-	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{
-		{Hash: fftypes.NewRandB32(), VerifierRef: fftypes.VerifierRef{
-			Type:  fftypes.VerifierTypeEthAddress,
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}},
 	}, nil, nil)
@@ -384,14 +385,14 @@ func TestGetOrganizationsWithVerifiers(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	id1 := fftypes.NewUUID()
-	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{
-		{IdentityBase: fftypes.IdentityBase{
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*core.Identity{
+		{IdentityBase: core.IdentityBase{
 			ID: id1,
 		}},
 	}, nil, nil)
-	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*fftypes.Verifier{
-		{Hash: fftypes.NewRandB32(), Identity: id1, VerifierRef: fftypes.VerifierRef{
-			Type:  fftypes.VerifierTypeEthAddress,
+	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{
+		{Hash: fftypes.NewRandB32(), Identity: id1, VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}},
 	}, nil, nil)
@@ -413,8 +414,8 @@ func TestGetIdentitiesWithVerifiersFailEnrich(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 	id1 := fftypes.NewUUID()
-	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*fftypes.Identity{
-		{IdentityBase: fftypes.IdentityBase{
+	nm.database.(*databasemocks.Plugin).On("GetIdentities", nm.ctx, mock.Anything).Return([]*core.Identity{
+		{IdentityBase: core.IdentityBase{
 			ID: id1,
 		}},
 	}, nil, nil)

@@ -4,7 +4,9 @@ package blockchainmocks
 
 import (
 	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -15,11 +17,11 @@ type Callbacks struct {
 }
 
 // BatchPinComplete provides a mock function with given fields: batch, signingKey
-func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error {
+func (_m *Callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
 	ret := _m.Called(batch, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, *fftypes.VerifierRef) error); ok {
+	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, *core.VerifierRef) error); ok {
 		r0 = rf(batch, signingKey)
 	} else {
 		r0 = ret.Error(0)
@@ -43,6 +45,6 @@ func (_m *Callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) er
 }
 
 // BlockchainOpUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
+func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
 	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }

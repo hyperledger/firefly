@@ -21,8 +21,8 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getStatusPins = &oapispec.Route{
@@ -34,7 +34,7 @@ var getStatusPins = &oapispec.Route{
 	FilterFactory:   database.PinQueryFactory,
 	Description:     coremsgs.APIEndpointsGetStatusPins,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []fftypes.Pin{} },
+	JSONOutputValue: func() interface{} { return []core.Pin{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetPins(r.Ctx, r.Filter))

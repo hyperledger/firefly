@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -50,7 +51,7 @@ func TestGetTransactionByIDBadID(t *testing.T) {
 
 func TestGetTransactionOperationsOk(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{}, nil, nil)
 	_, _, err := or.GetTransactionOperations(context.Background(), "ns1", fftypes.NewUUID().String())
 	assert.NoError(t, err)
 }
@@ -63,7 +64,7 @@ func TestGetTransactionOperationBadID(t *testing.T) {
 
 func TestGetNamespaces(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetNamespaces", mock.Anything, mock.Anything).Return([]*fftypes.Namespace{}, nil, nil)
+	or.mdi.On("GetNamespaces", mock.Anything, mock.Anything).Return([]*core.Namespace{}, nil, nil)
 	fb := database.NamespaceQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("name", "ns1"))
 	_, _, err := or.GetNamespaces(context.Background(), f)
@@ -73,7 +74,7 @@ func TestGetNamespaces(t *testing.T) {
 func TestGetTransactions(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetTransactions", mock.Anything, mock.Anything).Return([]*fftypes.Transaction{}, nil, nil)
+	or.mdi.On("GetTransactions", mock.Anything, mock.Anything).Return([]*core.Transaction{}, nil, nil)
 	fb := database.TransactionQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetTransactions(context.Background(), "ns1", f)
@@ -89,8 +90,8 @@ func TestGetMessageByIDBadID(t *testing.T) {
 func TestGetMessageByIDWrongNSReturned(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(&fftypes.Message{
-		Header: fftypes.MessageHeader{
+	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(&core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns2",
 		},
 	}, nil)
@@ -101,12 +102,12 @@ func TestGetMessageByIDWrongNSReturned(t *testing.T) {
 func TestGetMessageByIDNoValuesOk(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 			ID:        msgID,
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
@@ -124,18 +125,18 @@ func TestGetMessageByIDNoValuesOk(t *testing.T) {
 func TestGetMessageByIDWithDataOk(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 			ID:        msgID,
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.MatchedBy(func(u *fftypes.UUID) bool { return u.Equals(msgID) })).Return(msg, nil)
-	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(core.DataArray{
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.JSONAnyPtr("{}")},
 		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Value: fftypes.JSONAnyPtr("{}")},
 	}, true, nil)
@@ -162,12 +163,12 @@ func TestGetMessageByIDWithDataMsgFail(t *testing.T) {
 func TestGetMessageByIDWithDataFail(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 			ID:        msgID,
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
@@ -182,7 +183,7 @@ func TestGetMessageByIDWithDataFail(t *testing.T) {
 func TestGetMessages(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*core.Message{}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetMessages(context.Background(), "ns1", f)
@@ -202,15 +203,15 @@ func TestGetMessagesWithDataOk(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
 	msgID := fftypes.NewUUID()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID: msgID,
 		},
-		Data: fftypes.DataRefs{},
+		Data: core.DataRefs{},
 	}
-	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil)
+	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*core.Message{msg}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
-	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, true, nil)
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(core.DataArray{}, true, nil)
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetMessagesWithData(context.Background(), "ns1", f)
 	assert.NoError(t, err)
@@ -220,13 +221,13 @@ func TestGetMessagesWithDataFail(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
 	msgID := fftypes.NewUUID()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID: msgID,
 		},
-		Data: fftypes.DataRefs{},
+		Data: core.DataRefs{},
 	}
-	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*fftypes.Message{msg}, nil, nil)
+	or.mdi.On("GetMessages", mock.Anything, mock.Anything).Return([]*core.Message{msg}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(nil, true, fmt.Errorf("pop"))
 	f := fb.And(fb.Eq("id", u))
@@ -237,7 +238,7 @@ func TestGetMessagesWithDataFail(t *testing.T) {
 func TestGetMessagesForData(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetMessagesForData", mock.Anything, u, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	or.mdi.On("GetMessagesForData", mock.Anything, u, mock.Anything).Return([]*core.Message{}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetMessagesForData(context.Background(), "ns1", u.String(), f)
@@ -256,20 +257,20 @@ func TestGetMessageTransactionOk(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	batchID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
 		BatchID: batchID,
-		Header: fftypes.MessageHeader{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
-			TxType:    fftypes.TransactionTypeBatchPin,
+			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.BatchPersisted{
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeBatchPin,
+	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&core.BatchPersisted{
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeBatchPin,
 			ID:   txID,
 		},
 	}, nil)
-	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&fftypes.Transaction{
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&core.Transaction{
 		ID: txID,
 	}, nil)
 	tx, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
@@ -283,20 +284,20 @@ func TestGetMessageTransactionOperations(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	batchID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
 		BatchID: batchID,
-		Header: fftypes.MessageHeader{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
-			TxType:    fftypes.TransactionTypeBatchPin,
+			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.BatchPersisted{
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeBatchPin,
+	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&core.BatchPersisted{
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeBatchPin,
 			ID:   txID,
 		},
 	}, nil)
-	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{}, nil, nil)
 	ops, _, err := or.GetMessageOperations(context.Background(), "ns1", msgID.String())
 	assert.NoError(t, err)
 	assert.Len(t, ops, 0)
@@ -306,8 +307,8 @@ func TestGetMessageTransactionOperations(t *testing.T) {
 func TestGetMessageTransactionOperationsNoTX(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
-		Header: fftypes.MessageHeader{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 		},
 	}, nil, nil)
@@ -320,14 +321,14 @@ func TestGetMessageTransactionNoBatchTX(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
 	batchID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
 		BatchID: batchID,
-		Header: fftypes.MessageHeader{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
-			TxType:    fftypes.TransactionTypeBatchPin,
+			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&fftypes.BatchPersisted{}, nil)
+	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&core.BatchPersisted{}, nil)
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
 	assert.Regexp(t, "FF10210", err)
 }
@@ -336,11 +337,11 @@ func TestGetMessageTransactionNoBatch(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
 	batchID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
 		BatchID: batchID,
-		Header: fftypes.MessageHeader{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
-			TxType:    fftypes.TransactionTypeBatchPin,
+			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(nil, nil)
@@ -352,11 +353,11 @@ func TestGetMessageTransactionBatchLookupErr(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
 	batchID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
 		BatchID: batchID,
-		Header: fftypes.MessageHeader{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
-			TxType:    fftypes.TransactionTypeBatchPin,
+			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
 	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(nil, fmt.Errorf("pop"))
@@ -367,10 +368,10 @@ func TestGetMessageTransactionBatchLookupErr(t *testing.T) {
 func TestGetMessageTransactionNoBatchID(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
-		Header: fftypes.MessageHeader{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
-			TxType:    fftypes.TransactionTypeBatchPin,
+			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
@@ -380,8 +381,8 @@ func TestGetMessageTransactionNoBatchID(t *testing.T) {
 func TestGetMessageTransactionNoTx(t *testing.T) {
 	or := newTestOrchestrator()
 	msgID := fftypes.NewUUID()
-	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&fftypes.Message{
-		Header: fftypes.MessageHeader{
+	or.mdi.On("GetMessageByID", mock.Anything, msgID).Return(&core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 		},
 	}, nil)
@@ -399,18 +400,18 @@ func TestGetMessageTransactionMessageNotFound(t *testing.T) {
 
 func TestGetMessageData(t *testing.T) {
 	or := newTestOrchestrator()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 			{ID: fftypes.NewUUID()},
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, true, nil)
+	or.mdm.On("GetMessageDataCached", mock.Anything, mock.Anything).Return(core.DataArray{}, true, nil)
 	_, err := or.GetMessageData(context.Background(), "ns1", fftypes.NewUUID().String())
 	assert.NoError(t, err)
 }
@@ -424,20 +425,20 @@ func TestGetMessageDataBadMsg(t *testing.T) {
 
 func TestGetMessageEventsOk(t *testing.T) {
 	or := newTestOrchestrator()
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 			{ID: fftypes.NewUUID()},
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil)
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
-	f := fb.And(fb.Eq("type", fftypes.EventTypeMessageConfirmed))
+	f := fb.And(fb.Eq("type", core.EventTypeMessageConfirmed))
 	_, _, err := or.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
 	calculatedFilter, err := or.mdi.Calls[1].Arguments[1].(database.Filter).Finalize()
@@ -452,7 +453,7 @@ func TestGetMessageEventsOk(t *testing.T) {
 func TestGetMessageEventsBadMsgID(t *testing.T) {
 	or := newTestOrchestrator()
 	fb := database.EventQueryFactory.NewFilter(context.Background())
-	f := fb.And(fb.Eq("type", fftypes.EventTypeMessageConfirmed))
+	f := fb.And(fb.Eq("type", core.EventTypeMessageConfirmed))
 	or.mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(nil, nil)
 	ev, _, err := or.GetMessageEvents(context.Background(), "ns1", fftypes.NewUUID().String(), f)
 	assert.Regexp(t, "FF10109", err)
@@ -462,8 +463,8 @@ func TestGetMessageEventsBadMsgID(t *testing.T) {
 func TestGetBatchByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetBatchByID", mock.Anything, u).Return(&fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	or.mdi.On("GetBatchByID", mock.Anything, u).Return(&core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			Namespace: "ns1",
 		},
 	}, nil)
@@ -480,7 +481,7 @@ func TestGetBatchByIDBadID(t *testing.T) {
 func TestGetBatches(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return([]*fftypes.BatchPersisted{}, nil, nil)
+	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return([]*core.BatchPersisted{}, nil, nil)
 	fb := database.BatchQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetBatches(context.Background(), "ns1", f)
@@ -490,7 +491,7 @@ func TestGetBatches(t *testing.T) {
 func TestGetDataByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDataByID", mock.Anything, u, true).Return(&fftypes.Data{
+	or.mdi.On("GetDataByID", mock.Anything, u, true).Return(&core.Data{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetDataByID(context.Background(), "ns1", u.String())
@@ -506,7 +507,7 @@ func TestGetDataByIDBadID(t *testing.T) {
 func TestGetData(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetData", mock.Anything, mock.Anything).Return(fftypes.DataArray{}, nil, nil)
+	or.mdi.On("GetData", mock.Anything, mock.Anything).Return(core.DataArray{}, nil, nil)
 	fb := database.DataQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetData(context.Background(), "ns1", f)
@@ -516,7 +517,7 @@ func TestGetData(t *testing.T) {
 func TestGetDatatypeByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDatatypeByID", mock.Anything, u).Return(&fftypes.Datatype{
+	or.mdi.On("GetDatatypeByID", mock.Anything, u).Return(&core.Datatype{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetDatatypeByID(context.Background(), "ns1", u.String())
@@ -531,7 +532,7 @@ func TestGetDatatypeByIDBadID(t *testing.T) {
 
 func TestGetDatatypeByName(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetDatatypeByName", context.Background(), "ns1", "dt", "1").Return(&fftypes.Datatype{
+	or.mdi.On("GetDatatypeByName", context.Background(), "ns1", "dt", "1").Return(&core.Datatype{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetDatatypeByName(context.Background(), "ns1", "dt", "1")
@@ -561,7 +562,7 @@ func TestGetOperationByID(t *testing.T) {
 func TestGetOperationByIDNamespaced(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetOperationByID", mock.Anything, u).Return(&fftypes.Operation{
+	or.mdi.On("GetOperationByID", mock.Anything, u).Return(&core.Operation{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetOperationByIDNamespaced(context.Background(), "ns1", u.String())
@@ -583,7 +584,7 @@ func TestGetOperationIDNamespacedBadID(t *testing.T) {
 func TestGetEventByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetEventByID", mock.Anything, u).Return(&fftypes.Event{
+	or.mdi.On("GetEventByID", mock.Anything, u).Return(&core.Event{
 		Namespace: "ns1",
 	}, nil)
 	_, err := or.GetEventByID(context.Background(), "ns1", u.String())
@@ -599,7 +600,7 @@ func TestGetEventIDBadID(t *testing.T) {
 func TestGetDatatypes(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDatatypes", mock.Anything, mock.Anything).Return([]*fftypes.Datatype{}, nil, nil)
+	or.mdi.On("GetDatatypes", mock.Anything, mock.Anything).Return([]*core.Datatype{}, nil, nil)
 	fb := database.DatatypeQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetDatatypes(context.Background(), "ns1", f)
@@ -609,7 +610,7 @@ func TestGetDatatypes(t *testing.T) {
 func TestGetOperations(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{}, nil, nil)
 	fb := database.OperationQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetOperations(context.Background(), f)
@@ -619,7 +620,7 @@ func TestGetOperations(t *testing.T) {
 func TestGetOperationsNamespaced(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*fftypes.Operation{}, nil, nil)
+	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{}, nil, nil)
 	fb := database.OperationQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetOperationsNamespaced(context.Background(), "ns1", f)
@@ -629,7 +630,7 @@ func TestGetOperationsNamespaced(t *testing.T) {
 func TestGetEvents(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{}, nil, nil)
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetEvents(context.Background(), "ns1", f)
@@ -658,51 +659,51 @@ func TestGetEventsWithReferences(t *testing.T) {
 	ref3 := fftypes.NewUUID()
 	ev3 := fftypes.NewUUID()
 
-	blockchainEvent := &fftypes.Event{
+	blockchainEvent := &core.Event{
 		ID:        ev1,
 		Sequence:  10000001,
 		Reference: ref1,
-		Type:      fftypes.EventTypeBlockchainEventReceived,
+		Type:      core.EventTypeBlockchainEventReceived,
 	}
 
-	txEvent := &fftypes.Event{
+	txEvent := &core.Event{
 		ID:        ev2,
 		Sequence:  10000002,
 		Reference: ref2,
-		Type:      fftypes.EventTypeTransactionSubmitted,
+		Type:      core.EventTypeTransactionSubmitted,
 	}
 
-	msgEvent := &fftypes.Event{
+	msgEvent := &core.Event{
 		ID:        ev3,
 		Sequence:  10000003,
 		Reference: ref3,
-		Type:      fftypes.EventTypeMessageConfirmed,
+		Type:      core.EventTypeMessageConfirmed,
 	}
 
-	or.mth.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&fftypes.EnrichedEvent{
+	or.mth.On("EnrichEvent", mock.Anything, blockchainEvent).Return(&core.EnrichedEvent{
 		Event: *blockchainEvent,
-		BlockchainEvent: &fftypes.BlockchainEvent{
+		BlockchainEvent: &core.BlockchainEvent{
 			ID: ref1,
 		},
 	}, nil)
 
-	or.mth.On("EnrichEvent", mock.Anything, txEvent).Return(&fftypes.EnrichedEvent{
+	or.mth.On("EnrichEvent", mock.Anything, txEvent).Return(&core.EnrichedEvent{
 		Event: *txEvent,
-		Transaction: &fftypes.Transaction{
+		Transaction: &core.Transaction{
 			ID: ref2,
 		},
 	}, nil)
 
-	or.mth.On("EnrichEvent", mock.Anything, msgEvent).Return(&fftypes.EnrichedEvent{
+	or.mth.On("EnrichEvent", mock.Anything, msgEvent).Return(&core.EnrichedEvent{
 		Event: *msgEvent,
-		Message: &fftypes.Message{
-			Header: fftypes.MessageHeader{
+		Message: &core.Message{
+			Header: core.MessageHeader{
 				ID: ref3,
 			},
 		},
 	}, nil)
 
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{
 		blockchainEvent,
 		txEvent,
 		msgEvent,
@@ -717,7 +718,7 @@ func TestGetEventsWithReferencesEnrichFail(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
 
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*fftypes.Event{{ID: fftypes.NewUUID()}}, nil, nil)
+	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{{ID: fftypes.NewUUID()}}, nil, nil)
 	or.mth.On("EnrichEvent", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
@@ -729,7 +730,7 @@ func TestGetBlockchainEventByID(t *testing.T) {
 	or := newTestOrchestrator()
 
 	id := fftypes.NewUUID()
-	or.mdi.On("GetBlockchainEventByID", context.Background(), id).Return(&fftypes.BlockchainEvent{
+	or.mdi.On("GetBlockchainEventByID", context.Background(), id).Return(&core.BlockchainEvent{
 		Namespace: "ns1",
 	}, nil)
 
@@ -755,7 +756,7 @@ func TestGetBlockchainEvents(t *testing.T) {
 
 func TestGetTransactionBlockchainEventsOk(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return([]*fftypes.BlockchainEvent{}, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil)
 	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), "ns1", fftypes.NewUUID().String())
 	assert.NoError(t, err)
 }
@@ -769,7 +770,7 @@ func TestGetTransactionBlockchainEventsBadID(t *testing.T) {
 func TestGetPins(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	or.mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	fb := database.PinQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("hash", u))
 	_, _, err := or.GetPins(context.Background(), f)

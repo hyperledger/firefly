@@ -19,12 +19,13 @@ package networkmap
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *fftypes.IdentityCreateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 
 	// The parent can be a UUID directly
 	var parent *fftypes.UUID
@@ -41,28 +42,28 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 	}
 
 	// Parse the input DTO
-	identity = &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	identity = &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			Namespace: ns,
 			Name:      dto.Name,
 			Type:      dto.Type,
 			Parent:    parent,
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: dto.Description,
 			Profile:     dto.Profile,
 		},
 	}
 
 	// Set defaults
-	if identity.Namespace == fftypes.SystemNamespace || identity.Namespace == "" {
-		identity.Namespace = fftypes.SystemNamespace
+	if identity.Namespace == core.SystemNamespace || identity.Namespace == "" {
+		identity.Namespace = core.SystemNamespace
 		if identity.Type == "" {
-			identity.Type = fftypes.IdentityTypeOrg
+			identity.Type = core.IdentityTypeOrg
 		}
 	} else if identity.Type == "" {
-		identity.Type = fftypes.IdentityTypeCustom
+		identity.Type = core.IdentityTypeCustom
 	}
 
 	identity.DID, _ = identity.GenerateDID(ctx)
@@ -74,7 +75,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 	}
 
 	// Resolve if we need to perform a validation
-	var parentSigner *fftypes.SignerRef
+	var parentSigner *core.SignerRef
 	if immediateParent != nil {
 		parentSigner, err = nm.identity.ResolveIdentitySigner(ctx, immediateParent)
 		if err != nil {
@@ -83,8 +84,8 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 	}
 
 	// Determine claim signer
-	var claimSigner *fftypes.SignerRef
-	if dto.Type == fftypes.IdentityTypeNode {
+	var claimSigner *core.SignerRef
+	if dto.Type == core.IdentityTypeNode {
 		// Nodes are special - as they need the claim to be signed directly by the parent
 		claimSigner = parentSigner
 		parentSigner = nil
@@ -92,7 +93,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 		if dto.Key == "" {
 			return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
 		}
-		claimSigner = &fftypes.SignerRef{
+		claimSigner = &core.SignerRef{
 			Key: dto.Key,
 		}
 		claimSigner.Author = identity.DID
@@ -110,12 +111,12 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *ffty
 	return identity, nil
 }
 
-func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes.Identity, claimSigner *fftypes.SignerRef, parentSigner *fftypes.SignerRef) error {
+func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Identity, claimSigner *core.SignerRef, parentSigner *core.SignerRef) error {
 
 	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
-	claimMsg, err := nm.broadcast.BroadcastIdentityClaim(ctx, identity.Namespace, &fftypes.IdentityClaim{
+	claimMsg, err := nm.broadcast.BroadcastIdentityClaim(ctx, identity.Namespace, &core.IdentityClaim{
 		Identity: identity,
-	}, claimSigner, fftypes.SystemTagIdentityClaim, false)
+	}, claimSigner, core.SystemTagIdentityClaim, false)
 	if err != nil {
 		return err
 	}
@@ -123,13 +124,13 @@ func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *fftypes
 
 	// Send the verification if one is required.
 	if parentSigner != nil {
-		verifyMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityVerification{
-			Claim: fftypes.MessageRef{
+		verifyMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &core.IdentityVerification{
+			Claim: core.MessageRef{
 				ID:   claimMsg.Header.ID,
 				Hash: claimMsg.Hash,
 			},
 			Identity: identity.IdentityBase,
-		}, parentSigner, fftypes.SystemTagIdentityVerification, false)
+		}, parentSigner, core.SystemTagIdentityVerification, false)
 		if err != nil {
 			return err
 		}

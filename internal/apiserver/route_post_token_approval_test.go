@@ -22,8 +22,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -39,9 +40,9 @@ func TestPostTokenApproval(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TokenApproval", mock.Anything, "ns1", mock.MatchedBy(func(approval *fftypes.TokenApprovalInput) bool {
+	mam.On("TokenApproval", mock.Anything, "ns1", mock.MatchedBy(func(approval *core.TokenApprovalInput) bool {
 		return approval.Approved == true
-	}), false).Return(&fftypes.TokenApproval{}, nil)
+	}), false).Return(&core.TokenApproval{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
@@ -58,9 +59,9 @@ func TestPostTokenApprovalUnapprove(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TokenApproval", mock.Anything, "ns1", mock.MatchedBy(func(approval *fftypes.TokenApprovalInput) bool {
+	mam.On("TokenApproval", mock.Anything, "ns1", mock.MatchedBy(func(approval *core.TokenApprovalInput) bool {
 		return approval.Approved == false
-	}), false).Return(&fftypes.TokenApproval{}, nil)
+	}), false).Return(&core.TokenApproval{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

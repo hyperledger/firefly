@@ -30,7 +30,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -93,7 +94,7 @@ func NewResty(t *testing.T) *resty.Client {
 
 func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 	return client.R().
-		SetResult(&[]fftypes.Namespace{}).
+		SetResult(&[]core.Namespace{}).
 		Get(urlGetNamespaces)
 }
 
@@ -107,7 +108,7 @@ func CreateNamespaces(client *resty.Client, namespace string) (*resty.Response, 
 		Post(urlGetNamespaces)
 }
 
-func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, topic string, expectedStatus int) (events []*fftypes.EnrichedEvent) {
+func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, topic string, expectedStatus int) (events []*core.EnrichedEvent) {
 	path := urlGetEvents
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -121,7 +122,7 @@ func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, t
 	return events
 }
 
-func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType fftypes.MessageType, topic string, expectedStatus int) (msgs []*fftypes.Message) {
+func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgType core.MessageType, topic string, expectedStatus int) (msgs []*core.Message) {
 	path := urlGetMessages
 	resp, err := client.R().
 		SetQueryParam("type", string(msgType)).
@@ -135,7 +136,7 @@ func GetMessages(t *testing.T, client *resty.Client, startTime time.Time, msgTyp
 	return msgs
 }
 
-func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data fftypes.DataArray) {
+func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedStatus int) (data core.DataArray) {
 	path := urlGetData
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -146,7 +147,7 @@ func GetData(t *testing.T, client *resty.Client, startTime time.Time, expectedSt
 	return data
 }
 
-func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data fftypes.DataArray) {
+func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, msgID *fftypes.UUID) (data core.DataArray) {
 	path := urlGetMessages
 	path += "/" + msgID.String() + "/data"
 	resp, err := client.R().
@@ -158,7 +159,7 @@ func GetDataForMessage(t *testing.T, client *resty.Client, startTime time.Time, 
 	return data
 }
 
-func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedStatus int) []byte {
+func GetBlob(t *testing.T, client *resty.Client, data *core.Data, expectedStatus int) []byte {
 	path := fmt.Sprintf(urlGetDataBlob, data.ID)
 	resp, err := client.R().
 		SetDoNotParseResponse(true).
@@ -170,7 +171,7 @@ func GetBlob(t *testing.T, client *resty.Client, data *fftypes.Data, expectedSta
 	return blob
 }
 
-func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*fftypes.Identity) {
+func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*core.Identity) {
 	path := urlGetOrganizations
 	resp, err := client.R().
 		SetQueryParam("sort", "created").
@@ -181,10 +182,10 @@ func GetOrgs(t *testing.T, client *resty.Client, expectedStatus int) (orgs []*ff
 	return orgs
 }
 
-func GetIdentityBlockchainKeys(t *testing.T, client *resty.Client, identityID *fftypes.UUID, expectedStatus int) (verifiers []*fftypes.Verifier) {
+func GetIdentityBlockchainKeys(t *testing.T, client *resty.Client, identityID *fftypes.UUID, expectedStatus int) (verifiers []*core.Verifier) {
 	path := fmt.Sprintf(urlGetOrgKeys, identityID)
 	resp, err := client.R().
-		SetQueryParam("type", fmt.Sprintf("!=%s", fftypes.VerifierTypeFFDXPeerID)).
+		SetQueryParam("type", fmt.Sprintf("!=%s", core.VerifierTypeFFDXPeerID)).
 		SetResult(&verifiers).
 		Get(path)
 	require.NoError(t, err)
@@ -192,9 +193,9 @@ func GetIdentityBlockchainKeys(t *testing.T, client *resty.Client, identityID *f
 	return verifiers
 }
 
-func CreateSubscription(t *testing.T, client *resty.Client, input interface{}, expectedStatus int) *fftypes.Subscription {
+func CreateSubscription(t *testing.T, client *resty.Client, input interface{}, expectedStatus int) *core.Subscription {
 	path := urlSubscriptions
-	var sub fftypes.Subscription
+	var sub core.Subscription
 	resp, err := client.R().
 		SetBody(input).
 		SetResult(&sub).
@@ -206,7 +207,7 @@ func CreateSubscription(t *testing.T, client *resty.Client, input interface{}, e
 }
 
 func CleanupExistingSubscription(t *testing.T, client *resty.Client, namespace, name string) {
-	var subs []*fftypes.Subscription
+	var subs []*core.Subscription
 	path := urlSubscriptions
 	resp, err := client.R().
 		SetResult(&subs).
@@ -227,23 +228,23 @@ func DeleteSubscription(t *testing.T, client *resty.Client, id *fftypes.UUID) {
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func BroadcastMessage(t *testing.T, client *resty.Client, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
+func BroadcastMessage(t *testing.T, client *resty.Client, topic string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
 	return BroadcastMessageAsIdentity(t, client, "", topic, data, confirm)
 }
 
-func BroadcastMessageAsIdentity(t *testing.T, client *resty.Client, did, topic string, data *fftypes.DataRefOrValue, confirm bool) (*resty.Response, error) {
-	var msg fftypes.Message
+func BroadcastMessageAsIdentity(t *testing.T, client *resty.Client, did, topic string, data *core.DataRefOrValue, confirm bool) (*resty.Response, error) {
+	var msg core.Message
 	res, err := client.R().
-		SetBody(fftypes.MessageInOut{
-			Message: fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{topic},
-					SignerRef: fftypes.SignerRef{
+		SetBody(core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Topics: core.FFStringArray{topic},
+					SignerRef: core.SignerRef{
 						Author: did,
 					},
 				},
 			},
-			InlineData: fftypes.InlineData{data},
+			InlineData: core.InlineData{data},
 		}).
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&msg).
@@ -252,15 +253,15 @@ func BroadcastMessageAsIdentity(t *testing.T, client *resty.Client, did, topic s
 	return res, err
 }
 
-func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) *fftypes.Identity {
-	var identity fftypes.Identity
+func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc string, profile fftypes.JSONObject, parent *fftypes.UUID, confirm bool) *core.Identity {
+	var identity core.Identity
 	res, err := client.R().
-		SetBody(fftypes.IdentityCreateDTO{
+		SetBody(core.IdentityCreateDTO{
 			Name:   name,
-			Type:   fftypes.IdentityTypeCustom,
+			Type:   core.IdentityTypeCustom,
 			Parent: parent.String(),
 			Key:    key,
-			IdentityProfile: fftypes.IdentityProfile{
+			IdentityProfile: core.IdentityProfile{
 				Description: desc,
 				Profile:     profile,
 			},
@@ -274,8 +275,8 @@ func ClaimCustomIdentity(t *testing.T, client *resty.Client, key, name, desc str
 	return &identity
 }
 
-func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *fftypes.Identity {
-	var identity fftypes.Identity
+func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *core.Identity {
+	var identity core.Identity
 	res, err := client.R().
 		SetResult(&identity).
 		Get(fmt.Sprintf(urlIdentity, id))
@@ -284,8 +285,8 @@ func GetIdentity(t *testing.T, client *resty.Client, id *fftypes.UUID) *fftypes.
 	return &identity
 }
 
-func GetVerifiers(t *testing.T, client *resty.Client) []*fftypes.Verifier {
-	var verifiers []*fftypes.Verifier
+func GetVerifiers(t *testing.T, client *resty.Client) []*core.Verifier {
+	var verifiers []*core.Verifier
 	res, err := client.R().
 		SetResult(&verifiers).
 		Get(urlVerifiers)
@@ -294,7 +295,7 @@ func GetVerifiers(t *testing.T, client *resty.Client) []*fftypes.Verifier {
 	return verifiers
 }
 
-func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *fftypes.Data {
+func CreateBlob(t *testing.T, client *resty.Client, dt *core.DatatypeRef) *core.Data {
 	r, _ := rand.Int(rand.Reader, big.NewInt(1024*1024))
 	blob := make([]byte, r.Int64()+1024*1024)
 	for i := 0; i < len(blob); i++ {
@@ -302,7 +303,7 @@ func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *ff
 	}
 	var blobHash fftypes.Bytes32 = sha256.Sum256(blob)
 	t.Logf("Blob size=%d hash=%s", len(blob), &blobHash)
-	var data fftypes.Data
+	var data core.Data
 	formData := map[string]string{}
 	if dt == nil {
 		// If there's no datatype, tell FireFly to automatically add a data payload
@@ -328,7 +329,7 @@ func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *ff
 		assert.Equal(t, "myfile.txt", data.Value.JSONObject().GetString("filename"))
 		assert.Equal(t, "myfile.txt", data.Blob.Name)
 	} else {
-		assert.Equal(t, fftypes.ValidatorTypeNone, data.Validator)
+		assert.Equal(t, core.ValidatorTypeNone, data.Validator)
 		assert.Equal(t, *dt, *data.Datatype)
 	}
 	assert.Equal(t, int64(len(blob)), data.Blob.Size)
@@ -336,43 +337,43 @@ func CreateBlob(t *testing.T, client *resty.Client, dt *fftypes.DatatypeRef) *ff
 	return &data
 }
 
-func BroadcastBlobMessage(t *testing.T, client *resty.Client, topic string) (*fftypes.Data, *resty.Response, error) {
+func BroadcastBlobMessage(t *testing.T, client *resty.Client, topic string) (*core.Data, *resty.Response, error) {
 	data := CreateBlob(t, client, nil)
 	res, err := client.R().
-		SetBody(fftypes.MessageInOut{
-			Message: fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{topic},
+		SetBody(core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Topics: core.FFStringArray{topic},
 				},
 			},
-			InlineData: fftypes.InlineData{
-				{DataRef: fftypes.DataRef{ID: data.ID}},
+			InlineData: core.InlineData{
+				{DataRef: core.DataRef{ID: data.ID}},
 			},
 		}).
 		Post(urlBroadcastMessage)
 	return data, res, err
 }
 
-func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic string, orgNames []string) (*fftypes.Data, *resty.Response, error) {
-	data := CreateBlob(ts.t, client, &fftypes.DatatypeRef{Name: "myblob"})
-	members := make([]fftypes.MemberInput, len(orgNames))
+func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic string, orgNames []string) (*core.Data, *resty.Response, error) {
+	data := CreateBlob(ts.t, client, &core.DatatypeRef{Name: "myblob"})
+	members := make([]core.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
-		members[i] = fftypes.MemberInput{
+		members[i] = core.MemberInput{
 			Identity: oName,
 		}
 	}
 	res, err := client.R().
-		SetBody(fftypes.MessageInOut{
-			Message: fftypes.Message{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{topic},
+		SetBody(core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					Topics: core.FFStringArray{topic},
 				},
 			},
-			InlineData: fftypes.InlineData{
-				{DataRef: fftypes.DataRef{ID: data.ID}},
+			InlineData: core.InlineData{
+				{DataRef: core.DataRef{ID: data.ID}},
 			},
-			Group: &fftypes.InputGroup{
+			Group: &core.InputGroup{
 				Members: members,
 				Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 			},
@@ -381,31 +382,31 @@ func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic
 	return data, res, err
 }
 
-func PrivateMessage(ts *testState, client *resty.Client, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
+func PrivateMessage(ts *testState, client *resty.Client, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool) (*resty.Response, error) {
 	return PrivateMessageWithKey(ts, client, "", topic, data, orgNames, tag, txType, confirm)
 }
 
-func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic string, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType, confirm bool) (*resty.Response, error) {
-	members := make([]fftypes.MemberInput, len(orgNames))
+func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool) (*resty.Response, error) {
+	members := make([]core.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
-		members[i] = fftypes.MemberInput{
+		members[i] = core.MemberInput{
 			Identity: oName,
 		}
 	}
-	msg := fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
+	msg := core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
 				Tag:    tag,
 				TxType: txType,
-				Topics: fftypes.FFStringArray{topic},
-				SignerRef: fftypes.SignerRef{
+				Topics: core.FFStringArray{topic},
+				SignerRef: core.SignerRef{
 					Key: key,
 				},
 			},
 		},
-		InlineData: fftypes.InlineData{data},
-		Group: &fftypes.InputGroup{
+		InlineData: core.InlineData{data},
+		Group: &core.InputGroup{
 			Members: members,
 			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
@@ -419,28 +420,28 @@ func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic strin
 	return res, err
 }
 
-func RequestReply(ts *testState, client *resty.Client, data *fftypes.DataRefOrValue, orgNames []string, tag string, txType fftypes.TransactionType) *fftypes.MessageInOut {
-	members := make([]fftypes.MemberInput, len(orgNames))
+func RequestReply(ts *testState, client *resty.Client, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType) *core.MessageInOut {
+	members := make([]core.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
-		members[i] = fftypes.MemberInput{
+		members[i] = core.MemberInput{
 			Identity: oName,
 		}
 	}
-	msg := fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
+	msg := core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
 				Tag:    tag,
 				TxType: txType,
 			},
 		},
-		InlineData: fftypes.InlineData{data},
-		Group: &fftypes.InputGroup{
+		InlineData: core.InlineData{data},
+		Group: &core.InputGroup{
 			Members: members,
 			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
 		},
 	}
-	var replyMsg fftypes.MessageInOut
+	var replyMsg core.MessageInOut
 	resp, err := client.R().
 		SetBody(msg).
 		SetResult(&replyMsg).
@@ -450,8 +451,8 @@ func RequestReply(ts *testState, client *resty.Client, data *fftypes.DataRefOrVa
 	return &replyMsg
 }
 
-func CreateDatatype(t *testing.T, client *resty.Client, datatype *fftypes.Datatype, confirm bool) *fftypes.Datatype {
-	var dtReturn fftypes.Datatype
+func CreateDatatype(t *testing.T, client *resty.Client, datatype *core.Datatype, confirm bool) *core.Datatype {
+	var dtReturn core.Datatype
 	path := urlDatatypes
 	resp, err := client.R().
 		SetBody(datatype).
@@ -467,8 +468,8 @@ func CreateDatatype(t *testing.T, client *resty.Client, datatype *fftypes.Dataty
 	return &dtReturn
 }
 
-func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool, confirm bool) *fftypes.TokenPool {
-	var poolOut fftypes.TokenPool
+func CreateTokenPool(t *testing.T, client *resty.Client, pool *core.TokenPool, confirm bool) *core.TokenPool {
+	var poolOut core.TokenPool
 	path := urlTokenPools
 	resp, err := client.R().
 		SetBody(pool).
@@ -484,7 +485,7 @@ func CreateTokenPool(t *testing.T, client *resty.Client, pool *fftypes.TokenPool
 	return &poolOut
 }
 
-func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (pools []*fftypes.TokenPool) {
+func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (pools []*core.TokenPool) {
 	path := urlTokenPools
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -495,8 +496,8 @@ func GetTokenPools(t *testing.T, client *resty.Client, startTime time.Time) (poo
 	return pools
 }
 
-func MintTokens(t *testing.T, client *resty.Client, mint *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
-	var transferOut fftypes.TokenTransfer
+func MintTokens(t *testing.T, client *resty.Client, mint *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+	var transferOut core.TokenTransfer
 	path := urlTokenMint
 	resp, err := client.R().
 		SetBody(mint).
@@ -512,8 +513,8 @@ func MintTokens(t *testing.T, client *resty.Client, mint *fftypes.TokenTransferI
 	return &transferOut
 }
 
-func BurnTokens(t *testing.T, client *resty.Client, burn *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
-	var transferOut fftypes.TokenTransfer
+func BurnTokens(t *testing.T, client *resty.Client, burn *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+	var transferOut core.TokenTransfer
 	path := urlTokenBurn
 	resp, err := client.R().
 		SetBody(burn).
@@ -529,8 +530,8 @@ func BurnTokens(t *testing.T, client *resty.Client, burn *fftypes.TokenTransferI
 	return &transferOut
 }
 
-func TransferTokens(t *testing.T, client *resty.Client, transfer *fftypes.TokenTransferInput, confirm bool) *fftypes.TokenTransfer {
-	var transferOut fftypes.TokenTransfer
+func TransferTokens(t *testing.T, client *resty.Client, transfer *core.TokenTransferInput, confirm bool) *core.TokenTransfer {
+	var transferOut core.TokenTransfer
 	path := urlTokenTransfers
 	resp, err := client.R().
 		SetBody(transfer).
@@ -546,7 +547,7 @@ func TransferTokens(t *testing.T, client *resty.Client, transfer *fftypes.TokenT
 	return &transferOut
 }
 
-func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (transfers []*fftypes.TokenTransfer) {
+func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (transfers []*core.TokenTransfer) {
 	path := urlTokenTransfers
 	resp, err := client.R().
 		SetQueryParam("pool", poolID.String()).
@@ -557,8 +558,8 @@ func GetTokenTransfers(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 	return transfers
 }
 
-func TokenApproval(t *testing.T, client *resty.Client, approval *fftypes.TokenApprovalInput, confirm bool) *fftypes.TokenApproval {
-	var approvalOut fftypes.TokenApproval
+func TokenApproval(t *testing.T, client *resty.Client, approval *core.TokenApprovalInput, confirm bool) *core.TokenApproval {
+	var approvalOut core.TokenApproval
 	path := urlTokenApprovals
 	resp, err := client.R().
 		SetBody(approval).
@@ -574,7 +575,7 @@ func TokenApproval(t *testing.T, client *resty.Client, approval *fftypes.TokenAp
 	return &approvalOut
 }
 
-func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (approvals []*fftypes.TokenApproval) {
+func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (approvals []*core.TokenApproval) {
 	path := urlTokenApprovals
 	resp, err := client.R().
 		SetQueryParam("pool", poolID.String()).
@@ -586,7 +587,7 @@ func GetTokenApprovals(t *testing.T, client *resty.Client, poolID *fftypes.UUID)
 	return approvals
 }
 
-func GetTokenAccounts(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (accounts []*fftypes.TokenAccount) {
+func GetTokenAccounts(t *testing.T, client *resty.Client, poolID *fftypes.UUID) (accounts []*core.TokenAccount) {
 	path := urlTokenAccounts
 	resp, err := client.R().
 		SetResult(&accounts).
@@ -596,7 +597,7 @@ func GetTokenAccounts(t *testing.T, client *resty.Client, poolID *fftypes.UUID) 
 	return accounts
 }
 
-func GetTokenAccountPools(t *testing.T, client *resty.Client, identity string) (pools []*fftypes.TokenAccountPool) {
+func GetTokenAccountPools(t *testing.T, client *resty.Client, identity string) (pools []*core.TokenAccountPool) {
 	path := urlTokenAccounts + "/" + identity + "/pools"
 	resp, err := client.R().
 		SetQueryParam("sort", "-updated").
@@ -607,8 +608,8 @@ func GetTokenAccountPools(t *testing.T, client *resty.Client, identity string) (
 	return pools
 }
 
-func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex, key string) (account *fftypes.TokenBalance) {
-	var accounts []*fftypes.TokenBalance
+func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex, key string) (account *core.TokenBalance) {
+	var accounts []*core.TokenBalance
 	path := urlTokenBalances
 	resp, err := client.R().
 		SetQueryParam("pool", poolID.String()).
@@ -622,17 +623,17 @@ func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, t
 	return accounts[0]
 }
 
-func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.FFIEvent, location *fftypes.JSONObject) *fftypes.ContractListener {
-	body := fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+func CreateContractListener(t *testing.T, client *resty.Client, event *core.FFIEvent, location *fftypes.JSONObject) *core.ContractListener {
+	body := core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(location.String()),
-			Event: &fftypes.FFISerializedEvent{
+			Event: &core.FFISerializedEvent{
 				FFIEventDefinition: event.FFIEventDefinition,
 			},
 			Topic: "firefly-e2e",
 		},
 	}
-	var sub fftypes.ContractListener
+	var sub core.ContractListener
 	path := urlContractListeners
 	resp, err := client.R().
 		SetBody(&body).
@@ -643,16 +644,16 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.F
 	return &sub
 }
 
-func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventPath string, location *fftypes.JSONObject) *fftypes.ContractListener {
-	body := fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *core.FFIReference, eventPath string, location *fftypes.JSONObject) *core.ContractListener {
+	body := core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
 			Interface: ffiReference,
 			Topic:     "firefly-e2e",
 		},
 		EventPath: eventPath,
 	}
-	var listener fftypes.ContractListener
+	var listener core.ContractListener
 	path := urlContractListeners
 	resp, err := client.R().
 		SetBody(&body).
@@ -663,7 +664,7 @@ func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference 
 	return &listener
 }
 
-func GetContractListeners(t *testing.T, client *resty.Client, startTime time.Time) (subs []*fftypes.ContractListener) {
+func GetContractListeners(t *testing.T, client *resty.Client, startTime time.Time) (subs []*core.ContractListener) {
 	path := urlContractListeners
 	resp, err := client.R().
 		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -674,7 +675,7 @@ func GetContractListeners(t *testing.T, client *resty.Client, startTime time.Tim
 	return subs
 }
 
-func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, subscriptionID *fftypes.UUID) (events []*fftypes.BlockchainEvent) {
+func GetContractEvents(t *testing.T, client *resty.Client, startTime time.Time, subscriptionID *fftypes.UUID) (events []*core.BlockchainEvent) {
 	path := urlBlockchainEvents
 	resp, err := client.R().
 		SetQueryParam("timestamp", fmt.Sprintf(">%d", startTime.UnixNano())).
@@ -693,7 +694,7 @@ func DeleteContractListener(t *testing.T, client *resty.Client, id *fftypes.UUID
 	require.Equal(t, 204, resp.StatusCode(), "DELETE %s [%d]: %s", path, resp.StatusCode(), resp.String())
 }
 
-func InvokeContractMethod(t *testing.T, client *resty.Client, req *fftypes.ContractCallRequest) (interface{}, error) {
+func InvokeContractMethod(t *testing.T, client *resty.Client, req *core.ContractCallRequest) (interface{}, error) {
 	var res interface{}
 	path := urlContractInvoke
 	resp, err := client.R().
@@ -705,7 +706,7 @@ func InvokeContractMethod(t *testing.T, client *resty.Client, req *fftypes.Contr
 	return res, err
 }
 
-func QueryContractMethod(t *testing.T, client *resty.Client, req *fftypes.ContractCallRequest) (interface{}, error) {
+func QueryContractMethod(t *testing.T, client *resty.Client, req *core.ContractCallRequest) (interface{}, error) {
 	var res interface{}
 	path := urlContractQuery
 	resp, err := client.R().
@@ -717,7 +718,7 @@ func QueryContractMethod(t *testing.T, client *resty.Client, req *fftypes.Contra
 	return res, err
 }
 
-func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{}, error) {
+func CreateFFI(t *testing.T, client *resty.Client, ffi *core.FFI) (interface{}, error) {
 	var res interface{}
 	path := urlContractInterface
 	resp, err := client.R().
@@ -730,8 +731,8 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{
 	return res, err
 }
 
-func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIReference *fftypes.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
-	apiReqBody := &fftypes.ContractAPI{
+func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIReference *core.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
+	apiReqBody := &core.ContractAPI{
 		Name:      name,
 		Interface: FFIReference,
 		Location:  location,
@@ -780,11 +781,11 @@ func QueryContractAPIMethod(t *testing.T, client *resty.Client, APIName string, 
 	return res, err
 }
 
-func CreateContractAPIListener(t *testing.T, client *resty.Client, APIName, eventName, topic string) (*fftypes.ContractListener, error) {
+func CreateContractAPIListener(t *testing.T, client *resty.Client, APIName, eventName, topic string) (*core.ContractListener, error) {
 	apiReqBody := map[string]interface{}{
 		"topic": topic,
 	}
-	var listener fftypes.ContractListener
+	var listener core.ContractListener
 	path := fmt.Sprintf("%s/%s/listeners/%s", urlContractAPI, APIName, eventName)
 	resp, err := client.R().
 		SetBody(apiReqBody).

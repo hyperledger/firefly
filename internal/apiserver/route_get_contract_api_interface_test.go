@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/contractmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetContractAPIInterface(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/apis/banana/interface", &buf)
@@ -40,7 +40,7 @@ func TestGetContractAPIInterface(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetContractAPIInterface", mock.Anything, "ns1", "banana").
-		Return(&fftypes.FFI{}, nil)
+		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

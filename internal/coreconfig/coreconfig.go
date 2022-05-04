@@ -17,10 +17,9 @@
 package coreconfig
 
 import (
-	"net/http"
-
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/spf13/viper"
 )
 
@@ -39,8 +38,6 @@ var (
 	APIRequestTimeout = ffc("api.requestTimeout")
 	// APIRequestMaxTimeout is the maximum timeout an application can set using a Request-Timeout header
 	APIRequestMaxTimeout = ffc("api.requestMaxTimeout")
-	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
-	APIShutdownTimeout = ffc("api.shutdownTimeout")
 	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
 	APIOASPanicOnMissingDescription = ffc("api.oas.panicOnMissingDescription")
 	// BatchCacheSize
@@ -111,20 +108,6 @@ var (
 	PrivateMessagingRetryInitDelay = ffc("privatemessaging.retry.initDelay")
 	// PrivateMessagingRetryMaxDelay the maximum delay to use for retry of data base operations
 	PrivateMessagingRetryMaxDelay = ffc("privatemessaging.retry.maxDelay")
-	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
-	CorsAllowCredentials = ffc("cors.credentials")
-	// CorsAllowedHeaders CORS setting to control the allowed headers
-	CorsAllowedHeaders = ffc("cors.headers")
-	// CorsAllowedMethods CORS setting to control the allowed methods
-	CorsAllowedMethods = ffc("cors.methods")
-	// CorsAllowedOrigins CORS setting to control the allowed origins
-	CorsAllowedOrigins = ffc("cors.origins")
-	// CorsDebug is whether debug is enabled for the CORS implementation
-	CorsDebug = ffc("cors.debug")
-	// CorsEnabled is whether cors is enabled
-	CorsEnabled = ffc("cors.enabled")
-	// CorsMaxAge is the maximum age a browser should rely on CORS checks
-	CorsMaxAge = ffc("cors.maxAge")
 	// DataexchangeType is the name of the data exchange plugin being used by this firefly node
 	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
@@ -283,7 +266,6 @@ func setDefaults() {
 	viper.SetDefault(string(APIMaxFilterLimit), 250)
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
-	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
 	viper.SetDefault(string(BatchCacheSize), "1Mb")
 	viper.SetDefault(string(BatchCacheTTL), "5m")
@@ -306,12 +288,6 @@ func setDefaults() {
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
-	viper.SetDefault(string(CorsAllowCredentials), true)
-	viper.SetDefault(string(CorsAllowedHeaders), []string{"*"})
-	viper.SetDefault(string(CorsAllowedMethods), []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete})
-	viper.SetDefault(string(CorsAllowedOrigins), []string{"*"})
-	viper.SetDefault(string(CorsEnabled), true)
-	viper.SetDefault(string(CorsMaxAge), 600)
 	viper.SetDefault(string(DataexchangeType), "ffdx")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
@@ -320,7 +296,7 @@ func setDefaults() {
 	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")
 	viper.SetDefault(string(DownloadRetryMaxDelay), "1m")
 	viper.SetDefault(string(DownloadRetryFactor), 2.0)
-	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
+	viper.SetDefault(string(EventAggregatorFirstEvent), core.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")

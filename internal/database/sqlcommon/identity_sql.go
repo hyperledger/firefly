@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -55,7 +56,7 @@ var (
 
 const identitiesTable = "identities"
 
-func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, identity *fftypes.Identity) (int64, error) {
+func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, identity *core.Identity) (int64, error) {
 	identity.Updated = fftypes.Now()
 	return s.updateTx(ctx, identitiesTable, tx,
 		sq.Update(identitiesTable).
@@ -74,11 +75,11 @@ func (s *SQLCommon) attemptIdentityUpdate(ctx context.Context, tx *txWrapper, id
 				"id": identity.ID,
 			}),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, fftypes.ChangeEventTypeUpdated, identity.Namespace, identity.ID)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, core.ChangeEventTypeUpdated, identity.Namespace, identity.ID)
 		})
 }
 
-func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *fftypes.Identity, requestConflictEmptyResult bool) (err error) {
+func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, identity *core.Identity, requestConflictEmptyResult bool) (err error) {
 	identity.Created = fftypes.Now()
 	identity.Updated = identity.Created
 	_, err = s.insertTxExt(ctx, identitiesTable, tx,
@@ -100,12 +101,12 @@ func (s *SQLCommon) attemptIdentityInsert(ctx context.Context, tx *txWrapper, id
 				identity.Updated,
 			),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, fftypes.ChangeEventTypeCreated, identity.Namespace, identity.ID)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionIdentities, core.ChangeEventTypeCreated, identity.Namespace, identity.ID)
 		}, requestConflictEmptyResult)
 	return err
 }
 
-func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identity, optimization database.UpsertOptimization) (err error) {
+func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *core.Identity, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -149,8 +150,8 @@ func (s *SQLCommon) UpsertIdentity(ctx context.Context, identity *fftypes.Identi
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes.Identity, error) {
-	identity := fftypes.Identity{}
+func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*core.Identity, error) {
+	identity := core.Identity{}
 	err := row.Scan(
 		&identity.ID,
 		&identity.DID,
@@ -172,7 +173,7 @@ func (s *SQLCommon) identityResult(ctx context.Context, row *sql.Rows) (*fftypes
 	return &identity, nil
 }
 
-func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred interface{}) (identity *fftypes.Identity, err error) {
+func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred interface{}) (identity *core.Identity, err error) {
 
 	rows, _, err := s.query(ctx, identitiesTable,
 		sq.Select(identityColumns...).
@@ -192,19 +193,19 @@ func (s *SQLCommon) getIdentityPred(ctx context.Context, desc string, pred inter
 	return s.identityResult(ctx, rows)
 }
 
-func (s *SQLCommon) GetIdentityByName(ctx context.Context, iType fftypes.IdentityType, namespace, name string) (identity *fftypes.Identity, err error) {
+func (s *SQLCommon) GetIdentityByName(ctx context.Context, iType core.IdentityType, namespace, name string) (identity *core.Identity, err error) {
 	return s.getIdentityPred(ctx, name, sq.Eq{"itype": iType, "namespace": namespace, "name": name})
 }
 
-func (s *SQLCommon) GetIdentityByDID(ctx context.Context, did string) (identity *fftypes.Identity, err error) {
+func (s *SQLCommon) GetIdentityByDID(ctx context.Context, did string) (identity *core.Identity, err error) {
 	return s.getIdentityPred(ctx, did, sq.Eq{"did": did})
 }
 
-func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (identity *fftypes.Identity, err error) {
+func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error) {
 	return s.getIdentityPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (identities []*fftypes.Identity, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (identities []*core.Identity, fr *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From(identitiesTable), filter, identityFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -217,7 +218,7 @@ func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (
 	}
 	defer rows.Close()
 
-	identities = []*fftypes.Identity{}
+	identities = []*core.Identity{}
 	for rows.Next() {
 		d, err := s.identityResult(ctx, rows)
 		if err != nil {

@@ -5,7 +5,7 @@ package admineventsmocks
 import (
 	http "net/http"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -16,7 +16,7 @@ type Manager struct {
 }
 
 // Dispatch provides a mock function with given fields: changeEvent
-func (_m *Manager) Dispatch(changeEvent *fftypes.ChangeEvent) {
+func (_m *Manager) Dispatch(changeEvent *core.ChangeEvent) {
 	_m.Called(changeEvent)
 }
 

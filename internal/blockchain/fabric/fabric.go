@@ -27,15 +27,16 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
-	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 const (
@@ -155,8 +156,8 @@ func (f *Fabric) Name() string {
 	return "fabric"
 }
 
-func (f *Fabric) VerifierType() fftypes.VerifierType {
-	return fftypes.VerifierTypeMSPIdentity
+func (f *Fabric) VerifierType() core.VerifierType {
+	return core.VerifierTypeMSPIdentity
 }
 
 func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
@@ -333,8 +334,8 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeMSPIdentity,
+	return f.callbacks.BatchPinComplete(batch, &core.VerifierRef{
+		Type:  core.VerifierTypeMSPIdentity,
 		Value: signer,
 	})
 }
@@ -399,9 +400,9 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
 		return
 	}
-	updateType := fftypes.OpStatusSucceeded
+	updateType := core.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
-		updateType = fftypes.OpStatusFailed
+		updateType = core.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
 	f.callbacks.BlockchainOpUpdate(f, operationID, updateType, txHash, message, reply)
@@ -591,7 +592,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeInput(input)
 	if err != nil {
@@ -620,7 +621,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
 }
 
-func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeInput(input)
 	if err != nil {
@@ -714,7 +715,7 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &fabricLocation, nil
 }
 
-func (f *Fabric) AddContractListener(ctx context.Context, listener *fftypes.ContractListenerInput) error {
+func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
 	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
@@ -727,19 +728,19 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *fftypes.Cont
 	return nil
 }
 
-func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
+func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
-func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
+func (f *Fabric) GetFFIParamValidator(ctx context.Context) (core.FFIParamValidator, error) {
 	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
 }
 
-func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *core.FFIGenerationRequest) (*core.FFI, error) {
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string {
 	return event.Name
 }

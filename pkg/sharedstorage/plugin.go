@@ -20,13 +20,13 @@ import (
 	"context"
 	"io"
 
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 // Plugin is the interface implemented by each Shared Storage plugin
 type Plugin interface {
-	fftypes.Named
+	core.Named
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitPrefix(prefix config.Prefix)

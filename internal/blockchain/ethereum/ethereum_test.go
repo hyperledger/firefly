@@ -25,16 +25,17 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
-	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -45,10 +46,10 @@ var utEthconnectConf = utConfPrefix.SubPrefix(EthconnectConfigKey)
 var utAddressResolverConf = utConfPrefix.SubPrefix(AddressResolverConfigKey)
 var utFFTMConf = utConfPrefix.SubPrefix(FFTMConfigKey)
 
-func testFFIMethod() *fftypes.FFIMethod {
-	return &fftypes.FFIMethod{
+func testFFIMethod() *core.FFIMethod {
+	return &core.FFIMethod{
 		Name: "sum",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -58,7 +59,7 @@ func testFFIMethod() *fftypes.FFIMethod {
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{
+		Returns: []*core.FFIParam{
 			{
 				Name:   "z",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -183,7 +184,7 @@ func TestInitAllNewStreamsAndWSEventWithFFTM(t *testing.T) {
 	assert.NotNil(t, e.fftmClient)
 
 	assert.Equal(t, "ethereum", e.Name())
-	assert.Equal(t, fftypes.VerifierTypeEthAddress, e.VerifierType())
+	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
@@ -748,8 +749,8 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	expectedSigningKeyRef := &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
@@ -835,8 +836,8 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 	}
 
-	expectedSigningKeyRef := &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
@@ -885,8 +886,8 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
   }
 ]`)
 
-	expectedSigningKeyRef := &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
@@ -1171,7 +1172,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	em.On("BlockchainOpUpdate",
 		e,
 		operationID,
-		fftypes.OpStatusSucceeded,
+		core.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
 		mock.Anything).Return(nil)
@@ -1211,7 +1212,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	txsu := em.On("BlockchainOpUpdate",
 		e,
 		operationID,
-		fftypes.OpStatusFailed,
+		core.OpStatusFailed,
 		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))
@@ -1282,15 +1283,15 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-			Event: &fftypes.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: core.FFIEventDefinition{
 					Name: "Changed",
-					Params: fftypes.FFIParams{
+					Params: core.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
@@ -1298,8 +1299,8 @@ func TestAddSubscription(t *testing.T) {
 					},
 				},
 			},
-			Options: &fftypes.ContractListenerOptions{
-				FirstEvent: string(fftypes.SubOptsFirstEventOldest),
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventOldest),
 			},
 		},
 	}
@@ -1324,15 +1325,15 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-			Event: &fftypes.FFISerializedEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: core.FFIEventDefinition{
 					Name: "Changed",
-					Params: fftypes.FFIParams{
+					Params: core.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
@@ -1364,10 +1365,10 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(""),
-			Event:    &fftypes.FFISerializedEvent{},
+			Event:    &core.FFISerializedEvent{},
 		},
 	}
 
@@ -1389,14 +1390,14 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
-			Event: &fftypes.FFISerializedEvent{},
-			Options: &fftypes.ContractListenerOptions{
-				FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+			Event: &core.FFISerializedEvent{},
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventNewest),
 			},
 		},
 	}
@@ -1423,7 +1424,7 @@ func TestDeleteSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		BackendID: "sb-1",
 	}
 
@@ -1448,7 +1449,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		BackendID: "sb-1",
 	}
 
@@ -1677,9 +1678,9 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	location := &Location{
 		Address: "0x12345",
 	}
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "set",
-		Params: fftypes.FFIParams{
+		Params: core.FFIParams{
 			{
 				Schema: fftypes.JSONAnyPtr("{bad schema!"),
 			},
@@ -1730,8 +1731,8 @@ func TestQueryContractErrorPrepare(t *testing.T) {
 	location := &Location{
 		Address: "0x12345",
 	}
-	method := &fftypes.FFIMethod{
-		Params: fftypes.FFIParams{
+	method := &core.FFIMethod{
+		Params: core.FFIParams{
 			{
 				Name:   "bad",
 				Schema: fftypes.JSONAnyPtr("{badschema}"),
@@ -1873,9 +1874,9 @@ func TestGetContractAddressBadJSON(t *testing.T) {
 func TestFFIMethodToABI(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "set",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name: "newValue",
 				Schema: fftypes.JSONAnyPtr(`{
@@ -1886,7 +1887,7 @@ func TestFFIMethodToABI(t *testing.T) {
 				}`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{},
+		Returns: []*core.FFIParam{},
 	}
 
 	expectedABIElement := ABIElementMarshaling{
@@ -1910,9 +1911,9 @@ func TestFFIMethodToABI(t *testing.T) {
 func TestFFIMethodToABIObject(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "set",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name: "widget",
 				Schema: fftypes.JSONAnyPtr(`{
@@ -1946,7 +1947,7 @@ func TestFFIMethodToABIObject(t *testing.T) {
 				}`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{},
+		Returns: []*core.FFIParam{},
 	}
 
 	expectedABIElement := ABIElementMarshaling{
@@ -1984,9 +1985,9 @@ func TestFFIMethodToABIObject(t *testing.T) {
 func TestFFIMethodToABINestedArray(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "set",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name: "widget",
 				Schema: fftypes.JSONAnyPtr(`{
@@ -2004,7 +2005,7 @@ func TestFFIMethodToABINestedArray(t *testing.T) {
 				}`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{},
+		Returns: []*core.FFIParam{},
 	}
 
 	expectedABIElement := ABIElementMarshaling{
@@ -2029,15 +2030,15 @@ func TestFFIMethodToABINestedArray(t *testing.T) {
 func TestFFIMethodToABIInvalidJSON(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "set",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name:   "newValue",
 				Schema: fftypes.JSONAnyPtr(`{#!`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{},
+		Returns: []*core.FFIParam{},
 	}
 
 	_, err := e.FFIMethodToABI(context.Background(), method)
@@ -2047,9 +2048,9 @@ func TestFFIMethodToABIInvalidJSON(t *testing.T) {
 func TestFFIMethodToABIBadSchema(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "set",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name: "newValue",
 				Schema: fftypes.JSONAnyPtr(`{
@@ -2060,7 +2061,7 @@ func TestFFIMethodToABIBadSchema(t *testing.T) {
 				}`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{},
+		Returns: []*core.FFIParam{},
 	}
 
 	_, err := e.FFIMethodToABI(context.Background(), method)
@@ -2070,10 +2071,10 @@ func TestFFIMethodToABIBadSchema(t *testing.T) {
 func TestFFIMethodToABIBadReturn(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name:   "set",
-		Params: []*fftypes.FFIParam{},
-		Returns: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{},
+		Returns: []*core.FFIParam{
 			{
 				Name: "newValue",
 				Schema: fftypes.JSONAnyPtr(`{
@@ -2132,26 +2133,26 @@ func TestConvertABIToFFI(t *testing.T) {
 
 	schema := fftypes.JSONAnyPtr(`{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}`)
 
-	expectedFFI := &fftypes.FFI{
+	expectedFFI := &core.FFI{
 		Name:        "SimpleStorage",
 		Version:     "v0.0.1",
 		Namespace:   "default",
 		Description: "desc",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "set",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "newValue",
 						Schema: schema,
 					},
 				},
-				Returns: fftypes.FFIParams{},
+				Returns: core.FFIParams{},
 			},
 			{
 				Name:   "get",
-				Params: fftypes.FFIParams{},
-				Returns: fftypes.FFIParams{
+				Params: core.FFIParams{},
+				Returns: core.FFIParams{
 					{
 						Name:   "value",
 						Schema: schema,
@@ -2159,11 +2160,11 @@ func TestConvertABIToFFI(t *testing.T) {
 				},
 			},
 		},
-		Events: []*fftypes.FFIEvent{
+		Events: []*core.FFIEvent{
 			{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
+				FFIEventDefinition: core.FFIEventDefinition{
 					Name: "Updated",
-					Params: fftypes.FFIParams{
+					Params: core.FFIParams{
 						{
 							Name:   "value",
 							Schema: schema,
@@ -2211,24 +2212,24 @@ func TestConvertABIToFFIWithObject(t *testing.T) {
 
 	schema := fftypes.JSONAnyPtr(`{"type":"object","details":{"type":"tuple","internalType":"struct WidgetFactory.Widget"},"properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":1}},"size":{"type":"integer","details":{"type":"uint256","internalType":"uint256","index":0}}}}`)
 
-	expectedFFI := &fftypes.FFI{
+	expectedFFI := &core.FFI{
 		Name:        "WidgetTest",
 		Version:     "v0.0.1",
 		Namespace:   "default",
 		Description: "desc",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "set",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "newValue",
 						Schema: schema,
 					},
 				},
-				Returns: fftypes.FFIParams{},
+				Returns: core.FFIParams{},
 			},
 		},
-		Events: []*fftypes.FFIEvent{},
+		Events: []*core.FFIEvent{},
 	}
 
 	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
@@ -2256,24 +2257,24 @@ func TestConvertABIToFFIWithArray(t *testing.T) {
 
 	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[]","internalType":"string[]"},"items":{"type":"string"}}`)
 
-	expectedFFI := &fftypes.FFI{
+	expectedFFI := &core.FFI{
 		Name:        "WidgetTest",
 		Version:     "v0.0.1",
 		Namespace:   "default",
 		Description: "desc",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "set",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "newValue",
 						Schema: schema,
 					},
 				},
-				Returns: fftypes.FFIParams{},
+				Returns: core.FFIParams{},
 			},
 		},
-		Events: []*fftypes.FFIEvent{},
+		Events: []*core.FFIEvent{},
 	}
 
 	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
@@ -2300,24 +2301,24 @@ func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 	}
 
 	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[][]","internalType":"string[][]"},"items":{"type":"array","items":{"type":"string"}}}`)
-	expectedFFI := &fftypes.FFI{
+	expectedFFI := &core.FFI{
 		Name:        "WidgetTest",
 		Version:     "v0.0.1",
 		Namespace:   "default",
 		Description: "desc",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "set",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "newValue",
 						Schema: schema,
 					},
 				},
-				Returns: fftypes.FFIParams{},
+				Returns: core.FFIParams{},
 			},
 		},
-		Events: []*fftypes.FFIEvent{},
+		Events: []*core.FFIEvent{},
 	}
 
 	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
@@ -2361,24 +2362,24 @@ func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 	}
 
 	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"tuple[][]","internalType":"struct WidgetFactory.Widget[][]"},"items":{"type":"array","items":{"type":"object","properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":0}},"inUse":{"type":"boolean","details":{"type":"bool","internalType":"bool","index":2}},"size":{"type":"integer","details":{"type":"uint256","internalType":"uint256","index":1}}}}}}`)
-	expectedFFI := &fftypes.FFI{
+	expectedFFI := &core.FFI{
 		Name:        "WidgetTest",
 		Version:     "v0.0.1",
 		Namespace:   "default",
 		Description: "desc",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "set",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "gears",
 						Schema: schema,
 					},
 				},
-				Returns: fftypes.FFIParams{},
+				Returns: core.FFIParams{},
 			},
 		},
-		Events: []*fftypes.FFIEvent{},
+		Events: []*core.FFIEvent{},
 	}
 
 	actualFFI := e.convertABIToFFI("default", "WidgetTest", "v0.0.1", "desc", abi)
@@ -2388,7 +2389,7 @@ func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 
 func TestGenerateFFI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2399,7 +2400,7 @@ func TestGenerateFFI(t *testing.T) {
 
 func TestGenerateFFIInlineNamespace(t *testing.T) {
 	e, _ := newTestEthereum()
-	ffi, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+	ffi, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2412,7 +2413,7 @@ func TestGenerateFFIInlineNamespace(t *testing.T) {
 
 func TestGenerateFFIEmptyABI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2423,7 +2424,7 @@ func TestGenerateFFIEmptyABI(t *testing.T) {
 
 func TestGenerateFFIBadABI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2469,9 +2470,9 @@ func TestGenerateEventSignature(t *testing.T) {
 		},
 	}.String()
 
-	event := &fftypes.FFIEventDefinition{
+	event := &core.FFIEventDefinition{
 		Name: "Changed",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -2493,9 +2494,9 @@ func TestGenerateEventSignature(t *testing.T) {
 
 func TestGenerateEventSignatureInvalid(t *testing.T) {
 	e, _ := newTestEthereum()
-	event := &fftypes.FFIEventDefinition{
+	event := &core.FFIEventDefinition{
 		Name: "Changed",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"!bad": "bad"`),

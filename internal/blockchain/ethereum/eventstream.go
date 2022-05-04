@@ -23,10 +23,10 @@ import (
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type streamManager struct {
@@ -139,9 +139,9 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, fromBlock string, abi ABIElementMarshaling) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
 	switch fromBlock {
-	case string(fftypes.SubOptsFirstEventOldest):
+	case string(core.SubOptsFirstEventOldest):
 		fromBlock = "0"
-	case string(fftypes.SubOptsFirstEventNewest):
+	case string(core.SubOptsFirstEventNewest):
 		fromBlock = "latest"
 	}
 	sub := subscription{

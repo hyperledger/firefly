@@ -22,9 +22,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -37,7 +38,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new pin entry
-	pin := &fftypes.Pin{
+	pin := &core.Pin{
 		Masked:     true,
 		Hash:       fftypes.NewRandB32(),
 		Batch:      fftypes.NewUUID(),
@@ -48,8 +49,8 @@ func TestPinsE2EWithDB(t *testing.T) {
 		Dispatched: false,
 	}
 
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, mock.Anything).Return()
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeDeleted, mock.Anything).Return()
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeCreated, mock.Anything).Return()
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeDeleted, mock.Anything).Return()
 
 	err := s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
@@ -95,7 +96,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 func TestUpsertPinFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertPin(context.Background(), &fftypes.Pin{})
+	err := s.UpsertPin(context.Background(), &core.Pin{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -106,7 +107,7 @@ func TestUpsertPinFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"sequence", "masked", "dispatched"}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
+	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -116,7 +117,7 @@ func TestUpsertPinFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
+	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -126,7 +127,7 @@ func TestUpsertPinFailExistingSequenceScan(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(mock.NewRows([]string{"only one"}).AddRow(true))
 	mock.ExpectRollback()
-	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
+	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -137,7 +138,7 @@ func TestUpsertPinFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"sequence", "masked", "dispatched"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertPin(context.Background(), &fftypes.Pin{Hash: fftypes.NewRandB32()})
+	err := s.UpsertPin(context.Background(), &core.Pin{Hash: fftypes.NewRandB32()})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -145,7 +146,7 @@ func TestUpsertPinFailCommit(t *testing.T) {
 func TestInsertPinsBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertPins(context.Background(), []*fftypes.Pin{})
+	err := s.InsertPins(context.Background(), []*core.Pin{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
@@ -156,10 +157,10 @@ func TestInsertPinsMultiRowOK(t *testing.T) {
 	s.features.MultiRowInsert = true
 	s.fakePSQLInsert = true
 
-	pin1 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
-	pin2 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, int64(1001))
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, fftypes.ChangeEventTypeCreated, int64(1002))
+	pin1 := &core.Pin{Hash: fftypes.NewRandB32()}
+	pin2 := &core.Pin{Hash: fftypes.NewRandB32()}
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeCreated, int64(1001))
+	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeCreated, int64(1002))
 
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
@@ -167,7 +168,7 @@ func TestInsertPinsMultiRowOK(t *testing.T) {
 		AddRow(int64(1002)),
 	)
 	mock.ExpectCommit()
-	err := s.InsertPins(context.Background(), []*fftypes.Pin{pin1, pin2})
+	err := s.InsertPins(context.Background(), []*core.Pin{pin1, pin2})
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
@@ -177,10 +178,10 @@ func TestInsertPinsMultiRowFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	s.features.MultiRowInsert = true
 	s.fakePSQLInsert = true
-	pin1 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
+	pin1 := &core.Pin{Hash: fftypes.NewRandB32()}
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertPins(context.Background(), []*fftypes.Pin{pin1})
+	err := s.InsertPins(context.Background(), []*core.Pin{pin1})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)
@@ -188,10 +189,10 @@ func TestInsertPinsMultiRowFail(t *testing.T) {
 
 func TestInsertPinsSingleRowFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	pin1 := &fftypes.Pin{Hash: fftypes.NewRandB32()}
+	pin1 := &core.Pin{Hash: fftypes.NewRandB32()}
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertPins(context.Background(), []*fftypes.Pin{pin1})
+	err := s.InsertPins(context.Background(), []*core.Pin{pin1})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 	s.callbacks.AssertExpectations(t)

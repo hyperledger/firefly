@@ -5,11 +5,13 @@ package databasemocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/pkg/config"
+	config "github.com/hyperledger/firefly-common/pkg/config"
+
+	core "github.com/hyperledger/firefly/pkg/core"
 
 	database "github.com/hyperledger/firefly/pkg/database"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -120,11 +122,11 @@ func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error 
 }
 
 // DeleteOffset provides a mock function with given fields: ctx, t, name
-func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.FFEnum, name string) error {
+func (_m *Plugin) DeleteOffset(ctx context.Context, t core.FFEnum, name string) error {
 	ret := _m.Called(ctx, t, name)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string) error); ok {
 		r0 = rf(ctx, t, name)
 	} else {
 		r0 = ret.Error(0)
@@ -162,15 +164,15 @@ func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) 
 }
 
 // GetBatchByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BatchPersisted, error) {
+func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*core.BatchPersisted, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BatchPersisted); ok {
+	var r0 *core.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.BatchPersisted); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.BatchPersisted)
+			r0 = ret.Get(0).(*core.BatchPersisted)
 		}
 	}
 
@@ -231,15 +233,15 @@ func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.
 }
 
 // GetBatches provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*fftypes.BatchPersisted, *database.FilterResult, error) {
+func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*core.BatchPersisted, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.BatchPersisted); ok {
+	var r0 []*core.BatchPersisted
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.BatchPersisted); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.BatchPersisted)
+			r0 = ret.Get(0).([]*core.BatchPersisted)
 		}
 	}
 
@@ -263,15 +265,15 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*ff
 }
 
 // GetBlobMatchingHash provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Blob, error) {
+func (_m *Plugin) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (*core.Blob, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Blob); ok {
+	var r0 *core.Blob
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *core.Blob); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Blob)
+			r0 = ret.Get(0).(*core.Blob)
 		}
 	}
 
@@ -286,15 +288,15 @@ func (_m *Plugin) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32
 }
 
 // GetBlobs provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*fftypes.Blob, *database.FilterResult, error) {
+func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*core.Blob, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Blob); ok {
+	var r0 []*core.Blob
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Blob); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Blob)
+			r0 = ret.Get(0).([]*core.Blob)
 		}
 	}
 
@@ -318,15 +320,15 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*ffty
 }
 
 // GetBlockchainEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.BlockchainEvent); ok {
+	var r0 *core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.BlockchainEvent); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+			r0 = ret.Get(0).(*core.BlockchainEvent)
 		}
 	}
 
@@ -341,15 +343,15 @@ func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) 
 }
 
 // GetBlockchainEventByProtocolID provides a mock function with given fields: ctx, ns, listener, protocolID
-func (_m *Plugin) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error) {
+func (_m *Plugin) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error) {
 	ret := _m.Called(ctx, ns, listener, protocolID)
 
-	var r0 *fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.BlockchainEvent); ok {
+	var r0 *core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.BlockchainEvent); ok {
 		r0 = rf(ctx, ns, listener, protocolID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.BlockchainEvent)
+			r0 = ret.Get(0).(*core.BlockchainEvent)
 		}
 	}
 
@@ -364,15 +366,15 @@ func (_m *Plugin) GetBlockchainEventByProtocolID(ctx context.Context, ns string,
 }
 
 // GetBlockchainEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.BlockchainEvent); ok {
+	var r0 []*core.BlockchainEvent
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.BlockchainEvent); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.BlockchainEvent)
+			r0 = ret.Get(0).([]*core.BlockchainEvent)
 		}
 	}
 
@@ -396,20 +398,20 @@ func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filte
 }
 
 // GetChartHistogram provides a mock function with given fields: ctx, ns, intervals, collection
-func (_m *Plugin) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
+func (_m *Plugin) GetChartHistogram(ctx context.Context, ns string, intervals []core.ChartHistogramInterval, collection database.CollectionName) ([]*core.ChartHistogram, error) {
 	ret := _m.Called(ctx, ns, intervals, collection)
 
-	var r0 []*fftypes.ChartHistogram
-	if rf, ok := ret.Get(0).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) []*fftypes.ChartHistogram); ok {
+	var r0 []*core.ChartHistogram
+	if rf, ok := ret.Get(0).(func(context.Context, string, []core.ChartHistogramInterval, database.CollectionName) []*core.ChartHistogram); ok {
 		r0 = rf(ctx, ns, intervals, collection)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ChartHistogram)
+			r0 = ret.Get(0).([]*core.ChartHistogram)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, []fftypes.ChartHistogramInterval, database.CollectionName) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, []core.ChartHistogramInterval, database.CollectionName) error); ok {
 		r1 = rf(ctx, ns, intervals, collection)
 	} else {
 		r1 = ret.Error(1)
@@ -474,15 +476,15 @@ func (_m *Plugin) GetConfigRecords(ctx context.Context, filter database.Filter) 
 }
 
 // GetContractAPIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error) {
+func (_m *Plugin) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractAPI); ok {
+	var r0 *core.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.ContractAPI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractAPI)
+			r0 = ret.Get(0).(*core.ContractAPI)
 		}
 	}
 
@@ -497,15 +499,15 @@ func (_m *Plugin) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*ff
 }
 
 // GetContractAPIByName provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetContractAPIByName(ctx context.Context, ns string, name string) (*fftypes.ContractAPI, error) {
+func (_m *Plugin) GetContractAPIByName(ctx context.Context, ns string, name string) (*core.ContractAPI, error) {
 	ret := _m.Called(ctx, ns, name)
 
-	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractAPI); ok {
+	var r0 *core.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.ContractAPI); ok {
 		r0 = rf(ctx, ns, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractAPI)
+			r0 = ret.Get(0).(*core.ContractAPI)
 		}
 	}
 
@@ -520,15 +522,15 @@ func (_m *Plugin) GetContractAPIByName(ctx context.Context, ns string, name stri
 }
 
 // GetContractAPIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractAPI); ok {
+	var r0 []*core.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.ContractAPI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractAPI)
+			r0 = ret.Get(0).([]*core.ContractAPI)
 		}
 	}
 
@@ -552,15 +554,15 @@ func (_m *Plugin) GetContractAPIs(ctx context.Context, ns string, filter databas
 }
 
 // GetContractListener provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetContractListener(ctx context.Context, ns string, name string) (*fftypes.ContractListener, error) {
+func (_m *Plugin) GetContractListener(ctx context.Context, ns string, name string) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, ns, name)
 
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractListener); ok {
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.ContractListener); ok {
 		r0 = rf(ctx, ns, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
+			r0 = ret.Get(0).(*core.ContractListener)
 		}
 	}
 
@@ -575,15 +577,15 @@ func (_m *Plugin) GetContractListener(ctx context.Context, ns string, name strin
 }
 
 // GetContractListenerByBackendID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string) (*fftypes.ContractListener, error) {
+func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ContractListener); ok {
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.ContractListener); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
+			r0 = ret.Get(0).(*core.ContractListener)
 		}
 	}
 
@@ -598,15 +600,15 @@ func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string)
 }
 
 // GetContractListenerByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractListener, error) {
+func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.ContractListener); ok {
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.ContractListener); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
+			r0 = ret.Get(0).(*core.ContractListener)
 		}
 	}
 
@@ -621,15 +623,15 @@ func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID)
 }
 
 // GetContractListeners provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
+func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filter) ([]*core.ContractListener, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.ContractListener); ok {
+	var r0 []*core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.ContractListener); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractListener)
+			r0 = ret.Get(0).([]*core.ContractListener)
 		}
 	}
 
@@ -653,15 +655,15 @@ func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filt
 }
 
 // GetData provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) (fftypes.DataArray, *database.FilterResult, error) {
+func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) (core.DataArray, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 fftypes.DataArray
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataArray); ok {
+	var r0 core.DataArray
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) core.DataArray); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataArray)
+			r0 = ret.Get(0).(core.DataArray)
 		}
 	}
 
@@ -685,15 +687,15 @@ func (_m *Plugin) GetData(ctx context.Context, filter database.Filter) (fftypes.
 }
 
 // GetDataByID provides a mock function with given fields: ctx, id, withValue
-func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (*fftypes.Data, error) {
+func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (*core.Data, error) {
 	ret := _m.Called(ctx, id, withValue)
 
-	var r0 *fftypes.Data
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, bool) *fftypes.Data); ok {
+	var r0 *core.Data
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, bool) *core.Data); ok {
 		r0 = rf(ctx, id, withValue)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Data)
+			r0 = ret.Get(0).(*core.Data)
 		}
 	}
 
@@ -708,15 +710,15 @@ func (_m *Plugin) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue b
 }
 
 // GetDataRefs provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (fftypes.DataRefs, *database.FilterResult, error) {
+func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (core.DataRefs, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 fftypes.DataRefs
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) fftypes.DataRefs); ok {
+	var r0 core.DataRefs
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) core.DataRefs); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.DataRefs)
+			r0 = ret.Get(0).(core.DataRefs)
 		}
 	}
 
@@ -740,15 +742,15 @@ func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (ffty
 }
 
 // GetDatatypeByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Datatype, error) {
+func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*core.Datatype, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Datatype); ok {
+	var r0 *core.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Datatype); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Datatype)
+			r0 = ret.Get(0).(*core.Datatype)
 		}
 	}
 
@@ -763,15 +765,15 @@ func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*fftyp
 }
 
 // GetDatatypeByName provides a mock function with given fields: ctx, ns, name, version
-func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string, version string) (*fftypes.Datatype, error) {
+func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string, version string) (*core.Datatype, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *fftypes.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.Datatype); ok {
+	var r0 *core.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.Datatype); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Datatype)
+			r0 = ret.Get(0).(*core.Datatype)
 		}
 	}
 
@@ -786,15 +788,15 @@ func (_m *Plugin) GetDatatypeByName(ctx context.Context, ns string, name string,
 }
 
 // GetDatatypes provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*fftypes.Datatype, *database.FilterResult, error) {
+func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*core.Datatype, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Datatype); ok {
+	var r0 []*core.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Datatype); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Datatype)
+			r0 = ret.Get(0).([]*core.Datatype)
 		}
 	}
 
@@ -818,15 +820,15 @@ func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*
 }
 
 // GetEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Event, error) {
+func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*core.Event, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Event
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Event); ok {
+	var r0 *core.Event
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Event); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Event)
+			r0 = ret.Get(0).(*core.Event)
 		}
 	}
 
@@ -841,15 +843,15 @@ func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.
 }
 
 // GetEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*fftypes.Event, *database.FilterResult, error) {
+func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*core.Event, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Event
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Event); ok {
+	var r0 []*core.Event
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Event); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Event)
+			r0 = ret.Get(0).([]*core.Event)
 		}
 	}
 
@@ -873,15 +875,15 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*fft
 }
 
 // GetFFI provides a mock function with given fields: ctx, ns, name, version
-func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version string) (*fftypes.FFI, error) {
+func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version string) (*core.FFI, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.FFI); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -896,15 +898,15 @@ func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version st
 }
 
 // GetFFIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
+func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -919,15 +921,15 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FF
 }
 
 // GetFFIEvent provides a mock function with given fields: ctx, ns, interfaceID, pathName
-func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error) {
+func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error) {
 	ret := _m.Called(ctx, ns, interfaceID, pathName)
 
-	var r0 *fftypes.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIEvent); ok {
+	var r0 *core.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.FFIEvent); ok {
 		r0 = rf(ctx, ns, interfaceID, pathName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIEvent)
+			r0 = ret.Get(0).(*core.FFIEvent)
 		}
 	}
 
@@ -942,15 +944,15 @@ func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftyp
 }
 
 // GetFFIEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error) {
+func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFIEvent); ok {
+	var r0 *core.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFIEvent); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIEvent)
+			r0 = ret.Get(0).(*core.FFIEvent)
 		}
 	}
 
@@ -965,15 +967,15 @@ func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftyp
 }
 
 // GetFFIEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*fftypes.FFIEvent, *database.FilterResult, error) {
+func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*core.FFIEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIEvent); ok {
+	var r0 []*core.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.FFIEvent); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.FFIEvent)
+			r0 = ret.Get(0).([]*core.FFIEvent)
 		}
 	}
 
@@ -997,15 +999,15 @@ func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*
 }
 
 // GetFFIMethod provides a mock function with given fields: ctx, ns, interfaceID, pathName
-func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error) {
+func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error) {
 	ret := _m.Called(ctx, ns, interfaceID, pathName)
 
-	var r0 *fftypes.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIMethod); ok {
+	var r0 *core.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.FFIMethod); ok {
 		r0 = rf(ctx, ns, interfaceID, pathName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFIMethod)
+			r0 = ret.Get(0).(*core.FFIMethod)
 		}
 	}
 
@@ -1020,15 +1022,15 @@ func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, interfaceID *ffty
 }
 
 // GetFFIMethods provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]*fftypes.FFIMethod, *database.FilterResult, error) {
+func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]*core.FFIMethod, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIMethod); ok {
+	var r0 []*core.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.FFIMethod); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.FFIMethod)
+			r0 = ret.Get(0).([]*core.FFIMethod)
 		}
 	}
 
@@ -1052,15 +1054,15 @@ func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetFFIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetFFIs(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.FFI, *database.FilterResult, error) {
+func (_m *Plugin) GetFFIs(ctx context.Context, ns string, filter database.Filter) ([]*core.FFI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.FFI); ok {
+	var r0 []*core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.FFI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.FFI)
+			r0 = ret.Get(0).([]*core.FFI)
 		}
 	}
 
@@ -1084,15 +1086,15 @@ func (_m *Plugin) GetFFIs(ctx context.Context, ns string, filter database.Filter
 }
 
 // GetGroupByHash provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Group, error) {
+func (_m *Plugin) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (*core.Group, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.Group
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Group); ok {
+	var r0 *core.Group
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *core.Group); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Group)
+			r0 = ret.Get(0).(*core.Group)
 		}
 	}
 
@@ -1107,15 +1109,15 @@ func (_m *Plugin) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (*f
 }
 
 // GetGroups provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetGroups(ctx context.Context, filter database.Filter) ([]*fftypes.Group, *database.FilterResult, error) {
+func (_m *Plugin) GetGroups(ctx context.Context, filter database.Filter) ([]*core.Group, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Group
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Group); ok {
+	var r0 []*core.Group
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Group); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Group)
+			r0 = ret.Get(0).([]*core.Group)
 		}
 	}
 
@@ -1139,15 +1141,15 @@ func (_m *Plugin) GetGroups(ctx context.Context, filter database.Filter) ([]*fft
 }
 
 // GetIdentities provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetIdentities(ctx context.Context, filter database.Filter) ([]*fftypes.Identity, *database.FilterResult, error) {
+func (_m *Plugin) GetIdentities(ctx context.Context, filter database.Filter) ([]*core.Identity, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Identity); ok {
+	var r0 []*core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Identity); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Identity)
+			r0 = ret.Get(0).([]*core.Identity)
 		}
 	}
 
@@ -1171,15 +1173,15 @@ func (_m *Plugin) GetIdentities(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetIdentityByDID provides a mock function with given fields: ctx, did
-func (_m *Plugin) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Identity, error) {
+func (_m *Plugin) GetIdentityByDID(ctx context.Context, did string) (*core.Identity, error) {
 	ret := _m.Called(ctx, did)
 
-	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Identity); ok {
+	var r0 *core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Identity); ok {
 		r0 = rf(ctx, did)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Identity)
+			r0 = ret.Get(0).(*core.Identity)
 		}
 	}
 
@@ -1194,15 +1196,15 @@ func (_m *Plugin) GetIdentityByDID(ctx context.Context, did string) (*fftypes.Id
 }
 
 // GetIdentityByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Identity, error) {
+func (_m *Plugin) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (*core.Identity, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Identity); ok {
+	var r0 *core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Identity); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Identity)
+			r0 = ret.Get(0).(*core.Identity)
 		}
 	}
 
@@ -1217,20 +1219,20 @@ func (_m *Plugin) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (*fftyp
 }
 
 // GetIdentityByName provides a mock function with given fields: ctx, iType, namespace, name
-func (_m *Plugin) GetIdentityByName(ctx context.Context, iType fftypes.FFEnum, namespace string, name string) (*fftypes.Identity, error) {
+func (_m *Plugin) GetIdentityByName(ctx context.Context, iType core.FFEnum, namespace string, name string) (*core.Identity, error) {
 	ret := _m.Called(ctx, iType, namespace, name)
 
-	var r0 *fftypes.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *fftypes.Identity); ok {
+	var r0 *core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string, string) *core.Identity); ok {
 		r0 = rf(ctx, iType, namespace, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Identity)
+			r0 = ret.Get(0).(*core.Identity)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string, string) error); ok {
 		r1 = rf(ctx, iType, namespace, name)
 	} else {
 		r1 = ret.Error(1)
@@ -1240,15 +1242,15 @@ func (_m *Plugin) GetIdentityByName(ctx context.Context, iType fftypes.FFEnum, n
 }
 
 // GetMessageByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Message, error) {
+func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*core.Message, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Message); ok {
+	var r0 *core.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Message); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Message)
+			r0 = ret.Get(0).(*core.Message)
 		}
 	}
 
@@ -1263,15 +1265,15 @@ func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*fftype
 }
 
 // GetMessageIDs provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]*fftypes.IDAndSequence, error) {
+func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]*core.IDAndSequence, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.IDAndSequence
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.IDAndSequence); ok {
+	var r0 []*core.IDAndSequence
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.IDAndSequence); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.IDAndSequence)
+			r0 = ret.Get(0).([]*core.IDAndSequence)
 		}
 	}
 
@@ -1286,15 +1288,15 @@ func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetMessages provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*fftypes.Message, *database.FilterResult, error) {
+func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*core.Message, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Message); ok {
+	var r0 []*core.Message
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Message); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Message)
+			r0 = ret.Get(0).([]*core.Message)
 		}
 	}
 
@@ -1318,15 +1320,15 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*f
 }
 
 // GetMessagesForData provides a mock function with given fields: ctx, dataID, filter
-func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) ([]*fftypes.Message, *database.FilterResult, error) {
+func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) ([]*core.Message, *database.FilterResult, error) {
 	ret := _m.Called(ctx, dataID, filter)
 
-	var r0 []*fftypes.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Filter) []*fftypes.Message); ok {
+	var r0 []*core.Message
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Filter) []*core.Message); ok {
 		r0 = rf(ctx, dataID, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Message)
+			r0 = ret.Get(0).([]*core.Message)
 		}
 	}
 
@@ -1350,15 +1352,15 @@ func (_m *Plugin) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, 
 }
 
 // GetNamespace provides a mock function with given fields: ctx, name
-func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*fftypes.Namespace, error) {
+func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*core.Namespace, error) {
 	ret := _m.Called(ctx, name)
 
-	var r0 *fftypes.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.Namespace); ok {
+	var r0 *core.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Namespace); ok {
 		r0 = rf(ctx, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Namespace)
+			r0 = ret.Get(0).(*core.Namespace)
 		}
 	}
 
@@ -1373,15 +1375,15 @@ func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*fftypes.Names
 }
 
 // GetNamespaceByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Namespace, error) {
+func (_m *Plugin) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (*core.Namespace, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Namespace); ok {
+	var r0 *core.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Namespace); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Namespace)
+			r0 = ret.Get(0).(*core.Namespace)
 		}
 	}
 
@@ -1396,15 +1398,15 @@ func (_m *Plugin) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (*ffty
 }
 
 // GetNamespaces provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]*fftypes.Namespace, *database.FilterResult, error) {
+func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]*core.Namespace, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Namespace); ok {
+	var r0 []*core.Namespace
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Namespace); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Namespace)
+			r0 = ret.Get(0).([]*core.Namespace)
 		}
 	}
 
@@ -1428,15 +1430,15 @@ func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetNextPinByContextAndIdentity provides a mock function with given fields: ctx, _a1, identity
-func (_m *Plugin) GetNextPinByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*fftypes.NextPin, error) {
+func (_m *Plugin) GetNextPinByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*core.NextPin, error) {
 	ret := _m.Called(ctx, _a1, identity)
 
-	var r0 *fftypes.NextPin
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, string) *fftypes.NextPin); ok {
+	var r0 *core.NextPin
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32, string) *core.NextPin); ok {
 		r0 = rf(ctx, _a1, identity)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.NextPin)
+			r0 = ret.Get(0).(*core.NextPin)
 		}
 	}
 
@@ -1451,15 +1453,15 @@ func (_m *Plugin) GetNextPinByContextAndIdentity(ctx context.Context, _a1 *fftyp
 }
 
 // GetNextPinByHash provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.NextPin, error) {
+func (_m *Plugin) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (*core.NextPin, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.NextPin
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.NextPin); ok {
+	var r0 *core.NextPin
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *core.NextPin); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.NextPin)
+			r0 = ret.Get(0).(*core.NextPin)
 		}
 	}
 
@@ -1474,15 +1476,15 @@ func (_m *Plugin) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (
 }
 
 // GetNextPins provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNextPins(ctx context.Context, filter database.Filter) ([]*fftypes.NextPin, *database.FilterResult, error) {
+func (_m *Plugin) GetNextPins(ctx context.Context, filter database.Filter) ([]*core.NextPin, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.NextPin
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.NextPin); ok {
+	var r0 []*core.NextPin
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.NextPin); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.NextPin)
+			r0 = ret.Get(0).([]*core.NextPin)
 		}
 	}
 
@@ -1506,15 +1508,15 @@ func (_m *Plugin) GetNextPins(ctx context.Context, filter database.Filter) ([]*f
 }
 
 // GetNonce provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Nonce, error) {
+func (_m *Plugin) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (*core.Nonce, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.Nonce
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Nonce); ok {
+	var r0 *core.Nonce
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *core.Nonce); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Nonce)
+			r0 = ret.Get(0).(*core.Nonce)
 		}
 	}
 
@@ -1529,15 +1531,15 @@ func (_m *Plugin) GetNonce(ctx context.Context, hash *fftypes.Bytes32) (*fftypes
 }
 
 // GetNonces provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fftypes.Nonce, *database.FilterResult, error) {
+func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*core.Nonce, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Nonce
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Nonce); ok {
+	var r0 []*core.Nonce
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Nonce); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Nonce)
+			r0 = ret.Get(0).([]*core.Nonce)
 		}
 	}
 
@@ -1561,20 +1563,20 @@ func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*fft
 }
 
 // GetOffset provides a mock function with given fields: ctx, t, name
-func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.FFEnum, name string) (*fftypes.Offset, error) {
+func (_m *Plugin) GetOffset(ctx context.Context, t core.FFEnum, name string) (*core.Offset, error) {
 	ret := _m.Called(ctx, t, name)
 
-	var r0 *fftypes.Offset
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) *fftypes.Offset); ok {
+	var r0 *core.Offset
+	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string) *core.Offset); ok {
 		r0 = rf(ctx, t, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Offset)
+			r0 = ret.Get(0).(*core.Offset)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string) error); ok {
 		r1 = rf(ctx, t, name)
 	} else {
 		r1 = ret.Error(1)
@@ -1584,15 +1586,15 @@ func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.FFEnum, name string) 
 }
 
 // GetOffsets provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetOffsets(ctx context.Context, filter database.Filter) ([]*fftypes.Offset, *database.FilterResult, error) {
+func (_m *Plugin) GetOffsets(ctx context.Context, filter database.Filter) ([]*core.Offset, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Offset
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Offset); ok {
+	var r0 []*core.Offset
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Offset); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Offset)
+			r0 = ret.Get(0).([]*core.Offset)
 		}
 	}
 
@@ -1616,15 +1618,15 @@ func (_m *Plugin) GetOffsets(ctx context.Context, filter database.Filter) ([]*ff
 }
 
 // GetOperationByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetOperationByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Operation, error) {
+func (_m *Plugin) GetOperationByID(ctx context.Context, id *fftypes.UUID) (*core.Operation, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Operation); ok {
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Operation); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Operation)
+			r0 = ret.Get(0).(*core.Operation)
 		}
 	}
 
@@ -1639,15 +1641,15 @@ func (_m *Plugin) GetOperationByID(ctx context.Context, id *fftypes.UUID) (*ffty
 }
 
 // GetOperations provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]*fftypes.Operation, *database.FilterResult, error) {
+func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]*core.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Operation); ok {
+	var r0 []*core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Operation); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Operation)
+			r0 = ret.Get(0).([]*core.Operation)
 		}
 	}
 
@@ -1671,15 +1673,15 @@ func (_m *Plugin) GetOperations(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetPins provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*fftypes.Pin, *database.FilterResult, error) {
+func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*core.Pin, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Pin
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Pin); ok {
+	var r0 []*core.Pin
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Pin); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Pin)
+			r0 = ret.Get(0).([]*core.Pin)
 		}
 	}
 
@@ -1703,15 +1705,15 @@ func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*fftyp
 }
 
 // GetSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Subscription, error) {
+func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*core.Subscription, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Subscription); ok {
+	var r0 *core.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Subscription); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Subscription)
+			r0 = ret.Get(0).(*core.Subscription)
 		}
 	}
 
@@ -1726,15 +1728,15 @@ func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*f
 }
 
 // GetSubscriptionByName provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetSubscriptionByName(ctx context.Context, ns string, name string) (*fftypes.Subscription, error) {
+func (_m *Plugin) GetSubscriptionByName(ctx context.Context, ns string, name string) (*core.Subscription, error) {
 	ret := _m.Called(ctx, ns, name)
 
-	var r0 *fftypes.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.Subscription); ok {
+	var r0 *core.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Subscription); ok {
 		r0 = rf(ctx, ns, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Subscription)
+			r0 = ret.Get(0).(*core.Subscription)
 		}
 	}
 
@@ -1749,15 +1751,15 @@ func (_m *Plugin) GetSubscriptionByName(ctx context.Context, ns string, name str
 }
 
 // GetSubscriptions provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) ([]*fftypes.Subscription, *database.FilterResult, error) {
+func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) ([]*core.Subscription, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Subscription); ok {
+	var r0 []*core.Subscription
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Subscription); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Subscription)
+			r0 = ret.Get(0).([]*core.Subscription)
 		}
 	}
 
@@ -1781,15 +1783,15 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 }
 
 // GetTokenAccountPools provides a mock function with given fields: ctx, key, filter
-func (_m *Plugin) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*fftypes.TokenAccountPool, *database.FilterResult, error) {
+func (_m *Plugin) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
 	ret := _m.Called(ctx, key, filter)
 
-	var r0 []*fftypes.TokenAccountPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.TokenAccountPool); ok {
+	var r0 []*core.TokenAccountPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.TokenAccountPool); ok {
 		r0 = rf(ctx, key, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenAccountPool)
+			r0 = ret.Get(0).([]*core.TokenAccountPool)
 		}
 	}
 
@@ -1813,15 +1815,15 @@ func (_m *Plugin) GetTokenAccountPools(ctx context.Context, key string, filter d
 }
 
 // GetTokenAccounts provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*fftypes.TokenAccount, *database.FilterResult, error) {
+func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*core.TokenAccount, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.TokenAccount
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenAccount); ok {
+	var r0 []*core.TokenAccount
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenAccount); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenAccount)
+			r0 = ret.Get(0).([]*core.TokenAccount)
 		}
 	}
 
@@ -1845,15 +1847,15 @@ func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) 
 }
 
 // GetTokenApprovalByID provides a mock function with given fields: ctx, localID
-func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error) {
 	ret := _m.Called(ctx, localID)
 
-	var r0 *fftypes.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.TokenApproval); ok {
+	var r0 *core.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.TokenApproval); ok {
 		r0 = rf(ctx, localID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenApproval)
+			r0 = ret.Get(0).(*core.TokenApproval)
 		}
 	}
 
@@ -1868,15 +1870,15 @@ func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUI
 }
 
 // GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, connector, protocolID
-func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenApproval, error) {
+func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector string, protocolID string) (*core.TokenApproval, error) {
 	ret := _m.Called(ctx, connector, protocolID)
 
-	var r0 *fftypes.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenApproval); ok {
+	var r0 *core.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenApproval); ok {
 		r0 = rf(ctx, connector, protocolID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenApproval)
+			r0 = ret.Get(0).(*core.TokenApproval)
 		}
 	}
 
@@ -1891,15 +1893,15 @@ func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector st
 }
 
 // GetTokenApprovals provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter) ([]*fftypes.TokenApproval, *database.FilterResult, error) {
+func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter) ([]*core.TokenApproval, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenApproval); ok {
+	var r0 []*core.TokenApproval
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenApproval); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenApproval)
+			r0 = ret.Get(0).([]*core.TokenApproval)
 		}
 	}
 
@@ -1923,15 +1925,15 @@ func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter)
 }
 
 // GetTokenBalance provides a mock function with given fields: ctx, poolID, tokenIndex, identity
-func (_m *Plugin) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex string, identity string) (*fftypes.TokenBalance, error) {
+func (_m *Plugin) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex string, identity string) (*core.TokenBalance, error) {
 	ret := _m.Called(ctx, poolID, tokenIndex, identity)
 
-	var r0 *fftypes.TokenBalance
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) *fftypes.TokenBalance); ok {
+	var r0 *core.TokenBalance
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) *core.TokenBalance); ok {
 		r0 = rf(ctx, poolID, tokenIndex, identity)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenBalance)
+			r0 = ret.Get(0).(*core.TokenBalance)
 		}
 	}
 
@@ -1946,15 +1948,15 @@ func (_m *Plugin) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tok
 }
 
 // GetTokenBalances provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenBalances(ctx context.Context, filter database.Filter) ([]*fftypes.TokenBalance, *database.FilterResult, error) {
+func (_m *Plugin) GetTokenBalances(ctx context.Context, filter database.Filter) ([]*core.TokenBalance, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.TokenBalance
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenBalance); ok {
+	var r0 []*core.TokenBalance
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenBalance); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenBalance)
+			r0 = ret.Get(0).([]*core.TokenBalance)
 		}
 	}
 
@@ -1978,15 +1980,15 @@ func (_m *Plugin) GetTokenBalances(ctx context.Context, filter database.Filter) 
 }
 
 // GetTokenPool provides a mock function with given fields: ctx, ns, name
-func (_m *Plugin) GetTokenPool(ctx context.Context, ns string, name string) (*fftypes.TokenPool, error) {
+func (_m *Plugin) GetTokenPool(ctx context.Context, ns string, name string) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, ns, name)
 
-	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenPool); ok {
+	var r0 *core.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
 		r0 = rf(ctx, ns, name)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenPool)
+			r0 = ret.Get(0).(*core.TokenPool)
 		}
 	}
 
@@ -2001,15 +2003,15 @@ func (_m *Plugin) GetTokenPool(ctx context.Context, ns string, name string) (*ff
 }
 
 // GetTokenPoolByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*fftypes.TokenPool, error) {
+func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.TokenPool); ok {
+	var r0 *core.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.TokenPool); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenPool)
+			r0 = ret.Get(0).(*core.TokenPool)
 		}
 	}
 
@@ -2024,15 +2026,15 @@ func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*ffty
 }
 
 // GetTokenPoolByLocator provides a mock function with given fields: ctx, connector, locator
-func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, locator string) (*fftypes.TokenPool, error) {
+func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, locator string) (*core.TokenPool, error) {
 	ret := _m.Called(ctx, connector, locator)
 
-	var r0 *fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenPool); ok {
+	var r0 *core.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
 		r0 = rf(ctx, connector, locator)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenPool)
+			r0 = ret.Get(0).(*core.TokenPool)
 		}
 	}
 
@@ -2047,15 +2049,15 @@ func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, l
 }
 
 // GetTokenPools provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
+func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]*core.TokenPool, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenPool); ok {
+	var r0 []*core.TokenPool
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenPool); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenPool)
+			r0 = ret.Get(0).([]*core.TokenPool)
 		}
 	}
 
@@ -2079,15 +2081,15 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetTokenTransferByID provides a mock function with given fields: ctx, localID
-func (_m *Plugin) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenTransfer, error) {
+func (_m *Plugin) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenTransfer, error) {
 	ret := _m.Called(ctx, localID)
 
-	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.TokenTransfer); ok {
+	var r0 *core.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.TokenTransfer); ok {
 		r0 = rf(ctx, localID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+			r0 = ret.Get(0).(*core.TokenTransfer)
 		}
 	}
 
@@ -2102,15 +2104,15 @@ func (_m *Plugin) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUI
 }
 
 // GetTokenTransferByProtocolID provides a mock function with given fields: ctx, connector, protocolID
-func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector string, protocolID string) (*fftypes.TokenTransfer, error) {
+func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector string, protocolID string) (*core.TokenTransfer, error) {
 	ret := _m.Called(ctx, connector, protocolID)
 
-	var r0 *fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.TokenTransfer); ok {
+	var r0 *core.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenTransfer); ok {
 		r0 = rf(ctx, connector, protocolID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.TokenTransfer)
+			r0 = ret.Get(0).(*core.TokenTransfer)
 		}
 	}
 
@@ -2125,15 +2127,15 @@ func (_m *Plugin) GetTokenTransferByProtocolID(ctx context.Context, connector st
 }
 
 // GetTokenTransfers provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenTransfers(ctx context.Context, filter database.Filter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+func (_m *Plugin) GetTokenTransfers(ctx context.Context, filter database.Filter) ([]*core.TokenTransfer, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.TokenTransfer); ok {
+	var r0 []*core.TokenTransfer
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenTransfer); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.TokenTransfer)
+			r0 = ret.Get(0).([]*core.TokenTransfer)
 		}
 	}
 
@@ -2157,15 +2159,15 @@ func (_m *Plugin) GetTokenTransfers(ctx context.Context, filter database.Filter)
 }
 
 // GetTransactionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
+func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.Transaction); ok {
+	var r0 *core.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Transaction); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Transaction)
+			r0 = ret.Get(0).(*core.Transaction)
 		}
 	}
 
@@ -2180,15 +2182,15 @@ func (_m *Plugin) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (*ff
 }
 
 // GetTransactions provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTransactions(ctx context.Context, filter database.Filter) ([]*fftypes.Transaction, *database.FilterResult, error) {
+func (_m *Plugin) GetTransactions(ctx context.Context, filter database.Filter) ([]*core.Transaction, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Transaction
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Transaction); ok {
+	var r0 []*core.Transaction
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Transaction); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Transaction)
+			r0 = ret.Get(0).([]*core.Transaction)
 		}
 	}
 
@@ -2212,15 +2214,15 @@ func (_m *Plugin) GetTransactions(ctx context.Context, filter database.Filter) (
 }
 
 // GetVerifierByHash provides a mock function with given fields: ctx, hash
-func (_m *Plugin) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (*fftypes.Verifier, error) {
+func (_m *Plugin) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (*core.Verifier, error) {
 	ret := _m.Called(ctx, hash)
 
-	var r0 *fftypes.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *fftypes.Verifier); ok {
+	var r0 *core.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Bytes32) *core.Verifier); ok {
 		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Verifier)
+			r0 = ret.Get(0).(*core.Verifier)
 		}
 	}
 
@@ -2235,20 +2237,20 @@ func (_m *Plugin) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) 
 }
 
 // GetVerifierByValue provides a mock function with given fields: ctx, vType, namespace, value
-func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType fftypes.FFEnum, namespace string, value string) (*fftypes.Verifier, error) {
+func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType core.FFEnum, namespace string, value string) (*core.Verifier, error) {
 	ret := _m.Called(ctx, vType, namespace, value)
 
-	var r0 *fftypes.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *fftypes.Verifier); ok {
+	var r0 *core.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string, string) *core.Verifier); ok {
 		r0 = rf(ctx, vType, namespace, value)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Verifier)
+			r0 = ret.Get(0).(*core.Verifier)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string, string) error); ok {
 		r1 = rf(ctx, vType, namespace, value)
 	} else {
 		r1 = ret.Error(1)
@@ -2258,15 +2260,15 @@ func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType fftypes.FFEnum, 
 }
 
 // GetVerifiers provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetVerifiers(ctx context.Context, filter database.Filter) ([]*fftypes.Verifier, *database.FilterResult, error) {
+func (_m *Plugin) GetVerifiers(ctx context.Context, filter database.Filter) ([]*core.Verifier, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*fftypes.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.Verifier); ok {
+	var r0 []*core.Verifier
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Verifier); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.Verifier)
+			r0 = ret.Get(0).([]*core.Verifier)
 		}
 	}
 
@@ -2309,11 +2311,11 @@ func (_m *Plugin) InitPrefix(prefix config.Prefix) {
 }
 
 // InsertBlob provides a mock function with given fields: ctx, blob
-func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
+func (_m *Plugin) InsertBlob(ctx context.Context, blob *core.Blob) error {
 	ret := _m.Called(ctx, blob)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Blob) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Blob) error); ok {
 		r0 = rf(ctx, blob)
 	} else {
 		r0 = ret.Error(0)
@@ -2323,11 +2325,11 @@ func (_m *Plugin) InsertBlob(ctx context.Context, blob *fftypes.Blob) error {
 }
 
 // InsertBlobs provides a mock function with given fields: ctx, blobs
-func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) error {
+func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*core.Blob) error {
 	ret := _m.Called(ctx, blobs)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Blob) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Blob) error); ok {
 		r0 = rf(ctx, blobs)
 	} else {
 		r0 = ret.Error(0)
@@ -2337,11 +2339,11 @@ func (_m *Plugin) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) error 
 }
 
 // InsertBlockchainEvent provides a mock function with given fields: ctx, event
-func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) error {
+func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) error {
 	ret := _m.Called(ctx, event)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BlockchainEvent) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BlockchainEvent) error); ok {
 		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Error(0)
@@ -2351,11 +2353,11 @@ func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bloc
 }
 
 // InsertDataArray provides a mock function with given fields: ctx, data
-func (_m *Plugin) InsertDataArray(ctx context.Context, data fftypes.DataArray) error {
+func (_m *Plugin) InsertDataArray(ctx context.Context, data core.DataArray) error {
 	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, fftypes.DataArray) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, core.DataArray) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
@@ -2365,11 +2367,11 @@ func (_m *Plugin) InsertDataArray(ctx context.Context, data fftypes.DataArray) e
 }
 
 // InsertEvent provides a mock function with given fields: ctx, data
-func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
+func (_m *Plugin) InsertEvent(ctx context.Context, data *core.Event) error {
 	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Event) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Event) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
@@ -2379,7 +2381,7 @@ func (_m *Plugin) InsertEvent(ctx context.Context, data *fftypes.Event) error {
 }
 
 // InsertMessages provides a mock function with given fields: ctx, messages, hooks
-func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Message, hooks ...database.PostCompletionHook) error {
+func (_m *Plugin) InsertMessages(ctx context.Context, messages []*core.Message, hooks ...database.PostCompletionHook) error {
 	_va := make([]interface{}, len(hooks))
 	for _i := range hooks {
 		_va[_i] = hooks[_i]
@@ -2390,7 +2392,7 @@ func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Messag
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Message, ...database.PostCompletionHook) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Message, ...database.PostCompletionHook) error); ok {
 		r0 = rf(ctx, messages, hooks...)
 	} else {
 		r0 = ret.Error(0)
@@ -2400,11 +2402,11 @@ func (_m *Plugin) InsertMessages(ctx context.Context, messages []*fftypes.Messag
 }
 
 // InsertNextPin provides a mock function with given fields: ctx, nextpin
-func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) error {
+func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *core.NextPin) error {
 	ret := _m.Called(ctx, nextpin)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.NextPin) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.NextPin) error); ok {
 		r0 = rf(ctx, nextpin)
 	} else {
 		r0 = ret.Error(0)
@@ -2414,11 +2416,11 @@ func (_m *Plugin) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) e
 }
 
 // InsertNonce provides a mock function with given fields: ctx, nonce
-func (_m *Plugin) InsertNonce(ctx context.Context, nonce *fftypes.Nonce) error {
+func (_m *Plugin) InsertNonce(ctx context.Context, nonce *core.Nonce) error {
 	ret := _m.Called(ctx, nonce)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Nonce) error); ok {
 		r0 = rf(ctx, nonce)
 	} else {
 		r0 = ret.Error(0)
@@ -2428,7 +2430,7 @@ func (_m *Plugin) InsertNonce(ctx context.Context, nonce *fftypes.Nonce) error {
 }
 
 // InsertOperation provides a mock function with given fields: ctx, operation, hooks
-func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operation, hooks ...database.PostCompletionHook) error {
+func (_m *Plugin) InsertOperation(ctx context.Context, operation *core.Operation, hooks ...database.PostCompletionHook) error {
 	_va := make([]interface{}, len(hooks))
 	for _i := range hooks {
 		_va[_i] = hooks[_i]
@@ -2439,7 +2441,7 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operat
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation, ...database.PostCompletionHook) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation, ...database.PostCompletionHook) error); ok {
 		r0 = rf(ctx, operation, hooks...)
 	} else {
 		r0 = ret.Error(0)
@@ -2449,11 +2451,11 @@ func (_m *Plugin) InsertOperation(ctx context.Context, operation *fftypes.Operat
 }
 
 // InsertPins provides a mock function with given fields: ctx, pins
-func (_m *Plugin) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
+func (_m *Plugin) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	ret := _m.Called(ctx, pins)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*fftypes.Pin) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*core.Pin) error); ok {
 		r0 = rf(ctx, pins)
 	} else {
 		r0 = ret.Error(0)
@@ -2463,11 +2465,11 @@ func (_m *Plugin) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
 }
 
 // InsertTransaction provides a mock function with given fields: ctx, data
-func (_m *Plugin) InsertTransaction(ctx context.Context, data *fftypes.Transaction) error {
+func (_m *Plugin) InsertTransaction(ctx context.Context, data *core.Transaction) error {
 	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Transaction) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Transaction) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
@@ -2491,11 +2493,11 @@ func (_m *Plugin) Name() string {
 }
 
 // ReplaceMessage provides a mock function with given fields: ctx, message
-func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) error {
+func (_m *Plugin) ReplaceMessage(ctx context.Context, message *core.Message) error {
 	ret := _m.Called(ctx, message)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Message) error); ok {
 		r0 = rf(ctx, message)
 	} else {
 		r0 = ret.Error(0)
@@ -2505,11 +2507,11 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *fftypes.Message) 
 }
 
 // ResolveOperation provides a mock function with given fields: ctx, ns, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status fftypes.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg string, output fftypes.JSONObject) error {
 	ret := _m.Called(ctx, ns, id, status, errorMsg, output)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, fftypes.OpStatus, string, fftypes.JSONObject) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, string, fftypes.JSONObject) error); ok {
 		r0 = rf(ctx, ns, id, status, errorMsg, output)
 	} else {
 		r0 = ret.Error(0)
@@ -2659,11 +2661,11 @@ func (_m *Plugin) UpdateNextPin(ctx context.Context, sequence int64, update data
 }
 
 // UpdateNonce provides a mock function with given fields: ctx, nonce
-func (_m *Plugin) UpdateNonce(ctx context.Context, nonce *fftypes.Nonce) error {
+func (_m *Plugin) UpdateNonce(ctx context.Context, nonce *core.Nonce) error {
 	ret := _m.Called(ctx, nonce)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Nonce) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Nonce) error); ok {
 		r0 = rf(ctx, nonce)
 	} else {
 		r0 = ret.Error(0)
@@ -2743,11 +2745,11 @@ func (_m *Plugin) UpdateTokenApprovals(ctx context.Context, filter database.Filt
 }
 
 // UpdateTokenBalances provides a mock function with given fields: ctx, transfer
-func (_m *Plugin) UpdateTokenBalances(ctx context.Context, transfer *fftypes.TokenTransfer) error {
+func (_m *Plugin) UpdateTokenBalances(ctx context.Context, transfer *core.TokenTransfer) error {
 	ret := _m.Called(ctx, transfer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenTransfer) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransfer) error); ok {
 		r0 = rf(ctx, transfer)
 	} else {
 		r0 = ret.Error(0)
@@ -2785,11 +2787,11 @@ func (_m *Plugin) UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, upd
 }
 
 // UpsertBatch provides a mock function with given fields: ctx, data
-func (_m *Plugin) UpsertBatch(ctx context.Context, data *fftypes.BatchPersisted) error {
+func (_m *Plugin) UpsertBatch(ctx context.Context, data *core.BatchPersisted) error {
 	ret := _m.Called(ctx, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.BatchPersisted) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchPersisted) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
@@ -2813,11 +2815,11 @@ func (_m *Plugin) UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRe
 }
 
 // UpsertContractAPI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI) error {
+func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error {
 	ret := _m.Called(ctx, cd)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractAPI) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractAPI) error); ok {
 		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
@@ -2827,11 +2829,11 @@ func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *fftypes.ContractAPI
 }
 
 // UpsertContractListener provides a mock function with given fields: ctx, sub
-func (_m *Plugin) UpsertContractListener(ctx context.Context, sub *fftypes.ContractListener) error {
+func (_m *Plugin) UpsertContractListener(ctx context.Context, sub *core.ContractListener) error {
 	ret := _m.Called(ctx, sub)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractListener) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
 		r0 = rf(ctx, sub)
 	} else {
 		r0 = ret.Error(0)
@@ -2841,11 +2843,11 @@ func (_m *Plugin) UpsertContractListener(ctx context.Context, sub *fftypes.Contr
 }
 
 // UpsertData provides a mock function with given fields: ctx, data, optimization
-func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) error {
+func (_m *Plugin) UpsertData(ctx context.Context, data *core.Data, optimization database.UpsertOptimization) error {
 	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Data, database.UpsertOptimization) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Data, database.UpsertOptimization) error); ok {
 		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
@@ -2855,11 +2857,11 @@ func (_m *Plugin) UpsertData(ctx context.Context, data *fftypes.Data, optimizati
 }
 
 // UpsertDatatype provides a mock function with given fields: ctx, datadef, allowExisting
-func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype, allowExisting bool) error {
+func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *core.Datatype, allowExisting bool) error {
 	ret := _m.Called(ctx, datadef, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Datatype, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Datatype, bool) error); ok {
 		r0 = rf(ctx, datadef, allowExisting)
 	} else {
 		r0 = ret.Error(0)
@@ -2869,11 +2871,11 @@ func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *fftypes.Datatype,
 }
 
 // UpsertFFI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) UpsertFFI(ctx context.Context, cd *fftypes.FFI) error {
+func (_m *Plugin) UpsertFFI(ctx context.Context, cd *core.FFI) error {
 	ret := _m.Called(ctx, cd)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI) error); ok {
 		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
@@ -2883,11 +2885,11 @@ func (_m *Plugin) UpsertFFI(ctx context.Context, cd *fftypes.FFI) error {
 }
 
 // UpsertFFIEvent provides a mock function with given fields: ctx, method
-func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error {
+func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error {
 	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEvent) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIEvent) error); ok {
 		r0 = rf(ctx, method)
 	} else {
 		r0 = ret.Error(0)
@@ -2897,11 +2899,11 @@ func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) 
 }
 
 // UpsertFFIMethod provides a mock function with given fields: ctx, method
-func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
+func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *core.FFIMethod) error {
 	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIMethod) error); ok {
 		r0 = rf(ctx, method)
 	} else {
 		r0 = ret.Error(0)
@@ -2911,11 +2913,11 @@ func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod
 }
 
 // UpsertGroup provides a mock function with given fields: ctx, data, optimization
-func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, optimization database.UpsertOptimization) error {
+func (_m *Plugin) UpsertGroup(ctx context.Context, data *core.Group, optimization database.UpsertOptimization) error {
 	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Group, database.UpsertOptimization) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Group, database.UpsertOptimization) error); ok {
 		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
@@ -2925,11 +2927,11 @@ func (_m *Plugin) UpsertGroup(ctx context.Context, data *fftypes.Group, optimiza
 }
 
 // UpsertIdentity provides a mock function with given fields: ctx, data, optimization
-func (_m *Plugin) UpsertIdentity(ctx context.Context, data *fftypes.Identity, optimization database.UpsertOptimization) error {
+func (_m *Plugin) UpsertIdentity(ctx context.Context, data *core.Identity, optimization database.UpsertOptimization) error {
 	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Identity, database.UpsertOptimization) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Identity, database.UpsertOptimization) error); ok {
 		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)
@@ -2939,7 +2941,7 @@ func (_m *Plugin) UpsertIdentity(ctx context.Context, data *fftypes.Identity, op
 }
 
 // UpsertMessage provides a mock function with given fields: ctx, message, optimization, hooks
-func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) error {
+func (_m *Plugin) UpsertMessage(ctx context.Context, message *core.Message, optimization database.UpsertOptimization, hooks ...database.PostCompletionHook) error {
 	_va := make([]interface{}, len(hooks))
 	for _i := range hooks {
 		_va[_i] = hooks[_i]
@@ -2950,7 +2952,7 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, o
 	ret := _m.Called(_ca...)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Message, database.UpsertOptimization, ...database.PostCompletionHook) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Message, database.UpsertOptimization, ...database.PostCompletionHook) error); ok {
 		r0 = rf(ctx, message, optimization, hooks...)
 	} else {
 		r0 = ret.Error(0)
@@ -2960,11 +2962,11 @@ func (_m *Plugin) UpsertMessage(ctx context.Context, message *fftypes.Message, o
 }
 
 // UpsertNamespace provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace, allowExisting bool) error {
+func (_m *Plugin) UpsertNamespace(ctx context.Context, data *core.Namespace, allowExisting bool) error {
 	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Namespace, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
@@ -2974,11 +2976,11 @@ func (_m *Plugin) UpsertNamespace(ctx context.Context, data *fftypes.Namespace, 
 }
 
 // UpsertOffset provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowExisting bool) error {
+func (_m *Plugin) UpsertOffset(ctx context.Context, data *core.Offset, allowExisting bool) error {
 	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Offset, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Offset, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
@@ -2988,11 +2990,11 @@ func (_m *Plugin) UpsertOffset(ctx context.Context, data *fftypes.Offset, allowE
 }
 
 // UpsertPin provides a mock function with given fields: ctx, parked
-func (_m *Plugin) UpsertPin(ctx context.Context, parked *fftypes.Pin) error {
+func (_m *Plugin) UpsertPin(ctx context.Context, parked *core.Pin) error {
 	ret := _m.Called(ctx, parked)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Pin) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Pin) error); ok {
 		r0 = rf(ctx, parked)
 	} else {
 		r0 = ret.Error(0)
@@ -3002,11 +3004,11 @@ func (_m *Plugin) UpsertPin(ctx context.Context, parked *fftypes.Pin) error {
 }
 
 // UpsertSubscription provides a mock function with given fields: ctx, data, allowExisting
-func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscription, allowExisting bool) error {
+func (_m *Plugin) UpsertSubscription(ctx context.Context, data *core.Subscription, allowExisting bool) error {
 	ret := _m.Called(ctx, data, allowExisting)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Subscription, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription, bool) error); ok {
 		r0 = rf(ctx, data, allowExisting)
 	} else {
 		r0 = ret.Error(0)
@@ -3016,11 +3018,11 @@ func (_m *Plugin) UpsertSubscription(ctx context.Context, data *fftypes.Subscrip
 }
 
 // UpsertTokenApproval provides a mock function with given fields: ctx, approval
-func (_m *Plugin) UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) error {
+func (_m *Plugin) UpsertTokenApproval(ctx context.Context, approval *core.TokenApproval) error {
 	ret := _m.Called(ctx, approval)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenApproval) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenApproval) error); ok {
 		r0 = rf(ctx, approval)
 	} else {
 		r0 = ret.Error(0)
@@ -3030,11 +3032,11 @@ func (_m *Plugin) UpsertTokenApproval(ctx context.Context, approval *fftypes.Tok
 }
 
 // UpsertTokenPool provides a mock function with given fields: ctx, pool
-func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
+func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error {
 	ret := _m.Called(ctx, pool)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenPool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPool) error); ok {
 		r0 = rf(ctx, pool)
 	} else {
 		r0 = ret.Error(0)
@@ -3044,11 +3046,11 @@ func (_m *Plugin) UpsertTokenPool(ctx context.Context, pool *fftypes.TokenPool) 
 }
 
 // UpsertTokenTransfer provides a mock function with given fields: ctx, transfer
-func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.TokenTransfer) error {
+func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error {
 	ret := _m.Called(ctx, transfer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.TokenTransfer) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransfer) error); ok {
 		r0 = rf(ctx, transfer)
 	} else {
 		r0 = ret.Error(0)
@@ -3058,11 +3060,11 @@ func (_m *Plugin) UpsertTokenTransfer(ctx context.Context, transfer *fftypes.Tok
 }
 
 // UpsertVerifier provides a mock function with given fields: ctx, data, optimization
-func (_m *Plugin) UpsertVerifier(ctx context.Context, data *fftypes.Verifier, optimization database.UpsertOptimization) error {
+func (_m *Plugin) UpsertVerifier(ctx context.Context, data *core.Verifier, optimization database.UpsertOptimization) error {
 	ret := _m.Called(ctx, data, optimization)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Verifier, database.UpsertOptimization) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Verifier, database.UpsertOptimization) error); ok {
 		r0 = rf(ctx, data, optimization)
 	} else {
 		r0 = ret.Error(0)

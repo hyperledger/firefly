@@ -19,6 +19,10 @@ package broadcast
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -30,34 +34,31 @@ import (
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 const broadcastDispatcherName = "pinned_broadcast"
 
 type Manager interface {
-	fftypes.Named
+	core.Named
 
-	NewBroadcast(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender
-	BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error)
-	BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag string, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastIdentityClaim(ctx context.Context, ns string, def *fftypes.IdentityClaim, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error)
-	BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error)
+	NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender
+	BroadcastDatatype(ctx context.Context, ns string, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
+	BroadcastNamespace(ctx context.Context, ns *core.Namespace, waitConfirm bool) (msg *core.Message, err error)
+	BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
+	BroadcastDefinitionAsNode(ctx context.Context, ns string, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
+	BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	BroadcastIdentityClaim(ctx context.Context, ns string, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	BroadcastTokenPool(ctx context.Context, ns string, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
 	Start() error
 	WaitStop()
 
 	// From operations.OperationHandler
-	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type broadcastManager struct {
@@ -97,7 +98,7 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 	}
 
 	bo := batch.DispatcherOptions{
-		BatchType:      fftypes.BatchTypeBroadcast,
+		BatchType:      core.BatchTypeBroadcast,
 		BatchMaxSize:   config.GetUint(coreconfig.BroadcastBatchSize),
 		BatchMaxBytes:  bm.maxBatchPayloadLength,
 		BatchTimeout:   config.GetDuration(coreconfig.BroadcastBatchTimeout),
@@ -105,16 +106,16 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 	}
 
 	ba.RegisterDispatcher(broadcastDispatcherName,
-		fftypes.TransactionTypeBatchPin,
-		[]fftypes.MessageType{
-			fftypes.MessageTypeBroadcast,
-			fftypes.MessageTypeDefinition,
-			fftypes.MessageTypeTransferBroadcast,
+		core.TransactionTypeBatchPin,
+		[]core.MessageType{
+			core.MessageTypeBroadcast,
+			core.MessageTypeDefinition,
+			core.MessageTypeTransferBroadcast,
 		}, bm.dispatchBatch, bo)
 
-	om.RegisterHandler(ctx, bm, []fftypes.OpType{
-		fftypes.OpTypeSharedStorageUploadBatch,
-		fftypes.OpTypeSharedStorageUploadBlob,
+	om.RegisterHandler(ctx, bm, []core.OpType{
+		core.OpTypeSharedStorageUploadBatch,
+		core.OpTypeSharedStorageUploadBlob,
 	})
 
 	return bm, nil
@@ -132,11 +133,11 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	}
 
 	// Upload the batch itself
-	op := fftypes.NewOperation(
+	op := core.NewOperation(
 		bm.sharedstorage,
 		state.Persisted.Namespace,
 		state.Persisted.TX.ID,
-		fftypes.OpTypeSharedStorageUploadBatch)
+		core.OpTypeSharedStorageUploadBatch)
 	addUploadBatchInputs(op, state.Persisted.ID)
 	if err := bm.operations.AddOrReuseOperation(ctx, op); err != nil {
 		return err
@@ -155,16 +156,16 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, payloadRef)
 }
 
-func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data fftypes.DataArray) error {
+func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray) error {
 	for _, d := range data {
 		// We only need to send a blob if there is one, and it's not been uploaded to the shared storage
 		if d.Blob != nil && d.Blob.Hash != nil && d.Blob.Public == "" {
 
-			op := fftypes.NewOperation(
+			op := core.NewOperation(
 				bm.sharedstorage,
 				d.Namespace,
 				tx,
-				fftypes.OpTypeSharedStorageUploadBlob)
+				core.OpTypeSharedStorageUploadBlob)
 			addUploadBlobInputs(op, d.ID)
 
 			blob, err := bm.database.GetBlobMatchingHash(ctx, d.Blob.Hash)

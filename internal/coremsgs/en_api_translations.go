@@ -16,7 +16,7 @@
 
 package coremsgs
 
-import "github.com/hyperledger/firefly/pkg/i18n"
+import "github.com/hyperledger/firefly-common/pkg/i18n"
 
 var ffm = i18n.FFM
 

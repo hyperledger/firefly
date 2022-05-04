@@ -20,24 +20,24 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *fftypes.SubOptsFirstEvent) (firstOffset int64, err error) {
-	firstEvent := fftypes.SubOptsFirstEventNewest
+func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *core.SubOptsFirstEvent) (firstOffset int64, err error) {
+	firstEvent := core.SubOptsFirstEventNewest
 	if pfe != nil {
 		firstEvent = *pfe
 	}
 	firstOffset = -1
 	var useNewest bool
 	switch firstEvent {
-	case "", fftypes.SubOptsFirstEventNewest:
+	case "", core.SubOptsFirstEventNewest:
 		useNewest = true
-	case fftypes.SubOptsFirstEventOldest:
+	case core.SubOptsFirstEventOldest:
 		useNewest = false
 	default:
 		specificSequence, err := strconv.ParseInt(string(firstEvent), 10, 64)

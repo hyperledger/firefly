@@ -3,7 +3,9 @@
 package tokenmocks
 
 import (
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
 	mock "github.com/stretchr/testify/mock"
 
 	tokens "github.com/hyperledger/firefly/pkg/tokens"
@@ -15,7 +17,7 @@ type Callbacks struct {
 }
 
 // TokenOpUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
+func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
 	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }
 

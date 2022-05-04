@@ -22,12 +22,12 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type WebSockets struct {
@@ -67,7 +67,7 @@ func (ws *WebSockets) GetOptionsSchema(ctx context.Context) string {
 	return `{}` // no extra options currently
 }
 
-func (ws *WebSockets) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+func (ws *WebSockets) ValidateOptions(options *core.SubscriptionOptions) error {
 	// We don't support streaming the full data over websockets
 	if options.WithData != nil && *options.WithData {
 		return i18n.NewError(ws.ctx, coremsgs.MsgWebsocketsNoData)
@@ -77,7 +77,7 @@ func (ws *WebSockets) ValidateOptions(options *fftypes.SubscriptionOptions) erro
 	return nil
 }
 
-func (ws *WebSockets) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
+func (ws *WebSockets) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	ws.connMux.Lock()
 	conn, ok := ws.connections[connID]
 	ws.connMux.Unlock()
@@ -102,11 +102,11 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 	wc.processAutoStart(req)
 }
 
-func (ws *WebSockets) ack(connID string, inflight *fftypes.EventDeliveryResponse) {
+func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {
 	ws.callbacks.DeliveryResponse(connID, inflight)
 }
 
-func (ws *WebSockets) start(wc *websocketConnection, start *fftypes.WSClientActionStartPayload) error {
+func (ws *WebSockets) start(wc *websocketConnection, start *core.WSClientActionStartPayload) error {
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
 		return i18n.NewError(ws.ctx, coremsgs.MsgWSInvalidStartAction)
 	}
@@ -114,7 +114,7 @@ func (ws *WebSockets) start(wc *websocketConnection, start *fftypes.WSClientActi
 		return ws.callbacks.EphemeralSubscription(wc.connID, start.Namespace, &start.Filter, &start.Options)
 	}
 	// We can have multiple subscriptions on a single
-	return ws.callbacks.RegisterConnection(wc.connID, func(sr fftypes.SubscriptionRef) bool {
+	return ws.callbacks.RegisterConnection(wc.connID, func(sr core.SubscriptionRef) bool {
 		return wc.durableSubMatcher(sr)
 	})
 }
@@ -139,10 +139,10 @@ func (ws *WebSockets) WaitClosed() {
 	}
 }
 
-func (ws *WebSockets) GetStatus() *fftypes.WebSocketStatus {
-	status := &fftypes.WebSocketStatus{
+func (ws *WebSockets) GetStatus() *core.WebSocketStatus {
+	status := &core.WebSocketStatus{
 		Enabled:     true,
-		Connections: make([]*fftypes.WSConnectionStatus, 0),
+		Connections: make([]*core.WSConnectionStatus, 0),
 	}
 
 	ws.connMux.Lock()
@@ -154,15 +154,15 @@ func (ws *WebSockets) GetStatus() *fftypes.WebSocketStatus {
 
 	for _, wc := range connections {
 		wc.mux.Lock()
-		conn := &fftypes.WSConnectionStatus{
+		conn := &core.WSConnectionStatus{
 			ID:            wc.connID,
 			RemoteAddress: wc.remoteAddr,
 			UserAgent:     wc.userAgent,
-			Subscriptions: make([]*fftypes.WSSubscriptionStatus, 0),
+			Subscriptions: make([]*core.WSSubscriptionStatus, 0),
 		}
 		status.Connections = append(status.Connections, conn)
 		for _, s := range wc.started {
-			sub := &fftypes.WSSubscriptionStatus{
+			sub := &core.WSSubscriptionStatus{
 				Name:      s.name,
 				Namespace: s.namespace,
 				Ephemeral: s.ephemeral,

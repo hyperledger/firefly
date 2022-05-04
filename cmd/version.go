@@ -23,8 +23,8 @@ import (
 	"runtime/debug"
 
 	"github.com/ghodss/yaml"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/i18n"
 	"github.com/spf13/cobra"
 )
 

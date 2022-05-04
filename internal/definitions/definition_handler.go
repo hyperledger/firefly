@@ -20,21 +20,22 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type DefinitionHandler interface {
-	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error)
+	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 }
 
 type HandlerResult struct {
@@ -86,7 +87,7 @@ type DefinitionBatchState interface {
 	AddFinalize(func(ctx context.Context) error)
 
 	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
-	GetPendingConfirm() map[fftypes.UUID]*fftypes.Message
+	GetPendingConfirm() map[fftypes.UUID]*core.Message
 
 	// Notify of a DID claim locking in, so a rewind gets queued for it to go back and process any dependent child identities/messages
 	DIDClaimConfirmed(did string)
@@ -117,29 +118,29 @@ func NewDefinitionHandler(ctx context.Context, di database.Plugin, bi blockchain
 	}, nil
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
 	l.Infof("Processing system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
-	case fftypes.SystemTagDefineDatatype:
+	case core.SystemTagDefineDatatype:
 		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)
-	case fftypes.SystemTagDefineNamespace:
+	case core.SystemTagDefineNamespace:
 		return dh.handleNamespaceBroadcast(ctx, state, msg, data, tx)
-	case fftypes.DeprecatedSystemTagDefineOrganization:
+	case core.DeprecatedSystemTagDefineOrganization:
 		return dh.handleDeprecatedOrganizationBroadcast(ctx, state, msg, data)
-	case fftypes.DeprecatedSystemTagDefineNode:
+	case core.DeprecatedSystemTagDefineNode:
 		return dh.handleDeprecatedNodeBroadcast(ctx, state, msg, data)
-	case fftypes.SystemTagIdentityClaim:
+	case core.SystemTagIdentityClaim:
 		return dh.handleIdentityClaimBroadcast(ctx, state, msg, data, nil)
-	case fftypes.SystemTagIdentityVerification:
+	case core.SystemTagIdentityVerification:
 		return dh.handleIdentityVerificationBroadcast(ctx, state, msg, data)
-	case fftypes.SystemTagIdentityUpdate:
+	case core.SystemTagIdentityUpdate:
 		return dh.handleIdentityUpdateBroadcast(ctx, state, msg, data)
-	case fftypes.SystemTagDefinePool:
+	case core.SystemTagDefinePool:
 		return dh.handleTokenPoolBroadcast(ctx, state, msg, data)
-	case fftypes.SystemTagDefineFFI:
+	case core.SystemTagDefineFFI:
 		return dh.handleFFIBroadcast(ctx, state, msg, data, tx)
-	case fftypes.SystemTagDefineContractAPI:
+	case core.SystemTagDefineContractAPI:
 		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
 		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
@@ -147,7 +148,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	}
 }
 
-func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *fftypes.Message, data fftypes.DataArray, res fftypes.Definition) (valid bool) {
+func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *core.Message, data core.DataArray, res core.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))

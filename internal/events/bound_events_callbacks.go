@@ -17,8 +17,8 @@
 package events
 
 import (
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type boundCallbacks struct {
@@ -30,11 +30,11 @@ func (bc *boundCallbacks) RegisterConnection(connID string, matcher events.Subsc
 	return bc.sm.registerConnection(bc.ei, connID, matcher)
 }
 
-func (bc *boundCallbacks) EphemeralSubscription(connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error {
+func (bc *boundCallbacks) EphemeralSubscription(connID, namespace string, filter *core.SubscriptionFilter, options *core.SubscriptionOptions) error {
 	return bc.sm.ephemeralSubscription(bc.ei, connID, namespace, filter, options)
 }
 
-func (bc *boundCallbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) {
+func (bc *boundCallbacks) DeliveryResponse(connID string, inflight *core.EventDeliveryResponse) {
 	bc.sm.deliveryResponse(bc.ei, connID, inflight)
 }
 

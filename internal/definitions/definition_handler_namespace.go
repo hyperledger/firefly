@@ -19,14 +19,15 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
-	var ns fftypes.Namespace
+	var ns core.Namespace
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
 		return HandlerResult{Action: ActionReject}, nil
@@ -41,7 +42,7 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, stat
 		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if existing != nil {
-		if existing.Type != fftypes.NamespaceTypeLocal {
+		if existing.Type != core.NamespaceTypeLocal {
 			l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
 			return HandlerResult{Action: ActionReject}, nil
 		}
@@ -56,7 +57,7 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, stat
 	}
 
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx, fftypes.SystemTopicDefinitions)
+		event := core.NewEvent(core.EventTypeNamespaceConfirmed, ns.Name, ns.ID, tx, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

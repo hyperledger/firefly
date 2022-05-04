@@ -20,12 +20,13 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type operationCacheKey struct{}
-type operationCache map[string]*fftypes.Operation
+type operationCache map[string]*core.Operation
 
 func getOperationCache(ctx context.Context) operationCache {
 	ctxKey := operationCacheKey{}
@@ -38,8 +39,8 @@ func getOperationCache(ctx context.Context) operationCache {
 	return nil
 }
 
-func getCacheKey(op *fftypes.Operation) (string, error) {
-	opCopy := &fftypes.Operation{
+func getCacheKey(op *core.Operation) (string, error) {
+	opCopy := &core.Operation{
 		Namespace:   op.Namespace,
 		Transaction: op.Transaction,
 		Type:        op.Type,
@@ -63,7 +64,7 @@ func RunWithOperationCache(ctx context.Context, fn func(ctx context.Context) err
 	return fn(CreateOperationRetryContext(ctx))
 }
 
-func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error {
+func (om *operationsManager) AddOrReuseOperation(ctx context.Context, op *core.Operation) error {
 	// If a cache has been created via RunWithOperationCache, detect duplicate operation inserts
 	cache := getOperationCache(ctx)
 	if cache != nil {

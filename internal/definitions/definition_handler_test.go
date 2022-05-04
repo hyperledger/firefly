@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -28,7 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +41,7 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitio
 	mim := &identitymanagermocks.Manager{}
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
-	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress).Maybe()
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	dh, _ := NewDefinitionHandler(context.Background(), mdi, mbi, mdx, mdm, mim, mam, mcm)
 	return dh.(*definitionHandlers), newTestDefinitionBatchState(t)
 }
@@ -49,14 +50,14 @@ type testDefinitionBatchState struct {
 	t                  *testing.T
 	preFinalizers      []func(ctx context.Context) error
 	finalizers         []func(ctx context.Context) error
-	pendingConfirms    map[fftypes.UUID]*fftypes.Message
+	pendingConfirms    map[fftypes.UUID]*core.Message
 	confirmedDIDClaims []string
 }
 
 func newTestDefinitionBatchState(t *testing.T) *testDefinitionBatchState {
 	return &testDefinitionBatchState{
 		t:               t,
-		pendingConfirms: make(map[fftypes.UUID]*fftypes.Message),
+		pendingConfirms: make(map[fftypes.UUID]*core.Message),
 	}
 }
 
@@ -68,7 +69,7 @@ func (bs *testDefinitionBatchState) AddFinalize(pf func(ctx context.Context) err
 	bs.finalizers = append(bs.finalizers, pf)
 }
 
-func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
+func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*core.Message {
 	return bs.pendingConfirms
 }
 
@@ -88,11 +89,11 @@ func TestInitFail(t *testing.T) {
 
 func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
 			Tag: "unknown",
 		},
-	}, fftypes.DataArray{}, fftypes.NewUUID())
+	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -100,21 +101,21 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 
 func TestGetSystemBroadcastPayloadMissingData(t *testing.T) {
 	dh, _ := newTestDefinitionHandler(t)
-	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	valid := dh.getSystemBroadcastPayload(context.Background(), &core.Message{
+		Header: core.MessageHeader{
 			Tag: "unknown",
 		},
-	}, fftypes.DataArray{}, nil)
+	}, core.DataArray{}, nil)
 	assert.False(t, valid)
 }
 
 func TestGetSystemBroadcastPayloadBadJSON(t *testing.T) {
 	dh, _ := newTestDefinitionHandler(t)
-	valid := dh.getSystemBroadcastPayload(context.Background(), &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	valid := dh.getSystemBroadcastPayload(context.Background(), &core.Message{
+		Header: core.MessageHeader{
 			Tag: "unknown",
 		},
-	}, fftypes.DataArray{}, nil)
+	}, core.DataArray{}, nil)
 	assert.False(t, valid)
 }
 

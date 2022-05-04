@@ -19,82 +19,82 @@ package txcommon
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (t *transactionHelper) EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error) {
-	e := &fftypes.EnrichedEvent{
+func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error) {
+	e := &core.EnrichedEvent{
 		Event: *event,
 	}
 
 	switch event.Type {
-	case fftypes.EventTypeTransactionSubmitted:
+	case core.EventTypeTransactionSubmitted:
 		tx, err := t.GetTransactionByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Transaction = tx
-	case fftypes.EventTypeMessageConfirmed, fftypes.EventTypeMessageRejected:
+	case core.EventTypeMessageConfirmed, core.EventTypeMessageRejected:
 		msg, _, _, err := t.data.GetMessageWithDataCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Message = msg
-	case fftypes.EventTypeBlockchainEventReceived:
+	case core.EventTypeBlockchainEventReceived:
 		be, err := t.GetBlockchainEventByIDCached(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.BlockchainEvent = be
-	case fftypes.EventTypeContractAPIConfirmed:
+	case core.EventTypeContractAPIConfirmed:
 		contractAPI, err := t.database.GetContractAPIByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractAPI = contractAPI
-	case fftypes.EventTypeContractInterfaceConfirmed:
+	case core.EventTypeContractInterfaceConfirmed:
 		contractInterface, err := t.database.GetFFIByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractInterface = contractInterface
-	case fftypes.EventTypeDatatypeConfirmed:
+	case core.EventTypeDatatypeConfirmed:
 		dt, err := t.database.GetDatatypeByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Datatype = dt
-	case fftypes.EventTypeIdentityConfirmed, fftypes.EventTypeIdentityUpdated:
+	case core.EventTypeIdentityConfirmed, core.EventTypeIdentityUpdated:
 		identity, err := t.database.GetIdentityByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Identity = identity
-	case fftypes.EventTypeNamespaceConfirmed:
+	case core.EventTypeNamespaceConfirmed:
 		ns, err := t.database.GetNamespaceByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.NamespaceDetails = ns
-	case fftypes.EventTypePoolConfirmed:
+	case core.EventTypePoolConfirmed:
 		tokenPool, err := t.database.GetTokenPoolByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenPool = tokenPool
-	case fftypes.EventTypeApprovalConfirmed:
+	case core.EventTypeApprovalConfirmed:
 		approval, err := t.database.GetTokenApprovalByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenApproval = approval
-	case fftypes.EventTypeTransferConfirmed:
+	case core.EventTypeTransferConfirmed:
 		transfer, err := t.database.GetTokenTransferByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenTransfer = transfer
-	case fftypes.EventTypeApprovalOpFailed, fftypes.EventTypeTransferOpFailed, fftypes.EventTypeBlockchainInvokeOpFailed, fftypes.EventTypePoolOpFailed, fftypes.EventTypeBlockchainInvokeOpSucceeded:
+	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
 		operation, err := t.database.GetOperationByID(ctx, event.Reference)
 		if err != nil {
 			return nil, err

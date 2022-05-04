@@ -21,30 +21,31 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func testOrg(name string) *fftypes.Identity {
-	i := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+func testOrg(name string) *core.Identity {
+	i := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.IdentityTypeOrg,
-			Namespace: fftypes.SystemNamespace,
+			Type:      core.IdentityTypeOrg,
+			Namespace: core.SystemNamespace,
 			Name:      name,
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: "desc",
 			Profile: fftypes.JSONObject{
 				"some": "profiledata",
 			},
 		},
-		Messages: fftypes.IdentityMessages{
+		Messages: core.IdentityMessages{
 			Claim: fftypes.NewUUID(),
 		},
 	}
@@ -61,20 +62,20 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	config.Set(coreconfig.NodeDescription, "Node 1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&fftypes.VerifierRef{
+	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
-	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
+	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		fftypes.SystemNamespace,
-		mock.AnythingOfType("*fftypes.IdentityClaim"),
-		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
+		core.SystemNamespace,
+		mock.AnythingOfType("*core.IdentityClaim"),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		fftypes.SystemTagIdentityClaim, false).Return(mockMsg, nil)
+		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
 	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
@@ -91,10 +92,10 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	config.Set(coreconfig.NodeDescription, "")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&fftypes.VerifierRef{
+	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(nil, false, nil)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
 	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
