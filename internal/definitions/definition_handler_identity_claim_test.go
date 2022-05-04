@@ -138,7 +138,7 @@ func testCustomClaimAndVerification(t *testing.T) (*fftypes.Identity, *fftypes.I
 }
 
 func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -189,7 +189,7 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 }
 
 func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -234,7 +234,7 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -266,7 +266,7 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, _ := testCustomClaimAndVerification(t)
@@ -296,7 +296,7 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, _ := testCustomClaimAndVerification(t)
@@ -326,7 +326,7 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, verifyMsg, verifyData := testCustomClaimAndVerification(t)
@@ -357,7 +357,7 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -381,7 +381,7 @@ func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testi
 }
 
 func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -405,7 +405,7 @@ func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T)
 }
 
 func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -430,7 +430,7 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -453,7 +453,7 @@ func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -478,7 +478,7 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -500,7 +500,7 @@ func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -518,7 +518,7 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -536,7 +536,7 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -554,7 +554,7 @@ func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	custom1, org1, claimMsg, claimData, _, _ := testCustomClaimAndVerification(t)
@@ -572,7 +572,7 @@ func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 }
 
 func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	_, org1, claimMsg, _, _, _ := testCustomClaimAndVerification(t)

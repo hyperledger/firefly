@@ -29,7 +29,7 @@ import (
 )
 
 func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -59,7 +59,7 @@ func TestHandleDefinitionBroadcastNSOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -89,7 +89,7 @@ func TestHandleDefinitionBroadcastNSEventFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNSUpsertFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -117,7 +117,7 @@ func TestHandleDefinitionBroadcastNSUpsertFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNSMissingData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -130,7 +130,7 @@ func TestHandleDefinitionBroadcastNSMissingData(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNSBadID(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{}
 	b, err := json.Marshal(&ns)
@@ -150,7 +150,7 @@ func TestHandleDefinitionBroadcastNSBadID(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastNSBadData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	data := &fftypes.Data{
 		Value: fftypes.JSONAnyPtr(`!{json`),
@@ -167,7 +167,7 @@ func TestHandleDefinitionBroadcastNSBadData(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDuplicate(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -194,7 +194,7 @@ func TestHandleDefinitionBroadcastDuplicate(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -226,7 +226,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocal(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDuplicateOverrideLocalFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),
@@ -255,7 +255,7 @@ func TestHandleDefinitionBroadcastDuplicateOverrideLocalFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDupCheckFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
 	ns := &fftypes.Namespace{
 		ID:   fftypes.NewUUID(),

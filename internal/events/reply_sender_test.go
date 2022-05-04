@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definitions
+package events
 
 import (
 	"context"
@@ -29,13 +29,17 @@ import (
 )
 
 func TestSendReplyBroadcastFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &fftypes.Subscription{},
+	})
+	defer cancel()
+
 	mms := &sysmessagingmocks.MessageSender{}
-	mbm := dh.broadcast.(*broadcastmocks.Manager)
+	mbm := ed.broadcast.(*broadcastmocks.Manager)
 	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	dh.SendReply(context.Background(), &fftypes.Event{
+	ed.sendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{})
@@ -45,13 +49,17 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 }
 
 func TestSendReplyPrivateFail(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &fftypes.Subscription{},
+	})
+	defer cancel()
+
 	mms := &sysmessagingmocks.MessageSender{}
-	mpm := dh.messaging.(*privatemessagingmocks.Manager)
+	mpm := ed.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	dh.SendReply(context.Background(), &fftypes.Event{
+	ed.sendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{
@@ -67,7 +75,10 @@ func TestSendReplyPrivateFail(t *testing.T) {
 }
 
 func TestSendReplyPrivateOk(t *testing.T) {
-	dh, _ := newTestDefinitionHandlers(t)
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &fftypes.Subscription{},
+	})
+	defer cancel()
 
 	msg := &fftypes.Message{
 		Header: fftypes.MessageHeader{
@@ -76,11 +87,11 @@ func TestSendReplyPrivateOk(t *testing.T) {
 	}
 
 	mms := &sysmessagingmocks.MessageSender{}
-	mpm := dh.messaging.(*privatemessagingmocks.Manager)
+	mpm := ed.messaging.(*privatemessagingmocks.Manager)
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	dh.SendReply(context.Background(), &fftypes.Event{
+	ed.sendReply(context.Background(), &fftypes.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 	}, &fftypes.MessageInOut{

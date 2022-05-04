@@ -95,7 +95,7 @@ func testDeprecatedRootNode(t *testing.T) (*fftypes.DeprecatedNode, *fftypes.Mes
 }
 
 func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	node, msg, data := testDeprecatedRootNode(t)
@@ -145,7 +145,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 }
 
 func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &fftypes.Message{}, fftypes.DataArray{})
@@ -156,7 +156,7 @@ func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
 }
 
 func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	node, msg, data := testDeprecatedRootNode(t)
@@ -177,7 +177,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 }
 
 func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	node, msg, data := testDeprecatedRootNode(t)

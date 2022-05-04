@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/fftypes"
@@ -502,9 +502,6 @@ func TestMessageReceiveMessageIdentityFail(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
-
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeFFDXPeerID,
@@ -534,9 +531,6 @@ func TestMessageReceiveMessageIdentityParentNotFound(t *testing.T) {
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
-
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
@@ -568,9 +562,6 @@ func TestMessageReceiveMessageIdentityIncorrect(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
-
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeFFDXPeerID,
@@ -597,8 +588,8 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
@@ -620,6 +611,7 @@ func TestMessageReceiveMessagePersistMessageFail(t *testing.T) {
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
@@ -632,8 +624,8 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
@@ -654,6 +646,7 @@ func TestMessageReceiveMessagePersistDataFail(t *testing.T) {
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
@@ -669,8 +662,8 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeFFDXPeerID,
@@ -694,6 +687,7 @@ func TestMessageReceiveUnpinnedBatchOk(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
@@ -709,8 +703,8 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeFFDXPeerID,
@@ -734,6 +728,7 @@ func TestMessageReceiveUnpinnedBatchConfirmMessagesFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
@@ -749,8 +744,8 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(true, nil)
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []fftypes.IdentityType{fftypes.IdentityTypeNode}, fftypes.SystemNamespace, &fftypes.VerifierRef{
 		Type:  fftypes.VerifierTypeFFDXPeerID,
@@ -775,6 +770,7 @@ func TestMessageReceiveUnpinnedBatchPersistEventFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
@@ -783,20 +779,19 @@ func TestMessageReceiveMessageEnsureLocalGroupFail(t *testing.T) {
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
-	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
 	// no ack as we are simulating termination mid retry
 	mde := newMessageReceivedNoAck("peer1", b)
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
@@ -805,17 +800,16 @@ func TestMessageReceiveMessageEnsureLocalGroupReject(t *testing.T) {
 
 	_, b := sampleBatchTransfer(t, fftypes.TransactionTypeUnpinned)
 
-	mdi := em.database.(*databasemocks.Plugin)
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")
 
-	msh := em.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
+	mpm := em.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("EnsureLocalGroup", em.ctx, mock.Anything).Return(false, nil)
 
 	mde := newMessageReceived("peer1", b, "")
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
