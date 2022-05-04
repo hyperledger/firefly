@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,12 +26,10 @@ import (
 )
 
 var getTokenTransfers = &oapispec.Route{
-	Name:   "getTokenTransfers",
-	Path:   "namespaces/{ns}/tokens/transfers",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "getTokenTransfers",
+	Path:       "tokens/transfers",
+	Method:     http.MethodGet,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fromOrTo", Description: coremsgs.APIParamsTokenTransferFromOrTo},
 	},
@@ -50,6 +47,6 @@ var getTokenTransfers = &oapispec.Route{
 					Condition(fb.Eq("from", fromOrTo)).
 					Condition(fb.Eq("to", fromOrTo)))
 		}
-		return filterResult(getOr(r.Ctx).Assets().GetTokenTransfers(r.Ctx, r.PP["ns"], filter))
+		return filterResult(getOr(r.Ctx).Assets().GetTokenTransfers(r.Ctx, extractNamespace(r.PP), filter))
 	},
 }

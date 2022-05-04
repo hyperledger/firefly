@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,12 +26,10 @@ import (
 )
 
 var getContractAPIs = &oapispec.Route{
-	Name:   "getContractAPIs",
-	Path:   "namespaces/{ns}/apis",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getContractAPIs",
+	Path:            "apis",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.ContractAPIQueryFactory,
 	Description:     coremsgs.APIEndpointsGetContractAPIs,
@@ -40,6 +37,6 @@ var getContractAPIs = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.Filter))
 	},
 }

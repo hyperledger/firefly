@@ -19,19 +19,16 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewMessageRequestReply = &oapispec.Route{
-	Name:   "postNewMessageRequestReply",
-	Path:   "namespaces/{ns}/messages/requestreply",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "postNewMessageRequestReply",
+	Path:            "messages/requestreply",
+	Method:          http.MethodPost,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewMessageRequestReply,
@@ -39,7 +36,7 @@ var postNewMessageRequestReply = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).RequestReply(r.Ctx, r.PP["ns"], r.Input.(*core.MessageInOut))
+		output, err = getOr(r.Ctx).RequestReply(r.Ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut))
 		return output, err
 	},
 }

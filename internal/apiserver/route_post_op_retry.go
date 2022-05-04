@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var postOpRetry = &oapispec.Route{
 	Name:   "postOpRetry",
-	Path:   "namespaces/{ns}/operations/{opid}/retry",
+	Path:   "operations/{opid}/retry",
 	Method: http.MethodPost,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "opid", Description: coremsgs.OperationID},
 	},
 	QueryParams:     []*oapispec.QueryParam{},
@@ -45,6 +43,6 @@ var postOpRetry = &oapispec.Route{
 		if err != nil {
 			return nil, err
 		}
-		return getOr(r.Ctx).Operations().RetryOperation(r.Ctx, r.PP["ns"], opid)
+		return getOr(r.Ctx).Operations().RetryOperation(r.Ctx, extractNamespace(r.PP), opid)
 	},
 }

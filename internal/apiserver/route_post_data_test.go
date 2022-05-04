@@ -49,6 +49,24 @@ func TestPostDataJSON(t *testing.T) {
 	assert.Equal(t, 201, res.Result().StatusCode)
 }
 
+func TestPostDataJSONDefaultNS(t *testing.T) {
+	o, r := newTestAPIServer()
+	mdm := &datamocks.Manager{}
+	o.On("Data").Return(mdm)
+	input := core.Data{}
+	var buf bytes.Buffer
+	json.NewEncoder(&buf).Encode(&input)
+	req := httptest.NewRequest("POST", "/api/v1/data", &buf)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	mdm.On("UploadJSON", mock.Anything, "default", mock.AnythingOfType("*core.DataRefOrValue")).
+		Return(&core.Data{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 201, res.Result().StatusCode)
+}
+
 func TestPostDataBinary(t *testing.T) {
 	log.SetLevel("debug")
 

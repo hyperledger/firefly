@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var patchUpdateIdentity = &oapispec.Route{
 	Name:   "patchUpdateIdentity",
-	Path:   "namespaces/{ns}/identities/{iid}",
+	Path:   "identities/{iid}",
 	Method: http.MethodPatch,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "iid", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -45,7 +43,7 @@ var patchUpdateIdentity = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, r.PP["ns"], r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
+		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, extractNamespace(r.PP), r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
 		return org, err
 	},
 }

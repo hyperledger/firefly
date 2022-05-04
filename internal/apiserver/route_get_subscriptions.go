@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,12 +26,10 @@ import (
 )
 
 var getSubscriptions = &oapispec.Route{
-	Name:   "getSubscriptions",
-	Path:   "namespaces/{ns}/subscriptions",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getSubscriptions",
+	Path:            "subscriptions",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.SubscriptionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetSubscriptions,
@@ -40,6 +37,6 @@ var getSubscriptions = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetSubscriptions(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetSubscriptions(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

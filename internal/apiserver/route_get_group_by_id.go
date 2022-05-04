@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,10 +26,9 @@ import (
 
 var getGroupByHash = &oapispec.Route{
 	Name:   "getGroupByHash",
-	Path:   "namespaces/{ns}/groups/{hash}",
+	Path:   "groups/{hash}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "hash", Description: coremsgs.APIParamsGroupHash},
 	},
 	QueryParams:     nil,

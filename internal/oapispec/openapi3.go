@@ -303,6 +303,7 @@ func addRoute(ctx context.Context, doc *openapi3.T, route *Route, conf *SwaggerG
 		OperationID: route.Name,
 		Responses:   openapi3.NewResponses(),
 		Deprecated:  route.Deprecated,
+		Tags:        []string{route.Tag},
 	}
 	if route.Method != http.MethodGet && route.Method != http.MethodDelete {
 		initInput(op)

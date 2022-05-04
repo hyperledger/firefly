@@ -19,19 +19,16 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewContractListener = &oapispec.Route{
-	Name:   "postNewContractListener",
-	Path:   "namespaces/{ns}/contracts/listeners",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "postNewContractListener",
+	Path:            "contracts/listeners",
+	Method:          http.MethodPost,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewContractListener,
@@ -39,6 +36,6 @@ var postNewContractListener = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().AddContractListener(r.Ctx, r.PP["ns"], r.Input.(*core.ContractListenerInput))
+		return getOr(r.Ctx).Contracts().AddContractListener(r.Ctx, extractNamespace(r.PP), r.Input.(*core.ContractListenerInput))
 	},
 }

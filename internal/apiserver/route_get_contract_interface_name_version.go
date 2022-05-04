@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var getContractInterfaceNameVersion = &oapispec.Route{
 	Name:   "getContractInterfaceByNameAndVersion",
-	Path:   "namespaces/{ns}/contracts/interfaces/{name}/{version}",
+	Path:   "contracts/interfaces/{name}/{version}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "name", Description: coremsgs.APIParamsContractInterfaceName},
 		{Name: "version", Description: coremsgs.APIParamsContractInterfaceVersion},
 	},
@@ -45,8 +43,8 @@ var getContractInterfaceNameVersion = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
 		}
-		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])
+		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
 	},
 }

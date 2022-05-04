@@ -20,19 +20,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postTokenApproval = &oapispec.Route{
-	Name:   "postTokenApproval",
-	Path:   "namespaces/{ns}/tokens/approvals",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "postTokenApproval",
+	Path:       "tokens/approvals",
+	Method:     http.MethodPost,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
@@ -50,6 +47,6 @@ var postTokenApproval = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Assets().TokenApproval(r.Ctx, r.PP["ns"], r.Input.(*core.TokenApprovalInput), waitConfirm)
+		return getOr(r.Ctx).Assets().TokenApproval(r.Ctx, extractNamespace(r.PP), r.Input.(*core.TokenApprovalInput), waitConfirm)
 	},
 }

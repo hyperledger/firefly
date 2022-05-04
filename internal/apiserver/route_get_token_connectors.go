@@ -19,19 +19,16 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getTokenConnectors = &oapispec.Route{
-	Name:   "getTokenConnectors",
-	Path:   "namespaces/{ns}/tokens/connectors",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getTokenConnectors",
+	Path:            "tokens/connectors",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetTokenConnectors,
@@ -39,6 +36,6 @@ var getTokenConnectors = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.TokenConnector{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Assets().GetTokenConnectors(r.Ctx, r.PP["ns"]), nil
+		return getOr(r.Ctx).Assets().GetTokenConnectors(r.Ctx, extractNamespace(r.PP)), nil
 	},
 }

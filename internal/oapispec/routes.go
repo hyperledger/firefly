@@ -63,6 +63,8 @@ type Route struct {
 	FormUploadHandler func(r *APIRequest) (output interface{}, err error)
 	// Deprecated whether this route is deprecated
 	Deprecated bool
+	// Tag a category identifier for this route in the generated OpenAPI spec
+	Tag string
 }
 
 // PathParam is a description of a path parameter

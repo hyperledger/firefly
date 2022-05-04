@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,10 +26,9 @@ import (
 
 var getTokenTransferByID = &oapispec.Route{
 	Name:   "getTokenTransferByID",
-	Path:   "namespaces/{ns}/tokens/transfers/{transferId}",
+	Path:   "tokens/transfers/{transferId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "transferId", Description: coremsgs.APIParamsTokenTransferID},
 	},
 	QueryParams:     nil,
@@ -40,7 +38,7 @@ var getTokenTransferByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Assets().GetTokenTransferByID(r.Ctx, r.PP["ns"], r.PP["transferId"])
+		output, err = getOr(r.Ctx).Assets().GetTokenTransferByID(r.Ctx, extractNamespace(r.PP), r.PP["transferId"])
 		return output, err
 	},
 }
