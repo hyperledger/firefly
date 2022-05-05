@@ -22,7 +22,6 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -31,10 +30,9 @@ import (
 
 var getChartHistogram = &oapispec.Route{
 	Name:   "getChartHistogram",
-	Path:   "namespaces/{ns}/charts/histogram/{collection}",
+	Path:   "charts/histogram/{collection}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "collection", Description: coremsgs.APIParamsCollectionID},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -60,6 +58,6 @@ var getChartHistogram = &oapispec.Route{
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, coremsgs.MsgInvalidChartNumberParam, "buckets")
 		}
-		return getOr(r.Ctx).GetChartHistogram(r.Ctx, r.PP["ns"], startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
+		return getOr(r.Ctx).GetChartHistogram(r.Ctx, extractNamespace(r.PP), startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
 	},
 }

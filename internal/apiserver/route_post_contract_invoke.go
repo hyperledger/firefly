@@ -20,19 +20,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postContractInvoke = &oapispec.Route{
-	Name:   "postContractInvoke",
-	Path:   "namespaces/{ns}/contracts/invoke",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "postContractInvoke",
+	Path:       "contracts/invoke",
+	Method:     http.MethodPost,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
@@ -46,6 +43,6 @@ var postContractInvoke = &oapispec.Route{
 		r.SuccessStatus = syncRetcode(waitConfirm)
 		req := r.Input.(*core.ContractCallRequest)
 		req.Type = core.CallTypeInvoke
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req, waitConfirm)
+		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, extractNamespace(r.PP), req, waitConfirm)
 	},
 }

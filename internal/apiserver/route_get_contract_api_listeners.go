@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var getContractAPIListeners = &oapispec.Route{
 	Name:   "getContractAPIListeners",
-	Path:   "namespaces/{ns}/apis/{apiName}/listeners/{eventPath}",
+	Path:   "apis/{apiName}/listeners/{eventPath}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "apiName", Description: coremsgs.APIParamsContractAPIName},
 		{Name: "eventPath", Description: coremsgs.APIParamsEventPath},
 	},
@@ -42,6 +40,6 @@ var getContractAPIListeners = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIListeners(r.Ctx, r.PP["ns"], r.PP["apiName"], r.PP["eventPath"], r.Filter))
+		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIListeners(r.Ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["eventPath"], r.Filter))
 	},
 }

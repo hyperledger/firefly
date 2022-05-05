@@ -65,6 +65,7 @@ func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 }
 
 func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
+	config.Set(coreconfig.NamespacesDefault, "default")
 	mor, as := newTestServer()
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)

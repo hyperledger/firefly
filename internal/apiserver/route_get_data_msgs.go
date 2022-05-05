@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var getDataMsgs = &oapispec.Route{
 	Name:   "getDataMsgs",
-	Path:   "namespaces/{ns}/data/{dataid}/messages",
+	Path:   "data/{dataid}/messages",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "dataid", Description: coremsgs.APIParamsDataID},
 	},
 	QueryParams:     nil,
@@ -41,6 +39,6 @@ var getDataMsgs = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetMessagesForData(r.Ctx, r.PP["ns"], r.PP["dataid"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetMessagesForData(r.Ctx, extractNamespace(r.PP), r.PP["dataid"], r.Filter))
 	},
 }

@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,12 +27,10 @@ import (
 )
 
 var getIdentities = &oapispec.Route{
-	Name:   "getIdentities",
-	Path:   "namespaces/{ns}/identities",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "getIdentities",
+	Path:       "identities",
+	Method:     http.MethodGet,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
@@ -44,8 +41,8 @@ var getIdentities = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-			return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesWithVerifiers(r.Ctx, r.PP["ns"], r.Filter))
+			return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesWithVerifiers(r.Ctx, extractNamespace(r.PP), r.Filter))
 		}
-		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentities(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentities(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

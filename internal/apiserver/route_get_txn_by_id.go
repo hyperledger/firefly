@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var getTxnByID = &oapispec.Route{
 	Name:   "getTxnByID",
-	Path:   "namespaces/{ns}/transactions/{txnid}",
+	Path:   "transactions/{txnid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "txnid", Description: coremsgs.APIParamsTransactionID},
 	},
 	QueryParams:     nil,
@@ -41,7 +39,7 @@ var getTxnByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetTransactionByID(r.Ctx, r.PP["ns"], r.PP["txnid"])
+		output, err = getOr(r.Ctx).GetTransactionByID(r.Ctx, extractNamespace(r.PP), r.PP["txnid"])
 		return output, err
 	},
 }

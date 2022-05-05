@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,12 +26,10 @@ import (
 )
 
 var getTokenApprovals = &oapispec.Route{
-	Name:   "getTokenApprovals",
-	Path:   "namespaces/{ns}/tokens/approvals",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getTokenApprovals",
+	Path:            "tokens/approvals",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	FilterFactory:   database.TokenApprovalQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenApprovals,
 	JSONInputValue:  nil,
@@ -40,6 +37,6 @@ var getTokenApprovals = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		filter := r.Filter
-		return filterResult(getOr(r.Ctx).Assets().GetTokenApprovals(r.Ctx, r.PP["ns"], filter))
+		return filterResult(getOr(r.Ctx).Assets().GetTokenApprovals(r.Ctx, extractNamespace(r.PP), filter))
 	},
 }

@@ -19,17 +19,15 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
 var deleteSubscription = &oapispec.Route{
 	Name:   "deleteSubscription",
-	Path:   "namespaces/{ns}/subscriptions/{subid}",
+	Path:   "subscriptions/{subid}",
 	Method: http.MethodDelete,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams:     nil,
@@ -39,7 +37,7 @@ var deleteSubscription = &oapispec.Route{
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).DeleteSubscription(r.Ctx, r.PP["ns"], r.PP["subid"])
+		err = getOr(r.Ctx).DeleteSubscription(r.Ctx, extractNamespace(r.PP), r.PP["subid"])
 		return nil, err
 	},
 }

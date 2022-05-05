@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -29,10 +28,9 @@ import (
 
 var getContractInterface = &oapispec.Route{
 	Name:   "getContractInterface",
-	Path:   "namespaces/{ns}/contracts/interfaces/{interfaceId}",
+	Path:   "contracts/interfaces/{interfaceId}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "interfaceId", Description: coremsgs.APIParamsContractInterfaceID},
 	},
 	QueryParams: []*oapispec.QueryParam{

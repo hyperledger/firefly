@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -28,10 +27,9 @@ import (
 
 var getMsgByID = &oapispec.Route{
 	Name:   "getMsgByID",
-	Path:   "namespaces/{ns}/messages/{msgid}",
+	Path:   "messages/{msgid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "msgid", Description: coremsgs.APIParamsMessageID},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -44,8 +42,8 @@ var getMsgByID = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["data"], "true") || strings.EqualFold(r.QP["fetchdata"], "true") {
-			return getOr(r.Ctx).GetMessageByIDWithData(r.Ctx, r.PP["ns"], r.PP["msgid"])
+			return getOr(r.Ctx).GetMessageByIDWithData(r.Ctx, extractNamespace(r.PP), r.PP["msgid"])
 		}
-		return getOr(r.Ctx).GetMessageByID(r.Ctx, r.PP["ns"], r.PP["msgid"])
+		return getOr(r.Ctx).GetMessageByID(r.Ctx, extractNamespace(r.PP), r.PP["msgid"])
 	},
 }

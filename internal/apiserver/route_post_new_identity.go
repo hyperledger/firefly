@@ -20,19 +20,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewIdentity = &oapispec.Route{
-	Name:   "postNewIdentity",
-	Path:   "namespaces/{ns}/identities",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "postNewIdentity",
+	Path:       "identities",
+	Method:     http.MethodPost,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
@@ -44,7 +41,7 @@ var postNewIdentity = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().RegisterIdentity(r.Ctx, r.PP["ns"], r.Input.(*core.IdentityCreateDTO), waitConfirm)
+		org, err := getOr(r.Ctx).NetworkMap().RegisterIdentity(r.Ctx, extractNamespace(r.PP), r.Input.(*core.IdentityCreateDTO), waitConfirm)
 		return org, err
 	},
 }

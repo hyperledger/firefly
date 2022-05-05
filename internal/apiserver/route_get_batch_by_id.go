@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,10 +26,9 @@ import (
 
 var getBatchByID = &oapispec.Route{
 	Name:   "getBatchByID",
-	Path:   "namespaces/{ns}/batches/{batchid}",
+	Path:   "batches/{batchid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "batchid", Description: coremsgs.APIParamsBatchID},
 	},
 	QueryParams:     nil,
@@ -40,7 +38,7 @@ var getBatchByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetBatchByID(r.Ctx, r.PP["ns"], r.PP["batchid"])
+		output, err = getOr(r.Ctx).GetBatchByID(r.Ctx, extractNamespace(r.PP), r.PP["batchid"])
 		return output, err
 	},
 }

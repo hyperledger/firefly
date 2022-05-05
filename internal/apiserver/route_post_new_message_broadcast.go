@@ -20,19 +20,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewMessageBroadcast = &oapispec.Route{
-	Name:   "postNewMessageBroadcast",
-	Path:   "namespaces/{ns}/messages/broadcast",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "postNewMessageBroadcast",
+	Path:       "messages/broadcast",
+	Method:     http.MethodPost,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
@@ -44,7 +41,7 @@ var postNewMessageBroadcast = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		output, err = getOr(r.Ctx).Broadcast().BroadcastMessage(r.Ctx, r.PP["ns"], r.Input.(*core.MessageInOut), waitConfirm)
+		output, err = getOr(r.Ctx).Broadcast().BroadcastMessage(r.Ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut), waitConfirm)
 		return output, err
 	},
 }

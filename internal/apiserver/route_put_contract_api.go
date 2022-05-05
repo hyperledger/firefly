@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -29,10 +28,9 @@ import (
 
 var putContractAPI = &oapispec.Route{
 	Name:   "putContractAPI",
-	Path:   "namespaces/{ns}/apis/{id}",
+	Path:   "apis/{id}",
 	Method: http.MethodPut,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "id", Example: "id", Description: coremsgs.APIParamsContractAPIName},
 	},
 	QueryParams: []*oapispec.QueryParam{
@@ -50,7 +48,7 @@ var putContractAPI = &oapispec.Route{
 		api.ID, err = fftypes.ParseUUID(r.Ctx, r.PP["id"])
 		var res interface{}
 		if err == nil {
-			res, err = getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, r.PP["ns"], api, waitConfirm)
+			res, err = getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), api, waitConfirm)
 		}
 		return res, err
 	},

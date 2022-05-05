@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -27,12 +26,10 @@ import (
 )
 
 var getTxns = &oapispec.Route{
-	Name:   "getTxns",
-	Path:   "namespaces/{ns}/transactions",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getTxns",
+	Path:            "transactions",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.TransactionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTxns,
@@ -40,6 +37,6 @@ var getTxns = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetTransactions(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetTransactions(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

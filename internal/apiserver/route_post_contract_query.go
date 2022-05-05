@@ -19,19 +19,16 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postContractQuery = &oapispec.Route{
-	Name:   "postContractQuery",
-	Path:   "namespaces/{ns}/contracts/query",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "postContractQuery",
+	Path:            "contracts/query",
+	Method:          http.MethodPost,
+	PathParams:      nil,
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostContractQuery,
@@ -41,6 +38,6 @@ var postContractQuery = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		req := r.Input.(*core.ContractCallRequest)
 		req.Type = core.CallTypeQuery
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req, true)
+		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, extractNamespace(r.PP), req, true)
 	},
 }

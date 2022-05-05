@@ -42,7 +42,6 @@ $(eval $(call makemock, pkg/database,              Callbacks,          databasem
 $(eval $(call makemock, pkg/sharedstorage,         Plugin,             sharedstoragemocks))
 $(eval $(call makemock, pkg/sharedstorage,         Callbacks,          sharedstoragemocks))
 $(eval $(call makemock, pkg/events,                Plugin,             eventsmocks))
-$(eval $(call makemock, pkg/events,                Plugin,             eventsmocks))
 $(eval $(call makemock, pkg/events,                Callbacks,          eventsmocks))
 $(eval $(call makemock, pkg/identity,              Plugin,             identitymocks))
 $(eval $(call makemock, pkg/identity,              Callbacks,          identitymocks))
