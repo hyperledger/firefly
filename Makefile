@@ -25,7 +25,7 @@ ${MOCKERY}:
 ${LINT}:
 		$(VGO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ffcommon:
-		$(eval FFCOMMON_PATH := $(shell $(VGO) list -f '{{.Dir}}' github.com/hyperledger/firefly-common/pkg/wsclient))
+		$(eval WSCLIENT_PATH := $(shell $(VGO) list -f '{{.Dir}}' github.com/hyperledger/firefly-common/pkg/wsclient))
 
 
 define makemock
@@ -34,7 +34,7 @@ mocks-$(strip $(1))-$(strip $(2)): ${MOCKERY} ffcommon
 	${MOCKERY} --case underscore --dir $(1) --name $(2) --outpkg $(3) --output mocks/$(strip $(3))
 endef
 
-$(eval $(call makemock, $$(FFCOMMON_PATH),         WSClient,           wsmocks))
+$(eval $(call makemock, $$(WSCLIENT_PATH),         WSClient,           wsmocks))
 $(eval $(call makemock, pkg/blockchain,            Plugin,             blockchainmocks))
 $(eval $(call makemock, pkg/blockchain,            Callbacks,          blockchainmocks))
 $(eval $(call makemock, pkg/database,              Plugin,             databasemocks))
