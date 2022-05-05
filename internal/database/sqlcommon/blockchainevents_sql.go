@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -54,7 +55,7 @@ var (
 
 const blockchaineventsTable = "blockchainevents"
 
-func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.BlockchainEvent) (err error) {
+func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -79,7 +80,7 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 				event.TX.BlockchainID,
 			),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
 		},
 	); err != nil {
 		return err
@@ -88,8 +89,8 @@ func (s *SQLCommon) InsertBlockchainEvent(ctx context.Context, event *fftypes.Bl
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*fftypes.BlockchainEvent, error) {
-	var event fftypes.BlockchainEvent
+func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*core.BlockchainEvent, error) {
+	var event core.BlockchainEvent
 	err := row.Scan(
 		&event.ID,
 		&event.Source,
@@ -110,7 +111,7 @@ func (s *SQLCommon) blockchainEventResult(ctx context.Context, row *sql.Rows) (*
 	return &event, nil
 }
 
-func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pred interface{}) (*fftypes.BlockchainEvent, error) {
+func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pred interface{}) (*core.BlockchainEvent, error) {
 	rows, _, err := s.query(ctx, blockchaineventsTable,
 		sq.Select(blockchainEventColumns...).
 			From(blockchaineventsTable).
@@ -134,11 +135,11 @@ func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pre
 	return event, nil
 }
 
-func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	return s.getBlockchainEventPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*fftypes.BlockchainEvent, error) {
+func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error) {
 	return s.getBlockchainEventPred(ctx, protocolID, sq.Eq{
 		"namespace":   ns,
 		"listener_id": listener,
@@ -146,7 +147,7 @@ func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns strin
 	})
 }
 
-func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*fftypes.BlockchainEvent, *database.FilterResult, error) {
+func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "",
 		sq.Select(blockchainEventColumns...).From(blockchaineventsTable),
@@ -161,7 +162,7 @@ func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Fil
 	}
 	defer rows.Close()
 
-	events := []*fftypes.BlockchainEvent{}
+	events := []*core.BlockchainEvent{}
 	for rows.Next() {
 		event, err := s.blockchainEventResult(ctx, rows)
 		if err != nil {

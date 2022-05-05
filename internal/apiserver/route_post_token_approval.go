@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postTokenApproval = &oapispec.Route{
@@ -39,17 +39,17 @@ var postTokenApproval = &oapispec.Route{
 	FilterFactory: nil,
 	Description:   coremsgs.APIEndpointsPostTokenApproval,
 	JSONInputValue: func() interface{} {
-		return &fftypes.TokenApprovalInput{
-			TokenApproval: fftypes.TokenApproval{
+		return &core.TokenApprovalInput{
+			TokenApproval: core.TokenApproval{
 				Approved: true,
 			},
 		}
 	},
-	JSONOutputValue: func() interface{} { return &fftypes.TokenApproval{} },
+	JSONOutputValue: func() interface{} { return &core.TokenApproval{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Assets().TokenApproval(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenApprovalInput), waitConfirm)
+		return getOr(r.Ctx).Assets().TokenApproval(r.Ctx, r.PP["ns"], r.Input.(*core.TokenApprovalInput), waitConfirm)
 	},
 }

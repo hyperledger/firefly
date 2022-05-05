@@ -22,11 +22,12 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -45,7 +46,7 @@ var (
 
 const subscriptionsTable = "subscriptions"
 
-func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftypes.Subscription, allowExisting bool) (err error) {
+func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *core.Subscription, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -99,7 +100,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					"name":      subscription.Name,
 				}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
 			},
 		); err != nil {
 			return err
@@ -123,7 +124,7 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 					subscription.Updated,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, subscription.Namespace, subscription.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeCreated, subscription.Namespace, subscription.ID)
 			},
 		); err != nil {
 			return err
@@ -134,8 +135,8 @@ func (s *SQLCommon) UpsertSubscription(ctx context.Context, subscription *fftype
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fftypes.Subscription, error) {
-	subscription := fftypes.Subscription{}
+func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*core.Subscription, error) {
+	subscription := core.Subscription{}
 	err := row.Scan(
 		&subscription.ID,
 		&subscription.Namespace,
@@ -152,7 +153,7 @@ func (s *SQLCommon) subscriptionResult(ctx context.Context, row *sql.Rows) (*fft
 	return &subscription, nil
 }
 
-func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName string) (message *fftypes.Subscription, err error) {
+func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName string) (message *core.Subscription, err error) {
 
 	rows, _, err := s.query(ctx, subscriptionsTable,
 		sq.Select(subscriptionColumns...).
@@ -177,15 +178,15 @@ func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName st
 	return subscription, nil
 }
 
-func (s *SQLCommon) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Subscription, err error) {
+func (s *SQLCommon) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (message *core.Subscription, err error) {
 	return s.getSubscriptionEq(ctx, sq.Eq{"id": id}, id.String())
 }
 
-func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) (message *fftypes.Subscription, err error) {
+func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) (message *core.Subscription, err error) {
 	return s.getSubscriptionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
 }
 
-func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*fftypes.Subscription, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*core.Subscription, fr *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From(subscriptionsTable), filter, subscriptionFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -198,7 +199,7 @@ func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter
 	}
 	defer rows.Close()
 
-	subscription := []*fftypes.Subscription{}
+	subscription := []*core.Subscription{}
 	for rows.Next() {
 		d, err := s.subscriptionResult(ctx, rows)
 		if err != nil {
@@ -235,7 +236,7 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 
 	_, err = s.updateTx(ctx, subscriptionsTable, tx, query,
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeUpdated, subscription.Namespace, subscription.ID)
 		})
 	if err != nil {
 		return err
@@ -258,7 +259,7 @@ func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID
 			"id": id,
 		}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, subscription.Namespace, subscription.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeDeleted, subscription.Namespace, subscription.ID)
 			})
 		if err != nil {
 			return err

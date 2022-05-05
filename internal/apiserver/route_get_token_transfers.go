@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getTokenTransfers = &oapispec.Route{
@@ -39,7 +39,7 @@ var getTokenTransfers = &oapispec.Route{
 	FilterFactory:   database.TokenTransferQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenTransfers,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.TokenTransfer{} },
+	JSONOutputValue: func() interface{} { return []*core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		filter := r.Filter

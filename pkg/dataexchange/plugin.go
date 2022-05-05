@@ -20,8 +20,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 // Plugin is the interface implemented by each data exchange plugin
@@ -54,7 +55,7 @@ import (
 //   - Events triggered for arrival of blobs must contain the payloadRef, and the hash
 //
 type Plugin interface {
-	fftypes.Named
+	core.Named
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitPrefix(prefix config.Prefix)
@@ -130,8 +131,8 @@ type PrivateBlobReceived struct {
 
 type TransferResult struct {
 	TrackingID string
-	Status     fftypes.OpStatus
-	fftypes.TransportStatusUpdate
+	Status     core.OpStatus
+	core.TransportStatusUpdate
 }
 
 // Capabilities the supported featureset of the data exchange

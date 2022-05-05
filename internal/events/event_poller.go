@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hyperledger/firefly/internal/retry"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type eventPoller struct {
@@ -41,22 +41,22 @@ type eventPoller struct {
 	conf            *eventPollerConf
 }
 
-type newEventsHandler func(events []fftypes.LocallySequenced) (bool, error)
+type newEventsHandler func(events []core.LocallySequenced) (bool, error)
 
 type eventPollerConf struct {
 	ephemeral                  bool
 	eventBatchSize             int
 	eventBatchTimeout          time.Duration
 	eventPollTimeout           time.Duration
-	firstEvent                 *fftypes.SubOptsFirstEvent
+	firstEvent                 *core.SubOptsFirstEvent
 	queryFactory               database.QueryFactory
 	addCriteria                func(database.AndFilter) database.AndFilter
-	getItems                   func(context.Context, database.Filter, int64) ([]fftypes.LocallySequenced, error)
+	getItems                   func(context.Context, database.Filter, int64) ([]core.LocallySequenced, error)
 	maybeRewind                func() (bool, int64)
 	newEventsHandler           newEventsHandler
 	namespace                  string
 	offsetName                 string
-	offsetType                 fftypes.OffsetType
+	offsetType                 core.OffsetType
 	retry                      retry.Retry
 	startupOffsetRetryAttempts int
 }
@@ -80,7 +80,7 @@ func newEventPoller(ctx context.Context, di database.Plugin, en *eventNotifier, 
 func (ep *eventPoller) restoreOffset() error {
 	return ep.conf.retry.Do(ep.ctx, "restore offset", func(attempt int) (retry bool, err error) {
 		retry = ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts
-		var offset *fftypes.Offset
+		var offset *core.Offset
 		if ep.conf.ephemeral {
 			ep.pollingOffset, err = calcFirstOffset(ep.ctx, ep.database, ep.conf.firstEvent)
 			return retry, err
@@ -95,7 +95,7 @@ func (ep *eventPoller) restoreOffset() error {
 				if err != nil {
 					return retry, err
 				}
-				err = ep.database.UpsertOffset(ep.ctx, &fftypes.Offset{
+				err = ep.database.UpsertOffset(ep.ctx, &core.Offset{
 					Type:    ep.conf.offsetType,
 					Name:    ep.conf.offsetName,
 					Current: firstOffset,
@@ -158,9 +158,9 @@ func (ep *eventPoller) commitOffset(offset int64) {
 	}
 }
 
-func (ep *eventPoller) readPage() ([]fftypes.LocallySequenced, error) {
+func (ep *eventPoller) readPage() ([]core.LocallySequenced, error) {
 
-	var items []fftypes.LocallySequenced
+	var items []core.LocallySequenced
 
 	// We have a hook here to allow a safe to do operations that check pin state, and perform
 	// a rewind based on it.
@@ -242,7 +242,7 @@ func (ep *eventPoller) offsetCommitLoop() {
 	}
 }
 
-func (ep *eventPoller) dispatchEventsRetry(events []fftypes.LocallySequenced) (repoll bool, err error) {
+func (ep *eventPoller) dispatchEventsRetry(events []core.LocallySequenced) (repoll bool, err error) {
 	err = ep.conf.retry.Do(ep.ctx, "process events", func(attempt int) (retry bool, err error) {
 		repoll, err = ep.conf.newEventsHandler(events)
 		return err != nil, err // always retry (retry will end on cancelled context)

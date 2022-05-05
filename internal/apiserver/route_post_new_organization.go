@@ -22,7 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewOrganization = &oapispec.Route{
@@ -35,13 +35,13 @@ var postNewOrganization = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewOrganization,
-	JSONInputValue:  func() interface{} { return &fftypes.IdentityCreateDTO{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
+	JSONInputValue:  func() interface{} { return &core.IdentityCreateDTO{} },
+	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = getOr(r.Ctx).NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*fftypes.IdentityCreateDTO), waitConfirm)
+		_, err = getOr(r.Ctx).NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*core.IdentityCreateDTO), waitConfirm)
 		return r.Input, err
 	},
 }

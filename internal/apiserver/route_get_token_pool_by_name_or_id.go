@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getTokenPoolByNameOrID = &oapispec.Route{
@@ -37,7 +37,7 @@ var getTokenPoolByNameOrID = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetTokenPoolByNameOrID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
+	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = getOr(r.Ctx).Assets().GetTokenPoolByNameOrID(r.Ctx, r.PP["ns"], r.PP["nameOrId"])

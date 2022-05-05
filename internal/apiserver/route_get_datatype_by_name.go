@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getDatatypeByName = &oapispec.Route{
@@ -38,7 +38,7 @@ var getDatatypeByName = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetDatatypeByName,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Datatype{} },
+	JSONOutputValue: func() interface{} { return &core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = getOr(r.Ctx).GetDatatypeByName(r.Ctx, r.PP["ns"], r.PP["name"], r.PP["version"])

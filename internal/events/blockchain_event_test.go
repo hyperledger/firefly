@@ -20,11 +20,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -47,7 +48,7 @@ func TestContractEventWithRetries(t *testing.T) {
 			},
 		},
 	}
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		Namespace: "ns",
 		ID:        fftypes.NewUUID(),
 		Topic:     "topic1",
@@ -60,14 +61,14 @@ func TestContractEventWithRetries(t *testing.T) {
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", sub.ID, ev.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.BlockchainEvent) bool {
+	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		eventID = e.ID
 		return *e.Listener == *sub.ID && e.Name == "Changed" && e.Namespace == "ns"
 	})).Return(nil).Times(2)
 	mdi.On("GetContractListenerByID", mock.Anything, sub.ID).Return(sub, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return e.Type == fftypes.EventTypeBlockchainEventReceived && e.Reference != nil && e.Reference == eventID && e.Topic == "topic1"
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *core.Event) bool {
+		return e.Type == core.EventTypeBlockchainEventReceived && e.Reference != nil && e.Reference == eventID && e.Topic == "topic1"
 	})).Return(nil).Once()
 
 	err := em.BlockchainEvent(ev)
@@ -108,7 +109,7 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &fftypes.BlockchainEvent{
+	ev := &core.BlockchainEvent{
 		Name:       "Changed",
 		Namespace:  "ns",
 		ProtocolID: "10/20/30",
@@ -122,7 +123,7 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", ev.Listener, ev.ProtocolID).Return(&fftypes.BlockchainEvent{}, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", ev.Listener, ev.ProtocolID).Return(&core.BlockchainEvent{}, nil)
 
 	err := em.maybePersistBlockchainEvent(em.ctx, ev)
 	assert.NoError(t, err)
@@ -134,7 +135,7 @@ func TestPersistBlockchainEventLookupFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &fftypes.BlockchainEvent{
+	ev := &core.BlockchainEvent{
 		Name:       "Changed",
 		Namespace:  "ns",
 		ProtocolID: "10/20/30",
@@ -160,7 +161,7 @@ func TestPersistBlockchainEventChainListenerLookupFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	ev := &fftypes.BlockchainEvent{
+	ev := &core.BlockchainEvent{
 		Name:       "Changed",
 		Namespace:  "ns",
 		ProtocolID: "10/20/30",
@@ -190,7 +191,7 @@ func TestGetTopicForChainListenerFallback(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		Namespace: "ns",
 		ID:        fftypes.NewUUID(),
 		Topic:     "",

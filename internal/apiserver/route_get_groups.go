@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getGroups = &oapispec.Route{
@@ -37,7 +37,7 @@ var getGroups = &oapispec.Route{
 	FilterFactory:   database.GroupQueryFactory,
 	Description:     coremsgs.APIEndpointsGetGroups,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Group{} },
+	JSONOutputValue: func() interface{} { return []*core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(r.Or.PrivateMessaging().GetGroupsNS(r.Ctx, r.PP["ns"], r.Filter))

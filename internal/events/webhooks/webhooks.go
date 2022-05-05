@@ -28,13 +28,14 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type WebHooks struct {
@@ -71,7 +72,7 @@ func (wh *WebHooks) Init(ctx context.Context, prefix config.Prefix, callbacks ev
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions
-	return callbacks.RegisterConnection(wh.connID, func(sr fftypes.SubscriptionRef) bool { return true })
+	return callbacks.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })
 }
 
 func (wh *WebHooks) Capabilities() *events.Capabilities {
@@ -245,7 +246,7 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 			if len(txType) > 0 {
 				req.replyTx = txType
 				if strings.EqualFold(txType, "true") {
-					req.replyTx = string(fftypes.TransactionTypeBatchPin)
+					req.replyTx = string(core.TransactionTypeBatchPin)
 				}
 			}
 		}
@@ -253,7 +254,7 @@ func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.J
 	return req, err
 }
 
-func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error {
+func (wh *WebHooks) ValidateOptions(options *core.SubscriptionOptions) error {
 	if options.WithData == nil {
 		defaultTrue := true
 		options.WithData = &defaultTrue
@@ -262,7 +263,7 @@ func (wh *WebHooks) ValidateOptions(options *fftypes.SubscriptionOptions) error 
 	return err
 }
 
-func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) (req *whRequest, res *whResponse, err error) {
+func (wh *WebHooks) attemptRequest(sub *core.Subscription, event *core.EventDelivery, data core.DataArray) (req *whRequest, res *whResponse, err error) {
 	withData := sub.Options.WithData != nil && *sub.Options.WithData
 	allData := make([]*fftypes.JSONAny, 0, len(data))
 	var firstData fftypes.JSONObject
@@ -351,7 +352,7 @@ func (wh *WebHooks) attemptRequest(sub *fftypes.Subscription, event *fftypes.Eve
 	return req, res, nil
 }
 
-func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
+func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	req, res, gwErr := wh.attemptRequest(sub, event, data)
 	if gwErr != nil {
 		// Generate a bad-gateway error response - we always want to send something back,
@@ -373,17 +374,17 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 
 	// Emit the response
 	if reply {
-		txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
+		txType := core.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
 		if req != nil && req.replyTx != "" {
-			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
+			txType = core.FFEnum(strings.ToLower(req.replyTx))
 		}
-		wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+		wh.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
 			ID:           event.ID,
 			Rejected:     false,
 			Subscription: event.Subscription,
-			Reply: &fftypes.MessageInOut{
-				Message: fftypes.Message{
-					Header: fftypes.MessageHeader{
+			Reply: &core.MessageInOut{
+				Message: core.Message{
+					Header: core.MessageHeader{
 						CID:    event.Message.Header.ID,
 						Group:  event.Message.Header.Group,
 						Type:   event.Message.Header.Type,
@@ -392,7 +393,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 						TxType: txType,
 					},
 				},
-				InlineData: fftypes.InlineData{
+				InlineData: core.InlineData{
 					{Value: fftypes.JSONAnyPtrBytes(b)},
 				},
 			},
@@ -401,7 +402,7 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *fftypes.Subscript
 	return nil
 }
 
-func (wh *WebHooks) DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error {
+func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error {
 	if event.Message == nil && sub.Options.WithData != nil && *sub.Options.WithData {
 		log.L(wh.ctx).Debugf("Webhook withData=true subscription called with non-message event '%s'", event.ID)
 		return nil
@@ -413,7 +414,7 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *fftypes.Subscription, ev
 		// avoid loops - and there's no way for us to detect here if a user has configured correctly
 		// to avoid a loop.
 		log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
-		wh.callbacks.DeliveryResponse(connID, &fftypes.EventDeliveryResponse{
+		wh.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
 			ID:           event.ID,
 			Rejected:     false,
 			Subscription: event.Subscription,

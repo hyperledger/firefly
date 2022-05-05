@@ -22,7 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewOrganizationSelf = &oapispec.Route{
@@ -35,8 +35,8 @@ var postNewOrganizationSelf = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewOrganizationSelf,
-	JSONInputValue:  func() interface{} { return &fftypes.EmptyInput{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
+	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
+	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")

@@ -20,10 +20,10 @@ import (
 	"context"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type streamManager struct {
@@ -115,7 +115,7 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 
 func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, name, event, fromBlock string) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Fabric "fromBlock" values
-	if fromBlock == string(fftypes.SubOptsFirstEventOldest) {
+	if fromBlock == string(core.SubOptsFirstEventOldest) {
 		fromBlock = "0"
 	}
 	sub := subscription{
@@ -164,7 +164,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, location *Locati
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, event, string(fftypes.SubOptsFirstEventOldest)); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, event, string(core.SubOptsFirstEventOldest)); err != nil {
 			return nil, err
 		}
 	}

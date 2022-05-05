@@ -20,7 +20,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,8 +36,8 @@ func TestJSONValidator(t *testing.T) {
 		"required": ["prop1"]
 	}`)
 
-	dt := &fftypes.Datatype{
-		Validator: fftypes.ValidatorTypeJSON,
+	dt := &core.Datatype{
+		Validator: core.ValidatorTypeJSON,
 		Name:      "customer",
 		Version:   "0.0.1",
 		Value:     fftypes.JSONAnyPtrBytes(schemaBinary),
@@ -60,8 +61,8 @@ func TestJSONValidator(t *testing.T) {
 
 func TestJSONValidatorParseSchemaFail(t *testing.T) {
 
-	dt := &fftypes.Datatype{
-		Validator: fftypes.ValidatorTypeJSON,
+	dt := &core.Datatype{
+		Validator: core.ValidatorTypeJSON,
 		Name:      "customer",
 		Version:   "0.0.1",
 		Value:     fftypes.JSONAnyPtr(`{!json`),
@@ -75,7 +76,7 @@ func TestJSONValidatorParseSchemaFail(t *testing.T) {
 func TestJSONValidatorNilData(t *testing.T) {
 
 	v := &jsonValidator{}
-	err := v.Validate(context.Background(), &fftypes.Data{})
+	err := v.Validate(context.Background(), &core.Data{})
 	assert.Regexp(t, "FF10199", err)
 
 }

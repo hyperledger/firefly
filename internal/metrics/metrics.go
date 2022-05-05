@@ -21,19 +21,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var mutex = &sync.Mutex{}
 
 type Manager interface {
 	CountBatchPin()
-	MessageSubmitted(msg *fftypes.Message)
-	MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum)
-	TransferSubmitted(transfer *fftypes.TokenTransfer)
-	TransferConfirmed(transfer *fftypes.TokenTransfer)
+	MessageSubmitted(msg *core.Message)
+	MessageConfirmed(msg *core.Message, eventType core.FFEnum)
+	TransferSubmitted(transfer *core.TokenTransfer)
+	TransferConfirmed(transfer *core.TokenTransfer)
 	BlockchainTransaction(location, methodName string)
 	BlockchainQuery(location, methodName string)
 	BlockchainEvent(location, signature string)
@@ -68,66 +68,66 @@ func (mm *metricsManager) CountBatchPin() {
 	BatchPinCounter.Inc()
 }
 
-func (mm *metricsManager) MessageSubmitted(msg *fftypes.Message) {
+func (mm *metricsManager) MessageSubmitted(msg *core.Message) {
 	if len(msg.Header.ID.String()) > 0 {
 		switch msg.Header.Type {
-		case fftypes.MessageTypeBroadcast:
+		case core.MessageTypeBroadcast:
 			BroadcastSubmittedCounter.Inc()
-		case fftypes.MessageTypePrivate:
+		case core.MessageTypePrivate:
 			PrivateMsgSubmittedCounter.Inc()
 		}
 		mm.AddTime(msg.Header.ID.String())
 	}
 }
 
-func (mm *metricsManager) MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum) {
+func (mm *metricsManager) MessageConfirmed(msg *core.Message, eventType core.FFEnum) {
 	timeElapsed := time.Since(mm.GetTime(msg.Header.ID.String())).Seconds()
 	mm.DeleteTime(msg.Header.ID.String())
 
 	switch msg.Header.Type {
-	case fftypes.MessageTypeBroadcast:
+	case core.MessageTypeBroadcast:
 		BroadcastHistogram.Observe(timeElapsed)
-		if eventType == fftypes.EventTypeMessageConfirmed { // Broadcast Confirmed
+		if eventType == core.EventTypeMessageConfirmed { // Broadcast Confirmed
 			BroadcastConfirmedCounter.Inc()
-		} else if eventType == fftypes.EventTypeMessageRejected { // Broadcast Rejected
+		} else if eventType == core.EventTypeMessageRejected { // Broadcast Rejected
 			BroadcastRejectedCounter.Inc()
 		}
-	case fftypes.MessageTypePrivate:
+	case core.MessageTypePrivate:
 		PrivateMsgHistogram.Observe(timeElapsed)
-		if eventType == fftypes.EventTypeMessageConfirmed { // Private Msg Confirmed
+		if eventType == core.EventTypeMessageConfirmed { // Private Msg Confirmed
 			PrivateMsgConfirmedCounter.Inc()
-		} else if eventType == fftypes.EventTypeMessageRejected { // Private Msg Rejected
+		} else if eventType == core.EventTypeMessageRejected { // Private Msg Rejected
 			PrivateMsgRejectedCounter.Inc()
 		}
 	}
 }
 
-func (mm *metricsManager) TransferSubmitted(transfer *fftypes.TokenTransfer) {
+func (mm *metricsManager) TransferSubmitted(transfer *core.TokenTransfer) {
 	if len(transfer.LocalID.String()) > 0 {
 		switch transfer.Type {
-		case fftypes.TokenTransferTypeMint: // Mint submitted
+		case core.TokenTransferTypeMint: // Mint submitted
 			MintSubmittedCounter.Inc()
-		case fftypes.TokenTransferTypeTransfer: // Transfer submitted
+		case core.TokenTransferTypeTransfer: // Transfer submitted
 			TransferSubmittedCounter.Inc()
-		case fftypes.TokenTransferTypeBurn: // Burn submitted
+		case core.TokenTransferTypeBurn: // Burn submitted
 			BurnSubmittedCounter.Inc()
 		}
 		mm.AddTime(transfer.LocalID.String())
 	}
 }
 
-func (mm *metricsManager) TransferConfirmed(transfer *fftypes.TokenTransfer) {
+func (mm *metricsManager) TransferConfirmed(transfer *core.TokenTransfer) {
 	timeElapsed := time.Since(mm.GetTime(transfer.LocalID.String())).Seconds()
 	mm.DeleteTime(transfer.LocalID.String())
 
 	switch transfer.Type {
-	case fftypes.TokenTransferTypeMint: // Mint confirmed
+	case core.TokenTransferTypeMint: // Mint confirmed
 		MintHistogram.Observe(timeElapsed)
 		MintConfirmedCounter.Inc()
-	case fftypes.TokenTransferTypeTransfer: // Transfer confirmed
+	case core.TokenTransferTypeTransfer: // Transfer confirmed
 		TransferHistogram.Observe(timeElapsed)
 		TransferConfirmedCounter.Inc()
-	case fftypes.TokenTransferTypeBurn: // Burn confirmed
+	case core.TokenTransferTypeBurn: // Burn confirmed
 		BurnHistogram.Observe(timeElapsed)
 		BurnConfirmedCounter.Inc()
 	}

@@ -19,12 +19,12 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
-	var verification fftypes.IdentityVerification
+func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *core.Message, data core.DataArray) (HandlerResult, error) {
+	var verification core.IdentityVerification
 	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {
 		return HandlerResult{Action: ActionReject}, nil
@@ -59,7 +59,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	}
-	if claimMsg == nil || claimMsg.State != fftypes.MessageStateConfirmed {
+	if claimMsg == nil || claimMsg.State != core.MessageStateConfirmed {
 		claimMsg = state.GetPendingConfirm()[*verification.Claim.ID]
 	}
 

@@ -19,12 +19,12 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
+func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 
-	var orgOld fftypes.DeprecatedOrganization
+	var orgOld core.DeprecatedOrganization
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &orgOld)
 	if !valid {
 		return HandlerResult{Action: ActionReject}, nil

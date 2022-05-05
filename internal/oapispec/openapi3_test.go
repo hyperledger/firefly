@@ -23,10 +23,11 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,8 +43,8 @@ var testRoutes = []*Route{
 		QueryParams:     nil,
 		FilterFactory:   nil,
 		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
-		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
-		JSONOutputValue: func() interface{} { return &fftypes.Batch{} },
+		JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
+		JSONOutputValue: func() interface{} { return &core.Batch{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 	{
@@ -89,7 +90,7 @@ var testRoutes = []*Route{
 		},
 		FilterFactory:   nil,
 		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
-		JSONInputValue:  func() interface{} { return &fftypes.MessageInOut{} },
+		JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
 		JSONOutputValue: func() interface{} { return nil },
 		JSONOutputCodes: []int{http.StatusNoContent},
 		FormParams: []*FormParam{
@@ -119,8 +120,8 @@ var testRoutes = []*Route{
 		QueryParams:     nil,
 		FilterFactory:   nil,
 		Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
-		JSONInputValue:  func() interface{} { return &fftypes.Data{} },
-		JSONOutputValue: func() interface{} { return &fftypes.Data{} },
+		JSONInputValue:  func() interface{} { return &core.Data{} },
+		JSONOutputValue: func() interface{} { return &core.Data{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	},
 }
@@ -162,7 +163,7 @@ func TestBadCustomInputSchema(t *testing.T) {
 			Name:             "op6",
 			Path:             "namespaces/{ns}/example1/{id}",
 			Method:           http.MethodPost,
-			JSONInputValue:   func() interface{} { return &fftypes.Message{} },
+			JSONInputValue:   func() interface{} { return &core.Message{} },
 			JSONInputMask:    []string{"id"},
 			JSONOutputCodes:  []int{http.StatusOK},
 			JSONInputSchema:  func(ctx context.Context) string { return `!json` },
@@ -185,7 +186,7 @@ func TestBadCustomOutputSchema(t *testing.T) {
 			Name:            "op7",
 			Path:            "namespaces/{ns}/example1/{id}",
 			Method:          http.MethodGet,
-			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+			JSONInputValue:  func() interface{} { return &core.Message{} },
 			JSONInputMask:   []string{"id"},
 			JSONOutputCodes: []int{http.StatusOK}, JSONInputSchema: func(ctx context.Context) string { return `!json` },
 			JSONOutputSchema: func(ctx context.Context) string { return `!json` },
@@ -220,7 +221,7 @@ func TestWildcards(t *testing.T) {
 			Name:            "op1",
 			Path:            "namespaces/{ns}/example1/{id:.*wildcard.*}",
 			Method:          http.MethodPost,
-			JSONInputValue:  func() interface{} { return &fftypes.Message{} },
+			JSONInputValue:  func() interface{} { return &core.Message{} },
 			JSONOutputCodes: []int{http.StatusOK},
 		},
 	}

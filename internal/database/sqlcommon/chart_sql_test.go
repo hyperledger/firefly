@@ -22,28 +22,29 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	emptyHistogramResult = []*fftypes.ChartHistogram{
+	emptyHistogramResult = []*core.ChartHistogram{
 		{
 			Count:     "0",
 			IsCapped:  false,
 			Timestamp: fftypes.UnixTime(1000000000),
-			Types:     make([]*fftypes.ChartHistogramType, 0),
+			Types:     make([]*core.ChartHistogramType, 0),
 		},
 	}
-	expectedHistogramResult = []*fftypes.ChartHistogram{
+	expectedHistogramResult = []*core.ChartHistogram{
 		{
 			Count:     "10",
 			IsCapped:  false,
 			Timestamp: fftypes.UnixTime(1000000000),
-			Types: []*fftypes.ChartHistogramType{
+			Types: []*core.ChartHistogramType{
 				{
 					Count: "5",
 					Type:  "typeA",
@@ -55,12 +56,12 @@ var (
 			},
 		},
 	}
-	expectedHistogramResultIsCapped = []*fftypes.ChartHistogram{
+	expectedHistogramResultIsCapped = []*core.ChartHistogram{
 		{
 			Count:     "10",
 			IsCapped:  true,
 			Timestamp: fftypes.UnixTime(1000000000),
-			Types: []*fftypes.ChartHistogramType{
+			Types: []*core.ChartHistogramType{
 				{
 					Count: "5",
 					Type:  "typeA",
@@ -72,16 +73,16 @@ var (
 			},
 		},
 	}
-	expectedHistogramResultNoTypes = []*fftypes.ChartHistogram{
+	expectedHistogramResultNoTypes = []*core.ChartHistogram{
 		{
 			Count:     "10",
 			IsCapped:  false,
 			Timestamp: fftypes.UnixTime(1000000000),
-			Types:     make([]*fftypes.ChartHistogramType, 0),
+			Types:     make([]*core.ChartHistogramType, 0),
 		},
 	}
 
-	mockHistogramInterval = []fftypes.ChartHistogramInterval{
+	mockHistogramInterval = []core.ChartHistogramInterval{
 		{
 			StartTime: fftypes.UnixTime(1000000000),
 			EndTime:   fftypes.UnixTime(1000000001),
@@ -102,7 +103,7 @@ var (
 func TestGetChartHistogramInvalidCollectionName(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
-	_, err := s.GetChartHistogram(context.Background(), "ns1", []fftypes.ChartHistogramInterval{}, database.CollectionName("abc"))
+	_, err := s.GetChartHistogram(context.Background(), "ns1", []core.ChartHistogramInterval{}, database.CollectionName("abc"))
 	assert.Regexp(t, "FF10301", err)
 }
 

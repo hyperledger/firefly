@@ -25,11 +25,12 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -40,7 +41,7 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	cbs := &eventsmocks.Callbacks{}
 	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
 	rc.RunFn = func(a mock.Arguments) {
-		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(fftypes.SubscriptionRef{}))
+		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(core.SubscriptionRef{}))
 	}
 	wh = &WebHooks{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -58,8 +59,8 @@ func TestValidateOptionsWithDataFalse(t *testing.T) {
 	defer cancel()
 
 	no := false
-	opts := &fftypes.SubscriptionOptions{
-		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	opts := &core.SubscriptionOptions{
+		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 			WithData: &no,
 		},
 	}
@@ -73,7 +74,7 @@ func TestValidateOptionsWithDataDefaulTrue(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
-	opts := &fftypes.SubscriptionOptions{}
+	opts := &core.SubscriptionOptions{}
 	opts.TransportOptions()["url"] = "/anything"
 	err := wh.ValidateOptions(opts)
 	assert.NoError(t, err)
@@ -84,7 +85,7 @@ func TestValidateOptionsBadURL(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
-	opts := &fftypes.SubscriptionOptions{}
+	opts := &core.SubscriptionOptions{}
 	opts.TransportOptions()
 	err := wh.ValidateOptions(opts)
 	assert.Regexp(t, "FF10242", err)
@@ -94,7 +95,7 @@ func TestValidateOptionsBadHeaders(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
-	opts := &fftypes.SubscriptionOptions{}
+	opts := &core.SubscriptionOptions{}
 	opts.TransportOptions()
 	opts.TransportOptions()["url"] = "/anything"
 	opts.TransportOptions()["headers"] = fftypes.JSONObject{
@@ -108,7 +109,7 @@ func TestValidateOptionsBadQuery(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
 
-	opts := &fftypes.SubscriptionOptions{}
+	opts := &core.SubscriptionOptions{}
 	opts.TransportOptions()
 	opts.TransportOptions()["url"] = "/anything"
 	opts.TransportOptions()["query"] = fftypes.JSONObject{
@@ -145,9 +146,9 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	msgID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
-	sub := &fftypes.Subscription{
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	sub := &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
 		},
@@ -170,27 +171,27 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		"path":    "in_path",
 		"replytx": "in_replytx",
 	}
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:    msgID,
 					Group: groupHash,
-					Type:  fftypes.MessageTypePrivate,
+					Type:  core.MessageTypePrivate,
 				},
-				Data: fftypes.DataRefs{
+				Data: core.DataRefs{
 					{ID: dataID},
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: dataID,
 		Value: fftypes.JSONAnyPtr(`{
 			"in_body": {
@@ -208,18 +209,18 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
-		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
-		assert.Equal(t, fftypes.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
+		assert.Equal(t, core.MessageTypePrivate, response.Reply.Message.Header.Type)
+		assert.Equal(t, core.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
 		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
 		assert.Equal(t, "replyvalue", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
 		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -252,9 +253,9 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	msgID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
-	sub := &fftypes.Subscription{
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	sub := &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
 		},
@@ -277,27 +278,27 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 		"path":    "in_path",
 		"replytx": "in_replytx",
 	}
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:    msgID,
 					Group: groupHash,
-					Type:  fftypes.MessageTypePrivate,
+					Type:  core.MessageTypePrivate,
 				},
-				Data: fftypes.DataRefs{
+				Data: core.DataRefs{
 					{ID: dataID},
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: dataID,
 		Value: fftypes.JSONAnyPtr(`{
 			"in_body": {
@@ -315,18 +316,18 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
-		assert.Equal(t, fftypes.MessageTypePrivate, response.Reply.Message.Header.Type)
-		assert.Equal(t, fftypes.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
+		assert.Equal(t, core.MessageTypePrivate, response.Reply.Message.Header.Type)
+		assert.Equal(t, core.TransactionTypeBatchPin, response.Reply.Message.Header.TxType)
 		assert.Equal(t, "myheaderval2", response.Reply.InlineData[0].Value.JSONObject().GetObject("headers").GetString("My-Reply-Header"))
 		assert.Equal(t, "", response.Reply.InlineData[0].Value.JSONObject().GetObject("body").GetString("replyfield"))
 		assert.Equal(t, float64(200), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 
 	mcb.AssertExpectations(t)
@@ -353,37 +354,37 @@ func TestRequestNoBodyNoReply(t *testing.T) {
 
 	dataID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
-	sub := &fftypes.Subscription{}
+	sub := &core.Subscription{}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:    msgID,
 					Group: groupHash,
-					Type:  fftypes.MessageTypePrivate,
+					Type:  core.MessageTypePrivate,
 				},
-				Data: fftypes.DataRefs{
+				Data: core.DataRefs{
 					{ID: dataID},
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: dataID,
 		Value: fftypes.JSONAnyPtr(`{
 			"inputfield": "inputvalue"
 		}`),
 	}
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{data})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{data})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -407,9 +408,9 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	defer server.Close()
 
 	yes := true
-	sub := &fftypes.Subscription{
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	sub := &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
 		},
@@ -417,32 +418,32 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: fftypes.MessageTypeBroadcast,
+					Type: core.MessageTypeBroadcast,
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
-		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
+		assert.Equal(t, core.MessageTypeBroadcast, response.Reply.Message.Header.Type)
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }
@@ -461,36 +462,36 @@ func TestRequestReplyBadJSON(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	sub := &fftypes.Subscription{}
+	sub := &core.Subscription{}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
 	to["json"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: fftypes.MessageTypeBroadcast,
+					Type: core.MessageTypeBroadcast,
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		assert.Regexp(t, "FF10257", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{})
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
 }
 func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
@@ -516,9 +517,9 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	defer server.Close()
 
 	yes := true
-	sub := &fftypes.Subscription{
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	sub := &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
 		},
@@ -526,34 +527,34 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: fftypes.MessageTypeBroadcast,
+					Type: core.MessageTypeBroadcast,
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
-		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
+		assert.Equal(t, core.MessageTypeBroadcast, response.Reply.Message.Header.Type)
 		assert.Equal(t, float64(500), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		assert.Equal(t, `c29tZSBieXRlcw==`, response.Reply.InlineData[0].Value.JSONObject()["body"]) // base64 val
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -572,38 +573,38 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	server := httptest.NewServer(r)
 	server.Close()
 
-	sub := &fftypes.Subscription{}
+	sub := &core.Subscription{}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: fftypes.MessageTypeBroadcast,
+					Type: core.MessageTypeBroadcast,
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
-		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
+		assert.Equal(t, core.MessageTypeBroadcast, response.Reply.Message.Header.Type)
 		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		assert.NotEmpty(t, response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
 	})).Return(nil)
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -621,32 +622,32 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 	server := httptest.NewServer(r)
 	server.Close()
 
-	sub := &fftypes.Subscription{}
+	sub := &core.Subscription{}
 	sub.Options.TransportOptions()["reply"] = true
 	sub.Options.TransportOptions()["fastack"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:   msgID,
-					Type: fftypes.MessageTypeBroadcast,
+					Type: core.MessageTypeBroadcast,
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
 
 	waiter := make(chan struct{})
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	dr := mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	dr := mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
-		assert.Equal(t, fftypes.MessageTypeBroadcast, response.Reply.Message.Header.Type)
+		assert.Equal(t, core.MessageTypeBroadcast, response.Reply.Message.Header.Type)
 		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		assert.Regexp(t, "FF10242", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
 		return true
@@ -655,7 +656,7 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 		close(waiter)
 	}
 
-	err := wh.DeliveryRequest(mock.Anything, sub, event, fftypes.DataArray{
+	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value1"`)},
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"value2"`)},
 	})
@@ -670,21 +671,21 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 	defer cancel()
 
 	yes := true
-	sub := &fftypes.Subscription{
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	sub := &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
 		},
 	}
 	sub.Options.TransportOptions()["reply"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
@@ -698,34 +699,34 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 	defer cancel()
 
 	yes := true
-	sub := &fftypes.Subscription{
-		Options: fftypes.SubscriptionOptions{
-			SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	sub := &core.Subscription{
+		Options: core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
 			},
 		},
 	}
 	sub.Options.TransportOptions()["reply"] = true
-	event := &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	event := &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				ID: fftypes.NewUUID(),
 			},
-			Message: &fftypes.Message{
-				Header: fftypes.MessageHeader{
+			Message: &core.Message{
+				Header: core.MessageHeader{
 					ID:   fftypes.NewUUID(),
-					Type: fftypes.MessageTypeBroadcast,
+					Type: core.MessageTypeBroadcast,
 					CID:  fftypes.NewUUID(),
 				},
 			},
 		},
-		Subscription: fftypes.SubscriptionRef{
+		Subscription: core.SubscriptionRef{
 			ID: sub.ID,
 		},
 	}
 
 	mcb := wh.callbacks.(*eventsmocks.Callbacks)
-	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *fftypes.EventDeliveryResponse) bool {
+	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		return !response.Rejected // should be accepted as a no-op so we can move on to other events
 	}))
 

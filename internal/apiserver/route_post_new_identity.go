@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewIdentity = &oapispec.Route{
@@ -38,13 +38,13 @@ var postNewIdentity = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewIdentity,
-	JSONInputValue:  func() interface{} { return &fftypes.IdentityCreateDTO{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Identity{} },
+	JSONInputValue:  func() interface{} { return &core.IdentityCreateDTO{} },
+	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().RegisterIdentity(r.Ctx, r.PP["ns"], r.Input.(*fftypes.IdentityCreateDTO), waitConfirm)
+		org, err := getOr(r.Ctx).NetworkMap().RegisterIdentity(r.Ctx, r.PP["ns"], r.Input.(*core.IdentityCreateDTO), waitConfirm)
 		return org, err
 	},
 }

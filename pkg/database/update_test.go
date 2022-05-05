@@ -18,7 +18,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func TestUpdateBuilderOK(t *testing.T) {
 	u.Set("sequence", 12345).
 		Set("cid", uuid).
 		Set("author", "0x1234").
-		Set("type", fftypes.MessageTypePrivate)
+		Set("type", core.MessageTypePrivate)
 	assert.False(t, u.IsEmpty())
 	ui, err := u.Finalize()
 	assert.NoError(t, err)

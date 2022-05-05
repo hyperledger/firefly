@@ -19,12 +19,13 @@ package networkmap
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) UpdateIdentity(ctx context.Context, ns, uuidStr string, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+func (nm *networkMap) UpdateIdentity(ctx context.Context, ns, uuidStr string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 	id, err := fftypes.ParseUUID(ctx, uuidStr)
 	if err != nil {
 		return nil, err
@@ -32,7 +33,7 @@ func (nm *networkMap) UpdateIdentity(ctx context.Context, ns, uuidStr string, dt
 	return nm.updateIdentityID(ctx, ns, id, dto, waitConfirm)
 }
 
-func (nm *networkMap) updateIdentityID(ctx context.Context, ns string, id *fftypes.UUID, dto *fftypes.IdentityUpdateDTO, waitConfirm bool) (identity *fftypes.Identity, err error) {
+func (nm *networkMap) updateIdentityID(ctx context.Context, ns string, id *fftypes.UUID, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 
 	// Get the original identity
 	identity, err = nm.identity.CachedIdentityLookupByID(ctx, id)
@@ -55,10 +56,10 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, ns string, id *fftyp
 	}
 
 	// Send the update
-	updateMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &fftypes.IdentityUpdate{
+	updateMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &core.IdentityUpdate{
 		Identity: identity.IdentityBase,
 		Updates:  dto.IdentityProfile,
-	}, updateSigner, fftypes.SystemTagIdentityUpdate, waitConfirm)
+	}, updateSigner, core.SystemTagIdentityUpdate, waitConfirm)
 	if err != nil {
 		return nil, err
 	}

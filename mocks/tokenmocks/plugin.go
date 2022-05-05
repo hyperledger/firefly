@@ -5,9 +5,11 @@ package tokenmocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/pkg/config"
+	config "github.com/hyperledger/firefly-common/pkg/config"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -20,18 +22,18 @@ type Plugin struct {
 }
 
 // ActivateTokenPool provides a mock function with given fields: ctx, opID, pool
-func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (bool, error) {
+func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (bool, error) {
 	ret := _m.Called(ctx, opID, pool)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *core.TokenPool) bool); ok {
 		r0 = rf(ctx, opID, pool)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *core.TokenPool) error); ok {
 		r1 = rf(ctx, opID, pool)
 	} else {
 		r1 = ret.Error(1)
@@ -41,11 +43,11 @@ func (_m *Plugin) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 }
 
 // BurnTokens provides a mock function with given fields: ctx, opID, poolLocator, burn
-func (_m *Plugin) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *fftypes.TokenTransfer) error {
+func (_m *Plugin) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *core.TokenTransfer) error {
 	ret := _m.Called(ctx, opID, poolLocator, burn)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.TokenTransfer) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *core.TokenTransfer) error); ok {
 		r0 = rf(ctx, opID, poolLocator, burn)
 	} else {
 		r0 = ret.Error(0)
@@ -71,18 +73,18 @@ func (_m *Plugin) Capabilities() *tokens.Capabilities {
 }
 
 // CreateTokenPool provides a mock function with given fields: ctx, opID, pool
-func (_m *Plugin) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (bool, error) {
+func (_m *Plugin) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (bool, error) {
 	ret := _m.Called(ctx, opID, pool)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *core.TokenPool) bool); ok {
 		r0 = rf(ctx, opID, pool)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *fftypes.TokenPool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID, *core.TokenPool) error); ok {
 		r1 = rf(ctx, opID, pool)
 	} else {
 		r1 = ret.Error(1)
@@ -111,11 +113,11 @@ func (_m *Plugin) InitPrefix(prefix config.PrefixArray) {
 }
 
 // MintTokens provides a mock function with given fields: ctx, opID, poolLocator, mint
-func (_m *Plugin) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *fftypes.TokenTransfer) error {
+func (_m *Plugin) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *core.TokenTransfer) error {
 	ret := _m.Called(ctx, opID, poolLocator, mint)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.TokenTransfer) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *core.TokenTransfer) error); ok {
 		r0 = rf(ctx, opID, poolLocator, mint)
 	} else {
 		r0 = ret.Error(0)
@@ -153,11 +155,11 @@ func (_m *Plugin) Start() error {
 }
 
 // TokensApproval provides a mock function with given fields: ctx, opID, poolLocator, approval
-func (_m *Plugin) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *fftypes.TokenApproval) error {
+func (_m *Plugin) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *core.TokenApproval) error {
 	ret := _m.Called(ctx, opID, poolLocator, approval)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.TokenApproval) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *core.TokenApproval) error); ok {
 		r0 = rf(ctx, opID, poolLocator, approval)
 	} else {
 		r0 = ret.Error(0)
@@ -167,11 +169,11 @@ func (_m *Plugin) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLo
 }
 
 // TransferTokens provides a mock function with given fields: ctx, opID, poolLocator, transfer
-func (_m *Plugin) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *fftypes.TokenTransfer) error {
+func (_m *Plugin) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *core.TokenTransfer) error {
 	ret := _m.Called(ctx, opID, poolLocator, transfer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.TokenTransfer) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *core.TokenTransfer) error); ok {
 		r0 = rf(ctx, opID, poolLocator, transfer)
 	} else {
 		r0 = ret.Error(0)

@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -60,7 +61,7 @@ var (
 // items on top of a SQL database, means taking a lock (see below).
 // This is not safe to do unless you are really sure what other locks will be taken after
 // that in the transaction. So we defer the emission of the events to a pre-commit capture.
-func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err error) {
+func (s *SQLCommon) InsertEvent(ctx context.Context, event *core.Event) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -70,7 +71,7 @@ func (s *SQLCommon) InsertEvent(ctx context.Context, event *fftypes.Event) (err 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) setEventInsertValues(query sq.InsertBuilder, event *fftypes.Event) sq.InsertBuilder {
+func (s *SQLCommon) setEventInsertValues(query sq.InsertBuilder, event *core.Event) sq.InsertBuilder {
 	return query.Values(
 		event.ID,
 		string(event.Type),
@@ -85,12 +86,12 @@ func (s *SQLCommon) setEventInsertValues(query sq.InsertBuilder, event *fftypes.
 
 const eventsTable = "events"
 
-func (s *SQLCommon) eventInserted(ctx context.Context, event *fftypes.Event) {
-	s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, fftypes.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
+func (s *SQLCommon) eventInserted(ctx context.Context, event *core.Event) {
+	s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID, event.Sequence)
 	log.L(ctx).Infof("Emitted %s event %s for %s:%s (correlator=%v,topic=%s)", event.Type, event.ID, event.Namespace, event.Reference, event.Correlator, event.Topic)
 }
 
-func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, events []*fftypes.Event) (err error) {
+func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, events []*core.Event) (err error) {
 
 	// We take the cost of a full table lock on the events table.
 	// This allows us to rely on the sequence to always be increasing, even when writing events
@@ -130,8 +131,8 @@ func (s *SQLCommon) insertEventsPreCommit(ctx context.Context, tx *txWrapper, ev
 	return nil
 }
 
-func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Event, error) {
-	var event fftypes.Event
+func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*core.Event, error) {
+	var event core.Event
 	err := row.Scan(
 		&event.ID,
 		&event.Type,
@@ -150,7 +151,7 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*fftypes.Ev
 	return &event, nil
 }
 
-func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message *fftypes.Event, err error) {
+func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message *core.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
@@ -177,7 +178,7 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message
 	return event, nil
 }
 
-func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*fftypes.Event, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*core.Event, res *database.FilterResult, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
@@ -192,7 +193,7 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 	}
 	defer rows.Close()
 
-	events := []*fftypes.Event{}
+	events := []*core.Event{}
 	for rows.Next() {
 		event, err := s.eventResult(ctx, rows)
 		if err != nil {

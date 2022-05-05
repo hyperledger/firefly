@@ -20,31 +20,32 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type OperationHandler interface {
-	fftypes.Named
-	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
-	OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *OperationUpdate) error
+	core.Named
+	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+	OnOperationUpdate(ctx context.Context, op *core.Operation, update *OperationUpdate) error
 }
 
 type Manager interface {
-	RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType)
-	PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error)
-	RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
-	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error)
-	AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error
-	SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate)
+	RegisterHandler(ctx context.Context, handler OperationHandler, ops []core.OpType)
+	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
+	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*core.Operation, error)
+	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
+	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
-	ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error)
+	ResolveOperationByID(ctx context.Context, id string, op *core.Operation) (*core.Operation, error)
 	Start() error
 	WaitStop()
 }
@@ -58,7 +59,7 @@ const (
 type operationsManager struct {
 	ctx      context.Context
 	database database.Plugin
-	handlers map[fftypes.OpType]OperationHandler
+	handlers map[core.OpType]OperationHandler
 	updater  *operationUpdater
 }
 
@@ -69,21 +70,21 @@ func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txco
 	om := &operationsManager{
 		ctx:      ctx,
 		database: di,
-		handlers: make(map[fftypes.OpType]OperationHandler),
+		handlers: make(map[core.OpType]OperationHandler),
 	}
 	updater := newOperationUpdater(ctx, om, di, txHelper)
 	om.updater = updater
 	return om, nil
 }
 
-func (om *operationsManager) RegisterHandler(ctx context.Context, handler OperationHandler, ops []fftypes.OpType) {
+func (om *operationsManager) RegisterHandler(ctx context.Context, handler OperationHandler, ops []core.OpType) {
 	for _, opType := range ops {
 		log.L(ctx).Debugf("OpType=%s registered to handler %s", opType, handler.Name())
 		om.handlers[opType] = handler
 	}
 }
 
-func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (om *operationsManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	handler, ok := om.handlers[op.Type]
 	if !ok {
 		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
@@ -91,11 +92,11 @@ func (om *operationsManager) PrepareOperation(ctx context.Context, op *fftypes.O
 	return handler.PrepareOperation(ctx, op)
 }
 
-func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
-	failState := fftypes.OpStatusFailed
+func (om *operationsManager) RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error) {
+	failState := core.OpStatusFailed
 	for _, o := range options {
 		if o == RemainPendingOnFailure {
-			failState = fftypes.OpStatusPending
+			failState = core.OpStatusPending
 		}
 	}
 
@@ -115,7 +116,7 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *fftypes.Prepa
 	return outputs, nil
 }
 
-func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
+func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
 	op, err = om.database.GetOperationByID(ctx, opID)
 	if err != nil {
 		return nil, err
@@ -126,8 +127,8 @@ func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.
 	return om.findLatestRetry(ctx, op.Retry)
 }
 
-func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (op *fftypes.Operation, err error) {
-	var po *fftypes.PreparedOperation
+func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (op *core.Operation, err error) {
+	var po *core.PreparedOperation
 	err = om.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		op, err = om.findLatestRetry(ctx, opID)
 		if err != nil {
@@ -136,7 +137,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 
 		// Create a copy of the operation with a new ID
 		op.ID = fftypes.NewUUID()
-		op.Status = fftypes.OpStatusPending
+		op.Status = core.OpStatusPending
 		op.Error = ""
 		op.Output = nil
 		op.Created = fftypes.Now()
@@ -199,18 +200,18 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataex
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject) {
-	if err := om.database.ResolveOperation(ctx, ns, opID, fftypes.OpStatusSucceeded, "", outputs); err != nil {
+	if err := om.database.ResolveOperation(ctx, ns, opID, core.OpStatusSucceeded, "", outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
-func (om *operationsManager) writeOperationFailure(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus fftypes.OpStatus) {
+func (om *operationsManager) writeOperationFailure(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
 	if err := om.database.ResolveOperation(ctx, ns, opID, newStatus, err.Error(), outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
-func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error) {
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string, op *core.Operation) (*core.Operation, error) {
 	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -219,7 +220,7 @@ func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string
 	return op, err
 }
 
-func (om *operationsManager) SubmitOperationUpdate(plugin fftypes.Named, update *OperationUpdate) {
+func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *OperationUpdate) {
 	errString := ""
 	if update.ErrorMessage != "" {
 		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)

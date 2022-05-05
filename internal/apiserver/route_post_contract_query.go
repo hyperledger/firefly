@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postContractQuery = &oapispec.Route{
@@ -35,12 +35,12 @@ var postContractQuery = &oapispec.Route{
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostContractQuery,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractCallRequest{} },
+	JSONInputValue:  func() interface{} { return &core.ContractCallRequest{} },
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		req := r.Input.(*fftypes.ContractCallRequest)
-		req.Type = fftypes.CallTypeQuery
+		req := r.Input.(*core.ContractCallRequest)
+		req.Type = core.CallTypeQuery
 		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, r.PP["ns"], req, true)
 	},
 }

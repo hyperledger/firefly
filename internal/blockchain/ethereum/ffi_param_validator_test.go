@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,7 +30,7 @@ import (
 func NewTestSchema(input string) (*jsonschema.Schema, error) {
 	c := jsonschema.NewCompiler()
 	c.Draft = jsonschema.Draft2020
-	f := fftypes.BaseFFIParamValidator{}
+	f := core.BaseFFIParamValidator{}
 	c.RegisterExtension(f.GetExtensionName(), f.GetMetaSchema(), f)
 	e, _ := newTestEthereum()
 	v, err := e.GetFFIParamValidator(context.Background())

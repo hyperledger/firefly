@@ -23,9 +23,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -46,18 +47,18 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 			"nesting": 12345,
 		},
 	}
-	datatype := &fftypes.Datatype{
+	datatype := &core.Datatype{
 		ID:        datatypeID,
 		Message:   fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Hash:      randB32,
 		Created:   fftypes.Now(),
 		Value:     fftypes.JSONAnyPtr(val.String()),
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, fftypes.ChangeEventTypeCreated, "ns1", datatypeID, mock.Anything).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, fftypes.ChangeEventTypeUpdated, "ns1", datatypeID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, core.ChangeEventTypeCreated, "ns1", datatypeID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionDataTypes, core.ChangeEventTypeUpdated, "ns1", datatypeID, mock.Anything).Return()
 
 	err := s.UpsertDatatype(ctx, datatype, true)
 	assert.NoError(t, err)
@@ -78,10 +79,10 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 			"datatype": 12345,
 		},
 	}
-	datatypeUpdated := &fftypes.Datatype{
+	datatypeUpdated := &core.Datatype{
 		ID:        datatypeID,
 		Message:   fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "customer",
 		Version:   "0.0.1",
@@ -137,7 +138,7 @@ func TestDatatypeE2EWithDB(t *testing.T) {
 func TestUpsertDatatypeFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{}, true)
+	err := s.UpsertDatatype(context.Background(), &core.Datatype{}, true)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -148,7 +149,7 @@ func TestUpsertDatatypeFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	datatypeID := fftypes.NewUUID()
-	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
+	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -160,7 +161,7 @@ func TestUpsertDatatypeFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	datatypeID := fftypes.NewUUID()
-	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
+	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -172,7 +173,7 @@ func TestUpsertDatatypeFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(datatypeID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
+	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -184,7 +185,7 @@ func TestUpsertDatatypeFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertDatatype(context.Background(), &fftypes.Datatype{ID: datatypeID}, true)
+	err := s.UpsertDatatype(context.Background(), &core.Datatype{ID: datatypeID}, true)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

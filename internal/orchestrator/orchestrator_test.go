@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
@@ -46,9 +49,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -318,7 +319,7 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -336,7 +337,7 @@ func TestDataExchangePluginOldName(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
@@ -355,7 +356,7 @@ func TestBadTokensPlugin(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -378,7 +379,7 @@ func TestBadTokensPluginNoConnector(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -400,7 +401,7 @@ func TestBadTokensPluginNoName(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -422,7 +423,7 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -445,7 +446,7 @@ func TestBadTokensPluginNoType(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -469,7 +470,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -691,8 +692,8 @@ func TestInitNamespacesUpsertFail(t *testing.T) {
 
 func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&fftypes.Namespace{
-		Type: fftypes.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&core.Namespace{
+		Type: core.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
 	}, nil)
 	err := or.initNamespaces(context.Background())
 	assert.NoError(t, err)
@@ -716,7 +717,7 @@ func TestInitNamespacesDupName(t *testing.T) {
 	nsList, err := or.getPrefdefinedNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nsList, 3)
-	assert.Equal(t, fftypes.SystemNamespace, nsList[0].Name)
+	assert.Equal(t, core.SystemNamespace, nsList[0].Name)
 	assert.Equal(t, "ns1", nsList[1].Name)
 	assert.Equal(t, "ns2", nsList[2].Name)
 }
@@ -728,7 +729,7 @@ func TestInitOK(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
@@ -767,7 +768,7 @@ func TestInitDataExchangeGetNodesFail(t *testing.T) {
 func TestInitDataExchangeWithNodes(t *testing.T) {
 	or := newTestOrchestrator()
 
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*fftypes.Identity{{}}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("InitPrefix", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

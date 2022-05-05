@@ -19,22 +19,23 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
-func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+func (or *orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error) {
 	return or.createUpdateSubscription(ctx, ns, subDef, true)
 }
 
-func (or *orchestrator) CreateUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription) (*fftypes.Subscription, error) {
+func (or *orchestrator) CreateUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error) {
 	return or.createUpdateSubscription(ctx, ns, subDef, false)
 }
 
-func (or *orchestrator) createUpdateSubscription(ctx context.Context, ns string, subDef *fftypes.Subscription, mustNew bool) (*fftypes.Subscription, error) {
+func (or *orchestrator) createUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription, mustNew bool) (*core.Subscription, error) {
 	subDef.ID = fftypes.NewUUID()
 	subDef.Created = fftypes.Now()
 	subDef.Namespace = ns
@@ -42,7 +43,7 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, ns string,
 	if err := or.data.VerifyNamespaceExists(ctx, subDef.Namespace); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
+	if err := core.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
 		return nil, err
 	}
 	if subDef.Transport == system.SystemEventsTransport {
@@ -67,12 +68,12 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) e
 	return or.events.DeleteDurableSubscription(ctx, sub)
 }
 
-func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.Subscription, *database.FilterResult, error) {
+func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
 	return or.database.GetSubscriptions(ctx, filter)
 }
 
-func (or *orchestrator) GetSubscriptionByID(ctx context.Context, ns, id string) (*fftypes.Subscription, error) {
+func (or *orchestrator) GetSubscriptionByID(ctx context.Context, ns, id string) (*core.Subscription, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {
 		return nil, err

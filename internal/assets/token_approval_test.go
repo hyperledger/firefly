@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -27,8 +28,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -41,7 +42,7 @@ func TestGetTokenApprovals(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenApprovalQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenApprovals", context.Background(), f).Return([]*fftypes.TokenApproval{}, nil, nil)
+	mdi.On("GetTokenApprovals", context.Background(), f).Return([]*core.TokenApproval{}, nil, nil)
 	_, _, err := am.GetTokenApprovals(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
@@ -50,18 +51,18 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -70,11 +71,11 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
-		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
 	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
@@ -90,17 +91,17 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -109,11 +110,11 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
-		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
 	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
@@ -129,8 +130,8 @@ func TestApprovalBadNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
@@ -148,18 +149,18 @@ func TestApprovalBadConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "bad",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -178,8 +179,8 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
@@ -193,12 +194,12 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
-	tokenPools := []*fftypes.TokenPool{
+	tokenPools := []*core.TokenPool{
 		{
 			Name:      "pool1",
 			Locator:   "F1",
 			Connector: "magic-tokens",
-			State:     fftypes.TokenPoolStateConfirmed,
+			State:     core.TokenPoolStateConfirmed,
 		},
 	}
 	totalCount := int64(1)
@@ -210,11 +211,11 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
-		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == tokenPools[0] && data.Approval == &approval.TokenApproval
+		return op.Type == core.OpTypeTokenApproval && data.Pool == tokenPools[0] && data.Approval == &approval.TokenApproval
 	})).Return(nil, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
@@ -230,8 +231,8 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
@@ -242,7 +243,7 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And()
 	f.Limit(1).Count(true)
-	tokenPools := []*fftypes.TokenPool{}
+	tokenPools := []*core.TokenPool{}
 	totalCount := int64(0)
 	filterResult := &database.FilterResult{
 		TotalCount: &totalCount,
@@ -260,8 +261,8 @@ func TestApprovalBadPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
@@ -282,17 +283,17 @@ func TestApprovalUnconfirmedPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStatePending,
+		State:     core.TokenPoolStatePending,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -308,17 +309,17 @@ func TestApprovalIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -337,18 +338,18 @@ func TestApprovalFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -357,11 +358,11 @@ func TestApprovalFail(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
-		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
 	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
@@ -377,17 +378,17 @@ func TestApprovalTransactionFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -395,7 +396,7 @@ func TestApprovalTransactionFail(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.EqualError(t, err, "pop")
@@ -408,18 +409,18 @@ func TestApprovalOperationsFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -428,7 +429,7 @@ func TestApprovalOperationsFail(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
@@ -439,18 +440,18 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
@@ -461,11 +462,11 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
-		return op.Type == fftypes.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
+		return op.Type == core.OpTypeTokenApproval && data.Pool == pool && data.Approval == &approval.TokenApproval
 	})).Return(nil, nil)
 
 	msa.On("WaitForTokenApproval", context.Background(), "ns1", mock.Anything, mock.Anything).
@@ -473,7 +474,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 			send := args[3].(syncasync.RequestSender)
 			send(context.Background())
 		}).
-		Return(&fftypes.TokenApproval{}, nil)
+		Return(&core.TokenApproval{}, nil)
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, true)
 	assert.NoError(t, err)
@@ -489,18 +490,18 @@ func TestApprovalPrepare(t *testing.T) {
 	am, cancel := newTestAssetsWithMetrics(t)
 	defer cancel()
 
-	approval := &fftypes.TokenApprovalInput{
-		TokenApproval: fftypes.TokenApproval{
+	approval := &core.TokenApprovalInput{
+		TokenApproval: core.TokenApproval{
 			Approved: true,
 			Operator: "operator",
 			Key:      "key",
 		},
 		Pool: "pool1",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Locator:   "F1",
 		Connector: "magic-tokens",
-		State:     fftypes.TokenPoolStateConfirmed,
+		State:     core.TokenPoolStateConfirmed,
 	}
 
 	sender := am.NewApproval("ns1", approval)

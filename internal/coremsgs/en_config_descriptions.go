@@ -17,55 +17,16 @@
 package coremsgs
 
 import (
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
 var ffc = i18n.FFC
 
 //revive:disable
 var (
-	ConfigGlobalConnectionTimeout = ffc("config.global.connectionTimeout", "The maximum amount of time that a connection is allowed to remain with no data transmitted", i18n.TimeDurationType)
-	ConfigGlobalRequestTimeout    = ffc("config.global.requestTimeout", "The maximum amount of time that a request is allowed to remain open", i18n.TimeDurationType)
-
-	ConfigGlobalRetryEnabled      = ffc("config.global.retry.enabled", "Enables retries", i18n.BooleanType)
-	ConfigGlobalRetryFactor       = ffc("config.global.retry.factor", "The retry backoff factor", i18n.FloatType)
-	ConfigGlobalRetryInitDelay    = ffc("config.global.retry.initDelay", "The initial retry delay", i18n.TimeDurationType)
-	ConfigGlobalRetryInitialDelay = ffc("config.global.retry.initialDelay", "The initial retry delay", i18n.TimeDurationType)
-	ConfigGlobalRetryMaxDelay     = ffc("config.global.retry.maxDelay", "The maximum retry delay", i18n.TimeDurationType)
-	ConfigGlobalRetryMaxAttempts  = ffc("config.global.retry.maxAttempts", "The maximum number attempts", i18n.IntType)
-	ConfigGlobalRetryCount        = ffc("config.global.retry.count", "The maximum number of times to retry", i18n.IntType)
-	ConfigGlobalInitWaitTime      = ffc("config.global.retry.initWaitTime", "The initial retry delay", i18n.TimeDurationType)
-	ConfigGlobalMaxWaitTime       = ffc("config.global.retry.maxWaitTime", "The maximum retry delay", i18n.TimeDurationType)
-
-	ConfigGlobalUsername = ffc("config.global.auth.username", "Username", i18n.StringType)
-	ConfigGlobalPassword = ffc("config.global.auth.password", "Password", i18n.StringType)
-
-	ConfigGlobalSize = ffc("config.global.cache.size", "The size of the cache", i18n.ByteSizeType)
-	ConfigGlobalTTL  = ffc("config.global.cache.ttl", "The time to live (TTL) for the cache", i18n.TimeDurationType)
-
-	ConfigGlobaltWsHeartbeatInterval     = ffc("config.global.ws.heartbeatInterval", "The amount of time to wait between heartbeat signals on the WebSocket connection", i18n.TimeDurationType)
-	ConfigGlobalWsInitialConnectAttempts = ffc("config.global.ws.initialConnectAttempts", "The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing", i18n.IntType)
-	ConfigGlobalWsPath                   = ffc("config.global.ws.path", "The WebSocket sever URL to which FireFly should connect", "WebSocket URL "+i18n.StringType)
-	ConfigGlobalWsReadBufferSize         = ffc("config.global.ws.readBufferSize", "The size in bytes of the read buffer for the WebSocket connection", i18n.ByteSizeType)
-	ConfigGlobalWsWriteBufferSize        = ffc("config.global.ws.writeBufferSize", "The size in bytes of the write buffer for the WebSocket connection", i18n.ByteSizeType)
-
-	ConfigGlobalTLSCaFile           = ffc("config.global.tls.caFile", "The path to the CA file for TLS on this API", i18n.StringType)
-	ConfigGlobalTLSCertFile         = ffc("config.global.tls.certFile", "The path to the certificate file for TLS on this API", i18n.StringType)
-	ConfigGlobalTLSClientAuth       = ffc("config.global.tls.clientAuth", "Enables or disables client auth for TLS on this API", i18n.StringType)
-	ConfigGlobalTLSEnabled          = ffc("config.global.tls.enabled", "Enables or disables TLS on this API", i18n.BooleanType)
-	ConfigGlobalTLSKeyFile          = ffc("config.global.tls.keyFile", "The path to the private key file for TLS on this API", i18n.StringType)
-	ConfigGlobalTLSHandshakeTimeout = ffc("config.global.tlsHandshakeTimeout", "The maximum amount of time to wait for a successful TLS handshake", i18n.TimeDurationType)
-
-	ConfigGlobalBodyTemplate          = ffc("config.global.bodyTemplate", "The body go template string to use when making HTTP requests", i18n.GoTemplateType)
-	ConfigGlobalCustomClient          = ffc("config.global.customClient", "Used for testing purposes only", i18n.IgnoredType)
-	ConfigGlobalExpectContinueTimeout = ffc("config.global.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", i18n.TimeDurationType)
-	ConfigGlobalHeaders               = ffc("config.global.headers", "Adds custom headers to HTTP requests", i18n.MapStringStringType)
-	ConfigGlobalIdleTimeout           = ffc("config.global.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls", i18n.TimeDurationType)
-	ConfigGlobalMaxIdleConns          = ffc("config.global.maxIdleConns", "The max number of idle connections to hold pooled", i18n.IntType)
-	ConfigGlobalMethod                = ffc("config.global.method", "The HTTP method to use when making requests to the Address Resolver", i18n.StringType)
-
 	ConfigGlobalMigrationsAuto      = ffc("config.global.migrations.auto", "Enables automatic database migrations", i18n.BooleanType)
 	ConfigGlobalMigrationsDirectory = ffc("config.global.migrations.directory", "The directory containing the numerically ordered migration DDL files to apply to the database", i18n.StringType)
+	ConfigGlobalShutdownTimeout     = ffc("config.global.shutdownTimeout", "The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server", i18n.TimeDurationType)
 
 	ConfigAdminAddress      = ffc("config.admin.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigAdminEnabled      = ffc("config.admin.enabled", "Enables the admin HTTP API", i18n.BooleanType)
@@ -75,12 +36,9 @@ var (
 	ConfigAdminReadTimeout  = ffc("config.admin.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigAdminWriteTimeout = ffc("config.admin.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
-	ConfigAPIDefaultFilterLimit = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", i18n.IntType)
-	ConfigAPIMaxFilterLimit     = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", i18n.IntType)
-	ConfigAPIRequestMaxTimeout  = ffc("config.api.requestMaxTimeout", "The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open", i18n.TimeDurationType)
-
-	ConfigAPIShutdownTimeout = ffc("config.api.shutdownTimeout", "The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server", i18n.TimeDurationType)
-
+	ConfigAPIDefaultFilterLimit        = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", i18n.IntType)
+	ConfigAPIMaxFilterLimit            = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", i18n.IntType)
+	ConfigAPIRequestMaxTimeout         = ffc("config.api.requestMaxTimeout", "The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open", i18n.TimeDurationType)
 	ConfigAssetManagerKeyNormalization = ffc("config.asset.manager.keyNormalization", "Mechanism to normalize keys before using them. Valid options are `blockchain_plugin` - use blockchain plugin (default) or `none` - do not attempt normalization", i18n.StringType)
 
 	ConfigBatchManagerMinimumPollDelay = ffc("config.batch.manager.minimumPollDelay", "The minimum time the batch manager waits between polls on the DB - to prevent thrashing", i18n.TimeDurationType)
@@ -138,14 +96,6 @@ var (
 	ConfigBroadcastBatchPayloadLimit = ffc("config.broadcast.batch.payloadLimit", "The maximum payload size of a batch for broadcast messages", i18n.ByteSizeType)
 	ConfigBroadcastBatchSize         = ffc("config.broadcast.batch.size", "The maximum number of messages that can be packed into a batch", i18n.IntType)
 	ConfigBroadcastBatchTimeout      = ffc("config.broadcast.batch.timeout", "The timeout to wait for a batch to fill, before sending", i18n.TimeDurationType)
-
-	ConfigCorsCredentials = ffc("config.cors.credentials", "CORS setting to control whether a browser allows credentials to be sent to this API", i18n.BooleanType)
-	ConfigCorsDebug       = ffc("config.cors.debug", "Whether debug is enabled for the CORS implementation", i18n.BooleanType)
-	ConfigCorsEnabled     = ffc("config.cors.enabled", "Whether CORS is enabled", i18n.BooleanType)
-	ConfigCorsHeaders     = ffc("config.cors.headers", "CORS setting to control the allowed headers", i18n.StringType)
-	ConfigCorsMaxAge      = ffc("config.cors.maxAge", "The maximum age a browser should rely on CORS checks", i18n.TimeDurationType)
-	ConfigCorsMethods     = ffc("config.cors.methods", " CORS setting to control the allowed methods", i18n.StringType)
-	ConfigCorsOrigins     = ffc("config.cors.origins", "CORS setting to control the allowed origins", i18n.StringType)
 
 	ConfigDatabaseType = ffc("config.database.type", "The type of the database interface plugin to use", i18n.IntType)
 

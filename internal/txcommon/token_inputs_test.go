@@ -20,16 +20,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAddTokenPoolCreateInputs(t *testing.T) {
-	op := &fftypes.Operation{}
+	op := &core.Operation{}
 	config := fftypes.JSONObject{
 		"foo": "bar",
 	}
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "testpool",
@@ -50,7 +51,7 @@ func TestRetrieveTokenPoolCreateInputs(t *testing.T) {
 	config := fftypes.JSONObject{
 		"foo": "bar",
 	}
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"id":        id.String(),
 			"namespace": "ns1",
@@ -70,7 +71,7 @@ func TestRetrieveTokenPoolCreateInputs(t *testing.T) {
 }
 
 func TestRetrieveTokenPoolCreateInputsBadID(t *testing.T) {
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"id": "bad",
 		},
@@ -81,7 +82,7 @@ func TestRetrieveTokenPoolCreateInputsBadID(t *testing.T) {
 }
 
 func TestAddTokenPoolActivateInputs(t *testing.T) {
-	op := &fftypes.Operation{}
+	op := &core.Operation{}
 	poolID := fftypes.NewUUID()
 
 	AddTokenPoolActivateInputs(op, poolID)
@@ -90,7 +91,7 @@ func TestAddTokenPoolActivateInputs(t *testing.T) {
 
 func TestRetrieveTokenPoolActivateInputs(t *testing.T) {
 	id := fftypes.NewUUID()
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"id": id.String(),
 		},
@@ -102,13 +103,13 @@ func TestRetrieveTokenPoolActivateInputs(t *testing.T) {
 }
 
 func TestAddTokenTransferInputs(t *testing.T) {
-	op := &fftypes.Operation{}
-	transfer := &fftypes.TokenTransfer{
+	op := &core.Operation{}
+	transfer := &core.TokenTransfer{
 		LocalID: fftypes.NewUUID(),
-		Type:    fftypes.TokenTransferTypeTransfer,
+		Type:    core.TokenTransferTypeTransfer,
 		Amount:  *fftypes.NewFFBigInt(1),
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenTransfer,
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeTokenTransfer,
 			ID:   fftypes.NewUUID(),
 		},
 	}
@@ -127,7 +128,7 @@ func TestAddTokenTransferInputs(t *testing.T) {
 
 func TestRetrieveTokenTransferInputs(t *testing.T) {
 	id := fftypes.NewUUID()
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"amount":  "1",
 			"localId": id.String(),
@@ -141,7 +142,7 @@ func TestRetrieveTokenTransferInputs(t *testing.T) {
 }
 
 func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId": "bad",
 		},
@@ -152,14 +153,14 @@ func TestRetrieveTokenTransferInputsBadID(t *testing.T) {
 }
 
 func TestAddTokenApprovalInputs(t *testing.T) {
-	op := &fftypes.Operation{}
-	approval := &fftypes.TokenApproval{
+	op := &core.Operation{}
+	approval := &core.TokenApproval{
 		LocalID:  fftypes.NewUUID(),
 		Approved: true,
 		Operator: "0x01",
 		Key:      "0x02",
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenApproval,
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeTokenApproval,
 			ID:   fftypes.NewUUID(),
 		},
 	}
@@ -179,7 +180,7 @@ func TestAddTokenApprovalInputs(t *testing.T) {
 
 func TestRetrieveTokenApprovalInputs(t *testing.T) {
 	id := fftypes.NewUUID()
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"amount":   "1",
 			"localId":  id.String(),
@@ -194,7 +195,7 @@ func TestRetrieveTokenApprovalInputs(t *testing.T) {
 }
 
 func TestRetrieveTokenApprovalInputsBadID(t *testing.T) {
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"localId": "bad",
 		},

@@ -17,7 +17,7 @@
 package apiserver
 
 import (
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
 )
 
 const (

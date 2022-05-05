@@ -20,10 +20,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getContractInterface = &oapispec.Route{
@@ -40,7 +41,7 @@ var getContractInterface = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetContractInterface,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+	JSONOutputValue: func() interface{} { return &core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		interfaceID, err := fftypes.ParseUUID(r.Ctx, r.PP["interfaceId"])

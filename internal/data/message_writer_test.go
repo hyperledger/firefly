@@ -22,9 +22,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -56,42 +57,42 @@ func TestWriteNewMessageClosed(t *testing.T) {
 	mw := newTestMessageWriter(t)
 	mw.close()
 	err := mw.WriteNewMessage(mw.ctx, &NewMessage{
-		Message: &fftypes.MessageInOut{},
+		Message: &core.MessageInOut{},
 	})
-	assert.Regexp(t, "FF10158", err)
+	assert.Regexp(t, "FF00154", err)
 }
 
 func TestWriteDataClosed(t *testing.T) {
 	mw := newTestMessageWriter(t)
 	mw.close()
-	err := mw.WriteData(mw.ctx, &fftypes.Data{})
-	assert.Regexp(t, "FF10158", err)
+	err := mw.WriteData(mw.ctx, &core.Data{})
+	assert.Regexp(t, "FF00154", err)
 }
 
 func TestWriteNewMessageSyncFallback(t *testing.T) {
 	mw := newTestMessageWriterNoConcrrency(t)
 	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
 
-	msg1 := &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
+	msg1 := &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
 				ID: fftypes.NewUUID(),
 			},
 		},
 	}
-	data1 := &fftypes.Data{ID: fftypes.NewUUID()}
+	data1 := &core.Data{ID: fftypes.NewUUID()}
 
 	mdi := mw.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", customCtx, mock.Anything).Run(func(args mock.Arguments) {
 		err := args[1].(func(context.Context) error)(customCtx)
 		assert.NoError(t, err)
 	}).Return(nil)
-	mdi.On("InsertMessages", customCtx, []*fftypes.Message{&msg1.Message}).Return(nil)
-	mdi.On("InsertDataArray", customCtx, fftypes.DataArray{data1}).Return(nil)
+	mdi.On("InsertMessages", customCtx, []*core.Message{&msg1.Message}).Return(nil)
+	mdi.On("InsertDataArray", customCtx, core.DataArray{data1}).Return(nil)
 
 	err := mw.WriteNewMessage(customCtx, &NewMessage{
 		Message: msg1,
-		NewData: fftypes.DataArray{data1},
+		NewData: core.DataArray{data1},
 	})
 
 	assert.NoError(t, err)
@@ -101,7 +102,7 @@ func TestWriteDataSyncFallback(t *testing.T) {
 	mw := newTestMessageWriterNoConcrrency(t)
 	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
 
-	data1 := &fftypes.Data{ID: fftypes.NewUUID()}
+	data1 := &core.Data{ID: fftypes.NewUUID()}
 
 	mdi := mw.database.(*databasemocks.Plugin)
 	mdi.On("UpsertData", customCtx, data1, database.UpsertOptimizationNew).Return(nil)
@@ -114,16 +115,16 @@ func TestWriteDataSyncFallback(t *testing.T) {
 func TestWriteMessagesInsertMessagesFail(t *testing.T) {
 	mw := newTestMessageWriterNoConcrrency(t)
 
-	msg1 := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg1 := &core.Message{
+		Header: core.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
 
 	mdi := mw.database.(*databasemocks.Plugin)
-	mdi.On("InsertMessages", mw.ctx, []*fftypes.Message{msg1}).Return(fmt.Errorf("pop"))
+	mdi.On("InsertMessages", mw.ctx, []*core.Message{msg1}).Return(fmt.Errorf("pop"))
 
-	err := mw.writeMessages(mw.ctx, []*fftypes.Message{msg1}, fftypes.DataArray{})
+	err := mw.writeMessages(mw.ctx, []*core.Message{msg1}, core.DataArray{})
 
 	assert.Regexp(t, "pop", err)
 }
@@ -131,12 +132,12 @@ func TestWriteMessagesInsertMessagesFail(t *testing.T) {
 func TestWriteMessagesInsertDataArrayFail(t *testing.T) {
 	mw := newTestMessageWriterNoConcrrency(t)
 
-	data1 := &fftypes.Data{ID: fftypes.NewUUID()}
+	data1 := &core.Data{ID: fftypes.NewUUID()}
 
 	mdi := mw.database.(*databasemocks.Plugin)
-	mdi.On("InsertDataArray", mw.ctx, fftypes.DataArray{data1}).Return(fmt.Errorf("pop"))
+	mdi.On("InsertDataArray", mw.ctx, core.DataArray{data1}).Return(fmt.Errorf("pop"))
 
-	err := mw.writeMessages(mw.ctx, []*fftypes.Message{}, fftypes.DataArray{data1})
+	err := mw.writeMessages(mw.ctx, []*core.Message{}, core.DataArray{data1})
 
 	assert.Regexp(t, "pop", err)
 }

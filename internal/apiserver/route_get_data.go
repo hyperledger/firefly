@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getData = &oapispec.Route{
@@ -37,7 +37,7 @@ var getData = &oapispec.Route{
 	FilterFactory:   database.DataQueryFactory,
 	Description:     coremsgs.APIEndpointsGetData,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return fftypes.DataArray{} },
+	JSONOutputValue: func() interface{} { return core.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetData(r.Ctx, r.PP["ns"], r.Filter))

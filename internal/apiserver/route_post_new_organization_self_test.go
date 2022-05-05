@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestNewOrganizationSelf(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
-	input := fftypes.EmptyInput{}
+	input := core.EmptyInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/network/organizations/self", &buf)
@@ -40,7 +40,7 @@ func TestNewOrganizationSelf(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mnm.On("RegisterNodeOrganization", mock.Anything, false).
-		Return(&fftypes.Identity{}, nil)
+		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

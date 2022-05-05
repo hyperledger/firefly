@@ -30,11 +30,11 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3gen"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type SwaggerGenConfig struct {
@@ -126,7 +126,7 @@ func ffOutputTagHandler(ctx context.Context, route *Route, name string, tag refl
 
 func ffTagHandler(ctx context.Context, route *Route, name string, tag reflect.StructTag, schema *openapi3.Schema, conf *SwaggerGenConfig) error {
 	if ffEnum := tag.Get("ffenum"); ffEnum != "" {
-		schema.Enum = fftypes.FFEnumValues(ffEnum)
+		schema.Enum = core.FFEnumValues(ffEnum)
 	}
 	if isTrue(tag.Get("ffexclude")) {
 		return &openapi3gen.ExcludeSchemaSentinel{}

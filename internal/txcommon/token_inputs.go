@@ -20,11 +20,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func AddTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) (err error) {
+func AddTokenPoolCreateInputs(op *core.Operation, pool *core.TokenPool) (err error) {
 	var poolJSON []byte
 	if poolJSON, err = json.Marshal(pool); err == nil {
 		err = json.Unmarshal(poolJSON, &op.Input)
@@ -32,8 +33,8 @@ func AddTokenPoolCreateInputs(op *fftypes.Operation, pool *fftypes.TokenPool) (e
 	return err
 }
 
-func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.TokenPool, error) {
-	var pool fftypes.TokenPool
+func RetrieveTokenPoolCreateInputs(ctx context.Context, op *core.Operation) (*core.TokenPool, error) {
+	var pool core.TokenPool
 	s := op.Input.String()
 	if err := json.Unmarshal([]byte(s), &pool); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
@@ -41,18 +42,18 @@ func RetrieveTokenPoolCreateInputs(ctx context.Context, op *fftypes.Operation) (
 	return &pool, nil
 }
 
-func AddTokenPoolActivateInputs(op *fftypes.Operation, poolID *fftypes.UUID) {
+func AddTokenPoolActivateInputs(op *core.Operation, poolID *fftypes.UUID) {
 	op.Input = fftypes.JSONObject{
 		"id": poolID.String(),
 	}
 }
 
-func RetrieveTokenPoolActivateInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.UUID, error) {
+func RetrieveTokenPoolActivateInputs(ctx context.Context, op *core.Operation) (*fftypes.UUID, error) {
 	id, err := fftypes.ParseUUID(ctx, op.Input.GetString("id"))
 	return id, err
 }
 
-func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransfer) (err error) {
+func AddTokenTransferInputs(op *core.Operation, transfer *core.TokenTransfer) (err error) {
 	var transferJSON []byte
 	if transferJSON, err = json.Marshal(transfer); err == nil {
 		err = json.Unmarshal(transferJSON, &op.Input)
@@ -60,8 +61,8 @@ func AddTokenTransferInputs(op *fftypes.Operation, transfer *fftypes.TokenTransf
 	return err
 }
 
-func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation) (*fftypes.TokenTransfer, error) {
-	var transfer fftypes.TokenTransfer
+func RetrieveTokenTransferInputs(ctx context.Context, op *core.Operation) (*core.TokenTransfer, error) {
+	var transfer core.TokenTransfer
 	s := op.Input.String()
 	if err := json.Unmarshal([]byte(s), &transfer); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)
@@ -69,7 +70,7 @@ func RetrieveTokenTransferInputs(ctx context.Context, op *fftypes.Operation) (*f
 	return &transfer, nil
 }
 
-func AddTokenApprovalInputs(op *fftypes.Operation, approval *fftypes.TokenApproval) (err error) {
+func AddTokenApprovalInputs(op *core.Operation, approval *core.TokenApproval) (err error) {
 	var j []byte
 	if j, err = json.Marshal(approval); err == nil {
 		err = json.Unmarshal(j, &op.Input)
@@ -77,8 +78,8 @@ func AddTokenApprovalInputs(op *fftypes.Operation, approval *fftypes.TokenApprov
 	return err
 }
 
-func RetrieveTokenApprovalInputs(ctx context.Context, op *fftypes.Operation) (approval *fftypes.TokenApproval, err error) {
-	var approve fftypes.TokenApproval
+func RetrieveTokenApprovalInputs(ctx context.Context, op *core.Operation) (approval *core.TokenApproval, err error) {
+	var approve core.TokenApproval
 	s := op.Input.String()
 	if err = json.Unmarshal([]byte(s), &approve); err != nil {
 		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, s)

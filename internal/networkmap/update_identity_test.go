@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,22 +37,22 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	signerRef := &core.SignerRef{Key: "0x12345"}
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
-	mockMsg1 := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
+	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 
 	mbm.On("BroadcastDefinition", nm.ctx,
-		fftypes.SystemNamespace,
-		mock.AnythingOfType("*fftypes.IdentityUpdate"),
-		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
+		core.SystemNamespace,
+		mock.AnythingOfType("*core.IdentityUpdate"),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		fftypes.SystemTagIdentityUpdate, true).Return(mockMsg1, nil)
+		core.SystemTagIdentityUpdate, true).Return(mockMsg1, nil)
 
-	org, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &fftypes.IdentityUpdateDTO{
-		IdentityProfile: fftypes.IdentityProfile{
+	org, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
 			Description: "new desc",
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
@@ -72,20 +73,20 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	signerRef := &core.SignerRef{Key: "0x12345"}
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastDefinition", nm.ctx,
-		fftypes.SystemNamespace,
-		mock.AnythingOfType("*fftypes.IdentityUpdate"),
-		mock.MatchedBy(func(sr *fftypes.SignerRef) bool {
+		core.SystemNamespace,
+		mock.AnythingOfType("*core.IdentityUpdate"),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		fftypes.SystemTagIdentityUpdate, true).Return(nil, fmt.Errorf("pop"))
+		core.SystemTagIdentityUpdate, true).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &fftypes.IdentityUpdateDTO{
-		IdentityProfile: fftypes.IdentityProfile{
+	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
 			Description: "new desc",
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
@@ -105,11 +106,11 @@ func TestUpdateIdentityProfileBadProfile(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	signerRef := &core.SignerRef{Key: "0x12345"}
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
-	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &fftypes.IdentityUpdateDTO{
-		IdentityProfile: fftypes.IdentityProfile{
+	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
 			Description: string(make([]byte, 4097)),
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
@@ -129,8 +130,8 @@ func TestUpdateIdentityProfileNotFound(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(nil, nil)
 
-	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &fftypes.IdentityUpdateDTO{
-		IdentityProfile: fftypes.IdentityProfile{
+	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
 			Description: string(make([]byte, 4097)),
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
@@ -150,8 +151,8 @@ func TestUpdateIdentityProfileLookupFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &fftypes.IdentityUpdateDTO{
-		IdentityProfile: fftypes.IdentityProfile{
+	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
 			Description: string(make([]byte, 4097)),
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
@@ -170,11 +171,11 @@ func TestUpdateIdentityProfileClaimLookupFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", nm.ctx, identity.ID).Return(identity, nil)
-	signerRef := &fftypes.SignerRef{Key: "0x12345"}
+	signerRef := &core.SignerRef{Key: "0x12345"}
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, fmt.Errorf("pop"))
 
-	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &fftypes.IdentityUpdateDTO{
-		IdentityProfile: fftypes.IdentityProfile{
+	_, err := nm.UpdateIdentity(nm.ctx, identity.Namespace, identity.ID.String(), &core.IdentityUpdateDTO{
+		IdentityProfile: core.IdentityProfile{
 			Description: "Desc1",
 			Profile:     fftypes.JSONObject{"new": "profile"},
 		},
@@ -189,6 +190,6 @@ func TestUpdateIdentityProfileBadID(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	_, err := nm.UpdateIdentity(nm.ctx, "ns1", "badness", &fftypes.IdentityUpdateDTO{}, true)
+	_, err := nm.UpdateIdentity(nm.ctx, "ns1", "badness", &core.IdentityUpdateDTO{}, true)
 	assert.Regexp(t, "FF00138", err)
 }

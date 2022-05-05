@@ -27,6 +27,7 @@ nav_order: 3
 |preinit|Enables the pre-init mode. This mode will let the FireFly Core process start, but not initialize any plugins, besides the database to read any configuration overrides. This allows the admin HTTP API to be used to define custom configuration before starting the rest of FireFly Core.|`boolean`|`<nil>`
 |publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 
 ## admin.tls
@@ -56,7 +57,6 @@ nav_order: 3
 |maxFilterLimit|The largest value of `limit` that an HTTP client can specify in a request|`int`|`<nil>`
 |requestMaxTimeout|The maximum amount of time that an HTTP client can specify in a `Request-Timeout` header to keep a specific request open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
 ## asset.manager
 
@@ -316,13 +316,13 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|credentials|CORS setting to control whether a browser allows credentials to be sent to this API|`boolean`|`<nil>`
-|debug|Whether debug is enabled for the CORS implementation|`boolean`|`<nil>`
-|enabled|Whether CORS is enabled|`boolean`|`<nil>`
-|headers|CORS setting to control the allowed headers|`string`|`<nil>`
-|maxAge|The maximum age a browser should rely on CORS checks|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|methods| CORS setting to control the allowed methods|`string`|`<nil>`
-|origins|CORS setting to control the allowed origins|`string`|`<nil>`
+|credentials|CORS setting to control whether a browser allows credentials to be sent to this API|`boolean`|`true`
+|debug|Whether debug is enabled for the CORS implementation|`boolean`|`false`
+|enabled|Whether CORS is enabled|`boolean`|`true`
+|headers|CORS setting to control the allowed headers|`string`|`[*]`
+|maxAge|The maximum age a browser should rely on CORS checks|[`time.Duration`](https://pkg.go.dev/time#Duration)|`600`
+|methods| CORS setting to control the allowed methods|`string`|`[GET POST PUT PATCH DELETE]`
+|origins|CORS setting to control the allowed origins|`string`|`[*]`
 
 ## database
 
@@ -516,6 +516,7 @@ nav_order: 3
 |port|The port on which the HTTP API should listen|`int`|`5000`
 |publicURL|The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 
 ## http.tls
@@ -598,6 +599,7 @@ nav_order: 3
 |port|The port on which the metrics HTTP API should listen|`int`|`6000`
 |publicURL|The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 
 ## metrics.tls

@@ -19,14 +19,15 @@ package tokens
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 // Plugin is the interface implemented by each tokens plugin
 type Plugin interface {
-	fftypes.Named
+	core.Named
 
 	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
 	InitPrefix(prefix config.PrefixArray)
@@ -42,22 +43,22 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
+	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *fftypes.TokenPool) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *fftypes.TokenTransfer) error
+	MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *core.TokenTransfer) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *fftypes.TokenTransfer) error
+	BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *core.TokenTransfer) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *fftypes.TokenTransfer) error
+	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *core.TokenTransfer) error
 
 	// TokenApproval approves an operator to transfer tokens on the owner's behalf
-	TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *fftypes.TokenApproval) error
+	TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *core.TokenApproval) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -73,7 +74,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should only be returned in shutdown scenarios
-	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState fftypes.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
+	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.
@@ -99,13 +100,13 @@ type Capabilities struct {
 // TokenPool is the set of data returned from the connector when a token pool is created.
 type TokenPool struct {
 	// Type is the type of tokens (fungible, non-fungible, etc) in this pool
-	Type fftypes.TokenType
+	Type core.TokenType
 
 	// PoolLocator is the ID assigned to this pool by the connector (must be unique for this connector)
 	PoolLocator string
 
 	// TX is the FireFly-assigned information to correlate this to a transaction (optional)
-	TX fftypes.TransactionRef
+	TX core.TransactionRef
 
 	// Connector is the configured name of this connector
 	Connector string
@@ -127,9 +128,9 @@ type TokenPool struct {
 }
 
 type TokenTransfer struct {
-	// Although not every field will be filled in, embed fftypes.TokenTransfer to avoid duplicating lots of fields
+	// Although not every field will be filled in, embed core.TokenTransfer to avoid duplicating lots of fields
 	// Notable fields NOT expected to be populated by plugins: Namespace, LocalID, Pool
-	fftypes.TokenTransfer
+	core.TokenTransfer
 
 	// PoolLocator is the ID assigned to the token pool by the connector
 	PoolLocator string
@@ -139,7 +140,7 @@ type TokenTransfer struct {
 }
 
 type TokenApproval struct {
-	fftypes.TokenApproval
+	core.TokenApproval
 
 	// PoolLocator is the ID assigned to the token pool by the connector
 	PoolLocator string

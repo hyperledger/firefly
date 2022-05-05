@@ -22,11 +22,12 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -41,7 +42,7 @@ var (
 
 const nextpinsTable = "nextpins"
 
-func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin) (err error) {
+func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *core.NextPin) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -67,8 +68,8 @@ func (s *SQLCommon) InsertNextPin(ctx context.Context, nextpin *fftypes.NextPin)
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*fftypes.NextPin, error) {
-	nextpin := fftypes.NextPin{}
+func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*core.NextPin, error) {
+	nextpin := core.NextPin{}
 	err := row.Scan(
 		&nextpin.Context,
 		&nextpin.Identity,
@@ -82,7 +83,7 @@ func (s *SQLCommon) nextpinResult(ctx context.Context, row *sql.Rows) (*fftypes.
 	return &nextpin, nil
 }
 
-func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.NextPin, err error) {
+func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interface{}) (message *core.NextPin, err error) {
 	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, sequenceColumn)
 	rows, _, err := s.query(ctx, nextpinsTable,
@@ -109,20 +110,20 @@ func (s *SQLCommon) getNextPinPred(ctx context.Context, desc string, pred interf
 	return nextpin, nil
 }
 
-func (s *SQLCommon) GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *fftypes.NextPin, err error) {
+func (s *SQLCommon) GetNextPinByContextAndIdentity(ctx context.Context, context *fftypes.Bytes32, identity string) (message *core.NextPin, err error) {
 	return s.getNextPinPred(ctx, fmt.Sprintf("%s:%s", context, identity), sq.Eq{
 		"context":  context,
 		"identity": identity,
 	})
 }
 
-func (s *SQLCommon) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.NextPin, err error) {
+func (s *SQLCommon) GetNextPinByHash(ctx context.Context, hash *fftypes.Bytes32) (message *core.NextPin, err error) {
 	return s.getNextPinPred(ctx, hash.String(), sq.Eq{
 		"hash": hash,
 	})
 }
 
-func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (message []*fftypes.NextPin, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (message []*core.NextPin, fr *database.FilterResult, err error) {
 
 	cols := append([]string{}, nextpinColumns...)
 	cols = append(cols, sequenceColumn)
@@ -137,7 +138,7 @@ func (s *SQLCommon) GetNextPins(ctx context.Context, filter database.Filter) (me
 	}
 	defer rows.Close()
 
-	nextpin := []*fftypes.NextPin{}
+	nextpin := []*core.NextPin{}
 	for rows.Next() {
 		d, err := s.nextpinResult(ctx, rows)
 		if err != nil {

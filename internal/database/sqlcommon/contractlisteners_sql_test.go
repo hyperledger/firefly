@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,13 +37,13 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	// Create a new contract listener entry
 	location := fftypes.JSONObject{"path": "my-api"}
 	locationJson, _ := json.Marshal(location)
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		ID: fftypes.NewUUID(),
-		Interface: &fftypes.FFIReference{
+		Interface: &core.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
-		Event: &fftypes.FFISerializedEvent{
-			FFIEventDefinition: fftypes.FFIEventDefinition{
+		Event: &core.FFISerializedEvent{
+			FFIEventDefinition: core.FFIEventDefinition{
 				Name: "event1",
 			},
 		},
@@ -51,14 +52,14 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 		BackendID: "sb-123",
 		Location:  fftypes.JSONAnyPtrBytes(locationJson),
 		Topic:     "topic1",
-		Options: &fftypes.ContractListenerOptions{
+		Options: &core.ContractListenerOptions{
 			FirstEvent: "0",
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, "ns", sub.ID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, "ns", sub.ID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeDeleted, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeCreated, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeUpdated, "ns", sub.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeDeleted, "ns", sub.ID).Return()
 
 	err := s.UpsertContractListener(ctx, sub)
 	assert.NotNil(t, sub.Created)
@@ -123,7 +124,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 func TestUpsertContractListenerFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -132,7 +133,7 @@ func TestUpsertContractListenerFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -143,7 +144,7 @@ func TestUpsertContractListenerFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -154,7 +155,7 @@ func TestUpsertContractListenerFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -165,7 +166,7 @@ func TestUpsertContractListenerFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractListener(context.Background(), &fftypes.ContractListener{})
+	err := s.UpsertContractListener(context.Background(), &core.ContractListener{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -243,17 +244,17 @@ func TestContractListenerOptions(t *testing.T) {
 	defer cleanup()
 	ctx := context.Background()
 
-	l := &fftypes.ContractListener{
+	l := &core.ContractListener{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns",
-		Event:     &fftypes.FFISerializedEvent{},
+		Event:     &core.FFISerializedEvent{},
 		Location:  fftypes.JSONAnyPtr("{}"),
-		Options: &fftypes.ContractListenerOptions{
-			FirstEvent: string(fftypes.SubOptsFirstEventOldest),
+		Options: &core.ContractListenerOptions{
+			FirstEvent: string(core.SubOptsFirstEventOldest),
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, "ns", l.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeCreated, "ns", l.ID).Return()
 
 	err := s.UpsertContractListener(ctx, l)
 	assert.NoError(t, err)

@@ -19,19 +19,20 @@ package assets
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
+	if err := core.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
 	if existing, err := am.database.GetTokenPool(ctx, ns, pool.Name); err != nil {
@@ -58,7 +59,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *ff
 	return am.createTokenPoolInternal(ctx, pool, waitConfirm)
 }
 
-func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftypes.TokenPool, waitConfirm bool) (*fftypes.TokenPool, error) {
+func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return nil, err
@@ -71,21 +72,21 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 		})
 	}
 
-	var op *fftypes.Operation
+	var op *core.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		txid, err := am.txHelper.SubmitNewTransaction(ctx, pool.Namespace, fftypes.TransactionTypeTokenPool)
+		txid, err := am.txHelper.SubmitNewTransaction(ctx, pool.Namespace, core.TransactionTypeTokenPool)
 		if err != nil {
 			return err
 		}
 
 		pool.TX.ID = txid
-		pool.TX.Type = fftypes.TransactionTypeTokenPool
+		pool.TX.Type = core.TransactionTypeTokenPool
 
-		op = fftypes.NewOperation(
+		op = core.NewOperation(
 			plugin,
 			pool.Namespace,
 			txid,
-			fftypes.OpTypeTokenCreatePool)
+			core.OpTypeTokenCreatePool)
 		if err = txcommon.AddTokenPoolCreateInputs(op, pool); err == nil {
 			err = am.database.InsertOperation(ctx, op)
 		}
@@ -99,18 +100,18 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *fftyp
 	return pool, err
 }
 
-func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.TokenPool) error {
+func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) error {
 	plugin, err := am.selectTokenPlugin(ctx, pool.Connector)
 	if err != nil {
 		return err
 	}
 
-	var op *fftypes.Operation
+	var op *core.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		fb := database.OperationQueryFactory.NewFilter(ctx)
 		filter := fb.And(
 			fb.Eq("tx", pool.TX.ID),
-			fb.Eq("type", fftypes.OpTypeTokenActivatePool),
+			fb.Eq("type", core.OpTypeTokenActivatePool),
 		)
 		if existing, _, err := am.database.GetOperations(ctx, filter); err != nil {
 			return err
@@ -119,11 +120,11 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 			return nil
 		}
 
-		op = fftypes.NewOperation(
+		op = core.NewOperation(
 			plugin,
 			pool.Namespace,
 			pool.TX.ID,
-			fftypes.OpTypeTokenActivatePool)
+			core.OpTypeTokenActivatePool)
 		txcommon.AddTokenPoolActivateInputs(op, pool.ID)
 		return am.database.InsertOperation(ctx, op)
 	})
@@ -135,21 +136,21 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *fftypes.Tok
 	return err
 }
 
-func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenPool, *database.FilterResult, error) {
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error) {
+	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolName string) (*fftypes.TokenPool, error) {
+func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolName string) (*core.TokenPool, error) {
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
-	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
+	if err := core.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
 		return nil, err
 	}
 	pool, err := am.database.GetTokenPool(ctx, ns, poolName)
@@ -162,16 +163,16 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 	return pool, nil
 }
 
-func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolNameOrID string) (*fftypes.TokenPool, error) {
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolNameOrID string) (*core.TokenPool, error) {
+	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
 
-	var pool *fftypes.TokenPool
+	var pool *core.TokenPool
 
 	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
 	if err != nil {
-		if err := fftypes.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
+		if err := core.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
 			return nil, err
 		}
 		if pool, err = am.database.GetTokenPool(ctx, ns, poolNameOrID); err != nil {

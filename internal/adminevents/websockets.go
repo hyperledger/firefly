@@ -24,8 +24,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type webSocket struct {
@@ -36,12 +37,12 @@ type webSocket struct {
 	connID       string
 	senderDone   chan struct{}
 	receiverDone chan struct{}
-	events       chan *fftypes.ChangeEvent
+	events       chan *core.ChangeEvent
 	collections  []string
-	filter       fftypes.ChangeEventFilter
+	filter       core.ChangeEventFilter
 	mux          sync.Mutex
 	closed       bool
-	blocked      *fftypes.ChangeEvent
+	blocked      *core.ChangeEvent
 	lastWarnTime *fftypes.FFTime
 }
 
@@ -55,7 +56,7 @@ func newWebSocket(ae *adminEventManager, wsConn *websocket.Conn) *webSocket {
 		wsConn:       wsConn,
 		cancelCtx:    cancelCtx,
 		connID:       connID,
-		events:       make(chan *fftypes.ChangeEvent, ae.queueLength),
+		events:       make(chan *core.ChangeEvent, ae.queueLength),
 		senderDone:   make(chan struct{}),
 		receiverDone: make(chan struct{}),
 	}
@@ -64,7 +65,7 @@ func newWebSocket(ae *adminEventManager, wsConn *websocket.Conn) *webSocket {
 	return wc
 }
 
-func (wc *webSocket) eventMatches(changeEvent *fftypes.ChangeEvent) bool {
+func (wc *webSocket) eventMatches(changeEvent *core.ChangeEvent) bool {
 	collectionMatches := false
 	for _, c := range wc.collections {
 		if c == changeEvent.Collection {
@@ -149,7 +150,7 @@ func (wc *webSocket) receiveLoop() {
 	defer close(wc.receiverDone)
 	for {
 		var msgData []byte
-		var cmd fftypes.WSChangeEventCommand
+		var cmd core.WSChangeEventCommand
 		_, reader, err := wc.wsConn.NextReader()
 		if err == nil {
 			msgData, err = ioutil.ReadAll(reader)
@@ -163,7 +164,7 @@ func (wc *webSocket) receiveLoop() {
 		}
 		l.Tracef("Received: %s", string(msgData))
 		switch cmd.Type {
-		case fftypes.WSChangeEventCommandTypeStart:
+		case core.WSChangeEventCommandTypeStart:
 			wc.handleStart(&cmd)
 		default:
 			l.Errorf("Invalid request sent on socket: %+v", cmd)
@@ -171,17 +172,17 @@ func (wc *webSocket) receiveLoop() {
 	}
 }
 
-func (wc *webSocket) dispatch(event *fftypes.ChangeEvent) {
+func (wc *webSocket) dispatch(event *core.ChangeEvent) {
 	// We take as much as we possibly can off of this function, including string matching etc.
 	// This function is called on the critical path of the commit for all database operations.
 	select {
 	case wc.events <- event:
 	default:
 		wc.mux.Lock()
-		var blocked *fftypes.ChangeEvent
+		var blocked *core.ChangeEvent
 		if wc.blocked == nil {
-			wc.blocked = &fftypes.ChangeEvent{
-				Type:         fftypes.ChangeEventTypeDropped,
+			wc.blocked = &core.ChangeEvent{
+				Type:         core.ChangeEventTypeDropped,
 				DroppedSince: fftypes.Now(),
 			}
 		}
@@ -194,7 +195,7 @@ func (wc *webSocket) dispatch(event *fftypes.ChangeEvent) {
 	}
 }
 
-func (wc *webSocket) handleStart(start *fftypes.WSChangeEventCommand) {
+func (wc *webSocket) handleStart(start *core.WSChangeEventCommand) {
 	wc.mux.Lock()
 	wc.collections = start.Collections
 	wc.filter = start.Filter

@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,19 +19,20 @@ package broadcast
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *fftypes.Namespace, waitConfirm bool) (*fftypes.Message, error) {
+func (bm *broadcastManager) BroadcastNamespace(ctx context.Context, ns *core.Namespace, waitConfirm bool) (*core.Message, error) {
 
 	// Validate the input data definition data
 	ns.ID = fftypes.NewUUID()
 	ns.Created = fftypes.Now()
-	ns.Type = fftypes.NamespaceTypeBroadcast
+	ns.Type = core.NamespaceTypeBroadcast
 	if err := ns.Validate(ctx, false); err != nil {
 		return nil, err
 	}
-	msg, err := bm.BroadcastDefinitionAsNode(ctx, fftypes.SystemNamespace, ns, fftypes.SystemTagDefineNamespace, waitConfirm)
+	msg, err := bm.BroadcastDefinitionAsNode(ctx, core.SystemNamespace, ns, core.SystemTagDefineNamespace, waitConfirm)
 	if msg != nil {
 		ns.Message = msg.Header.ID
 	}

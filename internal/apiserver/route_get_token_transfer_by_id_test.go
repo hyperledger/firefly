@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func TestGetTokenTransferByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mam.On("GetTokenTransferByID", mock.Anything, "ns1", "id1").
-		Return(&fftypes.TokenTransfer{}, nil)
+		Return(&core.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

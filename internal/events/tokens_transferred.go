@@ -19,10 +19,11 @@ package events
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -35,12 +36,12 @@ import (
 //   allowed to trigger side-effects in other pools, but only the event from the targeted pool should use the original LocalID.
 // - The LocalID must not have been used yet. Connectors are allowed to emit multiple events in response to a single operation,
 //   but only the first of them can use the original LocalID.
-func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, transfer *fftypes.TokenTransfer) (*fftypes.UUID, error) {
+func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, transfer *core.TokenTransfer) (*fftypes.UUID, error) {
 	// Find a matching operation within the transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
-		fb.Eq("type", fftypes.OpTypeTokenTransfer),
+		fb.Eq("type", core.OpTypeTokenTransfer),
 	)
 	operations, _, err := em.database.GetOperations(ctx, filter)
 	if err != nil {
@@ -99,7 +100,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		}
 	}
 
-	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &fftypes.BlockchainTransactionRef{
+	chainEvent := buildBlockchainEvent(pool.Namespace, nil, &transfer.Event, &core.BlockchainTransactionRef{
 		ID:           transfer.TX.ID,
 		Type:         transfer.TX.Type,
 		BlockchainID: transfer.Event.BlockchainTXID,
@@ -141,9 +142,9 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 				switch {
 				case err != nil:
 					return err
-				case msg != nil && msg.State == fftypes.MessageStateStaged:
+				case msg != nil && msg.State == core.MessageStateStaged:
 					// Message can now be sent
-					msg.State = fftypes.MessageStateReady
+					msg.State = core.MessageStateReady
 					if err := em.database.ReplaceMessage(ctx, msg); err != nil {
 						return err
 					}
@@ -154,7 +155,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 			}
 			em.emitBlockchainEventMetric(&transfer.Event)
 
-			event := fftypes.NewEvent(fftypes.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID, transfer.Pool.String())
+			event := core.NewEvent(core.EventTypeTransferConfirmed, transfer.Namespace, transfer.LocalID, transfer.TX.ID, transfer.Pool.String())
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)

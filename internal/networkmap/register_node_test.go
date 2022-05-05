@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -43,8 +44,8 @@ func TestRegisterNodeOk(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, false, nil)
-	signerRef := &fftypes.SignerRef{Key: "0x23456"}
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
+	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
@@ -53,13 +54,13 @@ func TestRegisterNodeOk(t *testing.T) {
 		"endpoint": "details",
 	}, nil)
 
-	mockMsg := &fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}
+	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		fftypes.SystemNamespace,
-		mock.AnythingOfType("*fftypes.IdentityClaim"),
+		core.SystemNamespace,
+		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
-		fftypes.SystemTagIdentityClaim, false).Return(mockMsg, nil)
+		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
 	node, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)
@@ -80,8 +81,8 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*fftypes.Identity")).Return(parentOrg, false, nil)
-	signerRef := &fftypes.SignerRef{Key: "0x23456"}
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
+	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)

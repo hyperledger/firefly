@@ -19,17 +19,18 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
-func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []fftypes.ChartHistogramInterval) {
+func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, numBuckets int64) (intervals []core.ChartHistogramInterval) {
 	timeIntervalLength := (endTime - startTime) / numBuckets
 
 	for i := startTime; i < endTime; i += timeIntervalLength {
-		intervals = append(intervals, fftypes.ChartHistogramInterval{
+		intervals = append(intervals, core.ChartHistogramInterval{
 			StartTime: fftypes.UnixTime(i),
 			EndTime:   fftypes.UnixTime(i + timeIntervalLength),
 		})
@@ -38,9 +39,9 @@ func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, nu
 	return intervals
 }
 
-func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*fftypes.ChartHistogram, error) {
-	if buckets > fftypes.ChartHistogramMaxBuckets || buckets < fftypes.ChartHistogramMinBuckets {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidNumberOfIntervals, fftypes.ChartHistogramMinBuckets, fftypes.ChartHistogramMaxBuckets)
+func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*core.ChartHistogram, error) {
+	if buckets > core.ChartHistogramMaxBuckets || buckets < core.ChartHistogramMinBuckets {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidNumberOfIntervals, core.ChartHistogramMinBuckets, core.ChartHistogramMaxBuckets)
 	}
 	if startTime > endTime {
 		return nil, i18n.NewError(ctx, coremsgs.MsgHistogramInvalidTimes)

@@ -21,7 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getStatusWebSockets = &oapispec.Route{
@@ -33,7 +33,7 @@ var getStatusWebSockets = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetStatusWebSockets,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.WebSocketStatus{} },
+	JSONOutputValue: func() interface{} { return &core.WebSocketStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return getOr(r.Ctx).Events().GetWebSocketStatus(), nil

@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/contractmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetContractInterfaceNameVersion(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/banana/v1.0.0", &buf)
@@ -40,7 +40,7 @@ func TestGetContractInterfaceNameVersion(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFI", mock.Anything, "ns1", "banana", "v1.0.0").
-		Return(&fftypes.FFI{}, nil)
+		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -50,7 +50,7 @@ func TestGetContractInterfaceNameVersionWithChildren(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/banana/v1.0.0?fetchchildren", &buf)
@@ -58,7 +58,7 @@ func TestGetContractInterfaceNameVersionWithChildren(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFIWithChildren", mock.Anything, "ns1", "banana", "v1.0.0").
-		Return(&fftypes.FFI{}, nil)
+		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

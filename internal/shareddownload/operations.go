@@ -22,11 +22,12 @@ import (
 	"io/ioutil"
 
 	"github.com/docker/go-units"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type downloadBatchData struct {
@@ -40,7 +41,7 @@ type downloadBlobData struct {
 	PayloadRef string        `json:"payloadRef"`
 }
 
-func addDownloadBatchInputs(op *fftypes.Operation, ns, payloadRef string) {
+func addDownloadBatchInputs(op *core.Operation, ns, payloadRef string) {
 	op.Input = fftypes.JSONObject{
 		"namespace":  ns,
 		"payloadRef": payloadRef,
@@ -53,7 +54,7 @@ func getDownloadBatchOutputs(batchID *fftypes.UUID) fftypes.JSONObject {
 	}
 }
 
-func addDownloadBlobInputs(op *fftypes.Operation, ns string, dataID *fftypes.UUID, payloadRef string) {
+func addDownloadBlobInputs(op *core.Operation, ns string, dataID *fftypes.UUID, payloadRef string) {
 	op.Input = fftypes.JSONObject{
 		"namespace":  ns,
 		"dataId":     dataID.String(),
@@ -61,20 +62,20 @@ func addDownloadBlobInputs(op *fftypes.Operation, ns string, dataID *fftypes.UUI
 	}
 }
 
-func getDownloadBlobOutputs(hash *fftypes.Bytes32, size int64, dxPaylodRef string) fftypes.JSONObject {
+func getDownloadBlobOutputs(hash *fftypes.Bytes32, size int64, dxPayloadRef string) fftypes.JSONObject {
 	return fftypes.JSONObject{
 		"hash":         hash,
 		"size":         size,
-		"dxPayloadRef": dxPaylodRef,
+		"dxPayloadRef": dxPayloadRef,
 	}
 }
 
-func retrieveDownloadBatchInputs(op *fftypes.Operation) (string, string) {
+func retrieveDownloadBatchInputs(op *core.Operation) (string, string) {
 	return op.Input.GetString("namespace"),
 		op.Input.GetString("payloadRef")
 }
 
-func retrieveDownloadBlobInputs(ctx context.Context, op *fftypes.Operation) (namespace string, dataID *fftypes.UUID, payloadRef string, err error) {
+func retrieveDownloadBlobInputs(ctx context.Context, op *core.Operation) (namespace string, dataID *fftypes.UUID, payloadRef string, err error) {
 	namespace = op.Input.GetString("namespace")
 	dataID, err = fftypes.ParseUUID(ctx, op.Input.GetString("dataId"))
 	if err != nil {
@@ -84,14 +85,14 @@ func retrieveDownloadBlobInputs(ctx context.Context, op *fftypes.Operation) (nam
 	return
 }
 
-func (dm *downloadManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (dm *downloadManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
 
-	case fftypes.OpTypeSharedStorageDownloadBatch:
+	case core.OpTypeSharedStorageDownloadBatch:
 		namespace, payloadRef := retrieveDownloadBatchInputs(op)
 		return opDownloadBatch(op, namespace, payloadRef), nil
 
-	case fftypes.OpTypeSharedStorageDownloadBlob:
+	case core.OpTypeSharedStorageDownloadBlob:
 		namespace, dataID, payloadRef, err := retrieveDownloadBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -103,7 +104,7 @@ func (dm *downloadManager) PrepareOperation(ctx context.Context, op *fftypes.Ope
 	}
 }
 
-func (dm *downloadManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (dm *downloadManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case downloadBatchData:
 		return dm.downloadBatch(ctx, data)
@@ -166,12 +167,12 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	return getDownloadBlobOutputs(hash, blobSize, dxPayloadRef), true, nil
 }
 
-func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
 	return nil
 }
 
-func opDownloadBatch(op *fftypes.Operation, ns string, payloadRef string) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opDownloadBatch(op *core.Operation, ns string, payloadRef string) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
@@ -182,8 +183,8 @@ func opDownloadBatch(op *fftypes.Operation, ns string, payloadRef string) *fftyp
 	}
 }
 
-func opDownloadBlob(op *fftypes.Operation, ns string, dataID *fftypes.UUID, payloadRef string) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opDownloadBlob(op *core.Operation, ns string, dataID *fftypes.UUID, payloadRef string) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,

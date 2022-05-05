@@ -22,44 +22,45 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newPoolAnnouncement() *fftypes.TokenPoolAnnouncement {
-	pool := &fftypes.TokenPool{
+func newPoolAnnouncement() *core.TokenPoolAnnouncement {
+	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "name1",
-		Type:      fftypes.TokenTypeFungible,
+		Type:      core.TokenTypeFungible,
 		Locator:   "12345",
 		Symbol:    "COIN",
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenPool,
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
 	}
-	return &fftypes.TokenPoolAnnouncement{
+	return &core.TokenPoolAnnouncement{
 		Pool: pool,
 	}
 }
 
-func buildPoolDefinitionMessage(announce *fftypes.TokenPoolAnnouncement) (*fftypes.Message, fftypes.DataArray, error) {
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+func buildPoolDefinitionMessage(announce *core.TokenPoolAnnouncement) (*core.Message, core.DataArray, error) {
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:  fftypes.NewUUID(),
-			Tag: fftypes.SystemTagDefinePool,
+			Tag: core.SystemTagDefinePool,
 		},
 	}
 	b, err := json.Marshal(announce)
 	if err != nil {
 		return nil, nil, err
 	}
-	data := fftypes.DataArray{{
+	data := core.DataArray{{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}}
 	return msg, data, nil
@@ -76,10 +77,10 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
-	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool")).Return(nil)
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
@@ -120,11 +121,11 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(&fftypes.TokenPool{}, nil)
-	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(&core.TokenPool{}, nil)
+	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool")).Return(nil)
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
@@ -142,8 +143,8 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	pool := announce.Pool
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
-	existing := &fftypes.TokenPool{
-		State: fftypes.TokenPoolStateConfirmed,
+	existing := &core.TokenPool{
+		State: core.TokenPoolStateConfirmed,
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
@@ -166,7 +167,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
-	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(database.IDMismatch)
 
@@ -188,7 +189,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
-	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(fmt.Errorf("pop"))
 
@@ -211,10 +212,10 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
-	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *fftypes.TokenPool) bool {
+	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
-	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*fftypes.TokenPool")).Return(fmt.Errorf("pop"))
+	mam.On("ActivateTokenPool", context.Background(), mock.AnythingOfType("*core.TokenPool")).Return(fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait, CustomCorrelator: pool.ID}, action)
@@ -229,8 +230,8 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	announce := &fftypes.TokenPoolAnnouncement{
-		Pool: &fftypes.TokenPool{},
+	announce := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{},
 	}
 	msg, data, err := buildPoolDefinitionMessage(announce)
 	assert.NoError(t, err)
@@ -244,10 +245,10 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 	sh, bs := newTestDefinitionHandler(t)
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:  fftypes.NewUUID(),
-			Tag: fftypes.SystemTagDefinePool,
+			Tag: core.SystemTagDefinePool,
 		},
 	}
 

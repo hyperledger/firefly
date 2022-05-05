@@ -23,8 +23,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getEvents = &oapispec.Route{
@@ -40,7 +40,7 @@ var getEvents = &oapispec.Route{
 	FilterFactory:   database.EventQueryFactory,
 	Description:     coremsgs.APIEndpointsGetEvents,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Event{} },
+	JSONOutputValue: func() interface{} { return []*core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchreferences"], "true") {

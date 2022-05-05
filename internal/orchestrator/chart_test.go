@@ -21,15 +21,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func makeTestIntervals(start int, numIntervals int) (intervals []fftypes.ChartHistogramInterval) {
+func makeTestIntervals(start int, numIntervals int) (intervals []core.ChartHistogramInterval) {
 	for i := 0; i < numIntervals; i++ {
-		intervals = append(intervals, fftypes.ChartHistogramInterval{
+		intervals = append(intervals, core.ChartHistogramInterval{
 			StartTime: fftypes.UnixTime(int64(start + i)),
 			EndTime:   fftypes.UnixTime(int64(start + i + 1)),
 		})
@@ -39,13 +40,13 @@ func makeTestIntervals(start int, numIntervals int) (intervals []fftypes.ChartHi
 
 func TestGetHistogramBadIntervalMin(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, fftypes.ChartHistogramMinBuckets-1, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, core.ChartHistogramMinBuckets-1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
 func TestGetHistogramBadIntervalMax(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, fftypes.ChartHistogramMaxBuckets+1, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, core.ChartHistogramMaxBuckets+1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
@@ -66,7 +67,7 @@ func TestGetHistogramFailDB(t *testing.T) {
 func TestGetHistogramSuccess(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
-	mockHistogram := []*fftypes.ChartHistogram{}
+	mockHistogram := []*core.ChartHistogram{}
 
 	or.mdi.On("GetChartHistogram", mock.Anything, "ns1", intervals, database.CollectionName("test")).Return(mockHistogram, nil)
 	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))

@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/events/system"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -31,8 +32,8 @@ import (
 func TestCreateSubscriptionBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdm.On("VerifyNamespaceExists", mock.Anything, "!wrong").Return(fmt.Errorf("pop"))
-	_, err := or.CreateSubscription(or.ctx, "!wrong", &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	_, err := or.CreateSubscription(or.ctx, "!wrong", &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			Name: "sub1",
 		},
 	})
@@ -42,8 +43,8 @@ func TestCreateSubscriptionBadNamespace(t *testing.T) {
 func TestCreateSubscriptionBadName(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	_, err := or.CreateSubscription(or.ctx, "ns1", &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			Name: "!sub1",
 		},
 	})
@@ -53,9 +54,9 @@ func TestCreateSubscriptionBadName(t *testing.T) {
 func TestCreateSubscriptionSystemTransport(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	_, err := or.CreateSubscription(or.ctx, "ns1", &fftypes.Subscription{
+	_, err := or.CreateSubscription(or.ctx, "ns1", &core.Subscription{
 		Transport: system.SystemEventsTransport,
-		SubscriptionRef: fftypes.SubscriptionRef{
+		SubscriptionRef: core.SubscriptionRef{
 			Name: "sub1",
 		},
 	})
@@ -64,8 +65,8 @@ func TestCreateSubscriptionSystemTransport(t *testing.T) {
 
 func TestCreateSubscriptionOk(t *testing.T) {
 	or := newTestOrchestrator()
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			Name: "sub1",
 		},
 	}
@@ -79,8 +80,8 @@ func TestCreateSubscriptionOk(t *testing.T) {
 
 func TestCreateUpdateSubscriptionOk(t *testing.T) {
 	or := newTestOrchestrator()
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			Name: "sub1",
 		},
 	}
@@ -107,8 +108,8 @@ func TestDeleteSubscriptionLookupError(t *testing.T) {
 
 func TestDeleteSubscriptionNSMismatch(t *testing.T) {
 	or := newTestOrchestrator()
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Name:      "sub1",
 			Namespace: "ns1",
@@ -121,8 +122,8 @@ func TestDeleteSubscriptionNSMismatch(t *testing.T) {
 
 func TestDeleteSubscription(t *testing.T) {
 	or := newTestOrchestrator()
-	sub := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
 			Name:      "sub1",
 			Namespace: "ns1",
@@ -137,7 +138,7 @@ func TestDeleteSubscription(t *testing.T) {
 func TestGetSubscriptions(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*fftypes.Subscription{}, nil, nil)
+	or.mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
 	_, _, err := or.GetSubscriptions(context.Background(), "ns1", f)

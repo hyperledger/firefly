@@ -23,12 +23,13 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 
 	// Import migrate file source
@@ -47,7 +48,7 @@ type txContextKey struct{}
 
 type txWrapper struct {
 	sqlTX           *sql.Tx
-	preCommitEvents []*fftypes.Event
+	preCommitEvents []*core.Event
 	postCommit      []func()
 	tableLocks      []string
 }
@@ -358,7 +359,7 @@ func (s *SQLCommon) postCommitEvent(tx *txWrapper, fn func()) {
 	tx.postCommit = append(tx.postCommit, fn)
 }
 
-func (s *SQLCommon) addPreCommitEvent(tx *txWrapper, event *fftypes.Event) {
+func (s *SQLCommon) addPreCommitEvent(tx *txWrapper, event *core.Event) {
 	tx.preCommitEvents = append(tx.preCommitEvents, event)
 }
 

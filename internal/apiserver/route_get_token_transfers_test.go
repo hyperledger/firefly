@@ -21,8 +21,8 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,7 +36,7 @@ func TestGetTokenTransfers(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mam.On("GetTokenTransfers", mock.Anything, "ns1", mock.Anything).
-		Return([]*fftypes.TokenTransfer{}, nil, nil)
+		Return([]*core.TokenTransfer{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -53,7 +53,7 @@ func TestGetTokenTransfersFromOrTo(t *testing.T) {
 	mam.On("GetTokenTransfers", mock.Anything, "ns1", mock.MatchedBy(func(filter database.AndFilter) bool {
 		info, _ := filter.Finalize()
 		return info.String() == "( ( from == '0x1' ) || ( to == '0x1' ) )"
-	})).Return([]*fftypes.TokenTransfer{}, nil, nil)
+	})).Return([]*core.TokenTransfer{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

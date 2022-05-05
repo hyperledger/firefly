@@ -17,7 +17,7 @@
 package tbd
 
 import (
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
 )
 
 func (tbd *TBD) InitPrefix(prefix config.Prefix) {

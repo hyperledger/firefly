@@ -20,10 +20,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var putContractAPI = &oapispec.Route{
@@ -39,13 +40,13 @@ var putContractAPI = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIParamsContractAPIID,
-	JSONInputValue:  func() interface{} { return &fftypes.ContractAPI{} },
-	JSONOutputValue: func() interface{} { return &fftypes.ContractAPI{} },
+	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
+	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		api := r.Input.(*fftypes.ContractAPI)
+		api := r.Input.(*core.ContractAPI)
 		api.ID, err = fftypes.ParseUUID(r.Ctx, r.PP["id"])
 		var res interface{}
 		if err == nil {

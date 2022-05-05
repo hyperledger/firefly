@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func TestGetGroupByHash(t *testing.T) {
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
 	mpm.On("GetGroupByID", mock.Anything, "abcd12345").
-		Return(&fftypes.Group{}, nil)
+		Return(&core.Group{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

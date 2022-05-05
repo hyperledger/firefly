@@ -16,7 +16,7 @@
 
 package coremsgs
 
-import "github.com/hyperledger/firefly/pkg/i18n"
+import "github.com/hyperledger/firefly-common/pkg/i18n"
 
 var ffe = i18n.FFE
 
@@ -24,9 +24,7 @@ var ffe = i18n.FFE
 var (
 	MsgConfigFailed                 = ffe("FF10101", "Failed to read config")
 	MsgJSONDecodeFailed             = ffe("FF10103", "Failed to decode input JSON")
-	MsgAPIServerStartFailed         = ffe("FF10104", "Unable to start listener on %s: %s")
 	MsgTLSConfigFailed              = ffe("FF10105", "Failed to initialize TLS configuration")
-	MsgInvalidCAFile                = ffe("FF10106", "Invalid CA certificates file")
 	MsgResponseMarshalError         = ffe("FF10107", "Failed to serialize response data", 400)
 	MsgWebsocketClientError         = ffe("FF10108", "Error received from WebSocket client: %s")
 	Msg404NotFound                  = ffe("FF10109", "Not found", 404)
@@ -62,7 +60,7 @@ var (
 	Msg404NoResult                  = ffe("FF10143", "No result found", 404)
 	MsgUnsupportedSQLOpInFilter     = ffe("FF10150", "No SQL mapping implemented for filter operator '%s'", 400)
 	MsgFilterSortDesc               = ffe("FF10154", "Sort field. For multi-field sort use comma separated values (or multiple query values) with '-' prefix for descending")
-	MsgContextCanceled              = ffe("FF10158", "Context cancelled")
+	MsgContextCanceled              = ffe("FF00154", "Context cancelled")
 	MsgDBMigrationFailed            = ffe("FF10163", "Database migration failed")
 	MsgHashMismatch                 = ffe("FF10164", "Hash mismatch")
 	MsgDefaultNamespaceNotFound     = ffe("FF10166", "namespaces.default '%s' must be included in the namespaces.predefined configuration")

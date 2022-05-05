@@ -31,7 +31,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gorilla/websocket"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,10 +44,10 @@ type testState struct {
 	client2              *resty.Client
 	ws1                  *websocket.Conn
 	ws2                  *websocket.Conn
-	org1                 *fftypes.Identity
-	org1key              *fftypes.Verifier
-	org2                 *fftypes.Identity
-	org2key              *fftypes.Verifier
+	org1                 *core.Identity
+	org1key              *core.Verifier
+	org2                 *core.Identity
+	org2key              *core.Verifier
 	done                 func()
 	stackState           *StackState
 	unregisteredAccounts []interface{}
@@ -85,9 +86,9 @@ func pollForUp(t *testing.T, client *resty.Client) {
 	assert.Equal(t, 200, resp.StatusCode())
 }
 
-func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType fftypes.MessageType, txtype fftypes.TransactionType, count int) (data fftypes.DataArray) {
+func validateReceivedMessages(ts *testState, client *resty.Client, topic string, msgType core.MessageType, txtype core.TransactionType, count int) (data core.DataArray) {
 	var group *fftypes.Bytes32
-	var messages []*fftypes.Message
+	var messages []*core.Message
 	events := GetMessageEvents(ts.t, client, ts.startTime, topic, 200)
 	for i, event := range events {
 		if event.Message != nil {
@@ -105,14 +106,14 @@ func validateReceivedMessages(ts *testState, client *resty.Client, topic string,
 	}
 	assert.Equal(ts.t, count, len(messages))
 
-	var returnData []*fftypes.Data
+	var returnData []*core.Data
 	for idx := 0; idx < len(messages); idx++ {
 		assert.Equal(ts.t, txtype, (messages)[idx].Header.TxType)
-		assert.Equal(ts.t, fftypes.FFStringArray{topic}, (messages)[idx].Header.Topics)
+		assert.Equal(ts.t, core.FFStringArray{topic}, (messages)[idx].Header.Topics)
 		assert.Equal(ts.t, topic, (messages)[idx].Header.Topics[0])
 
 		data := GetDataForMessage(ts.t, client, ts.startTime, (messages)[idx].Header.ID)
-		var msgData *fftypes.Data
+		var msgData *core.Data
 		for i, d := range data {
 			ts.t.Logf("Data %d: %+v", i, *d)
 			if *d.ID == *messages[idx].Data[0].ID {
@@ -311,8 +312,8 @@ func beforeE2ETest(t *testing.T) *testState {
 	return ts
 }
 
-func wsReader(conn *websocket.Conn, dbChanges bool) chan *fftypes.EventDelivery {
-	events := make(chan *fftypes.EventDelivery, 100)
+func wsReader(conn *websocket.Conn, dbChanges bool) chan *core.EventDelivery {
+	events := make(chan *core.EventDelivery, 100)
 	go func() {
 		for {
 			_, b, err := conn.ReadMessage()
@@ -320,14 +321,14 @@ func wsReader(conn *websocket.Conn, dbChanges bool) chan *fftypes.EventDelivery 
 				fmt.Printf("Websocket %s closing, error: %s\n", conn.RemoteAddr(), err)
 				return
 			}
-			var wsa fftypes.WSClientActionBase
+			var wsa core.WSClientActionBase
 			err = json.Unmarshal(b, &wsa)
 			if err != nil {
 				panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
 			}
 			switch wsa.Type {
 			default:
-				var ed fftypes.EventDelivery
+				var ed core.EventDelivery
 				err = json.Unmarshal(b, &ed)
 				if err != nil {
 					panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))
@@ -342,7 +343,7 @@ func wsReader(conn *websocket.Conn, dbChanges bool) chan *fftypes.EventDelivery 
 	return events
 }
 
-func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes.EventType, ref *fftypes.UUID) {
+func waitForEvent(t *testing.T, c chan *core.EventDelivery, eventType core.EventType, ref *fftypes.UUID) {
 	for {
 		ed := <-c
 		if ed.Type == eventType && (ref == nil || *ref == *ed.Reference) {
@@ -353,10 +354,10 @@ func waitForEvent(t *testing.T, c chan *fftypes.EventDelivery, eventType fftypes
 	}
 }
 
-func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgType fftypes.MessageType) *fftypes.EventDelivery {
+func waitForMessageConfirmed(t *testing.T, c chan *core.EventDelivery, msgType core.MessageType) *core.EventDelivery {
 	for {
 		ed := <-c
-		if ed.Type == fftypes.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
+		if ed.Type == core.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
 			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
 			return ed
 		}
@@ -364,10 +365,10 @@ func waitForMessageConfirmed(t *testing.T, c chan *fftypes.EventDelivery, msgTyp
 	}
 }
 
-func waitForIdentityConfirmed(t *testing.T, c chan *fftypes.EventDelivery) *fftypes.EventDelivery {
+func waitForIdentityConfirmed(t *testing.T, c chan *core.EventDelivery) *core.EventDelivery {
 	for {
 		ed := <-c
-		if ed.Type == fftypes.EventTypeIdentityConfirmed {
+		if ed.Type == core.EventTypeIdentityConfirmed {
 			t.Logf("Detected '%s' event for identity '%s'", ed.Type, ed.Reference)
 			return ed
 		}
@@ -375,10 +376,10 @@ func waitForIdentityConfirmed(t *testing.T, c chan *fftypes.EventDelivery) *ffty
 	}
 }
 
-func waitForContractEvent(t *testing.T, client *resty.Client, c chan *fftypes.EventDelivery, match map[string]interface{}) map[string]interface{} {
+func waitForContractEvent(t *testing.T, client *resty.Client, c chan *core.EventDelivery, match map[string]interface{}) map[string]interface{} {
 	for {
 		eventDelivery := <-c
-		if eventDelivery.Type == fftypes.EventTypeBlockchainEventReceived {
+		if eventDelivery.Type == core.EventTypeBlockchainEventReceived {
 			event, err := GetBlockchainEvent(t, client, eventDelivery.Event.Reference.String())
 			if err != nil {
 				t.Logf("WARN: unable to get event: %v", err.Error())

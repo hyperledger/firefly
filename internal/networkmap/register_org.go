@@ -19,24 +19,24 @@ package networkmap
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
-func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*fftypes.Identity, error) {
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
 
 	key, err := nm.identity.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	orgRequest := &fftypes.IdentityCreateDTO{
+	orgRequest := &core.IdentityCreateDTO{
 		Name: config.GetString(coreconfig.OrgName),
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: config.GetString(coreconfig.OrgDescription),
 		},
 		Key: key.Value,
@@ -47,7 +47,7 @@ func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm 
 	return nm.RegisterOrganization(ctx, orgRequest, waitConfirm)
 }
 
-func (nm *networkMap) RegisterOrganization(ctx context.Context, orgRequest *fftypes.IdentityCreateDTO, waitConfirm bool) (*fftypes.Identity, error) {
-	orgRequest.Type = fftypes.IdentityTypeOrg
-	return nm.RegisterIdentity(ctx, fftypes.SystemNamespace, orgRequest, waitConfirm)
+func (nm *networkMap) RegisterOrganization(ctx context.Context, orgRequest *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+	orgRequest.Type = core.IdentityTypeOrg
+	return nm.RegisterIdentity(ctx, core.SystemNamespace, orgRequest, waitConfirm)
 }

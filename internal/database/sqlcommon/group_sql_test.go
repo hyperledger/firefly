@@ -23,9 +23,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -39,11 +40,11 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 
 	// Create a new group
 	groupHash := fftypes.NewRandB32()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: fftypes.Members{
+			Members: core.Members{
 				{Identity: "0x12345", Node: fftypes.NewUUID()},
 				{Identity: "0x23456", Node: fftypes.NewUUID()},
 			},
@@ -52,8 +53,8 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		Created: fftypes.Now(),
 	}
 
-	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, fftypes.ChangeEventTypeCreated, "ns1", groupHash, mock.Anything).Return()
-	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, fftypes.ChangeEventTypeUpdated, "ns1", groupHash, mock.Anything).Return()
+	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, core.ChangeEventTypeCreated, "ns1", groupHash, mock.Anything).Return()
+	s.callbacks.On("HashCollectionNSEvent", database.CollectionGroups, core.ChangeEventTypeUpdated, "ns1", groupHash, mock.Anything).Return()
 
 	err := s.UpsertGroup(ctx, group, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
@@ -67,8 +68,8 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 
 	// Update the group (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	groupUpdated := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	groupUpdated := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
 			Members:   group.Members,
@@ -133,7 +134,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 func TestUpsertGroupFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{}, database.UpsertOptimizationSkip)
+	err := s.UpsertGroup(context.Background(), &core.Group{}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -144,7 +145,7 @@ func TestUpsertGroupFailSelect(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	groupID := fftypes.NewRandB32()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
+	err := s.UpsertGroup(context.Background(), &core.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -156,7 +157,7 @@ func TestUpsertGroupFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	groupID := fftypes.NewRandB32()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
+	err := s.UpsertGroup(context.Background(), &core.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -168,7 +169,7 @@ func TestUpsertGroupFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow(groupID.String()))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
+	err := s.UpsertGroup(context.Background(), &core.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -181,10 +182,10 @@ func TestUpsertGroupFailMembers(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{
+	err := s.UpsertGroup(context.Background(), &core.Group{
 		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: "org1", Node: fftypes.NewUUID()},
 			},
 		},
@@ -200,7 +201,7 @@ func TestUpsertGroupFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertGroup(context.Background(), &fftypes.Group{Hash: groupID}, database.UpsertOptimizationSkip)
+	err := s.UpsertGroup(context.Background(), &core.Group{Hash: groupID}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -211,10 +212,10 @@ func TestUpdateMembersRecreateFail(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	tx, _ := s.db.Begin()
-	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &core.Group{
 		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{{Node: fftypes.NewUUID()}},
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{{Node: fftypes.NewUUID()}},
 		},
 	}, true)
 	assert.Regexp(t, "FF10118", err)
@@ -226,10 +227,10 @@ func TestUpdateMembersMissingOrg(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &core.Group{
 		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{{Node: fftypes.NewUUID()}},
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{{Node: fftypes.NewUUID()}},
 		},
 	}, false)
 	assert.Regexp(t, "FF00116", err)
@@ -241,10 +242,10 @@ func TestUpdateMembersMissingNode(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
-	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &core.Group{
 		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{{Identity: "0x12345"}},
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{{Identity: "0x12345"}},
 		},
 	}, false)
 	assert.Regexp(t, "FF00117", err)
@@ -257,7 +258,7 @@ func TestUpdateGroupDataDeleteFail(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &core.Group{
 		Hash: groupID,
 	}, true)
 	assert.Regexp(t, "FF10118", err)
@@ -270,10 +271,10 @@ func TestUpdateGroupDataAddFail(t *testing.T) {
 	mock.ExpectBegin()
 	tx, _ := s.db.Begin()
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &fftypes.Group{
+	err := s.updateMembers(context.Background(), &txWrapper{sqlTX: tx}, &core.Group{
 		Hash: groupID,
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{{Identity: "0x12345", Node: fftypes.NewUUID()}},
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{{Identity: "0x12345", Node: fftypes.NewUUID()}},
 		},
 	}, false)
 	assert.Regexp(t, "FF10116", err)
@@ -284,7 +285,7 @@ func TestLoadMembersQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.loadMembers(context.Background(), []*fftypes.Group{{Hash: groupID}})
+	err := s.loadMembers(context.Background(), []*core.Group{{Hash: groupID}})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -293,7 +294,7 @@ func TestLoadMembersScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
-	err := s.loadMembers(context.Background(), []*fftypes.Group{{Hash: groupID}})
+	err := s.loadMembers(context.Background(), []*core.Group{{Hash: groupID}})
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -301,11 +302,11 @@ func TestLoadMembersScanFail(t *testing.T) {
 func TestLoadMembersEmpty(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
-	group := &fftypes.Group{Hash: groupID}
+	group := &core.Group{Hash: groupID}
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
-	err := s.loadMembers(context.Background(), []*fftypes.Group{group})
+	err := s.loadMembers(context.Background(), []*core.Group{group})
 	assert.NoError(t, err)
-	assert.Equal(t, fftypes.Members{}, group.Members)
+	assert.Equal(t, core.Members{}, group.Members)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 

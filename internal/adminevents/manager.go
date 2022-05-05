@@ -23,14 +23,14 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type Manager interface {
-	Dispatch(changeEvent *fftypes.ChangeEvent)
+	Dispatch(changeEvent *core.ChangeEvent)
 	ServeHTTPWebSocketListener(res http.ResponseWriter, req *http.Request)
 	WaitStop()
 }
@@ -110,7 +110,7 @@ func (ae *adminEventManager) makeDirtyReadList() {
 	}
 }
 
-func (ae *adminEventManager) Dispatch(changeEvent *fftypes.ChangeEvent) {
+func (ae *adminEventManager) Dispatch(changeEvent *core.ChangeEvent) {
 	// We don't lock here, as this is a critical path function.
 	// We use a dirty copy of the connection list, updated on add/remove
 	for _, ws := range ae.dirtyReadList {

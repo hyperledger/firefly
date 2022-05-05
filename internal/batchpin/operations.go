@@ -19,20 +19,21 @@ package batchpin
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type batchPinData struct {
-	Batch      *fftypes.BatchPersisted `json:"batch"`
-	Contexts   []*fftypes.Bytes32      `json:"contexts"`
-	PayloadRef string                  `json:"payloadRef"`
+	Batch      *core.BatchPersisted `json:"batch"`
+	Contexts   []*fftypes.Bytes32   `json:"contexts"`
+	PayloadRef string               `json:"payloadRef"`
 }
 
-func addBatchPinInputs(op *fftypes.Operation, batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string) {
+func addBatchPinInputs(op *core.Operation, batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string) {
 	contextStr := make([]string, len(contexts))
 	for i, c := range contexts {
 		contextStr[i] = c.String()
@@ -44,7 +45,7 @@ func addBatchPinInputs(op *fftypes.Operation, batchID *fftypes.UUID, contexts []
 	}
 }
 
-func retrieveBatchPinInputs(ctx context.Context, op *fftypes.Operation) (batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string, err error) {
+func retrieveBatchPinInputs(ctx context.Context, op *core.Operation) (batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string, err error) {
 	batchID, err = fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 	if err != nil {
 		return nil, nil, "", err
@@ -61,9 +62,9 @@ func retrieveBatchPinInputs(ctx context.Context, op *fftypes.Operation) (batchID
 	return batchID, contexts, payloadRef, nil
 }
 
-func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypeBlockchainPinBatch:
+	case core.OpTypeBlockchainPinBatch:
 		batchID, contexts, payloadRef, err := retrieveBatchPinInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -81,7 +82,7 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *fftypes.O
 	}
 }
 
-func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
@@ -99,12 +100,12 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *fftypes.Prepa
 	}
 }
 
-func (bp *batchPinSubmitter) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+func (bp *batchPinSubmitter) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
 	return nil
 }
 
-func opBatchPin(op *fftypes.Operation, batch *fftypes.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opBatchPin(op *core.Operation, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,

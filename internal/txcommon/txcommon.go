@@ -21,23 +21,24 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/karlseguin/ccache"
 )
 
 type Helper interface {
-	SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.TransactionType) (*fftypes.UUID, error)
-	PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error)
-	AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error
-	InsertBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error
-	EnrichEvent(ctx context.Context, event *fftypes.Event) (*fftypes.EnrichedEvent, error)
-	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error)
-	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error)
+	SubmitNewTransaction(ctx context.Context, ns string, txType core.TransactionType) (*fftypes.UUID, error)
+	PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error)
+	AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error
+	InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error
+	EnrichEvent(ctx context.Context, event *core.Event) (*core.EnrichedEvent, error)
+	GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error)
+	GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 }
 
 type transactionHelper struct {
@@ -67,15 +68,15 @@ func NewTransactionHelper(di database.Plugin, dm data.Manager) Helper {
 	return t
 }
 
-func (t *transactionHelper) updateTransactionsCache(tx *fftypes.Transaction) {
+func (t *transactionHelper) updateTransactionsCache(tx *core.Transaction) {
 	t.transactionCache.Set(tx.ID.String(), tx, t.transactionCacheTTL)
 }
 
-func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.Transaction, error) {
+func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *fftypes.UUID) (*core.Transaction, error) {
 	cached := t.transactionCache.Get(id.String())
 	if cached != nil {
 		cached.Extend(t.transactionCacheTTL)
-		return cached.Value().(*fftypes.Transaction), nil
+		return cached.Value().(*core.Transaction), nil
 	}
 	tx, err := t.database.GetTransactionByID(ctx, id)
 	if err != nil || tx == nil {
@@ -86,9 +87,9 @@ func (t *transactionHelper) GetTransactionByIDCached(ctx context.Context, id *ff
 }
 
 // SubmitNewTransaction is called when there is a new transaction being submitted by the local node
-func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string, txType fftypes.TransactionType) (*fftypes.UUID, error) {
+func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string, txType core.TransactionType) (*fftypes.UUID, error) {
 
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		ID:        fftypes.NewUUID(),
 		Namespace: ns,
 		Type:      txType,
@@ -98,7 +99,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string,
 		return nil, err
 	}
 
-	if err := t.database.InsertEvent(ctx, fftypes.NewEvent(fftypes.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID, tx.Type.String())); err != nil {
+	if err := t.database.InsertEvent(ctx, core.NewEvent(core.EventTypeTransactionSubmitted, tx.Namespace, tx.ID, tx.ID, tx.Type.String())); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +107,7 @@ func (t *transactionHelper) SubmitNewTransaction(ctx context.Context, ns string,
 }
 
 // PersistTransaction is called when we need to ensure a transaction exists in the DB, and optionally associate a new BlockchainTXID to it
-func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType fftypes.TransactionType, blockchainTXID string) (valid bool, err error) {
+func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, id *fftypes.UUID, txType core.TransactionType, blockchainTXID string) (valid bool, err error) {
 
 	// TODO: Consider if this can exploit caching
 	tx, err := t.database.GetTransactionByID(ctx, id)
@@ -136,11 +137,11 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 		}
 
 	} else {
-		tx = &fftypes.Transaction{
+		tx = &core.Transaction{
 			ID:            id,
 			Namespace:     ns,
 			Type:          txType,
-			BlockchainIDs: fftypes.NewFFStringArray(strings.ToLower(blockchainTXID)),
+			BlockchainIDs: core.NewFFStringArray(strings.ToLower(blockchainTXID)),
 		}
 		if err = t.database.InsertTransaction(ctx, tx); err != nil {
 			return false, err
@@ -154,7 +155,7 @@ func (t *transactionHelper) PersistTransaction(ctx context.Context, ns string, i
 
 // AddBlockchainTX is called when we know the transaction should exist, and we don't need any validation
 // but just want to bolt on an extra blockchain TXID (if it's not there already).
-func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *fftypes.Transaction, blockchainTXID string) error {
+func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *core.Transaction, blockchainTXID string) error {
 
 	var changed bool
 	tx.BlockchainIDs, changed = tx.BlockchainIDs.AddToSortedSet(blockchainTXID)
@@ -171,15 +172,15 @@ func (t *transactionHelper) AddBlockchainTX(ctx context.Context, tx *fftypes.Tra
 	return nil
 }
 
-func (t *transactionHelper) addBlockchainEventToCache(chainEvent *fftypes.BlockchainEvent) {
+func (t *transactionHelper) addBlockchainEventToCache(chainEvent *core.BlockchainEvent) {
 	t.blockchainEventCache.Set(chainEvent.ID.String(), chainEvent, t.blockchainEventTTL)
 }
 
-func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.BlockchainEvent, error) {
+func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
 	cached := t.blockchainEventCache.Get(id.String())
 	if cached != nil {
 		cached.Extend(t.blockchainEventTTL)
-		return cached.Value().(*fftypes.BlockchainEvent), nil
+		return cached.Value().(*core.BlockchainEvent), nil
 	}
 	chainEvent, err := t.database.GetBlockchainEventByID(ctx, id)
 	if err != nil || chainEvent == nil {
@@ -189,7 +190,7 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 	return chainEvent, nil
 }
 
-func (t *transactionHelper) InsertBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+func (t *transactionHelper) InsertBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
 	err := t.database.InsertBlockchainEvent(ctx, chainEvent)
 	if err != nil {
 		return err

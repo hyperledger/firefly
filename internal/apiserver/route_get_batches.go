@@ -22,8 +22,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getBatches = &oapispec.Route{
@@ -37,7 +37,7 @@ var getBatches = &oapispec.Route{
 	FilterFactory:   database.BatchQueryFactory,
 	Description:     coremsgs.APIEndpointsGetBatches,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.BatchPersisted{} },
+	JSONOutputValue: func() interface{} { return []*core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		return filterResult(getOr(r.Ctx).GetBatches(r.Ctx, r.PP["ns"], r.Filter))

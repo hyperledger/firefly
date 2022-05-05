@@ -21,10 +21,11 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -32,15 +33,15 @@ type jsonValidator struct {
 	id       *fftypes.UUID
 	size     int64
 	ns       string
-	datatype *fftypes.DatatypeRef
+	datatype *core.DatatypeRef
 	schema   *jsonschema.Schema
 }
 
-func newJSONValidator(ctx context.Context, ns string, datatype *fftypes.Datatype) (*jsonValidator, error) {
+func newJSONValidator(ctx context.Context, ns string, datatype *core.Datatype) (*jsonValidator, error) {
 	jv := &jsonValidator{
 		id: datatype.ID,
 		ns: ns,
-		datatype: &fftypes.DatatypeRef{
+		datatype: &core.DatatypeRef{
 			Name:    datatype.Name,
 			Version: datatype.Version,
 		},
@@ -67,7 +68,7 @@ func newJSONValidator(ctx context.Context, ns string, datatype *fftypes.Datatype
 	return jv, nil
 }
 
-func (jv *jsonValidator) Validate(ctx context.Context, data *fftypes.Data) error {
+func (jv *jsonValidator) Validate(ctx context.Context, data *core.Data) error {
 	return jv.ValidateValue(ctx, data.Value, data.Hash)
 }
 

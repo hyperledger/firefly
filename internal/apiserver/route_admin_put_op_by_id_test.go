@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/operationmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func TestAdminPatchOperationByID(t *testing.T) {
 
 	mop := &operationmocks.Manager{}
 	o.On("Operations").Return(mop)
-	mop.On("ResolveOperationByID", mock.Anything, "abcd12345", mock.AnythingOfType("*fftypes.Operation")).Return(&fftypes.Operation{}, nil)
+	mop.On("ResolveOperationByID", mock.Anything, "abcd12345", mock.AnythingOfType("*core.Operation")).Return(&core.Operation{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

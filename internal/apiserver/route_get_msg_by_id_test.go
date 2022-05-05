@@ -20,7 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetMessageByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessageByID", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.Message{}, nil)
+		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -45,7 +45,7 @@ func TestGetMessageByIDWithData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessageByIDWithData", mock.Anything, "mynamespace", "abcd12345").
-		Return(&fftypes.MessageInOut{}, nil)
+		Return(&core.MessageInOut{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
