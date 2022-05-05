@@ -88,7 +88,6 @@ func getOrchestrator() orchestrator.Orchestrator {
 
 // Execute is called by the main method of the package
 func Execute() error {
-	apiserver.InitConfig()
 	return rootCmd.Execute()
 }
 
@@ -96,6 +95,7 @@ func run() error {
 
 	// Read the configuration
 	coreconfig.Reset()
+	apiserver.InitConfig()
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
