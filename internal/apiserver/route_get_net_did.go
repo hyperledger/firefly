@@ -25,8 +25,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getIdentityByDID = &oapispec.Route{
-	Name:   "getIdentityByDID",
+var getNetworkIdentityByDID = &oapispec.Route{
+	Name:   "getNetworkIdentityByDID",
 	Path:   "network/identities/{did:.+}",
 	Method: http.MethodGet,
 	QueryParams: []*oapispec.QueryParam{
@@ -36,7 +36,8 @@ var getIdentityByDID = &oapispec.Route{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetIdentityByDID,
+	Description:     coremsgs.APIEndpointsGetNetworkIdentityByDID,
+	Deprecated:      true, // use getIdentityByDID instead
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

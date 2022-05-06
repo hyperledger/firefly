@@ -24,16 +24,15 @@ import (
 	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var getNetworkDIDDocByDID = &oapispec.Route{
-	Name:   "getNetworkDIDDocByDID",
-	Path:   "network/diddocs/{did:.+}",
+var getDID = &oapispec.Route{
+	Name:   "getDID",
+	Path:   "dids/{did:.+}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetNetworkDIDDocByDID,
-	Deprecated:      true, // use getDID instead
+	Description:     coremsgs.APIEndpointsGetDIDDocByDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},

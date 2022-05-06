@@ -36,7 +36,6 @@ var getIdentities = &oapispec.Route{
 	},
 	FilterFactory:   database.IdentityQueryFactory,
 	Description:     coremsgs.APIEndpointsGetIdentities,
-	Deprecated:      true, // use getNetworkIdentities instead
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

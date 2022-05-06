@@ -18,26 +18,32 @@ package apiserver
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getNetworkDIDDocByDID = &oapispec.Route{
-	Name:   "getNetworkDIDDocByDID",
-	Path:   "network/diddocs/{did:.+}",
+var getIdentityByDID = &oapispec.Route{
+	Name:   "getIdentityByDID",
+	Path:   "identities/{did:did:.+}",
 	Method: http.MethodGet,
+	QueryParams: []*oapispec.QueryParam{
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
+	},
 	PathParams: []*oapispec.PathParam{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetNetworkDIDDocByDID,
-	Deprecated:      true, // use getDID instead
+	Description:     coremsgs.APIEndpointsGetIdentityByDID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
+	JSONOutputValue: func() interface{} { return &core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
+		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+			return getOr(r.Ctx).NetworkMap().GetIdentityByDIDWithVerifiers(r.Ctx, extractNamespace(r.PP), r.PP["did"])
+		}
+		return getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
 	},
 }

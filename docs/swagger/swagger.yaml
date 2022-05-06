@@ -5038,6 +5038,82 @@ paths:
           description: ""
       tags:
       - Default Namespace
+  /dids/{did}:
+    get:
+      description: Gets a DID document by its DID
+      operationId: getDID
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  '@context':
+                    description: See https://www.w3.org/TR/did-core/#json-ld
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#json-ld
+                      type: string
+                    type: array
+                  authentication:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#did-document-properties
+                      type: string
+                    type: array
+                  id:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    type: string
+                  verificationMethod:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#did-document-properties
+                      properties:
+                        blockchainAcountId:
+                          description: For blockchains like Ethereum that represent
+                            signing identities directly by their public key summarized
+                            in an account string
+                          type: string
+                        controller:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                        dataExchangePeerID:
+                          description: A string provided by your Data Exchange plugin,
+                            that it uses a technology specific mechanism to validate
+                            against when messages arrive from this identity
+                          type: string
+                        id:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                        mspIdentityString:
+                          description: For Hyperledger Fabric where the signing identity
+                            is represented by an MSP identifier (containing X509 certificate
+                            DN strings) that were validated by your local MSP
+                          type: string
+                        type:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
   /events:
     get:
       description: Gets a list of events
@@ -5522,8 +5598,8 @@ paths:
       - Default Namespace
   /identities:
     get:
-      deprecated: true
-      description: Gets a list of identities that have been registered in the network
+      description: Gets a list of all identities that have been registered in the
+        namespace
       operationId: getIdentities
       parameters:
       - description: When set, the API will return the verifier for this identity
@@ -5940,6 +6016,131 @@ paths:
                     description: The last update time of the identity profile
                     format: date-time
                     type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /identities/{did}:
+    get:
+      description: Gets an identity by its DID
+      operationId: getIdentityByDID
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: When set, the API will return the verifier for this identity
+        in: query
+        name: fetchverifiers
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                  verifiers:
+                    description: The verifiers, such as blockchain signing keys, that
+                      have been bound to this identity and can be used to prove data
+                      orignates from that identity
+                    items:
+                      description: The verifiers, such as blockchain signing keys,
+                        that have been bound to this identity and can be used to prove
+                        data orignates from that identity
+                      properties:
+                        type:
+                          description: The type of the verifier
+                          enum:
+                          - ethereum_address
+                          - fabric_msp_id
+                          - dx_peer_id
+                          type: string
+                        value:
+                          description: The verifier string, such as an Ethereum address,
+                            or Fabric MSP identifier
+                          type: string
+                      type: object
+                    type: array
                 type: object
           description: Success
         default:
@@ -13790,6 +13991,89 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/dids/{did}:
+    get:
+      description: Gets a DID document by its DID
+      operationId: getDIDNamespace
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  '@context':
+                    description: See https://www.w3.org/TR/did-core/#json-ld
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#json-ld
+                      type: string
+                    type: array
+                  authentication:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#did-document-properties
+                      type: string
+                    type: array
+                  id:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    type: string
+                  verificationMethod:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#did-document-properties
+                      properties:
+                        blockchainAcountId:
+                          description: For blockchains like Ethereum that represent
+                            signing identities directly by their public key summarized
+                            in an account string
+                          type: string
+                        controller:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                        dataExchangePeerID:
+                          description: A string provided by your Data Exchange plugin,
+                            that it uses a technology specific mechanism to validate
+                            against when messages arrive from this identity
+                          type: string
+                        id:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                        mspIdentityString:
+                          description: For Hyperledger Fabric where the signing identity
+                            is represented by an MSP identifier (containing X509 certificate
+                            DN strings) that were validated by your local MSP
+                          type: string
+                        type:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/events:
     get:
       description: Gets a list of events
@@ -14302,8 +14586,8 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/identities:
     get:
-      deprecated: true
-      description: Gets a list of identities that have been registered in the network
+      description: Gets a list of all identities that have been registered in the
+        namespace
       operationId: getIdentitiesNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -14734,6 +15018,138 @@ paths:
                     description: The last update time of the identity profile
                     format: date-time
                     type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/identities/{did}:
+    get:
+      description: Gets an identity by its DID
+      operationId: getIdentityByDIDNamespace
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When set, the API will return the verifier for this identity
+        in: query
+        name: fetchverifiers
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                  verifiers:
+                    description: The verifiers, such as blockchain signing keys, that
+                      have been bound to this identity and can be used to prove data
+                      orignates from that identity
+                    items:
+                      description: The verifiers, such as blockchain signing keys,
+                        that have been bound to this identity and can be used to prove
+                        data orignates from that identity
+                      properties:
+                        type:
+                          description: The type of the verifier
+                          enum:
+                          - ethereum_address
+                          - fabric_msp_id
+                          - dx_peer_id
+                          type: string
+                        value:
+                          description: The verifier string, such as an Ethereum address,
+                            or Fabric MSP identifier
+                          type: string
+                      type: object
+                    type: array
                 type: object
           description: Success
         default:
@@ -17002,8 +17418,10 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/network/diddocs/{did}:
     get:
-      description: Gets a DID document by its DID
-      operationId: getDIDDocByDIDNamespace
+      deprecated: true
+      description: Gets a DID document by its DID (deprecated - use /dids/{did} instead
+        of /network/diddocs/{did}
+      operationId: getNetworkDIDDocByDIDNamespace
       parameters:
       - description: The identity DID
         in: path
@@ -17085,7 +17503,9 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/network/identities:
     get:
-      description: Gets the list of identities in the network
+      deprecated: true
+      description: Gets the list of identities in the network (deprecated - use /identities
+        instead of /network/identities
       operationId: getNetworkIdentitiesNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -17312,8 +17732,10 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/network/identities/{did}:
     get:
-      description: Gets an identity by its DID
-      operationId: getIdentityByDIDNamespace
+      deprecated: true
+      description: Gets an identity by its DID (deprecated - use /identities/{did}
+        instead of /network/identities/{did})
+      operationId: getNetworkIdentityByDIDNamespace
       parameters:
       - description: The identity DID
         in: path
@@ -23882,8 +24304,10 @@ paths:
       - Non-Default Namespace
   /network/diddocs/{did}:
     get:
-      description: Gets a DID document by its DID
-      operationId: getDIDDocByDID
+      deprecated: true
+      description: Gets a DID document by its DID (deprecated - use /dids/{did} instead
+        of /network/diddocs/{did}
+      operationId: getNetworkDIDDocByDID
       parameters:
       - description: The identity DID
         in: path
@@ -23958,7 +24382,9 @@ paths:
       - Default Namespace
   /network/identities:
     get:
-      description: Gets the list of identities in the network
+      deprecated: true
+      description: Gets the list of identities in the network (deprecated - use /identities
+        instead of /network/identities
       operationId: getNetworkIdentities
       parameters:
       - description: When set, the API will return the verifier for this identity
@@ -24178,8 +24604,10 @@ paths:
       - Default Namespace
   /network/identities/{did}:
     get:
-      description: Gets an identity by its DID
-      operationId: getIdentityByDID
+      deprecated: true
+      description: Gets an identity by its DID (deprecated - use /identities/{did}
+        instead of /network/identities/{did})
+      operationId: getNetworkIdentityByDID
       parameters:
       - description: The identity DID
         in: path

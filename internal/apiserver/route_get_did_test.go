@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -20,37 +20,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
-	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetNetIdentityByDID(t *testing.T) {
+func TestGetDID(t *testing.T) {
 	o, r := newTestAPIServer()
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
-	req := httptest.NewRequest("GET", "/api/v1/network/identities/did:firefly:org/org_1", nil)
+	req := httptest.NewRequest("GET", "/api/v1/dids/did:firefly:org/org_1", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDID", mock.Anything, "default", "did:firefly:org/org_1").
-		Return(&core.Identity{}, nil)
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 200, res.Result().StatusCode)
-}
-
-func TestGetNetIdentityByDIDWithVerifiers(t *testing.T) {
-	o, r := newTestAPIServer()
-	nmn := &networkmapmocks.Manager{}
-	o.On("NetworkMap").Return(nmn)
-	req := httptest.NewRequest("GET", "/api/v1/network/identities/did:firefly:org/org_1?fetchverifiers", nil)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "default", "did:firefly:org/org_1").
-		Return(&core.IdentityWithVerifiers{}, nil)
+	nmn.On("GetDIDDocForIndentityByDID", mock.Anything, "default", "did:firefly:org/org_1").
+		Return(&networkmap.DIDDocument{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
