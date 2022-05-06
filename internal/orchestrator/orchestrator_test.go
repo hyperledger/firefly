@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -345,11 +345,101 @@ func TestDataExchangePluginOldName(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestTokensMissingName(t *testing.T) {
+	or := newTestOrchestrator()
+	tifactory.InitConfig(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdx.On("InitConfig", mock.Anything).Return()
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10386.*type", err)
+}
+
+func TestTokensBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	tifactory.InitConfig(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "/////////////")
+	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdx.On("InitConfig", mock.Anything).Return()
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF00140.*name", err)
+}
+
 func TestBadTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
-	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "erc20_erc721")
+	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdx.On("InitConfig", mock.Anything).Return()
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
+func TestGoodTokensPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	tifactory.InitConfig(tokensConfig)
+	tokensConfig.AddKnownKey(tokens.TokensConfigName, "erc20_erc721")
+	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
+	tokensConfig.AddKnownKey("fftokens.url", "test")
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.tokens = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdx.On("InitConfig", mock.Anything).Return()
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+}
+
+func TestBadDeprecatedTokensPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -367,11 +457,11 @@ func TestBadTokensPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10272.*wrong", err)
 }
 
-func TestBadTokensPluginNoConnector(t *testing.T) {
+func TestBadDeprecatedTokensPluginNoConnector(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
-	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
-	tokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -390,11 +480,11 @@ func TestBadTokensPluginNoConnector(t *testing.T) {
 	assert.Regexp(t, "FF10273", err)
 }
 
-func TestBadTokensPluginNoName(t *testing.T) {
+func TestBadDeprecatedTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(tokens.TokensConfigName)
-	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -412,11 +502,11 @@ func TestBadTokensPluginNoName(t *testing.T) {
 	assert.Regexp(t, "FF10273", err)
 }
 
-func TestBadTokensPluginInvalidName(t *testing.T) {
+func TestBadDeprecatedTokensPluginInvalidName(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "!wrong")
-	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "text")
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "!wrong")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "text")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -434,11 +524,11 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 	assert.Regexp(t, "FF00140.*'name'", err)
 }
 
-func TestBadTokensPluginNoType(t *testing.T) {
+func TestBadDeprecatedTokensPluginNoType(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
-	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -457,13 +547,13 @@ func TestBadTokensPluginNoType(t *testing.T) {
 	assert.Regexp(t, "FF10273", err)
 }
 
-func TestGoodTokensPlugin(t *testing.T) {
+func TestGoodDeprecatedTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig = config.RootArray("tokens")
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
-	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
-	tokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
+	deprecatedTokensConfig = config.RootArray("tokens")
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
+	deprecatedTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)

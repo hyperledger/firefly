@@ -115,6 +115,8 @@ var (
 	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = ffc("tokens")
+	// PluginsTokensList is the key containing a list of supported tokens plugins
+	PluginsTokensList = ffc("plugins.tokens")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions

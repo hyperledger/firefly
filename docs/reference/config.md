@@ -665,6 +665,64 @@ nav_order: 3
 |key|The signing identity allocated to the organization (can be the same as the nodes)|`string`|`<nil>`
 |name|The name of the organization to which this FireFly node belongs|`string`|`<nil>`
 
+## plugins
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
+
+## plugins.tokens[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
+|type|The type of the Tokens Connector plugin to use|`string`|`<nil>`
+
+## plugins.tokens[].fftokens
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the Token Connector|URL `string`|`<nil>`
+
+## plugins.tokens[].fftokens.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.tokens[].fftokens.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Token Connector|URL `string`|`<nil>`
+
+## plugins.tokens[].fftokens.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.tokens[].fftokens.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
 ## privatemessaging.batch
 
 |Key|Description|Type|Default Value|

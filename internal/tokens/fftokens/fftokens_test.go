@@ -41,6 +41,7 @@ import (
 )
 
 var utConfig = config.RootArray("tokens")
+var ffTokensConfig = config.RootSection("fftokens")
 
 func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
@@ -54,15 +55,15 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 
 	coreconfig.Reset()
 	h = &FFTokens{}
-	h.InitConfig(utConfig)
+	h.InitConfig(ffTokensConfig)
 
 	utConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	utConfig.AddKnownKey(ffresty.HTTPConfigURL, httpURL)
-	utConfig.AddKnownKey(ffresty.HTTPCustomClient, mockedClient)
+	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, httpURL)
+	ffTokensConfig.AddKnownKey(ffresty.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
-	err := h.Init(context.Background(), "testtokens", utConfig.ArrayEntry(0), &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "fftokens", h.Name())
 	assert.Equal(t, "testtokens", h.configuredName)
@@ -76,24 +77,24 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFTokens{}
-	h.InitConfig(utConfig)
+	h.InitConfig(ffTokensConfig)
 
 	utConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	utConfig.AddKnownKey(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), "testtokens", utConfig.ArrayEntry(0), &tokenmocks.Callbacks{})
+	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "::::////")
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF00149", err)
 }
 
 func TestInitMissingURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFTokens{}
-	h.InitConfig(utConfig)
+	h.InitConfig(ffTokensConfig)
 
 	utConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	utConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
 	utConfig.AddKnownKey(ffresty.HTTPConfigURL, "")
-	err := h.Init(context.Background(), "testtokens", utConfig.ArrayEntry(0), &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 

@@ -220,6 +220,12 @@ var (
 	ConfigTokensPlugin    = ffc("config.tokens[].plugin", "The name of the Tokens Connector plugin to use", i18n.StringType)
 	ConfigTokensURL       = ffc("config.tokens[].url", "The URL of the Token Connector", "URL "+i18n.StringType)
 
+	ConfigPluginTokens         = ffc("config.plugins.tokens", "The tokens plugin configurations. This will be used to configure tokens connectors", i18n.StringType)
+	ConfigPluginTokensName     = ffc("config.plugins.tokens[].name", "The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector", i18n.StringType)
+	ConfigPluginTokensType     = ffc("config.plugins.tokens[].type", "The type of the Tokens Connector plugin to use", i18n.StringType)
+	ConfigPluginTokensURL      = ffc("config.plugins.tokens[].fftokens.url", "The URL of the Token Connector", "URL "+i18n.StringType)
+	ConfigPluginTokensProxyURL = ffc("config.plugins.tokens[].fftokens.proxy.url", "Optional HTTP proxy server to use when connecting to the Token Connector", "URL "+i18n.StringType)
+
 	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "Optional HTTP proxy server to use when connecting to the Token Connector", "URL "+i18n.StringType)
 
 	ConfigUIEnabled = ffc("config.ui.enabled", "Enables the web user interface", i18n.BooleanType)

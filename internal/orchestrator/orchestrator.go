@@ -74,10 +74,11 @@ var (
 	databaseConfig      = config.RootSection("database")
 	identityConfig      = config.RootSection("identity")
 	sharedstorageConfig = config.RootSection("sharedstorage")
-	// For backward compatibility with the old "publicstorage" config
-	publicstorageConfig = config.RootSection("publicstorage")
-	dataexchangeConfig  = config.RootSection("dataexchange")
-	tokensConfig        = config.RootArray("tokens")
+	// For backward compatibility with the old "publicstorage" prefix
+	publicstorageConfig    = config.RootSection("publicstorage")
+	dataexchangeConfig     = config.RootSection("dataexchange")
+	deprecatedTokensConfig = config.RootArray("tokens")
+	tokensConfig           = config.RootArray("plugins.tokens")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -198,9 +199,11 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	bifactory.InitConfig(blockchainConfig)
 	difactory.InitConfig(databaseConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
-	// For backward compatibility also init with the old "publicstorage" config
+	// For backward compatibility also init with the old "publicstorage" prefix
 	ssfactory.InitConfig(publicstorageConfig)
 	dxfactory.InitConfig(dataexchangeConfig)
+	// For backwards compatibility with the top level "tokens" config
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
 
 	or.InitNamespaceConfig(withDefaults)
@@ -475,46 +478,88 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.tokens == nil {
-		or.tokens = make(map[string]tokens.Plugin)
-		tokensConfigArraySize := tokensConfig.ArraySize()
-		for i := 0; i < tokensConfigArraySize; i++ {
-			config := tokensConfig.ArrayEntry(i)
-			name := config.GetString(tokens.TokensConfigName)
-			pluginName := config.GetString(tokens.TokensConfigPlugin)
-			if name == "" {
-				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
-			}
-			if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
-				return err
-			}
-			if pluginName == "" {
-				// Migration path for old config key
-				// TODO: eventually make this fatal
-				pluginName = config.GetString(tokens.TokensConfigConnector)
-				if pluginName == "" {
-					return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
-				}
-				log.L(ctx).Warnf("Your tokens config uses the deprecated 'connector' key - please change to 'plugin' instead")
-			}
-			if pluginName == "https" {
-				// Migration path for old plugin name
-				// TODO: eventually make this fatal
-				log.L(ctx).Warnf("Your tokens config uses the old plugin name 'https' - this plugin has been renamed to 'fftokens'")
-				pluginName = "fftokens"
-			}
-
-			log.L(ctx).Infof("Loading tokens plugin name=%s plugin=%s", name, pluginName)
-			plugin, err := tifactory.GetPlugin(ctx, pluginName)
-			if plugin != nil {
-				err = plugin.Init(ctx, name, config, &or.bc)
-			}
-			if err != nil {
-				return err
-			}
-			or.tokens[name] = plugin
+		if err = or.initTokens(ctx); err != nil {
+			return err
 		}
 	}
 
+	return nil
+}
+
+func (or *orchestrator) initTokens(ctx context.Context) (err error) {
+	or.tokens = make(map[string]tokens.Plugin)
+	tokensConfigArraySize := tokensConfig.ArraySize()
+	for i := 0; i < tokensConfigArraySize; i++ {
+		config := tokensConfig.ArrayEntry(i)
+		name := config.GetString(tokens.TokensConfigName)
+		pluginType := config.GetString(tokens.TokensConfigType)
+		if name == "" || pluginType == "" {
+			return i18n.NewError(ctx, coremsgs.MsgMissingTokensConfig)
+		}
+
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			return err
+		}
+
+		log.L(ctx).Infof("Loading tokens plugin name=%s type=%s", name, pluginType)
+		pluginConfig := config.SubSection(pluginType)
+
+		plugin, err := tifactory.GetPlugin(ctx, pluginType)
+		if plugin != nil {
+			err = plugin.Init(ctx, name, pluginConfig, &or.bc)
+		}
+		if err != nil {
+			return err
+		}
+		or.tokens[name] = plugin
+	}
+
+	if len(or.tokens) > 0 {
+		return nil
+	}
+
+	// If there still is no tokens config, check the deprecated structure for config
+	tokensConfigArraySize = deprecatedTokensConfig.ArraySize()
+	if tokensConfigArraySize > 0 {
+		log.L(ctx).Warnf("Your tokens config uses a deprecated configuration structure - the tokens configuration has been moved under the 'plugins' section")
+	}
+
+	for i := 0; i < tokensConfigArraySize; i++ {
+		prefix := deprecatedTokensConfig.ArrayEntry(i)
+		name := prefix.GetString(tokens.TokensConfigName)
+		pluginName := prefix.GetString(tokens.TokensConfigPlugin)
+		if name == "" {
+			return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
+		}
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			return err
+		}
+		if pluginName == "" {
+			// Migration path for old config key
+			// TODO: eventually make this fatal
+			pluginName = prefix.GetString(tokens.TokensConfigConnector)
+			if pluginName == "" {
+				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
+			}
+			log.L(ctx).Warnf("Your tokens config uses the deprecated 'connector' key - please change to 'plugin' instead")
+		}
+		if pluginName == "https" {
+			// Migration path for old plugin name
+			// TODO: eventually make this fatal
+			log.L(ctx).Warnf("Your tokens config uses the old plugin name 'https' - this plugin has been renamed to 'fftokens'")
+			pluginName = "fftokens"
+		}
+
+		log.L(ctx).Infof("Loading tokens plugin name=%s plugin=%s", name, pluginName)
+		plugin, err := tifactory.GetPlugin(ctx, pluginName)
+		if plugin != nil {
+			err = plugin.Init(ctx, name, prefix, &or.bc)
+		}
+		if err != nil {
+			return err
+		}
+		or.tokens[name] = plugin
+	}
 	return nil
 }
 
