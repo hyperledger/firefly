@@ -31,6 +31,14 @@ var pluginsByName = map[string]func() tokens.Plugin{
 }
 
 func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(tokens.TokensConfigName)
+	config.AddKnownKey(tokens.TokensConfigType)
+	for name, plugin := range pluginsByName {
+		plugin().InitConfig(config.SubSection(name))
+	}
+}
+
+func InitConfigDeprecated(config config.ArraySection) {
 	config.AddKnownKey(tokens.TokensConfigConnector)
 	config.AddKnownKey(tokens.TokensConfigPlugin)
 	config.AddKnownKey(tokens.TokensConfigName)

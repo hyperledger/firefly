@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -21,6 +21,8 @@ const (
 	TokensConfigName = "name"
 	// TokensConfigConnector is the connector plugin used for this token type (deprecated)
 	TokensConfigConnector = "connector" // TODO: remove
-	// TokensConfigPlugin is the connector plugin used for this token type
+	// TokensConfigPlugin is the connector plugin used for this token type (deprecated)
 	TokensConfigPlugin = "plugin"
+	// TokensConfigType is the name of the plugin used for this token type
+	TokensConfigType = "type"
 )

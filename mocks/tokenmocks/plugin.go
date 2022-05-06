@@ -108,7 +108,7 @@ func (_m *Plugin) Init(ctx context.Context, name string, _a2 config.Section, cal
 }
 
 // InitConfig provides a mock function with given fields: _a0
-func (_m *Plugin) InitConfig(_a0 config.ArraySection) {
+func (_m *Plugin) InitConfig(_a0 config.KeySet) {
 	_m.Called(_a0)
 }
 
