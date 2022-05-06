@@ -42,8 +42,8 @@ const (
 )
 
 type Manager interface {
-	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error)
-	ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error)
+	ResolveInputSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error)
+	ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error)
 	NormalizeSigningKey(ctx context.Context, namespace, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, namespace string, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
@@ -103,19 +103,20 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 	}
 }
 
-// NormalizeSigningKey is for cases where there is no "author" field alongside the "key" in the input (custom contracts, tokens),
-// or the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
+// NormalizeSigningKey takes in only a "key" (which may be empty to use the default) to be normalized and returned.
+// This is for cases where keys are used directly without an "author" field alongside them (custom contracts, tokens),
+// or when the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
 func (im *identityManager) NormalizeSigningKey(ctx context.Context, namespace, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
 	if inputKey == "" {
-		msgSignerRef := &core.SignerRef{}
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, msgSignerRef)
+		signerRef := &core.SignerRef{}
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, signerRef)
 		if err != nil {
 			return "", err
 		}
-		return msgSignerRef.Key, nil
+		return signerRef.Key, nil
 	}
 	// If the caller is not confident that the blockchain plugin/connector should be used to resolve,
-	// for example it might be a different blockchain (Eth vs Fabric etc.), or it has it's own
+	// for example it might be a different blockchain (Eth vs Fabric etc.), or it has its own
 	// verification/management of keys, it should set `assets.keyNormalization: "none"` in the config.
 	if keyNormalizationMode != KeyNormalizationBlockchainPlugin {
 		return inputKey, nil
@@ -127,65 +128,69 @@ func (im *identityManager) NormalizeSigningKey(ctx context.Context, namespace, i
 	return signer.Value, nil
 }
 
-// ResolveInputIdentity takes in blockchain signing input information from an API call,
-// and resolves the final information that should be written in the message etc..
-func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error) {
-	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", msgSignerRef.Key, msgSignerRef.Author)
+// ResolveInputIdentity takes in blockchain signing input information from an API call (which may
+// include author or key or both), and updates it with fully resolved and normalized values
+func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error) {
+	log.L(ctx).Debugf("Resolving identity input: key='%s' author='%s'", signerRef.Key, signerRef.Author)
 
 	var verifier *core.VerifierRef
 	switch {
-	case msgSignerRef.Author == "" && msgSignerRef.Key == "":
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, msgSignerRef)
+	case signerRef.Author == "" && signerRef.Key == "":
+		// Nothing specified: use the default node identity
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, signerRef)
 		if err != nil {
 			return err
 		}
-	case msgSignerRef.Key != "":
-		if verifier, err = im.normalizeKeyViaBlockchainPlugin(ctx, msgSignerRef.Key); err != nil {
+
+	case signerRef.Key != "":
+		// Key specified: normalize it, then check it against author (if specified)
+		if verifier, err = im.normalizeKeyViaBlockchainPlugin(ctx, signerRef.Key); err != nil {
 			return err
 		}
-		msgSignerRef.Key = verifier.Value
-		// Fill in or verify the author DID based on the verfier, if it's been registered
+		signerRef.Key = verifier.Value
+
 		identity, err := im.FindIdentityForVerifier(ctx, []core.IdentityType{
 			core.IdentityTypeOrg,
 			core.IdentityTypeCustom,
 		}, namespace, verifier)
-		if err != nil {
-			return err
-		}
 		switch {
+		case err != nil:
+			return err
 		case identity != nil:
-			if msgSignerRef.Author == identity.Name || msgSignerRef.Author == "" {
-				// Switch to full DID automatically
-				msgSignerRef.Author = identity.DID
+			// Key matches a registered verifier: author must be unspecified OR must match verifier identity
+			if signerRef.Author == identity.Name || signerRef.Author == "" {
+				// Resolve author to DID (if blank or bare name)
+				signerRef.Author = identity.DID
 			}
-			if msgSignerRef.Author != identity.DID {
-				return i18n.NewError(ctx, coremsgs.MsgAuthorRegistrationMismatch, verifier.Value, msgSignerRef.Author, identity.DID)
+			if signerRef.Author != identity.DID {
+				return i18n.NewError(ctx, coremsgs.MsgAuthorRegistrationMismatch, verifier.Value, signerRef.Author, identity.DID)
 			}
-		case msgSignerRef.Author != "":
-			identity, _, err := im.CachedIdentityLookupMustExist(ctx, namespace, msgSignerRef.Author)
+		case signerRef.Author != "":
+			// Key is unrecognized, but an author was specified: use the key and resolve author to DID
+			identity, _, err := im.CachedIdentityLookupMustExist(ctx, namespace, signerRef.Author)
 			if err != nil {
 				return err
 			}
-			msgSignerRef.Author = identity.DID
+			signerRef.Author = identity.DID
 		default:
-			return i18n.NewError(ctx, coremsgs.MsgAuthorMissingForKey, msgSignerRef.Key)
+			return i18n.NewError(ctx, coremsgs.MsgAuthorMissingForKey, signerRef.Key)
 		}
-	case msgSignerRef.Author != "":
-		// Author must be non-empty (see above), so we want to find that identity and then
-		// use the first blockchain key that's associated with it.
-		identity, _, err := im.CachedIdentityLookupMustExist(ctx, namespace, msgSignerRef.Author)
+
+	case signerRef.Author != "":
+		// Author specified (without key): use the first blockchain key associated with it
+		identity, _, err := im.CachedIdentityLookupMustExist(ctx, namespace, signerRef.Author)
 		if err != nil {
 			return err
 		}
-		msgSignerRef.Author = identity.DID
 		verifier, _, err = im.firstVerifierForIdentity(ctx, im.blockchain.VerifierType(), identity)
 		if err != nil {
 			return err
 		}
-		msgSignerRef.Key = verifier.Value
+		signerRef.Author = identity.DID
+		signerRef.Key = verifier.Value
 	}
 
-	log.L(ctx).Debugf("Resolved identity: key='%s' author='%s'", msgSignerRef.Key, msgSignerRef.Author)
+	log.L(ctx).Debugf("Resolved identity: key='%s' author='%s'", signerRef.Key, signerRef.Author)
 	return nil
 }
 
@@ -207,8 +212,8 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 	return &verifiers[0].VerifierRef, false, nil
 }
 
-// ResolveNodeOwnerSigningIdentity add the node owner identity into a message
-func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error) {
+// ResolveNodeOwnerSigningIdentity adds the node owner identity into a message
+func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error) {
 	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return err
@@ -217,8 +222,8 @@ func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	msgSignerRef.Author = identity.DID
-	msgSignerRef.Key = verifierRef.Value
+	signerRef.Author = identity.DID
+	signerRef.Key = verifierRef.Value
 	return nil
 }
 
