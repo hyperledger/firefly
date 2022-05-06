@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,7 @@ func testOrg(name string) *core.Identity {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			Type:      core.IdentityTypeOrg,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      name,
 		},
 		IdentityProfile: core.IdentityProfile{
@@ -67,20 +68,26 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
+	mdm := nm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
+
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		core.SystemNamespace,
+		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
+	org, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *org.Messages.Claim)
 
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestRegisterNodeOrgNoName(t *testing.T) {
@@ -97,7 +104,7 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
 	assert.Regexp(t, "FF10216", err)
 
 }
@@ -113,7 +120,7 @@ func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerBlockchainKey", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
 	assert.Regexp(t, "pop", err)
 
 }

@@ -64,8 +64,8 @@ var (
 	urlContractListeners = "/namespaces/default/contracts/listeners"
 	urlContractAPI       = "/namespaces/default/apis"
 	urlBlockchainEvents  = "/namespaces/default/blockchainevents"
-	urlGetOrganizations  = "/network/organizations"
-	urlGetOrgKeys        = "/namespaces/ff_system/identities/%s/verifiers"
+	urlGetOrganizations  = "/namespaces/default/network/organizations"
+	urlGetOrgKeys        = "/namespaces/default/identities/%s/verifiers"
 )
 
 func NewResty(t *testing.T) *resty.Client {

@@ -269,7 +269,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 	batch := tw.Batch
 
 	// Lookup the local org
-	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx)
+	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx, batch.Namespace)
 	if err != nil {
 		return err
 	}

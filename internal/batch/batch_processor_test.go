@@ -42,7 +42,7 @@ func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *dat
 	mni := bm.ni.(*sysmessagingmocks.LocalNodeInfo)
 	mdm := bm.data.(*datamocks.Manager)
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID()).Maybe()
 	bp := newBatchProcessor(bm, &batchProcessorConf{
 		namespace: "ns1",
 		txType:    core.TransactionTypeBatchPin,

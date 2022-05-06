@@ -60,7 +60,7 @@ func TestE2EDispatchBroadcast(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *DispatchState)
 	handler := func(ctx context.Context, state *DispatchState) error {
@@ -176,7 +176,7 @@ func TestE2EDispatchPrivateUnpinned(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID())
 	readyForDispatch := make(chan bool)
 	waitForDispatch := make(chan *DispatchState)
 	var groupID fftypes.Bytes32
@@ -386,7 +386,7 @@ func TestMessageSequencerUpdateMessagesFail(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
 	bm.RegisterDispatcher("utdispatcher", core.TransactionTypeBatchPin, []core.MessageType{core.MessageTypeBroadcast},
@@ -440,7 +440,7 @@ func TestMessageSequencerDispatchFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID())
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)
@@ -480,7 +480,7 @@ func TestMessageSequencerUpdateBatchFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID())
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(fftypes.NewUUID())
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	bm, _ := NewBatchManager(ctx, mni, mdi, mdm, txHelper)

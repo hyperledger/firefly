@@ -42,8 +42,8 @@ var getIdentityByDID = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-			return getOr(r.Ctx).NetworkMap().GetIdentityByDIDWithVerifiers(r.Ctx, r.PP["did"])
+			return getOr(r.Ctx).NetworkMap().GetIdentityByDIDWithVerifiers(r.Ctx, extractNamespace(r.PP), r.PP["did"])
 		}
-		return getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, r.PP["did"])
+		return getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
 	},
 }

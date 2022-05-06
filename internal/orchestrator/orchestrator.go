@@ -99,7 +99,7 @@ type Orchestrator interface {
 	IsPreInit() bool
 
 	// Status
-	GetStatus(ctx context.Context) (*core.NodeStatus, error)
+	GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
@@ -393,7 +393,6 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
-		fb.Eq("namespace", core.SystemNamespace),
 	))
 	if err != nil {
 		return err
@@ -611,7 +610,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.data, or.broadcast, or.dataexchange, or.identity, or.syncasync)
 		if err != nil {
 			return err
 		}

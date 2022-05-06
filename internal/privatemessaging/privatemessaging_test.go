@@ -135,7 +135,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mom := pm.operations.(*operationmocks.Manager)
 
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localOrg, nil)
 	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: core.GroupIdentity{
@@ -274,7 +274,7 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	}, nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(nil, fmt.Errorf("pop"))
+	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
@@ -283,6 +283,7 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 				SignerRef: core.SignerRef{
 					Author: "badauthor",
 				},
+				Namespace: "ns1",
 			},
 		},
 	})
@@ -323,7 +324,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
@@ -348,6 +349,7 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 				SignerRef: core.SignerRef{
 					Author: "org1",
 				},
+				Namespace: "ns1",
 			},
 		},
 	})
@@ -368,7 +370,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	blob1 := fftypes.NewRandB32()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
@@ -403,6 +405,7 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 				SignerRef: core.SignerRef{
 					Author: "org1",
 				},
+				Namespace: "ns1",
 			},
 		},
 		Data: core.DataArray{
@@ -427,7 +430,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	blob1 := fftypes.NewRandB32()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
@@ -475,6 +478,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 				SignerRef: core.SignerRef{
 					Author: "org1",
 				},
+				Namespace: "ns1",
 			},
 		},
 		Data: core.DataArray{

@@ -41,7 +41,7 @@ var postNodesSelf = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		node, err := getOr(r.Ctx).NetworkMap().RegisterNode(r.Ctx, waitConfirm)
+		node, err := getOr(r.Ctx).NetworkMap().RegisterNode(r.Ctx, extractNamespace(r.PP), waitConfirm)
 		return node, err
 	},
 }

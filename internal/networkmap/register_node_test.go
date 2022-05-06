@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -43,10 +44,13 @@ func TestRegisterNodeOk(t *testing.T) {
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("GetNodeOwnerOrg", nm.ctx, "ns1").Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
 	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
+
+	mdm := nm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{
@@ -57,15 +61,19 @@ func TestRegisterNodeOk(t *testing.T) {
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		core.SystemNamespace,
+		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	node, err := nm.RegisterNode(nm.ctx, false)
+	node, err := nm.RegisterNode(nm.ctx, "ns1", false)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *node.Messages.Claim)
 
+	mim.AssertExpectations(t)
+	mdx.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mdm.AssertExpectations(t)
 }
 
 func TestRegisterNodePeerInfoFail(t *testing.T) {
@@ -80,7 +88,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", nm.ctx).Return(parentOrg, nil)
+	mim.On("GetNodeOwnerOrg", nm.ctx, "ns1").Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
 	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
@@ -88,7 +96,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{}, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNode(nm.ctx, false)
+	_, err := nm.RegisterNode(nm.ctx, "ns1", false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -99,9 +107,9 @@ func TestRegisterNodeGetOwnerFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", nm.ctx).Return(nil, fmt.Errorf("pop"))
+	mim.On("GetNodeOwnerOrg", nm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNode(nm.ctx, false)
+	_, err := nm.RegisterNode(nm.ctx, "ns1", false)
 	assert.Regexp(t, "pop", err)
 
 }

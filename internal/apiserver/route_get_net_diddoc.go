@@ -37,6 +37,6 @@ var getDIDDocByDID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, r.PP["did"])
+		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
 	},
 }

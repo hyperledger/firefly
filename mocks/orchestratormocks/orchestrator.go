@@ -1099,13 +1099,13 @@ func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) 
 	return r0, r1, r2
 }
 
-// GetStatus provides a mock function with given fields: ctx
-func (_m *Orchestrator) GetStatus(ctx context.Context) (*core.NodeStatus, error) {
-	ret := _m.Called(ctx)
+// GetStatus provides a mock function with given fields: ctx, ns
+func (_m *Orchestrator) GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error) {
+	ret := _m.Called(ctx, ns)
 
 	var r0 *core.NodeStatus
-	if rf, ok := ret.Get(0).(func(context.Context) *core.NodeStatus); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.NodeStatus); ok {
+		r0 = rf(ctx, ns)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.NodeStatus)
@@ -1113,8 +1113,8 @@ func (_m *Orchestrator) GetStatus(ctx context.Context) (*core.NodeStatus, error)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ns)
 	} else {
 		r1 = ret.Error(1)
 	}

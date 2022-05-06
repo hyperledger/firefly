@@ -113,10 +113,6 @@ func TestIdentityValidationOrgs(t *testing.T) {
 	o.DID = "did:firefly:node/node1"
 	assert.Regexp(t, "FF00120", o.Validate(ctx))
 
-	o = testOrg()
-	o.Namespace = "nonsystem"
-	assert.Regexp(t, "FF00122", o.Validate(ctx))
-
 }
 
 func TestIdentityValidationNodes(t *testing.T) {
@@ -132,10 +128,6 @@ func TestIdentityValidationNodes(t *testing.T) {
 	n = testNode()
 	n.DID = "did:firefly:org/org1"
 	assert.Regexp(t, "FF00120", n.Validate(ctx))
-
-	n = testNode()
-	n.Namespace = "nonsystem"
-	assert.Regexp(t, "FF00122", n.Validate(ctx))
 
 }
 

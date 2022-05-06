@@ -191,17 +191,11 @@ func (i *IdentityBase) GenerateDID(ctx context.Context) (string, error) {
 		}
 		return fmt.Sprintf("%s%s/%s", FireFlyCustomDIDPrefix, i.Namespace, i.Name), nil
 	case IdentityTypeNode:
-		if i.Namespace != SystemNamespace {
-			return "", i18n.NewError(ctx, i18n.MsgSystemIdentityCustomNS, SystemNamespace)
-		}
 		if i.Parent == nil {
 			return "", i18n.NewError(ctx, i18n.MsgNilParentIdentity, i.Type)
 		}
 		return fmt.Sprintf("%s%s", FireFlyNodeDIDPrefix, i.Name), nil
 	case IdentityTypeOrg:
-		if i.Namespace != SystemNamespace {
-			return "", i18n.NewError(ctx, i18n.MsgSystemIdentityCustomNS, SystemNamespace)
-		}
 		return fmt.Sprintf("%s%s", FireFlyOrgDIDPrefix, i.Name), nil
 	default:
 		return "", i18n.NewError(ctx, i18n.MsgUnknownIdentityType, i.Type)

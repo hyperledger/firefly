@@ -43,16 +43,16 @@ const (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error)
-	ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *core.SignerRef) (err error)
-	NormalizeSigningKey(ctx context.Context, namespace string, keyNormalizationMode int) (signingKey string, err error)
+	ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error)
+	NormalizeSigningKey(ctx context.Context, namespace, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, namespace string, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
 	CachedIdentityLookupByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error)
-	CachedIdentityLookupMustExist(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
-	CachedIdentityLookupNilOK(ctx context.Context, did string) (identity *core.Identity, retryable bool, err error)
-	CachedVerifierLookup(ctx context.Context, vType core.VerifierType, ns, value string) (verifier *core.Verifier, err error)
+	CachedIdentityLookupMustExist(ctx context.Context, namespace, did string) (identity *core.Identity, retryable bool, err error)
+	CachedIdentityLookupNilOK(ctx context.Context, namespace, did string) (identity *core.Identity, retryable bool, err error)
+	CachedVerifierLookup(ctx context.Context, vType core.VerifierType, namespace, value string) (verifier *core.Verifier, err error)
 	GetNodeOwnerBlockchainKey(ctx context.Context) (*core.VerifierRef, error)
-	GetNodeOwnerOrg(ctx context.Context) (*core.Identity, error)
+	GetNodeOwnerOrg(ctx context.Context, namespace string) (*core.Identity, error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 }
 
@@ -63,7 +63,7 @@ type identityManager struct {
 	data       data.Manager
 
 	nodeOwnerBlockchainKey *core.VerifierRef
-	nodeOwningOrgIdentity  *core.Identity
+	nodeOwningOrgIdentity  map[string]*core.Identity
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
 	signingKeyCacheTTL     time.Duration
@@ -75,12 +75,13 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	im := &identityManager{
-		database:           di,
-		plugin:             ii,
-		blockchain:         bi,
-		data:               dm,
-		identityCacheTTL:   config.GetDuration(coreconfig.IdentityManagerCacheTTL),
-		signingKeyCacheTTL: config.GetDuration(coreconfig.IdentityManagerCacheTTL),
+		database:              di,
+		plugin:                ii,
+		blockchain:            bi,
+		data:                  dm,
+		nodeOwningOrgIdentity: make(map[string]*core.Identity),
+		identityCacheTTL:      config.GetDuration(coreconfig.IdentityManagerCacheTTL),
+		signingKeyCacheTTL:    config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 	}
 	// For the identity and signingkey caches, we just treat them all equally sized and the max items
 	im.identityCache = ccache.New(
@@ -104,10 +105,10 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 
 // NormalizeSigningKey is for cases where there is no "author" field alongside the "key" in the input (custom contracts, tokens),
 // or the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
-func (im *identityManager) NormalizeSigningKey(ctx context.Context, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
+func (im *identityManager) NormalizeSigningKey(ctx context.Context, namespace, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
 	if inputKey == "" {
 		msgSignerRef := &core.SignerRef{}
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgSignerRef)
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, msgSignerRef)
 		if err != nil {
 			return "", err
 		}
@@ -134,7 +135,7 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, name
 	var verifier *core.VerifierRef
 	switch {
 	case msgSignerRef.Author == "" && msgSignerRef.Key == "":
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, msgSignerRef)
+		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, msgSignerRef)
 		if err != nil {
 			return err
 		}
@@ -161,7 +162,7 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, name
 				return i18n.NewError(ctx, coremsgs.MsgAuthorRegistrationMismatch, verifier.Value, msgSignerRef.Author, identity.DID)
 			}
 		case msgSignerRef.Author != "":
-			identity, _, err := im.CachedIdentityLookupMustExist(ctx, msgSignerRef.Author)
+			identity, _, err := im.CachedIdentityLookupMustExist(ctx, namespace, msgSignerRef.Author)
 			if err != nil {
 				return err
 			}
@@ -172,7 +173,7 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, name
 	case msgSignerRef.Author != "":
 		// Author must be non-empty (see above), so we want to find that identity and then
 		// use the first blockchain key that's associated with it.
-		identity, _, err := im.CachedIdentityLookupMustExist(ctx, msgSignerRef.Author)
+		identity, _, err := im.CachedIdentityLookupMustExist(ctx, namespace, msgSignerRef.Author)
 		if err != nil {
 			return err
 		}
@@ -207,12 +208,12 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 }
 
 // ResolveNodeOwnerSigningIdentity add the node owner identity into a message
-func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, msgSignerRef *core.SignerRef) (err error) {
+func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) (err error) {
 	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return err
 	}
-	identity, err := im.GetNodeOwnerOrg(ctx)
+	identity, err := im.GetNodeOwnerOrg(ctx, namespace)
 	if err != nil {
 		return err
 	}
@@ -243,7 +244,7 @@ func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context) (*core
 		return nil, err
 	}
 	im.nodeOwnerBlockchainKey = verifier
-	return im.nodeOwnerBlockchainKey, nil
+	return verifier, nil
 }
 
 // normalizeKeyViaBlockchainPlugin does a cached lookup of the fully qualified key, associated with a key reference string
@@ -267,34 +268,26 @@ func (im *identityManager) normalizeKeyViaBlockchainPlugin(ctx context.Context, 
 	return verifier, nil
 }
 
-// FindIdentityForVerifier is a reverse lookup function to look up an identity registered as owner of the specified verifier.
-// Each of the supplied identity types will be checked in order. Returns nil if not found
+// FindIdentityForVerifier is a reverse lookup function to look up an identity registered as owner of the specified verifier
 func (im *identityManager) FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, namespace string, verifier *core.VerifierRef) (identity *core.Identity, err error) {
-	for _, iType := range iTypes {
-		verifierNS := namespace
-		if iType != core.IdentityTypeCustom {
-			// Non-custom identity types are always in the system namespace
-			verifierNS = core.SystemNamespace
-		}
-		identity, err = im.cachedIdentityLookupByVerifierRef(ctx, verifierNS, verifier)
-		if err != nil || identity != nil {
-			return identity, err
-		}
+	identity, err = im.cachedIdentityLookupByVerifierRef(ctx, namespace, verifier)
+	if err != nil || identity != nil {
+		return identity, err
 	}
 	return nil, nil
 }
 
-// GetNodeOwnerOrg returns the identity of the organization that owns the node, if fully registered
-func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*core.Identity, error) {
-	if im.nodeOwningOrgIdentity != nil {
-		return im.nodeOwningOrgIdentity, nil
+// GetNodeOwnerOrg returns the identity of the organization that owns the node, if fully registered within the given namespace
+func (im *identityManager) GetNodeOwnerOrg(ctx context.Context, namespace string) (*core.Identity, error) {
+	if id, ok := im.nodeOwningOrgIdentity[namespace]; ok {
+		return id, nil
 	}
 	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return nil, err
 	}
 	orgName := config.GetString(coreconfig.OrgName)
-	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, verifierRef)
+	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, namespace, verifierRef)
 	if err != nil || identity == nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
@@ -302,8 +295,8 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context) (*core.Identity,
 	if identity.Type != core.IdentityTypeOrg || identity.Name != orgName {
 		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
-	im.nodeOwningOrgIdentity = identity
-	return im.nodeOwningOrgIdentity, nil
+	im.nodeOwningOrgIdentity[namespace] = identity
+	return identity, nil
 }
 
 func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentity *core.Identity) (immediateParent *core.Identity, retryable bool, err error) {
@@ -399,7 +392,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	return identity, nil
 }
 
-func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLookupStr string) (identity *core.Identity, retryable bool, err error) {
+func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, namespace, didLookupStr string) (identity *core.Identity, retryable bool, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
 	cacheKey := fmt.Sprintf("did=%s", didLookupStr)
 	defer func() {
@@ -434,7 +427,7 @@ func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLoo
 			}
 		} else {
 			// If there is just a name in there, then it could be an Org type identity (from the very original usage of the field)
-			if identity, err = im.database.GetIdentityByName(ctx, core.IdentityTypeOrg, core.SystemNamespace, didLookupStr); err != nil {
+			if identity, err = im.database.GetIdentityByName(ctx, core.IdentityTypeOrg, namespace, didLookupStr); err != nil {
 				return nil, true /* DB Error */, err
 			}
 		}
@@ -447,8 +440,8 @@ func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLoo
 	return identity, false, nil
 }
 
-func (im *identityManager) CachedIdentityLookupMustExist(ctx context.Context, didLookupStr string) (identity *core.Identity, retryable bool, err error) {
-	identity, retryable, err = im.CachedIdentityLookupNilOK(ctx, didLookupStr)
+func (im *identityManager) CachedIdentityLookupMustExist(ctx context.Context, namespace, didLookupStr string) (identity *core.Identity, retryable bool, err error) {
+	identity, retryable, err = im.CachedIdentityLookupNilOK(ctx, namespace, didLookupStr)
 	if err != nil {
 		return nil, retryable, err
 	}
@@ -475,14 +468,14 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 	return identity, nil
 }
 
-func (im *identityManager) CachedVerifierLookup(ctx context.Context, vType core.VerifierType, ns, value string) (verifier *core.Verifier, err error) {
+func (im *identityManager) CachedVerifierLookup(ctx context.Context, vType core.VerifierType, namespace, value string) (verifier *core.Verifier, err error) {
 	// Use an LRU cache for the author identity, as it's likely for the same identity to be re-used over and over
-	cacheKey := fmt.Sprintf("v=%s|%s|%s", vType, ns, value)
+	cacheKey := fmt.Sprintf("v=%s|%s|%s", vType, namespace, value)
 	if cached := im.identityCache.Get(cacheKey); cached != nil {
 		cached.Extend(im.identityCacheTTL)
 		verifier = cached.Value().(*core.Verifier)
 	} else {
-		verifier, err = im.database.GetVerifierByValue(ctx, vType, ns, value)
+		verifier, err = im.database.GetVerifierByValue(ctx, vType, namespace, value)
 		if err != nil || verifier == nil {
 			return verifier, err
 		}

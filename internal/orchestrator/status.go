@@ -69,11 +69,11 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	}
 }
 
-func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
+func (or *orchestrator) GetNodeUUID(ctx context.Context, ns string) (node *fftypes.UUID) {
 	if or.node != nil {
 		return or.node
 	}
-	status, err := or.GetStatus(ctx)
+	status, err := or.GetStatus(ctx, ns)
 	if err != nil {
 		log.L(or.ctx).Warnf("Failed to query local node UUID: %s", err)
 		return nil
@@ -86,9 +86,9 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 	return or.node
 }
 
-func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus, err error) {
+func (or *orchestrator) GetStatus(ctx context.Context, ns string) (status *core.NodeStatus, err error) {
 
-	org, err := or.identity.GetNodeOwnerOrg(ctx)
+	org, err := or.identity.GetNodeOwnerOrg(ctx, ns)
 	if err != nil {
 		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}
@@ -109,7 +109,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus,
 		status.Org.Registered = true
 		status.Org.ID = org.ID
 		status.Org.DID = org.DID
-		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, core.SystemNamespace, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
+		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, ns, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus,
 			status.Org.Verifiers[i] = &v.VerifierRef
 		}
 
-		node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, status.Node.Name))
+		node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, ns, fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, status.Node.Name))
 		if err != nil {
 			return nil, err
 		}
