@@ -2,9 +2,9 @@ name: Go
 
 on:
   push:
-    branches: [main]
+    branches: [main, release-1.0]
   pull_request:
-    branches: [main]
+    branches: [main, release-1.0]
   workflow_dispatch:
 
 jobs:
