@@ -92,9 +92,10 @@ func TestGetStatusRegistered(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
@@ -158,9 +159,10 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
@@ -195,9 +197,10 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
@@ -276,9 +279,10 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(nil, false, nil)
@@ -331,9 +335,10 @@ func TestGetStatusNodeError(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))

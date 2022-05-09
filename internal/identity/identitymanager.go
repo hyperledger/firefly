@@ -51,18 +51,19 @@ type Manager interface {
 	CachedIdentityLookupMustExist(ctx context.Context, namespace, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, namespace, did string) (identity *core.Identity, retryable bool, err error)
 	CachedVerifierLookup(ctx context.Context, vType core.VerifierType, namespace, value string) (verifier *core.Verifier, err error)
-	GetNodeOwnerBlockchainKey(ctx context.Context) (*core.VerifierRef, error)
+	GetNodeOwnerBlockchainKey(ctx context.Context, namespace string) (*core.VerifierRef, error)
 	GetNodeOwnerOrg(ctx context.Context, namespace string) (*core.Identity, error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 }
 
 type identityManager struct {
-	database   database.Plugin
-	plugin     identity.Plugin
-	blockchain blockchain.Plugin
-	data       data.Manager
+	database     database.Plugin
+	plugin       identity.Plugin
+	blockchain   blockchain.Plugin
+	data         data.Manager
+	predefinedNS map[string]config.Section
 
-	nodeOwnerBlockchainKey *core.VerifierRef
+	nodeOwnerBlockchainKey map[string]*core.VerifierRef
 	nodeOwningOrgIdentity  map[string]*core.Identity
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
@@ -70,18 +71,20 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager, predefinedNS config.ArraySection) (Manager, error) {
 	if di == nil || ii == nil || bi == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	im := &identityManager{
-		database:              di,
-		plugin:                ii,
-		blockchain:            bi,
-		data:                  dm,
-		nodeOwningOrgIdentity: make(map[string]*core.Identity),
-		identityCacheTTL:      config.GetDuration(coreconfig.IdentityManagerCacheTTL),
-		signingKeyCacheTTL:    config.GetDuration(coreconfig.IdentityManagerCacheTTL),
+		database:               di,
+		plugin:                 ii,
+		blockchain:             bi,
+		data:                   dm,
+		predefinedNS:           buildNamespaceMap(predefinedNS),
+		nodeOwnerBlockchainKey: make(map[string]*core.VerifierRef),
+		nodeOwningOrgIdentity:  make(map[string]*core.Identity),
+		identityCacheTTL:       config.GetDuration(coreconfig.IdentityManagerCacheTTL),
+		signingKeyCacheTTL:     config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 	}
 	// For the identity and signingkey caches, we just treat them all equally sized and the max items
 	im.identityCache = ccache.New(
@@ -92,6 +95,21 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 	)
 
 	return im, nil
+}
+
+func buildNamespaceMap(conf config.ArraySection) map[string]config.Section {
+	if conf == nil {
+		return nil
+	}
+	result := make(map[string]config.Section, conf.ArraySize())
+	for i := 0; i < conf.ArraySize(); i++ {
+		nsConfig := conf.ArrayEntry(i)
+		name := nsConfig.GetString(coreconfig.NamespaceName)
+		if name != "" {
+			result[name] = nsConfig
+		}
+	}
+	return result
 }
 
 func ParseKeyNormalizationConfig(strConfigVal string) int {
@@ -214,7 +232,7 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 
 // ResolveNodeOwnerSigningIdentity adds the node owner identity into a message
 func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error) {
-	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
+	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx, namespace)
 	if err != nil {
 		return err
 	}
@@ -227,13 +245,23 @@ func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, 
 	return nil
 }
 
+func (im *identityManager) getOrgConfig(key config.RootKey, ns string) string {
+	if nsConfig, ok := im.predefinedNS[ns]; ok {
+		val := nsConfig.GetString(string(key))
+		if val != "" {
+			return val
+		}
+	}
+	return config.GetString(key)
+}
+
 // GetNodeOwnerBlockchainKey gets the blockchain key of the node owner, from the configuration
-func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context) (*core.VerifierRef, error) {
-	if im.nodeOwnerBlockchainKey != nil {
-		return im.nodeOwnerBlockchainKey, nil
+func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context, namespace string) (*core.VerifierRef, error) {
+	if key, ok := im.nodeOwnerBlockchainKey[namespace]; ok {
+		return key, nil
 	}
 
-	orgKey := config.GetString(coreconfig.OrgKey)
+	orgKey := im.getOrgConfig(coreconfig.OrgKey, namespace)
 	if orgKey == "" {
 		orgKey = config.GetString(coreconfig.OrgIdentityDeprecated)
 		if orgKey != "" {
@@ -248,7 +276,7 @@ func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context) (*core
 	if err != nil {
 		return nil, err
 	}
-	im.nodeOwnerBlockchainKey = verifier
+	im.nodeOwnerBlockchainKey[namespace] = verifier
 	return verifier, nil
 }
 
@@ -287,7 +315,7 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context, namespace string
 	if id, ok := im.nodeOwningOrgIdentity[namespace]; ok {
 		return id, nil
 	}
-	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx)
+	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +410,13 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 		return cached.Value().(*core.Identity), nil
 	}
 	verifier, err := im.database.GetVerifierByValue(ctx, verifierRef.Type, namespace, verifierRef.Value)
-	if err != nil || verifier == nil {
+	if err != nil {
+		return nil, err
+	} else if verifier == nil {
+		if namespace != core.SystemNamespace && config.GetBool(coreconfig.IdentityManagerLegacySystemIdentities) {
+			// Fall back to SystemNamespace
+			return im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, verifierRef)
+		}
 		return nil, err
 	}
 	identity, err := im.database.GetIdentityByID(ctx, verifier.Identity)

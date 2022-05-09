@@ -29,7 +29,7 @@ import (
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
 func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
 
-	key, err := nm.identity.GetNodeOwnerBlockchainKey(ctx)
+	key, err := nm.identity.GetNodeOwnerBlockchainKey(ctx, ns)
 	if err != nil {
 		return nil, err
 	}

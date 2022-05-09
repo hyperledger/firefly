@@ -62,10 +62,6 @@ import (
 const (
 	// NamespacePredefined is the list of pre-defined namespaces
 	NamespacePredefined = "predefined"
-	// NamespaceName is a short name for a pre-defined namespace
-	NamespaceName = "name"
-	// NamespaceName is a long description for a pre-defined namespace
-	NamespaceDescription = "description"
 )
 
 var (
@@ -210,11 +206,12 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 
 func (or *orchestrator) InitNamespaceConfig(withDefaults bool) {
 	or.predefinedNS = namespaceConfig.SubArray(NamespacePredefined)
-	or.predefinedNS.AddKnownKey(NamespaceName)
-	or.predefinedNS.AddKnownKey(NamespaceDescription)
+	or.predefinedNS.AddKnownKey(coreconfig.NamespaceName)
+	or.predefinedNS.AddKnownKey(coreconfig.NamespaceDescription)
+	or.predefinedNS.AddKnownKey(coreconfig.NamespaceOrgKey)
 	if withDefaults {
-		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+NamespaceName, "default")
-		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+NamespaceDescription, "Default predefined namespace")
+		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceName, "default")
+		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceDescription, "Default predefined namespace")
 	}
 }
 
@@ -531,7 +528,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data, or.predefinedNS)
 		if err != nil {
 			return err
 		}

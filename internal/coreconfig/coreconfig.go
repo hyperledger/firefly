@@ -181,6 +181,8 @@ var (
 	IdentityManagerCacheTTL = ffc("identity.manager.cache.ttl")
 	// IdentityManagerCacheLimit the identity manager cache limit in count of items
 	IdentityManagerCacheLimit = ffc("identity.manager.cache.limit")
+	// IdentityManagerLegacySystemIdentities whether the identity manager should resolve legacy identities registered on the ff_system namespace
+	IdentityManagerLegacySystemIdentities = ffc("identity.manager.legacySystemIdentities")
 	// MessageCacheSize
 	MessageCacheSize = ffc("message.cache.size")
 	// MessageCacheTTL
@@ -354,6 +356,7 @@ func setDefaults() {
 	viper.SetDefault(string(ValidatorCacheTTL), "1h")
 	viper.SetDefault(string(IdentityManagerCacheLimit), 100 /* items */)
 	viper.SetDefault(string(IdentityManagerCacheTTL), "1h")
+	viper.SetDefault(string(IdentityManagerLegacySystemIdentities), true)
 }
 
 func Reset() {

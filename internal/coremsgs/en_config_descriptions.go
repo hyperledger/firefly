@@ -150,7 +150,8 @@ var (
 
 	ConfigIdentityType = ffc("config.identity.type", "The Identity plugin to use", i18n.StringType)
 
-	ConfigIdentityManagerCacheLimit = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
+	ConfigIdentityManagerCacheLimit              = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
+	ConfigIdentityManagerLegacySystemIdentitites = ffc("config.identity.manager.legacySystemIdentities", "Whether the identity manager should resolve legacy identities registered on the ff_system namespace", i18n.BooleanType)
 
 	ConfigLogCompress   = ffc("config.log.compress", "Determines if the rotated log files should be compressed using gzip", i18n.BooleanType)
 	ConfigLogFilename   = ffc("config.log.filename", "Filename is the file to write logs to.  Backup log files will be retained in the same directory", i18n.StringType)
@@ -179,6 +180,7 @@ var (
 	ConfigNamespacesPredefined            = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+i18n.StringType)
 	ConfigNamespacesPredefinedName        = ffc("config.namespaces.predefined[].name", "The name of the namespace (must be unique)", i18n.StringType)
 	ConfigNamespacesPredefinedDescription = ffc("config.namespaces.predefined[].description", "A description for the namespace", i18n.StringType)
+	ConfigNamespacesPredefinedOrgKey      = ffc("config.namespaces.predefined[].org.key", "A default signing key for blockchain transactions within the namespace (overrides top-level org.key)", i18n.StringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", i18n.StringType)
 	ConfigNodeName        = ffc("config.node.name", "The name of this FireFly node", i18n.StringType)

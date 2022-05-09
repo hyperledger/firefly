@@ -145,13 +145,13 @@ func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []core.FF
 	return r0, r1
 }
 
-// GetNodeOwnerBlockchainKey provides a mock function with given fields: ctx
-func (_m *Manager) GetNodeOwnerBlockchainKey(ctx context.Context) (*core.VerifierRef, error) {
-	ret := _m.Called(ctx)
+// GetNodeOwnerBlockchainKey provides a mock function with given fields: ctx, namespace
+func (_m *Manager) GetNodeOwnerBlockchainKey(ctx context.Context, namespace string) (*core.VerifierRef, error) {
+	ret := _m.Called(ctx, namespace)
 
 	var r0 *core.VerifierRef
-	if rf, ok := ret.Get(0).(func(context.Context) *core.VerifierRef); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.VerifierRef); ok {
+		r0 = rf(ctx, namespace)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.VerifierRef)
@@ -159,8 +159,8 @@ func (_m *Manager) GetNodeOwnerBlockchainKey(ctx context.Context) (*core.Verifie
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, namespace)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -235,13 +235,13 @@ func (_m *Manager) ResolveIdentitySigner(ctx context.Context, _a1 *core.Identity
 	return r0, r1
 }
 
-// ResolveInputSigningIdentity provides a mock function with given fields: ctx, namespace, msgSignerRef
-func (_m *Manager) ResolveInputSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) error {
-	ret := _m.Called(ctx, namespace, msgSignerRef)
+// ResolveInputSigningIdentity provides a mock function with given fields: ctx, namespace, signerRef
+func (_m *Manager) ResolveInputSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) error {
+	ret := _m.Called(ctx, namespace, signerRef)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *core.SignerRef) error); ok {
-		r0 = rf(ctx, namespace, msgSignerRef)
+		r0 = rf(ctx, namespace, signerRef)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -249,13 +249,13 @@ func (_m *Manager) ResolveInputSigningIdentity(ctx context.Context, namespace st
 	return r0
 }
 
-// ResolveNodeOwnerSigningIdentity provides a mock function with given fields: ctx, namespace, msgSignerRef
-func (_m *Manager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, msgSignerRef *core.SignerRef) error {
-	ret := _m.Called(ctx, namespace, msgSignerRef)
+// ResolveNodeOwnerSigningIdentity provides a mock function with given fields: ctx, namespace, signerRef
+func (_m *Manager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) error {
+	ret := _m.Called(ctx, namespace, signerRef)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *core.SignerRef) error); ok {
-		r0 = rf(ctx, namespace, msgSignerRef)
+		r0 = rf(ctx, namespace, signerRef)
 	} else {
 		r0 = ret.Error(0)
 	}

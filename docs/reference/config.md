@@ -535,6 +535,12 @@ nav_order: 3
 |---|-----------|----|-------------|
 |type|The Identity plugin to use|`string`|`<nil>`
 
+## identity.manager
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|legacySystemIdentities|Whether the identity manager should resolve legacy identities registered on the ff_system namespace|`boolean`|`<nil>`
+
 ## identity.manager.cache
 
 |Key|Description|Type|Default Value|
@@ -625,6 +631,12 @@ nav_order: 3
 |---|-----------|----|-------------|
 |description|A description for the namespace|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
+
+## namespaces.predefined[].org
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|key|A default signing key for blockchain transactions within the namespace (overrides top-level org.key)|`string`|`<nil>`
 
 ## node
 

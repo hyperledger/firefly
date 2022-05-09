@@ -109,6 +109,10 @@ func (or *orchestrator) GetStatus(ctx context.Context, ns string) (status *core.
 		status.Org.Registered = true
 		status.Org.ID = org.ID
 		status.Org.DID = org.DID
+
+		// It's possible namespace will fallback to SystemNamespace (if configured to do so)
+		ns = org.Namespace
+
 		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, ns, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
 		if err != nil {
 			return nil, err
