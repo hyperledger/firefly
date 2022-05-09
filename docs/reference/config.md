@@ -619,6 +619,13 @@ nav_order: 3
 |default|The default namespace - must be in the predefined list|`string`|`<nil>`
 |predefined|A list of namespaces to ensure exists, without requiring a broadcast from the network|List `string`|`<nil>`
 
+## namespaces.predefined[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|description|A description for the namespace|`string`|`<nil>`
+|name|The name of the namespace (must be unique)|`string`|`<nil>`
+
 ## node
 
 |Key|Description|Type|Default Value|

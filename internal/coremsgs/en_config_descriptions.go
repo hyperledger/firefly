@@ -175,8 +175,10 @@ var (
 	ConfigMetricsReadTimeout  = ffc("config.metrics.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigMetricsWriteTimeout = ffc("config.metrics.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
-	ConfigNamespacesDefault    = ffc("config.namespaces.default", "The default namespace - must be in the predefined list", i18n.StringType)
-	ConfigNamespacesPredefined = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+i18n.StringType)
+	ConfigNamespacesDefault               = ffc("config.namespaces.default", "The default namespace - must be in the predefined list", i18n.StringType)
+	ConfigNamespacesPredefined            = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+i18n.StringType)
+	ConfigNamespacesPredefinedName        = ffc("config.namespaces.predefined[].name", "The name of the namespace (must be unique)", i18n.StringType)
+	ConfigNamespacesPredefinedDescription = ffc("config.namespaces.predefined[].description", "A description for the namespace", i18n.StringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", i18n.StringType)
 	ConfigNodeName        = ffc("config.node.name", "The name of this FireFly node", i18n.StringType)

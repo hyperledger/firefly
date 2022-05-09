@@ -59,7 +59,17 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
+const (
+	// NamespacePredefined is the list of pre-defined namespaces
+	NamespacePredefined = "predefined"
+	// NamespaceName is a short name for a pre-defined namespace
+	NamespaceName = "name"
+	// NamespaceName is a long description for a pre-defined namespace
+	NamespaceDescription = "description"
+)
+
 var (
+	namespaceConfig     = config.RootSection("namespaces")
 	blockchainConfig    = config.RootSection("blockchain")
 	databaseConfig      = config.RootSection("database")
 	identityConfig      = config.RootSection("identity")
@@ -178,9 +188,10 @@ type orchestrator struct {
 	adminEvents    adminevents.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
+	predefinedNS   config.ArraySection
 }
 
-func NewOrchestrator() Orchestrator {
+func NewOrchestrator(withDefaults bool) Orchestrator {
 	or := &orchestrator{}
 
 	// Initialize the config on all the factories
@@ -192,7 +203,19 @@ func NewOrchestrator() Orchestrator {
 	dxfactory.InitConfig(dataexchangeConfig)
 	tifactory.InitConfig(tokensConfig)
 
+	or.InitNamespaceConfig(withDefaults)
+
 	return or
+}
+
+func (or *orchestrator) InitNamespaceConfig(withDefaults bool) {
+	or.predefinedNS = namespaceConfig.SubArray(NamespacePredefined)
+	or.predefinedNS.AddKnownKey(NamespaceName)
+	or.predefinedNS.AddKnownKey(NamespaceDescription)
+	if withDefaults {
+		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+NamespaceName, "default")
+		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+NamespaceDescription, "Default predefined namespace")
+	}
 }
 
 func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
@@ -599,9 +622,8 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+func (or *orchestrator) getPredefinedNamespaces(ctx context.Context) ([]*core.Namespace, error) {
 	defaultNS := config.GetString(coreconfig.NamespacesDefault)
-	predefined := config.GetObjectArray(coreconfig.NamespacesPredefined)
 	namespaces := []*core.Namespace{
 		{
 			Name:        core.SystemNamespace,
@@ -610,7 +632,8 @@ func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*core.N
 		},
 	}
 	foundDefault := false
-	for i, nsObject := range predefined {
+	for i := 0; i < or.predefinedNS.ArraySize(); i++ {
+		nsObject := or.predefinedNS.ArrayEntry(i)
 		name := nsObject.GetString("name")
 		err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
 		if err != nil {
@@ -640,7 +663,7 @@ func (or *orchestrator) getPrefdefinedNamespaces(ctx context.Context) ([]*core.N
 }
 
 func (or *orchestrator) initNamespaces(ctx context.Context) error {
-	predefined, err := or.getPrefdefinedNamespaces(ctx)
+	predefined, err := or.getPredefinedNamespaces(ctx)
 	if err != nil {
 		return err
 	}

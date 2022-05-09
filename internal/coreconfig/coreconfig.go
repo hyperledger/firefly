@@ -18,7 +18,6 @@ package coreconfig
 
 import (
 	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/spf13/viper"
 )
@@ -328,7 +327,6 @@ func setDefaults() {
 	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
-	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
 	viper.SetDefault(string(OpUpdateRetryInitDelay), "250ms")
 	viper.SetDefault(string(OpUpdateRetryMaxDelay), "1m")
