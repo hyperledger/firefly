@@ -81,9 +81,7 @@ func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string,
 	}
 	if len(preconditions) > 0 {
 		and := make(sq.And, len(preconditions)+1)
-		for i, p := range preconditions {
-			and[i] = p
-		}
+		copy(and, preconditions)
 		and[len(preconditions)] = fop
 		fop = and
 	}
