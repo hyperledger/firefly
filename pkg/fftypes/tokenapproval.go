@@ -24,13 +24,12 @@ type TokenApprovalInput struct {
 type TokenApproval struct {
 	LocalID         *UUID          `ffstruct:"TokenApproval" json:"localId,omitempty" ffexcludeinput:"true"`
 	Pool            *UUID          `ffstruct:"TokenApproval" json:"pool,omitempty"`
-	TokenIndex      string         `ffstruct:"TokenApproval" json:"tokenIndex,omitempty"`
 	Connector       string         `ffstruct:"TokenApproval" json:"connector,omitempty" ffexcludeinput:"true"`
 	Key             string         `ffstruct:"TokenApproval" json:"key,omitempty"`
 	Operator        string         `ffstruct:"TokenApproval" json:"operator,omitempty"`
 	Approved        bool           `ffstruct:"TokenApproval" json:"approved"`
-	Info            JSONObject     `ffstruct:"TokenApproval" json:"info,omitempty"`
-	Namespace       string         `ffstruct:"TokenApproval" json:"namespace,omitempty"`
+	Info            JSONObject     `ffstruct:"TokenApproval" json:"info,omitempty" ffexcludeinput:"true"`
+	Namespace       string         `ffstruct:"TokenApproval" json:"namespace,omitempty" ffexcludeinput:"true"`
 	ProtocolID      string         `ffstruct:"TokenApproval" json:"protocolId,omitempty" ffexcludeinput:"true"`
 	Subject         string         `ffstruct:"TokenApproval" json:"subject,omitempty" ffexcludeinput:"true"`
 	Active          bool           `ffstruct:"TokenApproval" json:"active,omitempty" ffexcludeinput:"true"`
