@@ -203,9 +203,9 @@ func (s *SQLCommon) GetTokenTransferByID(ctx context.Context, localID *fftypes.U
 	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
-func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenTransfer, error) {
+func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*fftypes.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, protocolID, sq.And{
-		sq.Eq{"pool_id": poolID},
+		sq.Eq{"connector": connector},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }
