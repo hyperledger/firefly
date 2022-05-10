@@ -44,9 +44,9 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 
 	ws = &WebSockets{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	svrPrefix := config.NewPluginConfig("ut.websockets")
-	ws.InitPrefix(svrPrefix)
-	ws.Init(ctx, svrPrefix, cbs)
+	svrConfig := config.RootSection("ut.websockets")
+	ws.InitConfig(svrConfig)
+	ws.Init(ctx, svrConfig, cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
 	assert.NotNil(t, ws.GetOptionsSchema(context.Background()))
@@ -54,14 +54,14 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 
 	svr := httptest.NewServer(ws)
 
-	clientPrefix := config.NewPluginConfig("ut.wsclient")
-	wsclient.InitPrefix(clientPrefix)
+	clientConfig := config.RootSection("ut.wsclient")
+	wsclient.InitConfig(clientConfig)
 	qs := ""
 	if len(queryParams) > 0 {
 		qs = fmt.Sprintf("?%s", strings.Join(queryParams, "&"))
 	}
-	clientPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
-	wsConfig := wsclient.GenerateConfigFromPrefix(clientPrefix)
+	clientConfig.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s%s", svr.Listener.Addr(), qs))
+	wsConfig := wsclient.GenerateConfig(clientConfig)
 
 	wsc, err := wsclient.New(ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)

@@ -93,13 +93,13 @@ func (_m *Plugin) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool 
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, name, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) error {
-	ret := _m.Called(ctx, name, prefix, callbacks)
+// Init provides a mock function with given fields: ctx, name, _a2, callbacks
+func (_m *Plugin) Init(ctx context.Context, name string, _a2 config.Section, callbacks tokens.Callbacks) error {
+	ret := _m.Called(ctx, name, _a2, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, config.Prefix, tokens.Callbacks) error); ok {
-		r0 = rf(ctx, name, prefix, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, string, config.Section, tokens.Callbacks) error); ok {
+		r0 = rf(ctx, name, _a2, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -107,9 +107,9 @@ func (_m *Plugin) Init(ctx context.Context, name string, prefix config.Prefix, c
 	return r0
 }
 
-// InitPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitPrefix(prefix config.PrefixArray) {
-	_m.Called(prefix)
+// InitConfig provides a mock function with given fields: _a0
+func (_m *Plugin) InitConfig(_a0 config.ArraySection) {
+	_m.Called(_a0)
 }
 
 // MintTokens provides a mock function with given fields: ctx, opID, poolLocator, mint

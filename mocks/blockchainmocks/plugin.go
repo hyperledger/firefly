@@ -126,13 +126,13 @@ func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (core.FFIParamValida
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, prefix, callbacks, _a3
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
-	ret := _m.Called(ctx, prefix, callbacks, _a3)
+// Init provides a mock function with given fields: ctx, _a1, callbacks, _a3
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
+	ret := _m.Called(ctx, _a1, callbacks, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, blockchain.Callbacks, metrics.Manager) error); ok {
-		r0 = rf(ctx, prefix, callbacks, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, blockchain.Callbacks, metrics.Manager) error); ok {
+		r0 = rf(ctx, _a1, callbacks, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -140,9 +140,9 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks bloc
 	return r0
 }
 
-// InitPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitPrefix(prefix config.Prefix) {
-	_m.Called(prefix)
+// InitConfig provides a mock function with given fields: _a0
+func (_m *Plugin) InitConfig(_a0 config.Section) {
+	_m.Called(_a0)
 }
 
 // InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, input

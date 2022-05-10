@@ -28,8 +28,8 @@ const (
 	DataExchangeInitEnabled = "initEnabled"
 )
 
-func (h *FFDX) InitPrefix(prefix config.Prefix) {
-	wsclient.InitPrefix(prefix)
-	prefix.AddKnownKey(DataExchangeManifestEnabled, false)
-	prefix.AddKnownKey(DataExchangeInitEnabled, false)
+func (h *FFDX) InitConfig(config config.Section) {
+	wsclient.InitConfig(config)
+	config.AddKnownKey(DataExchangeManifestEnabled, false)
+	config.AddKnownKey(DataExchangeInitEnabled, false)
 }

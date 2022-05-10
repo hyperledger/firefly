@@ -127,13 +127,13 @@ func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, erro
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, prefix, nodes, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) error {
-	ret := _m.Called(ctx, prefix, nodes, callbacks)
+// Init provides a mock function with given fields: ctx, _a1, nodes, callbacks
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) error {
+	ret := _m.Called(ctx, _a1, nodes, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, []fftypes.JSONObject, dataexchange.Callbacks) error); ok {
-		r0 = rf(ctx, prefix, nodes, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, []fftypes.JSONObject, dataexchange.Callbacks) error); ok {
+		r0 = rf(ctx, _a1, nodes, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -141,9 +141,9 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, nodes []fftype
 	return r0
 }
 
-// InitPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitPrefix(prefix config.Prefix) {
-	_m.Called(prefix)
+// InitConfig provides a mock function with given fields: _a0
+func (_m *Plugin) InitConfig(_a0 config.Section) {
+	_m.Called(_a0)
 }
 
 // Name provides a mock function with given fields:

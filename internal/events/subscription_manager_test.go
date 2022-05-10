@@ -49,7 +49,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")
 	mei.On("Capabilities").Return(&events.Capabilities{}).Maybe()
-	mei.On("InitPrefix", mock.Anything).Return()
+	mei.On("InitConfig", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&core.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
@@ -182,7 +182,7 @@ func TestSubManagerBadPlugin(t *testing.T) {
 func TestSubManagerTransportInitError(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	mei.On("Name").Return("ut")
-	mei.On("InitPrefix", mock.Anything).Return()
+	mei.On("InitConfig", mock.Anything).Return()
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	sm, cancel := newTestSubManager(t, mei)

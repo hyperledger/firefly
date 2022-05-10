@@ -397,8 +397,8 @@ func TestAddInternalListener(t *testing.T) {
 	cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 
-	conf := config.NewPluginConfig("ut.events")
-	ie.InitPrefix(conf)
+	conf := config.RootSection("ut.events")
+	ie.InitConfig(conf)
 	ie.Init(em.ctx, conf, cbs)
 	em.internalEvents = ie
 	defer cancel()

@@ -25,9 +25,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func InitPrefix(prefix config.Prefix) {
+func InitConfig(config config.Section) {
 	for name, plugin := range pluginsByName {
-		plugin().InitPrefix(prefix.SubPrefix(name))
+		plugin().InitConfig(config.SubSection(name))
 	}
 }
 

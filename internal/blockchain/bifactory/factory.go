@@ -32,9 +32,9 @@ var pluginsByName = map[string]func() blockchain.Plugin{
 	(*fabric.Fabric)(nil).Name():     func() blockchain.Plugin { return &fabric.Fabric{} },
 }
 
-func InitPrefix(prefix config.Prefix) {
+func InitConfig(config config.Section) {
 	for name, plugin := range pluginsByName {
-		plugin().InitPrefix(prefix.SubPrefix(name))
+		plugin().InitConfig(config.SubSection(name))
 	}
 }
 

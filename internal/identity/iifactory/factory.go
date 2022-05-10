@@ -31,9 +31,9 @@ var pluginsByName = map[string]func() identity.Plugin{
 	(*tbd.TBD)(nil).Name(): func() identity.Plugin { return &tbd.TBD{} },
 }
 
-func InitPrefix(prefix config.Prefix) {
+func InitConfig(config config.Section) {
 	for name, plugin := range pluginsByName {
-		plugin().InitPrefix(prefix.SubPrefix(name))
+		plugin().InitConfig(config.SubSection(name))
 	}
 }
 

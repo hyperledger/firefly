@@ -41,15 +41,15 @@ type WebSockets struct {
 
 func (ws *WebSockets) Name() string { return "websockets" }
 
-func (ws *WebSockets) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) error {
+func (ws *WebSockets) Init(ctx context.Context, config config.Section, callbacks events.Callbacks) error {
 	*ws = WebSockets{
 		ctx:          ctx,
 		connections:  make(map[string]*websocketConnection),
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
 		upgrader: websocket.Upgrader{
-			ReadBufferSize:  int(prefix.GetByteSize(ReadBufferSize)),
-			WriteBufferSize: int(prefix.GetByteSize(WriteBufferSize)),
+			ReadBufferSize:  int(config.GetByteSize(ReadBufferSize)),
+			WriteBufferSize: int(config.GetByteSize(WriteBufferSize)),
 			CheckOrigin: func(r *http.Request) bool {
 				// Cors is handled by the API server that wraps this handler
 				return true

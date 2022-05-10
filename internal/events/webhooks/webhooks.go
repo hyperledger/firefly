@@ -63,12 +63,12 @@ type whResponse struct {
 
 func (wh *WebHooks) Name() string { return "webhooks" }
 
-func (wh *WebHooks) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) (err error) {
+func (wh *WebHooks) Init(ctx context.Context, config config.Section, callbacks events.Callbacks) (err error) {
 	*wh = WebHooks{
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
-		client:       ffresty.New(ctx, prefix),
+		client:       ffresty.New(ctx, config),
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions
