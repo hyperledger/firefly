@@ -19,6 +19,7 @@ package core
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -29,6 +30,11 @@ var (
 	ffSafeCharsValidator = regexp.MustCompile(`^[0-9a-zA-Z._-]*$`)
 )
 
+type NameValidationOptions struct {
+	noUUID            bool
+	extraAllowedChars string
+}
+
 func ValidateSafeCharsOnly(ctx context.Context, str string, fieldName string) error {
 	if !ffSafeCharsValidator.MatchString(str) {
 		return i18n.NewError(ctx, i18n.MsgSafeCharsOnly, fieldName)
@@ -37,18 +43,30 @@ func ValidateSafeCharsOnly(ctx context.Context, str string, fieldName string) er
 }
 
 func ValidateFFNameField(ctx context.Context, str string, fieldName string) error {
-	if !ffNameValidator.MatchString(str) {
-		return i18n.NewError(ctx, i18n.MsgInvalidName, fieldName)
-	}
-	return nil
+	return ValidateFFNameFieldOptions(ctx, str, fieldName, NameValidationOptions{})
 }
 
 func ValidateFFNameFieldNoUUID(ctx context.Context, str string, fieldName string) error {
-	if _, err := fftypes.ParseUUID(ctx, str); err == nil {
+	return ValidateFFNameFieldOptions(ctx, str, fieldName, NameValidationOptions{noUUID: true})
+}
+
+func ValidateFFNameFieldOptions(ctx context.Context, str string, fieldName string, options NameValidationOptions) error {
+	if options.noUUID {
 		// Name must not be a UUID
-		return i18n.NewError(ctx, i18n.MsgNoUUID, fieldName)
+		if _, err := fftypes.ParseUUID(ctx, str); err == nil {
+			return i18n.NewError(ctx, i18n.MsgNoUUID, fieldName)
+		}
 	}
-	return ValidateFFNameField(ctx, str, fieldName)
+	if options.extraAllowedChars != "" {
+		// Remove some additional characters from validation
+		for _, c := range options.extraAllowedChars {
+			str = strings.ReplaceAll(str, string(c), "_")
+		}
+	}
+	if !ffNameValidator.MatchString(str) {
+		return i18n.NewError(ctx, i18n.MsgInvalidName, fieldName, options.extraAllowedChars)
+	}
+	return nil
 }
 
 func ValidateLength(ctx context.Context, str string, fieldName string, max int) error {

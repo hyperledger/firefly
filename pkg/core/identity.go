@@ -20,10 +20,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 )
 
 // IdentityType is the type of an identity
@@ -43,7 +45,7 @@ const (
 	FireFlyDIDPrefix       = "did:firefly:"
 	FireFlyOrgDIDPrefix    = "did:firefly:org/"
 	FireFlyNodeDIDPrefix   = "did:firefly:node/"
-	FireFlyCustomDIDPrefix = "did:firefly:ns/"
+	FireFlyCustomDIDPrefix = "did:firefly:"
 )
 
 type IdentityMessages struct {
@@ -169,12 +171,25 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 	if err = ValidateFFNameFieldNoUUID(ctx, i.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameFieldNoUUID(ctx, i.Name, "name"); err != nil {
+
+	options := NameValidationOptions{noUUID: true}
+	if i.Type == IdentityTypeCustom {
+		options.extraAllowedChars = "/"
+	}
+	if err = ValidateFFNameFieldOptions(ctx, i.Name, "name", options); err != nil {
 		return err
+	}
+
+	var legacyDID string
+	if i.Type == IdentityTypeCustom {
+		if strings.HasPrefix(i.DID, FireFlyNodeDIDPrefix) || strings.HasPrefix(i.DID, FireFlyOrgDIDPrefix) {
+			return i18n.NewError(ctx, coremsgs.MsgReservedIdentityPrefix, i.Name)
+		}
+		legacyDID = fmt.Sprintf("%sns/%s/%s", FireFlyCustomDIDPrefix, i.Namespace, i.Name)
 	}
 	if requiredDID, err := i.GenerateDID(ctx); err != nil {
 		return err
-	} else if i.DID != requiredDID {
+	} else if i.DID == "" || (i.DID != requiredDID && i.DID != legacyDID) {
 		return i18n.NewError(ctx, i18n.MsgInvalidDIDForType, i.DID, i.Type, i.Namespace, i.Name)
 	}
 	return nil
@@ -189,7 +204,7 @@ func (i *IdentityBase) GenerateDID(ctx context.Context) (string, error) {
 		if i.Parent == nil {
 			return "", i18n.NewError(ctx, i18n.MsgNilParentIdentity, i.Type)
 		}
-		return fmt.Sprintf("%s%s/%s", FireFlyCustomDIDPrefix, i.Namespace, i.Name), nil
+		return fmt.Sprintf("%s%s", FireFlyCustomDIDPrefix, i.Name), nil
 	case IdentityTypeNode:
 		if i.Parent == nil {
 			return "", i18n.NewError(ctx, i18n.MsgNilParentIdentity, i.Type)
