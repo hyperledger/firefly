@@ -19365,14 +19365,9 @@ paths:
             application/json:
               schema:
                 properties:
-                  defaults:
-                    description: Information about defaults configured on this node
-                      that appplications might need to query on startup
-                    properties:
-                      namespace:
-                        description: The default namespace on this node
-                        type: string
-                    type: object
+                  namespace:
+                    description: The namespace that this status applies to
+                    type: string
                   node:
                     description: Details of the local node
                     properties:
@@ -26153,14 +26148,9 @@ paths:
             application/json:
               schema:
                 properties:
-                  defaults:
-                    description: Information about defaults configured on this node
-                      that appplications might need to query on startup
-                    properties:
-                      namespace:
-                        description: The default namespace on this node
-                        type: string
-                    type: object
+                  namespace:
+                    description: The namespace that this status applies to
+                    type: string
                   node:
                     description: Details of the local node
                     properties:

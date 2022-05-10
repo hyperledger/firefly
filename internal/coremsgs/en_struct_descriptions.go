@@ -369,9 +369,9 @@ var (
 	NamespaceCreated     = ffm("Namespace.created", "The time the namespace was created")
 
 	// NodeStatus field descriptions
+	NodeNamespace  = ffm("NodeStatus.namespace", "The namespace that this status applies to")
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
 	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
-	NodeDefaults   = ffm("NodeStatus.defaults", "Information about defaults configured on this node that appplications might need to query on startup")
 	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
 
 	// NodeStatusNode field descriptions
