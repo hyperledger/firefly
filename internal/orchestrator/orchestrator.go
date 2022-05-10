@@ -622,7 +622,7 @@ func (or *orchestrator) getPredefinedNamespaces(ctx context.Context) ([]*core.Na
 	defaultNS := config.GetString(coreconfig.NamespacesDefault)
 	namespaces := []*core.Namespace{
 		{
-			Name:        core.SystemNamespace,
+			Name:        core.LegacySystemNamespace,
 			Type:        core.NamespaceTypeSystem,
 			Description: i18n.Expand(ctx, coremsgs.CoreSystemNSDescription),
 		},

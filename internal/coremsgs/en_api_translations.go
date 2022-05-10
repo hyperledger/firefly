@@ -22,7 +22,7 @@ var ffm = i18n.FFM
 
 //revive:disable
 var (
-	CoreSystemNSDescription = ffm("core.systemNSDescription", "FireFly system namespace")
+	CoreSystemNSDescription = ffm("core.systemNSDescription", "FireFly system namespace (legacy - no longer used by newer versions)")
 
 	APIParamsConfigRecordKeyUpdate          = ffm("api.params.configRecordKey.update", "The configuration key to update. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
 	APIParamsConfigRecordKeyGet             = ffm("api.params.configRecordKey.get", "The configuration key to get. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")

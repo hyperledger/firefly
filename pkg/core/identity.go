@@ -183,8 +183,8 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 func (i *IdentityBase) GenerateDID(ctx context.Context) (string, error) {
 	switch i.Type {
 	case IdentityTypeCustom:
-		if i.Namespace == SystemNamespace {
-			return "", i18n.NewError(ctx, i18n.MsgCustomIdentitySystemNS, SystemNamespace)
+		if i.Namespace == LegacySystemNamespace {
+			return "", i18n.NewError(ctx, i18n.MsgCustomIdentitySystemNS, LegacySystemNamespace)
 		}
 		if i.Parent == nil {
 			return "", i18n.NewError(ctx, i18n.MsgNilParentIdentity, i.Type)

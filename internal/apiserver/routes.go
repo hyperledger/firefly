@@ -30,7 +30,6 @@ var routes = append(
 		getStatusBatchManager,
 		getStatusPins,
 		getStatusWebSockets,
-		postNewNamespace,
 	}),
 	namespacedRoutes([]*oapispec.Route{
 		deleteContractListener,

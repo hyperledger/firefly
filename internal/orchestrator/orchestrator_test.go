@@ -716,7 +716,7 @@ func TestInitNamespacesDupName(t *testing.T) {
 	nsList, err := or.getPredefinedNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nsList, 3)
-	assert.Equal(t, core.SystemNamespace, nsList[0].Name)
+	assert.Equal(t, core.LegacySystemNamespace, nsList[0].Name)
 	assert.Equal(t, "ns1", nsList[1].Name)
 	assert.Equal(t, "ns2", nsList[2].Name)
 }

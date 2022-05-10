@@ -92,7 +92,7 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: core.SignerRef{
@@ -117,7 +117,7 @@ func TestResolveInitGroupBadData(t *testing.T) {
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: core.SignerRef{
@@ -142,7 +142,7 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: core.SignerRef{
@@ -180,7 +180,7 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
 			SignerRef: core.SignerRef{
@@ -220,7 +220,7 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineGroup,
 			Group:     group.Hash,
 			SignerRef: core.SignerRef{
@@ -261,7 +261,7 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	group, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineGroup,
 			Group:     group.Hash,
 			SignerRef: core.SignerRef{

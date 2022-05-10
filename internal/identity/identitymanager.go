@@ -413,9 +413,9 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.SystemNamespace && config.GetBool(coreconfig.IdentityManagerLegacySystemIdentities) {
+		if namespace != core.LegacySystemNamespace && config.GetBool(coreconfig.IdentityManagerLegacySystemIdentities) {
 			// Fall back to SystemNamespace
-			return im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, verifierRef)
+			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)
 		}
 		return nil, err
 	}

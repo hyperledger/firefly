@@ -31,7 +31,7 @@ func testOrg() *Identity {
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
 			Type:      IdentityTypeOrg,
-			Namespace: SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 		},
 		IdentityProfile: IdentityProfile{
@@ -50,7 +50,7 @@ func testNode() *Identity {
 			DID:       "did:firefly:node/node1",
 			Parent:    fftypes.NewUUID(),
 			Type:      IdentityTypeNode,
-			Namespace: SystemNamespace,
+			Namespace: "ns1",
 			Name:      "node1",
 		},
 		IdentityProfile: IdentityProfile{
@@ -146,7 +146,7 @@ func TestIdentityValidationCustom(t *testing.T) {
 	assert.Regexp(t, "FF00120", c.Validate(ctx))
 
 	c = testCustom("ns1", "custom1")
-	c.Namespace = SystemNamespace
+	c.Namespace = LegacySystemNamespace
 	assert.Regexp(t, "FF00121", c.Validate(ctx))
 
 }
