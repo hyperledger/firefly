@@ -77,8 +77,8 @@ func TestStartStopServer(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	apiConfigPrefix.Set(httpserver.HTTPConfPort, 0)
-	adminConfigPrefix.Set(httpserver.HTTPConfPort, 0)
+	apiConfig.Set(httpserver.HTTPConfPort, 0)
+	adminConfig.Set(httpserver.HTTPConfPort, 0)
 	config.Set(coreconfig.UIPath, "test")
 	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -96,7 +96,7 @@ func TestStartAPIFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	apiConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	apiConfig.Set(httpserver.HTTPConfAddress, "...://")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
@@ -110,7 +110,7 @@ func TestStartAdminFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	adminConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	adminConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
@@ -127,7 +127,7 @@ func TestStartAdminWSHandler(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	adminConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	adminConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	as := NewAPIServer().(*apiServer)
 	mor := &orchestratormocks.Orchestrator{}
@@ -147,7 +147,7 @@ func TestStartMetricsFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	metricsConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	metricsConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.MetricsEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down

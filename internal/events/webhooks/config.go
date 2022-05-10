@@ -21,6 +21,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 )
 
-func (wh *WebHooks) InitPrefix(prefix config.Prefix) {
-	ffresty.InitPrefix(prefix)
+func (wh *WebHooks) InitConfig(config config.Section) {
+	ffresty.InitConfig(config)
 }

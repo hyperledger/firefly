@@ -40,7 +40,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfPrefix = config.NewPluginConfig("ffdx_unit_tests")
+var utConfig = config.RootSection("ffdx_unit_tests")
 
 func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
@@ -53,17 +53,17 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	httpURL = u.String()
 
 	coreconfig.Reset()
-	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(ffresty.HTTPConfigURL, httpURL)
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	utConfPrefix.Set(DataExchangeManifestEnabled, manifestEnabled)
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeManifestEnabled, manifestEnabled)
 
 	h = &FFDX{initialized: true}
 	nodes := make([]fftypes.JSONObject, 0)
-	h.InitPrefix(utConfPrefix)
+	h.InitConfig(utConfig)
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(dxCtx, utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -78,9 +78,9 @@ func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
 	nodes := make([]fftypes.JSONObject, 0)
-	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
+	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -88,8 +88,8 @@ func TestInitMissingURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
 	nodes := make([]fftypes.JSONObject, 0)
-	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	h.InitConfig(utConfig)
+	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -649,10 +649,10 @@ func TestWebsocketWithReinit(t *testing.T) {
 	nodes := []fftypes.JSONObject{{}}
 
 	coreconfig.Reset()
-	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(ffresty.HTTPConfigURL, httpURL)
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	utConfPrefix.Set(DataExchangeInitEnabled, true)
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeInitEnabled, true)
 
 	count := 0
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
@@ -678,8 +678,8 @@ func TestWebsocketWithReinit(t *testing.T) {
 			})
 		})
 
-	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	h.InitConfig(utConfig)
+	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	err = h.Start()

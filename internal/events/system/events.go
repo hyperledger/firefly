@@ -46,13 +46,13 @@ type EventListener func(event *core.EventDelivery) error
 
 func (se *Events) Name() string { return SystemEventsTransport }
 
-func (se *Events) Init(ctx context.Context, prefix config.Prefix, callbacks events.Callbacks) (err error) {
+func (se *Events) Init(ctx context.Context, config config.Section, callbacks events.Callbacks) (err error) {
 	*se = Events{
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
 		callbacks:    callbacks,
 		listeners:    make(map[string][]EventListener),
-		readAhead:    uint16(prefix.GetInt(SystemEventsConfReadAhead)),
+		readAhead:    uint16(config.GetInt(SystemEventsConfReadAhead)),
 		connID:       fftypes.ShortID(),
 	}
 	// We have a single logical connection, that matches all subscriptions

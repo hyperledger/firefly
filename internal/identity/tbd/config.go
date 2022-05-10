@@ -20,5 +20,5 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 )
 
-func (tbd *TBD) InitPrefix(prefix config.Prefix) {
+func (tbd *TBD) InitConfig(config config.Section) {
 }

@@ -40,10 +40,10 @@ func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, ws *webSock
 	ae = NewAdminEventManager(context.Background()).(*adminEventManager)
 	svr := httptest.NewServer(http.HandlerFunc(ae.ServeHTTPWebSocketListener))
 
-	clientPrefix := config.NewPluginConfig("ut.wsclient")
-	wsclient.InitPrefix(clientPrefix)
-	clientPrefix.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
-	wsConfig := wsclient.GenerateConfigFromPrefix(clientPrefix)
+	clientConfig := config.RootSection("ut.wsclient")
+	wsclient.InitConfig(clientConfig)
+	clientConfig.Set(ffresty.HTTPConfigURL, fmt.Sprintf("http://%s", svr.Listener.Addr()))
+	wsConfig := wsclient.GenerateConfig(clientConfig)
 
 	wsc, err := wsclient.New(ae.ctx, wsConfig, nil, nil)
 	assert.NoError(t, err)

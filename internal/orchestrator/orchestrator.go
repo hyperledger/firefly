@@ -60,14 +60,14 @@ import (
 )
 
 var (
-	blockchainConfig    = config.NewPluginConfig("blockchain")
-	databaseConfig      = config.NewPluginConfig("database")
-	identityConfig      = config.NewPluginConfig("identity")
-	sharedstorageConfig = config.NewPluginConfig("sharedstorage")
-	// For backward compatibility with the old "publicstorage" prefix
-	publicstorageConfig = config.NewPluginConfig("publicstorage")
-	dataexchangeConfig  = config.NewPluginConfig("dataexchange")
-	tokensConfig        = config.NewPluginConfig("tokens").Array()
+	blockchainConfig    = config.RootSection("blockchain")
+	databaseConfig      = config.RootSection("database")
+	identityConfig      = config.RootSection("identity")
+	sharedstorageConfig = config.RootSection("sharedstorage")
+	// For backward compatibility with the old "publicstorage" config
+	publicstorageConfig = config.RootSection("publicstorage")
+	dataexchangeConfig  = config.RootSection("dataexchange")
+	tokensConfig        = config.RootArray("tokens")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -184,13 +184,13 @@ func NewOrchestrator() Orchestrator {
 	or := &orchestrator{}
 
 	// Initialize the config on all the factories
-	bifactory.InitPrefix(blockchainConfig)
-	difactory.InitPrefix(databaseConfig)
-	ssfactory.InitPrefix(sharedstorageConfig)
-	// For backward compatibility also init with the old "publicstorage" prefix
-	ssfactory.InitPrefix(publicstorageConfig)
-	dxfactory.InitPrefix(dataexchangeConfig)
-	tifactory.InitPrefix(tokensConfig)
+	bifactory.InitConfig(blockchainConfig)
+	difactory.InitConfig(databaseConfig)
+	ssfactory.InitConfig(sharedstorageConfig)
+	// For backward compatibility also init with the old "publicstorage" config
+	ssfactory.InitConfig(publicstorageConfig)
+	dxfactory.InitConfig(dataexchangeConfig)
+	tifactory.InitConfig(tokensConfig)
 
 	return or
 }
@@ -341,7 +341,7 @@ func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error
 			return err
 		}
 	}
-	if err = or.database.Init(ctx, databaseConfig.SubPrefix(or.database.Name()), or); err != nil {
+	if err = or.database.Init(ctx, databaseConfig.SubSection(or.database.Name()), or); err != nil {
 		return err
 	}
 
@@ -380,22 +380,22 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 
-	configPrefix := dataexchangeConfig.SubPrefix(dxPlugin)
+	config := dataexchangeConfig.SubSection(dxPlugin)
 	// Migration for explicitly setting the old name ..
 	if dxPlugin == dxfactory.OldFFDXPluginName ||
 		// .. or defaulting to the new name, but without setting the mandatory URL
-		(dxPlugin == dxfactory.NewFFDXPluginName && configPrefix.GetString(ffresty.HTTPConfigURL) == "") {
-		// We need to initialize the migration prefix, and use that if it's set
-		migrationPrefix := dataexchangeConfig.SubPrefix(dxfactory.OldFFDXPluginName)
-		or.dataexchange.InitPrefix(migrationPrefix)
-		if migrationPrefix.GetString(ffresty.HTTPConfigURL) != "" {
+		(dxPlugin == dxfactory.NewFFDXPluginName && config.GetString(ffresty.HTTPConfigURL) == "") {
+		// We need to initialize the migration config, and use that if it's set
+		migrationConfig := dataexchangeConfig.SubSection(dxfactory.OldFFDXPluginName)
+		or.dataexchange.InitConfig(migrationConfig)
+		if migrationConfig.GetString(ffresty.HTTPConfigURL) != "" {
 			// TODO: eventually make this fatal
 			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", coreconfig.OrgIdentityDeprecated, coreconfig.OrgKey)
-			configPrefix = migrationPrefix
+			config = migrationConfig
 		}
 	}
 
-	return or.dataexchange.Init(ctx, configPrefix, nodeInfo, &or.bc)
+	return or.dataexchange.Init(ctx, config, nodeInfo, &or.bc)
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
@@ -416,7 +416,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if err = or.identityPlugin.Init(ctx, identityConfig.SubPrefix(or.identityPlugin.Name()), or); err != nil {
+	if err = or.identityPlugin.Init(ctx, identityConfig.SubSection(or.identityPlugin.Name()), or); err != nil {
 		return err
 	}
 
@@ -426,7 +426,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if err = or.blockchain.Init(ctx, blockchainConfig.SubPrefix(or.blockchain.Name()), &or.bc, or.metrics); err != nil {
+	if err = or.blockchain.Init(ctx, blockchainConfig.SubSection(or.blockchain.Name()), &or.bc, or.metrics); err != nil {
 		return err
 	}
 
@@ -443,7 +443,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 
-	if err = or.sharedstorage.Init(ctx, storageConfig.SubPrefix(or.sharedstorage.Name()), or); err != nil {
+	if err = or.sharedstorage.Init(ctx, storageConfig.SubSection(or.sharedstorage.Name()), or); err != nil {
 		return err
 	}
 
@@ -455,9 +455,9 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		or.tokens = make(map[string]tokens.Plugin)
 		tokensConfigArraySize := tokensConfig.ArraySize()
 		for i := 0; i < tokensConfigArraySize; i++ {
-			prefix := tokensConfig.ArrayEntry(i)
-			name := prefix.GetString(tokens.TokensConfigName)
-			pluginName := prefix.GetString(tokens.TokensConfigPlugin)
+			config := tokensConfig.ArrayEntry(i)
+			name := config.GetString(tokens.TokensConfigName)
+			pluginName := config.GetString(tokens.TokensConfigPlugin)
 			if name == "" {
 				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 			}
@@ -467,7 +467,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			if pluginName == "" {
 				// Migration path for old config key
 				// TODO: eventually make this fatal
-				pluginName = prefix.GetString(tokens.TokensConfigConnector)
+				pluginName = config.GetString(tokens.TokensConfigConnector)
 				if pluginName == "" {
 					return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 				}
@@ -483,7 +483,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			log.L(ctx).Infof("Loading tokens plugin name=%s plugin=%s", name, pluginName)
 			plugin, err := tifactory.GetPlugin(ctx, pluginName)
 			if plugin != nil {
-				err = plugin.Init(ctx, name, prefix, &or.bc)
+				err = plugin.Init(ctx, name, config, &or.bc)
 			}
 			if err != nil {
 				return err

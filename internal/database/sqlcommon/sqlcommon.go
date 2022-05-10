@@ -53,7 +53,7 @@ type txWrapper struct {
 	tableLocks      []string
 }
 
-func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.Prefix, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
+func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.Section, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
 	s.capabilities = capabilities
 	s.callbacks = callbacks
 	s.provider = provider
@@ -65,27 +65,27 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, prefix config.P
 		return i18n.NewError(ctx, coremsgs.MsgDBInitFailed)
 	}
 
-	if s.db, err = provider.Open(prefix.GetString(SQLConfDatasourceURL)); err != nil {
+	if s.db, err = provider.Open(config.GetString(SQLConfDatasourceURL)); err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgDBInitFailed)
 	}
-	connLimit := prefix.GetInt(SQLConfMaxConnections)
+	connLimit := config.GetInt(SQLConfMaxConnections)
 	if connLimit > 0 {
 		s.db.SetMaxOpenConns(connLimit)
-		s.db.SetConnMaxIdleTime(prefix.GetDuration(SQLConfMaxConnIdleTime))
-		maxIdleConns := prefix.GetInt(SQLConfMaxIdleConns)
+		s.db.SetConnMaxIdleTime(config.GetDuration(SQLConfMaxConnIdleTime))
+		maxIdleConns := config.GetInt(SQLConfMaxIdleConns)
 		if maxIdleConns <= 0 {
 			// By default we rely on the idle time, rather than a maximum number of conns to leave open
 			maxIdleConns = connLimit
 		}
 		s.db.SetMaxIdleConns(maxIdleConns)
-		s.db.SetConnMaxLifetime(prefix.GetDuration(SQLConfMaxConnLifetime))
+		s.db.SetConnMaxLifetime(config.GetDuration(SQLConfMaxConnLifetime))
 	}
 	if connLimit > 1 {
 		capabilities.Concurrency = true
 	}
 
-	if prefix.GetBool(SQLConfMigrationsAuto) {
-		if err = s.applyDBMigrations(ctx, prefix, provider); err != nil {
+	if config.GetBool(SQLConfMigrationsAuto) {
+		if err = s.applyDBMigrations(ctx, config, provider); err != nil {
 			return i18n.WrapError(ctx, err, coremsgs.MsgDBMigrationFailed)
 		}
 	}
@@ -114,12 +114,12 @@ func (s *SQLCommon) RunAsGroup(ctx context.Context, fn func(ctx context.Context)
 	return s.commitTx(ctx, tx, false /* we _are_ the auto-committer */)
 }
 
-func (s *SQLCommon) applyDBMigrations(ctx context.Context, prefix config.Prefix, provider Provider) error {
+func (s *SQLCommon) applyDBMigrations(ctx context.Context, config config.Section, provider Provider) error {
 	driver, err := provider.GetMigrationDriver(s.db)
 	if err == nil {
 		var m *migrate.Migrate
 		m, err = migrate.NewWithDatabaseInstance(
-			"file://"+prefix.GetString(SQLConfMigrationsDirectory),
+			"file://"+config.GetString(SQLConfMigrationsDirectory),
 			provider.MigrationsDir(), driver)
 		if err == nil {
 			err = m.Up()

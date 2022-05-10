@@ -30,13 +30,13 @@ var pluginsByName = map[string]func() tokens.Plugin{
 	(*fftokens.FFTokens)(nil).Name(): func() tokens.Plugin { return &fftokens.FFTokens{} },
 }
 
-func InitPrefix(prefix config.PrefixArray) {
-	prefix.AddKnownKey(tokens.TokensConfigConnector)
-	prefix.AddKnownKey(tokens.TokensConfigPlugin)
-	prefix.AddKnownKey(tokens.TokensConfigName)
+func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(tokens.TokensConfigConnector)
+	config.AddKnownKey(tokens.TokensConfigPlugin)
+	config.AddKnownKey(tokens.TokensConfigName)
 	for _, plugin := range pluginsByName {
 		// Accept a superset of configs allowed by all plugins
-		plugin().InitPrefix(prefix)
+		plugin().InitConfig(config)
 	}
 }
 

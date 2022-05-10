@@ -31,11 +31,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-func utAddresResolverConfigPrefix() config.Prefix {
+func utAddresResolverConfig() config.Section {
 	coreconfig.Reset()
-	prefix := config.NewPluginConfig("utaddressresovler")
-	(&Ethereum{}).InitPrefix(prefix)
-	return prefix.SubPrefix(AddressResolverConfigKey)
+	config := config.RootSection("utaddressresovler")
+	(&Ethereum{}).InitConfig(config)
+	return config.SubSection(AddressResolverConfigKey)
 }
 
 func TestAddressResolverInEthereumOKCached(t *testing.T) {
@@ -53,13 +53,13 @@ func TestAddressResolverInEthereumOKCached(t *testing.T) {
 	}))
 	defer server.Close()
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	e := &Ethereum{
@@ -89,17 +89,17 @@ func TestAddressResolverPOSTOk(t *testing.T) {
 	}))
 	defer server.Close()
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverRetainOriginal, true)
-	prefix.Set(AddressResolverMethod, "POST")
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
-	prefix.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
-	prefix.Set(AddressResolverResponseField, "Addr")
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverRetainOriginal, true)
+	config.Set(AddressResolverMethod, "POST")
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
+	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
+	config.Set(AddressResolverResponseField, "Addr")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	resolved, err := ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -118,15 +118,15 @@ func TestAddressResolverPOSTBadKey(t *testing.T) {
 	}))
 	defer server.Close()
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverMethod, "POST")
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
-	prefix.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverMethod, "POST")
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
+	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -141,15 +141,15 @@ func TestAddressResolverPOSTResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverMethod, "POST")
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
-	prefix.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverMethod, "POST")
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve", server.URL))
+	config.Set(AddressResolverBodyTemplate, `{"key":"{{.Key}}"}`)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -164,13 +164,13 @@ func TestAddressResolverFailureResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -185,13 +185,13 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 	}))
 	server.Close() // close immediately
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, fmt.Sprintf("%s/resolve/{{.Key}}", server.URL))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -201,27 +201,27 @@ func TestAddressResolverErrorResponse(t *testing.T) {
 
 func TestAddressResolverBadBodyTemplate(t *testing.T) {
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, "http://ff.example/resolve")
-	prefix.Set(AddressResolverBodyTemplate, `{{unclosed!}`)
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, "http://ff.example/resolve")
+	config.Set(AddressResolverBodyTemplate, `{{unclosed!}`)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, err := newAddressResolver(ctx, prefix)
+	_, err := newAddressResolver(ctx, config)
 	assert.Regexp(t, "FF10337.*bodyTemplate", err)
 
 }
 
 func TestAddressResolverErrorURLTemplate(t *testing.T) {
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, "http://ff.example/resolve/{{.Wrong}}")
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, "http://ff.example/resolve/{{.Wrong}}")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")
@@ -231,14 +231,14 @@ func TestAddressResolverErrorURLTemplate(t *testing.T) {
 
 func TestAddressResolverErrorBodyTemplate(t *testing.T) {
 
-	prefix := utAddresResolverConfigPrefix()
-	prefix.Set(AddressResolverURLTemplate, "http://ff.example/resolve")
-	prefix.Set(AddressResolverBodyTemplate, "{{.Wrong}}")
+	config := utAddresResolverConfig()
+	config.Set(AddressResolverURLTemplate, "http://ff.example/resolve")
+	config.Set(AddressResolverBodyTemplate, "{{.Wrong}}")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ar, err := newAddressResolver(ctx, prefix)
+	ar, err := newAddressResolver(ctx, config)
 	assert.NoError(t, err)
 
 	_, err = ar.NormalizeSigningKey(ctx, "testkeystring")

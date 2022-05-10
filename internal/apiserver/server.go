@@ -57,10 +57,10 @@ type orchestratorContextKey struct{}
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 var (
-	adminConfigPrefix   = config.NewPluginConfig("admin")
-	apiConfigPrefix     = config.NewPluginConfig("http")
-	metricsConfigPrefix = config.NewPluginConfig("metrics")
-	corsConfigPrefix    = config.NewPluginConfig("cors")
+	adminConfig   = config.RootSection("admin")
+	apiConfig     = config.RootSection("http")
+	metricsConfig = config.RootSection("metrics")
+	corsConfig    = config.RootSection("cors")
 )
 
 // Server is the external interface for the API Server
@@ -80,11 +80,11 @@ type apiServer struct {
 }
 
 func InitConfig() {
-	httpserver.InitHTTPConfPrefix(apiConfigPrefix, 5000)
-	httpserver.InitHTTPConfPrefix(adminConfigPrefix, 5001)
-	httpserver.InitHTTPConfPrefix(metricsConfigPrefix, 6000)
-	httpserver.InitCORSConfig(corsConfigPrefix)
-	initMetricsConfPrefix(metricsConfigPrefix)
+	httpserver.InitHTTPConfig(apiConfig, 5000)
+	httpserver.InitHTTPConfig(adminConfig, 5001)
+	httpserver.InitHTTPConfig(metricsConfig, 6000)
+	httpserver.InitCORSConfig(corsConfig)
+	initMetricsConfig(metricsConfig)
 }
 
 func NewAPIServer() Server {
@@ -110,7 +110,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	metricsErrChan := make(chan error)
 
 	if !o.IsPreInit() {
-		apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfigPrefix, corsConfigPrefix)
+		apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfig, corsConfig)
 		if err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	}
 
 	if config.GetBool(coreconfig.AdminEnabled) {
-		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfigPrefix, corsConfigPrefix)
+		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfig, corsConfig)
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,7 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	}
 
 	if as.metricsEnabled {
-		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfigPrefix, corsConfigPrefix)
+		metricsHTTPServer, err := httpserver.NewHTTPServer(ctx, "metrics", as.createMetricsMuxRouter(), metricsErrChan, metricsConfig, corsConfig)
 		if err != nil {
 			return err
 		}
@@ -419,7 +419,7 @@ func (as *apiServer) swaggerUIHandler(url string) func(res http.ResponseWriter, 
 	}
 }
 
-func (as *apiServer) getPublicURL(conf config.Prefix, pathPrefix string) string {
+func (as *apiServer) getPublicURL(conf config.Section, pathPrefix string) string {
 	publicURL := conf.GetString(httpserver.HTTPConfPublicURL)
 	if publicURL == "" {
 		proto := "https"
@@ -497,7 +497,7 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 		r.Use(metrics.GetRestServerInstrumentation().Middleware)
 	}
 
-	publicURL := as.getPublicURL(apiConfigPrefix, "")
+	publicURL := as.getPublicURL(apiConfig, "")
 	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
 	for _, route := range routes {
 		if route.JSONHandler != nil {
@@ -542,7 +542,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
 	}
 
-	publicURL := as.getPublicURL(adminConfigPrefix, "admin")
+	publicURL := as.getPublicURL(adminConfig, "admin")
 	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {

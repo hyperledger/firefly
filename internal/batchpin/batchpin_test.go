@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfPrefix = config.NewPluginConfig("metrics")
+var utConfig = config.RootSection("metrics")
 
 func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitter {
 	coreconfig.Reset()

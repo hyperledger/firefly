@@ -40,9 +40,9 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	}
 	se = &Events{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	svrPrefix := config.NewPluginConfig("ut.events")
-	se.InitPrefix(svrPrefix)
-	se.Init(ctx, svrPrefix, cbs)
+	config := config.RootSection("ut.events")
+	se.InitConfig(config)
+	se.Init(ctx, config, cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
 	assert.NotNil(t, se.GetOptionsSchema(se.ctx))

@@ -30,9 +30,9 @@ var pluginsByName = map[string]func() sharedstorage.Plugin{
 	(*ipfs.IPFS)(nil).Name(): func() sharedstorage.Plugin { return &ipfs.IPFS{} },
 }
 
-func InitPrefix(prefix config.Prefix) {
+func InitConfig(config config.Section) {
 	for name, plugin := range pluginsByName {
-		plugin().InitPrefix(prefix.SubPrefix(name))
+		plugin().InitConfig(config.SubSection(name))
 	}
 }
 

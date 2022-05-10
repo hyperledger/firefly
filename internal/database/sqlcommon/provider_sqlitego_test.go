@@ -39,7 +39,7 @@ import (
 type sqliteGoTestProvider struct {
 	SQLCommon
 
-	prefix       config.Prefix
+	config       config.Section
 	t            *testing.T
 	callbacks    *databasemocks.Callbacks
 	capabilities *database.Capabilities
@@ -51,17 +51,17 @@ func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 		t:            t,
 		callbacks:    &databasemocks.Callbacks{},
 		capabilities: &database.Capabilities{},
-		prefix:       config.NewPluginConfig("unittest.db"),
+		config:       config.RootSection("unittest.db"),
 	}
-	tp.SQLCommon.InitPrefix(tp, tp.prefix)
+	tp.SQLCommon.InitConfig(tp, tp.config)
 	dir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err)
-	tp.prefix.Set(SQLConfDatasourceURL, "file::memory:")
-	tp.prefix.Set(SQLConfMigrationsAuto, true)
-	tp.prefix.Set(SQLConfMigrationsDirectory, "../../../db/migrations/sqlite")
-	tp.prefix.Set(SQLConfMaxConnections, 1)
+	tp.config.Set(SQLConfDatasourceURL, "file::memory:")
+	tp.config.Set(SQLConfMigrationsAuto, true)
+	tp.config.Set(SQLConfMigrationsDirectory, "../../../db/migrations/sqlite")
+	tp.config.Set(SQLConfMaxConnections, 1)
 
-	err = tp.Init(context.Background(), tp, tp.prefix, tp.callbacks, tp.capabilities)
+	err = tp.Init(context.Background(), tp, tp.config, tp.callbacks, tp.capabilities)
 	assert.NoError(tp.t, err)
 
 	return tp, func() {

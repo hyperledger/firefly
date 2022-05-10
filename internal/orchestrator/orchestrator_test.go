@@ -312,7 +312,7 @@ func TestBadDataExchangePlugin(t *testing.T) {
 
 func TestBadDataExchangeInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	dxfactory.InitPrefix(dataexchangeConfig)
+	dxfactory.InitConfig(dataexchangeConfig)
 	viper.Set("dataexchange.ffdx.url", "https://test")
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -328,7 +328,7 @@ func TestBadDataExchangeInitFail(t *testing.T) {
 
 func TestDataExchangePluginOldName(t *testing.T) {
 	or := newTestOrchestrator()
-	dxfactory.InitPrefix(dataexchangeConfig)
+	dxfactory.InitConfig(dataexchangeConfig)
 	viper.Set("dataexchange.https.url", "https://test")
 	or.dataexchange = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
@@ -336,7 +336,7 @@ func TestDataExchangePluginOldName(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -346,7 +346,7 @@ func TestDataExchangePluginOldName(t *testing.T) {
 
 func TestBadTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitPrefix(tokensConfig)
+	tifactory.InitConfig(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
@@ -357,7 +357,7 @@ func TestBadTokensPlugin(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -380,7 +380,7 @@ func TestBadTokensPluginNoConnector(t *testing.T) {
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -391,7 +391,7 @@ func TestBadTokensPluginNoConnector(t *testing.T) {
 
 func TestBadTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitPrefix(tokensConfig)
+	tifactory.InitConfig(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName)
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
@@ -402,7 +402,7 @@ func TestBadTokensPluginNoName(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -413,7 +413,7 @@ func TestBadTokensPluginNoName(t *testing.T) {
 
 func TestBadTokensPluginInvalidName(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitPrefix(tokensConfig)
+	tifactory.InitConfig(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "!wrong")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "text")
 	config.Set("tokens", []fftypes.JSONObject{{}})
@@ -424,7 +424,7 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -435,7 +435,7 @@ func TestBadTokensPluginInvalidName(t *testing.T) {
 
 func TestBadTokensPluginNoType(t *testing.T) {
 	or := newTestOrchestrator()
-	tifactory.InitPrefix(tokensConfig)
+	tifactory.InitConfig(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector)
 	config.Set("tokens", []fftypes.JSONObject{{}})
@@ -447,7 +447,7 @@ func TestBadTokensPluginNoType(t *testing.T) {
 	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -458,8 +458,8 @@ func TestBadTokensPluginNoType(t *testing.T) {
 
 func TestGoodTokensPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	tokensConfig = config.NewPluginConfig("tokens").Array()
-	tifactory.InitPrefix(tokensConfig)
+	tokensConfig = config.RootArray("tokens")
+	tifactory.InitConfig(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
 	tokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
 	tokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
@@ -471,7 +471,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -730,7 +730,7 @@ func TestInitOK(t *testing.T) {
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
@@ -769,7 +769,7 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 	or := newTestOrchestrator()
 
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("InitPrefix", mock.Anything).Return()
+	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := or.initDataExchange(or.ctx)

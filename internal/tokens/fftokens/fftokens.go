@@ -132,19 +132,19 @@ func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
-func (ft *FFTokens) Init(ctx context.Context, name string, prefix config.Prefix, callbacks tokens.Callbacks) (err error) {
+func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section, callbacks tokens.Callbacks) (err error) {
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	ft.callbacks = callbacks
 	ft.configuredName = name
 
-	if prefix.GetString(ffresty.HTTPConfigURL) == "" {
+	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
 	}
 
-	ft.client = ffresty.New(ft.ctx, prefix)
+	ft.client = ffresty.New(ft.ctx, config)
 	ft.capabilities = &tokens.Capabilities{}
 
-	wsConfig := wsclient.GenerateConfigFromPrefix(prefix)
+	wsConfig := wsclient.GenerateConfig(config)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/api/ws"

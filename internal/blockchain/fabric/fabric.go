@@ -160,8 +160,8 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
-	fabconnectConf := prefix.SubPrefix(FabconnectConfigKey)
+func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+	fabconnectConf := config.SubSection(FabconnectConfigKey)
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
 	f.callbacks = callbacks
@@ -191,7 +191,7 @@ func (f *Fabric) Init(ctx context.Context, prefix config.Prefix, callbacks block
 		GlobalSequencer: true,
 	}
 
-	wsConfig := wsclient.GenerateConfigFromPrefix(fabconnectConf)
+	wsConfig := wsclient.GenerateConfig(fabconnectConf)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"

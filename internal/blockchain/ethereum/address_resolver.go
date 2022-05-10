@@ -53,24 +53,24 @@ type addressResolverInserts struct {
 	Key string
 }
 
-func newAddressResolver(ctx context.Context, prefix config.Prefix) (ar *addressResolver, err error) {
+func newAddressResolver(ctx context.Context, config config.Section) (ar *addressResolver, err error) {
 
 	ar = &addressResolver{
-		retainOriginal: prefix.GetBool(AddressResolverRetainOriginal),
-		method:         prefix.GetString(AddressResolverMethod),
-		responseField:  prefix.GetString(AddressResolverResponseField),
-		client:         ffresty.New(ctx, prefix),
-		cache:          ccache.New(ccache.Configure().MaxSize(prefix.GetInt64(AddressResolverCacheSize))),
-		cacheTTL:       prefix.GetDuration(AddressResolverCacheTTL),
+		retainOriginal: config.GetBool(AddressResolverRetainOriginal),
+		method:         config.GetString(AddressResolverMethod),
+		responseField:  config.GetString(AddressResolverResponseField),
+		client:         ffresty.New(ctx, config),
+		cache:          ccache.New(ccache.Configure().MaxSize(config.GetInt64(AddressResolverCacheSize))),
+		cacheTTL:       config.GetDuration(AddressResolverCacheTTL),
 	}
 
-	urlTemplateString := prefix.GetString(AddressResolverURLTemplate)
+	urlTemplateString := config.GetString(AddressResolverURLTemplate)
 	ar.urlTemplate, err = template.New(AddressResolverURLTemplate).Option("missingkey=error").Parse(urlTemplateString)
 	if err != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgGoTemplateCompileFailed, AddressResolverURLTemplate, err)
 	}
 
-	bodyTemplateString := prefix.GetString(AddressResolverBodyTemplate)
+	bodyTemplateString := config.GetString(AddressResolverBodyTemplate)
 	if bodyTemplateString != "" {
 		ar.bodyTemplate, err = template.New(AddressResolverBodyTemplate).Option("missingkey=error").Parse(bodyTemplateString)
 		if err != nil {

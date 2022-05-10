@@ -45,15 +45,15 @@ func TestInitSQLCommonMissingOptions(t *testing.T) {
 func TestInitSQLCommonOpenFailed(t *testing.T) {
 	mp := newMockProvider()
 	mp.openError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
+	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
 	assert.Regexp(t, "FF10112.*pop", err)
 }
 
 func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 	mp := newMockProvider()
-	mp.prefix.Set(SQLConfMigrationsAuto, true)
+	mp.config.Set(SQLConfMigrationsAuto, true)
 	mp.getMigrationDriverError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
+	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
 	assert.Regexp(t, "FF10163.*pop", err)
 }
 

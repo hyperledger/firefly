@@ -45,9 +45,9 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	}
 	wh = &WebHooks{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	svrPrefix := config.NewPluginConfig("ut.webhooks")
-	wh.InitPrefix(svrPrefix)
-	wh.Init(ctx, svrPrefix, cbs)
+	svrConfig := config.RootSection("ut.webhooks")
+	wh.InitConfig(svrConfig)
+	wh.Init(ctx, svrConfig, cbs)
 	assert.Equal(t, "webhooks", wh.Name())
 	assert.NotNil(t, wh.Capabilities())
 	assert.NotNil(t, wh.GetOptionsSchema(wh.ctx))

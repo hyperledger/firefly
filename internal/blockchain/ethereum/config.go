@@ -75,9 +75,9 @@ const (
 	FFTMConfigKey = "fftm"
 )
 
-func (e *Ethereum) InitPrefix(prefix config.Prefix) {
-	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
-	wsclient.InitPrefix(ethconnectConf)
+func (e *Ethereum) InitConfig(config config.Section) {
+	ethconnectConf := config.SubSection(EthconnectConfigKey)
+	wsclient.InitConfig(ethconnectConf)
 	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
@@ -86,11 +86,11 @@ func (e *Ethereum) InitPrefix(prefix config.Prefix) {
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
 	ethconnectConf.AddKnownKey(EthconnectConfigFromBlock, defaultFromBlock)
 
-	fftmConf := prefix.SubPrefix(FFTMConfigKey)
-	ffresty.InitPrefix(fftmConf)
+	fftmConf := config.SubSection(FFTMConfigKey)
+	ffresty.InitConfig(fftmConf)
 
-	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
-	ffresty.InitPrefix(addressResolverConf)
+	addressResolverConf := config.SubSection(AddressResolverConfigKey)
+	ffresty.InitConfig(addressResolverConf)
 	addressResolverConf.AddKnownKey(AddressResolverRetainOriginal)
 	addressResolverConf.AddKnownKey(AddressResolverMethod, defaultAddressResolverMethod)
 	addressResolverConf.AddKnownKey(AddressResolverURLTemplate)

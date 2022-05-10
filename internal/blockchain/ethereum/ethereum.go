@@ -156,10 +156,10 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
-	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
-	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
-	fftmConf := prefix.SubPrefix(FFTMConfigKey)
+func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+	ethconnectConf := config.SubSection(EthconnectConfigKey)
+	addressResolverConf := config.SubSection(AddressResolverConfigKey)
+	fftmConf := config.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
@@ -214,7 +214,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
-	wsConfig := wsclient.GenerateConfigFromPrefix(ethconnectConf)
+	wsConfig := wsclient.GenerateConfig(ethconnectConf)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"

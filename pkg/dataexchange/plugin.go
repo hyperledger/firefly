@@ -57,11 +57,11 @@ import (
 type Plugin interface {
 	core.Named
 
-	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitPrefix(prefix config.Prefix)
+	// InitConfig initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, prefix config.Prefix, nodes []fftypes.JSONObject, callbacks Callbacks) error
+	Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject, callbacks Callbacks) error
 
 	// Data exchange interface must not deliver any events until start is called
 	Start() error

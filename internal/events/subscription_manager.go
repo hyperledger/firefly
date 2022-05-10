@@ -145,9 +145,9 @@ func (sm *subscriptionManager) loadTransports() error {
 func (sm *subscriptionManager) initTransports() error {
 	var err error
 	for _, ei := range sm.transports {
-		prefix := config.NewPluginConfig("events").SubPrefix(ei.Name())
-		ei.InitPrefix(prefix)
-		err = ei.Init(sm.ctx, prefix, &boundCallbacks{sm: sm, ei: ei})
+		config := config.RootSection("events").SubSection(ei.Name())
+		ei.InitConfig(config)
+		err = ei.Init(sm.ctx, config, &boundCallbacks{sm: sm, ei: ei})
 		if err != nil {
 			return err
 		}

@@ -35,9 +35,9 @@ var pluginsByName = map[string]func() dataexchange.Plugin{
 	NewFFDXPluginName: func() dataexchange.Plugin { return &ffdx.FFDX{} },
 }
 
-func InitPrefix(prefix config.Prefix) {
+func InitConfig(config config.Section) {
 	for name, plugin := range pluginsByName {
-		plugin().InitPrefix(prefix.SubPrefix(name))
+		plugin().InitConfig(config.SubSection(name))
 	}
 }
 

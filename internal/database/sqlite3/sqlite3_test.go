@@ -33,10 +33,10 @@ import (
 func TestSQLite3GoProvider(t *testing.T) {
 	sqlite := &SQLite3{}
 	dcb := &databasemocks.Callbacks{}
-	prefix := config.NewPluginConfig("unittest")
-	sqlite.InitPrefix(prefix)
-	prefix.Set(sqlcommon.SQLConfDatasourceURL, "!wrong://")
-	err := sqlite.Init(context.Background(), prefix, dcb)
+	config := config.RootSection("unittest")
+	sqlite.InitConfig(config)
+	config.Set(sqlcommon.SQLConfDatasourceURL, "!wrong://")
+	err := sqlite.Init(context.Background(), config, dcb)
 	assert.NoError(t, err)
 	_, err = sqlite.GetMigrationDriver(sqlite.DB())
 	assert.Error(t, err)
