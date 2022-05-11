@@ -73,7 +73,7 @@ func GenerateObjectsReferenceMarkdown() (map[string][]byte, error) {
 		dataRef,
 	}
 
-	return generateMarkdownPages(context.Background(), types, "../../docs/reference/types")
+	return generateMarkdownPages(context.Background(), types, filepath.Join("..", "..", "docs", "reference", "types"))
 }
 
 func generateMarkdownPages(ctx context.Context, objects []interface{}, outputPath string) (map[string][]byte, error) {
