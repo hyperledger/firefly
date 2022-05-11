@@ -122,6 +122,9 @@ func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t
 	if _, err := os.Stat(filepath.Join(outputPath, "includes", fmt.Sprintf("%s_description.md", t.Name()))); err == nil {
 		buff.WriteString("### Description\n\n")
 		buff.WriteString(fmt.Sprintf("{%% include_relative includes/%s_description.md %%}\n\n", t.Name()))
+	} else {
+		fmt.Println(err.Error())
+		fmt.Println(filepath.Abs(filepath.Join(outputPath, "includes", fmt.Sprintf("%s_description.md", t.Name()))))
 	}
 
 	// Include an example JSON representation if we have one available
