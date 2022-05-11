@@ -93,7 +93,7 @@ clean:
 deps:
 		$(VGO) get
 reference:
-		$(VGO) test ./internal/apiserver ./docs -timeout=10s -tags reference
+		$(VGO) test ./internal/apiserver ./internal/reference ./docs -timeout=10s -tags reference
 manifest:
 		./manifestgen.sh
 docker:
