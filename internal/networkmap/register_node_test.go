@@ -56,7 +56,7 @@ func TestRegisterNodeOk(t *testing.T) {
 
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mds := nm.defsender.(*defsendermocks.Sender)
-	mds.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)

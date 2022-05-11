@@ -109,7 +109,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Identity, claimSigner *core.SignerRef, parentSigner *core.SignerRef) error {
 
 	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
-	claimMsg, err := nm.defsender.BroadcastIdentityClaim(ctx, &core.IdentityClaim{
+	claimMsg, err := nm.defsender.CreateIdentityClaim(ctx, &core.IdentityClaim{
 		Identity: identity,
 	}, claimSigner, core.SystemTagIdentityClaim, false)
 	if err != nil {
@@ -119,7 +119,7 @@ func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Id
 
 	// Send the verification if one is required.
 	if parentSigner != nil {
-		verifyMsg, err := nm.defsender.BroadcastDefinition(ctx, &core.IdentityVerification{
+		verifyMsg, err := nm.defsender.CreateDefinitionWithIdentity(ctx, &core.IdentityVerification{
 			Claim: core.MessageRef{
 				ID:   claimMsg.Header.ID,
 				Hash: claimMsg.Hash,

@@ -53,7 +53,7 @@ func TestName(t *testing.T) {
 	assert.Equal(t, "DefinitionSender", bm.Name())
 }
 
-func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
+func TestCreateDefinitionConfirm(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -65,7 +65,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
-	_, err := ds.BroadcastDefinitionAsNode(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
+	_, err := ds.CreateDefinition(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -73,7 +73,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
-func TestBroadcastIdentityClaim(t *testing.T) {
+func TestCreateIdentityClaim(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -85,7 +85,7 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
-	_, err := ds.BroadcastIdentityClaim(ds.ctx, &core.IdentityClaim{
+	_, err := ds.CreateIdentityClaim(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
@@ -97,7 +97,7 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
-func TestBroadcastIdentityClaimFail(t *testing.T) {
+func TestCreateIdentityClaimFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -105,7 +105,7 @@ func TestBroadcastIdentityClaimFail(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
-	_, err := ds.BroadcastIdentityClaim(ds.ctx, &core.IdentityClaim{
+	_, err := ds.CreateIdentityClaim(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
@@ -115,7 +115,7 @@ func TestBroadcastIdentityClaimFail(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
+func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -127,7 +127,7 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
-	_, err := ds.BroadcastDefinitionAsNode(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
+	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -135,13 +135,13 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
-func TestBroadcastDefinitionBadIdentity(t *testing.T) {
+func TestCreateDefinitionBadIdentity(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := ds.BroadcastDefinition(ds.ctx, &core.Namespace{}, &core.SignerRef{
+	_, err := ds.CreateDefinitionWithIdentity(ds.ctx, &core.Namespace{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
 	}, core.SystemTagDefineNamespace, false)

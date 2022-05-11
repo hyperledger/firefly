@@ -69,7 +69,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mds := nm.defsender.(*defsendermocks.Sender)
-	mds.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"

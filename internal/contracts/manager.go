@@ -139,7 +139,7 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ffi *core.FFI, wait
 	}
 
 	output = ffi
-	msg, err := cm.defsender.BroadcastDefinitionAsNode(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
+	msg, err := cm.defsender.CreateDefinition(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerU
 		return nil, err
 	}
 
-	msg, err := cm.defsender.BroadcastDefinitionAsNode(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
+	msg, err := cm.defsender.CreateDefinition(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}

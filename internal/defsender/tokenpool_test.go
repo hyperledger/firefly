@@ -46,13 +46,13 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 		},
 	}
 
-	_, err := ds.BroadcastTokenPool(context.Background(), pool, false)
+	_, err := ds.CreateTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF00140", err)
 
 	mdm.AssertExpectations(t)
 }
 
-func TestBroadcastTokenPoolOk(t *testing.T) {
+func TestCreateTokenPoolOk(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -76,7 +76,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := ds.BroadcastTokenPool(context.Background(), pool, false)
+	_, err := ds.CreateTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)

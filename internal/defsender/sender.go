@@ -32,11 +32,11 @@ import (
 type Sender interface {
 	core.Named
 
-	BroadcastDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastDefinitionAsNode(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
+	CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
+	CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
+	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
 }
 
 type definitionSender struct {
@@ -64,11 +64,11 @@ func (bm *definitionSender) Name() string {
 	return "DefinitionSender"
 }
 
-func (bm *definitionSender) BroadcastDefinitionAsNode(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	return bm.BroadcastDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
+func (bm *definitionSender) CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+	return bm.CreateDefinitionWithIdentity(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *definitionSender) BroadcastDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *definitionSender) CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
 	if err != nil {
@@ -78,9 +78,9 @@ func (bm *definitionSender) BroadcastDefinition(ctx context.Context, def core.De
 	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
 }
 
-// BroadcastIdentityClaim is a special form of BroadcastDefinitionAsNode where the signing identity does not need to have been pre-registered
+// CreateIdentityClaim is a special form of CreateDefinition where the signing identity does not need to have been pre-registered
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (bm *definitionSender) BroadcastIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *definitionSender) CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {

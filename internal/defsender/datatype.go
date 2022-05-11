@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *definitionSender) BroadcastDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
+func (bm *definitionSender) CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
@@ -41,7 +41,7 @@ func (bm *definitionSender) BroadcastDatatype(ctx context.Context, datatype *cor
 	if err := bm.data.CheckDatatype(ctx, datatype); err != nil {
 		return nil, err
 	}
-	msg, err := bm.BroadcastDefinitionAsNode(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
+	msg, err := bm.CreateDefinition(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
 	if msg != nil {
 		datatype.Message = msg.Header.ID
 	}

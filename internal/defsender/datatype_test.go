@@ -31,10 +31,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBroadcastDatatypeBadType(t *testing.T) {
+func TestCreateDatatypeBadType(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
 	}, false)
 	assert.Regexp(t, "FF00111.*validator", err)
@@ -47,7 +47,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -56,7 +56,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	assert.Regexp(t, "FF10137.*value", err)
 }
 
-func TestBroadcastDatatypeInvalid(t *testing.T) {
+func TestCreateDatatypeInvalid(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	mdm := ds.data.(*datamocks.Manager)
@@ -65,7 +65,7 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -87,7 +87,7 @@ func TestBroadcastOk(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := ds.BroadcastDatatype(context.Background(), &core.Datatype{
+	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
