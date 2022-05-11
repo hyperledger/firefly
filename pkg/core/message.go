@@ -89,7 +89,7 @@ type Message struct {
 	Header    MessageHeader    `ffstruct:"Message" json:"header"`
 	Hash      *fftypes.Bytes32 `ffstruct:"Message" json:"hash,omitempty" ffexcludeinput:"true"`
 	BatchID   *fftypes.UUID    `ffstruct:"Message" json:"batch,omitempty" ffexcludeinput:"true"`
-	State     MessageState     `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate"`
+	State     MessageState     `ffstruct:"Message" json:"state,omitempty" ffenum:"messagestate" ffexcludeinput:"true"`
 	Confirmed *fftypes.FFTime  `ffstruct:"Message" json:"confirmed,omitempty" ffexcludeinput:"true"`
 	Data      DataRefs         `ffstruct:"Message" json:"data" ffexcludeinput:"true"`
 	Pins      FFStringArray    `ffstruct:"Message" json:"pins,omitempty" ffexcludeinput:"true"`
