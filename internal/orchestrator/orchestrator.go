@@ -69,16 +69,19 @@ const (
 )
 
 var (
-	namespaceConfig     = config.RootSection("namespaces")
-	blockchainConfig    = config.RootSection("blockchain")
-	databaseConfig      = config.RootSection("database")
-	identityConfig      = config.RootSection("identity")
-	sharedstorageConfig = config.RootSection("sharedstorage")
+	blockchainConfig = config.RootArray("plugins.blockchain")
+	tokensConfig     = config.RootArray("plugins.tokens")
+	namespaceConfig  = config.RootSection("namespaces")
+
+	// Deprecated configs
+	deprecatedBlockchainConfig = config.RootSection("blockchain")
+	databaseConfig             = config.RootSection("database")
+	identityConfig             = config.RootSection("identity")
+	sharedstorageConfig        = config.RootSection("sharedstorage")
 	// For backward compatibility with the old "publicstorage" prefix
 	publicstorageConfig    = config.RootSection("publicstorage")
 	dataexchangeConfig     = config.RootSection("dataexchange")
 	deprecatedTokensConfig = config.RootArray("tokens")
-	tokensConfig           = config.RootArray("plugins.tokens")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -164,7 +167,7 @@ type orchestrator struct {
 	cancelCtx      context.CancelFunc
 	started        bool
 	database       database.Plugin
-	blockchain     blockchain.Plugin
+	blockchains    map[string]blockchain.Plugin
 	identity       identity.Manager
 	identityPlugin idplugin.Plugin
 	sharedstorage  sharedstorage.Plugin
@@ -196,7 +199,9 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	or := &orchestrator{}
 
 	// Initialize the config on all the factories
+	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
 	bifactory.InitConfig(blockchainConfig)
+	difactory.InitConfig(databaseConfig)
 	difactory.InitConfig(databaseConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
 	// For backward compatibility also init with the old "publicstorage" prefix
@@ -235,7 +240,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		err = or.initNamespaces(ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
-	or.bc.bi = or.blockchain
+	or.bc.bi = or.blockchains["blockchain_0"]
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
 	or.bc.ss = or.sharedstorage
@@ -243,14 +248,21 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	return err
 }
 
-func (or *orchestrator) Start() error {
+func (or *orchestrator) Start() (err error) {
 	if or.preInitMode {
 		log.L(or.ctx).Infof("Orchestrator in pre-init mode, waiting for initialization")
 		return nil
 	}
-	err := or.blockchain.Start()
+
 	if err == nil {
 		err = or.batch.Start()
+	}
+	if err == nil {
+		for _, el := range or.blockchains {
+			if err = el.Start(); err != nil {
+				break
+			}
+		}
 	}
 	if err == nil {
 		err = or.events.Start()
@@ -446,14 +458,29 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	if or.blockchain == nil {
-		biType := config.GetString(coreconfig.BlockchainType)
-		if or.blockchain, err = bifactory.GetPlugin(ctx, biType); err != nil {
+	var bp []blockchain.Plugin
+	if or.blockchains == nil {
+		or.blockchains = make(map[string]blockchain.Plugin)
+		bp, err = or.getBlockchainPlugins(ctx)
+		if err != nil {
 			return err
 		}
 	}
-	if err = or.blockchain.Init(ctx, blockchainConfig.SubSection(or.blockchain.Name()), &or.bc, or.metrics); err != nil {
+	err = or.initBlockchainPlugins(ctx, bp)
+	if err != nil {
 		return err
+	}
+
+	if len(or.blockchains) == 0 {
+		biType := deprecatedBlockchainConfig.GetString(blockchain.BlockchainConfigType)
+		plugin, err := bifactory.GetPlugin(ctx, biType)
+		if err != nil {
+			return err
+		}
+		err = or.initDeprecatedBlockchainPlugin(ctx, plugin)
+		if err != nil {
+			return err
+		}
 	}
 
 	storageConfig := sharedstorageConfig
@@ -484,6 +511,57 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+func (or *orchestrator) getBlockchainPlugins(ctx context.Context) (plugins []blockchain.Plugin, err error) {
+	blockchainConfigArraySize := blockchainConfig.ArraySize()
+	plugins = make([]blockchain.Plugin, blockchainConfigArraySize)
+	for i := 0; i < blockchainConfigArraySize; i++ {
+		config := blockchainConfig.ArrayEntry(i)
+		name := config.GetString(blockchain.BlockchainConfigName)
+		pluginType := config.GetString(blockchain.BlockchainConfigType)
+		if name == "" || pluginType == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMissingBlockchainConfig)
+		}
+
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			return nil, err
+		}
+
+		plugin, err := bifactory.GetPlugin(ctx, pluginType)
+		if err != nil {
+			return nil, err
+		}
+		plugins[i] = plugin
+	}
+
+	return plugins, err
+}
+
+func (or *orchestrator) initDeprecatedBlockchainPlugin(ctx context.Context, plugin blockchain.Plugin) (err error) {
+	log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
+	err = plugin.Init(ctx, deprecatedBlockchainConfig.SubSection(plugin.Name()), &or.bc, or.metrics)
+	if err != nil {
+		return err
+	}
+
+	deprecatedPluginName := "blockchain_0"
+	or.blockchains[deprecatedPluginName] = plugin
+	return err
+}
+
+func (or *orchestrator) initBlockchainPlugins(ctx context.Context, plugins []blockchain.Plugin) (err error) {
+	for idx, plugin := range plugins {
+		config := blockchainConfig.ArrayEntry(idx)
+		err = plugin.Init(ctx, config, &or.bc, or.metrics)
+		if err != nil {
+			return err
+		}
+		name := config.GetString(blockchain.BlockchainConfigName)
+		or.blockchains[name] = plugin
+	}
+
+	return err
 }
 
 func (or *orchestrator) initTokens(ctx context.Context) (err error) {
@@ -577,7 +655,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchains["blockchain_0"], or.data)
 		if err != nil {
 			return err
 		}
@@ -599,19 +677,19 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
 
 	if or.batchpin == nil {
-		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database, or.identity, or.blockchain, or.metrics, or.operations); err != nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database, or.identity, or.blockchains["blockchain_0"], or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchains["blockchain_0"], or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -624,14 +702,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchain, or.operations, or.txHelper, or.syncasync)
+		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchains["blockchain_0"], or.operations, or.txHelper, or.syncasync)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.assets, or.contracts)
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database, or.blockchains["blockchain_0"], or.dataexchange, or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
@@ -645,7 +723,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchains["blockchain_0"], or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}

@@ -27,19 +27,28 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 )
 
-var pluginsByName = map[string]func() blockchain.Plugin{
+var pluginsByType = map[string]func() blockchain.Plugin{
 	(*ethereum.Ethereum)(nil).Name(): func() blockchain.Plugin { return &ethereum.Ethereum{} },
 	(*fabric.Fabric)(nil).Name():     func() blockchain.Plugin { return &fabric.Fabric{} },
 }
 
-func InitConfig(config config.Section) {
-	for name, plugin := range pluginsByName {
+func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(blockchain.BlockchainConfigName)
+	config.AddKnownKey(blockchain.BlockchainConfigType)
+	for name, plugin := range pluginsByType {
+		plugin().InitConfig(config.SubSection(name))
+	}
+}
+
+func InitConfigDeprecated(config config.Section) {
+	config.AddKnownKey(blockchain.BlockchainConfigType)
+	for name, plugin := range pluginsByType {
 		plugin().InitConfig(config.SubSection(name))
 	}
 }
 
 func GetPlugin(ctx context.Context, pluginType string) (blockchain.Plugin, error) {
-	plugin, ok := pluginsByName[pluginType]
+	plugin, ok := pluginsByType[pluginType]
 	if !ok {
 		return nil, i18n.NewError(ctx, coremsgs.MsgUnknownBlockchainPlugin, pluginType)
 	}

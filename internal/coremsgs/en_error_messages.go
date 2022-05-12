@@ -230,4 +230,5 @@ var (
 	MsgRouteDescriptionMissing      = ffe("FF10384", "API route description missing for route '%s'")
 	MsgInvalidOutputOption          = ffe("FF10385", "invalid output option '%s'")
 	MsgMissingTokensConfig          = ffe("FF10386", "Invalid tokens configuration - name and type are required", 400)
+	MsgMissingBlockchainConfig      = ffe("FF10387", "Invalid blockchain configuration - name and type are required", 400)
 )

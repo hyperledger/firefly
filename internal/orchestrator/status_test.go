@@ -35,6 +35,7 @@ var (
 	pluginsResult = core.NodeStatusPlugins{
 		Blockchain: []*core.NodeStatusPlugin{
 			{
+				Name:       "ethereum",
 				PluginType: "mock-bi",
 			},
 		},

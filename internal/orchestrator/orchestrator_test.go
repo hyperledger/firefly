@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
@@ -49,6 +50,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
@@ -124,13 +126,13 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.networkmap = tor.mnm
 	tor.orchestrator.sharedstorage = tor.mps
 	tor.orchestrator.messaging = tor.mpm
-	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.identity = tor.mim
 	tor.orchestrator.identityPlugin = tor.mii
 	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
+	tor.orchestrator.blockchains = map[string]blockchain.Plugin{"ethereum": tor.mbi}
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
@@ -200,6 +202,7 @@ func TestBadIdentityPlugin(t *testing.T) {
 
 func TestBadIdentityInitFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.blockchains = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -208,10 +211,10 @@ func TestBadIdentityInitFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBadBlockchainPlugin(t *testing.T) {
+func TestBadDeprecatedBlockchainPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.BlockchainType, "wrong")
-	or.blockchain = nil
+	deprecatedBlockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "wrong")
+	or.blockchains = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -220,19 +223,125 @@ func TestBadBlockchainPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10110.*wrong", err)
 }
 
-func TestBlockchainInitFail(t *testing.T) {
+func TestDeprecatedBlockchainInitFail(t *testing.T) {
 	or := newTestOrchestrator()
+	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
+	deprecatedBlockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
+	or.blockchains = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "FF10138.*url", err)
 }
 
-func TestBlockchainInitGetConfigRecordsFail(t *testing.T) {
+func TestBlockchainGetPlugins(t *testing.T) {
 	or := newTestOrchestrator()
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	plugins, err := or.getBlockchainPlugins(ctx)
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestBlockchainGetPluginsNoType(t *testing.T) {
+	or := newTestOrchestrator()
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	_, err := or.getBlockchainPlugins(ctx)
+	assert.Error(t, err)
+}
+
+func TestBlockchainGetPluginsBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "wrong/////////////")
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	_, err := or.getBlockchainPlugins(ctx)
+	assert.Error(t, err)
+}
+
+func TestBlockchainGetPluginsBadPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "wrong//")
+	or.blockchains = nil
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Error(t, err)
+}
+
+func TestBlockchainInitPlugins(t *testing.T) {
+	or := newTestOrchestrator()
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
+	plugins := make([]blockchain.Plugin, 1)
+	mbp := &blockchainmocks.Plugin{}
+	mbp.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	plugins[0] = mbp
+	ctx := context.Background()
+	err := or.initBlockchainPlugins(ctx, plugins)
+	assert.NoError(t, err)
+}
+
+func TestDeprecatedBlockchainInitPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
+	deprecatedBlockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	err := or.initDeprecatedBlockchainPlugin(ctx, or.mbi)
+	assert.NoError(t, err)
+}
+
+func TestBlockchainInitPluginsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
+	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
+	blockchainConfig.AddKnownKey("addressResolver.urlTemplate", "")
+	blockchainConfig.AddKnownKey("ethconnect.url", "")
+	or.blockchains = nil
+
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestDeprecatedBlockchainInitGetConfigRecordsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.blockchains = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -242,8 +351,9 @@ func TestBlockchainInitGetConfigRecordsFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBlockchainInitMergeConfigRecordsFail(t *testing.T) {
+func TestDeprecatedBlockchainInitMergeConfigRecordsFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.blockchains = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{
 		{
 			Key:   "pizza.toppings",
@@ -405,7 +515,6 @@ func TestBadTokensPlugin(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.Error(t, err)
@@ -429,7 +538,6 @@ func TestGoodTokensPlugin(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.NoError(t, err)
@@ -566,7 +674,6 @@ func TestGoodDeprecatedTokensPlugin(t *testing.T) {
 	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.NoError(t, err)
@@ -723,6 +830,15 @@ func TestStartTokensFail(t *testing.T) {
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
+	err := or.Start()
+	assert.EqualError(t, err, "pop")
+}
+
+func TestStartBlockchainsFail(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	or.mbi.On("Start").Return(fmt.Errorf("pop"))
+	or.mba.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }

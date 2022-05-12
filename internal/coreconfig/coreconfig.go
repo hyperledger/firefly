@@ -71,8 +71,6 @@ var (
 	BlockchainEventCacheSize = ffc("blockchainevent.cache.size")
 	// BlockchainEventCacheTTL time to live of cache for blockchain events
 	BlockchainEventCacheTTL = ffc("blockchainevent.cache.ttl")
-	// BlockchainType is the name of the blockchain interface plugin being used by this firefly node
-	BlockchainType = ffc("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	BroadcastBatchAgentTimeout = ffc("broadcast.batch.agentTimeout")
 	// BroadcastBatchSize is the maximum number of messages that can be packed into a batch
@@ -117,6 +115,8 @@ var (
 	TokensList = ffc("tokens")
 	// PluginsTokensList is the key containing a list of supported tokens plugins
 	PluginsTokensList = ffc("plugins.tokens")
+	// PluginsBlockchainList is the key containing a list of configured blockchain plugins
+	PluginsBlockchainList = ffc("plugins.blockchain")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions

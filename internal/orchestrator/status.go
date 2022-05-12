@@ -29,7 +29,7 @@ import (
 )
 
 func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
-	// Tokens can have more than one name, so they must be iterated over
+	// Plugins can have more than one name, so they must be iterated over
 	tokensArray := make([]*core.NodeStatusPlugin, 0)
 	for name, plugin := range or.tokens {
 		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
@@ -38,12 +38,16 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		})
 	}
 
+	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.blockchains {
+		blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
 	return core.NodeStatusPlugins{
-		Blockchain: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.blockchain.Name(),
-			},
-		},
+		Blockchain: blockchainsArray,
 		Database: []*core.NodeStatusPlugin{
 			{
 				PluginType: or.database.Name(),
