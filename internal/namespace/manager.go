@@ -34,16 +34,16 @@ type namespaceManager struct {
 }
 
 func NewNamespaceManager(ctx context.Context, predefinedNS config.ArraySection) Manager {
-	return &namespaceManager{
-		ctx:      ctx,
-		nsConfig: buildNamespaceMap(predefinedNS),
+	ns := &namespaceManager{
+		ctx: ctx,
 	}
+	if predefinedNS != nil {
+		ns.nsConfig = buildNamespaceMap(predefinedNS)
+	}
+	return ns
 }
 
 func buildNamespaceMap(conf config.ArraySection) map[string]config.Section {
-	if conf == nil {
-		return nil
-	}
 	result := make(map[string]config.Section, conf.ArraySize())
 	for i := 0; i < conf.ArraySize(); i++ {
 		nsConfig := conf.ArrayEntry(i)
