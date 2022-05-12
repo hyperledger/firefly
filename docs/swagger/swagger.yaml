@@ -7338,16 +7338,6 @@ paths:
                       - transfer_private
                       type: string
                   type: object
-                state:
-                  description: The current state of the message
-                  enum:
-                  - staged
-                  - ready
-                  - sent
-                  - pending
-                  - confirmed
-                  - rejected
-                  type: string
               type: object
       responses:
         "200":
@@ -7721,16 +7711,6 @@ paths:
                       - transfer_private
                       type: string
                   type: object
-                state:
-                  description: The current state of the message
-                  enum:
-                  - staged
-                  - ready
-                  - sent
-                  - pending
-                  - confirmed
-                  - rejected
-                  type: string
               type: object
       responses:
         "200":
@@ -8112,16 +8092,6 @@ paths:
                       - transfer_private
                       type: string
                   type: object
-                state:
-                  description: The current state of the message
-                  enum:
-                  - staged
-                  - ready
-                  - sent
-                  - pending
-                  - confirmed
-                  - rejected
-                  type: string
               type: object
       responses:
         "200":
@@ -16344,16 +16314,6 @@ paths:
                       - transfer_private
                       type: string
                   type: object
-                state:
-                  description: The current state of the message
-                  enum:
-                  - staged
-                  - ready
-                  - sent
-                  - pending
-                  - confirmed
-                  - rejected
-                  type: string
               type: object
       responses:
         "200":
@@ -16746,16 +16706,6 @@ paths:
                       - transfer_private
                       type: string
                   type: object
-                state:
-                  description: The current state of the message
-                  enum:
-                  - staged
-                  - ready
-                  - sent
-                  - pending
-                  - confirmed
-                  - rejected
-                  type: string
               type: object
       responses:
         "200":
@@ -17144,16 +17094,6 @@ paths:
                       - transfer_private
                       type: string
                   type: object
-                state:
-                  description: The current state of the message
-                  enum:
-                  - staged
-                  - ready
-                  - sent
-                  - pending
-                  - confirmed
-                  - rejected
-                  type: string
               type: object
       responses:
         "200":
@@ -21464,16 +21404,6 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    state:
-                      description: The current state of the message
-                      enum:
-                      - staged
-                      - ready
-                      - sent
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -21891,16 +21821,6 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    state:
-                      description: The current state of the message
-                      enum:
-                      - staged
-                      - ready
-                      - sent
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -23106,16 +23026,6 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    state:
-                      description: The current state of the message
-                      enum:
-                      - staged
-                      - ready
-                      - sent
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -28469,16 +28379,6 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    state:
-                      description: The current state of the message
-                      enum:
-                      - staged
-                      - ready
-                      - sent
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -28874,16 +28774,6 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    state:
-                      description: The current state of the message
-                      enum:
-                      - staged
-                      - ready
-                      - sent
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
@@ -30054,16 +29944,6 @@ paths:
                           - transfer_private
                           type: string
                       type: object
-                    state:
-                      description: The current state of the message
-                      enum:
-                      - staged
-                      - ready
-                      - sent
-                      - pending
-                      - confirmed
-                      - rejected
-                      type: string
                   type: object
                 pool:
                   description: The name or UUID of a token pool
