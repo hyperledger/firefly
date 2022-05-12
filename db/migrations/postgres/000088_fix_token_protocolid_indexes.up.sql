@@ -1,3 +1,4 @@
+BEGIN;
 DROP INDEX tokentransfer_protocolid;
 DROP INDEX tokenapproval_protocolid;
 
@@ -9,3 +10,4 @@ UPDATE tokenapproval
 
 CREATE UNIQUE INDEX tokentransfer_protocolid ON tokentransfer(connector, protocol_id);
 CREATE UNIQUE INDEX tokenapproval_protocolid ON tokenapproval(connector, protocol_id);
+COMMIT;
