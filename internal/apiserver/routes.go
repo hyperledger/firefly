@@ -54,7 +54,6 @@ var routes = append(
 		getDataMsgs,
 		getDatatypeByName,
 		getDatatypes,
-		getDID,
 		getEventByID,
 		getEvents,
 		getGroupByHash,

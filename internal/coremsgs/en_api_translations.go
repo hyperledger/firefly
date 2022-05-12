@@ -113,7 +113,6 @@ var (
 	APIEndpointsGetNetworkIdentityByDID         = ffm("api.endpoints.getNetworkIdentityByDID", "Gets an identity by its DID (deprecated - use /identities/{did} instead of /network/identities/{did})")
 	APIEndpointsGetIdentityByDID                = ffm("api.endpoints.getIdentityByDID", "Gets an identity by its DID")
 	APIEndpointsGetDIDDocByDID                  = ffm("api.endpoints.getDIDDocByDID", "Gets a DID document by its DID")
-	APIEndpointsGetNetworkDIDDocByDID           = ffm("api.endpoints.getNetworkDIDDocByDID", "Gets a DID document by its DID (deprecated - use /dids/{did} instead of /network/diddocs/{did}")
 	APIEndpointsGetNetworkIdentities            = ffm("api.endpoints.getNetworkIdentities", "Gets the list of identities in the network (deprecated - use /identities instead of /network/identities")
 	APIEndpointsGetNetworkNode                  = ffm("api.endpoints.getNetworkNode", "Gets information about a specific node in the network")
 	APIEndpointsGetNetworkNodes                 = ffm("api.endpoints.getNetworkNodes", "Gets a list of nodes in the network")

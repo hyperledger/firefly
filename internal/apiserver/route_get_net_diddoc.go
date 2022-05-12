@@ -32,8 +32,7 @@ var getNetworkDIDDocByDID = &oapispec.Route{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetNetworkDIDDocByDID,
-	Deprecated:      true, // use getDID instead
+	Description:     coremsgs.APIEndpointsGetDIDDocByDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
