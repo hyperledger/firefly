@@ -75,7 +75,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.
 	return false, nil
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	var ffi core.FFI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
@@ -98,7 +98,7 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 	return HandlerResult{Action: ActionConfirm}, nil
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	var api core.ContractAPI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {

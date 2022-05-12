@@ -104,14 +104,14 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineFFI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
-	err = bs.finalizers[0](context.Background())
+	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }
@@ -131,7 +131,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.handleFFIBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.handleFFIBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineFFI,
 		},
@@ -191,7 +191,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineFFI,
 		},
@@ -214,7 +214,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineFFI,
 		},
@@ -237,14 +237,14 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineContractAPI,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
-	err = bs.finalizers[0](context.Background())
+	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
 	mbi.AssertExpectations(t)
 }
@@ -255,7 +255,7 @@ func TestHandleContractAPIBadPayload(t *testing.T) {
 		Value: fftypes.JSONAnyPtr("bad"),
 	}
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineContractAPI,
 		},
@@ -277,7 +277,7 @@ func TestHandleContractAPIIDMismatch(t *testing.T) {
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(database.IDMismatch)
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineContractAPI,
 		},
@@ -329,7 +329,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineContractAPI,
 		},
@@ -351,7 +351,7 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineContractAPI,
 		},

@@ -19,18 +19,18 @@ type DefinitionHandler struct {
 }
 
 // HandleDefinitionBroadcast provides a mock function with given fields: ctx, state, msg, data, tx
-func (_m *DefinitionHandler) HandleDefinitionBroadcast(ctx context.Context, state definitions.DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (definitions.HandlerResult, error) {
+func (_m *DefinitionHandler) HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (definitions.HandlerResult, error) {
 	ret := _m.Called(ctx, state, msg, data, tx)
 
 	var r0 definitions.HandlerResult
-	if rf, ok := ret.Get(0).(func(context.Context, definitions.DefinitionBatchState, *core.Message, core.DataArray, *fftypes.UUID) definitions.HandlerResult); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchState, *core.Message, core.DataArray, *fftypes.UUID) definitions.HandlerResult); ok {
 		r0 = rf(ctx, state, msg, data, tx)
 	} else {
 		r0 = ret.Get(0).(definitions.HandlerResult)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, definitions.DefinitionBatchState, *core.Message, core.DataArray, *fftypes.UUID) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.BatchState, *core.Message, core.DataArray, *fftypes.UUID) error); ok {
 		r1 = rf(ctx, state, msg, data, tx)
 	} else {
 		r1 = ret.Error(1)

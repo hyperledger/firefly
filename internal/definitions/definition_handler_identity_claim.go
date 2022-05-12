@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
 	var claim core.IdentityClaim
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity claim", msg.Header.ID)
@@ -77,7 +77,7 @@ func (dh *definitionHandlers) getClaimVerifier(msg *core.Message, identity *core
 	return verifier
 }
 
-func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, state DefinitionBatchState, msg *core.Message, identity, parent *core.Identity) (*fftypes.UUID, error) {
+func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identity, parent *core.Identity) (*fftypes.UUID, error) {
 	// Query for messages on the topic for this DID, signed by the right identity
 	idTopic := identity.Topic()
 	fb := database.MessageQueryFactory.NewFilter(ctx)
@@ -93,7 +93,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 		return nil, err
 	}
 	// We also need to check pending messages in the current pin batch
-	for _, pending := range state.GetPendingConfirm() {
+	for _, pending := range state.PendingConfirms {
 		if pending.Header.Topics.String() == idTopic &&
 			pending.Header.Author == parent.DID &&
 			pending.Header.Type == core.MessageTypeDefinition &&
@@ -126,7 +126,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	return nil, nil
 }
 
-func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *core.Message, identityClaim *core.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identityClaim *core.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
@@ -211,7 +211,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 			})
 	}
 
-	state.DIDClaimConfirmed(identity.DID)
+	state.AddConfirmedDIDClaim(identity.DID)
 	state.AddFinalize(func(ctx context.Context) error {
 		event := core.NewEvent(core.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)

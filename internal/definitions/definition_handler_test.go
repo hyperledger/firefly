@@ -47,39 +47,24 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitio
 }
 
 type testDefinitionBatchState struct {
-	t                  *testing.T
-	preFinalizers      []func(ctx context.Context) error
-	finalizers         []func(ctx context.Context) error
-	pendingConfirms    map[fftypes.UUID]*core.Message
-	confirmedDIDClaims []string
+	core.BatchState
+	t *testing.T
 }
 
 func newTestDefinitionBatchState(t *testing.T) *testDefinitionBatchState {
 	return &testDefinitionBatchState{
-		t:               t,
-		pendingConfirms: make(map[fftypes.UUID]*core.Message),
+		BatchState: core.BatchState{
+			PendingConfirms: make(map[fftypes.UUID]*core.Message),
+			PreFinalize:     make([]func(ctx context.Context) error, 0),
+			Finalize:        make([]func(ctx context.Context) error, 0),
+		},
+		t: t,
 	}
 }
 
-func (bs *testDefinitionBatchState) AddPreFinalize(pf func(ctx context.Context) error) {
-	bs.preFinalizers = append(bs.preFinalizers, pf)
-}
-
-func (bs *testDefinitionBatchState) AddFinalize(pf func(ctx context.Context) error) {
-	bs.finalizers = append(bs.finalizers, pf)
-}
-
-func (bs *testDefinitionBatchState) GetPendingConfirm() map[fftypes.UUID]*core.Message {
-	return bs.pendingConfirms
-}
-
-func (bs *testDefinitionBatchState) DIDClaimConfirmed(did string) {
-	bs.confirmedDIDClaims = append(bs.confirmedDIDClaims, did)
-}
-
 func (bs *testDefinitionBatchState) assertNoFinalizers() {
-	assert.Empty(bs.t, bs.preFinalizers)
-	assert.Empty(bs.t, bs.finalizers)
+	assert.Empty(bs.t, bs.PreFinalize)
+	assert.Empty(bs.t, bs.Finalize)
 }
 
 func TestInitFail(t *testing.T) {
@@ -89,7 +74,7 @@ func TestInitFail(t *testing.T) {
 
 func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: "unknown",
 		},

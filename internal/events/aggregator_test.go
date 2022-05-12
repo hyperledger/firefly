@@ -261,7 +261,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
-	assert.NotNil(t, bs.GetPendingConfirm()[*msgID])
+	assert.NotNil(t, bs.PendingConfirms[*msgID])
 
 	// Confirm the offset
 	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
@@ -1130,7 +1130,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	}, nil, nil)
 
 	bs := newBatchState(ag)
-	_, err := bs.CheckMaskedContextReady(ag.ctx, &core.Message{
+	_, err := bs.checkMaskedContextReady(ag.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
@@ -2131,7 +2131,7 @@ func TestProcessWithBatchRewindsSuccess(t *testing.T) {
 	}
 
 	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
-		actions.DIDClaimConfirmed("did:firefly:org/test")
+		actions.AddConfirmedDIDClaim("did:firefly:org/test")
 		return nil
 	})
 	assert.NoError(t, err)

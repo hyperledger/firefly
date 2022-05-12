@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	var ns core.Namespace
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "namespace", msg.Header.ID)

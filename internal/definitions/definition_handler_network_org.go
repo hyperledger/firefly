@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
+func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 
 	var orgOld core.DeprecatedOrganization
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &orgOld)

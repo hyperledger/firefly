@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	var dt core.Datatype
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {

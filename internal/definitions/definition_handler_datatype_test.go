@@ -54,14 +54,14 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
-	err = bs.finalizers[0](context.Background())
+	err = bs.RunFinalize(context.Background())
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
@@ -92,14 +92,14 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
-	err = bs.finalizers[0](context.Background())
+	err = bs.RunFinalize(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -123,7 +123,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},
@@ -153,7 +153,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},
@@ -178,7 +178,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 	}
 	dt.Hash = dt.Value.Hash()
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},
@@ -210,7 +210,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Namespace: "ns1",
 			Tag:       core.SystemTagDefineDatatype,
@@ -247,7 +247,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},
@@ -282,7 +282,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
 		},

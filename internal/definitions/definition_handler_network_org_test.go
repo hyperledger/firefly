@@ -110,11 +110,11 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, core.DataArray{data}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, msg, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
-	err = bs.finalizers[0](ctx)
+	err = bs.RunFinalize(ctx)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -125,7 +125,7 @@ func TestHandleDeprecatedOrgDefinitionBadData(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
-	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, bs, &core.Message{}, core.DataArray{})
+	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, &bs.BatchState, &core.Message{}, core.DataArray{})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.Error(t, err)
 

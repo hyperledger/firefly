@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state DefinitionBatchState, verifyMsg *core.Message, data core.DataArray) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state *core.BatchState, verifyMsg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var verification core.IdentityVerification
 	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {
@@ -56,7 +56,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 		return HandlerResult{Action: ActionRetry}, err
 	}
 	if claimMsg == nil || claimMsg.State != core.MessageStateConfirmed {
-		claimMsg = state.GetPendingConfirm()[*verification.Claim.ID]
+		claimMsg = state.PendingConfirms[*verification.Claim.ID]
 	}
 
 	if claimMsg != nil {

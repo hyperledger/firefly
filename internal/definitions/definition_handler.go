@@ -36,7 +36,7 @@ import (
 )
 
 type DefinitionHandler interface {
-	HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error)
+	HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 }
 
 type HandlerResult struct {
@@ -76,24 +76,6 @@ func (dma DefinitionMessageAction) String() string {
 	}
 }
 
-// DefinitionBatchState tracks the state between definition handlers that run in-line on the pin processing route in the
-// aggregator as part of a batch of pins. They might have complex API calls, and interdependencies, that need to be managed via this state.
-// The actions to be taken at the end of a definition batch.
-// See further notes on "batchState" in the event aggregator
-type DefinitionBatchState interface {
-	// PreFinalize may perform a blocking action (possibly to an external connector) that should execute outside database RunAsGroup
-	AddPreFinalize(func(ctx context.Context) error)
-
-	// Finalize may perform final, non-idempotent database operations (such as inserting Events)
-	AddFinalize(func(ctx context.Context) error)
-
-	// GetPendingConfirm returns a map of messages are that pending confirmation after already being processed in this batch
-	GetPendingConfirm() map[fftypes.UUID]*core.Message
-
-	// Notify of a DID claim locking in, so a rewind gets queued for it to go back and process any dependent child identities/messages
-	DIDClaimConfirmed(did string)
-}
-
 type definitionHandlers struct {
 	namespace  string
 	database   database.Plugin
@@ -121,7 +103,7 @@ func NewDefinitionHandler(ctx context.Context, ns string, di database.Plugin, bi
 	}, nil
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
+func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
 	l.Infof("Processing system definition '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
