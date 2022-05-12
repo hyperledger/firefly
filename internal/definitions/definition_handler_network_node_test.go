@@ -151,7 +151,7 @@ func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &core.Message{}, core.DataArray{})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }
@@ -191,7 +191,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 
 	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, core.DataArray{data})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()

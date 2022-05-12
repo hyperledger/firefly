@@ -18,8 +18,8 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -28,14 +28,13 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 	var update core.IdentityUpdate
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid identity update message %s - invalid payload", msg.Header.ID)
 	}
 
 	// See if we find the message to which it refers
 	err := update.Identity.Validate(ctx)
 	if err != nil {
-		log.L(ctx).Warnf("Invalid identity update message %s: %v", msg.Header.ID, err)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid identity update message %s: %v", msg.Header.ID, err)
 	}
 
 	// Get the existing identity (must be a confirmed identity to at the point an update is issued)
@@ -44,14 +43,12 @@ func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context,
 		return HandlerResult{Action: ActionRetry}, err
 	}
 	if identity == nil {
-		log.L(ctx).Warnf("Invalid identity update message %s - not found: %s", msg.Header.ID, update.Identity.ID)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid identity update message %s - not found: %s", msg.Header.ID, update.Identity.ID)
 	}
 
 	// Check the author matches
 	if identity.DID != msg.Header.Author {
-		log.L(ctx).Warnf("Invalid identity update message %s - wrong author: %s", msg.Header.ID, msg.Header.Author)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid identity update message %s - wrong author: %s", msg.Header.ID, msg.Header.Author)
 	}
 
 	// Update the profile

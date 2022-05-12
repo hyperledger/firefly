@@ -129,7 +129,7 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 
@@ -159,7 +159,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mdm.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -184,7 +184,7 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 		},
 	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 
@@ -288,7 +288,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mdm.AssertExpectations(t)
 	mbi.AssertExpectations(t)

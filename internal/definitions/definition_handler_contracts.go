@@ -18,6 +18,7 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -94,8 +95,7 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 	}
 
 	if !valid {
-		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 	}
 
 	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
@@ -125,8 +125,7 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, st
 	}
 
 	if !valid {
-		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
 	}
 
 	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)

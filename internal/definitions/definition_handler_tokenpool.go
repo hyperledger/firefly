@@ -18,31 +18,17 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *core.TokenPoolAnnouncement) (valid bool, err error) {
-	pool := announce.Pool
-	pool.State = core.TokenPoolStatePending
-	err = dh.database.UpsertTokenPool(ctx, pool)
-	if err != nil {
-		if err == database.IDMismatch {
-			log.L(ctx).Errorf("Invalid token pool '%s'. ID mismatch with existing record", pool.ID)
-			return false, nil // not retryable
-		}
-		log.L(ctx).Errorf("Failed to insert token pool '%s': %s", pool.ID, err)
-		return false, err // retryable
-	}
-	return true, nil
-}
-
 func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var announce core.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process token pool broadcast %s - invalid payload", msg.Header.ID)
 	}
 
 	pool := announce.Pool
@@ -53,8 +39,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	correlator := pool.ID
 
 	if err := pool.Validate(ctx); err != nil {
-		log.L(ctx).Warnf("Token pool '%s' rejected - validate failed: %s", pool.ID, err)
-		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, nil
+		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, fmt.Errorf("token pool '%s' rejected - validate failed: %s", pool.ID, err)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
@@ -65,10 +50,12 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	}
 
 	// Create the pool in pending state
-	if valid, err := dh.persistTokenPool(ctx, &announce); err != nil {
+	pool.State = core.TokenPoolStatePending
+	if err := dh.database.UpsertTokenPool(ctx, pool); err != nil {
+		if err == database.IDMismatch {
+			return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, fmt.Errorf("invalid token pool '%s'. ID mismatch with existing record", pool.ID)
+		}
 		return HandlerResult{Action: ActionRetry}, err
-	} else if !valid {
-		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, nil
 	}
 
 	// Message will remain unconfirmed, but plugin will be notified to activate the pool

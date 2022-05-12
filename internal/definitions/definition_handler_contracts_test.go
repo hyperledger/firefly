@@ -138,7 +138,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 		},
 	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 
@@ -198,7 +198,7 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 
@@ -309,7 +309,7 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 

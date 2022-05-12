@@ -18,29 +18,25 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
-	l := log.L(ctx)
-
 	var dt core.Datatype
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &dt)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process datatype broadcast %s - invalid payload", msg.Header.ID)
 	}
 
 	if err := dt.Validate(ctx, true); err != nil {
-		l.Warnf("Unable to process datatype broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process datatype broadcast %s - validate failed: %s", msg.Header.ID, err)
 	}
 
 	if err := dh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
-		l.Warnf("Unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process datatype broadcast %s - schema check: %s", msg.Header.ID, err)
 	}
 
 	existing, err := dh.database.GetDatatypeByName(ctx, dt.Namespace, dt.Name, dt.Version)
@@ -48,8 +44,7 @@ func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state
 		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if existing != nil {
-		l.Warnf("Unable to process datatype broadcast %s (%s:%s) - duplicate of %v", msg.Header.ID, dt.Namespace, dt, existing.ID)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process datatype broadcast %s (%s:%s) - duplicate of %v", msg.Header.ID, dt.Namespace, dt, existing.ID)
 	}
 
 	if err = dh.database.UpsertDatatype(ctx, &dt, false); err != nil {

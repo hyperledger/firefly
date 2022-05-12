@@ -127,7 +127,7 @@ func TestHandleDeprecatedOrgDefinitionBadData(t *testing.T) {
 
 	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, bs, &core.Message{}, core.DataArray{})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }

@@ -30,18 +30,18 @@ func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, 
 	var claim core.IdentityClaim
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process identity claim %s - invalid payload", msg.Header.ID)
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, &claim, verificationID)
 
 }
 
-func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *core.Message, identity *core.Identity, parent *core.Identity) (valid bool) {
+func (dh *definitionHandlers) verifyClaimSignature(msg *core.Message, identity *core.Identity, parent *core.Identity) error {
 
 	author := msg.Header.Author
 	if author == "" {
-		return false
+		return fmt.Errorf("unable to process identity claim %s - author is blank", msg.Header.ID)
 	}
 
 	var expectedSigner *core.Identity
@@ -53,12 +53,12 @@ func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *cor
 		expectedSigner = identity
 	}
 
-	valid = author == expectedSigner.DID ||
+	valid := author == expectedSigner.DID ||
 		(expectedSigner.Type == core.IdentityTypeOrg && author == fmt.Sprintf("%s%s", core.FireFlyOrgDIDPrefix, expectedSigner.ID))
 	if !valid {
-		log.L(ctx).Warnf("Unable to process identity claim %s - signature mismatch type=%s author=%s expected=%s", msg.Header.ID, identity.Type, author, expectedSigner.DID)
+		return fmt.Errorf("unable to process identity claim %s - signature mismatch type=%s author=%s expected=%s", msg.Header.ID, identity.Type, author, expectedSigner.DID)
 	}
-	return valid
+	return nil
 }
 
 func (dh *definitionHandlers) getClaimVerifier(msg *core.Message, identity *core.Identity) *core.Verifier {
@@ -144,8 +144,8 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 
 	// Check signature verification
-	if !dh.verifyClaimSignature(ctx, msg, identity, parent) {
-		return HandlerResult{Action: ActionReject}, nil
+	if err := dh.verifyClaimSignature(msg, identity, parent); err != nil {
+		return HandlerResult{Action: ActionReject}, err
 	}
 
 	existingIdentity, err := dh.database.GetIdentityByName(ctx, identity.Type, identity.Namespace, identity.Name)
@@ -157,8 +157,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 	if existingIdentity != nil && !existingIdentity.IdentityBase.Equals(ctx, &identity.IdentityBase) {
 		// If the existing one matches - this is just idempotent replay. No action needed, just confirm
-		l.Warnf("Unable to process identity claim %s - conflict with existing: %v", msg.Header.ID, existingIdentity.ID)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process identity claim %s - conflict with existing: %v", msg.Header.ID, existingIdentity.ID)
 	}
 
 	// Check uniqueness of verifier
@@ -168,8 +167,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return HandlerResult{Action: ActionRetry}, err // retry database errors
 	}
 	if existingVerifier != nil && !existingVerifier.Identity.Equals(identity.ID) {
-		log.L(ctx).Warnf("Unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.Hash)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.Hash)
 	}
 
 	if parent != nil && identity.Type != core.IdentityTypeNode {

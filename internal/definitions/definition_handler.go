@@ -19,6 +19,7 @@ package definitions
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -143,8 +144,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	case core.SystemTagDefineContractAPI:
 		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
-		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unknown system tag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}
 }
 

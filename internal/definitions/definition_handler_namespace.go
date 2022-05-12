@@ -18,23 +18,20 @@ package definitions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
-	l := log.L(ctx)
-
 	var ns core.Namespace
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace broadcast %s - invalid payload", msg.Header.ID)
 	}
 	if err := ns.Validate(ctx, true); err != nil {
-		l.Warnf("Unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
 	}
 
 	existing, err := dh.database.GetNamespace(ctx, ns.Name)
@@ -43,8 +40,7 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, stat
 	}
 	if existing != nil {
 		if existing.Type != core.NamespaceTypeLocal {
-			l.Warnf("Unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
-			return HandlerResult{Action: ActionReject}, nil
+			return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
 		}
 		// Remove the local definition
 		if err = dh.database.DeleteNamespace(ctx, existing.ID); err != nil {
