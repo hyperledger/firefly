@@ -3,7 +3,7 @@ layout: default
 title: DataRef
 parent: Types
 grand_parent: Reference
-nav_order: 3
+nav_order: 4
 ---
 
 # DataRef
@@ -19,6 +19,7 @@ nav_order: 3
 ## DataRef
 
 ### Example
+
 ```json
 {
     "id": "5bea782a-6cf2-4e01-95ee-cb5fa05873e9",
@@ -30,6 +31,6 @@ nav_order: 3
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| id | DataRef.id | `UUID` |
-| hash | DataRef.hash | `Bytes32` |
+| id | The UUID of the referenced data resource | `UUID` |
+| hash | The hash of the referenced data | `Bytes32` |
 

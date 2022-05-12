@@ -3,7 +3,7 @@ layout: default
 title: TokenTransfer
 parent: Types
 grand_parent: Reference
-nav_order: 2
+nav_order: 3
 ---
 
 # TokenTransfer
@@ -19,6 +19,7 @@ nav_order: 2
 ## TokenTransfer
 
 ### Example
+
 ```json
 {
     "type": "transfer",
@@ -37,43 +38,29 @@ nav_order: 2
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| type | TokenTransfer.type | `FFEnum` |
-| localId | TokenTransfer.localId | `UUID` |
-| pool | TokenTransfer.pool | `UUID` |
-| tokenIndex | TokenTransfer.tokenIndex | `string` |
-| uri | TokenTransfer.uri | `string` |
-| connector | TokenTransfer.connector | `string` |
-| namespace | TokenTransfer.namespace | `string` |
-| key | TokenTransfer.key | `string` |
-| from | TokenTransfer.from | `string` |
-| to | TokenTransfer.to | `string` |
-| amount | TokenTransfer.amount | [`FFBigInt`](#ffbigint) |
-| protocolId | TokenTransfer.protocolId | `string` |
-| message | TokenTransfer.message | `UUID` |
-| messageHash | TokenTransfer.messageHash | `Bytes32` |
-| created | TokenTransfer.created | [`FFTime`](#fftime) |
-| tx | TokenTransfer.tx | [`TransactionRef`](#transactionref) |
-| blockchainEvent | TokenTransfer.blockchainEvent | `UUID` |
-
-## FFBigInt
-
-
-
-## FFTime
-
-### Description
-
-{% include_relative includes/fftime_description.md %}
-
-
+| type | The type of transfer such as mint/burn/transfer | `FFEnum` |
+| localId | The UUID of this token transfer, in the local FireFly node | `UUID` |
+| pool | The UUID the token pool this transfer applies to | `UUID` |
+| tokenIndex | The index of the token within the pool that this transfer applies to | `string` |
+| uri | The URI of the token this transfer applies to | `string` |
+| connector | The name of the token connector, as specified in the FireFly core configuration file. Required on input when there are more than one token connectors configured | `string` |
+| namespace | The namespace for the transfer, which must match the namespace of the token pool | `string` |
+| key | The blockchain signing key for the transfer. On input defaults to the first signing key of the organization that operates the node | `string` |
+| from | The source account for the transfer. On input defaults to the value of 'key' | `string` |
+| to | The target account for the transfer. On input defaults to the value of 'key' | `string` |
+| amount | The amount for the transfer. For non-fungible tokens will always be 1. For fungible tokens, the number of decimals for the token pool should be considered when inputting the amount. For example, with 18 decimals a fractional balance of 10.234 will be specified as 10,234,000,000,000,000,000 | [`FFBigInt`](simpletypes#ffbigint) |
+| protocolId | An alphanumerically sortable string that represents this event uniquely with respect to the blockchain | `string` |
+| message | The UUID of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector | `UUID` |
+| messageHash | The hash of a message that has been correlated with this transfer using the data field of the transfer in a compatible token connector | `Bytes32` |
+| created | The creation time of the transfer | [`FFTime`](simpletypes#fftime) |
+| tx | If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data) | [`TransactionRef`](#transactionref) |
+| blockchainEvent | The UUID of the blockchain event | `UUID` |
 
 ## TransactionRef
 
-### Field Descriptions
-
 | Field Name | Description | Type |
 |------------|-------------|------|
-| type | Transaction.type | `FFEnum` |
-| id | Transaction.id | `UUID` |
+| type | The type of the FireFly transaction | `FFEnum` |
+| id | The UUID of the FireFly transaction | `UUID` |
 
 

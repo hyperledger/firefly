@@ -47,13 +47,13 @@ func TestCheckGeneratedMarkdownPages(t *testing.T) {
 }
 
 func TestGenerateMarkdownPagesNonPointer(t *testing.T) {
-	markdownMap, err := generateMarkdownPages(context.Background(), []interface{}{"foo"}, "")
+	markdownMap, err := generateMarkdownPages(context.Background(), []interface{}{"foo"}, []interface{}{}, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, markdownMap)
 }
 
 func TestGenerateMarkdownPagesBadJSON(t *testing.T) {
 	badJSON := map[bool]bool{true: false}
-	_, err := generateMarkdownPages(context.Background(), []interface{}{badJSON}, "")
+	_, err := generateMarkdownPages(context.Background(), []interface{}{badJSON}, []interface{}{}, "")
 	assert.Error(t, err)
 }
