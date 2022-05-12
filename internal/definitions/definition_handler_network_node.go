@@ -27,7 +27,7 @@ func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context,
 	var nodeOld core.DeprecatedNode
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process node broadcast %s - invalid payload", msg.Header.ID)
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process node definition %s - invalid payload", msg.Header.ID)
 	}
 
 	owner, err := dh.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, &core.VerifierRef{
@@ -38,7 +38,7 @@ func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context,
 		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if owner == nil {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process node definition %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.AddMigratedParent(owner.ID), nil)

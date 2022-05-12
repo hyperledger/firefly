@@ -28,10 +28,10 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, stat
 	var ns core.Namespace
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace broadcast %s - invalid payload", msg.Header.ID)
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace definition %s - invalid payload", msg.Header.ID)
 	}
 	if err := ns.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace broadcast %s - validate failed: %s", msg.Header.ID, err)
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace definition %s - validate failed: %s", msg.Header.ID, err)
 	}
 
 	existing, err := dh.database.GetNamespace(ctx, ns.Name)
@@ -40,7 +40,7 @@ func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, stat
 	}
 	if existing != nil {
 		if existing.Type != core.NamespaceTypeLocal {
-			return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace broadcast %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
+			return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace definition %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
 		}
 		// Remove the local definition
 		if err = dh.database.DeleteNamespace(ctx, existing.ID); err != nil {

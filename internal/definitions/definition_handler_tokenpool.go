@@ -28,7 +28,7 @@ import (
 func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var announce core.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process token pool broadcast %s - invalid payload", msg.Header.ID)
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process token pool definition %s - invalid payload", msg.Header.ID)
 	}
 
 	pool := announce.Pool
