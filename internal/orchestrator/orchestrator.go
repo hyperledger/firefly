@@ -456,7 +456,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.defsender == nil {
-		or.defsender, err = defsender.NewDefinitionSender(ctx, or.namespace, or.broadcast, or.identity, or.data)
+		or.defsender, err = defsender.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.broadcast, or.identity, or.data)
 		if err != nil {
 			return err
 		}
@@ -488,7 +488,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
 	if or.defhandler == nil {
-		or.defhandler, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
+		or.defhandler, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
@@ -521,6 +521,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync.Init(or.events)
+	or.defsender.Init(or.defhandler)
 
 	return nil
 }

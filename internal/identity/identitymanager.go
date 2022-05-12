@@ -215,6 +215,10 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 	if err != nil {
 		return err
 	}
+	if im.multiparty == nil {
+		signerRef.Key = verifierRef.Value
+		return nil
+	}
 	identity, err := im.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		return err
@@ -332,7 +336,7 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 		if err := im.validateParentType(ctx, current, parent); err != nil {
 			return nil, false, err
 		}
-		if parent.Messages.Claim == nil {
+		if im.multiparty != nil && parent.Messages.Claim == nil {
 			return nil, false, i18n.NewError(ctx, coremsgs.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
 		}
 		current = parent
@@ -343,7 +347,11 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 
 }
 
-func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error) {
+func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (signer *core.SignerRef, err error) {
+	if im.multiparty == nil {
+		return nil, nil
+	}
+
 	// Find the message that registered the identity
 	msg, err := im.database.GetMessageByID(ctx, im.namespace, identity.Messages.Claim)
 	if err != nil {

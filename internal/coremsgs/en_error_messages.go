@@ -253,4 +253,5 @@ var (
 	MsgInvalidNamespaceUUID               = ffe("FF10411", "Expected 'namespace:' prefix on ID '%s'", 400)
 	MsgSubscriptionIDInvalid              = ffe("FF10412", "Invalid subscription ID: %s")
 	MsgActionOnlyValidMultiparty          = ffe("FF10413", "This action is only valid in a multiparty namespace", 400)
+	MsgDefinitionRejected                 = ffe("FF10414", "Definition rejected")
 )

@@ -997,8 +997,8 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, "ns1", idIntermediateCustom.ID).Return(idIntermediateCustom, nil).Once()
 	mdi.On("GetIdentityByID", ctx, "ns1", idRoot.ID).Return(idRoot, nil).Once()
 
-	immeidateParent, _, err := im.VerifyIdentityChain(ctx, idLeaf)
-	assert.Equal(t, idIntermediateCustom, immeidateParent)
+	immediateParent, _, err := im.VerifyIdentityChain(ctx, idLeaf)
+	assert.Equal(t, idIntermediateCustom, immediateParent)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -1339,6 +1339,23 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10366", err)
 
 	mdi.AssertExpectations(t)
+}
+
+func TestResolveIdentitySignerGateway(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.multiparty = nil
+
+	signer, err := im.ResolveIdentitySigner(ctx, &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			DID:       "did:firefly:org/org1",
+			Namespace: "ns1",
+			Name:      "org1",
+			Type:      core.IdentityTypeOrg,
+		},
+	})
+	assert.NoError(t, err)
+	assert.Nil(t, signer)
 }
 
 func TestParseKeyNormalizationConfig(t *testing.T) {

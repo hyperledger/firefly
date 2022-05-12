@@ -31,9 +31,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestCreateDatatypeGatewayMode(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{}, false)
+	assert.Regexp(t, "FF10413", err)
+}
+
 func TestCreateDatatypeBadType(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
+	ds.multiparty = true
 	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
 	}, false)
@@ -43,6 +51,7 @@ func TestCreateDatatypeBadType(t *testing.T) {
 func TestBroadcastDatatypeBadValue(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
+	ds.multiparty = true
 	mdm := ds.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mim := ds.identity.(*identitymanagermocks.Manager)
@@ -54,11 +63,15 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`!unparsable`),
 	}, false)
 	assert.Regexp(t, "FF10137.*value", err)
+
+	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestCreateDatatypeInvalid(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
+	ds.multiparty = true
 	mdm := ds.data.(*datamocks.Manager)
 	mim := ds.identity.(*identitymanagermocks.Manager)
 
@@ -72,11 +85,14 @@ func TestCreateDatatypeInvalid(t *testing.T) {
 		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
 	}, false)
 	assert.EqualError(t, err, "pop")
+
+	mdm.AssertExpectations(t)
 }
 
 func TestBroadcastOk(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
+	ds.multiparty = true
 	mdm := ds.data.(*datamocks.Manager)
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mbm := ds.broadcast.(*broadcastmocks.Manager)

@@ -130,6 +130,8 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", ctx, node.DX.Endpoint).Return(nil)
 
+	dh.multiparty = true
+
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, msg, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)

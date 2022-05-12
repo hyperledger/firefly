@@ -20,10 +20,16 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (bm *definitionSender) CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
+
+	if !bm.multiparty {
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+	}
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()

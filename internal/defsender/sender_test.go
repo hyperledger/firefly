@@ -31,19 +31,27 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+type mockDefinitionHandler struct {
+	err error
+}
+
+func (dh *mockDefinitionHandler) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
+	return dh.err
+}
+
 func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewDefinitionSender(ctx, "ns1", mbm, mim, mdm)
+	b, err := NewDefinitionSender(ctx, "ns1", false, mbm, mim, mdm)
 	assert.NoError(t, err)
 	return b.(*definitionSender), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewDefinitionSender(context.Background(), "", nil, nil, nil)
+	_, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -65,6 +73,7 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
+	ds.multiparty = true
 	_, err := ds.CreateDefinition(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
@@ -84,6 +93,8 @@ func TestCreateIdentityClaim(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
+
+	ds.multiparty = true
 
 	_, err := ds.CreateIdentityClaim(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
@@ -127,6 +138,8 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
+	ds.multiparty = true
+
 	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
@@ -146,4 +159,44 @@ func TestCreateDefinitionBadIdentity(t *testing.T) {
 		Key:    "wrong",
 	}, core.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
+}
+
+func TestCreateDefinitionLocal(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mdh := &mockDefinitionHandler{}
+	ds.Init(mdh)
+
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+
+	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
+	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestCreateDefinitionLocalError(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+	mdh := &mockDefinitionHandler{err: fmt.Errorf("pop")}
+	ds.Init(mdh)
+
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+
+	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
+	assert.EqualError(t, err, "pop")
+
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
 }

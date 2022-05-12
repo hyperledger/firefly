@@ -55,6 +55,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 func TestCreateTokenPoolOk(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
+	ds.multiparty = true
 
 	mdm := ds.data.(*datamocks.Manager)
 	mim := ds.identity.(*identitymanagermocks.Manager)

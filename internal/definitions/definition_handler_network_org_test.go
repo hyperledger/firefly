@@ -110,6 +110,8 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
+	dh.multiparty = true
+
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, msg, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)

@@ -65,6 +65,8 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{claimData}, true, nil)
 
+	dh.multiparty = true
+
 	bs.AddPendingConfirm(claimMsg.Header.ID, claimMsg)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, &bs.BatchState, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())

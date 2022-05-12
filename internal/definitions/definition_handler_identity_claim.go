@@ -146,9 +146,11 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state *co
 		return HandlerResult{Action: ActionWait}, nil
 	}
 
-	// Check signature verification
-	if err := dh.verifyClaimSignature(ctx, msg, identity, parent); err != nil {
-		return HandlerResult{Action: ActionReject}, err
+	// For multi-party namespaces, check that the claim message was appropriately signed
+	if dh.multiparty {
+		if err := dh.verifyClaimSignature(ctx, msg, identity, parent); err != nil {
+			return HandlerResult{Action: ActionReject}, err
+		}
 	}
 
 	existingIdentity, err := dh.database.GetIdentityByName(ctx, identity.Type, identity.Namespace, identity.Name)
@@ -175,7 +177,8 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state *co
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity verifier", verifierLabel, existingVerifierLabel)
 	}
 
-	if parent != nil && identity.Type != core.IdentityTypeNode {
+	// For child identities in multi-party namespaces, check that the parent signed a verification message
+	if dh.multiparty && parent != nil && identity.Type != core.IdentityTypeNode {
 		// The verification might be passed into this function, if we confirm the verification second,
 		// or we might have to hunt for it, if we confirm the verification first.
 		if verificationID == nil {

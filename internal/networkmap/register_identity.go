@@ -60,7 +60,6 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 	if identity.Type == "" {
 		identity.Type = core.IdentityTypeCustom
 	}
-
 	identity.DID, _ = identity.GenerateDID(ctx)
 
 	// Verify the chain
@@ -89,9 +88,9 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 			return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
 		}
 		claimSigner = &core.SignerRef{
-			Key: dto.Key,
+			Key:    dto.Key,
+			Author: identity.DID,
 		}
-		claimSigner.Author = identity.DID
 	}
 
 	if waitConfirm {

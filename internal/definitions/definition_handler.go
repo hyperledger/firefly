@@ -37,6 +37,7 @@ import (
 
 type DefinitionHandler interface {
 	HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error)
+	HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error
 }
 
 type HandlerResult struct {
@@ -78,6 +79,7 @@ func (dma DefinitionMessageAction) String() string {
 
 type definitionHandlers struct {
 	namespace  string
+	multiparty bool
 	database   database.Plugin
 	blockchain blockchain.Plugin
 	exchange   dataexchange.Plugin // optional
@@ -87,12 +89,13 @@ type definitionHandlers struct {
 	contracts  contracts.Manager
 }
 
-func NewDefinitionHandler(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
+func NewDefinitionHandler(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
 	if di == nil || bi == nil || dm == nil || im == nil || am == nil || cm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionHandler")
 	}
 	return &definitionHandlers{
 		namespace:  ns,
+		multiparty: multiparty,
 		database:   di,
 		blockchain: bi,
 		exchange:   dx,
@@ -145,4 +148,12 @@ func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg
 	}
 	res.SetBroadcastMessage(msg.Header.ID)
 	return true
+}
+
+func (dh *definitionHandlers) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
+	result, err := dh.HandleDefinitionBroadcast(ctx, state, msg, core.DataArray{data}, nil)
+	if result.Action == ActionReject {
+		return i18n.WrapError(ctx, err, coremsgs.MsgDefinitionRejected)
+	}
+	return err
 }

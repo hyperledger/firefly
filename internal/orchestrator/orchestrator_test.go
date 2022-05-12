@@ -175,6 +175,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
+	tor.mds.On("Init", mock.Anything).Maybe()
 	return tor
 }
 

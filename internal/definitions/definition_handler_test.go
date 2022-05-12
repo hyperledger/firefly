@@ -42,7 +42,7 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitio
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
-	dh, _ := NewDefinitionHandler(context.Background(), "ns1", mdi, mbi, mdx, mdm, mim, mam, mcm)
+	dh, _ := NewDefinitionHandler(context.Background(), "ns1", false, mdi, mbi, mdx, mdm, mim, mam, mcm)
 	return dh.(*definitionHandlers), newTestDefinitionBatchState(t)
 }
 
@@ -68,7 +68,7 @@ func (bs *testDefinitionBatchState) assertNoFinalizers() {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewDefinitionHandler(context.Background(), "", nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewDefinitionHandler(context.Background(), "", false, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -110,4 +110,15 @@ func TestActionEnum(t *testing.T) {
 	assert.Equal(t, "retry", fmt.Sprintf("%s", ActionRetry))
 	assert.Equal(t, "wait", fmt.Sprintf("%s", ActionWait))
 	assert.Equal(t, "unknown", fmt.Sprintf("%s", DefinitionMessageAction(999)))
+}
+
+func TestHandleDefinitionReject(t *testing.T) {
+	dh, bs := newTestDefinitionHandler(t)
+	err := dh.HandleDefinition(context.Background(), &bs.BatchState, &core.Message{
+		Header: core.MessageHeader{
+			Tag: "unknown",
+		},
+	}, &core.Data{})
+	assert.Error(t, err)
+	bs.assertNoFinalizers()
 }

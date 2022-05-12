@@ -5,6 +5,7 @@ package defsendermocks
 import (
 	context "context"
 
+	defsender "github.com/hyperledger/firefly/internal/defsender"
 	core "github.com/hyperledger/firefly/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
@@ -128,6 +129,11 @@ func (_m *Sender) CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnou
 	}
 
 	return r0, r1
+}
+
+// Init provides a mock function with given fields: handler
+func (_m *Sender) Init(handler defsender.DefinitionHandler) {
+	_m.Called(handler)
 }
 
 // Name provides a mock function with given fields:
