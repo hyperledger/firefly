@@ -65,6 +65,7 @@ $(eval $(call makemock, internal/shareddownload,   Manager,            shareddow
 $(eval $(call makemock, internal/shareddownload,   Callbacks,          shareddownloadmocks))
 $(eval $(call makemock, internal/definitions,      DefinitionHandler,  definitionsmocks))
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
+$(eval $(call makemock, internal/namespace,        Manager,            namespacemocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))
 $(eval $(call makemock, internal/contracts,        Manager,            contractmocks))

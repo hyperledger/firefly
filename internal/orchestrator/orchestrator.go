@@ -42,6 +42,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -184,6 +185,7 @@ type orchestrator struct {
 	adminEvents    adminevents.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
+	namespace      namespace.Manager
 	predefinedNS   config.ArraySection
 }
 
@@ -527,8 +529,12 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		or.txHelper = txcommon.NewTransactionHelper(or.database, or.data)
 	}
 
+	if or.namespace == nil {
+		or.namespace = namespace.NewNamespaceManager(ctx, or.predefinedNS)
+	}
+
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data, or.predefinedNS)
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchain, or.data, or.namespace)
 		if err != nil {
 			return err
 		}

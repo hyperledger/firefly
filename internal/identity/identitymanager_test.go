@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -35,20 +36,17 @@ import (
 
 func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	coreconfig.Reset()
-	return newTestIdentityManagerWithNS(t, nil)
-}
-
-func newTestIdentityManagerWithNS(t *testing.T, predefinedNS config.ArraySection) (context.Context, *identityManager) {
 
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mnm := &namespacemocks.Manager{}
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, mdi, mii, mbi, mdm, predefinedNS)
+	im, err := NewIdentityManager(ctx, mdi, mii, mbi, mdm, mnm)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
@@ -62,17 +60,24 @@ func TestResolveInputSigningIdentityNoOrgKey(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("")
+
 	msgIdentity := &core.SignerRef{}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
 	assert.Regexp(t, "FF10354", err)
+
+	mnm.AssertExpectations(t)
 
 }
 
 func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
 	config.Set(coreconfig.OrgName, "org1")
+
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -108,6 +113,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mnm.AssertExpectations(t)
 
 }
 
@@ -433,8 +439,10 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
 	config.Set(coreconfig.OrgName, "org1")
+
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -468,14 +476,17 @@ func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mnm.AssertExpectations(t)
 
 }
 
 func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
 	config.Set(coreconfig.OrgName, "org1")
+
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -489,6 +500,7 @@ func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mnm.AssertExpectations(t)
 
 }
 
@@ -624,26 +636,8 @@ func TestGetNodeOwnerBlockchainKeyDeprecatedKeyResolveFailed(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 	config.Set(coreconfig.OrgIdentityDeprecated, "0x12345")
 
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NormalizeSigningKey", ctx, "0x12345").Return("", fmt.Errorf("pop"))
-
-	_, err := im.GetNodeOwnerBlockchainKey(ctx, "ns1")
-	assert.Regexp(t, "pop", err)
-
-	mbi.AssertExpectations(t)
-
-}
-
-func TestGetNodeOwnerBlockchainKeyNamespaceOverrideResolveFailed(t *testing.T) {
-
-	coreconfig.Reset()
-
-	namespaceConfig := config.RootSection("namespaces")
-	predefinedNS := namespaceConfig.SubArray("predefined")
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceOrgKey, "0x12345")
-
-	ctx, im := newTestIdentityManagerWithNS(t, predefinedNS)
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "0x12345").Return("", fmt.Errorf("pop"))
@@ -700,6 +694,9 @@ func TestGetNodeOwnerOrgCached(t *testing.T) {
 func TestGetNodeOwnerOrgKeyNotSet(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
+
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("")
 
 	_, err := im.GetNodeOwnerOrg(ctx, "ns1")
 	assert.Regexp(t, "FF10354", err)

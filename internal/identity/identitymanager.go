@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -57,11 +58,11 @@ type Manager interface {
 }
 
 type identityManager struct {
-	database     database.Plugin
-	plugin       identity.Plugin
-	blockchain   blockchain.Plugin
-	data         data.Manager
-	predefinedNS map[string]config.Section
+	database   database.Plugin
+	plugin     identity.Plugin
+	blockchain blockchain.Plugin
+	data       data.Manager
+	namespace  namespace.Manager
 
 	nodeOwnerBlockchainKey map[string]*core.VerifierRef
 	nodeOwningOrgIdentity  map[string]*core.Identity
@@ -71,8 +72,8 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager, predefinedNS config.ArraySection) (Manager, error) {
-	if di == nil || ii == nil || bi == nil {
+func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager, nm namespace.Manager) (Manager, error) {
+	if di == nil || ii == nil || bi == nil || nm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	im := &identityManager{
@@ -80,7 +81,7 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 		plugin:                 ii,
 		blockchain:             bi,
 		data:                   dm,
-		predefinedNS:           buildNamespaceMap(predefinedNS),
+		namespace:              nm,
 		nodeOwnerBlockchainKey: make(map[string]*core.VerifierRef),
 		nodeOwningOrgIdentity:  make(map[string]*core.Identity),
 		identityCacheTTL:       config.GetDuration(coreconfig.IdentityManagerCacheTTL),
@@ -95,21 +96,6 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 	)
 
 	return im, nil
-}
-
-func buildNamespaceMap(conf config.ArraySection) map[string]config.Section {
-	if conf == nil {
-		return nil
-	}
-	result := make(map[string]config.Section, conf.ArraySize())
-	for i := 0; i < conf.ArraySize(); i++ {
-		nsConfig := conf.ArrayEntry(i)
-		name := nsConfig.GetString(coreconfig.NamespaceName)
-		if name != "" {
-			result[name] = nsConfig
-		}
-	}
-	return result
 }
 
 func ParseKeyNormalizationConfig(strConfigVal string) int {
@@ -245,23 +231,13 @@ func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, 
 	return nil
 }
 
-func (im *identityManager) getOrgConfig(key config.RootKey, ns string) string {
-	if nsConfig, ok := im.predefinedNS[ns]; ok {
-		val := nsConfig.GetString(string(key))
-		if val != "" {
-			return val
-		}
-	}
-	return config.GetString(key)
-}
-
 // GetNodeOwnerBlockchainKey gets the blockchain key of the node owner, from the configuration
 func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context, namespace string) (*core.VerifierRef, error) {
 	if key, ok := im.nodeOwnerBlockchainKey[namespace]; ok {
 		return key, nil
 	}
 
-	orgKey := im.getOrgConfig(coreconfig.OrgKey, namespace)
+	orgKey := im.namespace.GetConfigWithFallback(namespace, coreconfig.OrgKey)
 	if orgKey == "" {
 		orgKey = config.GetString(coreconfig.OrgIdentityDeprecated)
 		if orgKey != "" {
