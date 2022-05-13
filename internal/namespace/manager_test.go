@@ -18,26 +18,70 @@ package namespace
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
-func newTestNamespaceManager(t *testing.T, predefinedNS config.ArraySection) *namespaceManager {
-	nm := NewNamespaceManager(context.Background(), predefinedNS)
-	return nm.(*namespaceManager)
+type testNamespaceManager struct {
+	namespaceManager
+	mdi *databasemocks.Plugin
+}
+
+func (nm *testNamespaceManager) cleanup(t *testing.T) {
+	nm.mdi.AssertExpectations(t)
+}
+
+func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
+	if resetConfig {
+		coreconfig.Reset()
+		InitConfig(true)
+	}
+	nm := &testNamespaceManager{
+		mdi: &databasemocks.Plugin{},
+		namespaceManager: namespaceManager{
+			nsConfig: buildNamespaceMap(context.Background()),
+		},
+	}
+	nm.database = nm.mdi
+	return nm
+}
+
+func TestNewNamespaceManager(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
+	nm, err := NewNamespaceManager(context.Background(), mdi)
+	assert.NotNil(t, nm)
+	assert.NoError(t, err)
+}
+
+func TestNewNamespaceManagerFail(t *testing.T) {
+	nm, err := NewNamespaceManager(context.Background(), nil)
+	assert.Nil(t, nm)
+	assert.Regexp(t, "FF10128", err)
+}
+
+func TestInit(t *testing.T) {
+	coreconfig.Reset()
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
+
+	nm.Init(context.Background())
 }
 
 func TestGetConfig(t *testing.T) {
 	coreconfig.Reset()
-	namespaceConfig := config.RootSection("namespaces")
-	predefinedNS := namespaceConfig.SubArray("predefined")
 	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
 	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceOrgKey, "0x12345")
 
-	nm := newTestNamespaceManager(t, predefinedNS)
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
 
 	key := nm.GetConfigWithFallback("ns1", coreconfig.OrgKey)
 	assert.Equal(t, "0x12345", key)
@@ -45,13 +89,88 @@ func TestGetConfig(t *testing.T) {
 
 func TestGetConfigFallback(t *testing.T) {
 	coreconfig.Reset()
-	namespaceConfig := config.RootSection("namespaces")
-	predefinedNS := namespaceConfig.SubArray("predefined")
 	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
 	config.Set(coreconfig.OrgKey, "0x123")
 
-	nm := newTestNamespaceManager(t, predefinedNS)
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
 
 	key := nm.GetConfigWithFallback("ns1", coreconfig.OrgKey)
 	assert.Equal(t, "0x123", key)
+}
+
+func TestInitNamespacesBadName(t *testing.T) {
+	coreconfig.Reset()
+	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "!Badness")
+
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
+
+	err := nm.initNamespaces(context.Background())
+	assert.Regexp(t, "FF00140", err)
+}
+
+func TestInitNamespacesGetFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	err := nm.initNamespaces(context.Background())
+	assert.Regexp(t, "pop", err)
+}
+
+func TestInitNamespacesUpsertFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	nm.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
+	err := nm.initNamespaces(context.Background())
+	assert.Regexp(t, "pop", err)
+}
+
+func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&core.Namespace{
+		Type: core.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
+	}, nil)
+	err := nm.initNamespaces(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestInitNamespacesDefaultMissing(t *testing.T) {
+	coreconfig.Reset()
+	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{})
+
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
+
+	err := nm.initNamespaces(context.Background())
+	assert.Regexp(t, "FF10166", err)
+}
+
+func TestInitNamespacesDupName(t *testing.T) {
+	coreconfig.Reset()
+	InitConfig(true)
+
+	namespaceConfig.AddKnownKey("predefined.0.name", "ns1")
+	namespaceConfig.AddKnownKey("predefined.1.name", "ns2")
+	namespaceConfig.AddKnownKey("predefined.2.name", "ns2")
+	config.Set(coreconfig.NamespacesDefault, "ns1")
+
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
+
+	nsList, err := nm.getPredefinedNamespaces(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, nsList, 3)
+	names := make([]string, len(nsList))
+	for i, ns := range nsList {
+		names[i] = ns.Name
+	}
+	assert.Contains(t, names, core.LegacySystemNamespace)
+	assert.Contains(t, names, "ns1")
+	assert.Contains(t, names, "ns2")
 }

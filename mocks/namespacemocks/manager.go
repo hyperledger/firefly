@@ -3,7 +3,10 @@
 package namespacemocks
 
 import (
+	context "context"
+
 	config "github.com/hyperledger/firefly-common/pkg/config"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -21,6 +24,20 @@ func (_m *Manager) GetConfigWithFallback(ns string, key config.RootKey) string {
 		r0 = rf(ns, key)
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// Init provides a mock function with given fields: ctx
+func (_m *Manager) Init(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0
