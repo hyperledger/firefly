@@ -148,11 +148,12 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mti.On("Name").Return("mock-tk").Maybe()
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
+	tor.orchestrator.InitNamespaceConfig(true)
 	return tor
 }
 
 func TestNewOrchestrator(t *testing.T) {
-	or := NewOrchestrator()
+	or := NewOrchestrator(true)
 	assert.NotNil(t, or)
 }
 
@@ -708,13 +709,11 @@ func TestInitNamespacesDefaultMissing(t *testing.T) {
 
 func TestInitNamespacesDupName(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{
-		{"name": "ns1"},
-		{"name": "ns2"},
-		{"name": "ns2"},
-	})
+	namespaceConfig.AddKnownKey("predefined.0.name", "ns1")
+	namespaceConfig.AddKnownKey("predefined.1.name", "ns2")
+	namespaceConfig.AddKnownKey("predefined.2.name", "ns2")
 	config.Set(coreconfig.NamespacesDefault, "ns1")
-	nsList, err := or.getPrefdefinedNamespaces(context.Background())
+	nsList, err := or.getPredefinedNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nsList, 3)
 	assert.Equal(t, core.SystemNamespace, nsList[0].Name)

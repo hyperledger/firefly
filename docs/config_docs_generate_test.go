@@ -30,7 +30,7 @@ import (
 
 func TestGenerateConfigDocs(t *testing.T) {
 	// Initialize config of all plugins
-	orchestrator.NewOrchestrator()
+	orchestrator.NewOrchestrator(false)
 	apiserver.InitConfig()
 	f, err := os.Create(filepath.Join("reference", "config.md"))
 	assert.NoError(t, err)
