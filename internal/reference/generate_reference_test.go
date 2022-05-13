@@ -14,30 +14,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+//go:build reference
+// +build reference
+
+package reference
 
 import (
-	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly/internal/apiserver"
-	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateConfigDocs(t *testing.T) {
-	// Initialize config of all plugins
-	orchestrator.NewOrchestrator(false)
-	apiserver.InitConfig()
-	f, err := os.Create(filepath.Join("reference", "config.md"))
+func TestGenerateMarkdownPages(t *testing.T) {
+	markdownMap, err := GenerateObjectsReferenceMarkdown()
 	assert.NoError(t, err)
-	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), config.GetKnownKeys())
-	assert.NoError(t, err)
-	_, err = f.Write(generatedConfig)
-	assert.NoError(t, err)
-	err = f.Close()
-	assert.NoError(t, err)
+	assert.NotNil(t, markdownMap)
+
+	for pageName, markdown := range markdownMap {
+		f, err := os.Create(filepath.Join("..", "..", "docs", "reference", "types", fmt.Sprintf("%s.md", pageName)))
+		assert.NoError(t, err)
+		_, err = f.Write(markdown)
+		assert.NoError(t, err)
+		err = f.Close()
+		assert.NoError(t, err)
+	}
 }
