@@ -79,9 +79,7 @@ var (
 	deprecatedDatabaseConfig   = config.RootSection("database")
 	identityConfig             = config.RootSection("identity")
 	sharedstorageConfig        = config.RootSection("sharedstorage")
-	// For backward compatibility with the old "publicstorage" prefix
-	publicstorageConfig = config.RootSection("publicstorage")
-	dataexchangeConfig  = config.RootSection("dataexchange")
+	dataexchangeConfig         = config.RootSection("dataexchange")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -194,8 +192,6 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
 	difactory.InitConfig(databaseConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
-	// For backward compatibility also init with the old "publicstorage" prefix
-	ssfactory.InitConfig(publicstorageConfig)
 	dxfactory.InitConfig(dataexchangeConfig)
 	// For backwards compatibility with the top level "tokens" config
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
@@ -498,11 +494,6 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	storageConfig := sharedstorageConfig
 	if or.sharedstorage == nil {
 		ssType := config.GetString(coreconfig.SharedStorageType)
-		if ssType == "" {
-			// Fallback and attempt to look for a "publicstorage" (deprecated) plugin
-			ssType = config.GetString(coreconfig.PublicStorageType)
-			storageConfig = publicstorageConfig
-		}
 		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
 			return err
 		}

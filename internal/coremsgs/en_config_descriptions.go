@@ -261,12 +261,6 @@ var (
 	ConfigPrivatemessagingBatchSize         = ffc("config.privatemessaging.batch.size", "The maximum number of messages in a batch for private messages", i18n.IntType)
 	ConfigPrivatemessagingBatchTimeout      = ffc("config.privatemessaging.batch.timeout", "The timeout to wait for a batch to fill, before sending", i18n.TimeDurationType)
 
-	ConfigPublicstorageType = ffc("config.publicstorage.type", "`DEPRECATED` Please use `config.sharedstorage.type` instead", i18n.StringType)
-
-	ConfigPublicstorageIpfsAPIURL          = ffc("config.publicstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
-	ConfigPublicstorageIpfsAPIProxyURL     = ffc("config.publicstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
-	ConfigPublicstorageIpfsGatewayURL      = ffc("config.publicstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
-	ConfigPublicstorageIpfsGatewayProxyURL = ffc("config.publicstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
 	ConfigSharedstorageType                = ffc("config.sharedstorage.type", "The Shared Storage plugin to use", i18n.StringType)
 	ConfigSharedstorageIpfsAPIURL          = ffc("config.sharedstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
 	ConfigSharedstorageIpfsAPIProxyURL     = ffc("config.sharedstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
