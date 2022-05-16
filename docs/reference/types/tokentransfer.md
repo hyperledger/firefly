@@ -41,7 +41,7 @@ nav_order: 5
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `type` | The type of transfer such as mint/burn/transfer | `mint`<br/>`burn`<br/>`transfer` |
+| `type` | The type of transfer such as mint/burn/transfer | `FFEnum`:<br/>`"mint"`<br/>`"burn"`<br/>`"transfer"` |
 | `localId` | The UUID of this token transfer, in the local FireFly node | [`UUID`](simpletypes#uuid) |
 | `pool` | The UUID the token pool this transfer applies to | [`UUID`](simpletypes#uuid) |
 | `tokenIndex` | The index of the token within the pool that this transfer applies to | `string` |
@@ -63,7 +63,7 @@ nav_order: 5
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `type` | The type of the FireFly transaction |  |
+| `type` | The type of the FireFly transaction | `FFEnum`: |
 | `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
 
 

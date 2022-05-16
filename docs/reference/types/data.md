@@ -53,7 +53,7 @@ nav_order: 7
 | Field Name | Description | Type |
 |------------|-------------|------|
 | `id` | The UUID of the data resource | [`UUID`](simpletypes#uuid) |
-| `validator` | The data validator type |  |
+| `validator` | The data validator type | `FFEnum`: |
 | `namespace` | The namespace of the data resource | `string` |
 | `hash` | The hash of the data resource. Derived from the value and the hash of any binary blob attachment | `Bytes32` |
 | `created` | The creation time of the data resource | [`FFTime`](simpletypes#fftime) |

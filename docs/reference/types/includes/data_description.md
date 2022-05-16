@@ -16,7 +16,7 @@ A hash is also calculated as follows:
 - There is is both a `blob` and a `value`, then the hash is a hash of the
   concatenation of a hash of the value and a hash of the blob.
 
-## Value - JSON data stored in the core database
+### Value - JSON data stored in the core database
 
 Each data resource can contain a `value`, which is any JSON type. String, number,
 boolean, array or object. This value is stored directly in the FireFly database.
@@ -25,7 +25,7 @@ If the value you are storing is not JSON data, but is small enough you want it t
 be stored in the core database, then use a JSON string to store an encoded form
 of your data (such as XML, CSV etc.).
 
-## Datatype - validation of agreed data types
+### Datatype - validation of agreed data types
 
 A datatype can be associated with your data, causing FireFly to verify the
 `value` against a schema before accepting it (on upload, or receipt from another
@@ -38,7 +38,7 @@ required in the application/integration tier.
 
 > More information in the [Datatype](./datatype) section
 
-## Blob - binary data stored via the Data Exchange
+### Blob - binary data stored via the Data Exchange
 
 Data resources can also contain a `blob` attachment, which is stored via the
 Data Exchange plugin outside of the FireFly core database. This is intended for

@@ -4643,6 +4643,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -6479,6 +6487,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -6660,6 +6676,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7124,6 +7148,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -7220,6 +7252,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7334,6 +7374,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7497,6 +7545,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -7599,6 +7655,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7719,6 +7783,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7878,6 +7950,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -8012,6 +8092,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -13343,6 +13431,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -15270,6 +15366,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -15458,6 +15562,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -15988,6 +16100,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -16090,6 +16210,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16210,6 +16338,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16380,6 +16516,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -16482,6 +16626,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16602,6 +16754,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16768,6 +16928,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -16902,6 +17070,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -19263,6 +19439,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -19680,6 +19864,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -20885,6 +21077,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -26237,6 +26437,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -26632,6 +26840,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -27802,6 +28018,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message

@@ -190,7 +190,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 				ID:     fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
 				Type:   core.MessageTypePrivate,
 				CID:    fftypes.MustParseUUID("00d20cba-76ed-431d-b9ff-f04b4cbee55c"),
-				TxType: core.BatchTypePrivate,
+				TxType: core.TransactionTypeBatchPin,
 				SignerRef: core.SignerRef{
 					Author: "did:firefly:org/acme",
 					Key:    "0xD53B0294B6a596D404809b1d51D1b4B3d1aD4945",
@@ -398,11 +398,9 @@ func generateEnumList(f reflect.StructField) string {
 	enumName := f.Tag.Get("ffenum")
 	enumOptions := core.FFEnumValues(enumName)
 	buff := new(strings.Builder)
-	for i, v := range enumOptions {
-		if i != 0 {
-			buff.WriteString(`<br/>`)
-		}
-		buff.WriteString(fmt.Sprintf("`%s`", v))
+	buff.WriteString("`FFEnum`:")
+	for _, v := range enumOptions {
+		buff.WriteString(fmt.Sprintf("<br/>`\"%s\"`", v))
 	}
 	return buff.String()
 }

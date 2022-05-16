@@ -52,7 +52,7 @@ nav_order: 4
 | Field Name | Description | Type |
 |------------|-------------|------|
 | `id` | The UUID of the token pool | [`UUID`](simpletypes#uuid) |
-| `type` | The type of token the pool contains, such as fungible/non-fungible | `fungible`<br/>`nonfungible` |
+| `type` | The type of token the pool contains, such as fungible/non-fungible | `FFEnum`:<br/>`"fungible"`<br/>`"nonfungible"` |
 | `namespace` | The namespace for the token pool | `string` |
 | `name` | The name of the token pool. Note the name is not validated against the description of the token on the blockchain | `string` |
 | `standard` | The ERC standard the token pool conforms to, as reported by the token connector | `string` |
@@ -62,7 +62,7 @@ nav_order: 4
 | `decimals` | Number of decimal places that this token has | `int` |
 | `connector` | The name of the token connector, as specified in the FireFly core configuration file that is responsible for the token pool. Required on input when multiple token connectors are configured | `string` |
 | `message` | The UUID of the broadcast message used to inform the network to index this pool | [`UUID`](simpletypes#uuid) |
-| `state` | The current state of the token pool | `unknown`<br/>`pending`<br/>`confirmed` |
+| `state` | The current state of the token pool | `FFEnum`:<br/>`"unknown"`<br/>`"pending"`<br/>`"confirmed"` |
 | `created` | The creation time of the pool | [`FFTime`](simpletypes#fftime) |
 | `config` | Input only field, with token connector specific configuration of the pool, such as an existing Ethereum address and block number to used to index the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 | `info` | Token connector specific information about the pool. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
@@ -72,7 +72,7 @@ nav_order: 4
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `type` | The type of the FireFly transaction |  |
+| `type` | The type of the FireFly transaction | `FFEnum`: |
 | `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
 
 

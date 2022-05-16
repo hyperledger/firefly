@@ -11,19 +11,19 @@ it in your own off-chain database.
 
 Hyperledger FireFly maintains this index automatically for all Token Pools that are configured.
 
-## FireFly initiated vs. non-FireFly initiated transfers
+### FireFly initiated vs. non-FireFly initiated transfers
 
 There is no requirement at all to use FireFly to initiate transfers in Token Pools that
-Hyperledger FireFly is aware of. FireFly will listen to and update it's audit history
+Hyperledger FireFly is aware of. FireFly will listen to and update its audit history
 and balances for all transfers, regardless of whether they were initiated using a FireFly
 SuperNode or not.
 
 So you could for example use Metamask to initiate a transfer directly against an ERC-20/ERC-721
-contract directly on your blockchain, and you will see it appear a as transfer. Or initiate
+contract directly on your blockchain, and you will see it appear as a transfer. Or initiate
 a transfer on-chain via another Smart Contract, such as a Hashed Timelock Contract (HTLC) releasing
 funds held in digital escrow.
 
-## Message coordinated transfers
+### Message coordinated transfers
 
 One special feature enabled when using FireFly to initiate transfers, is to coordinate an off-chain
 data transfer (private or broadcast) with the on-chain transfer of value.  This is a powerful
@@ -37,7 +37,7 @@ be emitted as part of the transfer event.
 Examples of how to do this are included in the ERC-20, ERC-721 and ERC-1155 Token Connector sample
 smart contracts.
 
-## Transfer types
+### Transfer types
 
 There are three primary types of transfer:
 

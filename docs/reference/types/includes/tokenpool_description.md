@@ -10,7 +10,7 @@ for configuring a new Token Pool.
 Note that it is very common to use a Token Pool to teach Hyperledger FireFly about and
 *existing token*, so that you can start interacting with a token that already exists.
 
-## Example token pool types
+### Example token pool types
 
 Some examples of how the generic concept of a Token Pool maps to various well-defined Ethereum standards:
 

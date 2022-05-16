@@ -6,7 +6,7 @@ A message is made up of three sections:
 2. The data - an array of data attachments
 3. Status information - fields that are calculated independently by each node, and hence update as the message makes it way through the system
 
-## Hash
+### Hash
 
 Sections (1) and (2) are fixed once the message is sent, and a `hash` is generated that provides tamper protection.
 
@@ -20,13 +20,14 @@ All JSON data is serialized without whitespace to hash it.
 
 All hashes are SHA256.
 
-## Tags and Topics
-
-Two very important fields that your application should explicitly set in the `header` are the `tag` and `topics`.
+Each node independently calculates the hash, and the hash is included in the manifest of the [Batch](./batch) by the
+node that sends the message.
+Because the hash of that batch manifest is included in the blockchain transaction, a message transferred to
+a node that does not match the original message hash is rejected.
 
 ### Tag
 
-The `tag` tells the processors of the message how it should be processed, and  what data they should expect it to contain.
+The `header.tag` tells the processors of the message how it should be processed, and  what data they should expect it to contain.
 
 If you think of your decentralized application like a state machine, then you need to have a set of well defined transitions
 that can be performed between states. Each of these transitions that requires off-chain transfer of private data
@@ -40,7 +41,10 @@ logic to execute against it.
 > they sent the message, and process it immediately - otherwise they could end up processing it in a different order
 > to other parties in the network that are also processing the message.
 
-## Topics
+### Topics
+
+The `header.topics` strings allow you to set the the _ordering context_ for each message you send, and you are strongly
+encouraged to set it explicitly on every message you send (falling back to the `default` topic is not recommended).
 
 A key difference between blockchain backed decentralized applications and other event-driven applications, is
 that there is a single source of truth for the order in which things happen.
@@ -52,8 +56,7 @@ of the parties & network links involved in that off-chain communication.
 A "stop the world" approach to handling a single piece of missing data is not practical for a high volume
 production business network.
 
-So in Hyperledger FireFly we let you specify the _ordering context_ for each message you send. The ordering context
-is a function of:
+The ordering context is a function of:
 
 1. Whether the message is broadcast or private
 2. If it is private, the privacy group associated with the message
@@ -72,7 +75,7 @@ of any blockage if one item of off-chain data fails to be delivered or is delaye
 - A business transaction identifier - to ensure all data related to particular business transaction are processed in order
 - A globally agreed customer identifier - to ensure all data related to a particular business entity are processed in order
 
-### Using multiple topics
+#### Using multiple topics
 
 There are some advanced scenarios where you need to _merge streams_ of ordered data, so that two previously separately
 ordered streams of communication (different state machines) are joined together to process a critical decision/transition
@@ -92,7 +95,15 @@ Some examples:
 - Agreeing to join two previously separate entities with `id1` and `id2`, into a merged entity with `id3`. 
   - Specify `topics: ["id1","id2","id3"]` on the special merge message, and then from that point onwards you would only need to specify `topics: ["id3"]`.
 
-## In-line data
+### Transaction type
+
+By default messages are pinned to the blockchain, within a [Batch](./batch).
+
+For private messages, you can choose to disable this pinning by setting `header.txtype: "unpinned"`.
+
+Broadcast messages must be pinned to the blockchain.
+
+### In-line data
 
 When sending a message you can specify the array of [Data](./data) attachments in-line, as part of the same JSON payload.
 
@@ -100,7 +111,13 @@ For example, a minimal broadcast message could be:
 
 ```js
 {
-    "data": 
+    "data": [
+        {"value": "hello world"}
+    ]
 }
 ```
 
+When you send this message with `/api/v1/namespaces/{ns}/messages/broadcast`:
+- The `header` will be initialized with the default values, including `txtype: "batch_pin"`
+- The `data[0]` entry will be stored as a Data resource
+- The message will be assembled into a batch and broadcast
