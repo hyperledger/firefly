@@ -27,11 +27,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/language"
 )
 
 func TestCheckGeneratedMarkdownPages(t *testing.T) {
-	markdownMap, err := GenerateObjectsReferenceMarkdown()
+	ctx := i18n.WithLang(context.Background(), language.Spanish)
+	markdownMap, err := GenerateObjectsReferenceMarkdown(ctx)
 	assert.NoError(t, err)
 	assert.NotNil(t, markdownMap)
 

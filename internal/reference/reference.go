@@ -47,7 +47,7 @@ type TypeReferenceDoc struct {
  * array which is passed to generateMarkdownPages(). Note: It is the responsibility of
  * some other caller function to actually write the bytes to disk.
  */
-func GenerateObjectsReferenceMarkdown() (map[string][]byte, error) {
+func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, error) {
 	message := &core.Message{
 		Header: core.MessageHeader{
 			ID:        fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
@@ -89,7 +89,7 @@ func GenerateObjectsReferenceMarkdown() (map[string][]byte, error) {
 
 	simpleTypes := []interface{}{time, bigInt}
 
-	return generateMarkdownPages(context.Background(), types, simpleTypes, filepath.Join("..", "..", "docs", "reference", "types"))
+	return generateMarkdownPages(ctx, types, simpleTypes, filepath.Join("..", "..", "docs", "reference", "types"))
 }
 
 func getType(v interface{}) reflect.Type {
