@@ -241,7 +241,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 				Namespace: "ns1",
 				Node:      fftypes.MustParseUUID("5802ab80-fa71-4f52-9189-fb534de93756"),
 				Group:     fftypes.HashString("examplegroup"),
-				Created:   fftypes.Now(),
+				Created:   fftypes.UnixTime(1652664196),
 				SignerRef: core.SignerRef{
 					Author: "did:firefly:org/example",
 					Key:    "0x0a989907dcd17272257f3ebcf72f4351df65a846",
