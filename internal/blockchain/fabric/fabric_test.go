@@ -106,7 +106,7 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	resetConf()
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -117,7 +117,7 @@ func TestInitMissingChaincode(t *testing.T) {
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 	assert.Regexp(t, "FF10138.*chaincode", err)
 }
 
@@ -129,7 +129,7 @@ func TestInitMissingTopic(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigChaincode, "Firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
@@ -172,7 +172,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
@@ -211,7 +211,7 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 	assert.Regexp(t, "FF00149", err)
 
 }
@@ -252,7 +252,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
@@ -282,7 +282,7 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -311,7 +311,7 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -342,7 +342,7 @@ func TestSubQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -375,7 +375,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)

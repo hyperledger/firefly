@@ -36,10 +36,8 @@ const (
 )
 
 const (
-	// EthconnectConfigKey is a sub-key in the config to contain all the ethconnect specific config,
+	// EthconnectConfigKey is a sub-key in the config to contain all the ethconnect specific config
 	EthconnectConfigKey = "ethconnect"
-	// EthconnectConfigInstancePath is the ethereum address of the contract
-	EthconnectConfigInstancePath = "instance"
 	// EthconnectConfigTopic is the websocket listen topic that the node should register on, which is important if there are multiple
 	// nodes using a single ethconnect
 	EthconnectConfigTopic = "topic"
@@ -51,8 +49,17 @@ const (
 	EthconnectPrefixShort = "prefixShort"
 	// EthconnectPrefixLong is used in HTTP headers in requests to ethconnect
 	EthconnectPrefixLong = "prefixLong"
-	// EthconnectConfigFromBlock is the configuration of the first block to listen to when creating the listener for the FireFly contract
-	EthconnectConfigFromBlock = "fromBlock"
+	// EthconnectConfigInstanceDeprecated is the ethereum address of the FireFly contract
+	EthconnectConfigInstanceDeprecated = "instance"
+	// EthconnectConfigFromBlockDeprecated is the configuration of the first block to listen to when creating the listener for the FireFly contract
+	EthconnectConfigFromBlockDeprecated = "fromBlock"
+
+	// FireFlyContractConfigKey is a sub-key in the config to contain the info on the deployed FireFly contract
+	FireFlyContractConfigKey = "fireflyContract"
+	// FireFlyContractAddress is the ethereum address of the FireFly contract
+	FireFlyContractAddress = "address"
+	// FireFlyContractFromBlock is the configuration of the first block to listen to when creating the listener
+	FireFlyContractFromBlock = "fromBlock"
 
 	// AddressResolverConfigKey is a sub-key in the config to contain an address resolver config.
 	AddressResolverConfigKey = "addressResolver"
@@ -78,13 +85,17 @@ const (
 func (e *Ethereum) InitConfig(config config.Section) {
 	ethconnectConf := config.SubSection(EthconnectConfigKey)
 	wsclient.InitConfig(ethconnectConf)
-	ethconnectConf.AddKnownKey(EthconnectConfigInstancePath)
 	ethconnectConf.AddKnownKey(EthconnectConfigTopic)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchSize, defaultBatchSize)
 	ethconnectConf.AddKnownKey(EthconnectConfigBatchTimeout, defaultBatchTimeout)
 	ethconnectConf.AddKnownKey(EthconnectPrefixShort, defaultPrefixShort)
 	ethconnectConf.AddKnownKey(EthconnectPrefixLong, defaultPrefixLong)
-	ethconnectConf.AddKnownKey(EthconnectConfigFromBlock, defaultFromBlock)
+	ethconnectConf.AddKnownKey(EthconnectConfigInstanceDeprecated)
+	ethconnectConf.AddKnownKey(EthconnectConfigFromBlockDeprecated, defaultFromBlock)
+
+	e.contractConf = config.SubArray(FireFlyContractConfigKey)
+	e.contractConf.AddKnownKey(FireFlyContractAddress)
+	e.contractConf.AddKnownKey(FireFlyContractFromBlock)
 
 	fftmConf := config.SubSection(FFTMConfigKey)
 	ffresty.InitConfig(fftmConf)

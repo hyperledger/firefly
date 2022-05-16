@@ -70,17 +70,19 @@ var (
 
 	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
-	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
-	ConfigBlockchainEthereumEthconnectFromBlock    = ffc("config.blockchain.ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use fireflyContract[].address)", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectFromBlock    = ffc("config.blockchain.ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use fireflyContract[].fromBlock)", "Address "+i18n.StringType)
 	ConfigBlockchainEthereumEthconnectPrefixLong   = ffc("config.blockchain.ethereum.ethconnect.prefixLong", "The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectPrefixShort  = ffc("config.blockchain.ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectTopic        = ffc("config.blockchain.ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectURL          = ffc("config.blockchain.ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectProxyURL     = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
+
+	ConfigBlockchainEthereumContractAddress   = ffc("config.blockchain.ethereum.fireflyContract[].address", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumContractFromBlock = ffc("config.blockchain.ethereum.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigBlockchainEthereumFFTMURL      = ffc("config.blockchain.ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
 	ConfigBlockchainEthereumFFTMProxyURL = ffc("config.blockchain.ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
-
-	ConfigBlockchainEthereumEthconnectProxyURL = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
 
 	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigBlockchainFabricFabconnectBatchTimeout = ffc("config.blockchain.fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", i18n.TimeDurationType)
@@ -137,11 +139,13 @@ var (
 	ConfigPluginBlockchainEthereumEthconnectPrefixShort  = ffc("config.plugins.blockchain[].ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigPluginBlockchainEthereumEthconnectTopic        = ffc("config.plugins.blockchain[].ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
 	ConfigPluginBlockchainEthereumEthconnectURL          = ffc("config.plugins.blockchain[].ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectProxyURL     = ffc("config.plugins.blockchain[].ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
+
+	ConfigPluginsBlockchainEthereumContractAddress   = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].address", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
+	ConfigPluginsBlockchainEthereumContractFromBlock = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigPluginBlockchainEthereumFFTMURL      = ffc("config.plugins.blockchain[].ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
 	ConfigPluginBlockchainEthereumFFTMProxyURL = ffc("config.plugins.blockchain[].ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
-
-	ConfigPluginBlockchainEthereumEthconnectProxyURL = ffc("config.plugins.blockchain[].ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
 
 	ConfigPluginBlockchainFabricFabconnectBatchSize    = ffc("config.plugins.blockchain[].fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigPluginBlockchainFabricFabconnectBatchTimeout = ffc("config.plugins.blockchain[].fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", i18n.TimeDurationType)

@@ -48,17 +48,17 @@ const (
 )
 
 type Ethereum struct {
-	ctx          context.Context
-	topic        string
-	instancePath string
-	prefixShort  string
-	prefixLong   string
-	capabilities *blockchain.Capabilities
-	callbacks    blockchain.Callbacks
-	client       *resty.Client
-	fftmClient   *resty.Client
-	streams      *streamManager
-	initInfo     struct {
+	ctx             context.Context
+	topic           string
+	contractAddress string
+	prefixShort     string
+	prefixLong      string
+	capabilities    *blockchain.Capabilities
+	callbacks       blockchain.Callbacks
+	client          *resty.Client
+	fftmClient      *resty.Client
+	streams         *streamManager
+	initInfo        struct {
 		stream *eventStream
 		sub    *subscription
 	}
@@ -66,6 +66,7 @@ type Ethereum struct {
 	closed          chan struct{}
 	addressResolver *addressResolver
 	metrics         metrics.Manager
+	contractConf    config.ArraySection
 }
 
 type eventStreamWebsocket struct {
@@ -156,7 +157,8 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager, contractIndex int) (err error) {
+	e.InitConfig(config)
 	ethconnectConf := config.SubSection(EthconnectConfigKey)
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	fftmConf := config.SubSection(FFTMConfigKey)
@@ -173,7 +175,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	}
 
 	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethereum.ethconnect")
 	}
 
 	e.client = ffresty.New(e.ctx, ethconnectConf)
@@ -182,30 +184,51 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 		e.fftmClient = ffresty.New(e.ctx, fftmConf)
 	}
 
-	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
-	if e.instancePath == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
+	e.streams = &streamManager{client: e.client}
+	if e.contractConf.ArraySize() > contractIndex {
+		// New config (array of contracts)
+		e.contractAddress = e.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractAddress)
+		if e.contractAddress == "" {
+			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.fireflyContract")
+		}
+		e.streams.fireFlySubscriptionFromBlock = e.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
+	} else {
+		// Old config (attributes under "ethconnect")
+		e.contractAddress = ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
+		if e.contractAddress != "" {
+			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
+				EthconnectConfigKey, EthconnectConfigInstanceDeprecated,
+				FireFlyContractConfigKey, FireFlyContractAddress)
+		} else {
+			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethereum.ethconnect")
+		}
+		e.streams.fireFlySubscriptionFromBlock = ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
+		if e.streams.fireFlySubscriptionFromBlock != "" {
+			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
+				EthconnectConfigKey, EthconnectConfigFromBlockDeprecated,
+				FireFlyContractConfigKey, FireFlyContractFromBlock)
+		}
 	}
 
 	// Backwards compatibility from when instance path was not a contract address
-	if strings.HasPrefix(strings.ToLower(e.instancePath), "/contracts/") {
-		address, err := e.getContractAddress(ctx, e.instancePath)
+	if strings.HasPrefix(strings.ToLower(e.contractAddress), "/contracts/") {
+		address, err := e.getContractAddress(ctx, e.contractAddress)
 		if err != nil {
 			return err
 		}
-		e.instancePath = address
-	} else if strings.HasPrefix(e.instancePath, "/instances/") {
-		e.instancePath = strings.Replace(e.instancePath, "/instances/", "", 1)
+		e.contractAddress = address
+	} else if strings.HasPrefix(e.contractAddress, "/instances/") {
+		e.contractAddress = strings.Replace(e.contractAddress, "/instances/", "", 1)
 	}
 
 	// Ethconnect needs the "0x" prefix in some cases
-	if !strings.HasPrefix(e.instancePath, "0x") {
-		e.instancePath = fmt.Sprintf("0x%s", e.instancePath)
+	if !strings.HasPrefix(e.contractAddress, "0x") {
+		e.contractAddress = fmt.Sprintf("0x%s", e.contractAddress)
 	}
 
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethereum.ethconnect")
 	}
 
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
@@ -222,17 +245,13 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 		return err
 	}
 
-	e.streams = &streamManager{
-		client:                       e.client,
-		fireFlySubscriptionFromBlock: ethconnectConf.GetString(EthconnectConfigFromBlock),
-	}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.initInfo.stream.ID, e.topic)
-	if e.initInfo.sub, err = e.streams.ensureFireFlySubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureFireFlySubscription(e.ctx, e.contractAddress, e.initInfo.stream.ID, batchPinEventABI); err != nil {
 		return err
 	}
 
@@ -599,7 +618,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
-	return e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
+	return e.invokeContractMethod(ctx, e.contractAddress, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {

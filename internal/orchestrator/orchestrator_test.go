@@ -472,7 +472,7 @@ func TestBlockchainInitPlugins(t *testing.T) {
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
 	plugins := make([]blockchain.Plugin, 1)
 	mbp := &blockchainmocks.Plugin{}
-	mbp.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mbp.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything, 0).Return(nil)
 	plugins[0] = mbp
 	ctx := context.Background()
 	err := or.initBlockchainPlugins(ctx, plugins)
@@ -484,7 +484,7 @@ func TestDeprecatedBlockchainInitPlugin(t *testing.T) {
 	defer or.cleanup(t)
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
 	deprecatedBlockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything, 0).Return(nil)
 	ctx := context.Background()
 	err := or.initDeprecatedBlockchainPlugin(ctx, or.mbi)
 	assert.NoError(t, err)
