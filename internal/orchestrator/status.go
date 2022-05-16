@@ -54,9 +54,18 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		})
 	}
 
+	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.sharedstorage {
+		sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
 	return core.NodeStatusPlugins{
-		Blockchain: blockchainsArray,
-		Database:   databasesArray,
+		Blockchain:    blockchainsArray,
+		Database:      databasesArray,
+		SharedStorage: sharedstorageArray,
 		DataExchange: []*core.NodeStatusPlugin{
 			{
 				PluginType: or.dataexchange.Name(),
@@ -66,11 +75,6 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		Identity: []*core.NodeStatusPlugin{
 			{
 				PluginType: or.identityPlugin.Name(),
-			},
-		},
-		SharedStorage: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.sharedstorage.Name(),
 			},
 		},
 		Tokens: tokensArray,

@@ -115,6 +115,8 @@ var (
 	PluginsTokensList = ffc("plugins.tokens")
 	// PluginsBlockchainList is the key containing a list of configured blockchain plugins
 	PluginsBlockchainList = ffc("plugins.blockchain")
+	// PluginsSharedStorageList is the key containing a list of configured shared storage plugins
+	PluginsSharedStorageList = ffc("plugins.sharedstorage")
 	// PluginsDatabaseList is the key containing a list of configured database plugins
 	PluginsDatabaseList = ffc("plugins.database")
 	// DebugPort a HTTP port on which to enable the go debugger
@@ -229,8 +231,6 @@ var (
 	OrgDescription = ffc("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = ffc("orchestrator.startupAttempts")
-	// SharedStorageType specifies which shared storage interface plugin to use
-	SharedStorageType = ffc("sharedstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = ffc("subscription.defaults.batchSize")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)

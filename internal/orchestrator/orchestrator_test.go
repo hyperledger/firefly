@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
@@ -54,6 +55,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -126,7 +128,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
-	tor.orchestrator.sharedstorage = tor.mps
+	tor.orchestrator.sharedstorage = map[string]sharedstorage.Plugin{"ipfs": tor.mps}
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.identity = tor.mim
 	tor.orchestrator.identityPlugin = tor.mii
@@ -327,7 +329,6 @@ func TestBlockchainGetPlugins(t *testing.T) {
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx := context.Background()
 	plugins, err := or.getBlockchainPlugins(ctx)
@@ -340,10 +341,6 @@ func TestBlockchainGetPluginsNoType(t *testing.T) {
 	bifactory.InitConfig(blockchainConfig)
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx := context.Background()
 	_, err := or.getBlockchainPlugins(ctx)
 	assert.Error(t, err)
@@ -355,10 +352,6 @@ func TestBlockchainGetPluginsBadName(t *testing.T) {
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "wrong/////////////")
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx := context.Background()
 	_, err := or.getBlockchainPlugins(ctx)
 	assert.Error(t, err)
@@ -371,7 +364,6 @@ func TestBlockchainGetPluginsBadPlugin(t *testing.T) {
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "wrong//")
 	or.blockchains = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx := context.Background()
@@ -414,7 +406,6 @@ func TestBlockchainInitPluginsFail(t *testing.T) {
 	blockchainConfig.AddKnownKey("ethconnect.url", "")
 	or.blockchains = nil
 
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
@@ -425,26 +416,108 @@ func TestBlockchainInitPluginsFail(t *testing.T) {
 
 func TestBadSharedStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.SharedStorageType, "wrong")
+	ssfactory.InitConfig(sharedstorageConfig)
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "wrong")
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
 	or.sharedstorage = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	ctx := context.Background()
+	plugins, err := or.getSharedStoragePlugins(ctx)
+	assert.Nil(t, plugins)
+	assert.Regexp(t, "FF10389.*Invalid", err)
+}
+
+func TestBadSharedStoragePluginType(t *testing.T) {
+	or := newTestOrchestrator()
+	or.sharedstorage = nil
+	or.databases["database_0"] = or.mdi
+	ssfactory.InitConfig(sharedstorageConfig)
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigName, "sharedstorage")
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "wrong")
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10134.*wrong", err)
 }
 
-func TestBadSharedStorageInitFail(t *testing.T) {
+func TestBadSharedStoragePluginName(t *testing.T) {
 	or := newTestOrchestrator()
+	ssfactory.InitConfig(sharedstorageConfig)
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigName, "wrong////")
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "ipfs")
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
+	or.sharedstorage = nil
+	ctx := context.Background()
+	plugins, err := or.getSharedStoragePlugins(ctx)
+	assert.Nil(t, plugins)
+	assert.Regexp(t, "FF00140.*name", err)
+}
+
+func TestSharedStorageInitPlugins(t *testing.T) {
+	or := newTestOrchestrator()
+	ssfactory.InitConfig(sharedstorageConfig)
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigName, "flapflip")
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "ipfs")
+	plugins := make([]sharedstorage.Plugin, 1)
+	mss := &sharedstoragemocks.Plugin{}
+	mss.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	plugins[0] = mss
+	ctx := context.Background()
+	err := or.initSharedStoragePlugins(ctx, plugins)
+	assert.NoError(t, err)
+}
+
+func TestSharedStorageInitPluginsFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.sharedstorage = nil
+	or.databases["database_0"] = or.mdi
+	ssfactory.InitConfig(sharedstorageConfig)
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigName, "flapflip")
+	sharedstorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "ipfs")
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestDeprecatedSharedStorageInitPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
+	deprecatedSharedStorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "ipfs")
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	err := or.initDeprecatedSharedStoragePlugin(ctx, or.mps)
+	assert.NoError(t, err)
+}
+
+func TestDeprecatedSharedStorageInitPluginFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.sharedstorage = nil
+	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
+	deprecatedSharedStorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "ipfs")
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestBadDeprecatedSharedStoragePlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	deprecatedSharedStorageConfig.AddKnownKey(sharedstorage.SharedStorageConfigType, "wrong")
+	or.sharedstorage = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "FF10134.*Unknown", err)
 }
 
 func TestBadDataExchangePlugin(t *testing.T) {
@@ -501,7 +574,6 @@ func TestTokensMissingName(t *testing.T) {
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -524,7 +596,6 @@ func TestTokensBadName(t *testing.T) {
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -547,7 +618,6 @@ func TestBadTokensPlugin(t *testing.T) {
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -571,7 +641,6 @@ func TestGoodTokensPlugin(t *testing.T) {
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -594,7 +663,6 @@ func TestBadDeprecatedTokensPlugin(t *testing.T) {
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -617,7 +685,6 @@ func TestBadDeprecatedTokensPluginNoConnector(t *testing.T) {
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -641,7 +708,6 @@ func TestBadDeprecatedTokensPluginNoName(t *testing.T) {
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -664,7 +730,6 @@ func TestBadDeprecatedTokensPluginInvalidName(t *testing.T) {
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -687,7 +752,6 @@ func TestBadDeprecatedTokensPluginNoType(t *testing.T) {
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -713,7 +777,6 @@ func TestGoodDeprecatedTokensPlugin(t *testing.T) {
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -973,7 +1036,6 @@ func TestInitNamespacesDupName(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	or.databases["database_0"] = or.mdi
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -1008,7 +1070,6 @@ func TestInitOKWithMetrics(t *testing.T) {
 	or := newTestOrchestrator()
 	or.metrics = nil
 	or.databases["database_0"] = or.mdi
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)

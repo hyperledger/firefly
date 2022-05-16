@@ -62,6 +62,7 @@ var (
 		},
 		SharedStorage: []*core.NodeStatusPlugin{
 			{
+				Name:       "ipfs",
 				PluginType: "mock-ps",
 			},
 		},

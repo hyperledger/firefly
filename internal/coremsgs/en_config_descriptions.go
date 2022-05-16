@@ -267,6 +267,14 @@ var (
 	ConfigSharedstorageIpfsGatewayURL      = ffc("config.sharedstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
 	ConfigSharedstorageIpfsGatewayProxyURL = ffc("config.sharedstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
 
+	ConfigPluginSharedstorage                    = ffc("config.plugins.sharedstorage", "The list of configured Shared Storage plugins", i18n.StringType)
+	ConfigPluginSharedstorageName                = ffc("config.plugins.sharedstorage[].name", "The name of the Shared Storage plugin to use", i18n.StringType)
+	ConfigPluginSharedstorageType                = ffc("config.plugins.sharedstorage[].type", "The Shared Storage plugin to use", i18n.StringType)
+	ConfigPluginSharedstorageIpfsAPIURL          = ffc("config.plugins.sharedstorage[].ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsAPIProxyURL     = ffc("config.plugins.sharedstorage[].ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsGatewayURL      = ffc("config.plugins.sharedstorage[].ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsGatewayProxyURL = ffc("config.plugins.sharedstorage[].ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
+
 	ConfigSubscriptionMax               = ffc("config.subscription.max", "The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)", i18n.IntType)
 	ConfigSubscriptionDefaultsBatchSize = ffc("config.subscription.defaults.batchSize", "Default read ahead to enable for subscriptions that do not explicitly configure readahead", i18n.IntType)
 

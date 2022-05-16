@@ -30,7 +30,16 @@ var pluginsByName = map[string]func() sharedstorage.Plugin{
 	(*ipfs.IPFS)(nil).Name(): func() sharedstorage.Plugin { return &ipfs.IPFS{} },
 }
 
-func InitConfig(config config.Section) {
+func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(sharedstorage.SharedStorageConfigType)
+	config.AddKnownKey(sharedstorage.SharedStorageConfigName)
+	for name, plugin := range pluginsByName {
+		plugin().InitConfig(config.SubSection(name))
+	}
+}
+
+func InitConfigDeprecated(config config.Section) {
+	config.AddKnownKey(sharedstorage.SharedStorageConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

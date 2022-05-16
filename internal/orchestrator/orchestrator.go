@@ -69,17 +69,18 @@ const (
 )
 
 var (
-	blockchainConfig = config.RootArray("plugins.blockchain")
-	tokensConfig     = config.RootArray("plugins.tokens")
-	namespaceConfig  = config.RootSection("namespaces")
-	databaseConfig   = config.RootArray("plugins.database")
+	blockchainConfig    = config.RootArray("plugins.blockchain")
+	tokensConfig        = config.RootArray("plugins.tokens")
+	namespaceConfig     = config.RootSection("namespaces")
+	databaseConfig      = config.RootArray("plugins.database")
+	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
 	// Deprecated configs
-	deprecatedTokensConfig     = config.RootArray("tokens")
-	deprecatedBlockchainConfig = config.RootSection("blockchain")
-	deprecatedDatabaseConfig   = config.RootSection("database")
-	identityConfig             = config.RootSection("identity")
-	sharedstorageConfig        = config.RootSection("sharedstorage")
-	dataexchangeConfig         = config.RootSection("dataexchange")
+	deprecatedTokensConfig        = config.RootArray("tokens")
+	deprecatedBlockchainConfig    = config.RootSection("blockchain")
+	deprecatedDatabaseConfig      = config.RootSection("database")
+	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
+	identityConfig                = config.RootSection("identity")
+	dataexchangeConfig            = config.RootSection("dataexchange")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -159,7 +160,7 @@ type orchestrator struct {
 	blockchains    map[string]blockchain.Plugin
 	identity       identity.Manager
 	identityPlugin idplugin.Plugin
-	sharedstorage  sharedstorage.Plugin
+	sharedstorage  map[string]sharedstorage.Plugin
 	dataexchange   dataexchange.Plugin
 	events         events.EventManager
 	networkmap     networkmap.Manager
@@ -191,6 +192,7 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	bifactory.InitConfig(blockchainConfig)
 	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
 	difactory.InitConfig(databaseConfig)
+	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
 	dxfactory.InitConfig(dataexchangeConfig)
 	// For backwards compatibility with the top level "tokens" config
@@ -226,7 +228,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.bc.bi = or.blockchains["blockchain_0"]
 	or.bc.ei = or.events
 	or.bc.dx = or.dataexchange
-	or.bc.ss = or.sharedstorage
+	or.bc.ss = or.sharedstorage["sharedstorage_0"]
 	or.bc.om = or.operations
 	return err
 }
@@ -465,17 +467,17 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	var bp []blockchain.Plugin
 	if or.blockchains == nil {
 		or.blockchains = make(map[string]blockchain.Plugin)
+		var bp []blockchain.Plugin
 		bp, err = or.getBlockchainPlugins(ctx)
 		if err != nil {
 			return err
 		}
-	}
-	err = or.initBlockchainPlugins(ctx, bp)
-	if err != nil {
-		return err
+		err = or.initBlockchainPlugins(ctx, bp)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Check for deprecated blockchain config
@@ -491,16 +493,30 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 
-	storageConfig := sharedstorageConfig
 	if or.sharedstorage == nil {
-		ssType := config.GetString(coreconfig.SharedStorageType)
-		if or.sharedstorage, err = ssfactory.GetPlugin(ctx, ssType); err != nil {
+		var ss []sharedstorage.Plugin
+		or.sharedstorage = make(map[string]sharedstorage.Plugin)
+		ss, err := or.getSharedStoragePlugins(ctx)
+		if err != nil {
+			return err
+		}
+
+		if err = or.initSharedStoragePlugins(ctx, ss); err != nil {
 			return err
 		}
 	}
 
-	if err = or.sharedstorage.Init(ctx, storageConfig.SubSection(or.sharedstorage.Name()), or); err != nil {
-		return err
+	// Check for deprecated shared storage config
+	if len(or.sharedstorage) == 0 {
+		ssType := deprecatedSharedStorageConfig.GetString(sharedstorage.SharedStorageConfigType)
+		plugin, err := ssfactory.GetPlugin(ctx, ssType)
+		if err != nil {
+			return err
+		}
+
+		if err = or.initDeprecatedSharedStoragePlugin(ctx, plugin); err != nil {
+			return err
+		}
 	}
 
 	if err = or.initDataExchange(ctx); err != nil {
@@ -514,6 +530,56 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+func (or *orchestrator) initSharedStoragePlugins(ctx context.Context, plugins []sharedstorage.Plugin) (err error) {
+	for idx, plugin := range plugins {
+		config := sharedstorageConfig.ArrayEntry(idx)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(sharedstorage.SharedStorageConfigType)), &or.bc)
+		if err != nil {
+			return err
+		}
+		name := config.GetString(sharedstorage.SharedStorageConfigName)
+		or.sharedstorage[name] = plugin
+	}
+
+	return err
+}
+
+func (or *orchestrator) initDeprecatedSharedStoragePlugin(ctx context.Context, plugin sharedstorage.Plugin) (err error) {
+	log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
+	err = plugin.Init(ctx, deprecatedSharedStorageConfig.SubSection(plugin.Name()), &or.bc)
+	if err != nil {
+		return err
+	}
+
+	or.sharedstorage["sharedstorage_0"] = plugin
+	return err
+}
+
+func (or *orchestrator) getSharedStoragePlugins(ctx context.Context) (plugins []sharedstorage.Plugin, err error) {
+	configSize := sharedstorageConfig.ArraySize()
+	plugins = make([]sharedstorage.Plugin, configSize)
+	for i := 0; i < configSize; i++ {
+		config := sharedstorageConfig.ArrayEntry(i)
+		name := config.GetString(sharedstorage.SharedStorageConfigName)
+		pluginType := config.GetString(sharedstorage.SharedStorageConfigType)
+		if name == "" || pluginType == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMissingSharedStorageConfig)
+		}
+
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			return nil, err
+		}
+
+		plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+		if err != nil {
+			return nil, err
+		}
+		plugins[i] = plugin
+	}
+
+	return plugins, err
 }
 
 func (or *orchestrator) getBlockchainPlugins(ctx context.Context) (plugins []blockchain.Plugin, err error) {
@@ -659,7 +725,7 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.databases["database_0"], or.sharedstorage, or.dataexchange)
+		or.data, err = data.NewDataManager(ctx, or.databases["database_0"], or.sharedstorage["sharedstorage_0"], or.dataexchange)
 		if err != nil {
 			return err
 		}
@@ -704,7 +770,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.databases["database_0"], or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.databases["database_0"], or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange, or.sharedstorage["sharedstorage_0"], or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -731,14 +797,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.sharedDownload == nil {
-		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.databases["database_0"], or.sharedstorage, or.dataexchange, or.operations, &or.bc)
+		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.databases["database_0"], or.sharedstorage["sharedstorage_0"], or.dataexchange, or.operations, &or.bc)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.databases["database_0"], or.blockchains["blockchain_0"], or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage["sharedstorage_0"], or.databases["database_0"], or.blockchains["blockchain_0"], or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}
