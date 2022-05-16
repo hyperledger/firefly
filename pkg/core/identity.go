@@ -20,12 +20,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/coremsgs"
 )
 
 // IdentityType is the type of an identity
@@ -171,20 +169,12 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 	if err = ValidateFFNameFieldNoUUID(ctx, i.Namespace, "namespace"); err != nil {
 		return err
 	}
-
-	options := NameValidationOptions{noUUID: true}
-	if i.Type == IdentityTypeCustom {
-		options.extraAllowedChars = "/"
-	}
-	if err = ValidateFFNameFieldOptions(ctx, i.Name, "name", options); err != nil {
+	if err = ValidateFFNameFieldNoUUID(ctx, i.Name, "name"); err != nil {
 		return err
 	}
 
 	var legacyDID string
 	if i.Type == IdentityTypeCustom {
-		if strings.HasPrefix(i.DID, FireFlyNodeDIDPrefix) || strings.HasPrefix(i.DID, FireFlyOrgDIDPrefix) {
-			return i18n.NewError(ctx, coremsgs.MsgReservedIdentityPrefix, i.Name)
-		}
 		legacyDID = fmt.Sprintf("%sns/%s/%s", FireFlyCustomDIDPrefix, i.Namespace, i.Name)
 	}
 	if requiredDID, err := i.GenerateDID(ctx); err != nil {

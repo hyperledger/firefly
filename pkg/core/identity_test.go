@@ -134,7 +134,7 @@ func TestIdentityValidationNodes(t *testing.T) {
 func TestIdentityValidationCustom(t *testing.T) {
 
 	ctx := context.Background()
-	c := testCustom("ns1", "person/custom1")
+	c := testCustom("ns1", "custom1")
 	assert.NoError(t, c.Validate(ctx))
 	c.DID = fmt.Sprintf("did:firefly:ns/%s/%s", c.Namespace, c.Name)
 	assert.NoError(t, c.Validate(ctx))
@@ -150,10 +150,6 @@ func TestIdentityValidationCustom(t *testing.T) {
 	c = testCustom("ns1", "custom1")
 	c.Namespace = LegacySystemNamespace
 	assert.Regexp(t, "FF00121", c.Validate(ctx))
-
-	c = testCustom("ns1", "org/custom")
-	c.DID = "did:firefly:org/custom"
-	assert.Regexp(t, "FF10386", c.Validate(ctx))
 
 }
 
