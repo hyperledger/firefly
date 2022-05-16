@@ -3,7 +3,7 @@ layout: default
 title: FFI
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 8
+nav_order: 3
 ---
 
 # FFI
@@ -24,9 +24,86 @@ nav_order: 8
 
 ```json
 {
-    "name": "",
-    "description": "",
-    "version": ""
+    "id": "c35d3449-4f24-4676-8e64-91c9e46f06c4",
+    "message": "e4ad2077-5714-416e-81f9-7964a6223b6f",
+    "namespace": "ns1",
+    "name": "SimpleStorage",
+    "description": "A simple example contract in Solidity",
+    "version": "v0.0.1",
+    "methods": [
+        {
+            "id": "8f3289dd-3a19-4a9f-aab3-cb05289b013c",
+            "interface": "c35d3449-4f24-4676-8e64-91c9e46f06c4",
+            "name": "get",
+            "namespace": "ns1",
+            "pathname": "get",
+            "description": "Get the current value",
+            "params": [],
+            "returns": [
+                {
+                    "name": "output",
+                    "schema": {
+                        "type": "integer",
+                        "details": {
+                            "type": "uint256"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "id": "fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b",
+            "interface": "c35d3449-4f24-4676-8e64-91c9e46f06c4",
+            "name": "set",
+            "namespace": "ns1",
+            "pathname": "set",
+            "description": "Set the value",
+            "params": [
+                {
+                    "name": "newValue",
+                    "schema": {
+                        "type": "integer",
+                        "details": {
+                            "type": "uint256"
+                        }
+                    }
+                }
+            ],
+            "returns": []
+        }
+    ],
+    "events": [
+        {
+            "id": "9f653f93-86f4-45bc-be75-d7f5888fbbc0",
+            "interface": "c35d3449-4f24-4676-8e64-91c9e46f06c4",
+            "namespace": "ns1",
+            "pathname": "Changed",
+            "signature": "Changed(address,uint256)",
+            "name": "Changed",
+            "description": "Emitted when the value changes",
+            "params": [
+                {
+                    "name": "_from",
+                    "schema": {
+                        "type": "string",
+                        "details": {
+                            "type": "address",
+                            "indexed": true
+                        }
+                    }
+                },
+                {
+                    "name": "_value",
+                    "schema": {
+                        "type": "integer",
+                        "details": {
+                            "type": "uint256"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
 }
 ```
 

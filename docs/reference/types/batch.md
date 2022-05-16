@@ -3,7 +3,7 @@ layout: default
 title: Batch
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 2
+nav_order: 8
 ---
 
 # Batch
@@ -29,7 +29,7 @@ nav_order: 2
     "namespace": "ns1",
     "node": "5802ab80-fa71-4f52-9189-fb534de93756",
     "group": "cd1fedb69fb83ad5c0c62f2f5d0b04c59d2e41740916e6815a8e063b337bd32e",
-    "created": "2022-05-20T02:17:56.617605Z",
+    "created": "2022-05-20T02:28:41.805808Z",
     "author": "did:firefly:org/example",
     "key": "0x0a989907dcd17272257f3ebcf72f4351df65a846",
     "hash": "78d6861f860c8724468c9254b99dc09e7d9fd2d43f26f7bd40ecc9ee47be384d",

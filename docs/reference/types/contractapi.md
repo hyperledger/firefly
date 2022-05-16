@@ -3,7 +3,7 @@ layout: default
 title: ContractAPI
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 7
+nav_order: 2
 ---
 
 # ContractAPI
@@ -24,11 +24,19 @@ nav_order: 7
 
 ```json
 {
-    "interface": null,
-    "name": "",
+    "id": "0f12317b-85a0-4a77-a722-857ea2b0a5fa",
+    "namespace": "ns1",
+    "interface": {
+        "id": "c35d3449-4f24-4676-8e64-91c9e46f06c4"
+    },
+    "location": {
+        "address": "0x95a6c4895c7806499ba35f75069198f45e88fc69"
+    },
+    "name": "my_contract_api",
+    "message": "b09d9f77-7b16-4760-a8d7-0e3c319b2a16",
     "urls": {
-        "openapi": "",
-        "ui": ""
+        "openapi": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json",
+        "ui": "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api"
     }
 }
 ```

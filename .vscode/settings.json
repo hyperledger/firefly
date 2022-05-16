@@ -11,6 +11,7 @@
     "ccache",
     "coremsgs",
     "dataexchange",
+    "datahash",
     "Debugf",
     "Deps",
     "devdocs",

@@ -51,28 +51,138 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 
 	types := []interface{}{
 
-		&core.Batch{
-			BatchHeader: core.BatchHeader{
-				ID:        fftypes.MustParseUUID("894bc0ea-0c2e-4ca4-bbca-b4c39a816bbb"),
-				Type:      core.BatchTypePrivate,
-				Namespace: "ns1",
-				Node:      fftypes.MustParseUUID("5802ab80-fa71-4f52-9189-fb534de93756"),
-				Group:     fftypes.HashString("examplegroup"),
-				Created:   fftypes.Now(),
-				SignerRef: core.SignerRef{
-					Author: "did:firefly:org/example",
-					Key:    "0x0a989907dcd17272257f3ebcf72f4351df65a846",
+		&core.ContractAPI{
+			ID:        fftypes.MustParseUUID("0f12317b-85a0-4a77-a722-857ea2b0a5fa"),
+			Name:      "my_contract_api",
+			Namespace: "ns1",
+			Interface: &core.FFIReference{
+				ID: fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+			},
+			Location: fftypes.JSONAnyPtr(`{
+				"address": "0x95a6c4895c7806499ba35f75069198f45e88fc69"
+			}`),
+			Message: fftypes.MustParseUUID("b09d9f77-7b16-4760-a8d7-0e3c319b2a16"),
+			URLs: core.ContractURLs{
+				OpenAPI: "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json",
+				UI:      "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api",
+			},
+		},
+
+		&core.FFI{
+			ID:          fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+			Namespace:   "ns1",
+			Name:        "SimpleStorage",
+			Description: "A simple example contract in Solidity",
+			Version:     "v0.0.1",
+			Message:     fftypes.MustParseUUID("e4ad2077-5714-416e-81f9-7964a6223b6f"),
+			Methods: []*core.FFIMethod{
+				{
+					ID:          fftypes.MustParseUUID("8f3289dd-3a19-4a9f-aab3-cb05289b013c"),
+					Interface:   fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+					Name:        "get",
+					Namespace:   "ns1",
+					Pathname:    "get",
+					Description: "Get the current value",
+					Params:      core.FFIParams{},
+					Returns: core.FFIParams{
+						{
+							Name: "output",
+							Schema: fftypes.JSONAnyPtr(`{
+								"type": "integer",
+								"details": {
+								  "type": "uint256"
+								}
+							}`),
+						},
+					},
+				},
+				{
+					ID:          fftypes.MustParseUUID("fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b"),
+					Interface:   fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+					Name:        "set",
+					Namespace:   "ns1",
+					Pathname:    "set",
+					Description: "Set the value",
+					Params: core.FFIParams{
+						{
+							Name: "newValue",
+							Schema: fftypes.JSONAnyPtr(`{
+								"type": "integer",
+								"details": {
+								  "type": "uint256"
+								}
+							}`),
+						},
+					},
+					Returns: core.FFIParams{},
 				},
 			},
-			Hash: fftypes.HashString("examplebatchhash"),
-			Payload: core.BatchPayload{
-				TX: core.TransactionRef{
-					Type: core.BatchTypePrivate,
-					ID:   fftypes.MustParseUUID("04930D84-0227-4044-9D6D-82C2952A0108"),
+			Events: []*core.FFIEvent{
+				{
+					ID:        fftypes.MustParseUUID("9f653f93-86f4-45bc-be75-d7f5888fbbc0"),
+					Interface: fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+					Namespace: "ns1",
+					Pathname:  "Changed",
+					Signature: "Changed(address,uint256)",
+					FFIEventDefinition: core.FFIEventDefinition{
+						Name:        "Changed",
+						Description: "Emitted when the value changes",
+						Params: core.FFIParams{
+							{
+								Name: "_from",
+								Schema: fftypes.JSONAnyPtr(`{
+									"type": "string",
+									"details": {
+									  "type": "address",
+									  "indexed": true
+									}
+								}`),
+							},
+							{
+								Name: "_value",
+								Schema: fftypes.JSONAnyPtr(`{
+									"type": "integer",
+									"details": {
+									  "type": "uint256"
+									}
+								}`),
+							},
+						},
+					},
 				},
-				Messages: []*core.Message{},
-				Data:     core.DataArray{},
 			},
+		},
+
+		&core.TokenPool{
+			ID:        fftypes.MustParseUUID("90ebefdf-4230-48a5-9d07-c59751545859"),
+			Type:      core.TokenTypeFungible,
+			Namespace: "ns1",
+			Name:      "my_token",
+			Standard:  "ERC-20",
+			Locator:   "address=0x056df1c53c3c00b0e13d37543f46930b42f71db0&schema=ERC20WithData&type=fungible",
+			Decimals:  18,
+			Connector: "erc20_erc721",
+			State:     core.TokenPoolStateConfirmed,
+			Message:   fftypes.MustParseUUID("43923040-b1e5-4164-aa20-47636c7177ee"),
+			Info: fftypes.JSONObject{
+				"address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",
+				"name":    "pool8197",
+				"schema":  "ERC20WithData",
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenPool,
+				ID:   fftypes.MustParseUUID("a23ffc87-81a2-4cbc-97d6-f53d320c36cd"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.TokenTransfer{
+			Message: fftypes.MustParseUUID("855af8e7-2b02-4e05-ad7d-9ae0d4c409ba"),
+			Pool:    fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
+			From:    "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
+			To:      "0x7b746b92869De61649d148823808653430682C0d",
+			Type:    core.TokenTransferTypeTransfer,
+			Created: fftypes.UnixTime(1652664195),
 		},
 
 		&core.Message{
@@ -124,41 +234,29 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			},
 		},
 
-		&core.TokenPool{
-			ID:        fftypes.MustParseUUID("90ebefdf-4230-48a5-9d07-c59751545859"),
-			Type:      core.TokenTypeFungible,
-			Namespace: "ns1",
-			Name:      "my_token",
-			Standard:  "ERC-20",
-			Locator:   "address=0x056df1c53c3c00b0e13d37543f46930b42f71db0&schema=ERC20WithData&type=fungible",
-			Decimals:  18,
-			Connector: "erc20_erc721",
-			State:     core.TokenPoolStateConfirmed,
-			Message:   fftypes.MustParseUUID("43923040-b1e5-4164-aa20-47636c7177ee"),
-			Info: fftypes.JSONObject{
-				"address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",
-				"name":    "pool8197",
-				"schema":  "ERC20WithData",
+		&core.Batch{
+			BatchHeader: core.BatchHeader{
+				ID:        fftypes.MustParseUUID("894bc0ea-0c2e-4ca4-bbca-b4c39a816bbb"),
+				Type:      core.BatchTypePrivate,
+				Namespace: "ns1",
+				Node:      fftypes.MustParseUUID("5802ab80-fa71-4f52-9189-fb534de93756"),
+				Group:     fftypes.HashString("examplegroup"),
+				Created:   fftypes.Now(),
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/example",
+					Key:    "0x0a989907dcd17272257f3ebcf72f4351df65a846",
+				},
 			},
-			TX: core.TransactionRef{
-				Type: core.TransactionTypeTokenPool,
-				ID:   fftypes.MustParseUUID("a23ffc87-81a2-4cbc-97d6-f53d320c36cd"),
+			Hash: fftypes.HashString("examplebatchhash"),
+			Payload: core.BatchPayload{
+				TX: core.TransactionRef{
+					Type: core.BatchTypePrivate,
+					ID:   fftypes.MustParseUUID("04930D84-0227-4044-9D6D-82C2952A0108"),
+				},
+				Messages: []*core.Message{},
+				Data:     core.DataArray{},
 			},
-			Created: fftypes.UnixTime(1652664195),
 		},
-
-		&core.TokenTransfer{
-			Message: fftypes.MustParseUUID("855af8e7-2b02-4e05-ad7d-9ae0d4c409ba"),
-			Pool:    fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
-			From:    "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
-			To:      "0x7b746b92869De61649d148823808653430682C0d",
-			Type:    core.TokenTransferTypeTransfer,
-			Created: fftypes.UnixTime(1652664195),
-		},
-
-		&core.ContractAPI{},
-
-		&core.FFI{},
 	}
 
 	simpleTypes := []interface{}{

@@ -3,7 +3,7 @@ layout: default
 title: Data
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 4
+nav_order: 7
 ---
 
 # Data
