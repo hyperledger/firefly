@@ -25,7 +25,16 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func InitConfig(config config.Section) {
+func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(database.DatabaseConfigName)
+	config.AddKnownKey(database.DatabaseConfigType)
+	for name, plugin := range pluginsByName {
+		plugin().InitConfig(config.SubSection(name))
+	}
+}
+
+func InitConfigDeprecated(config config.Section) {
+	config.AddKnownKey(database.DatabaseConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

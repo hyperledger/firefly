@@ -41,6 +41,7 @@ var (
 		},
 		Database: []*core.NodeStatusPlugin{
 			{
+				Name:       "postgres",
 				PluginType: "mock-di",
 			},
 		},

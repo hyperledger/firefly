@@ -92,6 +92,22 @@ var (
 
 	ConfigBlockchainFabricFabconnectProxyURL = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
+	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database Connectors.", i18n.StringType)
+	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database Connector.", i18n.StringType)
+	ConfigPluginDatabaseType = ffc("config.plugins.database[].type", "The type of the configured Database Connector.", i18n.StringType)
+
+	ConfigPluginDatabasePostgresMaxConnIdleTime = ffc("config.plugins.database[].postgres.maxConnIdleTime", "The maximum amount of time a database connection can be idle", i18n.TimeDurationType)
+	ConfigPluginDatabasePostgresMaxConnLifetime = ffc("config.plugins.database[].postgres.maxConnLifetime", "The maximum amount of time to keep a database connection open", i18n.TimeDurationType)
+	ConfigPluginDatabasePostgresMaxConns        = ffc("config.plugins.database[].postgres.maxConns", "Maximum connections to the database", i18n.IntType)
+	ConfigPluginDatabasePostgresMaxIdleConns    = ffc("config.plugins.database[].postgres.maxIdleConns", "The maximum number of idle connections to the database", i18n.IntType)
+	ConfigPluginDatabasePostgresURL             = ffc("config.plugins.database[].postgres.url", "The PostgreSQL connection string for the database", i18n.StringType)
+
+	ConfigPluginDatabaseSqlite3MaxConnIdleTime = ffc("config.plugins.database[].sqlite3.maxConnIdleTime", "The maximum amount of time a database connection can be idle", i18n.TimeDurationType)
+	ConfigPluginDatabaseSqlite3MaxConnLifetime = ffc("config.plugins.database[].sqlite3.maxConnLifetime", "The maximum amount of time to keep a database connection open", i18n.TimeDurationType)
+	ConfigPluginDatabaseSqlite3MaxConns        = ffc("config.plugins.database[].sqlite3.maxConns", "Maximum connections to the database", i18n.IntType)
+	ConfigPluginDatabaseSqlite3MaxIdleConns    = ffc("config.plugins.database[].sqlite3.maxIdleConns", "The maximum number of idle connections to the database", i18n.IntType)
+	ConfigPluginDatabaseSqlite3URL             = ffc("config.plugins.database[].sqlite3.url", "The SQLite connection string for the database", i18n.StringType)
+
 	ConfigPluginBlockchain     = ffc("config.plugins.blockchain", "The list of configured Blockchain Connectors.", i18n.StringType)
 	ConfigPluginBlockchainName = ffc("config.plugins.blockchain[].name", "The name of the Blockchain Connector.", i18n.StringType)
 	ConfigPluginBlockchainType = ffc("config.plugins.blockchain[].type", "The type of the Blockchain Connector plugin to use", i18n.StringType)

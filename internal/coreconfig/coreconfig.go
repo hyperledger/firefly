@@ -108,8 +108,6 @@ var (
 	// DataexchangeType is the name of the data exchange plugin being used by this firefly node
 	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
-	DatabaseType = ffc("database.type")
-	// HistogramsMaxChartRows the maximum rows to fetch for each histogram bucket
 	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = ffc("tokens")
@@ -117,6 +115,8 @@ var (
 	PluginsTokensList = ffc("plugins.tokens")
 	// PluginsBlockchainList is the key containing a list of configured blockchain plugins
 	PluginsBlockchainList = ffc("plugins.blockchain")
+	// PluginsDatabaseList is the key containing a list of configured database plugins
+	PluginsDatabaseList = ffc("plugins.database")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions

@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
@@ -52,6 +53,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -118,7 +120,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mae: &admineventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 	}
-	tor.orchestrator.database = tor.mdi
+	tor.orchestrator.databases = map[string]database.Plugin{"postgres": tor.mdi}
 	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
@@ -159,39 +161,125 @@ func TestNewOrchestrator(t *testing.T) {
 	assert.NotNil(t, or)
 }
 
-func TestBadDatabasePlugin(t *testing.T) {
+func TestBadDeprecatedDatabasePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.DatabaseType, "wrong")
-	or.database = nil
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	deprecatedDatabaseConfig.Set(database.DatabaseConfigType, "wrong")
+	or.databases = nil
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10122.*wrong", err)
 }
 
-func TestBadDatabaseInitFail(t *testing.T) {
+func TestBadDeprecatedDatabaseInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.DatabaseType, "wrong")
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	deprecatedDatabaseConfig.AddKnownKey(database.DatabaseConfigType, "test")
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
+	ctx := context.Background()
+	err := or.initDeprecatedDatabasePlugin(ctx, or.mdi)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBadDatabasePreInitMode(t *testing.T) {
+func TestDatabaseGetPlugins(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.AdminPreinit, true)
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(database.DatabaseConfigName, "flapflip")
+	databaseConfig.AddKnownKey(database.DatabaseConfigType, "postgres")
+	ctx := context.Background()
+	plugins, err := or.getDatabasePlugins(ctx)
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDatabaseUnknownPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(database.DatabaseConfigName, "flapflip")
+	databaseConfig.AddKnownKey(database.DatabaseConfigType, "unknown")
+	ctx := context.Background()
+	plugins, err := or.getDatabasePlugins(ctx)
+	assert.Nil(t, plugins)
+	assert.Error(t, err)
+}
+
+func TestDatabaseGetPluginsNoName(t *testing.T) {
+	or := newTestOrchestrator()
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(database.DatabaseConfigType, "postgres")
+	ctx := context.Background()
+	plugins, err := or.getDatabasePlugins(ctx)
+	assert.Nil(t, plugins)
+	assert.Error(t, err)
+}
+
+func TestDatabaseGetPluginsBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	or.databases = nil
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(database.DatabaseConfigName, "wrong////")
+	databaseConfig.AddKnownKey(database.DatabaseConfigType, "postgres")
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Error(t, err)
+}
+
+func TestDeprecatedDatabaseInitPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	deprecatedDatabaseConfig.AddKnownKey(database.DatabaseConfigType, "postgres")
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
+	ctx := context.Background()
+	err := or.initDeprecatedDatabasePlugin(ctx, or.mdi)
 	assert.NoError(t, err)
-	err = or.Start()
+}
+
+func TestDatabaseInitPlugins(t *testing.T) {
+	or := newTestOrchestrator()
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(database.DatabaseConfigName, "flapflip")
+	databaseConfig.AddKnownKey(database.DatabaseConfigType, "postgres")
+	plugins := make([]database.Plugin, 1)
+	mdp := &databasemocks.Plugin{}
+	mdp.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	plugins[0] = mdp
+	ctx := context.Background()
+	err := or.initDatabasePlugins(ctx, plugins)
 	assert.NoError(t, err)
+}
+
+func TestDatabaseInitPluginFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.databases = nil
+	difactory.InitConfig(databaseConfig)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(database.DatabaseConfigName, "flapflip")
+	databaseConfig.AddKnownKey(database.DatabaseConfigType, "sqlite3")
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestDeprecatedDatabaseInitPluginFail(t *testing.T) {
+	or := newTestOrchestrator()
+	or.databases = nil
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	deprecatedDatabaseConfig.AddKnownKey(database.DatabaseConfigType, "sqlite3")
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.Regexp(t, "FF10138.*url", err)
 }
 
 func TestBadIdentityPlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	config.Set(coreconfig.IdentityType, "wrong")
 	or.identityPlugin = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -203,7 +291,6 @@ func TestBadIdentityPlugin(t *testing.T) {
 func TestBadIdentityInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchains = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -215,7 +302,6 @@ func TestBadDeprecatedBlockchainPlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	deprecatedBlockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "wrong")
 	or.blockchains = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -228,7 +314,6 @@ func TestDeprecatedBlockchainInitFail(t *testing.T) {
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
 	deprecatedBlockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
 	or.blockchains = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -242,7 +327,6 @@ func TestBlockchainGetPlugins(t *testing.T) {
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigName, "flapflip")
 	blockchainConfig.AddKnownKey(blockchain.BlockchainConfigType, "ethereum")
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx := context.Background()
@@ -339,36 +423,6 @@ func TestBlockchainInitPluginsFail(t *testing.T) {
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
-func TestDeprecatedBlockchainInitGetConfigRecordsFail(t *testing.T) {
-	or := newTestOrchestrator()
-	or.blockchains = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestDeprecatedBlockchainInitMergeConfigRecordsFail(t *testing.T) {
-	or := newTestOrchestrator()
-	or.blockchains = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{
-		{
-			Key:   "pizza.toppings",
-			Value: fftypes.JSONAnyPtr("cheese, pepperoni, mushrooms"),
-		},
-	}, nil, nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "invalid character 'c' looking for beginning of value")
-}
-
 func TestBadSharedStoragePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(coreconfig.SharedStorageType, "wrong")
@@ -386,7 +440,6 @@ func TestBadSharedStoragePluginOldConfig(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(coreconfig.PublicStorageType, "wrong")
 	or.sharedstorage = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -397,7 +450,6 @@ func TestBadSharedStoragePluginOldConfig(t *testing.T) {
 
 func TestBadSharedStorageInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -411,7 +463,6 @@ func TestBadDataExchangePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	config.Set(coreconfig.DataexchangeType, "wrong")
 	or.dataexchange = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -424,8 +475,8 @@ func TestBadDataExchangePlugin(t *testing.T) {
 func TestBadDataExchangeInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	dxfactory.InitConfig(dataexchangeConfig)
+	or.databases["database_0"] = or.mdi
 	viper.Set("dataexchange.ffdx.url", "https://test")
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -442,7 +493,7 @@ func TestDataExchangePluginOldName(t *testing.T) {
 	dxfactory.InitConfig(dataexchangeConfig)
 	viper.Set("dataexchange.https.url", "https://test")
 	or.dataexchange = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.databases["database_0"] = or.mdi
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -460,6 +511,7 @@ func TestTokensMissingName(t *testing.T) {
 	tifactory.InitConfig(tokensConfig)
 	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -482,6 +534,7 @@ func TestTokensBadName(t *testing.T) {
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "/////////////")
 	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -504,6 +557,7 @@ func TestBadTokensPlugin(t *testing.T) {
 	tokensConfig.AddKnownKey(tokens.TokensConfigName, "erc20_erc721")
 	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -527,6 +581,7 @@ func TestGoodTokensPlugin(t *testing.T) {
 	tokensConfig.AddKnownKey(tokens.TokensConfigType, "fftokens")
 	tokensConfig.AddKnownKey("fftokens.url", "test")
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -549,6 +604,7 @@ func TestBadDeprecatedTokensPlugin(t *testing.T) {
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -571,6 +627,7 @@ func TestBadDeprecatedTokensPluginNoConnector(t *testing.T) {
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector)
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
 	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -594,6 +651,7 @@ func TestBadDeprecatedTokensPluginNoName(t *testing.T) {
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName)
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -616,6 +674,7 @@ func TestBadDeprecatedTokensPluginInvalidName(t *testing.T) {
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "!wrong")
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "text")
 	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -638,6 +697,7 @@ func TestBadDeprecatedTokensPluginNoType(t *testing.T) {
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector)
 	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -663,6 +723,7 @@ func TestGoodDeprecatedTokensPlugin(t *testing.T) {
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
 	deprecatedTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
 	config.Set("tokens", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.tokens = nil
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -681,7 +742,7 @@ func TestGoodDeprecatedTokensPlugin(t *testing.T) {
 
 func TestInitMessagingComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.messaging = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -689,7 +750,7 @@ func TestInitMessagingComponentFail(t *testing.T) {
 
 func TestInitEventsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.events = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -697,7 +758,7 @@ func TestInitEventsComponentFail(t *testing.T) {
 
 func TestInitNetworkMapComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.networkmap = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -705,7 +766,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 
 func TestInitOperationComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -713,7 +774,7 @@ func TestInitOperationComponentFail(t *testing.T) {
 
 func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.sharedDownload = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -728,7 +789,7 @@ func TestInitAdminEventsInit(t *testing.T) {
 
 func TestInitBatchComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.batch = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -736,7 +797,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 
 func TestInitBroadcastComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.broadcast = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -744,25 +805,15 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 
 func TestInitDataComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.data = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitMetricsComponent(t *testing.T) {
-	or := newTestOrchestrator()
-	or.metrics = nil
-	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.initPlugins(context.Background())
-}
-
 func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.identity = nil
 	or.txHelper = nil
 	err := or.initComponents(context.Background())
@@ -771,7 +822,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 
 func TestInitAssetsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.assets = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -779,7 +830,7 @@ func TestInitAssetsComponentFail(t *testing.T) {
 
 func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.contracts = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -787,7 +838,7 @@ func TestInitContractsComponentFail(t *testing.T) {
 
 func TestInitDefinitionsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.definitions = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -795,7 +846,7 @@ func TestInitDefinitionsComponentFail(t *testing.T) {
 
 func TestInitBatchPinComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.batchpin = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -803,7 +854,7 @@ func TestInitBatchPinComponentFail(t *testing.T) {
 
 func TestInitOperationsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
-	or.database = nil
+	or.databases = nil
 	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -884,6 +935,7 @@ func TestInitNamespacesBadName(t *testing.T) {
 
 func TestInitNamespacesGetFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := or.initNamespaces(context.Background())
 	assert.Regexp(t, "pop", err)
@@ -891,6 +943,7 @@ func TestInitNamespacesGetFail(t *testing.T) {
 
 func TestInitNamespacesUpsertFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
 	err := or.initNamespaces(context.Background())
@@ -899,6 +952,7 @@ func TestInitNamespacesUpsertFail(t *testing.T) {
 
 func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&core.Namespace{
 		Type: core.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
 	}, nil)
@@ -908,6 +962,7 @@ func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 
 func TestInitNamespacesDefaultMissing(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{})
 	err := or.initNamespaces(context.Background())
 	assert.Regexp(t, "FF10166", err)
@@ -929,6 +984,7 @@ func TestInitNamespacesDupName(t *testing.T) {
 
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -947,7 +1003,6 @@ func TestInitOK(t *testing.T) {
 	err = or.Init(ctx, cancelCtx)
 	assert.NoError(t, err)
 
-	assert.False(t, or.IsPreInit())
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
 	assert.Equal(t, or.mem, or.Events())
@@ -961,8 +1016,43 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mae, or.AdminEvents())
 }
 
+func TestInitOKWithMetrics(t *testing.T) {
+	or := newTestOrchestrator()
+	or.metrics = nil
+	or.databases["database_0"] = or.mdi
+	or.mdi.On("GetConfigRecords", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.ConfigRecord{}, nil, nil)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdx.On("InitConfig", mock.Anything).Return()
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mmi.On("Init").Return(nil)
+	err := config.ReadConfig("core", configDir+"/firefly.core.yaml")
+	assert.NoError(t, err)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = or.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, or.mbm, or.Broadcast())
+	assert.Equal(t, or.mpm, or.PrivateMessaging())
+	assert.Equal(t, or.mem, or.Events())
+	assert.Equal(t, or.mba, or.BatchManager())
+	assert.Equal(t, or.mnm, or.NetworkMap())
+	assert.Equal(t, or.mdm, or.Data())
+	assert.Equal(t, or.mam, or.Assets())
+	assert.Equal(t, or.mcm, or.Contracts())
+	assert.Equal(t, or.mom, or.Operations())
+	assert.Equal(t, or.mae, or.AdminEvents())
+}
+
 func TestInitDataExchangeGetNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
@@ -972,6 +1062,7 @@ func TestInitDataExchangeGetNodesFail(t *testing.T) {
 
 func TestInitDataExchangeWithNodes(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("InitConfig", mock.Anything).Return()

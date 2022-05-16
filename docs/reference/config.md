@@ -670,6 +670,7 @@ nav_order: 3
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |blockchain|The list of configured Blockchain Connectors.|`string`|`<nil>`
+|database|The list of configured Database Connectors.|`string`|`<nil>`
 |tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
 
 ## plugins.blockchain[]
@@ -865,6 +866,47 @@ nav_order: 3
 |path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## plugins.database[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the Database Connector.|`string`|`<nil>`
+|type|The type of the configured Database Connector.|`string`|`<nil>`
+
+## plugins.database[].postgres
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|maxConnIdleTime|The maximum amount of time a database connection can be idle|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+|maxConnLifetime|The maximum amount of time to keep a database connection open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxConns|Maximum connections to the database|`int`|`50`
+|maxIdleConns|The maximum number of idle connections to the database|`int`|`<nil>`
+|url|The PostgreSQL connection string for the database|`string`|`<nil>`
+
+## plugins.database[].postgres.migrations
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|auto|Enables automatic database migrations|`boolean`|`false`
+|directory|The directory containing the numerically ordered migration DDL files to apply to the database|`string`|`./db/migrations/postgres`
+
+## plugins.database[].sqlite3
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|maxConnIdleTime|The maximum amount of time a database connection can be idle|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+|maxConnLifetime|The maximum amount of time to keep a database connection open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxConns|Maximum connections to the database|`int`|`1`
+|maxIdleConns|The maximum number of idle connections to the database|`int`|`<nil>`
+|url|The SQLite connection string for the database|`string`|`<nil>`
+
+## plugins.database[].sqlite3.migrations
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|auto|Enables automatic database migrations|`boolean`|`false`
+|directory|The directory containing the numerically ordered migration DDL files to apply to the database|`string`|`./db/migrations/sqlite`
 
 ## plugins.tokens[]
 

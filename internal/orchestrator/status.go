@@ -46,13 +46,17 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		})
 	}
 
+	databasesArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.databases {
+		databasesArray = append(databasesArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
 	return core.NodeStatusPlugins{
 		Blockchain: blockchainsArray,
-		Database: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.database.Name(),
-			},
-		},
+		Database:   databasesArray,
 		DataExchange: []*core.NodeStatusPlugin{
 			{
 				PluginType: or.dataexchange.Name(),

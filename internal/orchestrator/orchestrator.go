@@ -72,16 +72,16 @@ var (
 	blockchainConfig = config.RootArray("plugins.blockchain")
 	tokensConfig     = config.RootArray("plugins.tokens")
 	namespaceConfig  = config.RootSection("namespaces")
-
+	databaseConfig   = config.RootArray("plugins.database")
 	// Deprecated configs
+	deprecatedTokensConfig     = config.RootArray("tokens")
 	deprecatedBlockchainConfig = config.RootSection("blockchain")
-	databaseConfig             = config.RootSection("database")
+	deprecatedDatabaseConfig   = config.RootSection("database")
 	identityConfig             = config.RootSection("identity")
 	sharedstorageConfig        = config.RootSection("sharedstorage")
 	// For backward compatibility with the old "publicstorage" prefix
-	publicstorageConfig    = config.RootSection("publicstorage")
-	dataexchangeConfig     = config.RootSection("dataexchange")
-	deprecatedTokensConfig = config.RootArray("tokens")
+	publicstorageConfig = config.RootSection("publicstorage")
+	dataexchangeConfig  = config.RootSection("dataexchange")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -100,7 +100,6 @@ type Orchestrator interface {
 	NetworkMap() networkmap.Manager
 	Operations() operations.Manager
 	PrivateMessaging() privatemessaging.Manager
-	IsPreInit() bool
 
 	// Status
 	GetStatus(ctx context.Context) (*core.NodeStatus, error)
@@ -150,14 +149,6 @@ type Orchestrator interface {
 	// Charts
 	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
 
-	// Config Management
-	GetConfig(ctx context.Context) fftypes.JSONObject
-	GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error)
-	GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error)
-	PutConfigRecord(ctx context.Context, key string, configRecord *fftypes.JSONAny) (outputValue *fftypes.JSONAny, err error)
-	DeleteConfigRecord(ctx context.Context, key string) (err error)
-	ResetConfig(ctx context.Context)
-
 	// Message Routing
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 }
@@ -166,7 +157,7 @@ type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
 	started        bool
-	database       database.Plugin
+	databases      map[string]database.Plugin
 	blockchains    map[string]blockchain.Plugin
 	identity       identity.Manager
 	identityPlugin idplugin.Plugin
@@ -184,7 +175,6 @@ type orchestrator struct {
 	assets         assets.Manager
 	tokens         map[string]tokens.Plugin
 	bc             boundCallbacks
-	preInitMode    bool
 	contracts      contracts.Manager
 	node           *fftypes.UUID
 	metrics        metrics.Manager
@@ -201,7 +191,7 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	// Initialize the config on all the factories
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
 	bifactory.InitConfig(blockchainConfig)
-	difactory.InitConfig(databaseConfig)
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
 	difactory.InitConfig(databaseConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
 	// For backward compatibility also init with the old "publicstorage" prefix
@@ -230,9 +220,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.ctx = ctx
 	or.cancelCtx = cancelCtx
 	err = or.initPlugins(ctx)
-	if or.preInitMode {
-		return nil
-	}
 	if err == nil {
 		err = or.initComponents(ctx)
 	}
@@ -249,11 +236,6 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 }
 
 func (or *orchestrator) Start() (err error) {
-	if or.preInitMode {
-		log.L(or.ctx).Infof("Orchestrator in pre-init mode, waiting for initialization")
-		return nil
-	}
-
 	if err == nil {
 		err = or.batch.Start()
 	}
@@ -324,10 +306,6 @@ func (or *orchestrator) WaitStop() {
 	or.started = false
 }
 
-func (or *orchestrator) IsPreInit() bool {
-	return or.preInitMode
-}
-
 func (or *orchestrator) Broadcast() broadcast.Manager {
 	return or.broadcast
 }
@@ -372,28 +350,42 @@ func (or *orchestrator) AdminEvents() adminevents.Manager {
 	return or.adminEvents
 }
 
-func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error) {
-	if or.database == nil {
-		diType := config.GetString(coreconfig.DatabaseType)
-		if or.database, err = difactory.GetPlugin(ctx, diType); err != nil {
-			return err
+func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []database.Plugin, err error) {
+	dbConfigArraySize := databaseConfig.ArraySize()
+	plugins = make([]database.Plugin, dbConfigArraySize)
+	for i := 0; i < dbConfigArraySize; i++ {
+		config := databaseConfig.ArrayEntry(i)
+		name := config.GetString(database.DatabaseConfigName)
+		diType := config.GetString(database.DatabaseConfigType)
+		if name == "" || diType == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMissingDatabaseConfig)
 		}
-	}
-	if err = or.database.Init(ctx, databaseConfig.SubSection(or.database.Name()), or); err != nil {
-		return err
+
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			return nil, err
+		}
+		plugin, err := difactory.GetPlugin(ctx, diType)
+		if err != nil {
+			return nil, err
+		}
+		plugins[i] = plugin
 	}
 
-	// Read configuration from DB and merge with existing config
-	var configRecords []*fftypes.ConfigRecord
-	filter := database.ConfigRecordQueryFactory.NewFilter(ctx).And()
-	if configRecords, _, err = or.GetConfigRecords(ctx, filter); err != nil {
-		return err
+	return plugins, err
+}
+
+func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []database.Plugin) (err error) {
+	for idx, plugin := range plugins {
+		config := databaseConfig.ArrayEntry(idx)
+		err = plugin.Init(ctx, config.SubSection("sqlite3"), or)
+		if err != nil {
+			return err
+		}
+		name := config.GetString(database.DatabaseConfigName)
+		or.databases[name] = plugin
 	}
-	if len(configRecords) == 0 && config.GetBool(coreconfig.AdminPreinit) {
-		or.preInitMode = true
-		return nil
-	}
-	return config.MergeConfig(configRecords)
+
+	return err
 }
 
 func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
@@ -406,7 +398,7 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	}
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
-	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
+	nodes, _, err := or.databases["database_0"].GetIdentities(ctx, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
 		fb.Eq("namespace", core.SystemNamespace),
 	))
@@ -437,15 +429,34 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
-
 	if or.metrics == nil {
 		or.metrics = metrics.NewMetricsManager(ctx)
 	}
 
-	if err = or.initDatabaseCheckPreinit(ctx); err != nil {
-		return err
-	} else if or.preInitMode {
-		return nil
+	if or.databases == nil {
+		var dp []database.Plugin
+		or.databases = make(map[string]database.Plugin)
+		dp, err = or.getDatabasePlugins(ctx)
+		if err != nil {
+			return err
+		}
+		err = or.initDatabasePlugins(ctx, dp)
+		if err != nil {
+			return err
+		}
+	}
+
+	// check for deprecated db config
+	if len(or.databases) == 0 {
+		diType := deprecatedDatabaseConfig.GetString(database.DatabaseConfigType)
+		plugin, err := difactory.GetPlugin(ctx, diType)
+		if err != nil {
+			return err
+		}
+		err = or.initDeprecatedDatabasePlugin(ctx, plugin)
+		if err != nil {
+			return err
+		}
 	}
 
 	if or.identityPlugin == nil {
@@ -471,6 +482,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
+	// Check for deprecated blockchain config
 	if len(or.blockchains) == 0 {
 		biType := deprecatedBlockchainConfig.GetString(blockchain.BlockchainConfigType)
 		plugin, err := bifactory.GetPlugin(ctx, biType)
@@ -547,6 +559,18 @@ func (or *orchestrator) initDeprecatedBlockchainPlugin(ctx context.Context, plug
 
 	deprecatedPluginName := "blockchain_0"
 	or.blockchains[deprecatedPluginName] = plugin
+	return err
+}
+
+func (or *orchestrator) initDeprecatedDatabasePlugin(ctx context.Context, plugin database.Plugin) (err error) {
+	log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
+	err = plugin.Init(ctx, deprecatedDatabaseConfig.SubSection(plugin.Name()), or)
+	if err != nil {
+		return err
+	}
+
+	deprecatedPluginName := "database_0"
+	or.databases[deprecatedPluginName] = plugin
 	return err
 }
 
@@ -644,86 +668,86 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database, or.sharedstorage, or.dataexchange)
+		or.data, err = data.NewDataManager(ctx, or.databases["database_0"], or.sharedstorage, or.dataexchange)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.txHelper == nil {
-		or.txHelper = txcommon.NewTransactionHelper(or.database, or.data)
+		or.txHelper = txcommon.NewTransactionHelper(or.databases["database_0"], or.data)
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugin, or.blockchains["blockchain_0"], or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.databases["database_0"], or.identityPlugin, or.blockchains["blockchain_0"], or.data)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data, or.txHelper)
+		or.batch, err = batch.NewBatchManager(ctx, or, or.databases["database_0"], or.data, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.operations == nil {
-		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.txHelper); err != nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.databases["database_0"], or.txHelper); err != nil {
 			return err
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.databases["database_0"], or.data)
 
 	if or.batchpin == nil {
-		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database, or.identity, or.blockchains["blockchain_0"], or.metrics, or.operations); err != nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.databases["database_0"], or.identity, or.blockchains["blockchain_0"], or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchains["blockchain_0"], or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.databases["database_0"], or.identity, or.dataexchange, or.blockchains["blockchain_0"], or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.databases["database_0"], or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.databases["database_0"], or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchains["blockchain_0"], or.operations, or.txHelper, or.syncasync)
+		or.contracts, err = contracts.NewContractManager(ctx, or.databases["database_0"], or.broadcast, or.identity, or.blockchains["blockchain_0"], or.operations, or.txHelper, or.syncasync)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database, or.blockchains["blockchain_0"], or.dataexchange, or.data, or.identity, or.assets, or.contracts)
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.databases["database_0"], or.blockchains["blockchain_0"], or.dataexchange, or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.sharedDownload == nil {
-		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database, or.sharedstorage, or.dataexchange, or.operations, &or.bc)
+		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.databases["database_0"], or.sharedstorage, or.dataexchange, or.operations, &or.bc)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.database, or.blockchains["blockchain_0"], or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or, or.sharedstorage, or.databases["database_0"], or.blockchains["blockchain_0"], or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}
@@ -734,7 +758,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.databases["database_0"], or.broadcast, or.dataexchange, or.identity, or.syncasync)
 		if err != nil {
 			return err
 		}
@@ -791,7 +815,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 		return err
 	}
 	for _, newNS := range predefined {
-		ns, err := or.database.GetNamespace(ctx, newNS.Name)
+		ns, err := or.databases["database_0"].GetNamespace(ctx, newNS.Name)
 		if err != nil {
 			return err
 		}
@@ -805,7 +829,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) error {
 			updated = ns.Description != newNS.Description && ns.Type == core.NamespaceTypeLocal
 		}
 		if updated {
-			if err := or.database.UpsertNamespace(ctx, newNS, true); err != nil {
+			if err := or.databases["database_0"].UpsertNamespace(ctx, newNS, true); err != nil {
 				return err
 			}
 		}

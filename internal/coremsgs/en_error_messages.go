@@ -231,4 +231,5 @@ var (
 	MsgInvalidOutputOption          = ffe("FF10385", "invalid output option '%s'")
 	MsgMissingTokensConfig          = ffe("FF10386", "Invalid tokens configuration - name and type are required", 400)
 	MsgMissingBlockchainConfig      = ffe("FF10387", "Invalid blockchain configuration - name and type are required", 400)
+	MsgMissingDatabaseConfig        = ffe("FF10388", "Invalid database configuration - name and type are required", 400)
 )

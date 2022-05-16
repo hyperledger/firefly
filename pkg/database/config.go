@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,25 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apiserver
+package database
 
-import (
-	"bytes"
-	"net/http/httptest"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+const (
+	// DatabaseConfigType is the type of database used for this plugin
+	DatabaseConfigType = "type"
+	// DatabaseConfigName is the name of this plugin
+	DatabaseConfigName = "name"
 )
-
-func TestAdminPostResetConfig(t *testing.T) {
-	o, r := newTestAdminServer()
-	req := httptest.NewRequest("POST", "/admin/api/v1/config/reset", bytes.NewReader([]byte(`{}`)))
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	res := httptest.NewRecorder()
-
-	o.On("ResetConfig", mock.Anything).Return()
-	r.ServeHTTP(res, req)
-
-	assert.Equal(t, 204, res.Result().StatusCode)
-}
