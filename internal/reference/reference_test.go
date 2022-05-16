@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -50,13 +51,18 @@ func TestCheckGeneratedMarkdownPages(t *testing.T) {
 }
 
 func TestGenerateMarkdownPagesNonPointer(t *testing.T) {
-	markdownMap, err := generateMarkdownPages(context.Background(), []interface{}{"foo"}, []interface{}{}, "")
+	_, _, err := generateObjectReferenceMarkdown(context.Background(), false, "foo", reflect.TypeOf("foo"), []string{}, []string{}, []string{}, "outputPath")
 	assert.NoError(t, err)
-	assert.NotNil(t, markdownMap)
 }
 
 func TestGenerateMarkdownPagesBadJSON(t *testing.T) {
-	badJSON := map[bool]bool{true: false}
-	_, err := generateMarkdownPages(context.Background(), []interface{}{badJSON}, []interface{}{}, "")
-	assert.Error(t, err)
+	type badJSON map[bool]bool
+	_, err := generateMarkdownPages(context.Background(), []interface{}{badJSON{true: false}}, []interface{}{}, "../../test")
+	assert.Regexp(t, "badJSON", err)
+}
+
+func TestGenerateMarkdownDescriptionMissing(t *testing.T) {
+	type thingy struct{}
+	_, err := generateMarkdownPages(context.Background(), []interface{}{thingy{}}, []interface{}{}, "")
+	assert.Regexp(t, "FF10386.*thingy_description.md", err)
 }

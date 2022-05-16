@@ -233,4 +233,5 @@ var (
 	MsgContractListenerExists       = ffe("FF10383", "A contract listener already exists for this combination of topic + location + event", 409)
 	MsgRouteDescriptionMissing      = ffe("FF10384", "API route description missing for route '%s'")
 	MsgInvalidOutputOption          = ffe("FF10385", "invalid output option '%s'")
+	MsgReferenceMarkdownMissing     = ffe("FF10386", "Reference markdown file missing: '%s'")
 )

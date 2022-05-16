@@ -28,7 +28,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	_ "github.com/hyperledger/firefly/internal/coremsgs" // required to pull in translations of struct fields
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -333,7 +333,7 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 	_, err := os.Stat(filename)
 	if err != nil {
 		if descRequired {
-			panic(fmt.Sprintf("Missing file: %s", filename))
+			return nil, nil, i18n.NewError(ctx, coremsgs.MsgReferenceMarkdownMissing, filename)
 		}
 	} else {
 		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
