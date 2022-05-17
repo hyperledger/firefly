@@ -55,9 +55,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -132,7 +132,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.identity = tor.mim
 	tor.orchestrator.identityPlugin = tor.mii
-	tor.orchestrator.dataexchange = tor.mdx
+	tor.orchestrator.dataexchange = map[string]dataexchange.Plugin{"ffdx": tor.mdx}
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
@@ -522,7 +522,11 @@ func TestBadDeprecatedSharedStoragePlugin(t *testing.T) {
 
 func TestBadDataExchangePlugin(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.DataexchangeType, "wrong")
+	dxfactory.InitConfig(dataexchangeConfig)
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigName, "flapflip")
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "wrong//")
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
 	or.dataexchange = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -533,38 +537,93 @@ func TestBadDataExchangePlugin(t *testing.T) {
 	assert.Regexp(t, "FF10213.*wrong", err)
 }
 
+func TestDataExchangePluginBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	dxfactory.InitConfig(dataexchangeConfig)
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigName, "wrong//")
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
+	or.dataexchange = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF00140.*name", err)
+}
+
+func TestDataExchangePluginMissingName(t *testing.T) {
+	or := newTestOrchestrator()
+	dxfactory.InitConfig(dataexchangeConfig)
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
+	or.databases["database_0"] = or.mdi
+	or.dataexchange = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10390.*name", err)
+}
+
 func TestBadDataExchangeInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	dxfactory.InitConfig(dataexchangeConfig)
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigName, "flapflip")
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
-	viper.Set("dataexchange.ffdx.url", "https://test")
+	or.dataexchange = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "FF10138.*url", err)
 }
 
-func TestDataExchangePluginOldName(t *testing.T) {
+func TestDeprecatedBadDataExchangeInitFail(t *testing.T) {
 	or := newTestOrchestrator()
-	dxfactory.InitConfig(dataexchangeConfig)
-	viper.Set("dataexchange.https.url", "https://test")
-	or.dataexchange = nil
+	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
+	deprecatedDataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
 	or.databases["database_0"] = or.mdi
+	or.dataexchange = nil
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdx.On("InitConfig", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
+	assert.Regexp(t, "FF10138.*url", err)
+}
+
+func TestDeprecatedBadDataExchangePlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
+	deprecatedDataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "wrong//")
+	or.databases["database_0"] = or.mdi
+	or.dataexchange = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10213.*wrong", err)
 }
 
 func TestTokensMissingName(t *testing.T) {
@@ -1112,6 +1171,11 @@ func TestInitDataExchangeGetNodesFail(t *testing.T) {
 func TestInitDataExchangeWithNodes(t *testing.T) {
 	or := newTestOrchestrator()
 	or.databases["database_0"] = or.mdi
+	dxfactory.InitConfig(dataexchangeConfig)
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigName, "flapflip")
+	dataexchangeConfig.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	dataexchangeConfig.AddKnownKey("ffdx.url", "https://test")
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
 
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("InitConfig", mock.Anything).Return()

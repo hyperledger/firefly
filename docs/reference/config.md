@@ -368,7 +368,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|type|The Data Exchange plugin to use|`string`|`<nil>`
+|type|The Data Exchange plugin to use|`string`|`ffdx`
 
 ## dataexchange.ffdx
 
@@ -671,6 +671,7 @@ nav_order: 3
 |---|-----------|----|-------------|
 |blockchain|The list of configured Blockchain Connectors.|`string`|`<nil>`
 |database|The list of configured Database Connectors.|`string`|`<nil>`
+|dataexchange|The array of configured Data Exchange plugins |`string`|`<nil>`
 |sharedstorage|The list of configured Shared Storage plugins|`string`|`<nil>`
 |tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
 
@@ -908,6 +909,60 @@ nav_order: 3
 |---|-----------|----|-------------|
 |auto|Enables automatic database migrations|`boolean`|`false`
 |directory|The directory containing the numerically ordered migration DDL files to apply to the database|`string`|`./db/migrations/sqlite`
+
+## plugins.dataexchange[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the configured Data Exchange plugin|`string`|`<nil>`
+|type|The Data Exchange plugin to use|`string`|`<nil>`
+
+## plugins.dataexchange[].ffdx
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|initEnabled|Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector|`boolean`|`false`
+|manifestEnabled|Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector|`string`|`false`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the Data Exchange instance|URL `string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Data Exchange|URL `string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.dataexchange[].ffdx.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 
 ## plugins.sharedstorage[]
 

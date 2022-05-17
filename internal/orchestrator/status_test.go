@@ -47,6 +47,7 @@ var (
 		},
 		DataExchange: []*core.NodeStatusPlugin{
 			{
+				Name:       "ffdx",
 				PluginType: "mock-dx",
 			},
 		},

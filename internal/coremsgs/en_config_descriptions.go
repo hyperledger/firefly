@@ -180,6 +180,16 @@ var (
 
 	ConfigDataexchangeFfdxProxyURL = ffc("config.dataexchange.ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
 
+	ConfigPluginDataexchange     = ffc("config.plugins.dataexchange", "The array of configured Data Exchange plugins ", i18n.StringType)
+	ConfigPluginDataexchangeType = ffc("config.plugins.dataexchange[].type", "The Data Exchange plugin to use", i18n.StringType)
+	ConfigPluginDataexchangeName = ffc("config.plugins.dataexchange[].name", "The name of the configured Data Exchange plugin", i18n.StringType)
+
+	ConfigPluginDataexchangeFfdxInitEnabled     = ffc("config.plugins.dataexchange[].ffdx.initEnabled", "Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector", i18n.BooleanType)
+	ConfigPluginDataexchangeFfdxManifestEnabled = ffc("config.plugins.dataexchange[].ffdx.manifestEnabled", "Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector", i18n.StringType)
+	ConfigPluginDataexchangeFfdxURL             = ffc("config.plugins.dataexchange[].ffdx.url", "The URL of the Data Exchange instance", "URL "+i18n.StringType)
+
+	ConfigPluginDataexchangeFfdxProxyURL = ffc("config.plugins.dataexchange[].ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
+
 	ConfigDebugPort = ffc("config.debug.port", "An HTTP port on which to enable the go debugger", i18n.IntType)
 
 	ConfigDownloadWorkerCount       = ffc("config.download.worker.count", "The number of download workers", i18n.IntType)

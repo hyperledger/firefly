@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -74,13 +73,14 @@ var (
 	namespaceConfig     = config.RootSection("namespaces")
 	databaseConfig      = config.RootArray("plugins.database")
 	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
+	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
 	// Deprecated configs
 	deprecatedTokensConfig        = config.RootArray("tokens")
 	deprecatedBlockchainConfig    = config.RootSection("blockchain")
 	deprecatedDatabaseConfig      = config.RootSection("database")
 	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
+	deprecatedDataexchangeConfig  = config.RootSection("dataexchange")
 	identityConfig                = config.RootSection("identity")
-	dataexchangeConfig            = config.RootSection("dataexchange")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -161,7 +161,7 @@ type orchestrator struct {
 	identity       identity.Manager
 	identityPlugin idplugin.Plugin
 	sharedstorage  map[string]sharedstorage.Plugin
-	dataexchange   dataexchange.Plugin
+	dataexchange   map[string]dataexchange.Plugin
 	events         events.EventManager
 	networkmap     networkmap.Manager
 	batch          batch.Manager
@@ -195,6 +195,7 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
 	ssfactory.InitConfig(sharedstorageConfig)
 	dxfactory.InitConfig(dataexchangeConfig)
+	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
 	// For backwards compatibility with the top level "tokens" config
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
@@ -227,7 +228,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.bi = or.blockchains["blockchain_0"]
 	or.bc.ei = or.events
-	or.bc.dx = or.dataexchange
+	or.bc.dx = or.dataexchange["dataexchange_0"]
 	or.bc.ss = or.sharedstorage["sharedstorage_0"]
 	or.bc.om = or.operations
 	return err
@@ -387,12 +388,26 @@ func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []datab
 }
 
 func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
-	dxPlugin := config.GetString(coreconfig.DataexchangeType)
-	if or.dataexchange == nil {
-		pluginName := dxPlugin
-		if or.dataexchange, err = dxfactory.GetPlugin(ctx, pluginName); err != nil {
+	or.dataexchange = make(map[string]dataexchange.Plugin)
+	dxConfigArraySize := dataexchangeConfig.ArraySize()
+	plugins := make([]dataexchange.Plugin, dxConfigArraySize)
+	for i := 0; i < dxConfigArraySize; i++ {
+		config := dataexchangeConfig.ArrayEntry(i)
+		name := config.GetString(dataexchange.DataExchangeConfigName)
+		dxType := config.GetString(dataexchange.DataExchangeConfigType)
+
+		if name == "" || dxType == "" {
+			return i18n.NewError(ctx, coremsgs.MsgMissingDataExchangeConfig)
+		}
+
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
 			return err
 		}
+		plugin, err := dxfactory.GetPlugin(ctx, dxType)
+		if err != nil {
+			return err
+		}
+		plugins[i] = plugin
 	}
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
@@ -408,22 +423,32 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 
-	config := dataexchangeConfig.SubSection(dxPlugin)
-	// Migration for explicitly setting the old name ..
-	if dxPlugin == dxfactory.OldFFDXPluginName ||
-		// .. or defaulting to the new name, but without setting the mandatory URL
-		(dxPlugin == dxfactory.NewFFDXPluginName && config.GetString(ffresty.HTTPConfigURL) == "") {
-		// We need to initialize the migration config, and use that if it's set
-		migrationConfig := dataexchangeConfig.SubSection(dxfactory.OldFFDXPluginName)
-		or.dataexchange.InitConfig(migrationConfig)
-		if migrationConfig.GetString(ffresty.HTTPConfigURL) != "" {
-			// TODO: eventually make this fatal
-			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", coreconfig.OrgIdentityDeprecated, coreconfig.OrgKey)
-			config = migrationConfig
+	if len(plugins) > 0 {
+		for idx, plugin := range plugins {
+			config := dataexchangeConfig.ArrayEntry(idx)
+			err = plugin.Init(ctx, config.SubSection(config.GetString(dataexchange.DataExchangeConfigType)), nodeInfo, &or.bc)
+			if err != nil {
+				return err
+			}
+			name := config.GetString(dataexchange.DataExchangeConfigName)
+			or.dataexchange[name] = plugin
+		}
+	} else {
+		log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
+		dxType := deprecatedDataexchangeConfig.GetString(dataexchange.DataExchangeConfigType)
+		plugin, err := dxfactory.GetPlugin(ctx, dxType)
+		if err != nil {
+			return err
+		}
+
+		config := deprecatedDataexchangeConfig.SubSection(dxType)
+		err = plugin.Init(ctx, config, nodeInfo, &or.bc)
+		if err != nil {
+			return err
 		}
 	}
 
-	return or.dataexchange.Init(ctx, config, nodeInfo, &or.bc)
+	return err
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
@@ -519,8 +544,10 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 
-	if err = or.initDataExchange(ctx); err != nil {
-		return err
+	if or.dataexchange == nil {
+		if err = or.initDataExchange(ctx); err != nil {
+			return err
+		}
 	}
 
 	if or.tokens == nil {
@@ -725,7 +752,7 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.databases["database_0"], or.sharedstorage["sharedstorage_0"], or.dataexchange)
+		or.data, err = data.NewDataManager(ctx, or.databases["database_0"], or.sharedstorage["sharedstorage_0"], or.dataexchange["dataexchange_0"])
 		if err != nil {
 			return err
 		}
@@ -764,13 +791,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.databases["database_0"], or.identity, or.dataexchange, or.blockchains["blockchain_0"], or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.databases["database_0"], or.identity, or.dataexchange["dataexchange_0"], or.blockchains["blockchain_0"], or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.databases["database_0"], or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange, or.sharedstorage["sharedstorage_0"], or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.databases["database_0"], or.identity, or.data, or.blockchains["blockchain_0"], or.dataexchange["dataexchange_0"], or.sharedstorage["sharedstorage_0"], or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -790,14 +817,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.databases["database_0"], or.blockchains["blockchain_0"], or.dataexchange, or.data, or.identity, or.assets, or.contracts)
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.databases["database_0"], or.blockchains["blockchain_0"], or.dataexchange["dataexchange_0"], or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.sharedDownload == nil {
-		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.databases["database_0"], or.sharedstorage["sharedstorage_0"], or.dataexchange, or.operations, &or.bc)
+		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.databases["database_0"], or.sharedstorage["sharedstorage_0"], or.dataexchange["dataexchange_0"], or.operations, &or.bc)
 		if err != nil {
 			return err
 		}
@@ -815,7 +842,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.databases["database_0"], or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.databases["database_0"], or.broadcast, or.dataexchange["dataexchange_0"], or.identity, or.syncasync)
 		if err != nil {
 			return err
 		}

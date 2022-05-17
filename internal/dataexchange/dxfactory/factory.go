@@ -27,7 +27,6 @@ import (
 )
 
 var (
-	OldFFDXPluginName = "https"
 	NewFFDXPluginName = (*ffdx.FFDX)(nil).Name()
 )
 
@@ -35,7 +34,16 @@ var pluginsByName = map[string]func() dataexchange.Plugin{
 	NewFFDXPluginName: func() dataexchange.Plugin { return &ffdx.FFDX{} },
 }
 
-func InitConfig(config config.Section) {
+func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	config.AddKnownKey(dataexchange.DataExchangeConfigName)
+	for name, plugin := range pluginsByName {
+		plugin().InitConfig(config.SubSection(name))
+	}
+}
+
+func InitConfigDeprecated(config config.Section) {
+	config.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

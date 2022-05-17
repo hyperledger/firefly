@@ -233,4 +233,5 @@ var (
 	MsgMissingBlockchainConfig      = ffe("FF10387", "Invalid blockchain configuration - name and type are required", 400)
 	MsgMissingDatabaseConfig        = ffe("FF10388", "Invalid database configuration - name and type are required", 400)
 	MsgMissingSharedStorageConfig   = ffe("FF10389", "Invalid shared storage configuration - name and type are required", 400)
+	MsgMissingDataExchangeConfig    = ffe("FF10390", "Invalid data exchange configuration - name and type are required", 400)
 )

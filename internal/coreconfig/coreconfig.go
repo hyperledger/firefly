@@ -105,8 +105,6 @@ var (
 	PrivateMessagingRetryInitDelay = ffc("privatemessaging.retry.initDelay")
 	// PrivateMessagingRetryMaxDelay the maximum delay to use for retry of data base operations
 	PrivateMessagingRetryMaxDelay = ffc("privatemessaging.retry.maxDelay")
-	// DataexchangeType is the name of the data exchange plugin being used by this firefly node
-	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
 	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
@@ -119,6 +117,8 @@ var (
 	PluginsSharedStorageList = ffc("plugins.sharedstorage")
 	// PluginsDatabaseList is the key containing a list of configured database plugins
 	PluginsDatabaseList = ffc("plugins.database")
+	// PluginsDataExchangeList is the key containing a list of configured database plugins
+	PluginsDataExchangeList = ffc("plugins.dataexchange")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions
@@ -287,7 +287,6 @@ func setDefaults() {
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
-	viper.SetDefault(string(DataexchangeType), "ffdx")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
