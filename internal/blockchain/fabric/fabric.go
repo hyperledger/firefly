@@ -167,6 +167,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	f.callbacks = callbacks
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
+	f.capabilities = &blockchain.Capabilities{}
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabconnect")
@@ -187,9 +188,6 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
 
 	f.client = ffresty.New(f.ctx, fabconnectConf)
-	f.capabilities = &blockchain.Capabilities{
-		GlobalSequencer: true,
-	}
 
 	wsConfig := wsclient.GenerateConfig(fabconnectConf)
 
@@ -572,7 +570,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
