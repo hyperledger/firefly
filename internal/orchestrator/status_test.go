@@ -58,6 +58,7 @@ var (
 		},
 		Identity: []*core.NodeStatusPlugin{
 			{
+				Name:       "identity",
 				PluginType: "mock-ii",
 			},
 		},

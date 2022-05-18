@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -44,8 +45,10 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
+	plugins := map[string]identity.Plugin{"ffdx": mii}
+
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, mdi, mii, mbi, mdm)
+	im, err := NewIdentityManager(ctx, mdi, plugins, mbi, mdm)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }

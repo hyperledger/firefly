@@ -529,12 +529,6 @@ nav_order: 3
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
-## identity
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|type|The Identity plugin to use|`string`|`<nil>`
-
 ## identity.manager.cache
 
 |Key|Description|Type|Default Value|
@@ -672,6 +666,7 @@ nav_order: 3
 |blockchain|The list of configured Blockchain Connectors.|`string`|`<nil>`
 |database|The list of configured Database Connectors.|`string`|`<nil>`
 |dataexchange|The array of configured Data Exchange plugins |`string`|`<nil>`
+|identity|The list of available Identity plugins|`string`|`<nil>`
 |sharedstorage|The list of configured Shared Storage plugins|`string`|`<nil>`
 |tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
 
@@ -963,6 +958,13 @@ nav_order: 3
 |path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## plugins.identity[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of a configured Identity plugin|`string`|`<nil>`
+|type|The type of a configured Identity plugin|`string`|`<nil>`
 
 ## plugins.sharedstorage[]
 

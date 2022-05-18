@@ -70,18 +70,22 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		})
 	}
 
+	identityPluginArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.identityPlugins {
+		identityPluginArray = append(identityPluginArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
 	return core.NodeStatusPlugins{
 		Blockchain:    blockchainsArray,
 		Database:      databasesArray,
 		SharedStorage: sharedstorageArray,
 		DataExchange:  dataexchangeArray,
 		Events:        or.events.GetPlugins(),
-		Identity: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.identityPlugin.Name(),
-			},
-		},
-		Tokens: tokensArray,
+		Identity:      identityPluginArray,
+		Tokens:        tokensArray,
 	}
 }
 

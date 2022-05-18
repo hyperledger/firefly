@@ -219,7 +219,9 @@ var (
 	ConfigHTTPReadTimeout  = ffc("config.http.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigHTTPWriteTimeout = ffc("config.http.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
-	ConfigIdentityType = ffc("config.identity.type", "The Identity plugin to use", i18n.StringType)
+	ConfigPluginIdentity     = ffc("config.plugins.identity", "The list of available Identity plugins", i18n.StringType)
+	ConfigPluginIdentityType = ffc("config.plugins.identity[].type", "The type of a configured Identity plugin", i18n.StringType)
+	ConfigPluginIdentityName = ffc("config.plugins.identity[].name", "The name of a configured Identity plugin", i18n.StringType)
 
 	ConfigIdentityManagerCacheLimit = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
 

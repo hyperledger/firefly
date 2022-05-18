@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
@@ -56,6 +57,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
@@ -131,7 +133,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.sharedstorage = map[string]sharedstorage.Plugin{"ipfs": tor.mps}
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.identity = tor.mim
-	tor.orchestrator.identityPlugin = tor.mii
+	tor.orchestrator.identityPlugins = map[string]identity.Plugin{"identity": tor.mii}
 	tor.orchestrator.dataexchange = map[string]dataexchange.Plugin{"ffdx": tor.mdx}
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
@@ -280,23 +282,80 @@ func TestDeprecatedDatabaseInitPluginFail(t *testing.T) {
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
-func TestBadIdentityPlugin(t *testing.T) {
+func TestIdentityPluginMissingType(t *testing.T) {
 	or := newTestOrchestrator()
-	config.Set(coreconfig.IdentityType, "wrong")
-	or.identityPlugin = nil
+	or.databases["database_0"] = or.mdi
+	or.identityPlugins = nil
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(identity.IdentityConfigName, "flapflip")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10391.*type", err)
+}
+
+func TestIdentityPluginBadName(t *testing.T) {
+	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
+	or.identityPlugins = nil
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(identity.IdentityConfigName, "wrong//")
+	identityConfig.AddKnownKey(identity.IdentityConfigType, "tbd")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF00140.*name", err)
+}
+
+func TestIdentityPluginUnknownPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
+	or.identityPlugins = nil
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(identity.IdentityConfigName, "flapflip")
+	identityConfig.AddKnownKey(identity.IdentityConfigType, "wrong")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF10212.*wrong", err)
 }
 
+func TestIdentityPlugin(t *testing.T) {
+	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
+	or.identityPlugins = nil
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(identity.IdentityConfigName, "flapflip")
+	identityConfig.AddKnownKey(identity.IdentityConfigType, "onchain")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := or.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+}
+
 func TestBadIdentityInitFail(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchains = nil
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(identity.IdentityConfigName, "flapflip")
+	identityConfig.AddKnownKey(identity.IdentityConfigType, "onchain")
+	plugins := make([]identity.Plugin, 1)
+	mii := &identitymocks.Plugin{}
+	mii.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	plugins[0] = mii
+	ctx := context.Background()
+	err := or.initIdentityPlugins(ctx, plugins)
 	assert.EqualError(t, err, "pop")
 }
 

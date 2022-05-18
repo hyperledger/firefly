@@ -35,7 +35,7 @@ var pluginsByName = map[string]func() dataexchange.Plugin{
 }
 
 func InitConfig(config config.ArraySection) {
-	config.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	config.AddKnownKey(dataexchange.DataExchangeConfigType)
 	config.AddKnownKey(dataexchange.DataExchangeConfigName)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
@@ -43,7 +43,7 @@ func InitConfig(config config.ArraySection) {
 }
 
 func InitConfigDeprecated(config config.Section) {
-	config.AddKnownKey(dataexchange.DataExchangeConfigType, "ffdx")
+	config.AddKnownKey(dataexchange.DataExchangeConfigType, NewFFDXPluginName)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

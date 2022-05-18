@@ -74,13 +74,13 @@ var (
 	databaseConfig      = config.RootArray("plugins.database")
 	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
 	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
+	identityConfig      = config.RootArray("plugins.identity")
 	// Deprecated configs
 	deprecatedTokensConfig        = config.RootArray("tokens")
 	deprecatedBlockchainConfig    = config.RootSection("blockchain")
 	deprecatedDatabaseConfig      = config.RootSection("database")
 	deprecatedSharedStorageConfig = config.RootSection("sharedstorage")
 	deprecatedDataexchangeConfig  = config.RootSection("dataexchange")
-	identityConfig                = config.RootSection("identity")
 )
 
 // Orchestrator is the main interface behind the API, implementing the actions
@@ -153,35 +153,35 @@ type Orchestrator interface {
 }
 
 type orchestrator struct {
-	ctx            context.Context
-	cancelCtx      context.CancelFunc
-	started        bool
-	databases      map[string]database.Plugin
-	blockchains    map[string]blockchain.Plugin
-	identity       identity.Manager
-	identityPlugin idplugin.Plugin
-	sharedstorage  map[string]sharedstorage.Plugin
-	dataexchange   map[string]dataexchange.Plugin
-	events         events.EventManager
-	networkmap     networkmap.Manager
-	batch          batch.Manager
-	broadcast      broadcast.Manager
-	messaging      privatemessaging.Manager
-	definitions    definitions.DefinitionHandler
-	data           data.Manager
-	syncasync      syncasync.Bridge
-	batchpin       batchpin.Submitter
-	assets         assets.Manager
-	tokens         map[string]tokens.Plugin
-	bc             boundCallbacks
-	contracts      contracts.Manager
-	node           *fftypes.UUID
-	metrics        metrics.Manager
-	operations     operations.Manager
-	adminEvents    adminevents.Manager
-	sharedDownload shareddownload.Manager
-	txHelper       txcommon.Helper
-	predefinedNS   config.ArraySection
+	ctx             context.Context
+	cancelCtx       context.CancelFunc
+	started         bool
+	databases       map[string]database.Plugin
+	blockchains     map[string]blockchain.Plugin
+	identity        identity.Manager
+	identityPlugins map[string]idplugin.Plugin
+	sharedstorage   map[string]sharedstorage.Plugin
+	dataexchange    map[string]dataexchange.Plugin
+	events          events.EventManager
+	networkmap      networkmap.Manager
+	batch           batch.Manager
+	broadcast       broadcast.Manager
+	messaging       privatemessaging.Manager
+	definitions     definitions.DefinitionHandler
+	data            data.Manager
+	syncasync       syncasync.Bridge
+	batchpin        batchpin.Submitter
+	assets          assets.Manager
+	tokens          map[string]tokens.Plugin
+	bc              boundCallbacks
+	contracts       contracts.Manager
+	node            *fftypes.UUID
+	metrics         metrics.Manager
+	operations      operations.Manager
+	adminEvents     adminevents.Manager
+	sharedDownload  shareddownload.Manager
+	txHelper        txcommon.Helper
+	predefinedNS    config.ArraySection
 }
 
 func NewOrchestrator(withDefaults bool) Orchestrator {
@@ -196,6 +196,7 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	ssfactory.InitConfig(sharedstorageConfig)
 	dxfactory.InitConfig(dataexchangeConfig)
 	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
+	iifactory.InitConfig(identityConfig)
 	// For backwards compatibility with the top level "tokens" config
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
@@ -376,7 +377,7 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []database.Plugin) (err error) {
 	for idx, plugin := range plugins {
 		config := databaseConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config.SubSection("sqlite3"), or)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(database.DatabaseConfigType)), or)
 		if err != nil {
 			return err
 		}
@@ -482,14 +483,10 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.identityPlugin == nil {
-		iiType := config.GetString(coreconfig.IdentityType)
-		if or.identityPlugin, err = iifactory.GetPlugin(ctx, iiType); err != nil {
+	if or.identityPlugins == nil {
+		if err = or.initIdentity(ctx); err != nil {
 			return err
 		}
-	}
-	if err = or.identityPlugin.Init(ctx, identityConfig.SubSection(or.identityPlugin.Name()), or); err != nil {
-		return err
 	}
 
 	if or.blockchains == nil {
@@ -606,6 +603,56 @@ func (or *orchestrator) getSharedStoragePlugins(ctx context.Context) (plugins []
 		plugins[i] = plugin
 	}
 
+	return plugins, err
+}
+
+func (or *orchestrator) initIdentity(ctx context.Context) (err error) {
+	or.identityPlugins = make(map[string]idplugin.Plugin)
+	plugins, err := or.getIdentityPlugins(ctx)
+	if err != nil {
+		return err
+	}
+	// this is a no-op currently, inits the tbd plugin
+	_ = or.initIdentityPlugins(ctx, plugins)
+
+	return err
+}
+
+func (or *orchestrator) initIdentityPlugins(ctx context.Context, plugins []idplugin.Plugin) (err error) {
+	for idx, plugin := range plugins {
+		config := identityConfig.ArrayEntry(idx)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(idplugin.IdentityConfigType)), &or.bc)
+		if err != nil {
+			return err
+		}
+		name := config.GetString(idplugin.IdentityConfigName)
+		or.identityPlugins[name] = plugin
+	}
+
+	return err
+}
+
+func (or *orchestrator) getIdentityPlugins(ctx context.Context) (plugins []idplugin.Plugin, err error) {
+	configSize := identityConfig.ArraySize()
+	plugins = make([]idplugin.Plugin, configSize)
+	for i := 0; i < configSize; i++ {
+		config := identityConfig.ArrayEntry(i)
+		name := config.GetString(idplugin.IdentityConfigName)
+		pluginType := config.GetString(idplugin.IdentityConfigType)
+		if name == "" || pluginType == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgMissingIdentityPluginConfig)
+		}
+
+		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			return nil, err
+		}
+
+		plugin, err := iifactory.GetPlugin(ctx, pluginType)
+		if err != nil {
+			return nil, err
+		}
+		plugins[i] = plugin
+	}
 	return plugins, err
 }
 
@@ -763,7 +810,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.databases["database_0"], or.identityPlugin, or.blockchains["blockchain_0"], or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.databases["database_0"], or.identityPlugins, or.blockchains["blockchain_0"], or.data)
 		if err != nil {
 			return err
 		}

@@ -119,6 +119,8 @@ var (
 	PluginsDatabaseList = ffc("plugins.database")
 	// PluginsDataExchangeList is the key containing a list of configured database plugins
 	PluginsDataExchangeList = ffc("plugins.dataexchange")
+	// PluginsIdentityList is the key containing a list of configured identity plugins
+	PluginsIdentityList = ffc("plugins.identity")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions
@@ -179,8 +181,6 @@ var (
 	AdminWebSocketReadBufferSize = ffc("admin.ws.readBufferSize")
 	// AdminWebSocketWriteBufferSize is the WebSocket write buffer size for the admin change-event WebSocket
 	AdminWebSocketWriteBufferSize = ffc("admin.ws.writeBufferSize")
-	// IdentityType the type of the identity plugin in use
-	IdentityType = ffc("identity.type")
 	// IdentityManagerCacheTTL the identity manager cache time to live
 	IdentityManagerCacheTTL = ffc("identity.manager.cache.ttl")
 	// IdentityManagerCacheLimit the identity manager cache limit in count of items
@@ -319,7 +319,6 @@ func setDefaults() {
 	viper.SetDefault(string(AdminWebSocketWriteBufferSize), "16Kb")
 	viper.SetDefault(string(AdminWebSocketBlockedWarnInterval), "1m")
 	viper.SetDefault(string(AdminWebSocketEventQueueLength), 250)
-	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)

@@ -31,7 +31,9 @@ var pluginsByName = map[string]func() identity.Plugin{
 	(*tbd.TBD)(nil).Name(): func() identity.Plugin { return &tbd.TBD{} },
 }
 
-func InitConfig(config config.Section) {
+func InitConfig(config config.ArraySection) {
+	config.AddKnownKey(identity.IdentityConfigName)
+	config.AddKnownKey(identity.IdentityConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}
