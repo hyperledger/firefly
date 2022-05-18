@@ -1,7 +1,7 @@
 ---
 layout: default
 title: ② Start your environment
-parent: Getting Started
+parent: pages.getting_started
 nav_order: 2
 ---
 

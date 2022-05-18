@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Public and Permissioned
-parent: Understanding FireFly
+parent: pages.understanding_firefly
 nav_order: 5
 ---
 

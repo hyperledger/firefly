@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Multi-party Systems
-parent: Understanding FireFly
+parent: pages.understanding_firefly
 nav_order: 2
 ---
 

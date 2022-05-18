@@ -1,0 +1,24 @@
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.dropdown:hover .dropdown-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-content a {
+    flex-grow: 1;
+    padding: $sp-4;
+    background: none;
+}
+.dropdown-content a:hover {
+    background: $grey-lt-100;
+}

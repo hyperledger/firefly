@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Advanced CLI Usage
-parent: Contributors
+layout: i18n_page
+title: pages.advanced_cli_usage
+parent: pages.contributors
 nav_order: 5
 ---
 

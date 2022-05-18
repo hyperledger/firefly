@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Use tokens
-parent: Tutorials
+parent: pages.tutorials
 nav_order: 7
 has_children: true
 ---

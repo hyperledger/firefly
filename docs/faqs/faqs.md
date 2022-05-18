@@ -1,6 +1,6 @@
 ---
-layout: default
-title: FAQs
+layout: i18n_page
+title: pages.faqs
 nav_order: 9
 has_children: true
 ---

@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Broadcast / shared data
-parent: Understanding FireFly
+layout: i18n_page
+title: pages.broadcast_shared_data
+parent: pages.understanding_firefly
 nav_order: 8
 ---
 

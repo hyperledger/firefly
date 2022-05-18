@@ -2,7 +2,7 @@
 layout: default
 title: Message
 parent: Types
-grand_parent: Reference
+grand_parent: pages.reference
 nav_order: 2
 ---
 
@@ -47,7 +47,7 @@ nav_order: 2
 | batch | The UUID of the batch in which the message was pinned/transferred | `UUID` |
 | state | The current state of the message | `FFEnum` |
 | confirmed | The timestamp of when the message was confirmed/rejected | [`FFTime`](simpletypes#fftime) |
-| data | The list of data elements attached to the message | [`DataRef[]`](DataRef#dataref) |
+| data | The list of data elements attached to the message | [`DataRef[]`](dataref#dataref) |
 | pins | For private messages, a unique pin hash:nonce is assigned for each topic | `string[]` |
 
 ## MessageHeader
