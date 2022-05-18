@@ -19,8 +19,6 @@ package tokens
 const (
 	// TokensConfigName is the user-supplied name for this token type
 	TokensConfigName = "name"
-	// TokensConfigConnector is the connector plugin used for this token type (deprecated)
-	TokensConfigConnector = "connector" // TODO: remove
 	// TokensConfigPlugin is the connector plugin used for this token type (deprecated)
 	TokensConfigPlugin = "plugin"
 	// TokensConfigType is the name of the plugin used for this token type

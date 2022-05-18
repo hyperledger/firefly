@@ -773,56 +773,11 @@ func TestGoodTokensPlugin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestBadDeprecatedTokensPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	or.databases["database_0"] = or.mdi
-	or.tokens = nil
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitConfig", mock.Anything).Return()
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10272.*wrong", err)
-}
-
-func TestBadDeprecatedTokensPluginNoConnector(t *testing.T) {
-	or := newTestOrchestrator()
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector)
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	or.databases["database_0"] = or.mdi
-	or.tokens = nil
-	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mii.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("VerifyIdentitySyntax", mock.Anything, mock.Anything, mock.Anything).Return("", nil)
-	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	or.mdx.On("InitConfig", mock.Anything).Return()
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10273", err)
-}
-
 func TestBadDeprecatedTokensPluginNoName(t *testing.T) {
 	or := newTestOrchestrator()
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName)
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "wrong")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "wrong")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
@@ -844,7 +799,7 @@ func TestBadDeprecatedTokensPluginInvalidName(t *testing.T) {
 	or := newTestOrchestrator()
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "!wrong")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "text")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "text")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
@@ -866,7 +821,7 @@ func TestBadDeprecatedTokensPluginNoType(t *testing.T) {
 	or := newTestOrchestrator()
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "text")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector)
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi
 	or.tokens = nil
@@ -882,7 +837,7 @@ func TestBadDeprecatedTokensPluginNoType(t *testing.T) {
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10273", err)
+	assert.Regexp(t, "FF10272", err)
 }
 
 func TestGoodDeprecatedTokensPlugin(t *testing.T) {
@@ -890,7 +845,7 @@ func TestGoodDeprecatedTokensPlugin(t *testing.T) {
 	deprecatedTokensConfig = config.RootArray("tokens")
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigConnector, "https")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
 	deprecatedTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
 	config.Set("tokens", []fftypes.JSONObject{{}})
 	or.databases["database_0"] = or.mdi

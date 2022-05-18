@@ -139,7 +139,7 @@ var (
 	MsgRequestMustBePrivate        = ffe("FF10271", "For request messages you must specify a group of private recipients", 400)
 	MsgUnknownTokensPlugin         = ffe("FF10272", "Unknown tokens plugin '%s'", 400)
 	// Deprecated
-	MsgMissingTokensPluginConfig    = ffe("FF10273", "Invalid tokens configuration - name and connector are required", 400)
+	MsgMissingTokensPluginConfig    = ffe("FF10273", "Invalid tokens configuration - name and plugin are required", 400)
 	MsgTokensRESTErr                = ffe("FF10274", "Error from tokens service: %s")
 	MsgTokenPoolDuplicate           = ffe("FF10275", "Duplicate token pool: %s")
 	MsgTokenPoolRejected            = ffe("FF10276", "Token pool with ID '%s' was rejected. Please check the FireFly logs for more information")

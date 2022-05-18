@@ -767,21 +767,6 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
 			return err
 		}
-		if pluginName == "" {
-			// Migration path for old config key
-			// TODO: eventually make this fatal
-			pluginName = prefix.GetString(tokens.TokensConfigConnector)
-			if pluginName == "" {
-				return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
-			}
-			log.L(ctx).Warnf("Your tokens config uses the deprecated 'connector' key - please change to 'plugin' instead")
-		}
-		if pluginName == "https" {
-			// Migration path for old plugin name
-			// TODO: eventually make this fatal
-			log.L(ctx).Warnf("Your tokens config uses the old plugin name 'https' - this plugin has been renamed to 'fftokens'")
-			pluginName = "fftokens"
-		}
 
 		log.L(ctx).Infof("Loading tokens plugin name=%s plugin=%s", name, pluginName)
 		plugin, err := tifactory.GetPlugin(ctx, pluginName)

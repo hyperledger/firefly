@@ -39,7 +39,6 @@ func InitConfig(config config.ArraySection) {
 }
 
 func InitConfigDeprecated(config config.ArraySection) {
-	config.AddKnownKey(tokens.TokensConfigConnector)
 	config.AddKnownKey(tokens.TokensConfigPlugin)
 	config.AddKnownKey(tokens.TokensConfigName)
 	for _, plugin := range pluginsByName {
