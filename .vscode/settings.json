@@ -10,6 +10,7 @@
     "breq",
     "ccache",
     "coremsgs",
+    "Correlator",
     "dataexchange",
     "datahash",
     "Debugf",

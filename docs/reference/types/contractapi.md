@@ -3,7 +3,7 @@ layout: default
 title: ContractAPI
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 2
+nav_order: 3
 ---
 
 # ContractAPI

@@ -51,6 +51,17 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 
 	types := []interface{}{
 
+		&core.Event{
+			ID:          fftypes.MustParseUUID("5f875824-b36b-4559-9791-a57a2e2b30dd"),
+			Sequence:    168,
+			Type:        core.EventTypeTransactionSubmitted,
+			Namespace:   "ns1",
+			Reference:   fftypes.MustParseUUID("0d12aa75-5ed8-48a7-8b54-45274c6edcb1"),
+			Transaction: fftypes.MustParseUUID("0d12aa75-5ed8-48a7-8b54-45274c6edcb1"),
+			Topic:       core.TransactionTypeBatchPin.String(),
+			Created:     fftypes.UnixTime(1652664195),
+		},
+
 		&core.ContractAPI{
 			ID:        fftypes.MustParseUUID("0f12317b-85a0-4a77-a722-857ea2b0a5fa"),
 			Name:      "my_contract_api",
