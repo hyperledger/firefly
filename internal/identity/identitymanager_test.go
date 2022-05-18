@@ -45,7 +45,7 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
-	plugins := map[string]identity.Plugin{"ffdx": mii}
+	plugins := map[string]identity.Plugin{"tbd": mii}
 
 	ctx := context.Background()
 	im, err := NewIdentityManager(ctx, mdi, plugins, mbi, mdm)
