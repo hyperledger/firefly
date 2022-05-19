@@ -2,8 +2,13 @@
 layout: default
 title: TokenPool
 parent: Core Resources
+<<<<<<< HEAD
 grand_parent: pages.reference
 nav_order: 5
+=======
+grand_parent: Reference
+nav_order: 6
+>>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # TokenPool

@@ -49,6 +49,9 @@ type TypeReferenceDoc struct {
  */
 func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, error) {
 
+	newest := core.SubOptsFirstEventNewest
+	fifty := uint16(50)
+
 	types := []interface{}{
 
 		&core.Event{
@@ -60,6 +63,28 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			Transaction: fftypes.MustParseUUID("0d12aa75-5ed8-48a7-8b54-45274c6edcb1"),
 			Topic:       core.TransactionTypeBatchPin.String(),
 			Created:     fftypes.UnixTime(1652664195),
+		},
+
+		&core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{
+				ID:        fftypes.MustParseUUID("c38d69fd-442e-4d6f-b5a4-bab1411c7fe8"),
+				Namespace: "ns1",
+				Name:      "app1",
+			},
+			Transport: "websockets",
+			Filter: core.SubscriptionFilter{
+				Events: "^(message_.*|token_.*)$",
+				Message: core.MessageFilter{
+					Tag: "^(red|blue)$",
+				},
+			},
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					FirstEvent: &newest,
+					ReadAhead:  &fifty,
+				},
+			},
+			Created: fftypes.UnixTime(1652664195),
 		},
 
 		&core.ContractAPI{
@@ -420,106 +445,118 @@ func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, roo
 	fieldDescriptionsBytes := []byte{}
 	// subFieldBuff is where we write any additional tables for sub fields that may be on this struct
 	subFieldBuff := bytes.NewBuffer([]byte{})
-	numField := t.NumField()
-	if numField > 0 {
+	if t.NumField() > 0 {
 		// Write the table to a temporary buffer - we will throw it away if there are no
 		// public JSON serializable fields on the struct
 		tableRowCount := 0
 		tableBuff := bytes.NewBuffer([]byte{})
 		tableBuff.WriteString("| Field Name | Description | Type |\n")
 		tableBuff.WriteString("|------------|-------------|------|\n")
-		for i := 0; i < numField; i++ {
-			field := t.Field(i)
-			jsonTag := field.Tag.Get("json")
-			ffstructTag := field.Tag.Get("ffstruct")
-			ffexcludeTag := field.Tag.Get("ffexclude")
 
-			// If the field is specifically excluded, or doesn't have a json tag, skip it
-			if ffexcludeTag != "" || jsonTag == "" || jsonTag == "-" {
-				continue
-			}
+		tableRowCount = writeStructFields(ctx, t, rootPageNames, simpleTypeNames, generatedTableNames, outputPath, subFieldBuff, tableBuff, tableRowCount)
 
-			jsonFieldName := strings.Split(jsonTag, ",")[0]
-			messageKeyName := fmt.Sprintf("%s.%s", ffstructTag, jsonFieldName)
-			description := i18n.Expand(ctx, i18n.MessageKey(messageKeyName))
-			isArray := false
-
-			fieldType := field.Type
-			fireflyType := fieldType.Name()
-
-			if fieldType.Kind() == reflect.Slice {
-				fieldType = fieldType.Elem()
-				fireflyType = fieldType.Name()
-				isArray = true
-			}
-
-			if fieldType.Kind() == reflect.Ptr {
-				fieldType = fieldType.Elem()
-				fireflyType = fieldType.Name()
-			}
-
-			if isArray {
-				fireflyType = fmt.Sprintf("%s[]", fireflyType)
-			}
-
-			fireflyType = fmt.Sprintf("`%s`", fireflyType)
-
-			isStruct := fieldType.Kind() == reflect.Struct
-			isEnum := strings.ToLower(fieldType.Name()) == "ffenum"
-
-			fieldInRootPages := false
-			fieldInSimpleTypes := false
-			for _, rootPageName := range rootPageNames {
-				if strings.ToLower(fieldType.Name()) == rootPageName {
-					fieldInRootPages = true
-					break
-				}
-			}
-			for _, simpleTypeName := range simpleTypeNames {
-				if strings.ToLower(fieldType.Name()) == simpleTypeName {
-					fieldInSimpleTypes = true
-					break
-				}
-			}
-
-			link := ""
-			switch {
-			case isEnum:
-				fireflyType = generateEnumList(field)
-			case fieldInRootPages:
-				link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
-			case fieldInSimpleTypes:
-				link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
-			case isStruct:
-				link = fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
-			}
-			if link != "" {
-				fireflyType = fmt.Sprintf("[%s](%s)", fireflyType, link)
-
-				// Generate the table for the sub type
-				tableAlreadyGenerated := false
-				for _, tableName := range generatedTableNames {
-					if strings.ToLower(fieldType.Name()) == tableName {
-						tableAlreadyGenerated = true
-						break
-					}
-				}
-				if isStruct && !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
-					subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, false, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
-					generatedTableNames = newTableNames
-					subFieldBuff.Write(subFieldMarkdown)
-					subFieldBuff.WriteString("\n")
-				}
-			}
-
-			tableBuff.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", jsonFieldName, description, fireflyType))
-			tableRowCount++
-		}
 		if tableRowCount > 1 {
 			fieldDescriptionsBytes = tableBuff.Bytes()
 		}
 	}
 	return fieldDescriptionsBytes, subFieldBuff.Bytes(), generatedTableNames
+}
+
+func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string, subFieldBuff, tableBuff *bytes.Buffer, tableRowCount int) int {
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		jsonTag := field.Tag.Get("json")
+		ffstructTag := field.Tag.Get("ffstruct")
+		ffexcludeTag := field.Tag.Get("ffexclude")
+
+		// If this is a nested struct, we need to recurse into it
+		if field.Anonymous {
+			tableRowCount = writeStructFields(ctx, field.Type, rootPageNames, simpleTypeNames, generatedTableNames, outputPath, subFieldBuff, tableBuff, tableRowCount)
+			continue
+		}
+
+		// If the field is specifically excluded, or doesn't have a json tag, skip it
+		if ffexcludeTag != "" || jsonTag == "" || jsonTag == "-" {
+			continue
+		}
+
+		jsonFieldName := strings.Split(jsonTag, ",")[0]
+		messageKeyName := fmt.Sprintf("%s.%s", ffstructTag, jsonFieldName)
+		description := i18n.Expand(ctx, i18n.MessageKey(messageKeyName))
+		isArray := false
+
+		fieldType := field.Type
+		fireflyType := fieldType.Name()
+
+		if fieldType.Kind() == reflect.Slice {
+			fieldType = fieldType.Elem()
+			fireflyType = fieldType.Name()
+			isArray = true
+		}
+
+		if fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+			fireflyType = fieldType.Name()
+		}
+
+		if isArray {
+			fireflyType = fmt.Sprintf("%s[]", fireflyType)
+		}
+
+		fireflyType = fmt.Sprintf("`%s`", fireflyType)
+
+		isStruct := fieldType.Kind() == reflect.Struct
+		isEnum := strings.ToLower(fieldType.Name()) == "ffenum"
+
+		fieldInRootPages := false
+		fieldInSimpleTypes := false
+		for _, rootPageName := range rootPageNames {
+			if strings.ToLower(fieldType.Name()) == rootPageName {
+				fieldInRootPages = true
+				break
+			}
+		}
+		for _, simpleTypeName := range simpleTypeNames {
+			if strings.ToLower(fieldType.Name()) == simpleTypeName {
+				fieldInSimpleTypes = true
+				break
+			}
+		}
+
+		link := ""
+		switch {
+		case isEnum:
+			fireflyType = generateEnumList(field)
+		case fieldInRootPages:
+			link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
+		case fieldInSimpleTypes:
+			link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
+		case isStruct:
+			link = fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
+		}
+		if link != "" {
+			fireflyType = fmt.Sprintf("[%s](%s)", fireflyType, link)
+
+			// Generate the table for the sub type
+			tableAlreadyGenerated := false
+			for _, tableName := range generatedTableNames {
+				if strings.ToLower(fieldType.Name()) == tableName {
+					tableAlreadyGenerated = true
+					break
+				}
+			}
+			if isStruct && !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
+				subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, false, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
+				generatedTableNames = newTableNames
+				subFieldBuff.Write(subFieldMarkdown)
+				subFieldBuff.WriteString("\n")
+			}
+		}
+
+		tableBuff.WriteString(fmt.Sprintf("| %s | %s | %s |\n", jsonFieldName, description, fireflyType))
+		tableRowCount++
+	}
+	return tableRowCount
 }
 
 func generatePageHeader(pageTitle string, navOrder int) string {

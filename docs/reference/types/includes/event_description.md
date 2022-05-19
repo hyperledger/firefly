@@ -13,8 +13,8 @@ order that they are delivered to your application.
 ### Reference
 
 Events have a `reference` to the UUID of an object that is the subject of the event,
-such as a detailed [Blockchain Event](./types/blockchainevent), or an off-chain
-[Message](./types/message).
+such as a detailed [Blockchain Event](./blockchainevent), or an off-chain
+[Message](./message).
 
 When events are delivered to your application, the `reference` field is
 automatically retrieved and included in the JSON payload
@@ -44,7 +44,7 @@ the type of event. This is intended to be a property you would use to
 filter events to your application, or query all historical events
 associated with a given business data stream.
 
-For example when you send a [Message](./types/message), you set the `topics`
+For example when you send a [Message](./message), you set the `topics`
 you want that message to apply to, and FireFly ensures a consistent global
 order between all parties that receive that message.
 

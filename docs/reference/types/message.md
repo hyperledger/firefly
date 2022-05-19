@@ -2,8 +2,13 @@
 layout: default
 title: Message
 parent: Core Resources
+<<<<<<< HEAD
 grand_parent: pages.reference
 nav_order: 7
+=======
+grand_parent: Reference
+nav_order: 8
+>>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # Message
@@ -67,6 +72,7 @@ nav_order: 7
 
 | Field Name | Description | Type |
 |------------|-------------|------|
+<<<<<<< HEAD
 | `id` | The UUID of the message. Unique to each message | [`UUID`](simpletypes#uuid) |
 | `cid` | The correlation ID of the message. Set this when a message is a response to another message | [`UUID`](simpletypes#uuid) |
 | `type` | The type of the message | `FFEnum`:<br/>`"definition"`<br/>`"broadcast"`<br/>`"private"`<br/>`"groupinit"`<br/>`"transfer_broadcast"`<br/>`"transfer_private"` |
@@ -76,6 +82,19 @@ nav_order: 7
 | `topics` | A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged | `string[]` |
 | `tag` | The message tag indicates the purpose of the message to the applications that process it | `string` |
 | `datahash` | A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message | `Bytes32` |
+=======
+| id | The UUID of the message. Unique to each message | [`UUID`](simpletypes#uuid) |
+| cid | The correlation ID of the message. Set this when a message is a response to another message | [`UUID`](simpletypes#uuid) |
+| type | The type of the message | `FFEnum`:<br/>`"definition"`<br/>`"broadcast"`<br/>`"private"`<br/>`"groupinit"`<br/>`"transfer_broadcast"`<br/>`"transfer_private"` |
+| txtype | The type of transaction used to order/deliver this message | `FFEnum`:<br/>`"none"`<br/>`"unpinned"`<br/>`"batch_pin"`<br/>`"token_pool"`<br/>`"token_transfer"`<br/>`"contract_invoke"`<br/>`"token_approval"` |
+| author | The DID of identity of the submitter | `string` |
+| key | The on-chain signing key used to sign the transaction | `string` |
+| created | The creation time of the message | [`FFTime`](simpletypes#fftime) |
+| namespace | The namespace of the message | `string` |
+| topics | A message topic associates this message with an ordered stream of data. A custom topic should be assigned - using the default topic is discouraged | `string[]` |
+| tag | The message tag indicates the purpose of the message to the applications that process it | `string` |
+| datahash | A single hash representing all data in the message. Derived from the array of data ids+hashes attached to this message | `Bytes32` |
+>>>>>>> 99cef50f (Add subscription docs)
 
 
 ## DataRef

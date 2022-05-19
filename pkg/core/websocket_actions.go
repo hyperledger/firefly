@@ -31,33 +31,33 @@ var (
 	WSProtocolErrorEventType = ffEnum("wstype", "protocol_error")
 )
 
-// WSClientActionBase is the base fields of all client actions sent on the websocket
-type WSClientActionBase struct {
-	Type WSClientPayloadType `json:"type,omitempty"`
+// WSActionBase is the base fields of all client actions sent on the websocket
+type WSActionBase struct {
+	Type WSClientPayloadType `ffstruct:"WSActionBase" json:"type,omitempty" ffenum:"wstype"`
 }
 
-// WSClientActionStartPayload starts a subscription on this socket - either an existing one, or creating an ephemeral one
-type WSClientActionStartPayload struct {
-	WSClientActionBase
+// WSStart starts a subscription on this socket - either an existing one, or creating an ephemeral one
+type WSStart struct {
+	WSActionBase
 
-	AutoAck   *bool               `json:"autoack"`
-	Namespace string              `json:"namespace"`
-	Name      string              `json:"name"`
-	Ephemeral bool                `json:"ephemeral"`
-	Filter    SubscriptionFilter  `json:"filter"`
-	Options   SubscriptionOptions `json:"options"`
+	AutoAck   *bool               `ffstruct:"WSStart" json:"autoack"`
+	Namespace string              `ffstruct:"WSStart" json:"namespace"`
+	Name      string              `ffstruct:"WSStart" json:"name"`
+	Ephemeral bool                `ffstruct:"WSStart" json:"ephemeral"`
+	Filter    SubscriptionFilter  `ffstruct:"WSStart" json:"filter"`
+	Options   SubscriptionOptions `ffstruct:"WSStart" json:"options"`
 }
 
-// WSClientActionAckPayload acknowldges a received event (not applicable in AutoAck mode)
-type WSClientActionAckPayload struct {
-	WSClientActionBase
+// WSAck acknowledges a received event (not applicable in AutoAck mode)
+type WSAck struct {
+	WSActionBase
 
-	ID           *fftypes.UUID    `json:"id,omitempty"`
-	Subscription *SubscriptionRef `json:"subscription,omitempty"`
+	ID           *fftypes.UUID    `ffstruct:"WSAck" json:"id,omitempty"`
+	Subscription *SubscriptionRef `ffstruct:"WSAck" json:"subscription,omitempty"`
 }
 
-// WSProtocolErrorPayload is sent to the client by the server in the case of a protocol error
-type WSProtocolErrorPayload struct {
-	Type  WSClientPayloadType `json:"type" ffenum:"wstype"`
-	Error string              `json:"error"`
+// WSError is sent to the client by the server in the case of a protocol error
+type WSError struct {
+	Type  WSClientPayloadType `ffstruct:"WSAck" json:"type" ffenum:"wstype"`
+	Error string              `ffstruct:"WSAck" json:"error"`
 }

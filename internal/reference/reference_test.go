@@ -66,3 +66,19 @@ func TestGenerateMarkdownDescriptionMissing(t *testing.T) {
 	_, err := generateMarkdownPages(context.Background(), []interface{}{thingy{}}, []interface{}{}, "")
 	assert.Regexp(t, "FF10386.*thingy_description.md", err)
 }
+
+func TestGenerateMarkdownAnonymousStruct(t *testing.T) {
+	type thing2 struct {
+		Kite string `json:"kite" ffstruct:"thing2"`
+	}
+	type thing1 struct {
+		thing2
+	}
+	refdocs, err := generateMarkdownPages(context.Background(), []interface{}{thing1{
+		thing2{
+			Kite: "green and yellow",
+		},
+	}}, []interface{}{}, "../../test")
+	assert.NoError(t, err)
+	assert.Regexp(t, `\| kite \|`, string(refdocs["thing1"]))
+}

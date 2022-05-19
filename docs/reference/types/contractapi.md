@@ -2,8 +2,13 @@
 layout: default
 title: ContractAPI
 parent: Core Resources
+<<<<<<< HEAD
 grand_parent: pages.reference
 nav_order: 3
+=======
+grand_parent: Reference
+nav_order: 4
+>>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # ContractAPI

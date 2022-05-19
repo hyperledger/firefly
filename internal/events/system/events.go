@@ -63,10 +63,6 @@ func (se *Events) Capabilities() *events.Capabilities {
 	return se.capabilities
 }
 
-func (se *Events) GetOptionsSchema(ctx context.Context) string {
-	return `{}`
-}
-
 func (se *Events) ValidateOptions(options *core.SubscriptionOptions) error {
 	return nil
 }

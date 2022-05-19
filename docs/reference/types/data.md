@@ -2,8 +2,13 @@
 layout: default
 title: Data
 parent: Core Resources
+<<<<<<< HEAD
 grand_parent: pages.reference
 nav_order: 8
+=======
+grand_parent: Reference
+nav_order: 9
+>>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # Data

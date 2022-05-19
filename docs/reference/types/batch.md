@@ -2,8 +2,13 @@
 layout: default
 title: Batch
 parent: Core Resources
+<<<<<<< HEAD
 grand_parent: pages.reference
 nav_order: 9
+=======
+grand_parent: Reference
+nav_order: 10
+>>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # Batch
@@ -48,8 +53,21 @@ nav_order: 9
 
 | Field Name | Description | Type |
 |------------|-------------|------|
+<<<<<<< HEAD
 | `hash` | The hash of the manifest of the batch | `Bytes32` |
 | `payload` | Batch.payload | [`BatchPayload`](#batchpayload) |
+=======
+| id | The UUID of the batch | [`UUID`](simpletypes#uuid) |
+| type | The type of the batch | `FFEnum`:<br/>`"broadcast"`<br/>`"private"` |
+| namespace | The namespace of the batch | `string` |
+| node | The UUID of the node that generated the batch | [`UUID`](simpletypes#uuid) |
+| group | The privacy group the batch is sent to, for private batches | `Bytes32` |
+| created | The time the batch was sealed | [`FFTime`](simpletypes#fftime) |
+| author | The DID of identity of the submitter | `string` |
+| key | The on-chain signing key used to sign the transaction | `string` |
+| hash | The hash of the manifest of the batch | `Bytes32` |
+| payload | Batch.payload | [`BatchPayload`](#batchpayload) |
+>>>>>>> 99cef50f (Add subscription docs)
 
 ## BatchPayload
 
