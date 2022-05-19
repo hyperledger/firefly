@@ -46,7 +46,7 @@ var (
 	MsgScanFailed                   = ffe("FF10125", "Failed to restore type '%T' into '%T'")
 	MsgUnregisteredBatchType        = ffe("FF10126", "Unregistered batch type '%s'")
 	MsgBatchDispatchTimeout         = ffe("FF10127", "Timed out dispatching work to batch")
-	MsgInitializationNilDepError    = ffe("FF10128", "Initialization error due to unmet dependency")
+	MsgInitializationNilDepError    = ffe("FF10128", "Initialization failed in %s due to unmet dependency")
 	MsgNilResponseNon204            = ffe("FF10129", "No output from API call")
 	MsgInvalidContentType           = ffe("FF10130", "Invalid content type", 415)
 	MsgDataNotFound                 = ffe("FF10133", "Data not found for message %s", 400)
