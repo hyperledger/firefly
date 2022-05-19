@@ -292,7 +292,7 @@ func TestIdentityPluginMissingType(t *testing.T) {
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10391.*type", err)
+	assert.Regexp(t, "FF10386.*type", err)
 }
 
 func TestIdentityPluginBadName(t *testing.T) {
@@ -482,7 +482,7 @@ func TestBadSharedStoragePlugin(t *testing.T) {
 	ctx := context.Background()
 	plugins, err := or.getSharedStoragePlugins(ctx)
 	assert.Nil(t, plugins)
-	assert.Regexp(t, "FF10389.*Invalid", err)
+	assert.Regexp(t, "FF10386.*Invalid", err)
 }
 
 func TestBadSharedStoragePluginType(t *testing.T) {
@@ -626,7 +626,7 @@ func TestDataExchangePluginMissingName(t *testing.T) {
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10390.*name", err)
+	assert.Regexp(t, "FF10386.*name", err)
 }
 
 func TestBadDataExchangeInitFail(t *testing.T) {

@@ -358,7 +358,7 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 		name := config.GetString(database.DatabaseConfigName)
 		diType := config.GetString(database.DatabaseConfigType)
 		if name == "" || diType == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgMissingDatabaseConfig)
+			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "database")
 		}
 
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
@@ -398,7 +398,7 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		dxType := config.GetString(dataexchange.DataExchangeConfigType)
 
 		if name == "" || dxType == "" {
-			return i18n.NewError(ctx, coremsgs.MsgMissingDataExchangeConfig)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "dataexchange")
 		}
 
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
@@ -589,7 +589,7 @@ func (or *orchestrator) getSharedStoragePlugins(ctx context.Context) (plugins []
 		name := config.GetString(sharedstorage.SharedStorageConfigName)
 		pluginType := config.GetString(sharedstorage.SharedStorageConfigType)
 		if name == "" || pluginType == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgMissingSharedStorageConfig)
+			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "sharedstorage")
 		}
 
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
@@ -640,7 +640,7 @@ func (or *orchestrator) getIdentityPlugins(ctx context.Context) (plugins []idplu
 		name := config.GetString(idplugin.IdentityConfigName)
 		pluginType := config.GetString(idplugin.IdentityConfigType)
 		if name == "" || pluginType == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgMissingIdentityPluginConfig)
+			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "identity")
 		}
 
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
@@ -664,7 +664,7 @@ func (or *orchestrator) getBlockchainPlugins(ctx context.Context) (plugins []blo
 		name := config.GetString(blockchain.BlockchainConfigName)
 		pluginType := config.GetString(blockchain.BlockchainConfigType)
 		if name == "" || pluginType == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgMissingBlockchainConfig)
+			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "blockchain")
 		}
 
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
@@ -727,7 +727,7 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 		name := config.GetString(tokens.TokensConfigName)
 		pluginType := config.GetString(tokens.TokensConfigType)
 		if name == "" || pluginType == "" {
-			return i18n.NewError(ctx, coremsgs.MsgMissingTokensConfig)
+			return i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "tokens")
 		}
 
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
