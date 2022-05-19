@@ -16,10 +16,6 @@
 
 package coremsgs
 
-import "github.com/hyperledger/firefly-common/pkg/i18n"
-
-var ffm = i18n.FFM
-
 //revive:disable
 var (
 	CoreSystemNSDescription = ffm("core.systemNSDescription", "FireFly system namespace")

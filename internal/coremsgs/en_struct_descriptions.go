@@ -16,6 +16,11 @@
 
 package coremsgs
 
+import (
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"golang.org/x/text/language"
+)
+
 //revive:disable
 
 /*
@@ -36,6 +41,11 @@ type Message struct {
 MessageHeader    = ffm("Message.header", "The message header")
 
 */
+
+var ffm = func(key, translation string) i18n.MessageKey {
+	return i18n.FFM(language.AmericanEnglish, key, translation)
+}
+
 var (
 	// MessageHeader field descriptions
 	MessageHeaderID        = ffm("MessageHeader.id", "The UUID of the message. Unique to each message")
