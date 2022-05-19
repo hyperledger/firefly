@@ -72,7 +72,7 @@ type identityManager struct {
 
 func NewIdentityManager(ctx context.Context, di database.Plugin, ii map[string]identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || ii == nil || bi == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
 	im := &identityManager{
 		database:           di,

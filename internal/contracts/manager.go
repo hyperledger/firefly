@@ -80,7 +80,7 @@ type contractManager struct {
 
 func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
 	if err != nil {
