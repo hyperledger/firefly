@@ -36,7 +36,11 @@ type TokensTestSuite struct {
 func (suite *TokensTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
 	stack := readStackFile(suite.T())
-	suite.connector = stack.TokenProviders[0]
+	if stack.TokenProviders[0] != "" {
+		suite.connector = stack.TokenProviders[0]
+	} else {
+		suite.T().Skip("tokenProvider not specified, skipping TokensTestSuite")
+	}
 }
 
 func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
