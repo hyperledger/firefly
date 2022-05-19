@@ -40,10 +40,10 @@ func (suite *TokensTestSuite) SetupSuite() {
 }
 
 func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
-	if suite.connector != "none" {
-		suite.testState = beforeE2ETest(suite.T())
-	} else {
+	if suite.connector == "none" {
 		suite.T().Skip("tokenProvider not specified, skipping TokensTestSuite")
+	} else {
+		suite.testState = beforeE2ETest(suite.T())
 	}
 }
 
