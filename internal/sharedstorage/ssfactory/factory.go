@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ipfs"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
@@ -31,15 +32,15 @@ var pluginsByName = map[string]func() sharedstorage.Plugin{
 }
 
 func InitConfig(config config.ArraySection) {
-	config.AddKnownKey(sharedstorage.SharedStorageConfigType)
-	config.AddKnownKey(sharedstorage.SharedStorageConfigName)
+	config.AddKnownKey(coreconfig.PluginConfigType)
+	config.AddKnownKey(coreconfig.PluginConfigName)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}
 }
 
 func InitConfigDeprecated(config config.Section) {
-	config.AddKnownKey(sharedstorage.SharedStorageConfigType)
+	config.AddKnownKey(coreconfig.PluginConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

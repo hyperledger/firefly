@@ -24,6 +24,13 @@ import (
 
 var ffc = config.AddRootKey
 
+const (
+	// PluginConfigName is the user-supplied name for this token type
+	PluginConfigName = "name"
+	// PluginConfigType is the name of the plugin used for this token type
+	PluginConfigType = "type"
+)
+
 // The following keys can be access from the root configuration.
 // Plugins are responsible for defining their own keys using the Config interface
 var (

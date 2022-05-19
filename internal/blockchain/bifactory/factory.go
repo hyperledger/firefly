@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
 	"github.com/hyperledger/firefly/internal/blockchain/fabric"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 )
@@ -33,15 +34,15 @@ var pluginsByType = map[string]func() blockchain.Plugin{
 }
 
 func InitConfig(config config.ArraySection) {
-	config.AddKnownKey(blockchain.BlockchainConfigName)
-	config.AddKnownKey(blockchain.BlockchainConfigType)
+	config.AddKnownKey(coreconfig.PluginConfigName)
+	config.AddKnownKey(coreconfig.PluginConfigType)
 	for name, plugin := range pluginsByType {
 		plugin().InitConfig(config.SubSection(name))
 	}
 }
 
 func InitConfigDeprecated(config config.Section) {
-	config.AddKnownKey(blockchain.BlockchainConfigType)
+	config.AddKnownKey(coreconfig.PluginConfigType)
 	for name, plugin := range pluginsByType {
 		plugin().InitConfig(config.SubSection(name))
 	}

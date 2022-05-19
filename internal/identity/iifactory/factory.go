@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity/tbd"
 	"github.com/hyperledger/firefly/pkg/identity"
@@ -32,8 +33,8 @@ var pluginsByName = map[string]func() identity.Plugin{
 }
 
 func InitConfig(config config.ArraySection) {
-	config.AddKnownKey(identity.IdentityConfigName)
-	config.AddKnownKey(identity.IdentityConfigType)
+	config.AddKnownKey(coreconfig.PluginConfigName)
+	config.AddKnownKey(coreconfig.PluginConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

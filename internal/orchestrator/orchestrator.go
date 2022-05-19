@@ -355,8 +355,8 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 	plugins = make([]database.Plugin, dbConfigArraySize)
 	for i := 0; i < dbConfigArraySize; i++ {
 		config := databaseConfig.ArrayEntry(i)
-		name := config.GetString(database.DatabaseConfigName)
-		diType := config.GetString(database.DatabaseConfigType)
+		name := config.GetString(coreconfig.PluginConfigName)
+		diType := config.GetString(coreconfig.PluginConfigType)
 		if name == "" || diType == "" {
 			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "database")
 		}
@@ -364,11 +364,10 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
 			return nil, err
 		}
-		plugin, err := difactory.GetPlugin(ctx, diType)
+		plugins[i], err = difactory.GetPlugin(ctx, diType)
 		if err != nil {
 			return nil, err
 		}
-		plugins[i] = plugin
 	}
 
 	return plugins, err
@@ -377,11 +376,11 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []database.Plugin) (err error) {
 	for idx, plugin := range plugins {
 		config := databaseConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config.SubSection(config.GetString(database.DatabaseConfigType)), or)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), or)
 		if err != nil {
 			return err
 		}
-		name := config.GetString(database.DatabaseConfigName)
+		name := config.GetString(coreconfig.PluginConfigName)
 		or.databases[name] = plugin
 	}
 
@@ -394,8 +393,8 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	plugins := make([]dataexchange.Plugin, dxConfigArraySize)
 	for i := 0; i < dxConfigArraySize; i++ {
 		config := dataexchangeConfig.ArrayEntry(i)
-		name := config.GetString(dataexchange.DataExchangeConfigName)
-		dxType := config.GetString(dataexchange.DataExchangeConfigType)
+		name := config.GetString(coreconfig.PluginConfigName)
+		dxType := config.GetString(coreconfig.PluginConfigType)
 
 		if name == "" || dxType == "" {
 			return i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "dataexchange")
@@ -404,11 +403,10 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
 			return err
 		}
-		plugin, err := dxfactory.GetPlugin(ctx, dxType)
+		plugins[i], err = dxfactory.GetPlugin(ctx, dxType)
 		if err != nil {
 			return err
 		}
-		plugins[i] = plugin
 	}
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
@@ -427,16 +425,16 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	if len(plugins) > 0 {
 		for idx, plugin := range plugins {
 			config := dataexchangeConfig.ArrayEntry(idx)
-			err = plugin.Init(ctx, config.SubSection(config.GetString(dataexchange.DataExchangeConfigType)), nodeInfo, &or.bc)
+			err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), nodeInfo, &or.bc)
 			if err != nil {
 				return err
 			}
-			name := config.GetString(dataexchange.DataExchangeConfigName)
+			name := config.GetString(coreconfig.PluginConfigName)
 			or.dataexchange[name] = plugin
 		}
 	} else {
 		log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
-		dxType := deprecatedDataexchangeConfig.GetString(dataexchange.DataExchangeConfigType)
+		dxType := deprecatedDataexchangeConfig.GetString(coreconfig.PluginConfigType)
 		plugin, err := dxfactory.GetPlugin(ctx, dxType)
 		if err != nil {
 			return err
@@ -459,9 +457,8 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.databases == nil {
-		var dp []database.Plugin
 		or.databases = make(map[string]database.Plugin)
-		dp, err = or.getDatabasePlugins(ctx)
+		dp, err := or.getDatabasePlugins(ctx)
 		if err != nil {
 			return err
 		}
@@ -473,7 +470,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	// check for deprecated db config
 	if len(or.databases) == 0 {
-		diType := deprecatedDatabaseConfig.GetString(database.DatabaseConfigType)
+		diType := deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType)
 		plugin, err := difactory.GetPlugin(ctx, diType)
 		if err != nil {
 			return err
@@ -492,8 +489,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.blockchains == nil {
 		or.blockchains = make(map[string]blockchain.Plugin)
-		var bp []blockchain.Plugin
-		bp, err = or.getBlockchainPlugins(ctx)
+		bp, err := or.getBlockchainPlugins(ctx)
 		if err != nil {
 			return err
 		}
@@ -505,7 +501,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	// Check for deprecated blockchain config
 	if len(or.blockchains) == 0 {
-		biType := deprecatedBlockchainConfig.GetString(blockchain.BlockchainConfigType)
+		biType := deprecatedBlockchainConfig.GetString(coreconfig.PluginConfigType)
 		plugin, err := bifactory.GetPlugin(ctx, biType)
 		if err != nil {
 			return err
@@ -517,7 +513,6 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	if or.sharedstorage == nil {
-		var ss []sharedstorage.Plugin
 		or.sharedstorage = make(map[string]sharedstorage.Plugin)
 		ss, err := or.getSharedStoragePlugins(ctx)
 		if err != nil {
@@ -531,7 +526,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	// Check for deprecated shared storage config
 	if len(or.sharedstorage) == 0 {
-		ssType := deprecatedSharedStorageConfig.GetString(sharedstorage.SharedStorageConfigType)
+		ssType := deprecatedSharedStorageConfig.GetString(coreconfig.PluginConfigType)
 		plugin, err := ssfactory.GetPlugin(ctx, ssType)
 		if err != nil {
 			return err
@@ -560,11 +555,11 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 func (or *orchestrator) initSharedStoragePlugins(ctx context.Context, plugins []sharedstorage.Plugin) (err error) {
 	for idx, plugin := range plugins {
 		config := sharedstorageConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config.SubSection(config.GetString(sharedstorage.SharedStorageConfigType)), &or.bc)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), &or.bc)
 		if err != nil {
 			return err
 		}
-		name := config.GetString(sharedstorage.SharedStorageConfigName)
+		name := config.GetString(coreconfig.PluginConfigName)
 		or.sharedstorage[name] = plugin
 	}
 
@@ -587,8 +582,8 @@ func (or *orchestrator) getSharedStoragePlugins(ctx context.Context) (plugins []
 	plugins = make([]sharedstorage.Plugin, configSize)
 	for i := 0; i < configSize; i++ {
 		config := sharedstorageConfig.ArrayEntry(i)
-		name := config.GetString(sharedstorage.SharedStorageConfigName)
-		pluginType := config.GetString(sharedstorage.SharedStorageConfigType)
+		name := config.GetString(coreconfig.PluginConfigName)
+		pluginType := config.GetString(coreconfig.PluginConfigType)
 		if name == "" || pluginType == "" {
 			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "sharedstorage")
 		}
@@ -597,11 +592,10 @@ func (or *orchestrator) getSharedStoragePlugins(ctx context.Context) (plugins []
 			return nil, err
 		}
 
-		plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+		plugins[i], err = ssfactory.GetPlugin(ctx, pluginType)
 		if err != nil {
 			return nil, err
 		}
-		plugins[i] = plugin
 	}
 
 	return plugins, err
@@ -622,11 +616,11 @@ func (or *orchestrator) initIdentity(ctx context.Context) (err error) {
 func (or *orchestrator) initIdentityPlugins(ctx context.Context, plugins []idplugin.Plugin) (err error) {
 	for idx, plugin := range plugins {
 		config := identityConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config.SubSection(config.GetString(idplugin.IdentityConfigType)), &or.bc)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), &or.bc)
 		if err != nil {
 			return err
 		}
-		name := config.GetString(idplugin.IdentityConfigName)
+		name := config.GetString(coreconfig.PluginConfigName)
 		or.identityPlugins[name] = plugin
 	}
 
@@ -638,8 +632,8 @@ func (or *orchestrator) getIdentityPlugins(ctx context.Context) (plugins []idplu
 	plugins = make([]idplugin.Plugin, configSize)
 	for i := 0; i < configSize; i++ {
 		config := identityConfig.ArrayEntry(i)
-		name := config.GetString(idplugin.IdentityConfigName)
-		pluginType := config.GetString(idplugin.IdentityConfigType)
+		name := config.GetString(coreconfig.PluginConfigName)
+		pluginType := config.GetString(coreconfig.PluginConfigType)
 		if name == "" || pluginType == "" {
 			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "identity")
 		}
@@ -648,11 +642,10 @@ func (or *orchestrator) getIdentityPlugins(ctx context.Context) (plugins []idplu
 			return nil, err
 		}
 
-		plugin, err := iifactory.GetPlugin(ctx, pluginType)
+		plugins[i], err = iifactory.GetPlugin(ctx, pluginType)
 		if err != nil {
 			return nil, err
 		}
-		plugins[i] = plugin
 	}
 	return plugins, err
 }
@@ -662,8 +655,8 @@ func (or *orchestrator) getBlockchainPlugins(ctx context.Context) (plugins []blo
 	plugins = make([]blockchain.Plugin, blockchainConfigArraySize)
 	for i := 0; i < blockchainConfigArraySize; i++ {
 		config := blockchainConfig.ArrayEntry(i)
-		name := config.GetString(blockchain.BlockchainConfigName)
-		pluginType := config.GetString(blockchain.BlockchainConfigType)
+		name := config.GetString(coreconfig.PluginConfigName)
+		pluginType := config.GetString(coreconfig.PluginConfigType)
 		if name == "" || pluginType == "" {
 			return nil, i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "blockchain")
 		}
@@ -672,11 +665,10 @@ func (or *orchestrator) getBlockchainPlugins(ctx context.Context) (plugins []blo
 			return nil, err
 		}
 
-		plugin, err := bifactory.GetPlugin(ctx, pluginType)
+		plugins[i], err = bifactory.GetPlugin(ctx, pluginType)
 		if err != nil {
 			return nil, err
 		}
-		plugins[i] = plugin
 	}
 
 	return plugins, err
@@ -695,7 +687,7 @@ func (or *orchestrator) initDeprecatedBlockchainPlugin(ctx context.Context, plug
 }
 
 func (or *orchestrator) initDeprecatedDatabasePlugin(ctx context.Context, plugin database.Plugin) (err error) {
-	log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
+	log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
 	err = plugin.Init(ctx, deprecatedDatabaseConfig.SubSection(plugin.Name()), or)
 	if err != nil {
 		return err
@@ -713,7 +705,7 @@ func (or *orchestrator) initBlockchainPlugins(ctx context.Context, plugins []blo
 		if err != nil {
 			return err
 		}
-		name := config.GetString(blockchain.BlockchainConfigName)
+		name := config.GetString(coreconfig.PluginConfigName)
 		or.blockchains[name] = plugin
 	}
 
@@ -725,8 +717,8 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 	tokensConfigArraySize := tokensConfig.ArraySize()
 	for i := 0; i < tokensConfigArraySize; i++ {
 		config := tokensConfig.ArrayEntry(i)
-		name := config.GetString(tokens.TokensConfigName)
-		pluginType := config.GetString(tokens.TokensConfigType)
+		name := config.GetString(coreconfig.PluginConfigName)
+		pluginType := config.GetString(coreconfig.PluginConfigType)
 		if name == "" || pluginType == "" {
 			return i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, "tokens")
 		}
@@ -760,7 +752,7 @@ func (or *orchestrator) initTokens(ctx context.Context) (err error) {
 
 	for i := 0; i < tokensConfigArraySize; i++ {
 		prefix := deprecatedTokensConfig.ArrayEntry(i)
-		name := prefix.GetString(tokens.TokensConfigName)
+		name := prefix.GetString(coreconfig.PluginConfigName)
 		pluginName := prefix.GetString(tokens.TokensConfigPlugin)
 		if name == "" {
 			return i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)

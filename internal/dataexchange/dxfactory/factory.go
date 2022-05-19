@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/dataexchange/ffdx"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
@@ -35,15 +36,15 @@ var pluginsByName = map[string]func() dataexchange.Plugin{
 }
 
 func InitConfig(config config.ArraySection) {
-	config.AddKnownKey(dataexchange.DataExchangeConfigType)
-	config.AddKnownKey(dataexchange.DataExchangeConfigName)
+	config.AddKnownKey(coreconfig.PluginConfigName)
+	config.AddKnownKey(coreconfig.PluginConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}
 }
 
 func InitConfigDeprecated(config config.Section) {
-	config.AddKnownKey(dataexchange.DataExchangeConfigType, NewFFDXPluginName)
+	config.AddKnownKey(coreconfig.PluginConfigType, NewFFDXPluginName)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}
