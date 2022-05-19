@@ -5,7 +5,8 @@ on:
     branches:
       - main
   pull_request:
-
+  release:
+    types: [released]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,9 +15,18 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout the current commit
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      
+      # If this is a new release, get the previous versions of the docs to build the full list of versions
+      - name: Checkout the gh-pages branch
+        if: github.event_name == 'release'
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+          path: gh-pages
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -26,13 +36,57 @@ jobs:
       - name: Install bundler
         run: gem install bundler:1.17.2
 
-      - name: Build doc site
-        run: make docs
-
-      - name: Deploy
+      # If this was a merge to main, set the version to "head"
+      - name: Set version env var to 'head'
         if: github.event_name == 'push'
+        run: echo "DOCS_VERSION=head" >> $GITHUB_ENV
+
+      # If this was a release, set the version number
+      - name: Set version env var
+        if: github.event_name == 'release'
+        run: echo "DOCS_VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Set version in _config.yml
+        run: |
+          echo "version: ${{ env.DOCS_VERSION }}" >> ./docs/_config.yml
+
+      # Only need to build the full list of versions every time there is a new release
+      - name: Update version.json list
+        if: github.event_name == 'release'
+        run: ls ./gh-pages/docs | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq '. += ["${GITHUB_REF##*/}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
+
+      - name: Install dependencies
+        working-dir: docs
+        run: bundle install
+
+      - name: Build doc site version
+        run: bundle exec jekyll build --baseurl /firefly/${{ env.DOCS_VERSION }}
+
+      - name: Check the docs for broken links
+        run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}:/' --url-ignore /127.0.0.1/,/localhost/
+
+      # Push the versioned docs
+      - name: Deploy docs version
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.event_name != 'pull_request'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./docs/_site
+          destination_dir: ${{ env.DOCS_VERSION }}
+
+      # If this was a release, build the docs as the root (latest) version too
+      - name: Build doc site (latest)
+        if: github.event_name == 'release'
+        run: bundle exec jekyll build --baseurl /firefly
+
+      # If this was a release, push the docs as latest
+      - name: Deploy docs (latest)
+        if: github.event_name == 'release'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: ./docs/_site
+          destination_dir: /
+

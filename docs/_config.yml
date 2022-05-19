@@ -9,10 +9,6 @@ aux_links:
     - "https://wiki.hyperledger.org/display/FIR"
   "Discord":
     - "https://discord.gg/hyperledger"
-  "Mailing List":
-    - "https://lists.hyperledger.org/g/firefly"
-  "Calendar":
-    - "https://lists.hyperledger.org/g/firefly/calendar"
 color_scheme: firefly
 plugins:
   - jekyll-multiple-languages-plugin
