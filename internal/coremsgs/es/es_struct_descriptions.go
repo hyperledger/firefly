@@ -24,7 +24,7 @@ import (
 //revive:disable
 
 /*
-This file contains the English field level descriptions that are used in
+This file contains the field level descriptions that are used in
 OpenAPI Spec generation. Each struct field that wants to use one of these
 needs to have an ffstruct tag on it, indicating the name of the struct.
 That will be combined with the JSON field name (note, it is not the GO
