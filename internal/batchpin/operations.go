@@ -86,7 +86,7 @@ func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *core.Prepared
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
-		return nil, false, bp.blockchain.SubmitBatchPin(ctx, op.ID, nil /* TODO: ledger selection */, batch.Key, &blockchain.BatchPin{
+		return nil, false, bp.blockchain.SubmitBatchPin(ctx, op.ID, batch.Key, &blockchain.BatchPin{
 			Namespace:       batch.Namespace,
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,

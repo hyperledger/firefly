@@ -51,7 +51,7 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
+	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error
@@ -106,9 +106,6 @@ type Callbacks interface {
 // Capabilities the supported featureset of the blockchain
 // interface implemented by the plugin, with the specified config
 type Capabilities struct {
-	// GlobalSequencer means submitting an ordered piece of data visible to all
-	// participants of the network (requires an all-participant chain)
-	GlobalSequencer bool
 }
 
 // TransactionStatus is the only architecturally significant thing that Firefly tracks on blockchain transactions.

@@ -180,7 +180,6 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
-	assert.True(t, e.Capabilities().GlobalSequencer)
 
 	err = e.Start()
 	assert.NoError(t, err)
@@ -412,7 +411,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.NoError(t, err)
 
@@ -447,7 +446,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.NoError(t, err)
 
@@ -475,7 +474,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -505,7 +504,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 			"error": "Invalid",
 		}))
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.Regexp(t, "FF10284.*Invalid", err)
 

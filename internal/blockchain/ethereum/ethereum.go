@@ -164,6 +164,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
 	e.metrics = metrics
+	e.capabilities = &blockchain.Capabilities{}
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -179,10 +180,6 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 
 	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
 		e.fftmClient = ffresty.New(e.ctx, fftmConf)
-	}
-
-	e.capabilities = &blockchain.Capabilities{
-		GlobalSequencer: true,
 	}
 
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
@@ -587,7 +584,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 		Post("/")
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
