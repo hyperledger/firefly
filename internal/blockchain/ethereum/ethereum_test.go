@@ -188,6 +188,7 @@ func TestInitAllNewStreamsAndWSEventWithFFTM(t *testing.T) {
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+	assert.NotNil(t, e.Capabilities())
 
 	err = e.Start()
 	assert.NoError(t, err)
