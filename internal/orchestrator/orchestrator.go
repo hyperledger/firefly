@@ -447,6 +447,7 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		or.dataexchange["dataexchange_0"] = plugin
 	}
 
 	return err
