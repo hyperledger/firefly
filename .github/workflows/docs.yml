@@ -56,13 +56,15 @@ jobs:
         run: ls ./gh-pages/docs | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq '. += ["${GITHUB_REF##*/}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
 
       - name: Install dependencies
-        working-dir: docs
+        working-directory: docs
         run: bundle install
 
       - name: Build doc site version
+        working-directory: docs
         run: bundle exec jekyll build --baseurl /firefly/${{ env.DOCS_VERSION }}
 
       - name: Check the docs for broken links
+        working-directory: docs
         run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}:/' --url-ignore /127.0.0.1/,/localhost/
 
       # Push the versioned docs
