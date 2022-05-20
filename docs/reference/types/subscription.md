@@ -84,6 +84,10 @@ nav_order: 3
 
 ## TransactionFilter
 
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `type` | Regular expression to apply to the transaction 'type' field | `string` |
+
 
 ## BlockchainEventFilter
 

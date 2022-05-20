@@ -455,7 +455,7 @@ func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, roo
 
 		tableRowCount = writeStructFields(ctx, t, rootPageNames, simpleTypeNames, generatedTableNames, outputPath, subFieldBuff, tableBuff, tableRowCount)
 
-		if tableRowCount > 1 {
+		if tableRowCount > 0 {
 			fieldDescriptionsBytes = tableBuff.Bytes()
 		}
 	}

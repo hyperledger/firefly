@@ -80,5 +80,5 @@ func TestGenerateMarkdownAnonymousStruct(t *testing.T) {
 		},
 	}}, []interface{}{}, "../../test")
 	assert.NoError(t, err)
-	assert.Regexp(t, `\| kite \|`, string(refdocs["thing1"]))
+	assert.Regexp(t, "\\| `kite` \\|", string(refdocs["thing1"]))
 }
