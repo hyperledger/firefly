@@ -64,12 +64,12 @@ jobs:
         run: bundle exec jekyll build --baseurl /firefly/${{ env.DOCS_VERSION }}
 
       - name: Check the docs for broken links (root)
-        if: github.event_name != 'release'
+        if: github.event_name == 'pull_request'
         working-directory: docs
         run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/:/' --url-ignore /127.0.0.1/,/localhost/
 
       - name: Check the docs for broken links (version)
-        if: github.event_name == 'release'
+        if: github.event_name != 'pull_request'
         working-directory: docs
         run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}/:/' --url-ignore /127.0.0.1/,/localhost/
 
