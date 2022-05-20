@@ -553,7 +553,7 @@ func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpl
 			}
 		}
 
-		tableBuff.WriteString(fmt.Sprintf("| %s | %s | %s |\n", jsonFieldName, description, fireflyType))
+		tableBuff.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", jsonFieldName, description, fireflyType))
 		tableRowCount++
 	}
 	return tableRowCount
