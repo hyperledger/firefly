@@ -10,12 +10,12 @@ Root identities are registered with only a `claim` - which is a signed
 transaction from a particular blockchain account, to bind a DID with a
 `name` that is unique within the network, to that signing key.
 
-The signing key then becomes a [Verifier](./verifier) for that identity.
+The signing key then becomes a [Verifier](./(verifier.md) for that identity.
 Using that key the root identity can be used to register a new FireFly node
 in the network, send and receive messages, and register child identities.
 
 When child identities are registered, a `claim` using a key that is going
-to be the [Verifier](./verifier) for that child identity is required.
+to be the [Verifier](./(verifier.md) for that child identity is required.
 However, this is insufficient to establish that identity as a child identity
 of the parent. There must be an additional `verification` that references
 the `claim` (by UUID) using the key verifier of the parent identity.

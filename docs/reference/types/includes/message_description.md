@@ -20,7 +20,7 @@ All JSON data is serialized without whitespace to hash it.
 
 All hashes are SHA256.
 
-Each node independently calculates the hash, and the hash is included in the manifest of the [Batch](./batch) by the
+Each node independently calculates the hash, and the hash is included in the manifest of the [Batch](./(batch.md) by the
 node that sends the message.
 Because the hash of that batch manifest is included in the blockchain transaction, a message transferred to
 a node that does not match the original message hash is rejected.
@@ -97,7 +97,7 @@ Some examples:
 
 ### Transaction type
 
-By default messages are pinned to the blockchain, within a [Batch](./batch).
+By default messages are pinned to the blockchain, within a [Batch](./(batch.md).
 
 For private messages, you can choose to disable this pinning by setting `header.txtype: "unpinned"`.
 
@@ -105,7 +105,7 @@ Broadcast messages must be pinned to the blockchain.
 
 ### In-line data
 
-When sending a message you can specify the array of [Data](./data) attachments in-line, as part of the same JSON payload.
+When sending a message you can specify the array of [Data](./(data.md) attachments in-line, as part of the same JSON payload.
 
 For example, a minimal broadcast message could be:
 

@@ -11,7 +11,7 @@ smart contract.
 > the FireFly events (of type `blockchain_event_received`) that are emitted
 > for each detected blockchain event.
 >
-> For more information see the [Events](../events) reference section.
+> For more information see the [Events](../(events.md) reference section.
 
 ### URL
 

@@ -1,6 +1,6 @@
 An `ack` must be sent on a WebSocket for each event delivered to an application.
 
-> Unless `autoack` is set in the [WSStart](./wsstart) payload/URL parameters to cause
+> Unless `autoack` is set in the [WSStart](./(wsstart.md) payload/URL parameters to cause
 > automatic acknowledgement.
 
 Your application should specify the `id` of each event that it acknowledges.
@@ -11,5 +11,5 @@ application that has not been acknowledged is the one the `ack` is associated wi
 If multiple subscriptions are started on a WebSocket, then you need to specify the
 subscription `namespace`+`name` as part of each `ack`.
 
-If you send an acknowledgement that cannot be correlated, then a [WSError](./wserror)
+If you send an acknowledgement that cannot be correlated, then a [WSError](./(wserror.md)
 payload will be sent to the application.
