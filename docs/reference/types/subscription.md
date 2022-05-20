@@ -2,7 +2,7 @@
 layout: default
 title: Subscription
 parent: Core Resources
-grand_parent: Reference
+grand_parent: pages.reference
 nav_order: 3
 ---
 

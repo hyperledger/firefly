@@ -2,13 +2,8 @@
 layout: default
 title: Batch
 parent: Core Resources
-<<<<<<< HEAD
 grand_parent: pages.reference
-nav_order: 9
-=======
-grand_parent: Reference
 nav_order: 10
->>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # Batch
@@ -53,10 +48,6 @@ nav_order: 10
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-<<<<<<< HEAD
-| `hash` | The hash of the manifest of the batch | `Bytes32` |
-| `payload` | Batch.payload | [`BatchPayload`](#batchpayload) |
-=======
 | id | The UUID of the batch | [`UUID`](simpletypes#uuid) |
 | type | The type of the batch | `FFEnum`:<br/>`"broadcast"`<br/>`"private"` |
 | namespace | The namespace of the batch | `string` |
@@ -67,22 +58,21 @@ nav_order: 10
 | key | The on-chain signing key used to sign the transaction | `string` |
 | hash | The hash of the manifest of the batch | `Bytes32` |
 | payload | Batch.payload | [`BatchPayload`](#batchpayload) |
->>>>>>> 99cef50f (Add subscription docs)
 
 ## BatchPayload
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `tx` | BatchPayload.tx | [`TransactionRef`](#transactionref) |
-| `messages` | BatchPayload.messages | [`Message[]`](message#message) |
-| `data` | BatchPayload.data | [`Data[]`](data#data) |
+| tx | BatchPayload.tx | [`TransactionRef`](#transactionref) |
+| messages | BatchPayload.messages | [`Message[]`](message#message) |
+| data | BatchPayload.data | [`Data[]`](data#data) |
 
 ## TransactionRef
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `type` | The type of the FireFly transaction | `FFEnum`: |
-| `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
+| type | The type of the FireFly transaction | `FFEnum`: |
+| id | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
 
 
 

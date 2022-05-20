@@ -2,13 +2,8 @@
 layout: default
 title: Data
 parent: Core Resources
-<<<<<<< HEAD
 grand_parent: pages.reference
-nav_order: 8
-=======
-grand_parent: Reference
 nav_order: 9
->>>>>>> 99cef50f (Add subscription docs)
 ---
 
 # Data
@@ -57,30 +52,30 @@ nav_order: 9
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `id` | The UUID of the data resource | [`UUID`](simpletypes#uuid) |
-| `validator` | The data validator type | `FFEnum`: |
-| `namespace` | The namespace of the data resource | `string` |
-| `hash` | The hash of the data resource. Derived from the value and the hash of any binary blob attachment | `Bytes32` |
-| `created` | The creation time of the data resource | [`FFTime`](simpletypes#fftime) |
-| `datatype` | The optional datatype to use of validation of this data | [`DatatypeRef`](#datatyperef) |
-| `value` | The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment | [`JSONAny`](simpletypes#jsonany) |
-| `blob` | An optional hash reference to a binary blob attachment | [`BlobRef`](#blobref) |
+| id | The UUID of the data resource | [`UUID`](simpletypes#uuid) |
+| validator | The data validator type | `FFEnum`: |
+| namespace | The namespace of the data resource | `string` |
+| hash | The hash of the data resource. Derived from the value and the hash of any binary blob attachment | `Bytes32` |
+| created | The creation time of the data resource | [`FFTime`](simpletypes#fftime) |
+| datatype | The optional datatype to use of validation of this data | [`DatatypeRef`](#datatyperef) |
+| value | The value for the data, stored in the FireFly core database. Can be any JSON type - object, array, string, number or boolean. Can be combined with a binary blob attachment | [`JSONAny`](simpletypes#jsonany) |
+| blob | An optional hash reference to a binary blob attachment | [`BlobRef`](#blobref) |
 
 ## DatatypeRef
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `name` | The name of the datatype | `string` |
-| `version` | The version of the datatype. Semantic versioning is encouraged, such as v1.0.1 | `string` |
+| name | The name of the datatype | `string` |
+| version | The version of the datatype. Semantic versioning is encouraged, such as v1.0.1 | `string` |
 
 
 ## BlobRef
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `hash` | The hash of the binary blob data | `Bytes32` |
-| `size` | The size of the binary data | `int64` |
-| `name` | The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search | `string` |
-| `public` | If this data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.) | `string` |
+| hash | The hash of the binary blob data | `Bytes32` |
+| size | The size of the binary data | `int64` |
+| name | The name field from the metadata attached to the blob, commonly used as a path/filename, and indexed for search | `string` |
+| public | If this data has been published to shared storage, this field is the id of the data in the shared storage plugin (IPFS hash etc.) | `string` |
 
 
