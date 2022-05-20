@@ -55,7 +55,7 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	}
 
 	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.sharedstorage {
+	for name, plugin := range or.sharedstoragePlugins {
 		sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
 			Name:       name,
 			PluginType: plugin.Name(),
@@ -63,7 +63,7 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	}
 
 	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.dataexchange {
+	for name, plugin := range or.dataexchangePlugins {
 		dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
 			Name:       name,
 			PluginType: plugin.Name(),
