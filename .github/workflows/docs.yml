@@ -53,7 +53,7 @@ jobs:
       # Only need to build the full list of versions every time there is a new release
       - name: Update version.json list
         if: github.event_name == 'release'
-        run: ls ./gh-pages/docs | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq '. += ["${GITHUB_REF##*/}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
+        run: ls ./gh-pages | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' || true | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq --null-input '. += ["${GITHUB_REF##*/}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
 
       - name: Install dependencies
         working-directory: docs
