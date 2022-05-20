@@ -86,6 +86,7 @@ jobs:
       # If this was a release, build the docs as the root (latest) version too
       - name: Build doc site (latest)
         if: github.event_name == 'release'
+        working-directory: docs
         run: bundle exec jekyll build --baseurl /firefly
 
       # If this was a release, push the docs as latest
