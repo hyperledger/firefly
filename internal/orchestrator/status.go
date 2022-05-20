@@ -29,7 +29,7 @@ import (
 )
 
 func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
-	// Tokens can have more than one name, so they must be iterated over
+	// Plugins can have more than one name, so they must be iterated over
 	tokensArray := make([]*core.NodeStatusPlugin, 0)
 	for name, plugin := range or.tokens {
 		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
@@ -38,34 +38,54 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		})
 	}
 
+	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.blockchains {
+		blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	databasesArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.databases {
+		databasesArray = append(databasesArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.sharedstoragePlugins {
+		sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.dataexchangePlugins {
+		dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	identityPluginArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.identityPlugins {
+		identityPluginArray = append(identityPluginArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
 	return core.NodeStatusPlugins{
-		Blockchain: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.blockchain.Name(),
-			},
-		},
-		Database: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.database.Name(),
-			},
-		},
-		DataExchange: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.dataexchange.Name(),
-			},
-		},
-		Events: or.events.GetPlugins(),
-		Identity: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.identityPlugin.Name(),
-			},
-		},
-		SharedStorage: []*core.NodeStatusPlugin{
-			{
-				PluginType: or.sharedstorage.Name(),
-			},
-		},
-		Tokens: tokensArray,
+		Blockchain:    blockchainsArray,
+		Database:      databasesArray,
+		SharedStorage: sharedstorageArray,
+		DataExchange:  dataexchangeArray,
+		Events:        or.events.GetPlugins(),
+		Identity:      identityPluginArray,
+		Tokens:        tokensArray,
 	}
 }
 
