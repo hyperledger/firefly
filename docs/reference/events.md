@@ -27,7 +27,7 @@ Applications subscribe to these events using developer friendly protocols
 like WebSockets, and Webhooks. Additional transports and messaging systems
 like NATS, Kafka, and JMS Servers can be connected through plugins.
 
-Each application creates one ore more [Subscriptions](./types/subscription)
+Each application creates one or more [Subscriptions](./types/subscription.md)
 to identify itself.
 In this subscription the application can choose to receive all events that
 are emitted within a `namespace`, or can use server-side filtering to 
