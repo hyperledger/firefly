@@ -15,11 +15,10 @@ This guide describes the steps to deploy a smart contract to an Ethereum blockch
 > **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and an Ethereum blockchain created by the FireFly CLI. If you need help getting that set up, please see the [Getting Started guide to Start your environment](https://nguyer.github.io/firefly/gettingstarted/setup_env.html).
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC
-   {:toc}
+{:toc}
 
 ---
 
@@ -468,7 +467,7 @@ We need to copy the `id` field we got in the response from the previous step to 
 
 You'll notice in the response body that there are a couple of URLs near the bottom. If you navigate to the one labeled `ui` in your browser, you should see the Swagger UI for your smart contract.
 
-![Swagger UI](../images/simple_storage_swagger.png "Swagger UI")
+![Swagger UI](../../images/simple_storage_swagger.png "Swagger UI")
 
 ## Invoke the smart contract
 

@@ -421,7 +421,7 @@ We need to copy the `id` field we got in the response from the previous step to 
 
 You'll notice in the response body that there are a couple of URLs near the bottom. If you navigate to the one labeled `ui` in your browser, you should see the Swagger UI for your chaincode.
 
-![Swagger UI](../images/simple_storage_swagger.png "Swagger UI")
+![Swagger UI](../../images/asset_transfer_swagger.png "Swagger UI")
 
 ### /invoke/\* endpoints
 
