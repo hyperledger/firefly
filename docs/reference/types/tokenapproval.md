@@ -18,7 +18,7 @@ nav_order: 12
 ---
 ## TokenApproval
 
-{% include_relative includes/tokenapproval_description.md %}
+{% include_relative _includes/tokenapproval_description.md %}
 
 ### Example
 

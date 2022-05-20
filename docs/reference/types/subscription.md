@@ -18,7 +18,7 @@ nav_order: 3
 ---
 ## Subscription
 
-{% include_relative includes/subscription_description.md %}
+{% include_relative _includes/subscription_description.md %}
 
 ### Example
 

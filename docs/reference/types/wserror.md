@@ -18,7 +18,7 @@ nav_order: 23
 ---
 ## WSError
 
-{% include_relative includes/wserror_description.md %}
+{% include_relative _includes/wserror_description.md %}
 
 ### Example
 

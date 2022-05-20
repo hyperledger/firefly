@@ -18,7 +18,7 @@ nav_order: 19
 ---
 ## Batch
 
-{% include_relative includes/batch_description.md %}
+{% include_relative _includes/batch_description.md %}
 
 ### Example
 

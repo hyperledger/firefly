@@ -18,7 +18,7 @@ nav_order: 18
 ---
 ## Group
 
-{% include_relative includes/group_description.md %}
+{% include_relative _includes/group_description.md %}
 
 ### Example
 

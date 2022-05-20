@@ -18,7 +18,7 @@ nav_order: 6
 ---
 ## Transaction
 
-{% include_relative includes/transaction_description.md %}
+{% include_relative _includes/transaction_description.md %}
 
 ### Example
 

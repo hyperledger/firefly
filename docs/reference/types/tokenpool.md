@@ -18,7 +18,7 @@ nav_order: 10
 ---
 ## TokenPool
 
-{% include_relative includes/tokenpool_description.md %}
+{% include_relative _includes/tokenpool_description.md %}
 
 ### Example
 

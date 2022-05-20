@@ -18,7 +18,7 @@ nav_order: 5
 ---
 ## BlockchainEvent
 
-{% include_relative includes/blockchainevent_description.md %}
+{% include_relative _includes/blockchainevent_description.md %}
 
 ### Example
 

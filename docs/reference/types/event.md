@@ -18,7 +18,7 @@ nav_order: 2
 ---
 ## Event
 
-{% include_relative includes/event_description.md %}
+{% include_relative _includes/event_description.md %}
 
 ### Example
 

@@ -18,7 +18,7 @@ nav_order: 17
 ---
 ## Datatype
 
-{% include_relative includes/datatype_description.md %}
+{% include_relative _includes/datatype_description.md %}
 
 ### Example
 

@@ -18,7 +18,7 @@ nav_order: 21
 ---
 ## WSStart
 
-{% include_relative includes/wsstart_description.md %}
+{% include_relative _includes/wsstart_description.md %}
 
 ### Example
 

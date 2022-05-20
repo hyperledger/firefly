@@ -18,7 +18,7 @@ nav_order: 14
 ---
 ## Verifier
 
-{% include_relative includes/verifier_description.md %}
+{% include_relative _includes/verifier_description.md %}
 
 ### Example
 

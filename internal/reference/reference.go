@@ -595,14 +595,14 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 	generatedTableNames = append(generatedTableNames, strings.ToLower(t.Name()))
 
 	// If a detailed type_description.md file exists, include that in a Description section here
-	filename, _ := filepath.Abs(filepath.Join(outputPath, "includes", fmt.Sprintf("%s_description.md", strings.ToLower(t.Name()))))
+	filename, _ := filepath.Abs(filepath.Join(outputPath, "_includes", fmt.Sprintf("%s_description.md", strings.ToLower(t.Name()))))
 	_, err := os.Stat(filename)
 	if err != nil {
 		if descRequired {
 			return nil, nil, i18n.NewError(ctx, coremsgs.MsgReferenceMarkdownMissing, filename)
 		}
 	} else {
-		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
+		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative _includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
 	}
 
 	// Include an example JSON representation if we have one available

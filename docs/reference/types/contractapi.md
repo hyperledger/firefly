@@ -18,7 +18,7 @@ nav_order: 4
 ---
 ## ContractAPI
 
-{% include_relative includes/contractapi_description.md %}
+{% include_relative _includes/contractapi_description.md %}
 
 ### Example
 

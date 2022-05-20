@@ -18,7 +18,7 @@ nav_order: 8
 ---
 ## FFI
 
-{% include_relative includes/ffi_description.md %}
+{% include_relative _includes/ffi_description.md %}
 
 ### Example
 

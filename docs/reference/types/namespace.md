@@ -18,7 +18,7 @@ nav_order: 20
 ---
 ## Namespace
 
-{% include_relative includes/namespace_description.md %}
+{% include_relative _includes/namespace_description.md %}
 
 ### Example
 
