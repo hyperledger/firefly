@@ -18,7 +18,6 @@ package orchestrator
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -41,6 +40,7 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -58,19 +58,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
-const (
-	// NamespacePredefined is the list of pre-defined namespaces
-	NamespacePredefined = "predefined"
-	// NamespaceName is a short name for a pre-defined namespace
-	NamespaceName = "name"
-	// NamespaceName is a long description for a pre-defined namespace
-	NamespaceDescription = "description"
-)
-
 var (
 	blockchainConfig    = config.RootArray("plugins.blockchain")
 	tokensConfig        = config.RootArray("plugins.tokens")
-	namespaceConfig     = config.RootSection("namespaces")
 	databaseConfig      = config.RootArray("plugins.database")
 	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
 	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
@@ -185,7 +175,7 @@ type orchestrator struct {
 	adminEvents          adminevents.Manager
 	sharedDownload       shareddownload.Manager
 	txHelper             txcommon.Helper
-	predefinedNS         config.ArraySection
+	namespace            namespace.Manager
 }
 
 func NewOrchestrator(withDefaults bool) Orchestrator {
@@ -201,23 +191,11 @@ func NewOrchestrator(withDefaults bool) Orchestrator {
 	dxfactory.InitConfig(dataexchangeConfig)
 	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
 	iifactory.InitConfig(identityConfig)
-	// For backwards compatibility with the top level "tokens" config
 	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
 	tifactory.InitConfig(tokensConfig)
-
-	or.InitNamespaceConfig(withDefaults)
+	namespace.InitConfig(withDefaults)
 
 	return or
-}
-
-func (or *orchestrator) InitNamespaceConfig(withDefaults bool) {
-	or.predefinedNS = namespaceConfig.SubArray(NamespacePredefined)
-	or.predefinedNS.AddKnownKey(NamespaceName)
-	or.predefinedNS.AddKnownKey(NamespaceDescription)
-	if withDefaults {
-		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+NamespaceName, "default")
-		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+NamespaceDescription, "Default predefined namespace")
-	}
 }
 
 func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
@@ -225,10 +203,10 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.cancelCtx = cancelCtx
 	err = or.initPlugins(ctx)
 	if err == nil {
-		err = or.initComponents(ctx)
+		err = or.initNamespaces(ctx)
 	}
 	if err == nil {
-		err = or.initNamespaces(ctx)
+		err = or.initComponents(ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.bi = or.blockchain
@@ -493,6 +471,12 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Not really a plugin, but this has to be initialized here after the database (at least temporarily).
+	// Shortly after this step, namespaces will be synced to the database and will generate notifications to adminEvents.
+	if or.adminEvents == nil {
+		or.adminEvents = adminevents.NewAdminEventManager(ctx)
 	}
 
 	if or.identityPlugins == nil {
@@ -864,10 +848,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.adminEvents == nil {
-		or.adminEvents = adminevents.NewAdminEventManager(ctx)
-	}
-
 	if or.networkmap == nil {
 		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
 		if err != nil {
@@ -880,70 +860,9 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) getPredefinedNamespaces(ctx context.Context) ([]*core.Namespace, error) {
-	defaultNS := config.GetString(coreconfig.NamespacesDefault)
-	namespaces := []*core.Namespace{
-		{
-			Name:        core.SystemNamespace,
-			Type:        core.NamespaceTypeSystem,
-			Description: i18n.Expand(ctx, coremsgs.CoreSystemNSDescription),
-		},
+func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
+	if or.namespace == nil {
+		or.namespace = namespace.NewNamespaceManager(ctx)
 	}
-	foundDefault := false
-	for i := 0; i < or.predefinedNS.ArraySize(); i++ {
-		nsObject := or.predefinedNS.ArrayEntry(i)
-		name := nsObject.GetString("name")
-		err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i))
-		if err != nil {
-			return nil, err
-		}
-		foundDefault = foundDefault || name == defaultNS
-		description := nsObject.GetString("description")
-		dup := false
-		for _, existing := range namespaces {
-			if existing.Name == name {
-				log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
-				dup = true
-			}
-		}
-		if !dup {
-			namespaces = append(namespaces, &core.Namespace{
-				Type:        core.NamespaceTypeLocal,
-				Name:        name,
-				Description: description,
-			})
-		}
-	}
-	if !foundDefault {
-		return nil, i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultNS)
-	}
-	return namespaces, nil
-}
-
-func (or *orchestrator) initNamespaces(ctx context.Context) error {
-	predefined, err := or.getPredefinedNamespaces(ctx)
-	if err != nil {
-		return err
-	}
-	for _, newNS := range predefined {
-		ns, err := or.database.GetNamespace(ctx, newNS.Name)
-		if err != nil {
-			return err
-		}
-		var updated bool
-		if ns == nil {
-			updated = true
-			newNS.ID = fftypes.NewUUID()
-			newNS.Created = fftypes.Now()
-		} else {
-			// Only update if the description has changed, and the one in our DB is locally defined
-			updated = ns.Description != newNS.Description && ns.Type == core.NamespaceTypeLocal
-		}
-		if updated {
-			if err := or.database.UpsertNamespace(ctx, newNS, true); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return or.namespace.Init(ctx, or.database)
 }
