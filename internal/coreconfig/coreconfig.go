@@ -25,9 +25,9 @@ import (
 var ffc = config.AddRootKey
 
 const (
-	// PluginConfigName is the user-supplied name for this token type
+	// PluginConfigName is the user-supplied name for this plugin type
 	PluginConfigName = "name"
-	// PluginConfigType is the name of the plugin used for this token type
+	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
 )
 
