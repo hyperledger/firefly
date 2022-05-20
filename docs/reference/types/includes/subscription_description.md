@@ -8,7 +8,8 @@ to that application.
 
 Before you can connect to a subscription, you must create it via the REST API.
 
-> The one special case, is Ephemeral WebSocket connections (described below).
+> One special case where you do not need to do this, is Ephemeral WebSocket
+> connections (described below).
 > For these you can just connect and immediately start receiving events.
 
 When creating a new subscription, you give it a `name` which is how you will
@@ -27,14 +28,20 @@ FireFly to deliver events for both subscriptions over the same WebSocket
 (if you are using the WebSocket transport). However, delivery order is
 not assured between two subscription.
 
-### Subscriptions vs. Connections
+### Subscriptions and workload balancing
 
-You can have multiple scaled application copies of a single application,
+You can have multiple scaled runtime instances of a single application,
 all running in parallel. These instances of the application all share a
 single subscription.
 
 > Each event is only delivered once to the subscription, regardless of how
 > many instances of your application connect to FireFly.
+
+With multiple WebSocket connections active on a single subscription,
+each event might be delivered to different instance of your application.
+This means workload is balanced across your instances. However, each
+event still needs to be acknowledged, so delivery processing order
+can still be maintained within your application database state.
 
 If you have multiple different applications all needing their own copy of
 the same event, then you need to configure a separate subscription
@@ -56,7 +63,7 @@ by all popular application development frameworks, and are very firewall friendl
 for connecting applications into your FireFly server.
 
 > Check out the [@hyperledger/firefly-sdk](https://www.npmjs.com/package/@hyperledger/firefly-sdk)
-> NPM package for Node.js applications, and the [hyperledger/firefly-common](https://github.com/hyperledger/firefly-common)
+> SDK for Node.js applications, and the [hyperledger/firefly-common](https://github.com/hyperledger/firefly-common)
 > module for Golang applications. These both contain reliable WebSocket clients for your event listeners.
 >
 > A Java SDK is a roadmap item for the community.
@@ -115,7 +122,7 @@ $ websocat "ws://localhost:5000/ws?namespace=default&name=docexample&autoack"
 > Note using `autoack` means you can _miss events_ in the case of a disconnection,
 > so should not be used for production applications that require at-least-once delivery.
 
-#### Ephemeral WebSocket support
+#### Ephemeral WebSocket subscriptions
 
 FireFly WebSockets provide a special option to create a subscription dynamically, that
 only lasts for as long as you are connected to the server.
@@ -146,6 +153,11 @@ $ websocat "ws://localhost:5000/ws?namespace=default&ephemeral&autoack&filter.ev
 
 The Webhook transport allows FireFly to make HTTP calls against your application's API
 when events matching your subscription are emitted.
+
+This means the direction of network connection is from the FireFly server, to the
+application (the reverse of WebHooks). Conversely it means you don't need to add
+any connection management code to your application - just expose and API that
+FireFly can call to process the events.
 
 > Webhooks are great for serverless functions (AWS Lambda etc.), integrations
 > with SaaS applications, and calling existing APIs.
