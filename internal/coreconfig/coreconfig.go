@@ -29,6 +29,10 @@ const (
 	PluginConfigName = "name"
 	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
+	// NamespaceName is a short name for a pre-defined namespace
+	NamespaceName = "name"
+	// NamespaceName is a long description for a pre-defined namespace
+	NamespaceDescription = "description"
 )
 
 // The following keys can be access from the root configuration.
