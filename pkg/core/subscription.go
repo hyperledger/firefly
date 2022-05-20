@@ -105,7 +105,7 @@ type SubscriptionOptions struct {
 
 // SubscriptionRef are the fields that can be used to refer to a subscription
 type SubscriptionRef struct {
-	ID        *fftypes.UUID `ffstruct:"Subscription" json:"id" ffexcludeinput:"true"`
+	ID        *fftypes.UUID `ffstruct:"Subscription" json:"id,omitempty" ffexcludeinput:"true"`
 	Namespace string        `ffstruct:"Subscription" json:"namespace"`
 	Name      string        `ffstruct:"Subscription" json:"name"`
 }

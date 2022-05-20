@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Event Bus
-parent: Reference
-nav_order: 6
+parent: pages.reference
+nav_order: 4
 ---
 
 # Event Bus
@@ -192,7 +192,7 @@ FireFly allows your application to subscribe to any event from a blockchain
 smart contract.
 
 In order for applications connected to the FireFly API to receive blockchain events
-from a smart contracts, a [Listener](./types/listener) fist must be created to instruct
+from a smart contracts, a [ContractListener](./types/contractlistener) fist must be created to instruct
 FireFly to listen to those events from the blockchain (via the blockchain plugin).
 
 Once you have configured the blockchain event listener, every event detected

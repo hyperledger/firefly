@@ -3,7 +3,7 @@ layout: default
 title: Batch
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 10
+nav_order: 12
 ---
 
 # Batch

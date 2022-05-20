@@ -51,6 +51,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 
 	newest := core.SubOptsFirstEventNewest
 	fifty := uint16(50)
+	falseVar := false
 
 	types := []interface{}{
 
@@ -189,6 +190,42 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			},
 		},
 
+		&core.ContractListener{
+			ID: fftypes.MustParseUUID("d61980a9-748c-4c72-baf5-8b485b514d59"),
+			Interface: &core.FFIReference{
+				ID: fftypes.MustParseUUID("ff1da3c1-f9e7-40c2-8d93-abb8855e8a1d"),
+			},
+			Namespace: "ns1",
+			Name:      "contract1_events",
+			BackendID: "sb-dd8795fc-a004-4554-669d-c0cf1ee2c279",
+			Location: fftypes.JSONAnyPtr(`{
+				"address": "0x596003a91a97757ef1916c8d6c0d42592630d2cf"
+			}`),
+			Created: fftypes.UnixTime(1652664195),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: core.FFIEventDefinition{
+					Name: "Changed",
+					Params: core.FFIParams{
+						{
+							Name: "x",
+							Schema: fftypes.JSONAnyPtr(`{
+								"type": "integer",
+								"details": {
+								  "type": "uint256",
+								  "internalType": "uint256"
+								}
+							}`),
+						},
+					},
+				},
+			},
+			Signature: "Changed(uint256)",
+			Topic:     "app1_topic",
+			Options: &core.ContractListenerOptions{
+				FirstEvent: "newest",
+			},
+		},
+
 		&core.TokenPool{
 			ID:        fftypes.MustParseUUID("90ebefdf-4230-48a5-9d07-c59751545859"),
 			Type:      core.TokenTypeFungible,
@@ -270,6 +307,25 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			},
 		},
 
+		&core.Group{
+			Hash: fftypes.HashString("testgrouphash"),
+			GroupIdentity: core.GroupIdentity{
+				Namespace: "ns1",
+				Members: core.Members{
+					{
+						Identity: "did:firefly:org/1111",
+						Node:     fftypes.MustParseUUID("4f563179-b4bd-4161-86e0-c2c1c0869c4f"),
+					},
+					{
+						Identity: "did:firefly:org/2222",
+						Node:     fftypes.MustParseUUID("61a99af8-c1f7-48ea-8fcc-489e4822a0ed"),
+					},
+				},
+			},
+			Message: fftypes.MustParseUUID("0b9dfb76-103d-443d-92fd-b114fe07c54d"),
+			Created: fftypes.UnixTime(1652664196),
+		},
+
 		&core.Batch{
 			BatchHeader: core.BatchHeader{
 				ID:        fftypes.MustParseUUID("894bc0ea-0c2e-4ca4-bbca-b4c39a816bbb"),
@@ -292,6 +348,31 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 				Messages: []*core.Message{},
 				Data:     core.DataArray{},
 			},
+		},
+
+		&core.WSStart{
+			WSActionBase: core.WSActionBase{
+				Type: core.WSClientActionStart,
+			},
+			AutoAck:   &falseVar,
+			Namespace: "ns1",
+			Name:      "app1_subscription",
+		},
+
+		&core.WSAck{
+			WSActionBase: core.WSActionBase{
+				Type: core.WSClientActionAck,
+			},
+			ID: fftypes.MustParseUUID("f78bf82b-1292-4c86-8a08-e53d855f1a64"),
+			Subscription: &core.SubscriptionRef{
+				Name:      "app1_subscription",
+				Namespace: "ns1",
+			},
+		},
+
+		&core.WSError{
+			Type:  core.WSProtocolErrorEventType,
+			Error: i18n.NewError(ctx, coremsgs.MsgWSMsgSubNotMatched).Error(),
 		},
 	}
 
