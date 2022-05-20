@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Simple Types
-parent: Types
+parent: Core Resources
 grand_parent: pages.reference
 nav_order: 1
 ---
@@ -16,6 +16,10 @@ nav_order: 1
 {:toc}
 
 ---
+## UUID
+
+{% include_relative includes/uuid_description.md %}
+
 ## FFTime
 
 {% include_relative includes/fftime_description.md %}
@@ -23,4 +27,12 @@ nav_order: 1
 ## FFBigInt
 
 {% include_relative includes/ffbigint_description.md %}
+
+## JSONAny
+
+{% include_relative includes/jsonany_description.md %}
+
+## JSONObject
+
+{% include_relative includes/jsonobject_description.md %}
 

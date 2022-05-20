@@ -48,46 +48,126 @@ type TypeReferenceDoc struct {
  * some other caller function to actually write the bytes to disk.
  */
 func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, error) {
-	message := &core.Message{
-		Header: core.MessageHeader{
-			ID:        fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
-			Type:      core.MessageTypeBroadcast,
-			Namespace: "default",
-		},
-		Data: []*core.DataRef{
-			{
-				ID: fftypes.MustParseUUID("fdf9f118-eb81-4086-a63d-b06715b3bb4e"),
-			},
-		},
-		State: core.MessageStateConfirmed,
-	}
-
-	tokenTransfer := &core.TokenTransfer{
-		Message: fftypes.MustParseUUID("855af8e7-2b02-4e05-ad7d-9ae0d4c409ba"),
-		Pool:    fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
-		From:    "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
-		To:      "0x7b746b92869De61649d148823808653430682C0d",
-		Type:    core.TokenTransferTypeTransfer,
-	}
-
-	dataRef := &core.DataRef{
-		ID:   fftypes.MustParseUUID("5bea782a-6cf2-4e01-95ee-cb5fa05873e9"),
-		Hash: fftypes.HashString("blah"),
-	}
-
-	ffi := &core.FFI{}
 
 	types := []interface{}{
-		message,
-		tokenTransfer,
-		dataRef,
-		ffi,
+
+		&core.Batch{
+			BatchHeader: core.BatchHeader{
+				ID:        fftypes.MustParseUUID("894bc0ea-0c2e-4ca4-bbca-b4c39a816bbb"),
+				Type:      core.BatchTypePrivate,
+				Namespace: "ns1",
+				Node:      fftypes.MustParseUUID("5802ab80-fa71-4f52-9189-fb534de93756"),
+				Group:     fftypes.HashString("examplegroup"),
+				Created:   fftypes.Now(),
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/example",
+					Key:    "0x0a989907dcd17272257f3ebcf72f4351df65a846",
+				},
+			},
+			Hash: fftypes.HashString("examplebatchhash"),
+			Payload: core.BatchPayload{
+				TX: core.TransactionRef{
+					Type: core.BatchTypePrivate,
+					ID:   fftypes.MustParseUUID("04930D84-0227-4044-9D6D-82C2952A0108"),
+				},
+				Messages: []*core.Message{},
+				Data:     core.DataArray{},
+			},
+		},
+
+		&core.Message{
+			Header: core.MessageHeader{
+				ID:     fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
+				Type:   core.MessageTypePrivate,
+				CID:    fftypes.MustParseUUID("00d20cba-76ed-431d-b9ff-f04b4cbee55c"),
+				TxType: core.BatchTypePrivate,
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/acme",
+					Key:    "0xD53B0294B6a596D404809b1d51D1b4B3d1aD4945",
+				},
+				Created:   fftypes.UnixTime(1652664190),
+				Group:     fftypes.HashString("testgroup"),
+				Namespace: "ns1",
+				Topics:    core.NewFFStringArray("topic1"),
+				Tag:       "blue_message",
+				DataHash:  fftypes.HashString("testmsghash"),
+			},
+			Data: []*core.DataRef{
+				{
+					ID:   fftypes.MustParseUUID("fdf9f118-eb81-4086-a63d-b06715b3bb4e"),
+					Hash: fftypes.HashString("refhash"),
+				},
+			},
+			State:     core.MessageStateConfirmed,
+			Confirmed: fftypes.UnixTime(1652664196),
+		},
+
+		&core.Data{
+			ID:        fftypes.MustParseUUID("4f11e022-01f4-4c3f-909f-5226947d9ef0"),
+			Validator: core.ValidatorTypeJSON,
+			Namespace: "ns1",
+			Created:   fftypes.UnixTime(1652664195),
+			Hash:      fftypes.HashString("testdatahash"),
+			Datatype: &core.DatatypeRef{
+				Name:    "widget",
+				Version: "v1.2.3",
+			},
+			Value: fftypes.JSONAnyPtr(`{
+				"name": "filename.pdf",
+				"a": "example",
+				"b": { "c": 12345 }
+			}`),
+			Blob: &core.BlobRef{
+				Hash: fftypes.HashString("testblobhash"),
+				Size: 12345,
+				Name: "filename.pdf",
+			},
+		},
+
+		&core.TokenPool{
+			ID:        fftypes.MustParseUUID("90ebefdf-4230-48a5-9d07-c59751545859"),
+			Type:      core.TokenTypeFungible,
+			Namespace: "ns1",
+			Name:      "my_token",
+			Standard:  "ERC-20",
+			Locator:   "address=0x056df1c53c3c00b0e13d37543f46930b42f71db0&schema=ERC20WithData&type=fungible",
+			Decimals:  18,
+			Connector: "erc20_erc721",
+			State:     core.TokenPoolStateConfirmed,
+			Message:   fftypes.MustParseUUID("43923040-b1e5-4164-aa20-47636c7177ee"),
+			Info: fftypes.JSONObject{
+				"address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",
+				"name":    "pool8197",
+				"schema":  "ERC20WithData",
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenPool,
+				ID:   fftypes.MustParseUUID("a23ffc87-81a2-4cbc-97d6-f53d320c36cd"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.TokenTransfer{
+			Message: fftypes.MustParseUUID("855af8e7-2b02-4e05-ad7d-9ae0d4c409ba"),
+			Pool:    fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
+			From:    "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
+			To:      "0x7b746b92869De61649d148823808653430682C0d",
+			Type:    core.TokenTransferTypeTransfer,
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.ContractAPI{},
+
+		&core.FFI{},
 	}
 
-	time := fftypes.FFTime{}
-	bigInt := fftypes.FFBigInt{}
-
-	simpleTypes := []interface{}{time, bigInt}
+	simpleTypes := []interface{}{
+		fftypes.UUID{},
+		fftypes.FFTime{},
+		fftypes.FFBigInt{},
+		fftypes.JSONAny(""),
+		fftypes.JSONObject{},
+	}
 
 	return generateMarkdownPages(ctx, types, simpleTypes, filepath.Join("..", "..", "docs", "reference", "types"))
 }
@@ -114,7 +194,7 @@ func generateMarkdownPages(ctx context.Context, types []interface{}, simpleTypes
 		// Page index starts at 1. Simple types will be the first page. Everything else comes after that.
 		pageHeader := generatePageHeader(pageTitle, i+2)
 		b := bytes.NewBuffer([]byte(pageHeader))
-		markdown, _, err := generateObjectReferenceMarkdown(ctx, o, reflect.TypeOf(o), rootPageNames, simpleTypesNames, []string{}, outputPath)
+		markdown, _, err := generateObjectReferenceMarkdown(ctx, true, o, reflect.TypeOf(o), rootPageNames, simpleTypesNames, []string{}, outputPath)
 		if err != nil {
 			return nil, err
 		}
@@ -134,13 +214,13 @@ func generateSimpleTypesMarkdown(ctx context.Context, simpleTypes []interface{},
 
 	b := bytes.NewBuffer([]byte(pageHeader))
 	for _, simpleType := range simpleTypes {
-		markdown, _, _ := generateObjectReferenceMarkdown(ctx, nil, reflect.TypeOf(simpleType), []string{}, simpleTypeNames, []string{}, outputPath)
+		markdown, _, _ := generateObjectReferenceMarkdown(ctx, true, nil, reflect.TypeOf(simpleType), []string{}, simpleTypeNames, []string{}, outputPath)
 		b.Write(markdown)
 	}
 	return b.Bytes(), simpleTypeNames
 }
 
-func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string) ([]byte, []string, error) {
+func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, example interface{}, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string) ([]byte, []string, error) {
 	typeReferenceDoc := TypeReferenceDoc{}
 
 	if t.Kind() == reflect.Ptr {
@@ -151,7 +231,13 @@ func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t
 	generatedTableNames = append(generatedTableNames, strings.ToLower(t.Name()))
 
 	// If a detailed type_description.md file exists, include that in a Description section here
-	if _, err := os.Stat(filepath.Join(outputPath, "includes", fmt.Sprintf("%s_description.md", strings.ToLower(t.Name())))); err == nil {
+	filename, _ := filepath.Abs(filepath.Join(outputPath, "includes", fmt.Sprintf("%s_description.md", strings.ToLower(t.Name()))))
+	_, err := os.Stat(filename)
+	if err != nil {
+		if descRequired {
+			panic(fmt.Sprintf("Missing file: %s", filename))
+		}
+	} else {
 		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
 	}
 
@@ -210,6 +296,19 @@ func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t
 	return buff.Bytes(), generatedTableNames, nil
 }
 
+func generateEnumList(f reflect.StructField) string {
+	enumName := f.Tag.Get("ffenum")
+	enumOptions := core.FFEnumValues(enumName)
+	buff := new(strings.Builder)
+	for i, v := range enumOptions {
+		if i != 0 {
+			buff.WriteString(`<br/>`)
+		}
+		buff.WriteString(fmt.Sprintf("`%s`", v))
+	}
+	return buff.String()
+}
+
 func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string) ([]byte, []byte, []string) {
 	fieldDescriptionsBytes := []byte{}
 	// subFieldBuff is where we write any additional tables for sub fields that may be on this struct
@@ -258,28 +357,36 @@ func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, roo
 
 			fireflyType = fmt.Sprintf("`%s`", fireflyType)
 
-			if fieldType.Kind() == reflect.Struct {
-				fieldInRootPages := false
-				fieldInSimpleTypes := false
-				for _, rootPageName := range rootPageNames {
-					if strings.ToLower(fieldType.Name()) == rootPageName {
-						fieldInRootPages = true
-						break
-					}
-				}
-				for _, simpleTypeName := range simpleTypeNames {
-					if strings.ToLower(fieldType.Name()) == simpleTypeName {
-						fieldInSimpleTypes = true
-						break
-					}
-				}
+			isStruct := fieldType.Kind() == reflect.Struct
+			isEnum := strings.ToLower(fieldType.Name()) == "ffenum"
 
-				link := fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
-				if fieldInRootPages {
-					link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
-				} else if fieldInSimpleTypes {
-					link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
+			fieldInRootPages := false
+			fieldInSimpleTypes := false
+			for _, rootPageName := range rootPageNames {
+				if strings.ToLower(fieldType.Name()) == rootPageName {
+					fieldInRootPages = true
+					break
 				}
+			}
+			for _, simpleTypeName := range simpleTypeNames {
+				if strings.ToLower(fieldType.Name()) == simpleTypeName {
+					fieldInSimpleTypes = true
+					break
+				}
+			}
+
+			link := ""
+			switch {
+			case isEnum:
+				fireflyType = generateEnumList(field)
+			case fieldInRootPages:
+				link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
+			case fieldInSimpleTypes:
+				link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
+			case isStruct:
+				link = fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
+			}
+			if link != "" {
 				fireflyType = fmt.Sprintf("[%s](%s)", fireflyType, link)
 
 				// Generate the table for the sub type
@@ -290,14 +397,15 @@ func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, roo
 						break
 					}
 				}
-				if !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
-					subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
+				if isStruct && !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
+					subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, false, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
 					generatedTableNames = newTableNames
 					subFieldBuff.Write(subFieldMarkdown)
 					subFieldBuff.WriteString("\n")
 				}
 			}
-			tableBuff.WriteString(fmt.Sprintf("| %s | %s | %s |\n", jsonFieldName, description, fireflyType))
+
+			tableBuff.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", jsonFieldName, description, fireflyType))
 			tableRowCount++
 		}
 		if tableRowCount > 1 {
@@ -311,7 +419,7 @@ func generatePageHeader(pageTitle string, navOrder int) string {
 	return fmt.Sprintf(`---
 layout: default
 title: %s
-parent: Types
+parent: Core Resources
 grand_parent: pages.reference
 nav_order: %v
 ---

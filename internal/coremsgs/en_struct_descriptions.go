@@ -160,11 +160,11 @@ var (
 	BatchManifestData     = ffm("BatchManifest.data", "Array of manifest entries, succinctly summarizing the data in the batch")
 
 	// BatchPersisted field descriptions
-	BatchPersistedHash       = ffm("BatchPersisted.hash", "The hash of the manifest of the batch")
-	BatchPersistedManifest   = ffm("BatchPersisted.manifest", "The manifest of the batch")
-	BatchPersistedTX         = ffm("BatchPersisted.tx", "The FireFly transaction associated with this batch")
-	BatchPersistedPayloadRef = ffm("BatchPersisted.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
-	BatchPersistedConfirmed  = ffm("BatchPersisted.confirmed", "The time when the batch was confirmed")
+	BatchPersistedHash       = ffm("Batch.hash", "The hash of the manifest of the batch")
+	BatchPersistedManifest   = ffm("Batch.manifest", "The manifest of the batch")
+	BatchPersistedTX         = ffm("Batch.tx", "The FireFly transaction associated with this batch")
+	BatchPersistedPayloadRef = ffm("Batch.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
+	BatchPersistedConfirmed  = ffm("Batch.confirmed", "The time when the batch was confirmed")
 
 	// Transaction field descriptions
 	TransactionID            = ffm("Transaction.id", "The UUID of the FireFly transaction")
