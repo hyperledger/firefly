@@ -160,7 +160,7 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager, contractIndex int) (err error) {
+func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	fabconnectConf := config.SubSection(FabconnectConfigKey)
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
@@ -224,8 +224,12 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	return nil
 }
 
-func (f *Fabric) Start() error {
+func (f *Fabric) Start(contractIndex int) error {
 	return f.wsconn.Connect()
+}
+
+func (f *Fabric) Stop() {
+	f.wsconn.Close()
 }
 
 func (f *Fabric) Capabilities() *blockchain.Capabilities {

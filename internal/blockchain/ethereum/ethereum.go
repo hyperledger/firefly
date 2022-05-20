@@ -66,6 +66,7 @@ type Ethereum struct {
 	closed          chan struct{}
 	addressResolver *addressResolver
 	metrics         metrics.Manager
+	ethconnectConf  config.Section
 	contractConf    config.ArraySection
 }
 
@@ -157,9 +158,8 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager, contractIndex int) (err error) {
+func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	e.InitConfig(config)
-	ethconnectConf := config.SubSection(EthconnectConfigKey)
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	fftmConf := config.SubSection(FFTMConfigKey)
 
@@ -174,27 +174,42 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 		}
 	}
 
-	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+	if e.ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethereum.ethconnect")
 	}
 
-	e.client = ffresty.New(e.ctx, ethconnectConf)
-
+	e.client = ffresty.New(e.ctx, e.ethconnectConf)
 	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
 		e.fftmClient = ffresty.New(e.ctx, fftmConf)
 	}
 
+	e.topic = e.ethconnectConf.GetString(EthconnectConfigTopic)
+	if e.topic == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethereum.ethconnect")
+	}
+	e.prefixShort = e.ethconnectConf.GetString(EthconnectPrefixShort)
+	e.prefixLong = e.ethconnectConf.GetString(EthconnectPrefixLong)
+
+	return nil
+}
+
+func (e *Ethereum) initStreams(contractIndex int) (err error) {
+
+	ctx := e.ctx
 	e.streams = &streamManager{client: e.client}
-	if e.contractConf.ArraySize() > contractIndex {
-		// New config (array of contracts)
+	if e.contractConf.ArraySize() > 0 || contractIndex > 0 {
+		// New config (array of objects under "fireflyContract")
+		if contractIndex >= e.contractConf.ArraySize() {
+			return i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.ethereum.fireflyContract[%d]", contractIndex))
+		}
 		e.contractAddress = e.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractAddress)
 		if e.contractAddress == "" {
-			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.fireflyContract")
+			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.ethereum.fireflyContract")
 		}
 		e.streams.fireFlySubscriptionFromBlock = e.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
 	} else {
 		// Old config (attributes under "ethconnect")
-		e.contractAddress = ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
+		e.contractAddress = e.ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
 		if e.contractAddress != "" {
 			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
 				EthconnectConfigKey, EthconnectConfigInstanceDeprecated,
@@ -202,7 +217,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 		} else {
 			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethereum.ethconnect")
 		}
-		e.streams.fireFlySubscriptionFromBlock = ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
+		e.streams.fireFlySubscriptionFromBlock = e.ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
 		if e.streams.fireFlySubscriptionFromBlock != "" {
 			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
 				EthconnectConfigKey, EthconnectConfigFromBlockDeprecated,
@@ -226,27 +241,17 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 		e.contractAddress = fmt.Sprintf("0x%s", e.contractAddress)
 	}
 
-	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
-	if e.topic == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethereum.ethconnect")
-	}
-
-	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
-	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
-
-	wsConfig := wsclient.GenerateConfig(ethconnectConf)
-
+	wsConfig := wsclient.GenerateConfig(e.ethconnectConf)
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}
-
 	e.wsconn, err = wsclient.New(ctx, wsConfig, nil, e.afterConnect)
 	if err != nil {
 		return err
 	}
 
-	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
-	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
+	batchSize := e.ethconnectConf.GetUint(EthconnectConfigBatchSize)
+	batchTimeout := uint(e.ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
@@ -261,8 +266,15 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	return nil
 }
 
-func (e *Ethereum) Start() error {
+func (e *Ethereum) Start(contractIndex int) (err error) {
+	if err = e.initStreams(contractIndex); err != nil {
+		return err
+	}
 	return e.wsconn.Connect()
+}
+
+func (e *Ethereum) Stop() {
+	e.wsconn.Close()
 }
 
 func (e *Ethereum) Capabilities() *blockchain.Capabilities {

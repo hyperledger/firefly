@@ -126,13 +126,13 @@ func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (core.FFIParamValida
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, callbacks, _a3, contractIndex
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks blockchain.Callbacks, _a3 metrics.Manager, contractIndex int) error {
-	ret := _m.Called(ctx, _a1, callbacks, _a3, contractIndex)
+// Init provides a mock function with given fields: ctx, _a1, callbacks, _a3
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
+	ret := _m.Called(ctx, _a1, callbacks, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, blockchain.Callbacks, metrics.Manager, int) error); ok {
-		r0 = rf(ctx, _a1, callbacks, _a3, contractIndex)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, blockchain.Callbacks, metrics.Manager) error); ok {
+		r0 = rf(ctx, _a1, callbacks, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -240,18 +240,23 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// Start provides a mock function with given fields:
-func (_m *Plugin) Start() error {
-	ret := _m.Called()
+// Start provides a mock function with given fields: contractIndex
+func (_m *Plugin) Start(contractIndex int) error {
+	ret := _m.Called(contractIndex)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(int) error); ok {
+		r0 = rf(contractIndex)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// Stop provides a mock function with given fields:
+func (_m *Plugin) Stop() {
+	_m.Called()
 }
 
 // SubmitBatchPin provides a mock function with given fields: ctx, operationID, signingKey, batch

@@ -33,10 +33,13 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, config config.Section, callbacks Callbacks, metrics metrics.Manager, contractIndex int) error
+	Init(ctx context.Context, config config.Section, callbacks Callbacks, metrics metrics.Manager) error
 
 	// Blockchain interface must not deliver any events until start is called
-	Start() error
+	Start(contractIndex int) error
+
+	// Stop listening for events until start is called again
+	Stop()
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities

@@ -30,8 +30,7 @@ import (
 )
 
 type streamManager struct {
-	client *resty.Client
-
+	client                       *resty.Client
 	fireFlySubscriptionFromBlock string
 }
 

@@ -223,7 +223,7 @@ func (or *orchestrator) Start() (err error) {
 	}
 	if err == nil {
 		for _, el := range or.blockchains {
-			if err = el.Start(); err != nil {
+			if err = el.Start(0); err != nil {
 				break
 			}
 		}
@@ -660,7 +660,7 @@ func (or *orchestrator) getBlockchainPlugins(ctx context.Context) (plugins []blo
 
 func (or *orchestrator) initDeprecatedBlockchainPlugin(ctx context.Context, plugin blockchain.Plugin) (err error) {
 	log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
-	err = plugin.Init(ctx, deprecatedBlockchainConfig.SubSection(plugin.Name()), &or.bc, or.metrics, 0)
+	err = plugin.Init(ctx, deprecatedBlockchainConfig.SubSection(plugin.Name()), &or.bc, or.metrics)
 	if err != nil {
 		return err
 	}
@@ -687,7 +687,7 @@ func (or *orchestrator) initDeprecatedDatabasePlugin(ctx context.Context, plugin
 func (or *orchestrator) initBlockchainPlugins(ctx context.Context, plugins []blockchain.Plugin) (err error) {
 	for idx, plugin := range plugins {
 		config := blockchainConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config, &or.bc, or.metrics, 0)
+		err = plugin.Init(ctx, config, &or.bc, or.metrics)
 		if err != nil {
 			return err
 		}

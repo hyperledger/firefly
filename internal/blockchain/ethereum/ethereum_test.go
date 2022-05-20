@@ -105,7 +105,7 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()
 	resetConf(e)
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -114,7 +114,7 @@ func TestInitBadAddressResolver(t *testing.T) {
 	defer cancel()
 	resetConf(e)
 	utAddressResolverConf.Set(AddressResolverURLTemplate, "{{unclosed}")
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10337.*urlTemplate", err)
 }
 
@@ -125,7 +125,9 @@ func TestInitMissingInstance(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
 	assert.Regexp(t, "FF10138.*instance", err)
 }
 
@@ -136,11 +138,11 @@ func TestInitMissingTopic(t *testing.T) {
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
-func TestInitAllNewStreamsAndWSEventWithFFTM(t *testing.T) {
+func TestInitAndStartWithFFTM(t *testing.T) {
 
 	log.SetLevel("trace")
 	e, cancel := newTestEthereum()
@@ -178,19 +180,20 @@ func TestInitAllNewStreamsAndWSEventWithFFTM(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utFFTMConf.Set(ffresty.HTTPConfigURL, "http://fftm.example.com:12345")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	assert.NotNil(t, e.fftmClient)
 
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
+
+	err = e.Start(0)
+	assert.NoError(t, err)
+
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 	assert.NotNil(t, e.Capabilities())
-
-	err = e.Start()
-	assert.NoError(t, err)
 
 	startupMessage := <-toServer
 	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
@@ -217,22 +220,23 @@ func TestWSInitFail(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.Start(0)
 	assert.Regexp(t, "FF00149", err)
 
 }
 
-func TestWSConnectFail(t *testing.T) {
+func TestWSClose(t *testing.T) {
 
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
 		ctx:    context.Background(),
 		wsconn: wsm,
 	}
-	wsm.On("Connect").Return(fmt.Errorf("pop"))
+	wsm.On("Close").Return(nil)
+	e.Stop()
 
-	err := e.Start()
-	assert.EqualError(t, err, "pop")
 }
 
 func TestInitAllExistingStreams(t *testing.T) {
@@ -259,13 +263,14 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
-
-	assert.NoError(t, err)
 
 }
 
@@ -308,8 +313,11 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.NoError(t, err)
+
 	assert.Equal(t, e.contractAddress, "0x12345")
 }
 
@@ -342,8 +350,11 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.NoError(t, err)
+
 	assert.Equal(t, e.contractAddress, "0x12345")
 }
 
@@ -379,9 +390,10 @@ func TestInitOldInstancePathError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10111.*pop", err)
 }
 
 func TestInitNewConfig(t *testing.T) {
@@ -413,8 +425,11 @@ func TestInitNewConfig(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x12345")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.NoError(t, err)
+
 	assert.Equal(t, e.contractAddress, "0x12345")
 }
 
@@ -433,8 +448,31 @@ func TestInitNewConfigError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
 	assert.Regexp(t, "FF10138", err)
+}
+
+func TestInitNewConfigBadIndex(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(1)
+	assert.Regexp(t, "FF10387", err)
 }
 
 func TestStreamQueryError(t *testing.T) {
@@ -456,10 +494,10 @@ func TestStreamQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
-
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10111.*pop", err)
 
 }
 
@@ -484,10 +522,10 @@ func TestStreamCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
-
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10111.*pop", err)
 
 }
 
@@ -512,10 +550,10 @@ func TestStreamUpdateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
-
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10111.*pop", err)
 
 }
 
@@ -542,10 +580,10 @@ func TestSubQueryError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
-
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10111.*pop", err)
 
 }
 
@@ -574,10 +612,10 @@ func TestSubQueryCreateError(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x12345")
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{}, 0)
-
-	assert.Regexp(t, "FF10111", err)
-	assert.Regexp(t, "pop", err)
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10111.*pop", err)
 
 }
 
