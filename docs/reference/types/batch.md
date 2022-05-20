@@ -48,31 +48,31 @@ nav_order: 10
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| id | The UUID of the batch | [`UUID`](simpletypes#uuid) |
-| type | The type of the batch | `FFEnum`:<br/>`"broadcast"`<br/>`"private"` |
-| namespace | The namespace of the batch | `string` |
-| node | The UUID of the node that generated the batch | [`UUID`](simpletypes#uuid) |
-| group | The privacy group the batch is sent to, for private batches | `Bytes32` |
-| created | The time the batch was sealed | [`FFTime`](simpletypes#fftime) |
-| author | The DID of identity of the submitter | `string` |
-| key | The on-chain signing key used to sign the transaction | `string` |
-| hash | The hash of the manifest of the batch | `Bytes32` |
-| payload | Batch.payload | [`BatchPayload`](#batchpayload) |
+| `id` | The UUID of the batch | [`UUID`](simpletypes#uuid) |
+| `type` | The type of the batch | `FFEnum`:<br/>`"broadcast"`<br/>`"private"` |
+| `namespace` | The namespace of the batch | `string` |
+| `node` | The UUID of the node that generated the batch | [`UUID`](simpletypes#uuid) |
+| `group` | The privacy group the batch is sent to, for private batches | `Bytes32` |
+| `created` | The time the batch was sealed | [`FFTime`](simpletypes#fftime) |
+| `author` | The DID of identity of the submitter | `string` |
+| `key` | The on-chain signing key used to sign the transaction | `string` |
+| `hash` | The hash of the manifest of the batch | `Bytes32` |
+| `payload` | Batch.payload | [`BatchPayload`](#batchpayload) |
 
 ## BatchPayload
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| tx | BatchPayload.tx | [`TransactionRef`](#transactionref) |
-| messages | BatchPayload.messages | [`Message[]`](message#message) |
-| data | BatchPayload.data | [`Data[]`](data#data) |
+| `tx` | BatchPayload.tx | [`TransactionRef`](#transactionref) |
+| `messages` | BatchPayload.messages | [`Message[]`](message#message) |
+| `data` | BatchPayload.data | [`Data[]`](data#data) |
 
 ## TransactionRef
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| type | The type of the FireFly transaction | `FFEnum`: |
-| id | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
+| `type` | The type of the FireFly transaction | `FFEnum`: |
+| `id` | The UUID of the FireFly transaction | [`UUID`](simpletypes#uuid) |
 
 
 
