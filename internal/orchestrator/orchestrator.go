@@ -18,6 +18,7 @@ package orchestrator
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -140,6 +141,9 @@ type Orchestrator interface {
 
 	// Message Routing
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
+
+	// Network Operations
+	MigrateNetwork(ctx context.Context, contractIndex int) error
 }
 
 type orchestrator struct {
@@ -221,9 +225,13 @@ func (or *orchestrator) Start() (err error) {
 	if err == nil {
 		err = or.batch.Start()
 	}
+	var ns *core.Namespace
+	if err == nil {
+		ns, err = or.database.GetNamespace(or.ctx, core.SystemNamespace)
+	}
 	if err == nil {
 		for _, el := range or.blockchains {
-			if err = el.Start(0); err != nil {
+			if err = el.Start(ns.ContractIndex); err != nil {
 				break
 			}
 		}
@@ -865,4 +873,12 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 		or.namespace = namespace.NewNamespaceManager(ctx)
 	}
 	return or.namespace.Init(ctx, or.database)
+}
+
+func (or *orchestrator) MigrateNetwork(ctx context.Context, contractIndex int) error {
+	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx)
+	if err != nil {
+		return err
+	}
+	return or.blockchain.SubmitOperatorAction(ctx, fftypes.NewUUID(), verifier.Value, blockchain.OperatorActionMigrate, strconv.Itoa(contractIndex))
 }

@@ -978,6 +978,8 @@ func TestStartTokensFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
 	or.mbi.On("Start", 0).Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
@@ -994,6 +996,8 @@ func TestStartBlockchainsFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
 	or.mbi.On("Start", 0).Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
 	err := or.Start()
@@ -1004,6 +1008,8 @@ func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
 	or.mbi.On("Start", 0).Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
@@ -1110,4 +1116,21 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 
 	err := or.initDataExchange(or.ctx)
 	assert.NoError(t, err)
+}
+
+func TestMigrateNetwork(t *testing.T) {
+	or := newTestOrchestrator()
+	or.blockchain = or.mbi
+	verifier := &core.VerifierRef{Value: "0x123"}
+	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
+	or.mbi.On("SubmitOperatorAction", context.Background(), mock.Anything, "0x123", "migrate", "1").Return(nil)
+	err := or.MigrateNetwork(context.Background(), 1)
+	assert.NoError(t, err)
+}
+
+func TestMigrateNetworkBadKey(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
+	err := or.MigrateNetwork(context.Background(), 1)
+	assert.EqualError(t, err, "pop")
 }

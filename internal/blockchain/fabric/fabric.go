@@ -304,11 +304,22 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	eventIndex := msgJSON.GetInt64("eventIndex")
 	timestamp := msgJSON.GetInt64("timestamp")
 	signer := payload.GetString("signer")
-	ns := payload.GetString("namespace")
+	nsOrAction := payload.GetString("namespace")
 	sUUIDs := payload.GetString("uuids")
 	sBatchHash := payload.GetString("batchHash")
 	sPayloadRef := payload.GetString("payloadRef")
 	sContexts := payload.GetStringArray("contexts")
+
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeMSPIdentity,
+		Value: signer,
+	}
+
+	// Check if this is actually an operator action
+	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
+		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
+		return f.callbacks.BlockchainOperatorAction(action, sPayloadRef, verifier)
+	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
 	if err != nil || len(hexUUIDs) != 32 {
@@ -340,7 +351,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 
 	delete(msgJSON, "payload")
 	batch := &blockchain.BatchPin{
-		Namespace:       ns,
+		Namespace:       nsOrAction,
 		TransactionID:   &txnID,
 		BatchID:         &batchID,
 		BatchHash:       &batchHash,
@@ -360,10 +371,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, &core.VerifierRef{
-		Type:  core.VerifierTypeMSPIdentity,
-		Value: signer,
-	})
+	return f.callbacks.BatchPinComplete(batch, verifier)
 }
 
 func (f *Fabric) buildEventLocationString(msgJSON fftypes.JSONObject) string {
@@ -613,7 +621,18 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		"payloadRef": batch.BatchPayloadRef,
 		"contexts":   hashes,
 	}
+	input, _ := jsonEncodeInput(pinInput)
+	return f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+}
 
+func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action, payload string) error {
+	pinInput := map[string]interface{}{
+		"namespace":  "firefly:" + action,
+		"uuids":      hexFormatB32(nil),
+		"batchHash":  hexFormatB32(nil),
+		"payloadRef": payload,
+		"contexts":   []string{},
+	}
 	input, _ := jsonEncodeInput(pinInput)
 	return f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }

@@ -55,6 +55,9 @@ type Plugin interface {
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
+	// SubmitOperatorAction writes a special "BatchPin" event which signals the plugin to take an action
+	SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action, payload string) error
+
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error
 
@@ -80,6 +83,13 @@ type Plugin interface {
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
 }
 
+const (
+	// OperatorActionMigrate request all network members to stop using the current contract and move to the next one configured
+	OperatorActionMigrate = "migrate"
+)
+
+const FireFlyActionPrefix = "firefly:"
+
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
 //
 // Events must be delivered sequentially, such that event 2 is not delivered until the callback invoked for event 1
@@ -91,15 +101,18 @@ type Callbacks interface {
 	// opOutput can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
-	//
-	// Error should will only be returned in shutdown scenarios
 	BlockchainOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	//
-	// Error should will only be returned in shutdown scenarios
+	// Error should only be returned in shutdown scenarios
 	BatchPinComplete(batch *BatchPin, signingKey *core.VerifierRef) error
+
+	// BlockchainOperatorAction notifies on the arrival of a network operator action
+	//
+	// Error should only be returned in shutdown scenarios
+	BlockchainOperatorAction(action, payload string, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

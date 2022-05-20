@@ -2597,3 +2597,72 @@ func TestGenerateEventSignatureInvalid(t *testing.T) {
 	signature := e.GenerateEventSignature(context.Background(), event)
 	assert.Equal(t, "", signature)
 }
+
+func TestSubmitOperatorAction(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", params[1])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", params[2])
+			assert.Equal(t, "1", params[3])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	err := e.SubmitOperatorAction(context.Background(), fftypes.NewUUID(), "0x123", blockchain.OperatorActionMigrate, "1")
+	assert.NoError(t, err)
+}
+
+func TestHandleOperatorAction(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber": "38011",
+		"transactionIndex": "0x0",
+		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"data": {
+			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "firefly:migrate",
+			"uuids": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"batchHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"payloadRef": "1",
+			"contexts": []
+    },
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"logIndex": "50",
+		"timestamp": "1620576488"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+	}
+
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+	}
+
+	em.On("BlockchainOperatorAction", "migrate", "1", expectedSigningKeyRef).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	em.AssertExpectations(t)
+
+}

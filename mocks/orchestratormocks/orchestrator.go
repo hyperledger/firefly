@@ -1262,6 +1262,20 @@ func (_m *Orchestrator) Metrics() metrics.Manager {
 	return r0
 }
 
+// MigrateNetwork provides a mock function with given fields: ctx, contractIndex
+func (_m *Orchestrator) MigrateNetwork(ctx context.Context, contractIndex int) error {
+	ret := _m.Called(ctx, contractIndex)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) error); ok {
+		r0 = rf(ctx, contractIndex)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NetworkMap provides a mock function with given fields:
 func (_m *Orchestrator) NetworkMap() networkmap.Manager {
 	ret := _m.Called()

@@ -1766,3 +1766,68 @@ func TestGenerateEventSignature(t *testing.T) {
 	signature := e.GenerateEventSignature(context.Background(), &core.FFIEventDefinition{Name: "Changed"})
 	assert.Equal(t, "Changed", signature)
 }
+
+func TestSubmitOperatorAction(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signer := "signer001"
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", (body["args"].(map[string]interface{}))["uuids"])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", (body["args"].(map[string]interface{}))["batchHash"])
+			assert.Equal(t, "1", (body["args"].(map[string]interface{}))["payloadRef"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	err := e.SubmitOperatorAction(context.Background(), nil, signer, "migrate", "1")
+	assert.NoError(t, err)
+
+}
+
+func TestHandleOperatorAction(t *testing.T) {
+	data := []byte(`
+[
+  {
+		"chaincodeId": "firefly",
+		"blockNumber": 91,
+		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
+		"transactionIndex": 2,
+		"eventIndex": 50,
+		"eventName": "BatchPin",
+		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoiZmlyZWZseTptaWdyYXRlIiwidXVpZHMiOiIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJiYXRjaEhhc2giOiIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJwYXlsb2FkUmVmIjoiMSIsImNvbnRleHRzIjpbXX0=",
+		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Fabric{
+		callbacks: em,
+	}
+	e.initInfo.sub = &subscription{
+		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
+	}
+
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeMSPIdentity,
+		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
+	}
+
+	em.On("BlockchainOperatorAction", "migrate", "1", expectedSigningKeyRef).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data, &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	em.AssertExpectations(t)
+
+}

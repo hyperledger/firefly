@@ -168,6 +168,7 @@ var (
 	APIEndpointsPutContractAPI                  = ffm("api.endpoints.putContractAPI", "Updates an existing contract API")
 	APIEndpointsPutSubscription                 = ffm("api.endpoints.putSubscription", "Update an existing subscription")
 	APIEndpointsGetContractAPIInterface         = ffm("api.endpoints.getContractAPIInterface", "Gets a contract interface for a contract API")
+	APIEndpointsPostNetworkMigrate              = ffm("api.endpoints.postNetworkMigrate", "Instruct the network to unsubscribe from the current FireFly contract and migrate to the next one configured")
 
 	APISuccessResponse         = ffm("api.success", "Success")
 	APIRequestTimeoutDesc      = ffm("api.requestTimeout", "Server-side request timeout (millseconds, or set a custom suffix like 10s)")

@@ -8136,6 +8136,10 @@ paths:
               schema:
                 items:
                   properties:
+                    contractIndex:
+                      description: The index of the configured FireFly smart contract
+                        currently being used
+                      type: integer
                     created:
                       description: The time the namespace was created
                       format: date-time
@@ -8206,6 +8210,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  contractIndex:
+                    description: The index of the configured FireFly smart contract
+                      currently being used
+                    type: integer
                   created:
                     description: The time the namespace was created
                     format: date-time
@@ -8241,6 +8249,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  contractIndex:
+                    description: The index of the configured FireFly smart contract
+                      currently being used
+                    type: integer
                   created:
                     description: The time the namespace was created
                     format: date-time
@@ -8300,6 +8312,10 @@ paths:
             application/json:
               schema:
                 properties:
+                  contractIndex:
+                    description: The index of the configured FireFly smart contract
+                      currently being used
+                    type: integer
                   created:
                     description: The time the namespace was created
                     format: date-time
@@ -22389,6 +22405,45 @@ paths:
                           type: string
                       type: object
                     type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Global
+  /network/migrate:
+    post:
+      description: Instruct the network to unsubscribe from the current FireFly contract
+        and migrate to the next one configured
+      operationId: postNetworkMigrate
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                contractIndex:
+                  description: The index of the configured FireFly smart contract
+                    currently being used
+                  type: integer
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  contractIndex:
+                    description: The index of the configured FireFly smart contract
+                      currently being used
+                    type: integer
                 type: object
           description: Success
         default:

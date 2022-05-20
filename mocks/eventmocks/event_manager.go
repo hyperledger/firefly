@@ -69,6 +69,20 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return r0
 }
 
+// BlockchainOperatorAction provides a mock function with given fields: bi, action, payload, signingKey
+func (_m *EventManager) BlockchainOperatorAction(bi blockchain.Plugin, action string, payload string, signingKey *core.VerifierRef) error {
+	ret := _m.Called(bi, action, payload, signingKey)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(blockchain.Plugin, string, string, *core.VerifierRef) error); ok {
+		r0 = rf(bi, action, payload, signingKey)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateUpdateDurableSubscription provides a mock function with given fields: ctx, subDef, mustNew
 func (_m *EventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) error {
 	ret := _m.Called(ctx, subDef, mustNew)

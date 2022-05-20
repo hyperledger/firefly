@@ -312,7 +312,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	logIndex := msgJSON.GetInt64("logIndex")
 	dataJSON := msgJSON.GetObject("data")
 	authorAddress := dataJSON.GetString("author")
-	ns := dataJSON.GetString("namespace")
+	nsOrAction := dataJSON.GetString("namespace")
 	sUUIDs := dataJSON.GetString("uuids")
 	sBatchHash := dataJSON.GetString("batchHash")
 	sPayloadRef := dataJSON.GetString("payloadRef")
@@ -337,6 +337,16 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
+	}
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: authorAddress,
+	}
+
+	// Check if this is actually an operator action
+	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
+		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
+		return e.callbacks.BlockchainOperatorAction(action, sPayloadRef, verifier)
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -369,7 +379,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 
 	delete(msgJSON, "data")
 	batch := &blockchain.BatchPin{
-		Namespace:       ns,
+		Namespace:       nsOrAction,
 		TransactionID:   &txnID,
 		BatchID:         &batchID,
 		BatchHash:       &batchHash,
@@ -389,10 +399,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: authorAddress,
-	})
+	return e.callbacks.BatchPinComplete(batch, verifier)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
@@ -629,6 +636,17 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		ethHexFormatB32(batch.BatchHash),
 		batch.BatchPayloadRef,
 		ethHashes,
+	}
+	return e.invokeContractMethod(ctx, e.contractAddress, signingKey, batchPinMethodABI, operationID.String(), input)
+}
+
+func (e *Ethereum) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action, payload string) error {
+	input := []interface{}{
+		blockchain.FireFlyActionPrefix + action,
+		ethHexFormatB32(nil),
+		ethHexFormatB32(nil),
+		payload,
+		[]string{},
 	}
 	return e.invokeContractMethod(ctx, e.contractAddress, signingKey, batchPinMethodABI, operationID.String(), input)
 }

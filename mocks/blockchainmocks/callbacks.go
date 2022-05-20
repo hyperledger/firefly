@@ -48,3 +48,17 @@ func (_m *Callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) er
 func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
 	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }
+
+// BlockchainOperatorAction provides a mock function with given fields: action, payload, signingKey
+func (_m *Callbacks) BlockchainOperatorAction(action string, payload string, signingKey *core.VerifierRef) error {
+	ret := _m.Called(action, payload, signingKey)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, string, *core.VerifierRef) error); ok {
+		r0 = rf(action, payload, signingKey)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

@@ -57,6 +57,10 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
+	mei.On("BlockchainOperatorAction", mbi, "migrate", "1", &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainOperatorAction("migrate", "1", &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
+	assert.EqualError(t, err, "pop")
+
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
 		ID:             opID,
 		Status:         core.OpStatusFailed,
