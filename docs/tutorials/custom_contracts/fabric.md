@@ -15,11 +15,10 @@ This guide describes the steps to deploy a chaincode to a Hyperledger Fabric blo
 > **NOTE:** This guide assumes that you are running a local FireFly stack with at least 2 members and a Fabric blockchain created by the FireFly CLI. If you need help getting that set up, please see the [Getting Started guide to Start your environment](https://nguyer.github.io/firefly/gettingstarted/setup_env.html).
 
 ## Table of contents
-
 {: .no_toc .text-delta }
 
 1. TOC
-   {:toc}
+{:toc}
 
 ---
 
