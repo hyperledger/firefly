@@ -73,23 +73,22 @@ jobs:
         working-directory: docs
         run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}/:/' --url-ignore /127.0.0.1/,/localhost/
 
-      # Push the versioned docs
-      - name: Deploy docs version
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.event_name != 'pull_request'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./docs/_site
-          destination_dir: ${{ env.DOCS_VERSION }}
+      ## FINAL STEPS TO COMPLETE IF THIS WAS A NEW RELEASE ##
 
-      # If this was a release, build the docs as the root (latest) version too
+      - name: Copy new version into version directory
+        if: github.event_name == 'release'
+        working-directory: docs
+        run: mv _site ${{ env.DOCS_VERSION }}
+
+      - name: Copy existing versions into working directory
+        if: github.event_name == 'release'
+        run: ls ./gh-pages | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' || true | xargs cp -t ./docs
+
       - name: Build doc site (latest)
         if: github.event_name == 'release'
         working-directory: docs
         run: bundle exec jekyll build --baseurl /firefly
-
-      # If this was a release, push the docs as latest
+      
       - name: Deploy docs (latest)
         if: github.event_name == 'release'
         uses: peaceiris/actions-gh-pages@v3
@@ -97,5 +96,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: ./docs/_site
-          keep_files: true
 
