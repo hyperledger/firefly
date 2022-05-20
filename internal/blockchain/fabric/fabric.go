@@ -59,10 +59,12 @@ type Fabric struct {
 		stream *eventStream
 		sub    *subscription
 	}
-	idCache map[string]*fabIdentity
-	wsconn  wsclient.WSClient
-	closed  chan struct{}
-	metrics metrics.Manager
+	idCache        map[string]*fabIdentity
+	wsconn         wsclient.WSClient
+	closed         chan struct{}
+	metrics        metrics.Manager
+	fabconnectConf config.Section
+	contractConf   config.ArraySection
 }
 
 type eventStreamWebsocket struct {
@@ -161,7 +163,7 @@ func (f *Fabric) VerifierType() core.VerifierType {
 }
 
 func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
-	fabconnectConf := config.SubSection(FabconnectConfigKey)
+	f.InitConfig(config)
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
 	f.callbacks = callbacks
@@ -169,43 +171,62 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
 
-	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabconnect")
+	if f.fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
 	}
-	f.defaultChannel = fabconnectConf.GetString(FabconnectConfigDefaultChannel)
-	f.chaincode = fabconnectConf.GetString(FabconnectConfigChaincode)
-	if f.chaincode == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabconnect")
-	}
+	f.defaultChannel = f.fabconnectConf.GetString(FabconnectConfigDefaultChannel)
 	// the org identity is guaranteed to be configured by the core
-	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
-	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
+	f.signer = f.fabconnectConf.GetString(FabconnectConfigSigner)
+	f.topic = f.fabconnectConf.GetString(FabconnectConfigTopic)
 	if f.topic == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.fabconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.fabric.fabconnect")
 	}
 
-	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
-	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
+	f.prefixShort = f.fabconnectConf.GetString(FabconnectPrefixShort)
+	f.prefixLong = f.fabconnectConf.GetString(FabconnectPrefixLong)
 
-	f.client = ffresty.New(f.ctx, fabconnectConf)
+	f.client = ffresty.New(f.ctx, f.fabconnectConf)
 
-	wsConfig := wsclient.GenerateConfig(fabconnectConf)
+	return nil
+}
 
+func (f *Fabric) initStreams(contractIndex int) (err error) {
+	ctx := f.ctx
+	wsConfig := wsclient.GenerateConfig(f.fabconnectConf)
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}
-
 	f.wsconn, err = wsclient.New(ctx, wsConfig, nil, f.afterConnect)
 	if err != nil {
 		return err
 	}
 
-	f.streams = &streamManager{
-		client: f.client,
-		signer: f.signer,
+	f.streams = &streamManager{client: f.client, signer: f.signer}
+	if f.contractConf.ArraySize() > 0 || contractIndex > 0 {
+		// New config (array of objects under "fireflyContract")
+		if contractIndex >= f.contractConf.ArraySize() {
+			return i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.fabric.fireflyContract[%d]", contractIndex))
+		}
+		f.chaincode = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractChaincode)
+		if f.chaincode == "" {
+			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.fabric.fireflyContract")
+		}
+		f.streams.fireFlySubscriptionFromBlock = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
+	} else {
+		// Old config (attributes under "ethconnect")
+		f.chaincode = f.fabconnectConf.GetString(FabconnectConfigChaincodeDeprecated)
+		if f.chaincode != "" {
+			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
+				FabconnectConfigKey, FabconnectConfigChaincodeDeprecated,
+				FireFlyContractConfigKey, FireFlyContractChaincode)
+			f.streams.fireFlySubscriptionFromBlock = string(core.SubOptsFirstEventOldest)
+		} else {
+			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fabconnect")
+		}
 	}
-	batchSize := fabconnectConf.GetUint(FabconnectConfigBatchSize)
-	batchTimeout := uint(fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
+
+	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
+	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 	if f.initInfo.stream, err = f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
@@ -224,7 +245,10 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	return nil
 }
 
-func (f *Fabric) Start(contractIndex int) error {
+func (f *Fabric) Start(contractIndex int) (err error) {
+	if err = f.initStreams(contractIndex); err != nil {
+		return err
+	}
 	return f.wsconn.Connect()
 }
 

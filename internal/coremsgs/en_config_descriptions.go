@@ -86,15 +86,17 @@ var (
 
 	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigBlockchainFabricFabconnectBatchTimeout = ffc("config.blockchain.fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", i18n.TimeDurationType)
-	ConfigBlockchainFabricFabconnectChaincode    = ffc("config.blockchain.fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigBlockchainFabricFabconnectChaincode    = ffc("config.blockchain.fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)", i18n.StringType)
 	ConfigBlockchainFabricFabconnectChannel      = ffc("config.blockchain.fabric.fabconnect.channel", "The Fabric channel that FireFly will use for BatchPin transactions", i18n.StringType)
 	ConfigBlockchainFabricFabconnectPrefixLong   = ffc("config.blockchain.fabric.fabconnect.prefixLong", "The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectPrefixShort  = ffc("config.blockchain.fabric.fabconnect.prefixShort", "The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectSigner       = ffc("config.blockchain.fabric.fabconnect.signer", "The Fabric signing key to use when submitting transactions to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectTopic        = ffc("config.blockchain.fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
+	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
-	ConfigBlockchainFabricFabconnectProxyURL = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
+	ConfigBlockchainFabricContractChaincode = ffc("config.blockchain.fabric.fireflyContract[].chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigBlockchainFabricContractFromBlock = ffc("config.blockchain.fabric.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
@@ -141,23 +143,25 @@ var (
 	ConfigPluginBlockchainEthereumEthconnectURL          = ffc("config.plugins.blockchain[].ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
 	ConfigPluginBlockchainEthereumEthconnectProxyURL     = ffc("config.plugins.blockchain[].ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
 
-	ConfigPluginsBlockchainEthereumContractAddress   = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].address", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
-	ConfigPluginsBlockchainEthereumContractFromBlock = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+	ConfigPluginBlockchainEthereumContractAddress   = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].address", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
+	ConfigPluginBlockchainEthereumContractFromBlock = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigPluginBlockchainEthereumFFTMURL      = ffc("config.plugins.blockchain[].ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
 	ConfigPluginBlockchainEthereumFFTMProxyURL = ffc("config.plugins.blockchain[].ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
 
 	ConfigPluginBlockchainFabricFabconnectBatchSize    = ffc("config.plugins.blockchain[].fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigPluginBlockchainFabricFabconnectBatchTimeout = ffc("config.plugins.blockchain[].fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", i18n.TimeDurationType)
-	ConfigPluginBlockchainFabricFabconnectChaincode    = ffc("config.plugins.blockchain[].fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectChaincode    = ffc("config.plugins.blockchain[].fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectChannel      = ffc("config.plugins.blockchain[].fabric.fabconnect.channel", "The Fabric channel that FireFly will use for BatchPin transactions", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectPrefixLong   = ffc("config.plugins.blockchain[].fabric.fabconnect.prefixLong", "The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectPrefixShort  = ffc("config.plugins.blockchain[].fabric.fabconnect.prefixShort", "The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectSigner       = ffc("config.plugins.blockchain[].fabric.fabconnect.signer", "The Fabric signing key to use when submitting transactions to Fabconnect", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectTopic        = ffc("config.plugins.blockchain[].fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", i18n.StringType)
 	ConfigPluginBlockchainFabricFabconnectURL          = ffc("config.plugins.blockchain[].fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectProxyURL     = ffc("config.plugins.blockchain[].fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
-	ConfigPluginBlockchainFabricFabconnectProxyURL = ffc("config.plugins.blockchain[].fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
+	ConfigPluginBlockchainFabricContractChaincode = ffc("config.plugins.blockchain[].fabric.fireflyContract[].chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigPluginBlockchainFabricContractFromBlock = ffc("config.plugins.blockchain[].fabric.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigBroadcastBatchAgentTimeout = ffc("config.broadcast.batch.agentTimeout", "How long to keep around a batching agent for a sending identity before disposal", i18n.StringType)
 	ConfigBroadcastBatchPayloadLimit = ffc("config.broadcast.batch.payloadLimit", "The maximum payload size of a batch for broadcast messages", i18n.ByteSizeType)

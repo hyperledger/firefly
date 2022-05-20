@@ -46,9 +46,8 @@ var utConfig = config.RootSection("fab_unit_tests")
 var utFabconnectConf = utConfig.SubSection(FabconnectConfigKey)
 var signer = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
 
-func resetConf() {
+func resetConf(e *Fabric) {
 	coreconfig.Reset()
-	e := &Fabric{}
 	e.InitConfig(utConfig)
 }
 
@@ -105,7 +104,7 @@ func testFFIMethod() *core.FFIMethod {
 func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
-	resetConf()
+	resetConf(e)
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*url", err)
 }
@@ -113,20 +112,22 @@ func TestInitMissingURL(t *testing.T) {
 func TestInitMissingChaincode(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
 	assert.Regexp(t, "FF10138.*chaincode", err)
 }
 
 func TestInitMissingTopic(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(FabconnectConfigChaincode, "Firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "Firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
@@ -165,10 +166,10 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
@@ -177,13 +178,14 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 
 	assert.Equal(t, "fabric", e.Name())
 	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
+
+	err = e.Start(0)
+	assert.NoError(t, err)
+
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 	assert.NotNil(t, e.Capabilities())
-
-	err = e.Start(0)
-	assert.NoError(t, err)
 
 	startupMessage := <-toServer
 	assert.Equal(t, `{"type":"listen","topic":"topic1"}`, startupMessage)
@@ -205,28 +207,29 @@ func TestWSInitFail(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "!!!://")
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.Start(0)
 	assert.Regexp(t, "FF00149", err)
 
 }
 
-func TestWSConnectFail(t *testing.T) {
+func TestWSClose(t *testing.T) {
 
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
 		ctx:    context.Background(),
 		wsconn: wsm,
 	}
-	wsm.On("Connect").Return(fmt.Errorf("pop"))
+	wsm.On("Close").Return(nil)
+	e.Stop()
 
-	err := e.Start(0)
-	assert.EqualError(t, err, "pop")
 }
 
 func TestInitAllExistingStreams(t *testing.T) {
@@ -245,20 +248,101 @@ func TestInitAllExistingStreams(t *testing.T) {
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.NoError(t, err)
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
 
+}
+
+func TestInitNewConfig(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{
+			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
+		}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.initInfo.stream.ID)
+	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+
+}
+
+func TestInitNewConfigError(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10138", err)
+
+}
+
+func TestInitNewConfigBadIndex(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	assert.NoError(t, err)
+	err = e.initStreams(1)
+	assert.Regexp(t, "FF10387", err)
 
 }
 
@@ -274,18 +358,18 @@ func TestStreamQueryError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
 		httpmock.NewStringResponder(500, `pop`))
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10284.*pop", err)
 
 }
 
@@ -303,18 +387,18 @@ func TestStreamCreateError(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
 		httpmock.NewStringResponder(500, `pop`))
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10284.*pop", err)
 
 }
 
@@ -334,18 +418,18 @@ func TestSubQueryError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewStringResponder(500, `pop`))
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10284.*pop", err)
 
 }
 
@@ -367,18 +451,18 @@ func TestSubQueryCreateError(t *testing.T) {
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewStringResponder(500, `pop`))
 
-	resetConf()
+	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPConfigRetryEnabled, false)
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utFabconnectConf.Set(FabconnectConfigChaincode, "firefly")
+	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.NoError(t, err)
+	err = e.initStreams(0)
+	assert.Regexp(t, "FF10284.*pop", err)
 
 }
 
@@ -1202,8 +1286,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 
 	err := e.AddContractListener(context.Background(), sub)
 
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10284.*pop", err)
 }
 
 func TestDeleteSubscription(t *testing.T) {
@@ -1253,8 +1336,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 
 	err := e.DeleteContractListener(context.Background(), sub)
 
-	assert.Regexp(t, "FF10284", err)
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10284.*pop", err)
 }
 
 func TestHandleMessageContractEvent(t *testing.T) {

@@ -27,8 +27,9 @@ import (
 )
 
 type streamManager struct {
-	client *resty.Client
-	signer string
+	client                       *resty.Client
+	signer                       string
+	fireFlySubscriptionFromBlock string
 }
 
 type eventStream struct {
@@ -164,7 +165,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, location *Locati
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, event, string(core.SubOptsFirstEventOldest)); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, event, s.fireFlySubscriptionFromBlock); err != nil {
 			return nil, err
 		}
 	}
