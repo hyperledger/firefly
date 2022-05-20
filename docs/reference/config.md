@@ -24,7 +24,6 @@ nav_order: 3
 |address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
 |enabled|Enables the admin HTTP API|`boolean`|`<nil>`
 |port|The port on which the admin HTTP API should listen|`int`|`5001`
-|preinit|Enables the pre-init mode. This mode will let the FireFly Core process start, but not initialize any plugins, besides the database to read any configuration overrides. This allows the admin HTTP API to be used to define custom configuration before starting the rest of FireFly Core|`boolean`|`<nil>`
 |publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`

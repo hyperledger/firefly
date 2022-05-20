@@ -178,8 +178,6 @@ var (
 	GroupCacheTTL = ffc("group.cache.ttl")
 	// AdminEnabled determines whether the admin interface will be enabled or not
 	AdminEnabled = ffc("admin.enabled")
-	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
-	AdminPreinit = ffc("admin.preinit")
 	// AdminWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
 	AdminWebSocketEventQueueLength = ffc("admin.ws.eventQueueLength")
 	// AdminWebSocketBlockedWarnInterval how often to emit a warning if an admin.ws is blocked and not receiving events

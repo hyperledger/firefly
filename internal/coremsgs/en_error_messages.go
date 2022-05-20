@@ -118,7 +118,6 @@ var (
 	MsgInvalidHex                   = ffe("FF10231", "Invalid hex supplied", 400)
 	MsgInvalidWrongLenB32           = ffe("FF00107", "Byte length must be 32 (64 hex characters)", 400)
 	MsgNodeNotFoundInOrg            = ffe("FF10233", "Unable to find any nodes owned by org '%s', or parent orgs", 400)
-	MsgPreInitCheckFailed           = ffe("FF10235", "Pre-initialization has not yet been completed. Add config records with the admin API complete initialization and reset the node")
 	MsgFieldsAfterFile              = ffe("FF10236", "Additional form field sent after file in multi-part form (ignored): '%s'", 400)
 	MsgDXBadResponse                = ffe("FF10237", "Unexpected '%s' in data exchange response: %s")
 	MsgDXBadHash                    = ffe("FF10238", "Unexpected hash returned from data exchange upload. Hash=%s Expected=%s")

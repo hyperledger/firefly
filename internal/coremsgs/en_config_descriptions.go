@@ -31,7 +31,6 @@ var (
 	ConfigAdminAddress      = ffc("config.admin.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigAdminEnabled      = ffc("config.admin.enabled", "Enables the admin HTTP API", i18n.BooleanType)
 	ConfigAdminPort         = ffc("config.admin.port", "The port on which the admin HTTP API should listen", i18n.IntType)
-	ConfigAdminPreInit      = ffc("config.admin.preinit", "Enables the pre-init mode. This mode will let the FireFly Core process start, but not initialize any plugins, besides the database to read any configuration overrides. This allows the admin HTTP API to be used to define custom configuration before starting the rest of FireFly Core", i18n.BooleanType)
 	ConfigAdminPublicURL    = ffc("config.admin.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
 	ConfigAdminReadTimeout  = ffc("config.admin.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigAdminWriteTimeout = ffc("config.admin.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
