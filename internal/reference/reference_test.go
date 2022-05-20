@@ -64,7 +64,7 @@ func TestGenerateMarkdownPagesBadJSON(t *testing.T) {
 func TestGenerateMarkdownDescriptionMissing(t *testing.T) {
 	type thingy struct{}
 	_, err := generateMarkdownPages(context.Background(), []interface{}{thingy{}}, []interface{}{}, "")
-	assert.Regexp(t, "FF10386.*thingy_description.md", err)
+	assert.Regexp(t, "FF10387.*thingy_description.md", err)
 }
 
 func TestGenerateMarkdownAnonymousStruct(t *testing.T) {

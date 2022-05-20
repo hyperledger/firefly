@@ -65,6 +65,10 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.S
 		return i18n.NewError(ctx, coremsgs.MsgDBInitFailed)
 	}
 
+	if config.GetString(SQLConfDatasourceURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", fmt.Sprintf("database.%s", s.provider.Name()))
+	}
+
 	if s.db, err = provider.Open(config.GetString(SQLConfDatasourceURL)); err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgDBInitFailed)
 	}

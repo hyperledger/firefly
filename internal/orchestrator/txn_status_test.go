@@ -39,6 +39,7 @@ func compactJSON(s string) string {
 
 func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -119,6 +120,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 
 func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -173,6 +175,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 
 func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -227,6 +230,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 
 func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -306,6 +310,7 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -356,6 +361,7 @@ func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 
 func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -416,6 +422,7 @@ func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 
 func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -494,6 +501,7 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -568,6 +576,7 @@ func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -622,6 +631,7 @@ func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 
 func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -689,6 +699,7 @@ func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
 
 func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -743,6 +754,7 @@ func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
 
 func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -789,6 +801,7 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTXError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(nil, fmt.Errorf("pop"))
@@ -801,6 +814,7 @@ func TestGetTransactionStatusTXError(t *testing.T) {
 
 func TestGetTransactionStatusNotFound(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(nil, nil)
@@ -813,6 +827,7 @@ func TestGetTransactionStatusNotFound(t *testing.T) {
 
 func TestGetTransactionStatusOpError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&core.Transaction{
@@ -828,6 +843,7 @@ func TestGetTransactionStatusOpError(t *testing.T) {
 
 func TestGetTransactionStatusBlockchainEventError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&core.Transaction{
@@ -844,6 +860,7 @@ func TestGetTransactionStatusBlockchainEventError(t *testing.T) {
 
 func TestGetTransactionStatusBatchError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -864,6 +881,7 @@ func TestGetTransactionStatusBatchError(t *testing.T) {
 
 func TestGetTransactionStatusPoolError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -884,6 +902,7 @@ func TestGetTransactionStatusPoolError(t *testing.T) {
 
 func TestGetTransactionStatusTransferError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -904,6 +923,7 @@ func TestGetTransactionStatusTransferError(t *testing.T) {
 
 func TestGetTransactionStatusApprovalError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{
@@ -924,6 +944,7 @@ func TestGetTransactionStatusApprovalError(t *testing.T) {
 
 func TestGetTransactionStatusUnknownType(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	tx := &core.Transaction{

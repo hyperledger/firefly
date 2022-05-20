@@ -47,11 +47,13 @@ type sqliteGoTestProvider struct {
 
 // newTestProvider creates a real in-memory database provider for e2e testing
 func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
+	conf := config.RootSection("unittest.db")
+	conf.AddKnownKey("url", "test")
 	tp := &sqliteGoTestProvider{
 		t:            t,
 		callbacks:    &databasemocks.Callbacks{},
 		capabilities: &database.Capabilities{},
-		config:       config.RootSection("unittest.db"),
+		config:       conf,
 	}
 	tp.SQLCommon.InitConfig(tp, tp.config)
 	dir, err := ioutil.TempDir("", "")

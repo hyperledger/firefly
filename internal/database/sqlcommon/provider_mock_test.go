@@ -48,10 +48,12 @@ type mockProvider struct {
 
 func newMockProvider() *mockProvider {
 	coreconfig.Reset()
+	conf := config.RootSection("unittest.db")
+	conf.AddKnownKey("url", "test")
 	mp := &mockProvider{
 		capabilities: &database.Capabilities{},
 		callbacks:    &databasemocks.Callbacks{},
-		config:       config.RootSection("unittest.mockdb"),
+		config:       conf,
 	}
 	mp.SQLCommon.InitConfig(mp, mp.config)
 	mp.config.Set(SQLConfMaxConnections, 10)
