@@ -3,7 +3,7 @@ layout: default
 title: Group
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 11
+nav_order: 14
 ---
 
 # Group

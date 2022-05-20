@@ -3,7 +3,7 @@ layout: default
 title: TokenTransfer
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 8
+nav_order: 10
 ---
 
 # TokenTransfer
@@ -26,14 +26,22 @@ nav_order: 8
 {
     "type": "transfer",
     "pool": "1244ecbe-5862-41c3-99ec-4666a18b9dd5",
-    "from": "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
-    "to": "0x7b746b92869De61649d148823808653430682C0d",
-    "amount": "0",
-    "message": "855af8e7-2b02-4e05-ad7d-9ae0d4c409ba",
+    "uri": "firefly://token/1",
+    "connector": "erc20_erc721",
+    "namespace": "ns1",
+    "key": "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+    "from": "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+    "to": "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+    "amount": "1000000000000000000",
+    "protocolId": "000000000041/000000/000000",
+    "message": "780b9b90-e3b0-4510-afac-b4b1f2940b36",
+    "messageHash": "780204e634364c42779920eddc8d9fecccb33e3607eeac9f53abd1b31184ae4e",
     "created": "2022-05-16T01:23:15Z",
     "tx": {
-        "type": ""
-    }
+        "type": "token_transfer",
+        "id": "62767ca8-99f9-439c-9deb-d80c6672c158"
+    },
+    "blockchainEvent": "b57fcaa2-156e-4c3f-9b0b-ddec9ee25933"
 }
 ```
 

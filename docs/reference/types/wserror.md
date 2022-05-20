@@ -3,7 +3,7 @@ layout: default
 title: WSError
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 15
+nav_order: 18
 ---
 
 # WSError

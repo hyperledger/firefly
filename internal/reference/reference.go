@@ -105,6 +105,30 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			},
 		},
 
+		&core.Transaction{
+			ID:            fftypes.MustParseUUID("4e7e0943-4230-4f67-89b6-181adf471edc"),
+			Namespace:     "ns1",
+			Type:          core.TransactionTypeContractInvoke,
+			Created:       fftypes.UnixTime(1652664195),
+			BlockchainIDs: core.NewFFStringArray("0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d"),
+		},
+
+		&core.Operation{
+			ID:          fftypes.MustParseUUID("04a8b0c4-03c2-4935-85a1-87d17cddc20a"),
+			Namespace:   "ns1",
+			Type:        core.OpTypeSharedStorageUploadBatch,
+			Transaction: fftypes.MustParseUUID("99543134-769b-42a8-8be4-a5f8873f969d"),
+			Status:      core.OpStatusSucceeded,
+			Plugin:      "ipfs",
+			Input: fftypes.JSONObject{
+				"id": "80d89712-57f3-48fe-b085-a8cba6e0667d",
+			},
+			Output: fftypes.JSONObject{
+				"payloadRef": "QmWj3tr2aTHqnRYovhS2mQAjYneRtMWJSU4M4RdAJpJwEC",
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
 		&core.FFI{
 			ID:          fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
 			Namespace:   "ns1",
@@ -250,11 +274,46 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 		},
 
 		&core.TokenTransfer{
-			Message: fftypes.MustParseUUID("855af8e7-2b02-4e05-ad7d-9ae0d4c409ba"),
-			Pool:    fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
-			From:    "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
-			To:      "0x7b746b92869De61649d148823808653430682C0d",
-			Type:    core.TokenTransferTypeTransfer,
+			Namespace:       "ns1",
+			Connector:       "erc20_erc721",
+			URI:             "firefly://token/1",
+			Type:            core.TokenTransferTypeTransfer,
+			Key:             "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+			From:            "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+			To:              "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+			Amount:          *fftypes.NewFFBigInt(1000000000000000000),
+			ProtocolID:      "000000000041/000000/000000",
+			Message:         fftypes.MustParseUUID("780b9b90-e3b0-4510-afac-b4b1f2940b36"),
+			MessageHash:     fftypes.MustParseBytes32("780204e634364c42779920eddc8d9fecccb33e3607eeac9f53abd1b31184ae4e"),
+			Pool:            fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
+			BlockchainEvent: fftypes.MustParseUUID("b57fcaa2-156e-4c3f-9b0b-ddec9ee25933"),
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenTransfer,
+				ID:   fftypes.MustParseUUID("62767ca8-99f9-439c-9deb-d80c6672c158"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.TokenApproval{
+			Namespace: "ns1",
+			Connector: "erc20_erc721",
+			LocalID:   fftypes.MustParseUUID("1CD3E2E2-DD6A-441D-94C5-02439DE9897B"),
+			Pool:      fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
+			Key:       "0x55860105d6a675dbe6e4d83f67b834377ba677ad",
+			Operator:  "0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+			Approved:  true,
+			Info: fftypes.JSONObject{
+				"owner":   "0x55860105d6a675dbe6e4d83f67b834377ba677ad",
+				"spender": "0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+				"value":   "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+			},
+			ProtocolID: "000000000032/000000/000000",
+			Subject:    "0x55860105d6a675dbe6e4d83f67b834377ba677ad:0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+			Active:     true,
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenApproval,
+				ID:   fftypes.MustParseUUID("4b6e086d-0e31-482d-9683-cd18b2045031"),
+			},
 			Created: fftypes.UnixTime(1652664195),
 		},
 
