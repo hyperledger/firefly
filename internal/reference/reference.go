@@ -276,7 +276,7 @@ func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, roo
 
 				link := fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
 				if fieldInRootPages {
-					link = fmt.Sprintf("%s#%s", fieldType.Name(), strings.ToLower(fieldType.Name()))
+					link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
 				} else if fieldInSimpleTypes {
 					link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
 				}
@@ -312,7 +312,7 @@ func generatePageHeader(pageTitle string, navOrder int) string {
 layout: default
 title: %s
 parent: Types
-grand_parent: Reference
+grand_parent: pages.reference
 nav_order: %v
 ---
 

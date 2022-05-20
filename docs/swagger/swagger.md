@@ -1,6 +1,6 @@
 ---
-layout: default
-title: API Spec
+layout: i18n_page
+title: pages.api_spec
 nav_order: 8
 has_children: false
 ---

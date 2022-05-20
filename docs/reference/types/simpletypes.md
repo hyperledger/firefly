@@ -2,7 +2,7 @@
 layout: default
 title: Simple Types
 parent: Types
-grand_parent: Reference
+grand_parent: pages.reference
 nav_order: 1
 ---
 

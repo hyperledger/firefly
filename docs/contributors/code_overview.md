@@ -1,7 +1,7 @@
 ---
-layout: default
-title: FireFly Code Overview
-parent: Contributors
+layout: i18n_page
+title: pages.code_overview
+parent: pages.contributors
 nav_order: 1
 ---
 

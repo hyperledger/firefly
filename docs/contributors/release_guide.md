@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Release Guide
-parent: Contributors
+parent: pages.contributors
 nav_order: 8
 ---
 
