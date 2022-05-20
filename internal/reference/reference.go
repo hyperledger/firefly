@@ -105,6 +105,34 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			},
 		},
 
+		&core.BlockchainEvent{
+			ID:         fftypes.MustParseUUID("e9bc4735-a332-4071-9975-b1066e51ab8b"),
+			Source:     "ethereum",
+			Namespace:  "ns1",
+			Name:       "MyEvent",
+			Listener:   fftypes.MustParseUUID("c29b4595-03c2-411a-89e3-8b7f27ef17bb"),
+			ProtocolID: "000000000048/000000/000000",
+			Output: fftypes.JSONObject{
+				"addr1":  "0x55860105d6a675dbe6e4d83f67b834377ba677ad",
+				"value2": "42",
+			},
+			Info: fftypes.JSONObject{
+				"address":          "0x57A9bE18CCB50D06B7567012AaF6031D669BBcAA",
+				"blockHash":        "0xae7382ef2573553f517913b927d8b9691ada8d617266b8b16f74bb37aa78cae8",
+				"blockNumber":      "48",
+				"logIndex":         "0",
+				"signature":        "Changed(address,uint256)",
+				"subId":            "sb-e4d5efcd-2eba-4ed1-43e8-24831353fffc",
+				"timestamp":        "1653048837",
+				"transactionHash":  "0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d",
+				"transactionIndex": "0x0",
+			},
+			Timestamp: fftypes.UnixTime(1652664195),
+			TX: core.BlockchainTransactionRef{
+				BlockchainID: "0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d",
+			},
+		},
+
 		&core.Transaction{
 			ID:            fftypes.MustParseUUID("4e7e0943-4230-4f67-89b6-181adf471edc"),
 			Namespace:     "ns1",
@@ -317,6 +345,32 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			Created: fftypes.UnixTime(1652664195),
 		},
 
+		&core.Identity{
+			IdentityBase: core.IdentityBase{
+				ID:        fftypes.MustParseUUID("114f5857-9983-46fb-b1fc-8c8f0a20846c"),
+				DID:       "did:firefly:org/org_1",
+				Parent:    fftypes.MustParseUUID("688072c3-4fa0-436c-a86b-5d89673b8938"),
+				Type:      core.IdentityTypeOrg,
+				Namespace: "ff_system",
+				Name:      "org_1",
+			},
+			Messages: core.IdentityMessages{
+				Claim:        fftypes.MustParseUUID("911b364b-5863-4e49-a3f8-766dbbae7c4c"),
+				Verification: fftypes.MustParseUUID("24636f11-c1f9-4bbb-9874-04dd24c7502f"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.Verifier{
+			Identity: fftypes.MustParseUUID("114f5857-9983-46fb-b1fc-8c8f0a20846c"),
+			Hash:     fftypes.MustParseBytes32("6818c41093590b862b781082d4df5d4abda6d2a4b71d737779edf6d2375d810b"),
+			VerifierRef: core.VerifierRef{
+				Type:  core.VerifierTypeEthAddress,
+				Value: "0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
 		&core.Message{
 			Header: core.MessageHeader{
 				ID:     fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
@@ -364,6 +418,34 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 				Size: 12345,
 				Name: "filename.pdf",
 			},
+		},
+
+		&core.Datatype{
+			ID:        fftypes.MustParseUUID("3a479f7e-ddda-4bda-aa24-56d06c0bf08e"),
+			Message:   fftypes.MustParseUUID("bfcf904c-bdf7-40aa-bbd7-567f625c26c0"),
+			Validator: core.ValidatorTypeJSON,
+			Namespace: "ns1",
+			Name:      "widget",
+			Version:   "1.0.0",
+			Hash:      fftypes.MustParseBytes32("639cd98c893fa45a9df6fd87bd0393a9b39e31e26fbb1eeefe90cb40c3fa02d2"),
+			Created:   fftypes.UnixTime(1652664196),
+			Value: fftypes.JSONAnyPtr(`{
+				"$id": "https://example.com/widget.schema.json",
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"title": "Widget",
+				"type": "object",
+				"properties": {
+				  "id": {
+					"type": "string",
+					"description": "The unique identifier for the widget."
+				  },
+				  "name": {
+					"type": "string",
+					"description": "The person's last name."
+				  }
+				},
+				"additionalProperties": false				
+			}`),
 		},
 
 		&core.Group{

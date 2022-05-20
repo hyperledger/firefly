@@ -3,7 +3,7 @@ layout: default
 title: WSStart
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 16
+nav_order: 20
 ---
 
 # WSStart

@@ -3,7 +3,7 @@ layout: default
 title: Operation
 parent: Core Resources
 grand_parent: pages.reference
-nav_order: 6
+nav_order: 7
 ---
 
 # Operation
