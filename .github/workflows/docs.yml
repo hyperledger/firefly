@@ -65,7 +65,7 @@ jobs:
 
       - name: Check the docs for broken links
         working-directory: docs
-        run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}:/' --url-ignore /127.0.0.1/,/localhost/
+        run: bundle exec htmlproofer --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}/:/' --url-ignore /127.0.0.1/,/localhost/
 
       # Push the versioned docs
       - name: Deploy docs version
