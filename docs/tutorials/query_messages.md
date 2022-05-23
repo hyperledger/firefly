@@ -28,7 +28,7 @@ This builds on the APIs to query and filter messages, described below
 
 ## Additional info
 
-- Reference: [API Query Syntax](/firefly/reference/api_query_syntax.html)
+- Reference: [API Query Syntax](../reference/api_query_syntax.html)
 - Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/getMsgs" data-proofer-ignore>GET /api/v1/namespaces/{ns}/messages</a>
 
 ### Example 1: Query confirmed messages

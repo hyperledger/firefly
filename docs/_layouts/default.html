@@ -117,6 +117,15 @@ layout: table_wrappers
                 </div>
               </span>
             </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: {{ site.version | default: "latest" }}
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
           </ul>
         </nav>
       {% endif %}
@@ -222,5 +231,8 @@ layout: table_wrappers
       <div class="search-overlay"></div>
     {% endif %}
   </div>
+  <script>
+    getVersions("{{ site.lang }}")
+  </script>
 </body>
 </html>
