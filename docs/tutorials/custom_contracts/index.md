@@ -46,4 +46,4 @@ Like the rest of FireFly, custom onchin logic support are implemented with an as
 
 <!-- TODO: Update this diagram -->
 
-![Smart Contracts Async Flow](../images/smart_contracts_async_flow.svg "Smart Contracts Async Flow")
+![Smart Contracts Async Flow](../../images/smart_contracts_async_flow.svg "Smart Contracts Async Flow")
