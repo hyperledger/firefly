@@ -1,4 +1,4 @@
-Batch bundles a number of off-chain messages, with associated data, into a single payload
+A batch bundles a number of off-chain messages, with associated data, into a single payload
 for broadcast or private transfer.
 
 This allows the transfer of many messages (hundreds) to be backed by a single blockchain

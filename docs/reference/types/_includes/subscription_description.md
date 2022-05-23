@@ -1,5 +1,5 @@
 Each [Subscription](subscription.html#subscription) tracks delivery of events to a particular
-application, and allow FireFly to ensure that messages are delivered reliably
+application, and allows FireFly to ensure that messages are delivered reliably
 to that application.
 
 [![FireFly Event Subscription Model](../../images/firefly_event_subscription_model.jpg)](../../images/firefly_event_subscription_model.jpg)
@@ -26,7 +26,7 @@ You can create multiple subscriptions for your application, to request
 different sets of server-side filtering for events. You can then request
 FireFly to deliver events for both subscriptions over the same WebSocket
 (if you are using the WebSocket transport). However, delivery order is
-not assured between two subscription.
+not assured between two subscriptions.
 
 ### Subscriptions and workload balancing
 
@@ -98,7 +98,7 @@ $ websocat ws://localhost:5000/ws
 {"type":"ack","id":"70ed4411-57cf-4ba1-bedb-fe3b4b5fd6b6"}
 ```
 
-When creating your subscription, you can set `readhead` in order to
+When creating your subscription, you can set `readahead` in order to
 ask FireFly to stream a number of messages to your application,
 ahead of receiving the acknowledgements.
 

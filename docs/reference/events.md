@@ -126,7 +126,7 @@ transaction is finalized.
 
 Other steps in the process might include human decision making, private data from the core
 systems of one member, or proprietary business logic that one member is not willing to share.
-These steps are "non-deterministic" - you cannot predict the outcome, or be guaranteed
+These steps are "non-deterministic" - you cannot predict the outcome, nor be guaranteed
 to reproduce the same outcome with the same inputs in the future.
 
 The FireFly event bus is designed to make triggering these non-deterministic steps
@@ -237,7 +237,7 @@ FireFly model for tokens. Reference token connector implementations are provided
 common interface standards implemented by tokens - like ERC-20, ERC-721 and ERC-115.
 
 A particular token contract might have many additional features that
-are unique to that contract. Particularly around governance. For these you
+are unique to that contract, particularly around governance. For these you
 would use the Smart Contract features of FireFly to interact with the blockchain
 API and Events directly.
 

@@ -38,9 +38,9 @@ The key points are:
   - The Data Exchange is responsible for encryption and off-chain identity verification
 - Only parties that are involved in the privacy group receive the data
   - Other parties are only able to view the blockchain transaction
-- The hash and member list of the group not shared outside of the privacy group
-  - The `name` of the group can be used to additional salt in generation of the group hash
-  - The member list must be known by all members to verify the blockchain transactions,
+- The hash and member list of the group are not shared outside of the privacy group
+  - The `name` of the group can be used as an additional salt in generation of the group hash
+  - The member list must be known by all members of the group to verify the blockchain transactions,
     so the full group JSON structure is communicated privately with the first message
     sent on a group
 - The blockchain transaction is the source of truth for ordering

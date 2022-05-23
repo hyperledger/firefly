@@ -36,7 +36,7 @@ Use this system to enforce a set of common data types for exchange of data
 across your business network, and reduce the overhead of data verification\
 required in the application/integration tier.
 
-> More information in the [Datatype](./(datatype.md) section
+> More information in the [Datatype](./datatype.md) section
 
 ### Blob - binary data stored via the Data Exchange
 

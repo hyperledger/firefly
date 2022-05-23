@@ -1,4 +1,4 @@
-A contract listener configured FireFly to stream events from the blockchain,
+A contract listener configures FireFly to stream events from the blockchain,
 from a specific location on the blockchain, according to a given definition
 of the interface for that event.
 

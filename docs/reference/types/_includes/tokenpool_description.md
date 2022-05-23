@@ -7,7 +7,7 @@ The exact definition of a token pool is dependent on the token connector impleme
 Check the documentation for your chosen connector implementation to see the detailed options
 for configuring a new Token Pool.
 
-Note that it is very common to use a Token Pool to teach Hyperledger FireFly about and
+Note that it is very common to use a Token Pool to teach Hyperledger FireFly about an
 *existing token*, so that you can start interacting with a token that already exists.
 
 ### Example token pool types

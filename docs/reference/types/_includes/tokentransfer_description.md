@@ -48,7 +48,7 @@ There are three primary types of transfer:
 3. Transfer - tokens move from ownership by one account, to another account.
    The `from` and `to` addresses are both set for these type of transfers.
 
-Note that the `key` that signed the Transfer transactio might be different to the `from`
+Note that the `key` that signed the Transfer transaction might be different to the `from`
 account that is the owner of the tokens before the transfer.
 
 The Approval resource is used to track which signing accounts (other than the owner)

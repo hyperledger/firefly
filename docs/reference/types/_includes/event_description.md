@@ -20,7 +20,7 @@ When events are delivered to your application, the `reference` field is
 automatically retrieved and included in the JSON payload
 that is delivered to your application.
 
-You can use the `?fetchreferences` option on API calls to request the same
+You can use the `?fetchreferences` query parameter on API calls to request the same
 in-line JSON payload be included in query results.
 
 The type of the reference also determines what subscription filters apply
@@ -50,7 +50,7 @@ order between all parties that receive that message.
 
 ### Transaction
 
-When actions are submitted performed by a FireFly node, they are performed
+When actions are submitted by a FireFly node, they are performed
 within a FireFly [Transaction](./(transaction.md). The events that occur
 as a direct result of that transaction, are tagged with the transaction
 ID so that they can be grouped together.
