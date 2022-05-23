@@ -15,6 +15,12 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
+
+        # This is a regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+        # It is used in this GitHub action in a couple places to find semver named directories (with a 'v' on the front)
+      - name: Set SEMVER_REGEX
+        run: echo "SEMVER_REGEX='^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'" >> $GITHUB_ENV
+
       - name: Checkout the current commit
         uses: actions/checkout@v3
         with:
@@ -51,9 +57,11 @@ jobs:
           echo "version: ${{ env.DOCS_VERSION }}" >> ./docs/_config.yml
 
       # Only need to build the full list of versions every time there is a new release
+      # This uses a regex to determine which existing directories are "versions" and should be listed in the version.json file.
+      # The output of this command is a version.json file containing a JSON array of all semver released versions of the docs, plus "latest" and "head"
       - name: Update version.json list
         if: github.event_name == 'release'
-        run: ls ./gh-pages | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq '. += ["${{ env.DOCS_VERSION }}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
+        run: ls ./gh-pages | grep -E ${{ env.SEMVER_REGEX }} | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq '. += ["${{ env.DOCS_VERSION }}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
 
       - name: Install dependencies
         working-directory: docs
@@ -89,9 +97,10 @@ jobs:
         working-directory: docs
         run: mv _site ${{ env.DOCS_VERSION }}
 
+      # This uses a regex from to determine which existing directories are "versions" and should be copied over
       - name: Copy existing versions into working directory
         if: github.event_name == 'release'
-        run: ls ./gh-pages | grep -E '^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$' | xargs -I '{}' mv './gh-pages/{}' ./docs
+        run: ls ./gh-pages | grep -E ${{ env.SEMVER_REGEX }} | xargs -I '{}' mv './gh-pages/{}' ./docs
 
       - name: Copy existing 'head' directory into working directory
         if: github.event_name == 'release'
