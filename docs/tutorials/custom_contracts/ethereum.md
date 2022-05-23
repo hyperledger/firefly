@@ -1,8 +1,8 @@
 ---
 layout: default
 title: Ethereum
-parent: Custom Smart Contracts
-grand_parent: Tutorials
+parent: pages.custom_smart_contracts
+grand_parent: pages.tutorials
 nav_order: 1
 ---
 
