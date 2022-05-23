@@ -19,27 +19,24 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getDatatypes = &oapispec.Route{
-	Name:   "getDatatypes",
-	Path:   "namespaces/{ns}/datatypes",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getDatatypes",
+	Path:            "datatypes",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.DatatypeQueryFactory,
 	Description:     coremsgs.APIEndpointsGetDatatypes,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Datatype{} },
+	JSONOutputValue: func() interface{} { return []*core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetDatatypes(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetDatatypes(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

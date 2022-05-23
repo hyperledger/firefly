@@ -20,32 +20,29 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getMsgs = &oapispec.Route{
-	Name:   "getMsgs",
-	Path:   "namespaces/{ns}/messages",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "getMsgs",
+	Path:       "messages",
+	Method:     http.MethodGet,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fetchdata", IsBool: true, Description: coremsgs.APIFetchDataDesc},
 	},
 	FilterFactory:   database.MessageQueryFactory,
 	Description:     coremsgs.APIEndpointsGetMsgs,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Message{} },
+	JSONOutputValue: func() interface{} { return []*core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchdata"], "true") {
-			return filterResult(getOr(r.Ctx).GetMessagesWithData(r.Ctx, r.PP["ns"], r.Filter))
+			return filterResult(getOr(r.Ctx).GetMessagesWithData(r.Ctx, extractNamespace(r.PP), r.Filter))
 		}
-		return filterResult(getOr(r.Ctx).GetMessages(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(getOr(r.Ctx).GetMessages(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

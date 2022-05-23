@@ -20,7 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetMessagesForData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessagesForData", mock.Anything, "mynamespace", "abcd1234", mock.Anything).
-		Return([]*fftypes.Message{}, nil, nil)
+		Return([]*core.Message{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

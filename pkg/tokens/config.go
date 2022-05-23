@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -17,10 +17,6 @@
 package tokens
 
 const (
-	// TokensConfigName is the user-supplied name for this token type
-	TokensConfigName = "name"
-	// TokensConfigConnector is the connector plugin used for this token type (deprecated)
-	TokensConfigConnector = "connector" // TODO: remove
-	// TokensConfigPlugin is the connector plugin used for this token type
+	// TokensConfigPlugin is the connector plugin used for this token type (deprecated)
 	TokensConfigPlugin = "plugin"
 )

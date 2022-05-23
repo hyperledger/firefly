@@ -20,13 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *fftypes.BlockchainTransactionRef) *fftypes.BlockchainEvent {
-	ev := &fftypes.BlockchainEvent{
+func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Event, tx *core.BlockchainTransactionRef) *core.BlockchainEvent {
+	ev := &core.BlockchainEvent{
 		ID:         fftypes.NewUUID(),
 		Namespace:  ns,
 		Listener:   subID,
@@ -43,23 +44,23 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 	return ev
 }
 
-func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*fftypes.ContractListener, error) {
-	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*fftypes.ContractListener, error) {
+func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*core.ContractListener, error) {
+	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*core.ContractListener, error) {
 		return em.database.GetContractListenerByBackendID(ctx, protocolID)
 	})
 }
 
-func (em *eventManager) getChainListenerByIDCached(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractListener, error) {
-	return em.getChainListenerCached(fmt.Sprintf("id:%s", id), func() (*fftypes.ContractListener, error) {
+func (em *eventManager) getChainListenerByIDCached(ctx context.Context, id *fftypes.UUID) (*core.ContractListener, error) {
+	return em.getChainListenerCached(fmt.Sprintf("id:%s", id), func() (*core.ContractListener, error) {
 		return em.database.GetContractListenerByID(ctx, id)
 	})
 }
 
-func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*fftypes.ContractListener, error)) (*fftypes.ContractListener, error) {
+func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*core.ContractListener, error)) (*core.ContractListener, error) {
 	cached := em.chainListenerCache.Get(cacheKey)
 	if cached != nil {
 		cached.Extend(em.chainListenerCacheTTL)
-		return cached.Value().(*fftypes.ContractListener), nil
+		return cached.Value().(*core.ContractListener), nil
 	}
 	listener, err := getter()
 	if listener == nil || err != nil {
@@ -71,7 +72,7 @@ func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*
 
 func (em *eventManager) getTopicForChainListener(ctx context.Context, listenerID *fftypes.UUID) (string, error) {
 	if listenerID == nil {
-		return fftypes.SystemBatchPinTopic, nil
+		return core.SystemBatchPinTopic, nil
 	}
 	listener, err := em.getChainListenerByIDCached(ctx, listenerID)
 	if err != nil {
@@ -86,7 +87,7 @@ func (em *eventManager) getTopicForChainListener(ctx context.Context, listenerID
 	return topic, nil
 }
 
-func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *fftypes.BlockchainEvent) error {
+func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
 	if existing, err := em.database.GetBlockchainEventByProtocolID(ctx, chainEvent.Namespace, chainEvent.Listener, chainEvent.ProtocolID); err != nil {
 		return err
 	} else if existing != nil {
@@ -102,7 +103,7 @@ func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEv
 	if err != nil {
 		return err
 	}
-	ffEvent := fftypes.NewEvent(fftypes.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
+	ffEvent := core.NewEvent(core.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
 	if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
 		return err
 	}
@@ -127,7 +128,7 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 				return nil // no retry
 			}
 
-			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, &fftypes.BlockchainTransactionRef{
+			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,
 			})
 			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {

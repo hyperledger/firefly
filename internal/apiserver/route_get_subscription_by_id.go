@@ -19,28 +19,26 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getSubscriptionByID = &oapispec.Route{
 	Name:   "getSubscriptionByID",
-	Path:   "namespaces/{ns}/subscriptions/{subid}",
+	Path:   "subscriptions/{subid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetSubscriptionByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Subscription{} },
+	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetSubscriptionByID(r.Ctx, r.PP["ns"], r.PP["subid"])
+		output, err = getOr(r.Ctx).GetSubscriptionByID(r.Ctx, extractNamespace(r.PP), r.PP["subid"])
 		return output, err
 	},
 }

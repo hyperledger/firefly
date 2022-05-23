@@ -21,10 +21,11 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -63,17 +64,17 @@ const oldOrgExampleMessage = `{
     ]
   }`
 
-func testDeprecatedRootOrg(t *testing.T) (*fftypes.DeprecatedOrganization, *fftypes.Message, *fftypes.Data) {
+func testDeprecatedRootOrg(t *testing.T) (*core.DeprecatedOrganization, *core.Message, *core.Data) {
 
-	var msgInOut fftypes.MessageInOut
+	var msgInOut core.MessageInOut
 	err := json.Unmarshal([]byte(oldOrgExampleMessage), &msgInOut)
 	assert.NoError(t, err)
 
-	var org fftypes.DeprecatedOrganization
+	var org core.DeprecatedOrganization
 	err = json.Unmarshal(msgInOut.InlineData[0].Value.Bytes(), &org)
 	assert.NoError(t, err)
 
-	return &org, &msgInOut.Message, &fftypes.Data{
+	return &org, &msgInOut.Message, &core.Data{
 		ID:        msgInOut.InlineData[0].ID,
 		Validator: msgInOut.InlineData[0].Validator,
 		Namespace: msgInOut.Header.Namespace,
@@ -83,7 +84,7 @@ func testDeprecatedRootOrg(t *testing.T) (*fftypes.DeprecatedOrganization, *ffty
 }
 
 func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	org, msg, data := testDeprecatedRootOrg(t)
@@ -92,24 +93,24 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, fftypes.IdentityTypeOrg, fftypes.SystemNamespace, org.Name).Return(nil, nil)
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.SystemNamespace, org.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, org.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, fftypes.SystemNamespace, msg.Header.Key).Return(nil, nil)
-	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, msg.Header.Key).Return(nil, nil)
+	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *fftypes.Verifier) bool {
-		assert.Equal(t, fftypes.VerifierTypeEthAddress, verifier.Type)
+	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+		assert.Equal(t, core.VerifierTypeEthAddress, verifier.Type)
 		assert.Equal(t, msg.Header.Key, verifier.Value)
 		assert.Equal(t, *org.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypeIdentityConfirmed
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, fftypes.DataArray{data}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -121,10 +122,10 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 }
 
 func TestHandleDeprecatedOrgDefinitionBadData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
-	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, bs, &fftypes.Message{}, fftypes.DataArray{})
+	action, err := dh.handleDeprecatedOrganizationBroadcast(ctx, bs, &core.Message{}, core.DataArray{})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

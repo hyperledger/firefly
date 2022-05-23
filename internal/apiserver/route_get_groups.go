@@ -19,27 +19,24 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 var getGroups = &oapispec.Route{
-	Name:   "getGroups",
-	Path:   "namespaces/{ns}/groups",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:            "getGroups",
+	Path:            "groups",
+	Method:          http.MethodGet,
+	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.GroupQueryFactory,
 	Description:     coremsgs.APIEndpointsGetGroups,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*fftypes.Group{} },
+	JSONOutputValue: func() interface{} { return []*core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.PrivateMessaging().GetGroupsNS(r.Ctx, r.PP["ns"], r.Filter))
+		return filterResult(r.Or.PrivateMessaging().GetGroupsNS(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

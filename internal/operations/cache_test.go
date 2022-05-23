@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -30,23 +31,23 @@ func TestRunWithOperationCache(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	op1 := &fftypes.Operation{
+	op1 := &core.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Type:   core.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
-		Status: fftypes.OpStatusFailed,
+		Status: core.OpStatusFailed,
 	}
-	op1Copy := &fftypes.Operation{
+	op1Copy := &core.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Type:   core.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
-		Status: fftypes.OpStatusPending,
+		Status: core.OpStatusPending,
 	}
-	op2 := &fftypes.Operation{
+	op2 := &core.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Type:   core.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "2"},
-		Status: fftypes.OpStatusFailed,
+		Status: core.OpStatusFailed,
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
@@ -71,11 +72,11 @@ func TestRunWithOperationCacheFail(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
-	op1 := &fftypes.Operation{
+	op1 := &core.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Type:   core.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
-		Status: fftypes.OpStatusFailed,
+		Status: core.OpStatusFailed,
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
@@ -94,17 +95,17 @@ func TestAddOrReuseOperationNoCache(t *testing.T) {
 	defer cancel()
 
 	ctx := context.Background()
-	op1 := &fftypes.Operation{
+	op1 := &core.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Type:   core.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
-		Status: fftypes.OpStatusFailed,
+		Status: core.OpStatusFailed,
 	}
-	op2 := &fftypes.Operation{
+	op2 := &core.Operation{
 		ID:     fftypes.NewUUID(),
-		Type:   fftypes.OpTypeBlockchainPinBatch,
+		Type:   core.OpTypeBlockchainPinBatch,
 		Input:  fftypes.JSONObject{"batch": "1"},
-		Status: fftypes.OpStatusPending,
+		Status: core.OpStatusPending,
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
@@ -120,7 +121,7 @@ func TestAddOrReuseOperationNoCache(t *testing.T) {
 }
 
 func TestGetCacheKeyBadJSON(t *testing.T) {
-	op := &fftypes.Operation{
+	op := &core.Operation{
 		Input: fftypes.JSONObject{
 			"test": map[bool]bool{true: false},
 		},

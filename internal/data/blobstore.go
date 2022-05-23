@@ -23,12 +23,13 @@ import (
 	"io"
 
 	"github.com/docker/go-units"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -77,9 +78,9 @@ func (bs *blobStore) uploadVerifyBlob(ctx context.Context, ns string, id *fftype
 
 }
 
-func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *fftypes.DataRefOrValue, mpart *fftypes.Multipart, autoMeta bool) (*fftypes.Data, error) {
+func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, mpart *core.Multipart, autoMeta bool) (*core.Data, error) {
 
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID:        fftypes.NewUUID(),
 		Namespace: ns,
 		Created:   fftypes.Now(),
@@ -96,7 +97,7 @@ func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *fftypes.
 	if err != nil {
 		return nil, err
 	}
-	data.Blob = &fftypes.BlobRef{Hash: hash}
+	data.Blob = &core.BlobRef{Hash: hash}
 
 	// autoMeta will create/update JSON metadata with the upload details
 	if autoMeta {
@@ -107,10 +108,10 @@ func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *fftypes.
 		data.Value = fftypes.JSONAnyPtrBytes(b)
 	}
 	if data.Validator == "" {
-		data.Validator = fftypes.ValidatorTypeJSON
+		data.Validator = core.ValidatorTypeJSON
 	}
 
-	blob := &fftypes.Blob{
+	blob := &core.Blob{
 		Hash:       hash,
 		Size:       blobSize,
 		PayloadRef: payloadRef,
@@ -140,9 +141,9 @@ func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *fftypes.
 	return data, nil
 }
 
-func (bs *blobStore) DownloadBlob(ctx context.Context, ns, dataID string) (*fftypes.Blob, io.ReadCloser, error) {
+func (bs *blobStore) DownloadBlob(ctx context.Context, ns, dataID string) (*core.Blob, io.ReadCloser, error) {
 
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}
 	id, err := fftypes.ParseUUID(ctx, dataID)

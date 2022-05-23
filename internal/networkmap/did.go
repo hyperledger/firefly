@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // DIDDocument - see https://www.w3.org/TR/did-core/#core-properties
@@ -43,7 +43,7 @@ type VerificationMethod struct {
 	DataExchangePeerID  string `ffstruct:"DIDVerificationMethod" json:"dataExchangePeerID,omitempty"`
 }
 
-func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *fftypes.Identity) (doc *DIDDocument, err error) {
+func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *core.Identity) (doc *DIDDocument, err error) {
 
 	fb := database.VerifierQueryFactory.NewFilter(ctx)
 	filter := fb.And(
@@ -74,13 +74,13 @@ func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *fftypes
 	return doc, nil
 }
 
-func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
+func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	switch verifier.Type {
-	case fftypes.VerifierTypeEthAddress:
+	case core.VerifierTypeEthAddress:
 		return nm.generateEthAddressVerifier(identity, verifier)
-	case fftypes.VerifierTypeMSPIdentity:
+	case core.VerifierTypeMSPIdentity:
 		return nm.generateMSPVerifier(identity, verifier)
-	case fftypes.VerifierTypeFFDXPeerID:
+	case core.VerifierTypeFFDXPeerID:
 		return nm.generateDXPeerIDVerifier(identity, verifier)
 	default:
 		log.L(ctx).Warnf("Unknown verifier type '%s' on verifier '%s' of DID '%s' (%s) - cannot add to DID document", verifier.Type, verifier.Value, identity.DID, identity.ID)
@@ -88,7 +88,7 @@ func (nm *networkMap) generateDIDAuthentication(ctx context.Context, identity *f
 	}
 }
 
-func (nm *networkMap) generateEthAddressVerifier(identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
+func (nm *networkMap) generateEthAddressVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	return &VerificationMethod{
 		ID:                  verifier.Hash.String(),
 		Type:                "EcdsaSecp256k1VerificationKey2019",
@@ -97,7 +97,7 @@ func (nm *networkMap) generateEthAddressVerifier(identity *fftypes.Identity, ver
 	}
 }
 
-func (nm *networkMap) generateMSPVerifier(identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
+func (nm *networkMap) generateMSPVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	return &VerificationMethod{
 		ID:                verifier.Hash.String(),
 		Type:              "HyperledgerFabricMSPIdentity",
@@ -106,7 +106,7 @@ func (nm *networkMap) generateMSPVerifier(identity *fftypes.Identity, verifier *
 	}
 }
 
-func (nm *networkMap) generateDXPeerIDVerifier(identity *fftypes.Identity, verifier *fftypes.Verifier) *VerificationMethod {
+func (nm *networkMap) generateDXPeerIDVerifier(identity *core.Identity, verifier *core.Verifier) *VerificationMethod {
 	return &VerificationMethod{
 		ID:                 verifier.Hash.String(),
 		Type:               "FireFlyDataExchangePeerIdentity",

@@ -22,7 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -69,7 +70,7 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 	}
 	assert.Len(suite.T(), identityIDs, totalIdentities)
 
-	identities := make(map[string]*fftypes.Identity)
+	identities := make(map[string]*core.Identity)
 	for identityID := range identityIDs {
 		identityNode1 := GetIdentity(suite.T(), suite.testState.client1, &identityID)
 		identityNode2 := GetIdentity(suite.T(), suite.testState.client1, &identityID)
@@ -79,15 +80,15 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityBroadcasts() {
 
 	// Send a broadcast from each custom identity
 	for did := range identities {
-		resp, err := BroadcastMessageAsIdentity(suite.T(), suite.testState.client1, did, "identitytest", &fftypes.DataRefOrValue{
+		resp, err := BroadcastMessageAsIdentity(suite.T(), suite.testState.client1, did, "identitytest", &core.DataRefOrValue{
 			Value: fftypes.JSONAnyPtr(`{"some": "data"}`),
 		}, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
 	for range identities {
-		waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypeBroadcast)
-		waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypeBroadcast)
+		waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+		waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 	}
 
 }
@@ -123,14 +124,14 @@ func (suite *IdentityTestSuite) TestCustomChildIdentityPrivate() {
 		waitForIdentityConfirmed(suite.T(), received2)
 	}
 
-	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1key, "topic1", &fftypes.DataRefOrValue{
+	resp, err := PrivateMessageWithKey(suite.testState, suite.testState.client1, org1key, "topic1", &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`"test private custom identity"`),
-	}, []string{custom1.DID, custom2.DID}, "tag1", fftypes.TransactionTypeBatchPin, true)
+	}, []string{custom1.DID, custom2.DID}, "tag1", core.TransactionTypeBatchPin, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, fftypes.MessageTypePrivate)
-	waitForMessageConfirmed(suite.T(), received2, fftypes.MessageTypePrivate)
+	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 }
 
 func getUnregisteredAccount(suite *IdentityTestSuite, orgName string) string {

@@ -19,7 +19,7 @@ package sqlcommon
 import (
 	"fmt"
 
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
 )
 
 const (
@@ -43,12 +43,12 @@ const (
 	defaultMigrationsDirectoryTemplate = "./db/migrations/%s"
 )
 
-func (s *SQLCommon) InitPrefix(provider Provider, prefix config.Prefix) {
-	prefix.AddKnownKey(SQLConfMigrationsAuto, false)
-	prefix.AddKnownKey(SQLConfDatasourceURL)
-	prefix.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.MigrationsDir()))
-	prefix.AddKnownKey(SQLConfMaxConnections) // some providers set a default
-	prefix.AddKnownKey(SQLConfMaxConnIdleTime, "1m")
-	prefix.AddKnownKey(SQLConfMaxIdleConns) // defaults to the max connections
-	prefix.AddKnownKey(SQLConfMaxConnLifetime)
+func (s *SQLCommon) InitConfig(provider Provider, config config.Section) {
+	config.AddKnownKey(SQLConfMigrationsAuto, false)
+	config.AddKnownKey(SQLConfDatasourceURL)
+	config.AddKnownKey(SQLConfMigrationsDirectory, fmt.Sprintf(defaultMigrationsDirectoryTemplate, provider.MigrationsDir()))
+	config.AddKnownKey(SQLConfMaxConnections) // some providers set a default
+	config.AddKnownKey(SQLConfMaxConnIdleTime, "1m")
+	config.AddKnownKey(SQLConfMaxIdleConns) // defaults to the max connections
+	config.AddKnownKey(SQLConfMaxConnLifetime)
 }

@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -39,13 +40,13 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
-		Header: fftypes.MessageHeader{ID: ref1},
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref1},
 	}, nil, true, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeMessageConfirmed,
+		Type:      core.EventTypeMessageConfirmed,
 		Reference: ref1,
 	}
 
@@ -67,9 +68,9 @@ func TestEnrichMessageFail(t *testing.T) {
 	// Setup enrichment
 	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(nil, nil, false, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeMessageConfirmed,
+		Type:      core.EventTypeMessageConfirmed,
 		Reference: ref1,
 	}
 
@@ -88,13 +89,13 @@ func TestEnrichMessageRejected(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&fftypes.Message{
-		Header: fftypes.MessageHeader{ID: ref1},
+	mdm.On("GetMessageWithDataCached", mock.Anything, ref1).Return(&core.Message{
+		Header: core.MessageHeader{ID: ref1},
 	}, nil, true, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeMessageRejected,
+		Type:      core.EventTypeMessageRejected,
 		Reference: ref1,
 	}
 
@@ -114,13 +115,13 @@ func TestEnrichTxSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(&fftypes.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(&core.Transaction{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeTransactionSubmitted,
+		Type:      core.EventTypeTransactionSubmitted,
 		Reference: ref1,
 	}
 
@@ -142,9 +143,9 @@ func TestEnrichTxFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeTransactionSubmitted,
+		Type:      core.EventTypeTransactionSubmitted,
 		Reference: ref1,
 	}
 
@@ -163,13 +164,13 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(&fftypes.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(&core.BlockchainEvent{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeBlockchainEventReceived,
+		Type:      core.EventTypeBlockchainEventReceived,
 		Reference: ref1,
 	}
 
@@ -191,9 +192,9 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeBlockchainEventReceived,
+		Type:      core.EventTypeBlockchainEventReceived,
 		Reference: ref1,
 	}
 
@@ -212,13 +213,13 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(&fftypes.ContractAPI{
+	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(&core.ContractAPI{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeContractAPIConfirmed,
+		Type:      core.EventTypeContractAPIConfirmed,
 		Reference: ref1,
 	}
 
@@ -240,9 +241,9 @@ func TestEnrichContractAPItFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeContractAPIConfirmed,
+		Type:      core.EventTypeContractAPIConfirmed,
 		Reference: ref1,
 	}
 
@@ -261,13 +262,13 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetFFIByID", mock.Anything, ref1).Return(&fftypes.FFI{
+	mdi.On("GetFFIByID", mock.Anything, ref1).Return(&core.FFI{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeContractInterfaceConfirmed,
+		Type:      core.EventTypeContractInterfaceConfirmed,
 		Reference: ref1,
 	}
 
@@ -289,9 +290,9 @@ func TestEnrichContractInterfacetFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetFFIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeContractInterfaceConfirmed,
+		Type:      core.EventTypeContractInterfaceConfirmed,
 		Reference: ref1,
 	}
 
@@ -310,13 +311,13 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(&fftypes.Datatype{
+	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(&core.Datatype{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeDatatypeConfirmed,
+		Type:      core.EventTypeDatatypeConfirmed,
 		Reference: ref1,
 	}
 
@@ -338,9 +339,9 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeDatatypeConfirmed,
+		Type:      core.EventTypeDatatypeConfirmed,
 		Reference: ref1,
 	}
 
@@ -359,15 +360,15 @@ func TestEnrichIdentityConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(&fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: ref1,
 		},
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeIdentityConfirmed,
+		Type:      core.EventTypeIdentityConfirmed,
 		Reference: ref1,
 	}
 
@@ -389,9 +390,9 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeIdentityConfirmed,
+		Type:      core.EventTypeIdentityConfirmed,
 		Reference: ref1,
 	}
 
@@ -410,13 +411,13 @@ func TestEnrichNamespaceConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(&fftypes.Namespace{
+	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(&core.Namespace{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeNamespaceConfirmed,
+		Type:      core.EventTypeNamespaceConfirmed,
 		Reference: ref1,
 	}
 
@@ -438,9 +439,9 @@ func TestEnrichNamespaceConfirmedFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetNamespaceByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeNamespaceConfirmed,
+		Type:      core.EventTypeNamespaceConfirmed,
 		Reference: ref1,
 	}
 
@@ -459,13 +460,13 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(&fftypes.TokenPool{
+	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(&core.TokenPool{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypePoolConfirmed,
+		Type:      core.EventTypePoolConfirmed,
 		Reference: ref1,
 	}
 
@@ -487,9 +488,9 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypePoolConfirmed,
+		Type:      core.EventTypePoolConfirmed,
 		Reference: ref1,
 	}
 
@@ -508,13 +509,13 @@ func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenApprovalByID", mock.Anything, ref1).Return(&fftypes.TokenApproval{
+	mdi.On("GetTokenApprovalByID", mock.Anything, ref1).Return(&core.TokenApproval{
 		LocalID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeApprovalConfirmed,
+		Type:      core.EventTypeApprovalConfirmed,
 		Reference: ref1,
 	}
 
@@ -534,13 +535,13 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&fftypes.Operation{
+	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeApprovalOpFailed,
+		Type:      core.EventTypeApprovalOpFailed,
 		Reference: ref1,
 	}
 
@@ -562,9 +563,9 @@ func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetTokenApprovalByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeApprovalConfirmed,
+		Type:      core.EventTypeApprovalConfirmed,
 		Reference: ref1,
 	}
 
@@ -583,13 +584,13 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(&fftypes.TokenTransfer{
+	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(&core.TokenTransfer{
 		LocalID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeTransferConfirmed,
+		Type:      core.EventTypeTransferConfirmed,
 		Reference: ref1,
 	}
 
@@ -609,13 +610,13 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&fftypes.Operation{
+	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeTransferOpFailed,
+		Type:      core.EventTypeTransferOpFailed,
 		Reference: ref1,
 	}
 
@@ -637,9 +638,9 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeTransferConfirmed,
+		Type:      core.EventTypeTransferConfirmed,
 		Reference: ref1,
 	}
 
@@ -660,9 +661,9 @@ func TestEnrichOperationFail(t *testing.T) {
 	// Setup enrichment
 	mdi.On("GetOperationByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
 
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:        ev1,
-		Type:      fftypes.EventTypeApprovalOpFailed,
+		Type:      core.EventTypeApprovalOpFailed,
 		Reference: ref1,
 	}
 

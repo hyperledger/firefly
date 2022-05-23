@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -27,8 +28,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,7 +39,7 @@ func TestCreateTokenPoolBadName(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{}
+	pool := &core.TokenPool{}
 
 	mdm := am.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
@@ -51,7 +52,7 @@ func TestCreateTokenPoolGetError(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -70,13 +71,13 @@ func TestCreateTokenPoolDuplicateName(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdm := am.data.(*datamocks.Manager)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(&fftypes.TokenPool{}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(&core.TokenPool{}, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -89,7 +90,7 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -101,11 +102,11 @@ func TestCreateTokenPoolDefaultConnectorSuccess(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("resolved-key", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -122,7 +123,7 @@ func TestCreateTokenPoolDefaultConnectorNoConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -144,7 +145,7 @@ func TestCreateTokenPoolDefaultConnectorMultipleConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -167,7 +168,7 @@ func TestCreateTokenPoolMissingNamespace(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -185,7 +186,7 @@ func TestCreateTokenPoolNoConnectors(t *testing.T) {
 	defer cancel()
 	am.tokens = nil
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -205,7 +206,7 @@ func TestCreateTokenPoolIdentityFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Name: "testpool",
 	}
 
@@ -228,7 +229,7 @@ func TestCreateTokenPoolWrongConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "wrongun",
 		Name:      "testpool",
 	}
@@ -252,7 +253,7 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Name:      "testpool",
 	}
@@ -265,11 +266,11 @@ func TestCreateTokenPoolFail(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -286,7 +287,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Name:      "testpool",
 	}
@@ -298,7 +299,7 @@ func TestCreateTokenPoolTransactionFail(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
 	assert.Regexp(t, "pop", err)
@@ -313,7 +314,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Name:      "testpool",
 	}
@@ -325,7 +326,7 @@ func TestCreateTokenPoolOpInsertFail(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -341,7 +342,7 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Name:      "testpool",
 	}
@@ -354,11 +355,11 @@ func TestCreateTokenPoolSyncSuccess(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -375,7 +376,7 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Name:      "testpool",
 	}
@@ -388,11 +389,11 @@ func TestCreateTokenPoolAsyncSuccess(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, false)
@@ -409,7 +410,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 		Name:      "testpool",
 	}
@@ -423,7 +424,7 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 	mdi.On("GetTokenPool", context.Background(), "ns1", "testpool").Return(nil, nil)
 	mdm.On("VerifyNamespaceExists", context.Background(), "ns1").Return(nil)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", fftypes.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenPool).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	msa.On("WaitForTokenPool", context.Background(), "ns1", mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
@@ -431,9 +432,9 @@ func TestCreateTokenPoolConfirm(t *testing.T) {
 			send(context.Background())
 		}).
 		Return(nil, nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(createPoolData)
-		return op.Type == fftypes.OpTypeTokenCreatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenCreatePool && data.Pool == pool
 	})).Return(nil, nil)
 
 	_, err := am.CreateTokenPool(context.Background(), "ns1", pool, true)
@@ -451,7 +452,7 @@ func TestActivateTokenPool(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Connector: "magic-tokens",
@@ -460,12 +461,12 @@ func TestActivateTokenPool(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenActivatePool
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
-		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
@@ -479,7 +480,7 @@ func TestActivateTokenPoolBadConnector(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "bad",
 	}
@@ -492,15 +493,15 @@ func TestActivateTokenPoolOpInsertFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenActivatePool
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool)
@@ -513,7 +514,7 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
@@ -521,12 +522,12 @@ func TestActivateTokenPoolFail(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenActivatePool
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
-		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil, fmt.Errorf("pop"))
 
 	err := am.ActivateTokenPool(context.Background(), pool)
@@ -540,13 +541,13 @@ func TestActivateTokenPoolExisting(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", context.Background(), mock.Anything).Return([]*fftypes.Operation{{}}, nil, nil)
+	mdi.On("GetOperations", context.Background(), mock.Anything).Return([]*core.Operation{{}}, nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
 	assert.NoError(t, err)
@@ -558,7 +559,7 @@ func TestActivateTokenPoolExistingFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
@@ -576,7 +577,7 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		Namespace: "ns1",
 		Connector: "magic-tokens",
 	}
@@ -585,12 +586,12 @@ func TestActivateTokenPoolSyncSuccess(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
 	mdi.On("GetOperations", context.Background(), mock.Anything).Return(nil, nil, nil)
-	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *fftypes.Operation) bool {
-		return op.Type == fftypes.OpTypeTokenActivatePool
+	mdi.On("InsertOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+		return op.Type == core.OpTypeTokenActivatePool
 	})).Return(nil)
-	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(activatePoolData)
-		return op.Type == fftypes.OpTypeTokenActivatePool && data.Pool == pool
+		return op.Type == core.OpTypeTokenActivatePool && data.Pool == pool
 	})).Return(nil, nil)
 
 	err := am.ActivateTokenPool(context.Background(), pool)
@@ -606,7 +607,7 @@ func TestGetTokenPool(t *testing.T) {
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&fftypes.TokenPool{}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&core.TokenPool{}, nil)
 	_, err := am.GetTokenPool(context.Background(), "ns1", "magic-tokens", "abc")
 	assert.NoError(t, err)
 
@@ -667,7 +668,7 @@ func TestGetTokenPoolByID(t *testing.T) {
 
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), u).Return(&fftypes.TokenPool{}, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), u).Return(&core.TokenPool{}, nil)
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 
@@ -713,7 +714,7 @@ func TestGetTokenPoolByName(t *testing.T) {
 	defer cancel()
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&fftypes.TokenPool{}, nil)
+	mdi.On("GetTokenPool", context.Background(), "ns1", "abc").Return(&core.TokenPool{}, nil)
 	_, err := am.GetTokenPoolByNameOrID(context.Background(), "ns1", "abc")
 	assert.NoError(t, err)
 
@@ -748,7 +749,7 @@ func TestGetTokenPools(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenPoolQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	mdi.On("GetTokenPools", context.Background(), f).Return([]*fftypes.TokenPool{}, nil, nil)
+	mdi.On("GetTokenPools", context.Background(), f).Return([]*core.TokenPool{}, nil, nil)
 	_, _, err := am.GetTokenPools(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 

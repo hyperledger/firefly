@@ -17,15 +17,15 @@
 package postgres
 
 import (
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
-	"github.com/hyperledger/firefly/pkg/config"
 )
 
 const (
 	defaultConnectionLimitPostgreSQL = 50
 )
 
-func (psql *Postgres) InitPrefix(prefix config.Prefix) {
-	psql.SQLCommon.InitPrefix(psql, prefix)
-	prefix.SetDefault(sqlcommon.SQLConfMaxConnections, defaultConnectionLimitPostgreSQL)
+func (psql *Postgres) InitConfig(config config.Section) {
+	psql.SQLCommon.InitConfig(psql, config)
+	config.SetDefault(sqlcommon.SQLConfMaxConnections, defaultConnectionLimitPostgreSQL)
 }

@@ -25,9 +25,26 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestInitSQLCommonMissingURL(t *testing.T) {
+	conf := config.RootSection("unittest.db")
+	conf.AddKnownKey("url", "")
+	s := &SQLCommon{}
+	tp := &sqliteGoTestProvider{
+		t:            t,
+		callbacks:    &databasemocks.Callbacks{},
+		capabilities: &database.Capabilities{},
+		config:       conf,
+	}
+	s.InitConfig(tp, conf)
+	err := s.Init(context.Background(), tp, conf, nil, nil)
+	assert.Regexp(t, "FF10138.*url", err)
+}
 
 func TestInitSQLCommon(t *testing.T) {
 	s, cleanup := newSQLiteTestProvider(t)
@@ -45,15 +62,15 @@ func TestInitSQLCommonMissingOptions(t *testing.T) {
 func TestInitSQLCommonOpenFailed(t *testing.T) {
 	mp := newMockProvider()
 	mp.openError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
+	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
 	assert.Regexp(t, "FF10112.*pop", err)
 }
 
 func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 	mp := newMockProvider()
-	mp.prefix.Set(SQLConfMigrationsAuto, true)
+	mp.config.Set(SQLConfMigrationsAuto, true)
 	mp.getMigrationDriverError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
+	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
 	assert.Regexp(t, "FF10163.*pop", err)
 }
 

@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Custom Smart Contracts
-parent: Tutorials
+layout: i18n_page
+title: pages.custom_smart_contracts
+parent: pages.tutorials
 nav_order: 10
 has_children: true
 ---

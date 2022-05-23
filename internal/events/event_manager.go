@@ -23,6 +23,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -34,17 +39,13 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
-	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/karlseguin/ccache"
@@ -56,14 +57,14 @@ type EventManager interface {
 	NewSubscriptions() chan<- *fftypes.UUID
 	SubscriptionUpdates() chan<- *fftypes.UUID
 	DeletedSubscriptions() chan<- *fftypes.UUID
-	DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error)
-	CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) (err error)
-	GetWebSocketStatus() *fftypes.WebSocketStatus
+	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
+	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
+	GetWebSocketStatus() *core.WebSocketStatus
 	Start() error
 	WaitStop()
 
 	// Bound blockchain callbacks
-	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *fftypes.VerifierRef) error
+	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
 
 	// Bound dataexchange callbacks
@@ -78,7 +79,7 @@ type EventManager interface {
 	TokensTransferred(ti tokens.Plugin, transfer *tokens.TokenTransfer) error
 	TokensApproved(ti tokens.Plugin, approval *tokens.TokenApproval) error
 
-	GetPlugins() []*fftypes.NodeStatusPlugin
+	GetPlugins() []*core.NodeStatusPlugin
 
 	// Internal events
 	sysmessaging.SystemEvents
@@ -91,7 +92,7 @@ type eventManager struct {
 	database              database.Plugin
 	txHelper              txcommon.Helper
 	identity              identity.Manager
-	definitions           definitions.DefinitionHandlers
+	definitions           definitions.DefinitionHandler
 	data                  data.Manager
 	subManager            *subscriptionManager
 	retry                 retry.Retry
@@ -110,9 +111,9 @@ type eventManager struct {
 	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandlers, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
+func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
 	newEventNotifier := newEventNotifier(ctx, "events")
@@ -137,7 +138,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
-		aggregator:            newAggregator(ctx, di, bi, dh, im, dm, newPinNotifier, mm),
+		aggregator:            newAggregator(ctx, di, bi, pm, dh, im, dm, newPinNotifier, mm),
 		metrics:               mm,
 		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
@@ -147,7 +148,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 	em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, dh, txHelper); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, bm, pm, txHelper); err != nil {
 		return nil, err
 	}
 
@@ -189,7 +190,7 @@ func (em *eventManager) WaitStop() {
 	<-em.aggregator.eventPoller.closed
 }
 
-func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *fftypes.Subscription, mustNew bool) (err error) {
+func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error) {
 	if subDef.Namespace == "" || subDef.Name == "" || subDef.ID == nil {
 		return i18n.NewError(ctx, coremsgs.MsgInvalidSubscription)
 	}
@@ -228,7 +229,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 		if err != nil {
 			return err
 		}
-		lockedInFirstEvent := fftypes.SubOptsFirstEvent(strconv.FormatInt(sequence, 10))
+		lockedInFirstEvent := core.SubOptsFirstEvent(strconv.FormatInt(sequence, 10))
 		subDef.Options.FirstEvent = &lockedInFirstEvent
 	}
 
@@ -236,7 +237,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	return em.database.UpsertSubscription(ctx, subDef, !mustNew)
 }
 
-func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *fftypes.Subscription) (err error) {
+func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
 	return em.database.DeleteSubscriptionByID(ctx, subDef.ID)
 }
@@ -245,12 +246,12 @@ func (em *eventManager) AddSystemEventListener(ns string, el system.EventListene
 	return em.internalEvents.AddListener(ns, el)
 }
 
-func (em *eventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
-	eventsArray := make([]*fftypes.NodeStatusPlugin, 0)
+func (em *eventManager) GetPlugins() []*core.NodeStatusPlugin {
+	eventsArray := make([]*core.NodeStatusPlugin, 0)
 	plugins := em.subManager.transports
 
 	for _, plugin := range plugins {
-		eventsArray = append(eventsArray, &fftypes.NodeStatusPlugin{
+		eventsArray = append(eventsArray, &core.NodeStatusPlugin{
 			PluginType: plugin.Name(),
 		})
 	}
@@ -258,6 +259,6 @@ func (em *eventManager) GetPlugins() []*fftypes.NodeStatusPlugin {
 	return eventsArray
 }
 
-func (em *eventManager) GetWebSocketStatus() *fftypes.WebSocketStatus {
+func (em *eventManager) GetWebSocketStatus() *core.WebSocketStatus {
 	return em.subManager.getWebSocketStatus()
 }

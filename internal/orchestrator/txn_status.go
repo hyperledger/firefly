@@ -20,29 +20,29 @@ import (
 	"context"
 	"sort"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
-func updateStatus(result *fftypes.TransactionStatus, newStatus fftypes.OpStatus) {
-	if result.Status != fftypes.OpStatusFailed && newStatus != fftypes.OpStatusSucceeded {
+func updateStatus(result *core.TransactionStatus, newStatus core.OpStatus) {
+	if result.Status != core.OpStatusFailed && newStatus != core.OpStatusSucceeded {
 		result.Status = newStatus
 	}
 }
 
-func pendingPlaceholder(t fftypes.TransactionStatusType) *fftypes.TransactionStatusDetails {
-	return &fftypes.TransactionStatusDetails{
+func pendingPlaceholder(t core.TransactionStatusType) *core.TransactionStatusDetails {
+	return &core.TransactionStatusDetails{
 		Type:   t,
-		Status: fftypes.OpStatusPending,
+		Status: core.OpStatusPending,
 	}
 }
 
-func txOperationStatus(op *fftypes.Operation) *fftypes.TransactionStatusDetails {
-	return &fftypes.TransactionStatusDetails{
+func txOperationStatus(op *core.Operation) *core.TransactionStatusDetails {
+	return &core.TransactionStatusDetails{
 		Status:    op.Status,
-		Type:      fftypes.TransactionStatusTypeOperation,
+		Type:      core.TransactionStatusTypeOperation,
 		SubType:   op.Type.String(),
 		Timestamp: op.Updated,
 		ID:        op.ID,
@@ -51,10 +51,10 @@ func txOperationStatus(op *fftypes.Operation) *fftypes.TransactionStatusDetails 
 	}
 }
 
-func txBlockchainEventStatus(event *fftypes.BlockchainEvent) *fftypes.TransactionStatusDetails {
-	return &fftypes.TransactionStatusDetails{
-		Status:    fftypes.OpStatusSucceeded,
-		Type:      fftypes.TransactionStatusTypeBlockchainEvent,
+func txBlockchainEventStatus(event *core.BlockchainEvent) *core.TransactionStatusDetails {
+	return &core.TransactionStatusDetails{
+		Status:    core.OpStatusSucceeded,
+		Type:      core.TransactionStatusTypeBlockchainEvent,
 		SubType:   event.Name,
 		Timestamp: event.Timestamp,
 		ID:        event.ID,
@@ -62,10 +62,10 @@ func txBlockchainEventStatus(event *fftypes.BlockchainEvent) *fftypes.Transactio
 	}
 }
 
-func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*fftypes.TransactionStatus, error) {
-	result := &fftypes.TransactionStatus{
-		Status:  fftypes.OpStatusSucceeded,
-		Details: make([]*fftypes.TransactionStatusDetails, 0),
+func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*core.TransactionStatus, error) {
+	result := &core.TransactionStatus{
+		Status:  core.OpStatusSucceeded,
+		Details: make([]*core.TransactionStatusDetails, 0),
 	}
 
 	tx, err := or.GetTransactionByID(ctx, ns, id)
@@ -95,99 +95,99 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 	}
 
 	switch tx.Type {
-	case fftypes.TransactionTypeBatchPin:
+	case core.TransactionTypeBatchPin:
 		if len(events) == 0 {
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
-			updateStatus(result, fftypes.OpStatusPending)
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.BatchQueryFactory.NewFilter(ctx)
-		switch batches, _, err := or.database.GetBatches(ctx, f.Eq("tx.id", id)); {
+		switch batches, _, err := or.databases["database_0"].GetBatches(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(batches) == 0:
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBatch))
-			updateStatus(result, fftypes.OpStatusPending)
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeBatch))
+			updateStatus(result, core.OpStatusPending)
 		default:
-			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Status:    fftypes.OpStatusSucceeded,
-				Type:      fftypes.TransactionStatusTypeBatch,
+			result.Details = append(result.Details, &core.TransactionStatusDetails{
+				Status:    core.OpStatusSucceeded,
+				Type:      core.TransactionStatusTypeBatch,
 				SubType:   batches[0].Type.String(),
 				Timestamp: batches[0].Confirmed,
 				ID:        batches[0].ID,
 			})
 		}
 
-	case fftypes.TransactionTypeTokenPool:
+	case core.TransactionTypeTokenPool:
 		// Note: no assumptions about blockchain events here (may or may not contain one)
 		f := database.TokenPoolQueryFactory.NewFilter(ctx)
-		switch pools, _, err := or.database.GetTokenPools(ctx, f.Eq("tx.id", id)); {
+		switch pools, _, err := or.databases["database_0"].GetTokenPools(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(pools) == 0:
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenPool))
-			updateStatus(result, fftypes.OpStatusPending)
-		case pools[0].State != fftypes.TokenPoolStateConfirmed:
-			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Status:  fftypes.OpStatusPending,
-				Type:    fftypes.TransactionStatusTypeTokenPool,
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeTokenPool))
+			updateStatus(result, core.OpStatusPending)
+		case pools[0].State != core.TokenPoolStateConfirmed:
+			result.Details = append(result.Details, &core.TransactionStatusDetails{
+				Status:  core.OpStatusPending,
+				Type:    core.TransactionStatusTypeTokenPool,
 				SubType: pools[0].Type.String(),
 				ID:      pools[0].ID,
 			})
-			updateStatus(result, fftypes.OpStatusPending)
+			updateStatus(result, core.OpStatusPending)
 		default:
-			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Status:    fftypes.OpStatusSucceeded,
-				Type:      fftypes.TransactionStatusTypeTokenPool,
+			result.Details = append(result.Details, &core.TransactionStatusDetails{
+				Status:    core.OpStatusSucceeded,
+				Type:      core.TransactionStatusTypeTokenPool,
 				SubType:   pools[0].Type.String(),
 				Timestamp: pools[0].Created,
 				ID:        pools[0].ID,
 			})
 		}
 
-	case fftypes.TransactionTypeTokenTransfer:
+	case core.TransactionTypeTokenTransfer:
 		if len(events) == 0 {
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
-			updateStatus(result, fftypes.OpStatusPending)
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenTransferQueryFactory.NewFilter(ctx)
-		switch transfers, _, err := or.database.GetTokenTransfers(ctx, f.Eq("tx.id", id)); {
+		switch transfers, _, err := or.databases["database_0"].GetTokenTransfers(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(transfers) == 0:
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenTransfer))
-			updateStatus(result, fftypes.OpStatusPending)
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeTokenTransfer))
+			updateStatus(result, core.OpStatusPending)
 		default:
-			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Status:    fftypes.OpStatusSucceeded,
-				Type:      fftypes.TransactionStatusTypeTokenTransfer,
+			result.Details = append(result.Details, &core.TransactionStatusDetails{
+				Status:    core.OpStatusSucceeded,
+				Type:      core.TransactionStatusTypeTokenTransfer,
 				SubType:   transfers[0].Type.String(),
 				Timestamp: transfers[0].Created,
 				ID:        transfers[0].LocalID,
 			})
 		}
 
-	case fftypes.TransactionTypeTokenApproval:
+	case core.TransactionTypeTokenApproval:
 		if len(events) == 0 {
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeBlockchainEvent))
-			updateStatus(result, fftypes.OpStatusPending)
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeBlockchainEvent))
+			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenApprovalQueryFactory.NewFilter(ctx)
-		switch approvals, _, err := or.database.GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
+		switch approvals, _, err := or.databases["database_0"].GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(approvals) == 0:
-			result.Details = append(result.Details, pendingPlaceholder(fftypes.TransactionStatusTypeTokenApproval))
-			updateStatus(result, fftypes.OpStatusPending)
+			result.Details = append(result.Details, pendingPlaceholder(core.TransactionStatusTypeTokenApproval))
+			updateStatus(result, core.OpStatusPending)
 		default:
-			result.Details = append(result.Details, &fftypes.TransactionStatusDetails{
-				Status:    fftypes.OpStatusSucceeded,
-				Type:      fftypes.TransactionStatusTypeTokenApproval,
+			result.Details = append(result.Details, &core.TransactionStatusDetails{
+				Status:    core.OpStatusSucceeded,
+				Type:      core.TransactionStatusTypeTokenApproval,
 				Timestamp: approvals[0].Created,
 				ID:        approvals[0].LocalID,
 			})
 		}
 
-	case fftypes.TransactionTypeContractInvoke:
+	case core.TransactionTypeContractInvoke:
 		// no blockchain events or other objects
 
 	default:

@@ -22,15 +22,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPostNewMessageRequestReply(t *testing.T) {
 	o, r := newTestAPIServer()
-	o.On("RequestReply", mock.Anything, "ns1", mock.Anything).Return(&fftypes.MessageInOut{}, nil)
-	input := &fftypes.MessageInOut{}
+	o.On("RequestReply", mock.Anything, "ns1", mock.Anything).Return(&core.MessageInOut{}, nil)
+	input := &core.MessageInOut{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/messages/requestreply", &buf)

@@ -19,19 +19,20 @@ package assets
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
-func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.TokenTransfer, *database.FilterResult, error) {
+func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error) {
 	return am.database.GetTokenTransfers(ctx, am.scopeNS(ns, filter))
 }
 
-func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string) (*fftypes.TokenTransfer, error) {
+func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string) (*core.TokenTransfer, error) {
 	transferID, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 	return am.database.GetTokenTransferByID(ctx, transferID)
 }
 
-func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferInput) sysmessaging.MessageSender {
+func (am *assetManager) NewTransfer(ns string, transfer *core.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
 		mgr:       am,
 		namespace: ns,
@@ -53,7 +54,7 @@ func (am *assetManager) NewTransfer(ns string, transfer *fftypes.TokenTransferIn
 type transferSender struct {
 	mgr       *assetManager
 	namespace string
-	transfer  *fftypes.TokenTransferInput
+	transfer  *core.TokenTransferInput
 	resolved  bool
 	msgSender sysmessaging.MessageSender
 }
@@ -87,7 +88,7 @@ func (s *transferSender) setDefaults() {
 	s.transfer.LocalID = fftypes.NewUUID()
 }
 
-func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput) (pool *fftypes.TokenPool, err error) {
+func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *core.TokenTransferInput) (pool *core.TokenPool, err error) {
 	if transfer.Pool == "" {
 		pool, err = am.getDefaultTokenPool(ctx, ns)
 		if err != nil {
@@ -102,7 +103,7 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 	transfer.TokenTransfer.Pool = pool.ID
 	transfer.TokenTransfer.Connector = pool.Connector
 
-	if pool.State != fftypes.TokenPoolStateConfirmed {
+	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
 	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
@@ -117,8 +118,8 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 	return pool, nil
 }
 
-func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Type = fftypes.TokenTransferTypeMint
+func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
+	transfer.Type = core.TokenTransferTypeMint
 
 	sender := am.NewTransfer(ns, transfer)
 	if am.metrics.IsMetricsEnabled() {
@@ -132,8 +133,8 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *fft
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Type = fftypes.TokenTransferTypeBurn
+func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
+	transfer.Type = core.TokenTransferTypeBurn
 
 	sender := am.NewTransfer(ns, transfer)
 	if am.metrics.IsMetricsEnabled() {
@@ -147,8 +148,8 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *fft
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *fftypes.TokenTransferInput, waitConfirm bool) (out *fftypes.TokenTransfer, err error) {
-	transfer.Type = fftypes.TokenTransferTypeTransfer
+func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
+	transfer.Type = core.TokenTransferTypeTransfer
 
 	sender := am.NewTransfer(ns, transfer)
 	if am.metrics.IsMetricsEnabled() {
@@ -207,14 +208,14 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 		return err
 	}
 
-	var op *fftypes.Operation
-	var pool *fftypes.TokenPool
+	var op *core.Operation
+	var pool *core.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
 		pool, err = s.mgr.validateTransfer(ctx, s.namespace, s.transfer)
 		if err != nil {
 			return err
 		}
-		if s.transfer.Type == fftypes.TokenTransferTypeTransfer && s.transfer.From == s.transfer.To {
+		if s.transfer.Type == core.TokenTransferTypeTransfer && s.transfer.From == s.transfer.To {
 			return i18n.NewError(ctx, coremsgs.MsgCannotTransferToSelf)
 		}
 
@@ -227,18 +228,18 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, fftypes.TransactionTypeTokenTransfer)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, core.TransactionTypeTokenTransfer)
 		if err != nil {
 			return err
 		}
 		s.transfer.TX.ID = txid
-		s.transfer.TX.Type = fftypes.TransactionTypeTokenTransfer
+		s.transfer.TX.Type = core.TransactionTypeTokenTransfer
 
-		op = fftypes.NewOperation(
+		op = core.NewOperation(
 			plugin,
 			s.namespace,
 			txid,
-			fftypes.OpTypeTokenTransfer)
+			core.OpTypeTokenTransfer)
 		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
 			err = s.mgr.database.InsertOperation(ctx, op)
 		}
@@ -252,7 +253,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 
 	// Write the transfer message outside of any DB transaction, as it will use the background message writer.
 	if s.transfer.Message != nil {
-		s.transfer.Message.State = fftypes.MessageStateStaged
+		s.transfer.Message.State = core.MessageStateStaged
 		if err = s.msgSender.Send(ctx); err != nil {
 			return err
 		}
@@ -262,18 +263,18 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 	return err
 }
 
-func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *fftypes.MessageInOut) (sysmessaging.MessageSender, error) {
-	allowedTypes := []fftypes.FFEnum{
-		fftypes.MessageTypeTransferBroadcast,
-		fftypes.MessageTypeTransferPrivate,
+func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *core.MessageInOut) (sysmessaging.MessageSender, error) {
+	allowedTypes := []core.FFEnum{
+		core.MessageTypeTransferBroadcast,
+		core.MessageTypeTransferPrivate,
 	}
 	if in.Header.Type == "" {
-		in.Header.Type = fftypes.MessageTypeTransferBroadcast
+		in.Header.Type = core.MessageTypeTransferBroadcast
 	}
 	switch in.Header.Type {
-	case fftypes.MessageTypeTransferBroadcast:
+	case core.MessageTypeTransferBroadcast:
 		return s.mgr.broadcast.NewBroadcast(ns, in), nil
-	case fftypes.MessageTypeTransferPrivate:
+	case core.MessageTypeTransferPrivate:
 		return s.mgr.messaging.NewMessage(ns, in), nil
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)

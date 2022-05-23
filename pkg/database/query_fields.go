@@ -26,8 +26,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 // QueryFactory creates a filter builder in the given context, and contains the rules on
@@ -298,7 +299,7 @@ func (f *JSONField) filterAsString() bool                 { return true }
 func (f *JSONField) description() string                  { return "JSON-blob" }
 
 type FFStringArrayField struct{}
-type ffNameArrayField struct{ na fftypes.FFStringArray }
+type ffNameArrayField struct{ na core.FFStringArray }
 
 func (f *ffNameArrayField) Scan(src interface{}) (err error) {
 	return f.na.Scan(src)

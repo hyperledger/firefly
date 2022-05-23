@@ -22,10 +22,11 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -41,11 +42,11 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	apiID := fftypes.NewUUID()
 	interfaceID := fftypes.NewUUID()
 
-	contractAPI := &fftypes.ContractAPI{
+	contractAPI := &core.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
 		Name:      "banana",
-		Interface: &fftypes.FFIReference{
+		Interface: &core.FFIReference{
 			ID:      interfaceID,
 			Name:    "banana",
 			Version: "v1.0.0",
@@ -53,8 +54,8 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 		Message: fftypes.NewUUID(),
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, fftypes.ChangeEventTypeCreated, "ns1", apiID, mock.Anything).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, fftypes.ChangeEventTypeUpdated, "ns1", apiID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeCreated, "ns1", apiID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractAPIs, core.ChangeEventTypeUpdated, "ns1", apiID, mock.Anything).Return()
 
 	err := s.UpsertContractAPI(ctx, contractAPI)
 	assert.NoError(t, err)
@@ -80,7 +81,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 func TestContractAPIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractAPI(context.Background(), &fftypes.ContractAPI{})
+	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -89,7 +90,7 @@ func TestContractAPIDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertContractAPI(context.Background(), &fftypes.ContractAPI{})
+	err := s.UpsertContractAPI(context.Background(), &core.ContractAPI{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -100,8 +101,8 @@ func TestContractAPIDBFailInsert(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	// mock.ExpectQuery("INSERT .*").WillReturnError(fmt.Errorf("pop"))
-	api := &fftypes.ContractAPI{
-		Interface: &fftypes.FFIReference{},
+	api := &core.ContractAPI{
+		Interface: &core.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "FF10116", err)
@@ -115,8 +116,8 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	api := &fftypes.ContractAPI{
-		Interface: &fftypes.FFIReference{},
+	api := &core.ContractAPI{
+		Interface: &core.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "pop", err)
@@ -127,7 +128,7 @@ func TestUpsertContractAPIIDMismatch(t *testing.T) {
 	callbacks := &databasemocks.Callbacks{}
 	s.SQLCommon.callbacks = callbacks
 	apiID := fftypes.NewUUID()
-	api := &fftypes.ContractAPI{
+	api := &core.ContractAPI{
 		ID:        apiID,
 		Namespace: "ns1",
 	}

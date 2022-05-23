@@ -22,12 +22,12 @@ import (
 	"strconv"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection database.CollectionName) (tableName string, fieldMap map[string]string, err error) {
@@ -49,7 +49,7 @@ func (s *SQLCommon) getTableNameFromCollection(ctx context.Context, collection d
 	}
 }
 
-func (s *SQLCommon) getSelectStatements(ns string, tableName string, intervals []fftypes.ChartHistogramInterval, timestampKey string, sql sq.SelectBuilder) (queries []sq.SelectBuilder) {
+func (s *SQLCommon) getSelectStatements(ns string, tableName string, intervals []core.ChartHistogramInterval, timestampKey string, sql sq.SelectBuilder) (queries []sq.SelectBuilder) {
 	for _, interval := range intervals {
 		queries = append(queries, sql.
 			From(tableName).
@@ -102,7 +102,7 @@ func (s *SQLCommon) histogramResult(ctx context.Context, tableName string, rows 
 	return typeMap, strconv.Itoa(total), nil
 }
 
-func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []fftypes.ChartHistogramInterval, collection database.CollectionName) (histogramList []*fftypes.ChartHistogram, err error) {
+func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals []core.ChartHistogramInterval, collection database.CollectionName) (histogramList []*core.ChartHistogram, err error) {
 	tableName, fieldMap, err := s.getTableNameFromCollection(ctx, collection)
 	if err != nil {
 		return nil, err
@@ -140,8 +140,8 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 			return nil, err
 		}
 
-		histTypes := make([]*fftypes.ChartHistogramType, 0)
-		histBucket := fftypes.ChartHistogram{
+		histTypes := make([]*core.ChartHistogramType, 0)
+		histBucket := core.ChartHistogram{
 			Count:     total,
 			Timestamp: intervals[i].StartTime,
 			Types:     histTypes,
@@ -152,7 +152,7 @@ func (s *SQLCommon) GetChartHistogram(ctx context.Context, ns string, intervals 
 		if !onlyTimestamp {
 			for k, v := range data {
 				histBucket.Types = append(histBucket.Types,
-					&fftypes.ChartHistogramType{
+					&core.ChartHistogramType{
 						Count: strconv.Itoa(v),
 						Type:  k,
 					})

@@ -22,11 +22,12 @@ import (
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -51,7 +52,7 @@ var (
 
 const contractlistenersTable = "contractlisteners"
 
-func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftypes.ContractListener) (err error) {
+func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -88,7 +89,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 				Set("options", listener.Options).
 				Where(sq.Eq{"backend_id": listener.BackendID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
 			},
 		); err != nil {
 			return err
@@ -112,7 +113,7 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 					listener.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeCreated, listener.Namespace, listener.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeCreated, listener.Namespace, listener.ID)
 			},
 		); err != nil {
 			return err
@@ -122,9 +123,9 @@ func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *fftype
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractListener, error) {
-	listener := fftypes.ContractListener{
-		Interface: &fftypes.FFIReference{},
+func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (*core.ContractListener, error) {
+	listener := core.ContractListener{
+		Interface: &core.FFIReference{},
 	}
 	err := row.Scan(
 		&listener.ID,
@@ -145,7 +146,7 @@ func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (
 	return &listener, nil
 }
 
-func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractListener, error) {
+func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pred interface{}) (*core.ContractListener, error) {
 	rows, _, err := s.query(ctx, contractlistenersTable,
 		sq.Select(contractListenerColumns...).
 			From(contractlistenersTable).
@@ -169,19 +170,19 @@ func (s *SQLCommon) getContractListenerPred(ctx context.Context, desc string, pr
 	return sub, nil
 }
 
-func (s *SQLCommon) GetContractListener(ctx context.Context, ns, name string) (sub *fftypes.ContractListener, err error) {
+func (s *SQLCommon) GetContractListener(ctx context.Context, ns, name string) (sub *core.ContractListener, err error) {
 	return s.getContractListenerPred(ctx, fmt.Sprintf("%s:%s", ns, name), sq.Eq{"namespace": ns, "name": name})
 }
 
-func (s *SQLCommon) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *fftypes.ContractListener, err error) {
+func (s *SQLCommon) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *core.ContractListener, err error) {
 	return s.getContractListenerPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetContractListenerByBackendID(ctx context.Context, id string) (sub *fftypes.ContractListener, err error) {
+func (s *SQLCommon) GetContractListenerByBackendID(ctx context.Context, id string) (sub *core.ContractListener, err error) {
 	return s.getContractListenerPred(ctx, id, sq.Eq{"backend_id": id})
 }
 
-func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Filter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
+func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Filter) ([]*core.ContractListener, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
 		sq.Select(contractListenerColumns...).From(contractlistenersTable),
 		filter, contractListenerFilterFieldMap, []interface{}{"sequence"})
@@ -195,7 +196,7 @@ func (s *SQLCommon) GetContractListeners(ctx context.Context, filter database.Fi
 	}
 	defer rows.Close()
 
-	subs := []*fftypes.ContractListener{}
+	subs := []*core.ContractListener{}
 	for rows.Next() {
 		sub, err := s.contractListenerResult(ctx, rows)
 		if err != nil {
@@ -218,7 +219,7 @@ func (s *SQLCommon) DeleteContractListenerByID(ctx context.Context, id *fftypes.
 	if err == nil && sub != nil {
 		err = s.deleteTx(ctx, contractlistenersTable, tx, sq.Delete(contractlistenersTable).Where(sq.Eq{"id": id}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, fftypes.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeDeleted, sub.Namespace, sub.ID)
 			},
 		)
 		if err != nil {

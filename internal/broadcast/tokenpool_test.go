@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,12 +35,12 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 	defer cancel()
 	mdm := bm.data.(*datamocks.Manager)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		Pool: &fftypes.TokenPool{
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "mypool",
-			Type:      fftypes.TokenTypeNonFungible,
+			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
 		},
@@ -59,12 +60,12 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		Pool: &fftypes.TokenPool{
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "",
 			Name:      "",
-			Type:      fftypes.TokenTypeNonFungible,
+			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
 		},
@@ -83,12 +84,12 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		Pool: &fftypes.TokenPool{
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "mypool",
-			Type:      fftypes.TokenTypeNonFungible,
+			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
 		},
@@ -111,12 +112,12 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	pool := &fftypes.TokenPoolAnnouncement{
-		Pool: &fftypes.TokenPool{
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Name:      "mypool",
-			Type:      fftypes.TokenTypeNonFungible,
+			Type:      core.TokenTypeNonFungible,
 			Locator:   "N1",
 			Symbol:    "COIN",
 		},

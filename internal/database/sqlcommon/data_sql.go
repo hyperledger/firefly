@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -57,14 +58,14 @@ var (
 
 const dataTable = "data"
 
-func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *fftypes.Data) (int64, error) {
+func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *core.Data) (int64, error) {
 	datatype := data.Datatype
 	if datatype == nil {
-		datatype = &fftypes.DatatypeRef{}
+		datatype = &core.DatatypeRef{}
 	}
 	blob := data.Blob
 	if blob == nil {
-		blob = &fftypes.BlobRef{}
+		blob = &core.BlobRef{}
 	}
 	return s.updateTx(ctx, dataTable, tx,
 		sq.Update(dataTable).
@@ -85,18 +86,18 @@ func (s *SQLCommon) attemptDataUpdate(ctx context.Context, tx *txWrapper, data *
 				"hash": data.Hash,
 			}),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeUpdated, data.Namespace, data.ID)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, core.ChangeEventTypeUpdated, data.Namespace, data.ID)
 		})
 }
 
-func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *fftypes.Data) sq.InsertBuilder {
+func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *core.Data) sq.InsertBuilder {
 	datatype := data.Datatype
 	if datatype == nil {
-		datatype = &fftypes.DatatypeRef{}
+		datatype = &core.DatatypeRef{}
 	}
 	blob := data.Blob
 	if blob == nil {
-		blob = &fftypes.BlobRef{}
+		blob = &core.BlobRef{}
 	}
 	return query.Values(
 		data.ID,
@@ -115,15 +116,15 @@ func (s *SQLCommon) setDataInsertValues(query sq.InsertBuilder, data *fftypes.Da
 	)
 }
 
-func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *fftypes.Data, requestConflictEmptyResult bool) (int64, error) {
+func (s *SQLCommon) attemptDataInsert(ctx context.Context, tx *txWrapper, data *core.Data, requestConflictEmptyResult bool) (int64, error) {
 	return s.insertTxExt(ctx, dataTable, tx,
 		s.setDataInsertValues(sq.Insert(dataTable).Columns(dataColumnsWithValue...), data),
 		func() {
-			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionData, core.ChangeEventTypeCreated, data.Namespace, data.ID)
 		}, requestConflictEmptyResult)
 }
 
-func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimization database.UpsertOptimization) (err error) {
+func (s *SQLCommon) UpsertData(ctx context.Context, data *core.Data, optimization database.UpsertOptimization) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -181,7 +182,7 @@ func (s *SQLCommon) UpsertData(ctx context.Context, data *fftypes.Data, optimiza
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray fftypes.DataArray) (err error) {
+func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray core.DataArray) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -197,7 +198,7 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray fftypes.DataA
 		sequences := make([]int64, len(dataArray))
 		err := s.insertTxRows(ctx, dataTable, tx, query, func() {
 			for _, data := range dataArray {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, fftypes.ChangeEventTypeCreated, data.Namespace, data.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionData, core.ChangeEventTypeCreated, data.Namespace, data.ID)
 			}
 		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
@@ -217,10 +218,10 @@ func (s *SQLCommon) InsertDataArray(ctx context.Context, dataArray fftypes.DataA
 
 }
 
-func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue bool) (*fftypes.Data, error) {
-	data := fftypes.Data{
-		Datatype: &fftypes.DatatypeRef{},
-		Blob:     &fftypes.BlobRef{},
+func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue bool) (*core.Data, error) {
+	data := core.Data{
+		Datatype: &core.DatatypeRef{},
+		Blob:     &core.BlobRef{},
 	}
 	results := []interface{}{
 		&data.ID,
@@ -252,7 +253,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *fftypes.Data, err error) {
+func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *core.Data, err error) {
 
 	var cols []string
 	if withValue {
@@ -283,7 +284,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	return data, nil
 }
 
-func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message fftypes.DataArray, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message core.DataArray, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From(dataTable), filter, dataFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -296,7 +297,7 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 	}
 	defer rows.Close()
 
-	data := fftypes.DataArray{}
+	data := core.DataArray{}
 	for rows.Next() {
 		d, err := s.dataResult(ctx, rows, true)
 		if err != nil {
@@ -309,7 +310,7 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 
 }
 
-func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message fftypes.DataRefs, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message core.DataRefs, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From(dataTable), filter, dataFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -322,9 +323,9 @@ func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (me
 	}
 	defer rows.Close()
 
-	refs := fftypes.DataRefs{}
+	refs := core.DataRefs{}
 	for rows.Next() {
-		ref := fftypes.DataRef{}
+		ref := core.DataRef{}
 		err := rows.Scan(
 			&ref.ID,
 			&ref.Hash,

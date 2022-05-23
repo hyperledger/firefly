@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Private data exchange
-parent: Understanding FireFly
+layout: i18n_page
+title: pages.private_data_exchange
+parent: pages.understanding_firefly
 nav_order: 7
 ---
 

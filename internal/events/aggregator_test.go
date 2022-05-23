@@ -23,6 +23,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
@@ -32,10 +35,9 @@ import (
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -46,17 +48,18 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	logrus.SetLevel(logrus.DebugLevel)
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandlers{}
+	mpm := &privatemessagingmocks.Manager{}
+	msh := &definitionsmocks.DefinitionHandler{}
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
 	if metrics {
-		mmi.On("MessageConfirmed", mock.Anything, fftypes.EventTypeMessageConfirmed).Return()
+		mmi.On("MessageConfirmed", mock.Anything, core.EventTypeMessageConfirmed).Return()
 	}
 	mmi.On("IsMetricsEnabled").Return(metrics)
-	mbi.On("VerifierType").Return(fftypes.VerifierTypeEthAddress)
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, mbi, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
+	ag := newAggregator(ctx, mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
 	return ag, func() {
 		cancel()
 		ag.batchCache.Stop()
@@ -71,53 +74,53 @@ func newTestAggregator() (*aggregator, func()) {
 	return newTestAggregatorCommon(false)
 }
 
-func newTestManifest(mType fftypes.MessageType, groupID *fftypes.Bytes32) (*fftypes.Message, *fftypes.Message, *fftypes.Identity, *fftypes.BatchManifest) {
+func newTestManifest(mType core.MessageType, groupID *fftypes.Bytes32) (*core.Message, *core.Message, *core.Identity, *core.BatchManifest) {
 	org1 := newTestOrg("org1")
 
-	msg1 := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg1 := &core.Message{
+		Header: core.MessageHeader{
 			Type:      mType,
 			ID:        fftypes.NewUUID(),
 			Namespace: "any",
 			Group:     groupID,
-			Topics:    fftypes.FFStringArray{"topic1"},
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
+			Topics:    core.FFStringArray{"topic1"},
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
 	}
-	msg2 := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg2 := &core.Message{
+		Header: core.MessageHeader{
 			Type:      mType,
 			ID:        fftypes.NewUUID(),
 			Group:     groupID,
 			Namespace: "any",
-			Topics:    fftypes.FFStringArray{"topic1"},
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
+			Topics:    core.FFStringArray{"topic1"},
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
 		},
 	}
 
-	return msg1, msg2, org1, &fftypes.BatchManifest{
+	return msg1, msg2, org1, &core.BatchManifest{
 		Version: 1,
 		ID:      fftypes.NewUUID(),
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeBatchPin,
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeBatchPin,
 			ID:   fftypes.NewUUID(),
 		},
-		Messages: []*fftypes.MessageManifestEntry{
+		Messages: []*core.MessageManifestEntry{
 			{
-				MessageRef: fftypes.MessageRef{
+				MessageRef: core.MessageRef{
 					ID:   msg1.Header.ID,
 					Hash: msg1.Hash,
 				},
 				Topics: len(msg1.Header.Topics),
 			},
 			{
-				MessageRef: fftypes.MessageRef{
+				MessageRef: core.MessageRef{
 					ID:   msg2.Header.ID,
 					Hash: msg2.Hash,
 				},
@@ -152,33 +155,33 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: member2key,
 	}).Return(member2org, nil)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
 				{
-					Header: fftypes.MessageHeader{
+					Header: core.MessageHeader{
 						ID:        msgID,
 						Group:     groupID,
 						Namespace: "ns1",
 						Topics:    []string{topic},
-						SignerRef: fftypes.SignerRef{
+						SignerRef: core.SignerRef{
 							Author: member2org.DID,
 							Key:    member2key,
 						},
 					},
 					Pins: []string{fmt.Sprintf("%s:%.9d", member2NonceZero, 0)},
-					Data: fftypes.DataRefs{
+					Data: core.DataRefs{
 						{ID: fftypes.NewUUID()},
 					},
 				},
@@ -190,36 +193,36 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
 	// Look for existing nextpins - none found, first on context
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{}, nil, nil).Once()
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{}, nil, nil).Once()
 	// Get the group members
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: member1org.DID},
 				{Identity: member2org.DID},
 			},
 		},
 	}, nil)
 	// Look for any earlier pins - none found
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil).Once()
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil).Once()
 	// Insert all the zero pins
-	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *fftypes.NextPin) bool {
+	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *core.NextPin) bool {
 		assert.Equal(t, *np.Context, *contextUnmasked)
 		np.Sequence = 10011
 		return *np.Hash == *member1NonceZero && np.Nonce == 0
 	})).Return(nil).Once()
-	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *fftypes.NextPin) bool {
+	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *core.NextPin) bool {
 		assert.Equal(t, *np.Context, *contextUnmasked)
 		np.Sequence = 10012
 		return *np.Hash == *member2NonceOne && np.Nonce == 1
 	})).Return(nil).Once()
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
-	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
@@ -242,7 +245,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{
 			Sequence:   10001,
 			Masked:     true,
@@ -265,6 +268,8 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
+	mpm.AssertExpectations(t)
 }
 
 func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
@@ -294,8 +299,8 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: member2key,
 	}).Return(member2org, nil)
 
@@ -304,25 +309,25 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
 	}
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
 				{
-					Header: fftypes.MessageHeader{
+					Header: core.MessageHeader{
 						ID:        msgID,
 						Group:     groupID,
 						Namespace: "ns1",
 						Topics:    []string{topic},
-						SignerRef: fftypes.SignerRef{
+						SignerRef: core.SignerRef{
 							Author: member2org.DID,
 							Key:    member2key,
 						},
 					},
 					Pins: []string{member2Nonce500.String()},
-					Data: fftypes.DataRefs{
+					Data: core.DataRefs{
 						{ID: fftypes.NewUUID()},
 					},
 				},
@@ -334,17 +339,17 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
 	// Look for existing nextpins - none found, first on context
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
 		{Context: contextUnmasked, Identity: member1org.DID, Hash: member1Nonce100, Nonce: 100, Sequence: 929},
 		{Context: contextUnmasked, Identity: member2org.DID, Hash: member2Nonce500, Nonce: 500, Sequence: 424},
 	}, nil, nil).Once()
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePins).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
-	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Update member2 to nonce 1
 	mdi.On("UpdateNextPin", ag.ctx, mock.MatchedBy(func(seq int64) bool {
@@ -364,8 +369,8 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	// Update the message
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
-	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
-		&fftypes.Pin{
+	_, err := ag.processPinsEventsHandler([]core.LocallySequenced{
+		&core.Pin{
 			Sequence:   10001,
 			Masked:     true,
 			Hash:       member2Nonce500,
@@ -404,28 +409,28 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
 				{
-					Header: fftypes.MessageHeader{
+					Header: core.MessageHeader{
 						ID:        msgID,
 						Topics:    []string{topic},
 						Namespace: "ns1",
-						SignerRef: fftypes.SignerRef{
+						SignerRef: core.SignerRef{
 							Author: member1org.DID,
 							Key:    member1key,
 						},
 					},
-					Data: fftypes.DataRefs{
+					Data: core.DataRefs{
 						{ID: fftypes.NewUUID()},
 					},
 				},
@@ -437,21 +442,21 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
 	// Do not resolve any pins earlier
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
-	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{
 			Sequence:   10001,
 			Hash:       contextUnmasked,
@@ -493,28 +498,28 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
 				{
-					Header: fftypes.MessageHeader{
+					Header: core.MessageHeader{
 						ID:        msgID,
 						Topics:    []string{topic},
 						Namespace: "ns1",
-						SignerRef: fftypes.SignerRef{
+						SignerRef: core.SignerRef{
 							Author: member1org.DID,
 							Key:    member1key,
 						},
 					},
-					Data: fftypes.DataRefs{
+					Data: core.DataRefs{
 						{ID: fftypes.NewUUID()},
 					},
 				},
@@ -523,7 +528,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	}
 	payloadBinary, err := json.Marshal(&batch.Payload)
 	assert.NoError(t, err)
-	bp := &fftypes.BatchPersisted{
+	bp := &core.BatchPersisted{
 		TX:          batch.Payload.TX,
 		BatchHeader: batch.BatchHeader,
 		Manifest:    fftypes.JSONAnyPtr(string(payloadBinary)),
@@ -532,21 +537,21 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
 	// Do not resolve any pins earlier
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	// Validate the message is ok
-	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
-	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, fftypes.MessageStateConfirmed, mock.Anything).Return()
+	mdm.On("UpdateMessageStateIfCached", ag.ctx, mock.Anything, core.MessageStateConfirmed, mock.Anything).Return()
 	// Insert the confirmed event
-	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *fftypes.Event) bool {
-		return *e.Reference == *msgID && e.Type == fftypes.EventTypeMessageConfirmed
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(e *core.Event) bool {
+		return *e.Reference == *msgID && e.Type == core.EventTypeMessageConfirmed
 	})).Return(nil)
 	// Set the pin to dispatched
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	// Update the message
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 
-	err = ag.processPins(ag.ctx, []*fftypes.Pin{
+	err = ag.processPins(ag.ctx, []*core.Pin{
 		{
 			Sequence:   10001,
 			Hash:       contextUnmasked,
@@ -587,26 +592,26 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{"topic1"},
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{{
+				Header: core.MessageHeader{
+					Topics: core.FFStringArray{"topic1"},
 				},
 			}},
 		},
 	}
 	payloadBinary, err := json.Marshal(&batch.Payload)
 	assert.NoError(t, err)
-	bp := &fftypes.BatchPersisted{
+	bp := &core.BatchPersisted{
 		TX:          batch.Payload.TX,
 		BatchHeader: batch.BatchHeader,
 		Manifest:    fftypes.JSONAnyPtr(string(payloadBinary)),
@@ -614,7 +619,7 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
 
-	err = ag.processPins(ag.ctx, []*fftypes.Pin{
+	err = ag.processPins(ag.ctx, []*core.Pin{
 		{
 			Sequence:   10001,
 			Hash:       contextUnmasked,
@@ -655,24 +660,24 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{{
-				Header: fftypes.MessageHeader{
-					Topics: fftypes.FFStringArray{"topic1"},
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{{
+				Header: core.MessageHeader{
+					Topics: core.FFStringArray{"topic1"},
 				},
 			}},
 		},
 	}
-	bp := &fftypes.BatchPersisted{
+	bp := &core.BatchPersisted{
 		TX:          batch.Payload.TX,
 		BatchHeader: batch.BatchHeader,
 		Manifest:    fftypes.JSONAnyPtr("{}"),
@@ -680,7 +685,7 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 
 	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{
 			Sequence:   10001,
 			Hash:       contextUnmasked,
@@ -705,13 +710,13 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 func TestShutdownOnCancel(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetOffset", mock.Anything, fftypes.OffsetTypeAggregator, aggregatorOffsetName).Return(&fftypes.Offset{
-		Type:    fftypes.OffsetTypeAggregator,
+	mdi.On("GetOffset", mock.Anything, core.OffsetTypeAggregator, aggregatorOffsetName).Return(&core.Offset{
+		Type:    core.OffsetTypeAggregator,
 		Name:    aggregatorOffsetName,
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	ag.start()
 	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
 	ag.eventPoller.eventNotifier.newEvents <- 12345
@@ -734,8 +739,8 @@ func TestProcessPinsDBGroupFail(t *testing.T) {
 	}
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := ag.processPinsEventsHandler([]fftypes.LocallySequenced{
-		&fftypes.Pin{
+	_, err := ag.processPinsEventsHandler([]core.LocallySequenced{
+		&core.Pin{
 			Batch: fftypes.NewUUID(),
 		},
 	})
@@ -747,7 +752,7 @@ func TestGetPins(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345},
 	}, nil, nil)
 
@@ -764,7 +769,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, bs)
 	assert.NoError(t, err)
@@ -779,13 +784,13 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 	defer cancel()
 	bs := newBatchState(ag)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}},
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
+				{Header: core.MessageHeader{ID: fftypes.NewUUID()}},
 			},
 		},
 	}
@@ -794,7 +799,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 25},
 	}, bs)
 	assert.NoError(t, err)
@@ -810,15 +815,15 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 	defer cancel()
 	bs := newBatchState(ag)
 
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
+				{Header: core.MessageHeader{
 					ID:     nil, /* missing */
-					Topics: fftypes.FFStringArray{"topic1"},
+					Topics: core.FFStringArray{"topic1"},
 				}},
 			},
 		},
@@ -828,7 +833,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 0},
 	}, bs)
 	assert.NoError(t, err)
@@ -846,15 +851,15 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	bs := newBatchState(ag)
 
 	batchID := fftypes.NewUUID()
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
+				{Header: core.MessageHeader{
 					ID:     fftypes.NewUUID(),
-					Topics: fftypes.FFStringArray{"topic1", "topic2"},
+					Topics: core.FFStringArray{"topic1", "topic2"},
 				}},
 			},
 		},
@@ -863,14 +868,14 @@ func TestProcessSkipDupMsg(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil).Once()
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*fftypes.Pin{
+	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{
 		{Sequence: 1111}, // blocks the context
 	}, nil, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], nil, true, nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
 		{Sequence: 12345, Batch: batchID, Index: 1, Hash: fftypes.NewRandB32()},
 	}, bs)
@@ -890,15 +895,15 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 	bs := newBatchState(ag)
 
 	batchID := fftypes.NewUUID()
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: batchID,
 		},
-		Payload: fftypes.BatchPayload{
-			Messages: []*fftypes.Message{
-				{Header: fftypes.MessageHeader{
+		Payload: core.BatchPayload{
+			Messages: []*core.Message{
+				{Header: core.MessageHeader{
 					ID:     fftypes.NewUUID(),
-					Topics: fftypes.FFStringArray{"topic1"},
+					Topics: core.FFStringArray{"topic1"},
 				}},
 			},
 		},
@@ -912,7 +917,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], nil, true, nil)
 
-	err := ag.processPins(ag.ctx, []*fftypes.Pin{
+	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: batchID, Index: 0, Hash: fftypes.NewRandB32()},
 	}, bs)
 	assert.EqualError(t, err, "pop")
@@ -927,7 +932,7 @@ func TestProcessMsgFailData(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(nil, nil, false, fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{}, nil)
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Masked: true, Sequence: 12345}, 10, &core.MessageManifestEntry{}, nil)
 	assert.Regexp(t, "pop", err)
 
 	mdm.AssertExpectations(t)
@@ -938,9 +943,9 @@ func TestProcessMsgFailMissingData(t *testing.T) {
 	defer cancel()
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(&fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}, nil, false, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(&core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}, nil, false, nil)
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{}, nil)
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Masked: true, Sequence: 12345}, 10, &core.MessageManifestEntry{}, nil)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
@@ -951,9 +956,9 @@ func TestProcessMsgFailMissingGroup(t *testing.T) {
 	defer cancel()
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(&fftypes.Message{Header: fftypes.MessageHeader{ID: fftypes.NewUUID()}}, nil, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(&core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}, nil, true, nil)
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{}, nil)
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Masked: true, Sequence: 12345}, 10, &core.MessageManifestEntry{}, nil)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)
@@ -963,21 +968,21 @@ func TestProcessMsgFailBadPin(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: fftypes.FFStringArray{"topic1"},
+			Topics: core.FFStringArray{"topic1"},
 		},
 		Hash: fftypes.NewRandB32(),
-		Pins: fftypes.FFStringArray{"!Wrong"},
+		Pins: core.FFStringArray{"!Wrong"},
 	}
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{
-		MessageRef: fftypes.MessageRef{
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Masked: true, Sequence: 12345}, 10, &core.MessageManifestEntry{
+		MessageRef: core.MessageRef{
 			ID:   msg.Header.ID,
 			Hash: msg.Hash,
 		},
@@ -996,20 +1001,20 @@ func TestProcessMsgFailGetNextPins(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Topics: fftypes.FFStringArray{"topic1"},
+			Topics: core.FFStringArray{"topic1"},
 		},
-		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
+		Pins: core.FFStringArray{fftypes.NewRandB32().String()},
 	}
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Masked: true, Sequence: 12345}, 10, &fftypes.MessageManifestEntry{
-		MessageRef: fftypes.MessageRef{
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Masked: true, Sequence: 12345}, 10, &core.MessageManifestEntry{
+		MessageRef: core.MessageRef{
 			ID:   msg.Header.ID,
 			Hash: msg.Hash,
 		},
@@ -1027,17 +1032,17 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil)
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Topics: fftypes.FFStringArray{"topic1"},
-			SignerRef: fftypes.SignerRef{
+			Topics: core.FFStringArray{"topic1"},
+			SignerRef: core.SignerRef{
 				Key: "0x12345",
 			},
 		},
-		Pins: fftypes.FFStringArray{fftypes.NewRandB32().String()},
+		Pins: core.FFStringArray{fftypes.NewRandB32().String()},
 	}
 
 	mdm := ag.data.(*datamocks.Manager)
@@ -1046,8 +1051,8 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{}, &fftypes.Pin{Sequence: 12345, Signer: "0x12345"}, 10, &fftypes.MessageManifestEntry{
-		MessageRef: fftypes.MessageRef{
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Sequence: 12345, Signer: "0x12345"}, 10, &core.MessageManifestEntry{
+		MessageRef: core.MessageRef{
 			ID:   msg.Header.ID,
 			Hash: msg.Hash,
 		},
@@ -1071,25 +1076,25 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Group:     fftypes.NewRandB32(),
-			Topics:    fftypes.FFStringArray{"topic1"},
+			Topics:    core.FFStringArray{"topic1"},
 			Namespace: "ns1",
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",
 			},
 		},
-		Pins: fftypes.FFStringArray{pin.String()},
+		Pins: core.FFStringArray{pin.String()},
 	}
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg, fftypes.IdentityTypeCustom}, "ns1", &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	}).Return(org1, nil)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin, Identity: org1.DID},
 	}, nil, nil)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePins).Return(msg, nil, true, nil)
@@ -1098,10 +1103,10 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpdateNextPin", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := ag.processMessage(ag.ctx, &fftypes.BatchManifest{
+	err := ag.processMessage(ag.ctx, &core.BatchManifest{
 		ID: fftypes.NewUUID(),
-	}, &fftypes.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 10, &fftypes.MessageManifestEntry{
-		MessageRef: fftypes.MessageRef{
+	}, &core.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 10, &core.MessageManifestEntry{
+		MessageRef: core.MessageRef{
 			ID:   msg.Header.ID,
 			Hash: msg.Hash,
 		},
@@ -1120,18 +1125,18 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	pin := fftypes.NewRandB32()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
 		{Context: fftypes.NewRandB32(), Hash: pin},
 	}, nil, nil)
 
 	bs := newBatchState(ag)
-	_, err := bs.CheckMaskedContextReady(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := bs.CheckMaskedContextReady(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
-			Tag:    fftypes.SystemTagDefineDatatype,
-			Topics: fftypes.FFStringArray{"topic1"},
-			SignerRef: fftypes.SignerRef{
+			Tag:    core.SystemTagDefineDatatype,
+			Topics: core.FFStringArray{"topic1"},
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1145,15 +1150,15 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	bs := newBatchState(ag)
-	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1161,21 +1166,22 @@ func TestAttemptContextInitGetGroupByIDFail(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.EqualError(t, err, "pop")
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(nil, nil)
 
 	bs := newBatchState(ag)
-	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1183,6 +1189,7 @@ func TestAttemptContextInitGroupNotFound(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitAuthorMismatch(t *testing.T) {
@@ -1192,21 +1199,21 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author2", 0)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: "author2"},
 			},
 		},
 	}, nil)
 
 	bs := newBatchState(ag)
-	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1214,6 +1221,7 @@ func TestAttemptContextInitAuthorMismatch(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.NoError(t, err)
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitNoMatch(t *testing.T) {
@@ -1221,21 +1229,21 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	defer cancel()
 
 	groupID := fftypes.NewRandB32()
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: "author2"},
 			},
 		},
 	}, nil)
 
 	bs := newBatchState(ag)
-	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1243,6 +1251,7 @@ func TestAttemptContextInitNoMatch(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), fftypes.NewRandB32())
 	assert.NoError(t, err)
 
+	mpm.AssertExpectations(t)
 }
 
 func TestAttemptContextInitGetPinsFail(t *testing.T) {
@@ -1252,11 +1261,11 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	groupID := fftypes.NewRandB32()
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author1", 0)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: "author1"},
 			},
 		},
@@ -1264,11 +1273,11 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	bs := newBatchState(ag)
-	_, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1276,6 +1285,8 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 	}, "topic1", 12345, fftypes.NewRandB32(), zeroHash)
 	assert.EqualError(t, err, "pop")
 
+	mpm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
@@ -1286,24 +1297,24 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: "author1"},
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345},
 	}, nil, nil)
 
 	bs := newBatchState(ag)
-	np, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	np, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1312,6 +1323,8 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, np)
 
+	mpm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestAttemptContextInitInsertPinsFail(t *testing.T) {
@@ -1322,23 +1335,23 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	zeroHash := initNPG.calcPinHash("author1", 0)
 	mdi := ag.database.(*databasemocks.Plugin)
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
-	msh.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
+	mpm := ag.messaging.(*privatemessagingmocks.Manager)
+	mpm.On("ResolveInitGroup", ag.ctx, mock.Anything).Return(&core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
 				{Identity: "author1"},
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	mdi.On("InsertNextPin", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	bs := newBatchState(ag)
-	np, err := bs.attemptContextInit(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	np, err := bs.attemptContextInit(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:    fftypes.NewUUID(),
 			Group: groupID,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -1349,6 +1362,8 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 	err = bs.RunFinalize(ag.ctx)
 	assert.EqualError(t, err, "pop")
 
+	mpm.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
@@ -1360,15 +1375,15 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID}},
-		Data: fftypes.DataRefs{
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
+		Header: core.MessageHeader{ID: fftypes.NewUUID(), SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID}},
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, fftypes.DataArray{}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	}, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1387,14 +1402,14 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", ag.ctx, blobHash).Return(nil, nil)
 
-	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID}},
-	}, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &fftypes.BlobRef{
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
+		Header: core.MessageHeader{ID: fftypes.NewUUID(), SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID}},
+	}, core.DataArray{
+		{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), Blob: &core.BlobRef{
 			Hash:   blobHash,
 			Public: "public-ref",
 		}},
-	}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1409,20 +1424,20 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 	org1 := newTestOrg("org1")
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return([]*fftypes.TokenTransfer{}, nil, nil)
+	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return([]*core.TokenTransfer{}, nil, nil)
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:   fftypes.NewUUID(),
-			Type: fftypes.MessageTypeTransferBroadcast,
-			SignerRef: fftypes.SignerRef{
+			Type: core.MessageTypeTransferBroadcast,
+			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x12345",
 			},
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, fftypes.DataArray{}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1441,15 +1456,15 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeTransferBroadcast,
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
+			Type:      core.MessageTypeTransferBroadcast,
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 	}
 	msg.Hash = msg.Header.Hash()
-	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, fftypes.DataArray{}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
 	assert.False(t, dispatched)
 
@@ -1462,16 +1477,16 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 
 	org1 := newTestOrg("org1")
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeTransferBroadcast,
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
+			Type:      core.MessageTypeTransferBroadcast,
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
 	}
 	msg.Hash = msg.Header.Hash()
 
-	transfers := []*fftypes.TokenTransfer{{
+	transfers := []*core.TokenTransfer{{
 		Message:     msg.Header.ID,
 		MessageHash: fftypes.NewRandB32(),
 	}}
@@ -1482,7 +1497,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
 
-	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, fftypes.DataArray{}, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, dispatched)
 
@@ -1501,12 +1516,12 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	customCorrelator := fftypes.NewUUID()
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(definitions.HandlerResult{Action: definitions.ActionReject, CustomCorrelator: customCorrelator}, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
@@ -1526,23 +1541,23 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 
 		return true
 	})).Return(nil)
-	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *fftypes.Event) bool {
+	mdi.On("InsertEvent", ag.ctx, mock.MatchedBy(func(event *core.Event) bool {
 		return event.Correlator.Equals(customCorrelator)
 	})).Return(nil)
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Type:      fftypes.MessageTypeDefinition,
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
+			Type:      core.MessageTypeDefinition,
 			ID:        fftypes.NewUUID(),
 			Namespace: "any",
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
-			Tag:       fftypes.SystemTagDefineDatatype,
-			Topics:    fftypes.FFStringArray{"topic1"},
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
+			Tag:       core.SystemTagDefineDatatype,
+			Topics:    core.FFStringArray{"topic1"},
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, fftypes.DataArray{}, nil, bs, &fftypes.Pin{Signer: "0x12345"})
+	}, core.DataArray{}, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
@@ -1559,7 +1574,7 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("UpdateMessages", ag.ctx, mock.Anything, mock.MatchedBy(func(u database.Update) bool {
@@ -1581,17 +1596,17 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 	})).Return(nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Type:      fftypes.MessageTypeDefinition,
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
+			Type:      core.MessageTypeDefinition,
 			ID:        fftypes.NewUUID(),
 			Namespace: "any",
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
-		Data: fftypes.DataRefs{
+		Data: core.DataRefs{
 			{ID: fftypes.NewUUID()},
 		},
-	}, fftypes.DataArray{}, nil, bs, &fftypes.Pin{Signer: "0x12345"})
+	}, core.DataArray{}, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 }
 
@@ -1600,24 +1615,24 @@ func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
 	defer cancel()
 	bs := newBatchState(ag)
 
-	msg1, msg2, org1, manifest := newTestManifest(fftypes.MessageTypeDefinition, nil)
+	msg1, msg2, org1, manifest := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, fftypes.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePublicBlobRefs).Return(msg2, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, core.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePublicBlobRefs).Return(msg2, core.DataArray{}, true, nil).Once()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*fftypes.Pin{}, nil, nil)
+	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil)
 
 	// First message should dispatch
-	err := ag.processMessage(ag.ctx, manifest, &fftypes.Pin{Sequence: 12345}, 0, manifest.Messages[0], bs)
+	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Sequence: 12345}, 0, manifest.Messages[0], bs)
 	assert.NoError(t, err)
 
 	// Second message should not (mocks have Once limit on GetMessageData to confirm)
-	err = ag.processMessage(ag.ctx, manifest, &fftypes.Pin{Sequence: 12346}, 0, manifest.Messages[1], bs)
+	err = ag.processMessage(ag.ctx, manifest, &core.Pin{Sequence: 12346}, 0, manifest.Messages[1], bs)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -1630,14 +1645,14 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	bs := newBatchState(ag)
 
 	groupID := fftypes.NewRandB32()
-	msg1, msg2, org1, manifest := newTestManifest(fftypes.MessageTypePrivate, groupID)
+	msg1, msg2, org1, manifest := newTestManifest(core.MessageTypePrivate, groupID)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, fftypes.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, core.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, core.DataArray{}, true, nil).Once()
 
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
 	member1NonceOne := initNPG.calcPinHash("org1", 1)
@@ -1647,19 +1662,19 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	context := fftypes.HashResult(h)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
 	}, nil, nil)
 
-	msg1.Pins = fftypes.FFStringArray{member1NonceOne.String()}
-	msg2.Pins = fftypes.FFStringArray{member1NonceTwo.String()}
+	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
+	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
 
 	// First message should dispatch
-	err := ag.processMessage(ag.ctx, manifest, &fftypes.Pin{Masked: true, Sequence: 12345}, 0, manifest.Messages[0], bs)
+	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12345}, 0, manifest.Messages[0], bs)
 	assert.NoError(t, err)
 
 	// Second message should not (mocks have Once limit on GetMessageData to confirm)
-	err = ag.processMessage(ag.ctx, manifest, &fftypes.Pin{Masked: true, Sequence: 12346}, 0, manifest.Messages[1], bs)
+	err = ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12346}, 0, manifest.Messages[1], bs)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -1672,14 +1687,14 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 	bs := newBatchState(ag)
 
 	groupID := fftypes.NewRandB32()
-	msg1, msg2, org1, manifest := newTestManifest(fftypes.MessageTypePrivate, groupID)
+	msg1, msg2, org1, manifest := newTestManifest(core.MessageTypePrivate, groupID)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, fftypes.DataArray{}, true, nil).Once()
-	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, fftypes.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, core.DataArray{}, true, nil).Once()
+	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePins).Return(msg2, core.DataArray{}, true, nil).Once()
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 
 	initNPG := &nextPinGroupState{topic: "topic1", groupID: groupID}
@@ -1690,19 +1705,19 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 	context := fftypes.HashResult(h)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*fftypes.NextPin{
+	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
 		{Context: context, Nonce: 1 /* match member1NonceOne */, Identity: org1.DID, Hash: member1NonceOne},
 	}, nil, nil)
 
-	msg1.Pins = fftypes.FFStringArray{member1NonceOne.String()}
-	msg2.Pins = fftypes.FFStringArray{member1NonceTwo.String()}
+	msg1.Pins = core.FFStringArray{member1NonceOne.String()}
+	msg2.Pins = core.FFStringArray{member1NonceTwo.String()}
 
 	// First message should dispatch
-	err := ag.processMessage(ag.ctx, manifest, &fftypes.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 0, manifest.Messages[0], bs)
+	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12345, Signer: "0x12345"}, 0, manifest.Messages[0], bs)
 	assert.NoError(t, err)
 
 	// Second message should dispatch too (Twice on GetMessageData)
-	err = ag.processMessage(ag.ctx, manifest, &fftypes.Pin{Masked: true, Sequence: 12346, Signer: "0x12345"}, 0, manifest.Messages[1], bs)
+	err = ag.processMessage(ag.ctx, manifest, &core.Pin{Masked: true, Sequence: 12346, Signer: "0x12345"}, 0, manifest.Messages[1], bs)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -1713,18 +1728,18 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, org1, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
+	msg1, _, org1, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionRetry}, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
-	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg1, fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything).Return(msg1, core.DataArray{}, true, nil)
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.EqualError(t, err, "pop")
 
 }
@@ -1733,12 +1748,12 @@ func TestDefinitionBroadcastRejectSignerLookupFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, _, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
+	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 
@@ -1749,12 +1764,12 @@ func TestDefinitionBroadcastRejectSignerLookupWrongOrg(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, _, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
+	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(newTestOrg("org2"), nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -1765,10 +1780,10 @@ func TestDefinitionBroadcastRejectBadSigner(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, org1, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
-	msg1.Header.SignerRef = fftypes.SignerRef{Key: "0x23456", Author: org1.DID}
+	msg1, _, org1, _ := newTestManifest(core.MessageTypeDefinition, nil)
+	msg1.Header.SignerRef = core.SignerRef{Key: "0x23456", Author: org1.DID}
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -1778,16 +1793,16 @@ func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, _, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
-	msg1.Header.Tag = fftypes.SystemTagIdentityClaim
+	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
+	msg1.Header.Tag = core.SystemTagIdentityClaim
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
-	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 	assert.Empty(t, newState)
@@ -1800,12 +1815,12 @@ func TestDefinitionBroadcastRootUnregisteredOk(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, _, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
+	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 
-	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -1816,15 +1831,15 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	msg1, _, org1, _ := newTestManifest(fftypes.MessageTypeDefinition, nil)
+	msg1, _, org1, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandlers)
+	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &fftypes.Pin{Signer: "0x12345"})
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -1836,7 +1851,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 	bs := newBatchState(ag)
-	msg1, _, org1, _ := newTestManifest(fftypes.MessageTypeBroadcast, nil)
+	msg1, _, org1, _ := newTestManifest(core.MessageTypeBroadcast, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdm := ag.data.(*datamocks.Manager)
@@ -1846,9 +1861,9 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, fftypes.DataArray{
-		&fftypes.Data{ID: msg1.Data[0].ID},
-	}, nil, bs, &fftypes.Pin{Signer: "0x12345"})
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, core.DataArray{
+		&core.Data{ID: msg1.Data[0].ID},
+	}, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 
 	err = bs.RunFinalize(ag.ctx)
@@ -1871,17 +1886,17 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
-	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)
 
-	_, _, err := ag.attemptMessageDispatch(ag.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, _, err := ag.attemptMessageDispatch(ag.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.MessageTypeGroupInit,
-			SignerRef: fftypes.SignerRef{Key: "0x12345", Author: org1.DID},
+			Type:      core.MessageTypeGroupInit,
+			SignerRef: core.SignerRef{Key: "0x12345", Author: org1.DID},
 		},
-	}, nil, nil, bs, &fftypes.Pin{Signer: "0x12345"})
+	}, nil, nil, bs, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
 
 }
@@ -1925,7 +1940,7 @@ func TestRewindOffchainBatchesAndTXRewind(t *testing.T) {
 	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
 		fftypes.NewUUID(),
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, nil)
 
@@ -1951,7 +1966,7 @@ func TestRewindOffchainBatchesError(t *testing.T) {
 	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
 		fftypes.NewUUID(),
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.Pin{
+	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, fmt.Errorf("pop"))
 
@@ -1966,8 +1981,8 @@ func TestResolveBlobsNoop(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{}},
+	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
+		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{}},
 	})
 
 	assert.NoError(t, err)
@@ -1981,8 +1996,8 @@ func TestResolveBlobsErrorGettingHash(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
+		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{
 			Hash: fftypes.NewRandB32(),
 		}},
 	})
@@ -1998,8 +2013,8 @@ func TestResolveBlobsNotFoundPrivate(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(nil, nil)
 
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
+		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{
 			Hash: fftypes.NewRandB32(),
 		}},
 	})
@@ -2013,10 +2028,10 @@ func TestResolveBlobsFoundPrivate(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(&fftypes.Blob{}, nil)
+	mdi.On("GetBlobMatchingHash", ag.ctx, mock.Anything).Return(&core.Blob{}, nil)
 
-	resolved, err := ag.resolveBlobs(ag.ctx, fftypes.DataArray{
-		{ID: fftypes.NewUUID(), Blob: &fftypes.BlobRef{
+	resolved, err := ag.resolveBlobs(ag.ctx, core.DataArray{
+		{ID: fftypes.NewUUID(), Blob: &core.BlobRef{
 			Hash: fftypes.NewRandB32(),
 		}},
 	})
@@ -2144,7 +2159,7 @@ func TestExtractManifestFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	manifest := ag.extractManifest(ag.ctx, &fftypes.BatchPersisted{
+	manifest := ag.extractManifest(ag.ctx, &core.BatchPersisted{
 		Manifest: fftypes.JSONAnyPtr("!wrong"),
 	})
 
@@ -2155,7 +2170,7 @@ func TestExtractManifestBadVersion(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	manifest := ag.extractManifest(ag.ctx, &fftypes.BatchPersisted{
+	manifest := ag.extractManifest(ag.ctx, &core.BatchPersisted{
 		Manifest: fftypes.JSONAnyPtr(`{"version":999}`),
 	})
 
@@ -2166,7 +2181,7 @@ func TestMigrateManifestFail(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	manifest := ag.migrateManifest(ag.ctx, &fftypes.BatchPersisted{
+	manifest := ag.migrateManifest(ag.ctx, &core.BatchPersisted{
 		Manifest: fftypes.JSONAnyPtr("!wrong"),
 	})
 
@@ -2177,11 +2192,11 @@ func TestBatchCaching(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	persisted, expectedManifest := batch.Confirmed()
 
-	pin := &fftypes.Pin{
+	pin := &core.Pin{
 		Batch:     batch.ID,
 		BatchHash: batch.Hash,
 	}
@@ -2205,10 +2220,10 @@ func TestGetBatchForPinHashMismatch(t *testing.T) {
 	ag, cancel := newTestAggregator()
 	defer cancel()
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	persisted, _ := batch.Confirmed()
-	pin := &fftypes.Pin{
+	pin := &core.Pin{
 		Batch:     batch.ID,
 		BatchHash: fftypes.NewRandB32(),
 	}

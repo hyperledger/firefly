@@ -26,12 +26,12 @@ import (
 	"syscall"
 
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/apiserver"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -42,11 +42,11 @@ var sigs = make(chan os.Signal, 1)
 
 var rootCmd = &cobra.Command{
 	Use:   "firefly",
-	Short: "Firefly is an API toolkit for building enterprise grade multi-party systems",
-	Long: `You build great user experiences and business logic in your favorite language,
-and let Firefly take care of the REST. The event-driven programming model gives you the
-building blocks needed for high performance, scalable multi-party systems, and the power
-to digital transformation your business ecosystem.`,
+	Short: "FireFly is a complete stack for enterprises to build and scale secure Web3 applications",
+	Long: `Hyperledger FireFly is the first open source Supernode: a complete stack for
+enterprises to build and scale secure Web3 applications. The FireFly API for digital
+assets, data flows, and blockchain transactions makes it radically faster to build
+production-ready apps on popular chains and protocols.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run()
 	},
@@ -83,12 +83,11 @@ func getOrchestrator() orchestrator.Orchestrator {
 	if _utOrchestrator != nil {
 		return _utOrchestrator
 	}
-	return orchestrator.NewOrchestrator()
+	return orchestrator.NewOrchestrator(true)
 }
 
 // Execute is called by the main method of the package
 func Execute() error {
-	apiserver.InitConfig()
 	return rootCmd.Execute()
 }
 
@@ -96,6 +95,7 @@ func run() error {
 
 	// Read the configuration
 	coreconfig.Reset()
+	apiserver.InitConfig()
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly
@@ -104,8 +104,8 @@ func run() error {
 	ctx = log.WithLogger(ctx, logrus.WithField("prefix", config.GetString(coreconfig.NodeName)))
 
 	config.SetupLogging(ctx)
-	log.L(ctx).Infof("Project Firefly")
-	log.L(ctx).Infof("© Copyright 2021 Kaleido, Inc.")
+	log.L(ctx).Infof("Hyperledger FireFly")
+	log.L(ctx).Infof("© Copyright 2022 Kaleido, Inc.")
 
 	// Deferred error return from reading config
 	if err != nil {

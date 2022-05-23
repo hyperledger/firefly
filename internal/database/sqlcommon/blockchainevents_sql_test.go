@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new contract event entry
-	event := &fftypes.BlockchainEvent{
+	event := &core.BlockchainEvent{
 		ID:         fftypes.NewUUID(),
 		Namespace:  "ns",
 		Listener:   fftypes.NewUUID(),
@@ -43,14 +44,14 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 		Output:     fftypes.JSONObject{"value": 1},
 		Info:       fftypes.JSONObject{"blockNumber": 1},
 		Timestamp:  fftypes.Now(),
-		TX: fftypes.BlockchainTransactionRef{
+		TX: core.BlockchainTransactionRef{
 			ID:           fftypes.NewUUID(),
-			Type:         fftypes.TransactionTypeBatchPin,
+			Type:         core.TransactionTypeBatchPin,
 			BlockchainID: "0x12345",
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, fftypes.ChangeEventTypeCreated, "ns", event.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionBlockchainEvents, core.ChangeEventTypeCreated, "ns", event.ID).Return()
 
 	err := s.InsertBlockchainEvent(ctx, event)
 	assert.NotNil(t, event.Timestamp)
@@ -86,7 +87,7 @@ func TestBlockchainEventsE2EWithDB(t *testing.T) {
 func TestInsertBlockchainEventFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertBlockchainEvent(context.Background(), &fftypes.BlockchainEvent{})
+	err := s.InsertBlockchainEvent(context.Background(), &core.BlockchainEvent{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -96,7 +97,7 @@ func TestInsertBlockchainEventFailInsert(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.InsertBlockchainEvent(context.Background(), &fftypes.BlockchainEvent{})
+	err := s.InsertBlockchainEvent(context.Background(), &core.BlockchainEvent{})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -106,7 +107,7 @@ func TestInsertBlockchainEventFailCommit(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertBlockchainEvent(context.Background(), &fftypes.BlockchainEvent{})
+	err := s.InsertBlockchainEvent(context.Background(), &core.BlockchainEvent{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

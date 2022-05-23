@@ -17,7 +17,7 @@
 package system
 
 import (
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
 )
 
 const (
@@ -29,6 +29,6 @@ const (
 	SystemEventsConfReadAhead = "readAhead"
 )
 
-func (se *Events) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(SystemEventsConfReadAhead, readAhead)
+func (se *Events) InitConfig(config config.Section) {
+	config.AddKnownKey(SystemEventsConfReadAhead, readAhead)
 }

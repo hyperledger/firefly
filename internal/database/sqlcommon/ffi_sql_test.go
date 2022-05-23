@@ -22,9 +22,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,17 +39,17 @@ func TestFFIE2EWithDB(t *testing.T) {
 	// Create a new FFI
 	id := fftypes.NewUUID()
 
-	ffi := &fftypes.FFI{
+	ffi := &core.FFI{
 		ID:          id,
 		Namespace:   "ns1",
 		Name:        "math",
 		Version:     "v1.0.0",
 		Description: "Does things and stuff",
 		Message:     fftypes.NewUUID(),
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "sum",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
@@ -58,7 +59,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
 					},
 				},
-				Returns: fftypes.FFIParams{
+				Returns: core.FFIParams{
 					{
 						Name:   "result",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
@@ -68,8 +69,8 @@ func TestFFIE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, fftypes.ChangeEventTypeCreated, "ns1", ffi.ID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, fftypes.ChangeEventTypeUpdated, "ns1", ffi.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeCreated, "ns1", ffi.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIs, core.ChangeEventTypeUpdated, "ns1", ffi.ID).Return()
 
 	err := s.UpsertFFI(ctx, ffi)
 	assert.NoError(t, err)
@@ -103,7 +104,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 func TestFFIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFI(context.Background(), &fftypes.FFI{})
+	err := s.UpsertFFI(context.Background(), &core.FFI{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -112,7 +113,7 @@ func TestFFIDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFI(context.Background(), &fftypes.FFI{})
+	err := s.UpsertFFI(context.Background(), &core.FFI{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -122,7 +123,7 @@ func TestFFIDBFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	ffi := &fftypes.FFI{
+	ffi := &core.FFI{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFI(context.Background(), ffi)
@@ -137,7 +138,7 @@ func TestFFIDBFailUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	ffi := &fftypes.FFI{
+	ffi := &core.FFI{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFI(context.Background(), ffi)

@@ -20,13 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
-	var claim fftypes.IdentityClaim
+func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
+	var claim core.IdentityClaim
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
 	if !valid {
 		return HandlerResult{Action: ActionReject}, nil
@@ -36,16 +37,16 @@ func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, 
 
 }
 
-func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fftypes.Message, identity *fftypes.Identity, parent *fftypes.Identity) (valid bool) {
+func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *core.Message, identity *core.Identity, parent *core.Identity) (valid bool) {
 
 	author := msg.Header.Author
 	if author == "" {
 		return false
 	}
 
-	var expectedSigner *fftypes.Identity
+	var expectedSigner *core.Identity
 	switch {
-	case identity.Type == fftypes.IdentityTypeNode:
+	case identity.Type == core.IdentityTypeNode:
 		// In the special case of a node, the parent signs it directly
 		expectedSigner = parent
 	default:
@@ -53,21 +54,21 @@ func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *fft
 	}
 
 	valid = author == expectedSigner.DID ||
-		(expectedSigner.Type == fftypes.IdentityTypeOrg && author == fmt.Sprintf("%s%s", fftypes.FireFlyOrgDIDPrefix, expectedSigner.ID))
+		(expectedSigner.Type == core.IdentityTypeOrg && author == fmt.Sprintf("%s%s", core.FireFlyOrgDIDPrefix, expectedSigner.ID))
 	if !valid {
 		log.L(ctx).Warnf("Unable to process identity claim %s - signature mismatch type=%s author=%s expected=%s", msg.Header.ID, identity.Type, author, expectedSigner.DID)
 	}
 	return valid
 }
 
-func (dh *definitionHandlers) getClaimVerifier(msg *fftypes.Message, identity *fftypes.Identity) *fftypes.Verifier {
-	verifier := &fftypes.Verifier{
+func (dh *definitionHandlers) getClaimVerifier(msg *core.Message, identity *core.Identity) *core.Verifier {
+	verifier := &core.Verifier{
 		Identity:  identity.ID,
 		Namespace: identity.Namespace,
 	}
 	switch identity.Type {
-	case fftypes.IdentityTypeNode:
-		verifier.VerifierRef.Type = fftypes.VerifierTypeFFDXPeerID
+	case core.IdentityTypeNode:
+		verifier.VerifierRef.Type = core.VerifierTypeFFDXPeerID
 		verifier.VerifierRef.Value = identity.Profile.GetString("id")
 	default:
 		verifier.VerifierRef.Type = dh.blockchain.VerifierType()
@@ -77,16 +78,16 @@ func (dh *definitionHandlers) getClaimVerifier(msg *fftypes.Message, identity *f
 	return verifier
 }
 
-func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identity, parent *fftypes.Identity) (*fftypes.UUID, error) {
+func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, state DefinitionBatchState, msg *core.Message, identity, parent *core.Identity) (*fftypes.UUID, error) {
 	// Query for messages on the topic for this DID, signed by the right identity
 	idTopic := identity.Topic()
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("topics", idTopic),
 		fb.Eq("author", parent.DID),
-		fb.Eq("type", fftypes.MessageTypeDefinition),
-		fb.Eq("state", fftypes.MessageStateConfirmed),
-		fb.Eq("tag", fftypes.SystemTagIdentityVerification),
+		fb.Eq("type", core.MessageTypeDefinition),
+		fb.Eq("state", core.MessageStateConfirmed),
+		fb.Eq("tag", core.SystemTagIdentityVerification),
 	)
 	candidates, _, err := dh.database.GetMessages(ctx, filter)
 	if err != nil {
@@ -96,8 +97,8 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	for _, pending := range state.GetPendingConfirm() {
 		if pending.Header.Topics.String() == idTopic &&
 			pending.Header.Author == parent.DID &&
-			pending.Header.Type == fftypes.MessageTypeDefinition &&
-			pending.Header.Tag == fftypes.SystemTagIdentityVerification {
+			pending.Header.Type == core.MessageTypeDefinition &&
+			pending.Header.Tag == core.SystemTagIdentityVerification {
 			candidates = append(candidates, pending)
 		}
 	}
@@ -110,7 +111,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 		var verificationID *fftypes.UUID
 		var verificationHash *fftypes.Bytes32
 		if foundAll {
-			var verification fftypes.IdentityVerification
+			var verification core.IdentityVerification
 			if !dh.getSystemBroadcastPayload(ctx, msg, data, &verification) {
 				return nil, nil
 			}
@@ -126,7 +127,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	return nil, nil
 }
 
-func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, identityClaim *fftypes.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state DefinitionBatchState, msg *core.Message, identityClaim *core.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity
@@ -171,7 +172,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return HandlerResult{Action: ActionReject}, nil
 	}
 
-	if parent != nil && identity.Type != fftypes.IdentityTypeNode {
+	if parent != nil && identity.Type != core.IdentityTypeNode {
 		// The verification might be passed into this function, if we confirm the verification second,
 		// or we might have to hunt for it, if we confirm the verification first.
 		if verificationID == nil {
@@ -203,7 +204,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 
 	// If this is a node, we need to add that peer
-	if identity.Type == fftypes.IdentityTypeNode {
+	if identity.Type == core.IdentityTypeNode {
 		state.AddPreFinalize(
 			func(ctx context.Context) error {
 				// Tell the data exchange about this node. Treat these errors like database errors - and return for retry processing
@@ -213,7 +214,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 
 	state.DIDClaimConfirmed(identity.DID)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, fftypes.SystemTopicDefinitions)
+		event := core.NewEvent(core.EventTypeIdentityConfirmed, identity.Namespace, identity.ID, nil, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

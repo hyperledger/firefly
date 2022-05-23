@@ -20,23 +20,23 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *fftypes.Identity, err error) {
+func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *core.Identity, err error) {
 
 	nodeOwningOrg, err := nm.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodeRequest := &fftypes.IdentityCreateDTO{
+	nodeRequest := &core.IdentityCreateDTO{
 		Parent: nodeOwningOrg.ID.String(),
 		Name:   config.GetString(coreconfig.NodeName),
-		Type:   fftypes.IdentityTypeNode,
-		IdentityProfile: fftypes.IdentityProfile{
+		Type:   core.IdentityTypeNode,
+		IdentityProfile: core.IdentityProfile{
 			Description: config.GetString(coreconfig.NodeDescription),
 		},
 	}
@@ -52,5 +52,5 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	}
 	nodeRequest.Profile = dxInfo
 
-	return nm.RegisterIdentity(ctx, fftypes.SystemNamespace, nodeRequest, waitConfirm)
+	return nm.RegisterIdentity(ctx, core.SystemNamespace, nodeRequest, waitConfirm)
 }

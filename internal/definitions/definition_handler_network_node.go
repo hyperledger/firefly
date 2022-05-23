@@ -19,20 +19,20 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
+func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	l := log.L(ctx)
 
-	var nodeOld fftypes.DeprecatedNode
+	var nodeOld core.DeprecatedNode
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
 	if !valid {
 		return HandlerResult{Action: ActionReject}, nil
 	}
 
-	owner, err := dh.identity.FindIdentityForVerifier(ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
+	owner, err := dh.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, &core.VerifierRef{
 		Type:  dh.blockchain.VerifierType(),
 		Value: nodeOld.Owner,
 	})

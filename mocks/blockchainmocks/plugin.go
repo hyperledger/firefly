@@ -3,12 +3,14 @@
 package blockchainmocks
 
 import (
+	config "github.com/hyperledger/firefly-common/pkg/config"
 	blockchain "github.com/hyperledger/firefly/pkg/blockchain"
-	config "github.com/hyperledger/firefly/pkg/config"
 
 	context "context"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	metrics "github.com/hyperledger/firefly/internal/metrics"
 
@@ -21,11 +23,11 @@ type Plugin struct {
 }
 
 // AddContractListener provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) AddContractListener(ctx context.Context, subscription *fftypes.ContractListenerInput) error {
+func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractListenerInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListenerInput) error); ok {
 		r0 = rf(ctx, subscription)
 	} else {
 		r0 = ret.Error(0)
@@ -51,11 +53,11 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 }
 
 // DeleteContractListener provides a mock function with given fields: ctx, subscription
-func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
+func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	ret := _m.Called(ctx, subscription)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.ContractListener) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
 		r0 = rf(ctx, subscription)
 	} else {
 		r0 = ret.Error(0)
@@ -65,11 +67,11 @@ func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *ffty
 }
 
 // GenerateEventSignature provides a mock function with given fields: ctx, event
-func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string {
 	ret := _m.Called(ctx, event)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIEventDefinition) string); ok {
 		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -79,20 +81,20 @@ func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFI
 }
 
 // GenerateFFI provides a mock function with given fields: ctx, generationRequest
-func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *core.FFIGenerationRequest) (*core.FFI, error) {
 	ret := _m.Called(ctx, generationRequest)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIGenerationRequest) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIGenerationRequest) *core.FFI); ok {
 		r0 = rf(ctx, generationRequest)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIGenerationRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.FFIGenerationRequest) error); ok {
 		r1 = rf(ctx, generationRequest)
 	} else {
 		r1 = ret.Error(1)
@@ -102,15 +104,15 @@ func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FF
 }
 
 // GetFFIParamValidator provides a mock function with given fields: ctx
-func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
+func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (core.FFIParamValidator, error) {
 	ret := _m.Called(ctx)
 
-	var r0 fftypes.FFIParamValidator
-	if rf, ok := ret.Get(0).(func(context.Context) fftypes.FFIParamValidator); ok {
+	var r0 core.FFIParamValidator
+	if rf, ok := ret.Get(0).(func(context.Context) core.FFIParamValidator); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.FFIParamValidator)
+			r0 = ret.Get(0).(core.FFIParamValidator)
 		}
 	}
 
@@ -124,13 +126,13 @@ func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVal
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, prefix, callbacks, _a3
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
-	ret := _m.Called(ctx, prefix, callbacks, _a3)
+// Init provides a mock function with given fields: ctx, _a1, callbacks, _a3
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
+	ret := _m.Called(ctx, _a1, callbacks, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, blockchain.Callbacks, metrics.Manager) error); ok {
-		r0 = rf(ctx, prefix, callbacks, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, blockchain.Callbacks, metrics.Manager) error); ok {
+		r0 = rf(ctx, _a1, callbacks, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -138,17 +140,17 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks bloc
 	return r0
 }
 
-// InitPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitPrefix(prefix config.Prefix) {
-	_m.Called(prefix)
+// InitConfig provides a mock function with given fields: _a0
+func (_m *Plugin) InitConfig(_a0 config.Section) {
+	_m.Called(_a0)
 }
 
 // InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, input
-func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
+func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
 	ret := _m.Called(ctx, operationID, signingKey, location, method, input)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}) error); ok {
 		r0 = rf(ctx, operationID, signingKey, location, method, input)
 	} else {
 		r0 = ret.Error(0)
@@ -216,11 +218,11 @@ func (_m *Plugin) NormalizeSigningKey(ctx context.Context, keyRef string) (strin
 }
 
 // QueryContract provides a mock function with given fields: ctx, location, method, input
-func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	ret := _m.Called(ctx, location, method, input)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}) interface{}); ok {
 		r0 = rf(ctx, location, method, input)
 	} else {
 		if ret.Get(0) != nil {
@@ -229,7 +231,7 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}) error); ok {
 		r1 = rf(ctx, location, method, input)
 	} else {
 		r1 = ret.Error(1)
@@ -252,13 +254,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, operationID, ledgerID, signingKey, batch
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
-	ret := _m.Called(ctx, operationID, ledgerID, signingKey, batch)
+// SubmitBatchPin provides a mock function with given fields: ctx, operationID, signingKey, batch
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, operationID, signingKey, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *fftypes.UUID, string, *blockchain.BatchPin) error); ok {
-		r0 = rf(ctx, operationID, ledgerID, signingKey, batch)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, operationID, signingKey, batch)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -267,14 +269,14 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 }
 
 // VerifierType provides a mock function with given fields:
-func (_m *Plugin) VerifierType() fftypes.FFEnum {
+func (_m *Plugin) VerifierType() core.FFEnum {
 	ret := _m.Called()
 
-	var r0 fftypes.FFEnum
-	if rf, ok := ret.Get(0).(func() fftypes.FFEnum); ok {
+	var r0 core.FFEnum
+	if rf, ok := ret.Get(0).(func() core.FFEnum); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(fftypes.FFEnum)
+		r0 = ret.Get(0).(core.FFEnum)
 	}
 
 	return r0

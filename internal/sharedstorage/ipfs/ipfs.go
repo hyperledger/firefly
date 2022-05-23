@@ -24,11 +24,11 @@ import (
 	"io"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -50,21 +50,21 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, prefix config.Prefix, callbacks sharedstorage.Callbacks) error {
+func (i *IPFS) Init(ctx context.Context, config config.Section, callbacks sharedstorage.Callbacks) error {
 
 	i.ctx = log.WithLogField(ctx, "sharedstorage", "ipfs")
 	i.callbacks = callbacks
 
-	apiPrefix := prefix.SubPrefix(IPFSConfAPISubconf)
-	if apiPrefix.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, apiPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
+	apiConfig := config.SubSection(IPFSConfAPISubconf)
+	if apiConfig.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, apiConfig.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.apiClient = ffresty.New(i.ctx, apiPrefix)
-	gwPrefix := prefix.SubPrefix(IPFSConfGatewaySubconf)
-	if gwPrefix.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, gwPrefix.Resolve(ffresty.HTTPConfigURL), "ipfs")
+	i.apiClient = ffresty.New(i.ctx, apiConfig)
+	gwConfig := config.SubSection(IPFSConfGatewaySubconf)
+	if gwConfig.GetString(ffresty.HTTPConfigURL) == "" {
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, gwConfig.Resolve(ffresty.HTTPConfigURL), "ipfs")
 	}
-	i.gwClient = ffresty.New(i.ctx, gwPrefix)
+	i.gwClient = ffresty.New(i.ctx, gwConfig)
 	i.capabilities = &sharedstorage.Capabilities{}
 	return nil
 }

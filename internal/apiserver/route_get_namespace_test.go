@@ -20,7 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetNamespace(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetNamespace", mock.Anything, "ns1").
-		Return(&fftypes.Namespace{}, nil)
+		Return(&core.Namespace{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

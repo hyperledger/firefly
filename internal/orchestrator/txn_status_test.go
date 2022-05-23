@@ -23,7 +23,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -38,23 +39,24 @@ func compactJSON(s string) string {
 
 func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeBatchPin,
+		Type:      core.TransactionTypeBatchPin,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeBlockchainPinBatch,
+			Type:      core.OpTypeBlockchainPinBatch,
 			Updated:   fftypes.UnixTime(0),
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{
+	events := []*core.BlockchainEvent{
 		{
 			Namespace: "ns1",
 			Name:      "BatchPin",
@@ -63,12 +65,12 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	batches := []*fftypes.BatchPersisted{
+	batches := []*core.BatchPersisted{
 		{
-			BatchHeader: fftypes.BatchHeader{
+			BatchHeader: core.BatchHeader{
 				Namespace: "ns1",
 				ID:        fftypes.NewUUID(),
-				Type:      fftypes.BatchTypeBroadcast,
+				Type:      core.BatchTypeBroadcast,
 			},
 			Confirmed: fftypes.UnixTime(2),
 		},
@@ -118,23 +120,24 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 
 func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeBatchPin,
+		Type:      core.TransactionTypeBatchPin,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusFailed,
+			Status:    core.OpStatusFailed,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeBlockchainPinBatch,
+			Type:      core.OpTypeBlockchainPinBatch,
 			Error:     "complete failure",
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.BatchPersisted{}
+	events := []*core.BlockchainEvent{}
+	batches := []*core.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -172,23 +175,24 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 
 func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeBatchPin,
+		Type:      core.TransactionTypeBatchPin,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeBlockchainPinBatch,
+			Type:      core.OpTypeBlockchainPinBatch,
 			Updated:   fftypes.UnixTime(0),
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	batches := []*fftypes.BatchPersisted{}
+	events := []*core.BlockchainEvent{}
+	batches := []*core.BatchPersisted{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -226,23 +230,24 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 
 func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenPool,
+		Type:      core.TransactionTypeTokenPool,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenCreatePool,
+			Type:      core.OpTypeTokenCreatePool,
 			Updated:   fftypes.UnixTime(0),
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{
+	events := []*core.BlockchainEvent{
 		{
 			Namespace: "ns1",
 			Name:      "TokenPool",
@@ -251,13 +256,13 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	pools := []*fftypes.TokenPool{
+	pools := []*core.TokenPool{
 		{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.TokenTypeFungible,
+			Type:      core.TokenTypeFungible,
 			Created:   fftypes.UnixTime(0),
-			State:     fftypes.TokenPoolStateConfirmed,
+			State:     core.TokenPoolStateConfirmed,
 		},
 	}
 
@@ -305,23 +310,24 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenPool,
+		Type:      core.TransactionTypeTokenPool,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenCreatePool,
+			Type:      core.OpTypeTokenCreatePool,
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	pools := []*fftypes.TokenPool{}
+	events := []*core.BlockchainEvent{}
+	pools := []*core.TokenPool{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -355,29 +361,30 @@ func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 
 func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenPool,
+		Type:      core.TransactionTypeTokenPool,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenCreatePool,
+			Type:      core.OpTypeTokenCreatePool,
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	pools := []*fftypes.TokenPool{
+	events := []*core.BlockchainEvent{}
+	pools := []*core.TokenPool{
 		{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.TokenTypeFungible,
+			Type:      core.TokenTypeFungible,
 			Created:   fftypes.UnixTime(0),
-			State:     fftypes.TokenPoolStatePending,
+			State:     core.TokenPoolStatePending,
 		},
 	}
 
@@ -415,23 +422,24 @@ func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 
 func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenTransfer,
+		Type:      core.TransactionTypeTokenTransfer,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenTransfer,
+			Type:      core.OpTypeTokenTransfer,
 			Updated:   fftypes.UnixTime(0),
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{
+	events := []*core.BlockchainEvent{
 		{
 			Namespace: "ns1",
 			Name:      "Mint",
@@ -440,11 +448,11 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	transfers := []*fftypes.TokenTransfer{
+	transfers := []*core.TokenTransfer{
 		{
 			Namespace: "ns1",
 			LocalID:   fftypes.NewUUID(),
-			Type:      fftypes.TokenTransferTypeMint,
+			Type:      core.TokenTransferTypeMint,
 			Created:   fftypes.UnixTime(0),
 		},
 	}
@@ -493,23 +501,24 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenApproval,
+		Type:      core.TransactionTypeTokenApproval,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenApproval,
+			Type:      core.OpTypeTokenApproval,
 			Updated:   fftypes.UnixTime(0),
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{
+	events := []*core.BlockchainEvent{
 		{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
@@ -517,7 +526,7 @@ func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
 			Info:      fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	approvals := []*fftypes.TokenApproval{
+	approvals := []*core.TokenApproval{
 		{
 			Namespace: "ns1",
 			LocalID:   fftypes.NewUUID(),
@@ -567,23 +576,24 @@ func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenTransfer,
+		Type:      core.TransactionTypeTokenTransfer,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenTransfer,
+			Type:      core.OpTypeTokenTransfer,
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	transfers := []*fftypes.TokenTransfer{}
+	events := []*core.BlockchainEvent{}
+	transfers := []*core.TokenTransfer{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -621,31 +631,32 @@ func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 
 func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenTransfer,
+		Type:      core.TransactionTypeTokenTransfer,
 	}
 	op1ID := fftypes.NewUUID()
 	op2ID := fftypes.NewUUID()
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusFailed,
+			Status:    core.OpStatusFailed,
 			ID:        op1ID,
-			Type:      fftypes.OpTypeTokenTransfer,
+			Type:      core.OpTypeTokenTransfer,
 			Retry:     op2ID,
 		},
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusPending,
+			Status:    core.OpStatusPending,
 			ID:        op2ID,
-			Type:      fftypes.OpTypeTokenTransfer,
+			Type:      core.OpTypeTokenTransfer,
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	transfers := []*fftypes.TokenTransfer{}
+	events := []*core.BlockchainEvent{}
+	transfers := []*core.TokenTransfer{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -688,23 +699,24 @@ func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
 
 func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenApproval,
+		Type:      core.TransactionTypeTokenApproval,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeTokenApproval,
+			Type:      core.OpTypeTokenApproval,
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
-	approvals := []*fftypes.TokenApproval{}
+	events := []*core.BlockchainEvent{}
+	approvals := []*core.TokenApproval{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -742,23 +754,24 @@ func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
 
 func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeContractInvoke,
+		Type:      core.TransactionTypeContractInvoke,
 	}
-	ops := []*fftypes.Operation{
+	ops := []*core.Operation{
 		{
 			Namespace: "ns1",
-			Status:    fftypes.OpStatusSucceeded,
+			Status:    core.OpStatusSucceeded,
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.OpTypeBlockchainInvoke,
+			Type:      core.OpTypeBlockchainInvoke,
 			Updated:   fftypes.UnixTime(0),
 			Output:    fftypes.JSONObject{"transactionHash": "0x100"},
 		},
 	}
-	events := []*fftypes.BlockchainEvent{}
+	events := []*core.BlockchainEvent{}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(ops, nil, nil)
@@ -788,6 +801,7 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 
 func TestGetTransactionStatusTXError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(nil, fmt.Errorf("pop"))
@@ -800,6 +814,7 @@ func TestGetTransactionStatusTXError(t *testing.T) {
 
 func TestGetTransactionStatusNotFound(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(nil, nil)
@@ -812,9 +827,10 @@ func TestGetTransactionStatusNotFound(t *testing.T) {
 
 func TestGetTransactionStatusOpError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&fftypes.Transaction{
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&core.Transaction{
 		Namespace: "ns1",
 	}, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -827,9 +843,10 @@ func TestGetTransactionStatusOpError(t *testing.T) {
 
 func TestGetTransactionStatusBlockchainEventError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&fftypes.Transaction{
+	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(&core.Transaction{
 		Namespace: "ns1",
 	}, nil)
 	or.mdi.On("GetOperations", mock.Anything, mock.Anything).Return(nil, nil, nil)
@@ -843,11 +860,12 @@ func TestGetTransactionStatusBlockchainEventError(t *testing.T) {
 
 func TestGetTransactionStatusBatchError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeBatchPin,
+		Type:      core.TransactionTypeBatchPin,
 	}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
@@ -863,11 +881,12 @@ func TestGetTransactionStatusBatchError(t *testing.T) {
 
 func TestGetTransactionStatusPoolError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenPool,
+		Type:      core.TransactionTypeTokenPool,
 	}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
@@ -883,11 +902,12 @@ func TestGetTransactionStatusPoolError(t *testing.T) {
 
 func TestGetTransactionStatusTransferError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenTransfer,
+		Type:      core.TransactionTypeTokenTransfer,
 	}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
@@ -903,11 +923,12 @@ func TestGetTransactionStatusTransferError(t *testing.T) {
 
 func TestGetTransactionStatusApprovalError(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
-		Type:      fftypes.TransactionTypeTokenApproval,
+		Type:      core.TransactionTypeTokenApproval,
 	}
 
 	or.mdi.On("GetTransactionByID", mock.Anything, txID).Return(tx, nil)
@@ -923,9 +944,10 @@ func TestGetTransactionStatusApprovalError(t *testing.T) {
 
 func TestGetTransactionStatusUnknownType(t *testing.T) {
 	or := newTestOrchestrator()
+	or.databases["database_0"] = or.mdi
 
 	txID := fftypes.NewUUID()
-	tx := &fftypes.Transaction{
+	tx := &core.Transaction{
 		Namespace: "ns1",
 		Type:      "bad",
 	}

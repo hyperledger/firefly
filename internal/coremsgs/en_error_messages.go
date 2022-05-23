@@ -16,17 +16,20 @@
 
 package coremsgs
 
-import "github.com/hyperledger/firefly/pkg/i18n"
+import (
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"golang.org/x/text/language"
+)
 
-var ffe = i18n.FFE
+var ffe = func(key, translation string, statusHint ...int) i18n.ErrorMessageKey {
+	return i18n.FFE(language.AmericanEnglish, key, translation, statusHint...)
+}
 
 //revive:disable
 var (
 	MsgConfigFailed                 = ffe("FF10101", "Failed to read config")
 	MsgJSONDecodeFailed             = ffe("FF10103", "Failed to decode input JSON")
-	MsgAPIServerStartFailed         = ffe("FF10104", "Unable to start listener on %s: %s")
 	MsgTLSConfigFailed              = ffe("FF10105", "Failed to initialize TLS configuration")
-	MsgInvalidCAFile                = ffe("FF10106", "Invalid CA certificates file")
 	MsgResponseMarshalError         = ffe("FF10107", "Failed to serialize response data", 400)
 	MsgWebsocketClientError         = ffe("FF10108", "Error received from WebSocket client: %s")
 	Msg404NotFound                  = ffe("FF10109", "Not found", 404)
@@ -48,7 +51,7 @@ var (
 	MsgScanFailed                   = ffe("FF10125", "Failed to restore type '%T' into '%T'")
 	MsgUnregisteredBatchType        = ffe("FF10126", "Unregistered batch type '%s'")
 	MsgBatchDispatchTimeout         = ffe("FF10127", "Timed out dispatching work to batch")
-	MsgInitializationNilDepError    = ffe("FF10128", "Initialization error due to unmet dependency")
+	MsgInitializationNilDepError    = ffe("FF10128", "Initialization failed in %s due to unmet dependency")
 	MsgNilResponseNon204            = ffe("FF10129", "No output from API call")
 	MsgInvalidContentType           = ffe("FF10130", "Invalid content type", 415)
 	MsgDataNotFound                 = ffe("FF10133", "Data not found for message %s", 400)
@@ -62,7 +65,7 @@ var (
 	Msg404NoResult                  = ffe("FF10143", "No result found", 404)
 	MsgUnsupportedSQLOpInFilter     = ffe("FF10150", "No SQL mapping implemented for filter operator '%s'", 400)
 	MsgFilterSortDesc               = ffe("FF10154", "Sort field. For multi-field sort use comma separated values (or multiple query values) with '-' prefix for descending")
-	MsgContextCanceled              = ffe("FF10158", "Context cancelled")
+	MsgContextCanceled              = ffe("FF00154", "Context cancelled")
 	MsgDBMigrationFailed            = ffe("FF10163", "Database migration failed")
 	MsgHashMismatch                 = ffe("FF10164", "Hash mismatch")
 	MsgDefaultNamespaceNotFound     = ffe("FF10166", "namespaces.default '%s' must be included in the namespaces.predefined configuration")
@@ -120,7 +123,6 @@ var (
 	MsgInvalidHex                   = ffe("FF10231", "Invalid hex supplied", 400)
 	MsgInvalidWrongLenB32           = ffe("FF00107", "Byte length must be 32 (64 hex characters)", 400)
 	MsgNodeNotFoundInOrg            = ffe("FF10233", "Unable to find any nodes owned by org '%s', or parent orgs", 400)
-	MsgPreInitCheckFailed           = ffe("FF10235", "Pre-initialization has not yet been completed. Add config records with the admin API complete initialization and reset the node")
 	MsgFieldsAfterFile              = ffe("FF10236", "Additional form field sent after file in multi-part form (ignored): '%s'", 400)
 	MsgDXBadResponse                = ffe("FF10237", "Unexpected '%s' in data exchange response: %s")
 	MsgDXBadHash                    = ffe("FF10238", "Unexpected hash returned from data exchange upload. Hash=%s Expected=%s")
@@ -140,7 +142,7 @@ var (
 	MsgRejected                     = ffe("FF10269", "Message with ID '%s' was rejected. Please check the FireFly logs for more information")
 	MsgRequestMustBePrivate         = ffe("FF10271", "For request messages you must specify a group of private recipients", 400)
 	MsgUnknownTokensPlugin          = ffe("FF10272", "Unknown tokens plugin '%s'", 400)
-	MsgMissingTokensPluginConfig    = ffe("FF10273", "Invalid tokens configuration - name and connector are required", 400)
+	MsgMissingTokensPluginConfig    = ffe("FF10273", "Invalid tokens configuration - name and plugin are required", 400)
 	MsgTokensRESTErr                = ffe("FF10274", "Error from tokens service: %s")
 	MsgTokenPoolDuplicate           = ffe("FF10275", "Duplicate token pool: %s")
 	MsgTokenPoolRejected            = ffe("FF10276", "Token pool with ID '%s' was rejected. Please check the FireFly logs for more information")
@@ -230,4 +232,6 @@ var (
 	MsgContractListenerExists       = ffe("FF10383", "A contract listener already exists for this combination of topic + location + event", 409)
 	MsgRouteDescriptionMissing      = ffe("FF10384", "API route description missing for route '%s'")
 	MsgInvalidOutputOption          = ffe("FF10385", "invalid output option '%s'")
+	MsgInvalidPluginConfiguration   = ffe("FF10386", "Invalid %s plugin configuration - name and type are required")
+	MsgReferenceMarkdownMissing     = ffe("FF10387", "Reference markdown file missing: '%s'")
 )

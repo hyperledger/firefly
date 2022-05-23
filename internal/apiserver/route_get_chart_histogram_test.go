@@ -20,8 +20,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -69,7 +70,7 @@ func TestGetChartHistogramSuccess(t *testing.T) {
 	endtime, _ := fftypes.ParseTimeString("1234567891")
 
 	o.On("GetChartHistogram", mock.Anything, "mynamespace", startTime.UnixNano(), endtime.UnixNano(), int64(30), database.CollectionName("test")).
-		Return([]*fftypes.ChartHistogram{}, nil)
+		Return([]*core.ChartHistogram{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

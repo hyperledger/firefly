@@ -20,30 +20,27 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postTokenPool = &oapispec.Route{
-	Name:   "postTokenPool",
-	Path:   "namespaces/{ns}/tokens/pools",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:       "postTokenPool",
+	Path:       "tokens/pools",
+	Method:     http.MethodPost,
+	PathParams: nil,
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostTokenPool,
-	JSONInputValue:  func() interface{} { return &fftypes.TokenPool{} },
-	JSONOutputValue: func() interface{} { return &fftypes.TokenPool{} },
+	JSONInputValue:  func() interface{} { return &core.TokenPool{} },
+	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Assets().CreateTokenPool(r.Ctx, r.PP["ns"], r.Input.(*fftypes.TokenPool), waitConfirm)
+		return getOr(r.Ctx).Assets().CreateTokenPool(r.Ctx, extractNamespace(r.PP), r.Input.(*core.TokenPool), waitConfirm)
 	},
 }

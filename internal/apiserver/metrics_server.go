@@ -17,7 +17,7 @@
 package apiserver
 
 import (
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 	MetricsPath    = "path"
 )
 
-func initMetricsConfPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(MetricsEnabled, true)
-	prefix.AddKnownKey(MetricsPath, "/metrics")
+func initMetricsConfig(config config.Section) {
+	config.AddKnownKey(MetricsEnabled, true)
+	config.AddKnownKey(MetricsPath, "/metrics")
 }

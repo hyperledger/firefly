@@ -26,29 +26,30 @@ import (
 	"testing"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
-	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfPrefix = config.NewPluginConfig("fab_unit_tests")
-var utFabconnectConf = utConfPrefix.SubPrefix(FabconnectConfigKey)
+var utConfig = config.RootSection("fab_unit_tests")
+var utFabconnectConf = utConfig.SubSection(FabconnectConfigKey)
 var signer = "orgMSP::x509::CN=signer001,OU=client::CN=fabric-ca"
 
 func resetConf() {
 	coreconfig.Reset()
 	e := &Fabric{}
-	e.InitPrefix(utConfPrefix)
+	e.InitConfig(utConfig)
 }
 
 func newTestFabric() (*Fabric, func()) {
@@ -75,10 +76,10 @@ func newTestFabric() (*Fabric, func()) {
 	}
 }
 
-func testFFIMethod() *fftypes.FFIMethod {
-	return &fftypes.FFIMethod{
+func testFFIMethod() *core.FFIMethod {
+	return &core.FFIMethod{
 		Name: "sum",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -92,7 +93,7 @@ func testFFIMethod() *fftypes.FFIMethod {
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{
+		Returns: []*core.FFIParam{
 			{
 				Name:   "z",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -105,7 +106,7 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	resetConf()
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -116,7 +117,7 @@ func TestInitMissingChaincode(t *testing.T) {
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*chaincode", err)
 }
 
@@ -128,7 +129,7 @@ func TestInitMissingTopic(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigChaincode, "Firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
@@ -171,15 +172,15 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
-	assert.Equal(t, fftypes.VerifierTypeMSPIdentity, e.VerifierType())
+	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
 	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
-	assert.True(t, e.Capabilities().GlobalSequencer)
+	assert.NotNil(t, e.Capabilities())
 
 	err = e.Start()
 	assert.NoError(t, err)
@@ -210,7 +211,7 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF00149", err)
 
 }
@@ -251,7 +252,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.initInfo.stream.ID)
@@ -281,7 +282,7 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -310,7 +311,7 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -341,7 +342,7 @@ func TestSubQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -374,7 +375,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfPrefix, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 
 	assert.Regexp(t, "FF10284", err)
 	assert.Regexp(t, "pop", err)
@@ -411,7 +412,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.NoError(t, err)
 
@@ -446,7 +447,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.NoError(t, err)
 
@@ -474,7 +475,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -504,7 +505,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 			"error": "Invalid",
 		}))
 
-	err := e.SubmitBatchPin(context.Background(), nil, nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
 
 	assert.Regexp(t, "FF10284.*Invalid", err)
 
@@ -633,8 +634,8 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	expectedSigningKeyRef := &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeMSPIdentity,
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeMSPIdentity,
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
@@ -682,8 +683,8 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	expectedSigningKeyRef := &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeMSPIdentity,
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeMSPIdentity,
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
@@ -731,8 +732,8 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
 	}
 
-	expectedSigningKeyRef := &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeMSPIdentity,
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeMSPIdentity,
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
@@ -961,7 +962,7 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 	txsu := em.On("BlockchainOpUpdate",
 		e,
 		operationID,
-		fftypes.OpStatusFailed,
+		core.OpStatusFailed,
 		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		mock.Anything).Return(fmt.Errorf("Shutdown"))
@@ -1006,7 +1007,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	em.On("BlockchainOpUpdate",
 		e,
 		operationID,
-		fftypes.OpStatusSucceeded,
+		core.OpStatusSucceeded,
 		"ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
 		"",
 		mock.Anything).Return(nil)
@@ -1092,7 +1093,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 	em.On("BlockchainOpUpdate",
 		e,
 		operationID,
-		fftypes.OpStatusFailed,
+		core.OpStatusFailed,
 		"ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
 		"",
 		mock.Anything).Return(nil)
@@ -1119,15 +1120,15 @@ func TestAddSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
 			}.String()),
-			Event: &fftypes.FFISerializedEvent{},
-			Options: &fftypes.ContractListenerOptions{
-				FirstEvent: string(fftypes.SubOptsFirstEventOldest),
+			Event: &core.FFISerializedEvent{},
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventOldest),
 			},
 		},
 	}
@@ -1158,10 +1159,10 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(""),
-			Event:    &fftypes.FFISerializedEvent{},
+			Event:    &core.FFISerializedEvent{},
 		},
 	}
 
@@ -1183,15 +1184,15 @@ func TestAddSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListenerInput{
-		ContractListener: fftypes.ContractListener{
+	sub := &core.ContractListenerInput{
+		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"channel":   "firefly",
 				"chaincode": "mycode",
 			}.String()),
-			Event: &fftypes.FFISerializedEvent{},
-			Options: &fftypes.ContractListenerOptions{
-				FirstEvent: string(fftypes.SubOptsFirstEventNewest),
+			Event: &core.FFISerializedEvent{},
+			Options: &core.ContractListenerOptions{
+				FirstEvent: string(core.SubOptsFirstEventNewest),
 			},
 		},
 	}
@@ -1218,7 +1219,7 @@ func TestDeleteSubscription(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		BackendID: "sb-1",
 	}
 
@@ -1243,7 +1244,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 		client: e.client,
 	}
 
-	sub := &fftypes.ContractListener{
+	sub := &core.ContractListener{
 		BackendID: "sb-1",
 	}
 
@@ -1424,15 +1425,15 @@ func TestInvokeContractBadSchema(t *testing.T) {
 		Channel:   "firefly",
 		Chaincode: "simplestorage",
 	}
-	method := &fftypes.FFIMethod{
+	method := &core.FFIMethod{
 		Name: "sum",
-		Params: []*fftypes.FFIParam{
+		Params: []*core.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{not json]`),
 			},
 		},
-		Returns: []*fftypes.FFIParam{},
+		Returns: []*core.FFIParam{},
 	}
 	params := map[string]interface{}{
 		"x":           float64(1),
@@ -1669,7 +1670,7 @@ func TestGetFFIParamValidator(t *testing.T) {
 
 func TestGenerateFFI(t *testing.T) {
 	e, _ := newTestFabric()
-	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -1680,6 +1681,6 @@ func TestGenerateFFI(t *testing.T) {
 
 func TestGenerateEventSignature(t *testing.T) {
 	e, _ := newTestFabric()
-	signature := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
+	signature := e.GenerateEventSignature(context.Background(), &core.FFIEventDefinition{Name: "Changed"})
 	assert.Equal(t, "Changed", signature)
 }

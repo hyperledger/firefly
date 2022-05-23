@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,12 +37,12 @@ func TestOperationE2EWithDB(t *testing.T) {
 
 	// Create a new operation entry
 	operationID := fftypes.NewUUID()
-	operation := &fftypes.Operation{
+	operation := &core.Operation{
 		ID:          operationID,
 		Namespace:   "ns1",
-		Type:        fftypes.OpTypeBlockchainPinBatch,
+		Type:        core.OpTypeBlockchainPinBatch,
 		Transaction: fftypes.NewUUID(),
-		Status:      fftypes.OpStatusFailed,
+		Status:      core.OpStatusFailed,
 		Plugin:      "ethereum",
 		Error:       "pop",
 		Input:       fftypes.JSONObject{"some": "input-info"},
@@ -49,8 +50,8 @@ func TestOperationE2EWithDB(t *testing.T) {
 		Created:     fftypes.Now(),
 		Updated:     fftypes.Now(),
 	}
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeCreated, "ns1", operationID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, fftypes.ChangeEventTypeUpdated, "ns1", operationID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", operationID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionOperations, core.ChangeEventTypeUpdated, "ns1", operationID).Return()
 	hookCalled := false
 	err := s.InsertOperation(ctx, operation, func() {
 		hookCalled = true
@@ -95,13 +96,13 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(operations))
 
 	// Update
-	err = s.ResolveOperation(ctx, operation.Namespace, operation.ID, fftypes.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
+	err = s.ResolveOperation(ctx, operation.Namespace, operation.ID, core.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
 	assert.NoError(t, err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", operation.ID.String()),
-		fb.Eq("status", fftypes.OpStatusSucceeded),
+		fb.Eq("status", core.OpStatusSucceeded),
 		fb.Eq("error", ""),
 	)
 	operations, _, err = s.GetOperations(ctx, filter)
@@ -114,7 +115,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 func TestInsertOperationFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertOperation(context.Background(), &fftypes.Operation{})
+	err := s.InsertOperation(context.Background(), &core.Operation{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -125,7 +126,7 @@ func TestInsertOperationFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	operationID := fftypes.NewUUID()
-	err := s.InsertOperation(context.Background(), &fftypes.Operation{ID: operationID})
+	err := s.InsertOperation(context.Background(), &core.Operation{ID: operationID})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -136,7 +137,7 @@ func TestInsertOperationFailCommit(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertOperation(context.Background(), &fftypes.Operation{ID: operationID})
+	err := s.InsertOperation(context.Background(), &core.Operation{ID: operationID})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

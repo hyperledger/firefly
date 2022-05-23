@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -75,17 +76,17 @@ const oldNodeExample = `
   }
 `
 
-func testDeprecatedRootNode(t *testing.T) (*fftypes.DeprecatedNode, *fftypes.Message, *fftypes.Data) {
+func testDeprecatedRootNode(t *testing.T) (*core.DeprecatedNode, *core.Message, *core.Data) {
 
-	var msgInOut fftypes.MessageInOut
+	var msgInOut core.MessageInOut
 	err := json.Unmarshal([]byte(oldNodeExample), &msgInOut)
 	assert.NoError(t, err)
 
-	var node fftypes.DeprecatedNode
+	var node core.DeprecatedNode
 	err = json.Unmarshal(msgInOut.InlineData[0].Value.Bytes(), &node)
 	assert.NoError(t, err)
 
-	return &node, &msgInOut.Message, &fftypes.Data{
+	return &node, &msgInOut.Message, &core.Data{
 		ID:        msgInOut.InlineData[0].ID,
 		Validator: msgInOut.InlineData[0].Validator,
 		Namespace: msgInOut.Header.Namespace,
@@ -95,41 +96,41 @@ func testDeprecatedRootNode(t *testing.T) (*fftypes.DeprecatedNode, *fftypes.Mes
 }
 
 func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	node, msg, data := testDeprecatedRootNode(t)
 	parent, _, _ := testDeprecatedRootOrg(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(parent.Migrated().Identity, nil)
 	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(parent.Migrated().Identity, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, fftypes.IdentityTypeNode, fftypes.SystemNamespace, node.Name).Return(nil, nil)
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, core.SystemNamespace, node.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, node.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeFFDXPeerID, fftypes.SystemNamespace, "member_0").Return(nil, nil)
-	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, core.SystemNamespace, "member_0").Return(nil, nil)
+	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *fftypes.Verifier) bool {
-		assert.Equal(t, fftypes.VerifierTypeFFDXPeerID, verifier.Type)
+	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+		assert.Equal(t, core.VerifierTypeFFDXPeerID, verifier.Type)
 		assert.Equal(t, "member_0", verifier.Value)
 		assert.Equal(t, *node.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypeIdentityConfirmed
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
 	mdx := dh.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("AddPeer", ctx, node.DX.Endpoint).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, fftypes.DataArray{data}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, msg, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -145,10 +146,10 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 }
 
 func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
-	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &fftypes.Message{}, fftypes.DataArray{})
+	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, &core.Message{}, core.DataArray{})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -156,18 +157,18 @@ func TestHandleDeprecatedNodeDefinitionBadData(t *testing.T) {
 }
 
 func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	node, msg, data := testDeprecatedRootNode(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, fftypes.DataArray{data})
+	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, core.DataArray{data})
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -177,18 +178,18 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 }
 
 func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
 
 	node, msg, data := testDeprecatedRootNode(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []fftypes.IdentityType{fftypes.IdentityTypeOrg}, fftypes.SystemNamespace, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, nil)
 
-	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, fftypes.DataArray{data})
+	action, err := dh.handleDeprecatedNodeBroadcast(ctx, bs, msg, core.DataArray{data})
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

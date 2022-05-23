@@ -25,8 +25,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
-	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 
 	// Import pq driver
@@ -37,9 +37,9 @@ type Postgres struct {
 	sqlcommon.SQLCommon
 }
 
-func (psql *Postgres) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+func (psql *Postgres) Init(ctx context.Context, config config.Section, callbacks database.Callbacks) error {
 	capabilities := &database.Capabilities{}
-	return psql.SQLCommon.Init(ctx, psql, prefix, callbacks, capabilities)
+	return psql.SQLCommon.Init(ctx, psql, config, callbacks, capabilities)
 }
 
 func (psql *Postgres) Name() string {

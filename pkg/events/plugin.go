@@ -19,39 +19,36 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 // Plugin is the interface implemented by event interface
 // - Delivery to generic application code - WebSockets, Webhooks, AMQP etc.
 // - Integration of frameworks for coordination of multi-party compute - Hyperledger Avalon,  etc.
 type Plugin interface {
-	fftypes.Named
+	core.Named
 
-	// InitPrefix initializes the set of configuration options that are valid, with defaults. Called on all plugins.
-	InitPrefix(prefix config.Prefix)
+	// InitConfig initializes the set of configuration options that are valid, with defaults. Called on all plugins.
+	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
 	// Returns the supported featureset of the interface
-	Init(ctx context.Context, prefix config.Prefix, callbacks Callbacks) error
+	Init(ctx context.Context, config config.Section, callbacks Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
 
-	// GetOptionsSchema returns a JSON schema for the transport specific options
-	GetOptionsSchema(context.Context) string
-
 	// ValidateOptions verifies a set of input options, prior to storage of a new subscription
 	// The plugin can modify the core subscription options, such as overriding whether data is delivered.
-	ValidateOptions(options *fftypes.SubscriptionOptions) error
+	ValidateOptions(options *core.SubscriptionOptions) error
 
 	// DeliveryRequest requests delivery of work on a connection, which must later be responded to
 	// Data will only be supplied as non-nil if the subscription is set to include data
-	DeliveryRequest(connID string, sub *fftypes.Subscription, event *fftypes.EventDelivery, data fftypes.DataArray) error
+	DeliveryRequest(connID string, sub *core.Subscription, event *core.EventDelivery, data core.DataArray) error
 }
 
-type SubscriptionMatcher func(fftypes.SubscriptionRef) bool
+type SubscriptionMatcher func(core.SubscriptionRef) bool
 
 type Callbacks interface {
 
@@ -63,7 +60,7 @@ type Callbacks interface {
 	RegisterConnection(connID string, matcher SubscriptionMatcher) error
 
 	// EphemeralSubscription creates an ephemeral (non-durable) subscription, and associates it with a connection
-	EphemeralSubscription(connID, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error
+	EphemeralSubscription(connID, namespace string, filter *core.SubscriptionFilter, options *core.SubscriptionOptions) error
 
 	// ConnectionClosed is a notification that a connection has closed, and all dispatchers should be re-allocated.
 	// Note the plugin must not crash if it receives PublishEvent calls on the connID after the ConnectionClosed event is fired
@@ -75,7 +72,7 @@ type Callbacks interface {
 	//   * If a message is included in the response, then that will be automatically sent with the correct CID
 	// - Reject it: This resets the associated subscription back to the last committed offset
 	//   * Note all message since the last committed offet will be redelivered, so additional messages to be redelivered if streaming ahead
-	DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse)
+	DeliveryResponse(connID string, inflight *core.EventDeliveryResponse)
 }
 
 type Capabilities struct{}

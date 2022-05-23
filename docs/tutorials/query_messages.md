@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Explore messages
-parent: Tutorials
+parent: pages.tutorials
 nav_order: 5
 ---
 
@@ -29,7 +29,7 @@ This builds on the APIs to query and filter messages, described below
 ## Additional info
 
 - Reference: [API Query Syntax](/firefly/reference/api_query_syntax.html)
-- Swagger: [GET /api/v1/namespaces/{ns}/messages](/firefly/swagger/swagger.html#/default/getMsgs)
+- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/getMsgs" data-proofer-ignore>GET /api/v1/namespaces/{ns}/messages</a>
 
 ### Example 1: Query confirmed messages
 

@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/events"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,17 +36,16 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	cbs := &eventsmocks.Callbacks{}
 	rc := cbs.On("RegisterConnection", mock.Anything, mock.Anything).Return(nil)
 	rc.RunFn = func(a mock.Arguments) {
-		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(fftypes.SubscriptionRef{}))
+		assert.Equal(t, true, a[1].(events.SubscriptionMatcher)(core.SubscriptionRef{}))
 	}
 	se = &Events{}
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	svrPrefix := config.NewPluginConfig("ut.events")
-	se.InitPrefix(svrPrefix)
-	se.Init(ctx, svrPrefix, cbs)
+	config := config.RootSection("ut.events")
+	se.InitConfig(config)
+	se.Init(ctx, config, cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
-	assert.NotNil(t, se.GetOptionsSchema(se.ctx))
-	assert.Nil(t, se.ValidateOptions(&fftypes.SubscriptionOptions{}))
+	assert.Nil(t, se.ValidateOptions(&core.SubscriptionOptions{}))
 	return se, cancelCtx
 }
 
@@ -60,24 +59,24 @@ func TestDeliveryRequestOk(t *testing.T) {
 	cbs.On("DeliveryResponse", se.connID, mock.Anything).Return(nil)
 
 	called := 0
-	err := se.AddListener("ns1", func(event *fftypes.EventDelivery) error {
+	err := se.AddListener("ns1", func(event *core.EventDelivery) error {
 		called++
 		return nil
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	err = se.DeliveryRequest(se.connID, &core.Subscription{}, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				Namespace: "ns1",
 			},
 		},
 	}, nil)
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, &fftypes.Subscription{}, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	err = se.DeliveryRequest(se.connID, &core.Subscription{}, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				Namespace: "ns2",
 			},
 		},
@@ -97,14 +96,14 @@ func TestDeliveryRequestFail(t *testing.T) {
 	cbs := se.callbacks.(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 
-	err := se.AddListener("ns1", func(event *fftypes.EventDelivery) error {
+	err := se.AddListener("ns1", func(event *core.EventDelivery) error {
 		return fmt.Errorf("pop")
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(mock.Anything, &fftypes.Subscription{}, &fftypes.EventDelivery{
-		EnrichedEvent: fftypes.EnrichedEvent{
-			Event: fftypes.Event{
+	err = se.DeliveryRequest(mock.Anything, &core.Subscription{}, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{
 				Namespace: "ns1",
 			},
 		},
@@ -121,7 +120,7 @@ func TestAddListenerFail(t *testing.T) {
 	cbs := se.callbacks.(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := se.AddListener("ns1", func(event *fftypes.EventDelivery) error { return nil })
+	err := se.AddListener("ns1", func(event *core.EventDelivery) error { return nil })
 	assert.EqualError(t, err, "pop")
 
 }

@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Example Transaction Flow
-parent: Architecture
+parent: pages.architecture
 nav_order: 3
 ---
 

@@ -16,7 +16,7 @@
 
 package websockets
 
-import "github.com/hyperledger/firefly/pkg/config"
+import "github.com/hyperledger/firefly-common/pkg/config"
 
 const (
 	bufferSizeDefault = "16Kb"
@@ -29,8 +29,8 @@ const (
 	WriteBufferSize = "writeBufferSize"
 )
 
-func (ws *WebSockets) InitPrefix(prefix config.Prefix) {
-	prefix.AddKnownKey(ReadBufferSize, bufferSizeDefault)
-	prefix.AddKnownKey(WriteBufferSize, bufferSizeDefault)
+func (ws *WebSockets) InitConfig(config config.Section) {
+	config.AddKnownKey(ReadBufferSize, bufferSizeDefault)
+	config.AddKnownKey(WriteBufferSize, bufferSizeDefault)
 
 }

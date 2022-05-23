@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -62,7 +63,7 @@ var (
 
 const tokenapprovalTable = "tokenapproval"
 
-func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.TokenApproval) (err error) {
+func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *core.TokenApproval) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -72,8 +73,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 	rows, _, err := s.queryTx(ctx, tokenapprovalTable, tx,
 		sq.Select("seq").
 			From(tokenapprovalTable).
-			Where(sq.Eq{"subject": approval.Subject}).
-			Where(sq.Eq{"pool_id": approval.Pool}),
+			Where(sq.Eq{"protocol_id": approval.ProtocolID}),
 	)
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 		if _, err = s.updateTx(ctx, tokenapprovalTable, tx,
 			sq.Update(tokenapprovalTable).
 				Set("local_id", approval.LocalID).
-				Set("protocol_id", approval.ProtocolID).
+				Set("subject", approval.Subject).
 				Set("active", approval.Active).
 				Set("key", approval.Key).
 				Set("operator_key", approval.Operator).
@@ -97,10 +97,9 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 				Set("tx_type", approval.TX.Type).
 				Set("tx_id", approval.TX.ID).
 				Set("blockchain_event", approval.BlockchainEvent).
-				Where(sq.Eq{"subject": approval.Subject}).
-				Where(sq.Eq{"pool_id": approval.Pool}),
+				Where(sq.Eq{"protocol_id": approval.ProtocolID}),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, core.ChangeEventTypeUpdated, approval.Namespace, approval.LocalID)
 			},
 		); err != nil {
 			return err
@@ -128,7 +127,7 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 					approval.Created,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, fftypes.ChangeEventTypeCreated, approval.Namespace, approval.LocalID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionTokenApprovals, core.ChangeEventTypeCreated, approval.Namespace, approval.LocalID)
 			},
 		); err != nil {
 			return err
@@ -137,8 +136,8 @@ func (s *SQLCommon) UpsertTokenApproval(ctx context.Context, approval *fftypes.T
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) tokenApprovalResult(ctx context.Context, row *sql.Rows) (*fftypes.TokenApproval, error) {
-	approval := fftypes.TokenApproval{}
+func (s *SQLCommon) tokenApprovalResult(ctx context.Context, row *sql.Rows) (*core.TokenApproval, error) {
+	approval := core.TokenApproval{}
 	err := row.Scan(
 		&approval.LocalID,
 		&approval.ProtocolID,
@@ -162,7 +161,7 @@ func (s *SQLCommon) tokenApprovalResult(ctx context.Context, row *sql.Rows) (*ff
 	return &approval, nil
 }
 
-func (s *SQLCommon) getTokenApprovalPred(ctx context.Context, desc string, pred interface{}) (*fftypes.TokenApproval, error) {
+func (s *SQLCommon) getTokenApprovalPred(ctx context.Context, desc string, pred interface{}) (*core.TokenApproval, error) {
 	rows, _, err := s.query(ctx, tokenapprovalTable,
 		sq.Select(tokenApprovalColumns...).
 			From(tokenapprovalTable).
@@ -186,18 +185,18 @@ func (s *SQLCommon) getTokenApprovalPred(ctx context.Context, desc string, pred 
 	return approval, nil
 }
 
-func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*fftypes.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, localID.String(), sq.Eq{"local_id": localID})
 }
 
-func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, poolID *fftypes.UUID, protocolID string) (*fftypes.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, protocolID, sq.And{
-		sq.Eq{"pool_id": poolID},
+		sq.Eq{"connector": connector},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }
 
-func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filter) (approvals []*fftypes.TokenApproval, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filter) (approvals []*core.TokenApproval, fr *database.FilterResult, err error) {
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenApprovalColumns...).From(tokenapprovalTable), filter, tokenApprovalFilterFieldMap, []interface{}{"seq"})
 	if err != nil {
 		return nil, nil, err
@@ -209,7 +208,7 @@ func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filte
 	}
 	defer rows.Close()
 
-	approvals = []*fftypes.TokenApproval{}
+	approvals = []*core.TokenApproval{}
 	for rows.Next() {
 		d, err := s.tokenApprovalResult(ctx, rows)
 		if err != nil {

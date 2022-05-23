@@ -22,19 +22,20 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -43,7 +44,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -53,11 +54,11 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
@@ -68,11 +69,11 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -81,7 +82,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -91,11 +92,11 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
@@ -106,10 +107,10 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
-		Validator: fftypes.ValidatorTypeJSON,
+	dt := &core.Datatype{
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -118,26 +119,26 @@ func TestHandleDefinitionBroadcastDatatypeMissingID(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -146,17 +147,17 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -165,11 +166,11 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -177,22 +178,22 @@ func TestHandleDefinitionBroadcastMissingData(t *testing.T) {
 	}
 	dt.Hash = dt.Value.Hash()
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{}, fftypes.NewUUID())
+	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
 }
 
 func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -201,7 +202,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -209,12 +210,12 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
@@ -224,11 +225,11 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -237,7 +238,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -246,11 +247,11 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.EqualError(t, err, "pop")
 
@@ -260,11 +261,11 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 }
 
 func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
-	dh, bs := newTestDefinitionHandlers(t)
+	dh, bs := newTestDefinitionHandler(t)
 
-	dt := &fftypes.Datatype{
+	dt := &core.Datatype{
 		ID:        fftypes.NewUUID(),
-		Validator: fftypes.ValidatorTypeJSON,
+		Validator: core.ValidatorTypeJSON,
 		Namespace: "ns1",
 		Name:      "name1",
 		Version:   "ver1",
@@ -273,7 +274,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	dt.Hash = dt.Value.Hash()
 	b, err := json.Marshal(&dt)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -281,11 +282,11 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineDatatype,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineDatatype,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

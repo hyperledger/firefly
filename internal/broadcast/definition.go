@@ -20,18 +20,19 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def fftypes.Definition, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
-	return bm.BroadcastDefinition(ctx, ns, def, &fftypes.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
+func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+	return bm.BroadcastDefinition(ctx, ns, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	err = bm.identity.ResolveInputSigningIdentity(ctx, ns, signingIdentity)
 	if err != nil {
@@ -43,7 +44,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 
 // BroadcastIdentityClaim is a special form of BroadcastDefinitionAsNode where the signing identity does not need to have been pre-registered
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns string, def *fftypes.IdentityClaim, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns string, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
@@ -53,11 +54,11 @@ func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns strin
 	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def fftypes.Definition, signingIdentity *fftypes.SignerRef, tag string, waitConfirm bool) (*fftypes.Message, error) {
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
-	d := &fftypes.Data{
-		Validator: fftypes.ValidatorTypeSystemDefinition,
+	d := &core.Data{
+		Validator: core.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
 		Namespace: ns,
 		Created:   fftypes.Now(),
@@ -73,23 +74,23 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 
 	// Create a broadcast message referring to the data
 	newMsg := &data.NewMessage{
-		Message: &fftypes.MessageInOut{
-			Message: fftypes.Message{
-				Header: fftypes.MessageHeader{
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
 					Namespace: ns,
-					Type:      fftypes.MessageTypeDefinition,
+					Type:      core.MessageTypeDefinition,
 					SignerRef: *signingIdentity,
-					Topics:    fftypes.FFStringArray{def.Topic()},
+					Topics:    core.FFStringArray{def.Topic()},
 					Tag:       tag,
-					TxType:    fftypes.TransactionTypeBatchPin,
+					TxType:    core.TransactionTypeBatchPin,
 				},
-				Data: fftypes.DataRefs{
+				Data: core.DataRefs{
 					{ID: d.ID, Hash: d.Hash, ValueSize: d.ValueSize},
 				},
 			},
 		},
-		NewData: fftypes.DataArray{d},
-		AllData: fftypes.DataArray{d},
+		NewData: core.DataArray{d},
+		AllData: core.DataArray{d},
 	}
 
 	// Broadcast the message

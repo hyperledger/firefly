@@ -3,6 +3,8 @@ debug:
   port: 0
 http:
   port: 0
+metrics:
+  port: 0
 node:
   identity: 0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635
 blockchain:

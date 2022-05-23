@@ -3,7 +3,7 @@
 package metricsmocks
 
 import (
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -74,12 +74,12 @@ func (_m *Manager) IsMetricsEnabled() bool {
 }
 
 // MessageConfirmed provides a mock function with given fields: msg, eventType
-func (_m *Manager) MessageConfirmed(msg *fftypes.Message, eventType fftypes.FFEnum) {
+func (_m *Manager) MessageConfirmed(msg *core.Message, eventType core.FFEnum) {
 	_m.Called(msg, eventType)
 }
 
 // MessageSubmitted provides a mock function with given fields: msg
-func (_m *Manager) MessageSubmitted(msg *fftypes.Message) {
+func (_m *Manager) MessageSubmitted(msg *core.Message) {
 	_m.Called(msg)
 }
 
@@ -98,11 +98,11 @@ func (_m *Manager) Start() error {
 }
 
 // TransferConfirmed provides a mock function with given fields: transfer
-func (_m *Manager) TransferConfirmed(transfer *fftypes.TokenTransfer) {
+func (_m *Manager) TransferConfirmed(transfer *core.TokenTransfer) {
 	_m.Called(transfer)
 }
 
 // TransferSubmitted provides a mock function with given fields: transfer
-func (_m *Manager) TransferSubmitted(transfer *fftypes.TokenTransfer) {
+func (_m *Manager) TransferSubmitted(transfer *core.TokenTransfer) {
 	_m.Called(transfer)
 }

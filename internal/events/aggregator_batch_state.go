@@ -22,23 +22,24 @@ import (
 	"database/sql/driver"
 	"encoding/binary"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/definitions"
+	"github.com/hyperledger/firefly/internal/privatemessaging"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
 func newBatchState(ag *aggregator) *batchState {
 	return &batchState{
 		database:           ag.database,
-		definitions:        ag.definitions,
+		messaging:          ag.messaging,
 		data:               ag.data,
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
 		dispatchedMessages: make([]*dispatchedMessage, 0),
-		pendingConfirms:    make(map[fftypes.UUID]*fftypes.Message),
+		pendingConfirms:    make(map[fftypes.UUID]*core.Message),
 
 		PreFinalize: make([]func(ctx context.Context) error, 0),
 		Finalize:    make([]func(ctx context.Context) error, 0),
@@ -52,14 +53,14 @@ func newBatchState(ag *aggregator) *batchState {
 type nextPinGroupState struct {
 	groupID           *fftypes.Bytes32
 	topic             string
-	nextPins          []*fftypes.NextPin
+	nextPins          []*core.NextPin
 	new               bool
 	identitiesChanged map[string]bool
 }
 
 type nextPinState struct {
 	nextPinGroup *nextPinGroupState
-	nextPin      *fftypes.NextPin
+	nextPin      *core.NextPin
 }
 
 // contextState tracks the unmasked (broadcast) pins related to a particular context
@@ -75,8 +76,8 @@ type dispatchedMessage struct {
 	msgID         *fftypes.UUID
 	firstPinIndex int64
 	topicCount    int
-	msgPins       fftypes.FFStringArray
-	newState      fftypes.MessageState
+	msgPins       core.FFStringArray
+	newState      core.MessageState
 }
 
 // batchState is the object that tracks the in-memory state that builds up while processing a batch of pins,
@@ -95,12 +96,12 @@ type dispatchedMessage struct {
 //              are no pre-finalize handlers registered.
 type batchState struct {
 	database           database.Plugin
-	definitions        definitions.DefinitionHandlers
+	messaging          privatemessaging.Manager
 	data               data.Manager
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
-	pendingConfirms    map[fftypes.UUID]*fftypes.Message
+	pendingConfirms    map[fftypes.UUID]*core.Message
 	confirmedDIDClaims []string
 
 	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
@@ -128,7 +129,7 @@ func (bs *batchState) AddFinalize(action func(ctx context.Context) error) {
 	}
 }
 
-func (bs *batchState) GetPendingConfirm() map[fftypes.UUID]*fftypes.Message {
+func (bs *batchState) GetPendingConfirm() map[fftypes.UUID]*core.Message {
 	return bs.pendingConfirms
 }
 
@@ -160,7 +161,7 @@ func (bs *batchState) queueRewinds(ag *aggregator) {
 	}
 }
 
-func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *fftypes.Message, topic string, firstMsgPinSequence int64) (bool, error) {
+func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *core.Message, topic string, firstMsgPinSequence int64) (bool, error) {
 
 	ucs, found := bs.unmaskedContexts[*contextUnmasked]
 	if !found {
@@ -192,7 +193,7 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 
 }
 
-func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
+func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *core.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
@@ -215,7 +216,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 
 	// This message must be the next hash for the author
 	l.Debugf("Group=%s Topic='%s' Sequence=%d Pin=%s", msg.Header.Group, topic, firstMsgPinSequence, pin)
-	var nextPin *fftypes.NextPin
+	var nextPin *core.NextPin
 	for _, np := range npg.nextPins {
 		if *np.Hash == *pin {
 			nextPin = np
@@ -237,7 +238,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *fftypes.
 	}, err
 }
 
-func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftypes.UUID, msg *fftypes.Message, msgBaseIndex int64, newState fftypes.MessageState) {
+func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftypes.UUID, msg *core.Message, msgBaseIndex int64, newState core.MessageState) {
 	bs.dispatchedMessages = append(bs.dispatchedMessages, &dispatchedMessage{
 		batchID:       batchID,
 		msgID:         msg.Header.ID,
@@ -286,7 +287,7 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 	// Note that this might include pins not in the batch we read from the database, as the page size
 	// cannot be guaranteed to overlap with the set of indexes of a message within a batch.
 	pinsDispatched := make(map[fftypes.UUID][]driver.Value)
-	msgStateUpdates := make(map[fftypes.MessageState][]*fftypes.UUID)
+	msgStateUpdates := make(map[core.MessageState][]*fftypes.UUID)
 	for _, dm := range bs.dispatchedMessages {
 		batchDispatched := pinsDispatched[*dm.batchID]
 		l.Debugf("Marking message dispatched batch=%s msg=%s firstIndex=%d topics=%d pins=%s", dm.batchID, dm.msgID, dm.firstPinIndex, dm.topicCount, dm.msgPins)
@@ -343,7 +344,7 @@ func (nps *nextPinState) IncrementNextPin(ctx context.Context) {
 		if np.Hash.Equals(existingPin.Hash) {
 			// We are spending this one, replace it in the list
 			newNonce := np.Nonce + 1
-			newNextPin := &fftypes.NextPin{
+			newNextPin := &core.NextPin{
 				Context:  np.Context,
 				Identity: np.Identity,
 				Nonce:    newNonce,
@@ -396,12 +397,12 @@ func (bs *batchState) stateForMaskedContext(ctx context.Context, groupID *fftype
 
 }
 
-func (bs *batchState) attemptContextInit(ctx context.Context, msg *fftypes.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*nextPinState, error) {
+func (bs *batchState) attemptContextInit(ctx context.Context, msg *core.Message, topic string, pinnedSequence int64, contextUnmasked, pin *fftypes.Bytes32) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// It might be the system topic/context initializing the group
 	// - This performs the actual database updates in-line, as it is idempotent
-	group, err := bs.definitions.ResolveInitGroup(ctx, msg)
+	group, err := bs.messaging.ResolveInitGroup(ctx, msg)
 	if err != nil || group == nil {
 		return nil, err
 	}
@@ -411,15 +412,15 @@ func (bs *batchState) attemptContextInit(ctx context.Context, msg *fftypes.Messa
 		topic:             topic,
 		new:               true,
 		identitiesChanged: make(map[string]bool),
-		nextPins:          make([]*fftypes.NextPin, len(group.Members)),
+		nextPins:          make([]*core.NextPin, len(group.Members)),
 	}
 
 	// Find the list of zerohashes for this context, and match this pin to one of them
 	zeroHashes := make([]driver.Value, len(group.Members))
-	var nextPin *fftypes.NextPin
+	var nextPin *core.NextPin
 	for i, member := range group.Members {
 		zeroHash := npg.calcPinHash(member.Identity, 0)
-		np := &fftypes.NextPin{
+		np := &core.NextPin{
 			Context:  contextUnmasked,
 			Identity: member.Identity,
 			Hash:     zeroHash,

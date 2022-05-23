@@ -25,15 +25,16 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
-	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
@@ -55,6 +56,7 @@ type Ethereum struct {
 	capabilities *blockchain.Capabilities
 	callbacks    blockchain.Callbacks
 	client       *resty.Client
+	fftmClient   *resty.Client
 	streams      *streamManager
 	initInfo     struct {
 		stream *eventStream
@@ -150,17 +152,19 @@ func (e *Ethereum) Name() string {
 	return "ethereum"
 }
 
-func (e *Ethereum) VerifierType() fftypes.VerifierType {
-	return fftypes.VerifierTypeEthAddress
+func (e *Ethereum) VerifierType() core.VerifierType {
+	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
-	ethconnectConf := prefix.SubPrefix(EthconnectConfigKey)
-	addressResolverConf := prefix.SubPrefix(AddressResolverConfigKey)
+func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+	ethconnectConf := config.SubSection(EthconnectConfigKey)
+	addressResolverConf := config.SubSection(AddressResolverConfigKey)
+	fftmConf := config.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
 	e.metrics = metrics
+	e.capabilities = &blockchain.Capabilities{}
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -173,8 +177,9 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	e.client = ffresty.New(e.ctx, ethconnectConf)
-	e.capabilities = &blockchain.Capabilities{
-		GlobalSequencer: true,
+
+	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
+		e.fftmClient = ffresty.New(e.ctx, fftmConf)
 	}
 
 	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
@@ -206,7 +211,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
-	wsConfig := wsclient.GenerateConfigFromPrefix(ethconnectConf)
+	wsConfig := wsclient.GenerateConfig(ethconnectConf)
 
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
@@ -218,7 +223,8 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 	}
 
 	e.streams = &streamManager{
-		client: e.client,
+		client:                       e.client,
+		fireFlySubscriptionFromBlock: ethconnectConf.GetString(EthconnectConfigFromBlock),
 	}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
@@ -226,7 +232,7 @@ func (e *Ethereum) Init(ctx context.Context, prefix config.Prefix, callbacks blo
 		return err
 	}
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.initInfo.stream.ID, e.topic)
-	if e.initInfo.sub, err = e.streams.ensureSubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
+	if e.initInfo.sub, err = e.streams.ensureFireFlySubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
 		return err
 	}
 
@@ -352,8 +358,8 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, &fftypes.VerifierRef{
-		Type:  fftypes.VerifierTypeEthAddress,
+	return e.callbacks.BatchPinComplete(batch, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
 		Value: authorAddress,
 	})
 }
@@ -410,9 +416,9 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
 		return
 	}
-	updateType := fftypes.OpStatusSucceeded
+	updateType := core.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
-		updateType = fftypes.OpStatusFailed
+		updateType = core.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
 	e.callbacks.BlockchainOpUpdate(e, operationID, updateType, txHash, message, reply)
@@ -544,8 +550,12 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 		Method: abi,
 		Params: input,
 	}
+	client := e.fftmClient
+	if client == nil {
+		client = e.client
+	}
 	var resErr ethError
-	res, err := e.client.R().
+	res, err := client.R().
 		SetContext(ctx).
 		SetBody(body).
 		SetError(&resErr).
@@ -574,7 +584,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 		Post("/")
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -592,7 +602,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) error {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -604,7 +614,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
 }
 
-func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error) {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -651,7 +661,7 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 	return &ethLocation, nil
 }
 
-func (e *Ethereum) AddContractListener(ctx context.Context, listener *fftypes.ContractListenerInput) error {
+func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
 	location, err := parseContractLocation(ctx, listener.Location)
 	if err != nil {
 		return err
@@ -670,15 +680,15 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *fftypes.Co
 	return nil
 }
 
-func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *fftypes.ContractListener) error {
+func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	return e.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
-func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
+func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (core.FFIParamValidator, error) {
 	return &FFIParamValidator{}, nil
 }
 
-func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *fftypes.FFIEventDefinition) (ABIElementMarshaling, error) {
+func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *core.FFIEventDefinition) (ABIElementMarshaling, error) {
 	abiElement := ABIElementMarshaling{
 		Name:   event.Name,
 		Type:   "event",
@@ -691,7 +701,7 @@ func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *fftypes.F
 	return abiElement, nil
 }
 
-func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *fftypes.FFIMethod) (ABIElementMarshaling, error) {
+func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *core.FFIMethod) (ABIElementMarshaling, error) {
 	abiElement := ABIElementMarshaling{
 		Name:    method.Name,
 		Type:    "function",
@@ -734,7 +744,7 @@ func ABIMethodToSignature(abi *ABIElementMarshaling) string {
 	return result
 }
 
-func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
+func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string {
 	abi, err := e.FFIEventDefinitionToABI(ctx, event)
 	if err != nil {
 		return ""
@@ -742,9 +752,9 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FF
 	return ABIMethodToSignature(&abi)
 }
 
-func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgumentMarshaling, params fftypes.FFIParams) error {
+func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgumentMarshaling, params core.FFIParams) error {
 	for i, param := range params {
-		c := fftypes.NewFFISchemaCompiler()
+		c := core.NewFFISchemaCompiler()
 		v, _ := e.GetFFIParamValidator(ctx)
 		c.RegisterExtension(v.GetExtensionName(), v.GetMetaSchema(), v)
 		err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
@@ -805,7 +815,7 @@ func getParamDetails(schema *jsonschema.Schema) *paramDetails {
 	return paramDetails
 }
 
-func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}) (ABIElementMarshaling, []interface{}, error) {
+func (e *Ethereum) prepareRequest(ctx context.Context, method *core.FFIMethod, input map[string]interface{}) (ABIElementMarshaling, []interface{}, error) {
 	orderedInput := make([]interface{}, len(method.Params))
 	abi, err := e.FFIMethodToABI(ctx, method)
 	if err != nil {
@@ -831,7 +841,7 @@ func (e *Ethereum) getContractAddress(ctx context.Context, instancePath string) 
 	return output["address"], nil
 }
 
-func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *core.FFIGenerationRequest) (*core.FFI, error) {
 	var input FFIGenerationInput
 	err := json.Unmarshal(generationRequest.Input.Bytes(), &input)
 	if err != nil {
@@ -844,28 +854,28 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	return ffi, nil
 }
 
-func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi []ABIElementMarshaling) *fftypes.FFI {
-	ffi := &fftypes.FFI{
+func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi []ABIElementMarshaling) *core.FFI {
+	ffi := &core.FFI{
 		Namespace:   ns,
 		Name:        name,
 		Version:     version,
 		Description: description,
-		Methods:     []*fftypes.FFIMethod{},
-		Events:      []*fftypes.FFIEvent{},
+		Methods:     []*core.FFIMethod{},
+		Events:      []*core.FFIEvent{},
 	}
 
 	for _, element := range abi {
 		switch element.Type {
 		case "event":
-			event := &fftypes.FFIEvent{
-				FFIEventDefinition: fftypes.FFIEventDefinition{
+			event := &core.FFIEvent{
+				FFIEventDefinition: core.FFIEventDefinition{
 					Name:   element.Name,
 					Params: e.convertABIArgumentsToFFI(element.Inputs),
 				},
 			}
 			ffi.Events = append(ffi.Events, event)
 		case "function":
-			method := &fftypes.FFIMethod{
+			method := &core.FFIMethod{
 				Name:    element.Name,
 				Params:  e.convertABIArgumentsToFFI(element.Inputs),
 				Returns: e.convertABIArgumentsToFFI(element.Outputs),
@@ -876,10 +886,10 @@ func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi []
 	return ffi
 }
 
-func (e *Ethereum) convertABIArgumentsToFFI(args []ABIArgumentMarshaling) fftypes.FFIParams {
-	ffiParams := fftypes.FFIParams{}
+func (e *Ethereum) convertABIArgumentsToFFI(args []ABIArgumentMarshaling) core.FFIParams {
+	ffiParams := core.FFIParams{}
 	for _, arg := range args {
-		param := &fftypes.FFIParam{
+		param := &core.FFIParam{
 			Name: arg.Name,
 		}
 		s := e.getSchema(arg)

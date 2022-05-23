@@ -22,12 +22,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,15 +37,15 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBatch,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBatch,
 	}
-	bp := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	batch := &fftypes.Batch{
+	batch := &core.Batch{
 		BatchHeader: bp.BatchHeader,
 	}
 	addUploadBatchInputs(op, bp.ID)
@@ -74,11 +75,11 @@ func TestPrepareAndRunBatchBroadcastHydrateFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBatch,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBatch,
 	}
-	bp := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -102,7 +103,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	_, err := bm.PrepareOperation(context.Background(), &fftypes.Operation{})
+	_, err := bm.PrepareOperation(context.Background(), &core.Operation{})
 
 	assert.Regexp(t, "FF10371", err)
 }
@@ -111,8 +112,8 @@ func TestPrepareOperationBatchBroadcastBadInput(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeSharedStorageUploadBatch,
+	op := &core.Operation{
+		Type:  core.OpTypeSharedStorageUploadBatch,
 		Input: fftypes.JSONObject{"id": "bad"},
 	}
 
@@ -125,8 +126,8 @@ func TestPrepareOperationBatchBroadcastError(t *testing.T) {
 	defer cancel()
 
 	batchID := fftypes.NewUUID()
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeSharedStorageUploadBatch,
+	op := &core.Operation{
+		Type:  core.OpTypeSharedStorageUploadBatch,
 		Input: fftypes.JSONObject{"id": batchID.String()},
 	}
 
@@ -142,8 +143,8 @@ func TestPrepareOperationBatchBroadcastNotFound(t *testing.T) {
 	defer cancel()
 
 	batchID := fftypes.NewUUID()
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeSharedStorageUploadBatch,
+	op := &core.Operation{
+		Type:  core.OpTypeSharedStorageUploadBatch,
 		Input: fftypes.JSONObject{"id": batchID.String()},
 	}
 
@@ -158,7 +159,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	_, complete, err := bm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := bm.RunOperation(context.Background(), &core.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
@@ -168,16 +169,16 @@ func TestRunOperationBatchBroadcastInvalidData(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	batch := &fftypes.Batch{
-		Payload: fftypes.BatchPayload{
-			Data: fftypes.DataArray{
+	op := &core.Operation{}
+	batch := &core.Batch{
+		Payload: core.BatchPayload{
+			Data: core.DataArray{
 				{Value: fftypes.JSONAnyPtr(`!json`)},
 			},
 		},
 	}
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &fftypes.BatchPersisted{}))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &core.BatchPersisted{}))
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10137", err)
@@ -187,9 +188,9 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	op := &core.Operation{}
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -197,7 +198,7 @@ func TestRunOperationBatchBroadcastPublishFail(t *testing.T) {
 	mps := bm.sharedstorage.(*sharedstoragemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("", fmt.Errorf("pop"))
 
-	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &fftypes.BatchPersisted{}))
+	_, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, &core.BatchPersisted{}))
 
 	assert.False(t, complete)
 	assert.EqualError(t, err, "pop")
@@ -209,9 +210,9 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	batch := &fftypes.Batch{
-		BatchHeader: fftypes.BatchHeader{
+	op := &core.Operation{}
+	batch := &core.Batch{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -220,7 +221,7 @@ func TestRunOperationBatchBroadcast(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 
-	bp := &fftypes.BatchPersisted{}
+	bp := &core.BatchPersisted{}
 	outputs, complete, err := bm.RunOperation(context.Background(), opUploadBatch(op, batch, bp))
 	assert.Equal(t, "123", outputs["payloadRef"])
 
@@ -235,15 +236,15 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBlob,
 	}
-	blob := &fftypes.Blob{
+	blob := &core.Blob{
 		Hash: fftypes.NewRandB32(),
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
+		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
 	}
@@ -288,15 +289,15 @@ func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBlob,
 	}
-	blob := &fftypes.Blob{
+	blob := &core.Blob{
 		Hash: fftypes.NewRandB32(),
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
+		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
 	}
@@ -322,15 +323,15 @@ func TestPrepareUploadBlobGetBlobFailg(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBlob,
 	}
-	blob := &fftypes.Blob{
+	blob := &core.Blob{
 		Hash: fftypes.NewRandB32(),
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
+		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
 	}
@@ -352,8 +353,8 @@ func TestPrepareUploadBlobGetDataMissing(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBlob,
 	}
 	dataID := fftypes.NewUUID()
 	addUploadBlobInputs(op, dataID)
@@ -373,8 +374,8 @@ func TestPrepareUploadBlobGetDataFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBlob,
 	}
 	dataID := fftypes.NewUUID()
 	addUploadBlobInputs(op, dataID)
@@ -394,8 +395,8 @@ func TestPrepareUploadBlobGetDataBadID(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeSharedStorageUploadBlob,
+	op := &core.Operation{
+		Type: core.OpTypeSharedStorageUploadBlob,
 	}
 
 	_, err := bm.PrepareOperation(context.Background(), op)
@@ -407,13 +408,13 @@ func TestRunOperationUploadBlobUpdateFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	blob := &fftypes.Blob{
+	op := &core.Operation{}
+	blob := &core.Blob{
 		Hash: fftypes.NewRandB32(),
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
+		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
 	}
@@ -441,13 +442,13 @@ func TestRunOperationUploadBlobUploadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	blob := &fftypes.Blob{
+	op := &core.Operation{}
+	blob := &core.Blob{
 		Hash: fftypes.NewRandB32(),
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
+		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
 	}
@@ -472,13 +473,13 @@ func TestRunOperationUploadBlobDownloadFail(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	blob := &fftypes.Blob{
+	op := &core.Operation{}
+	blob := &core.Blob{
 		Hash: fftypes.NewRandB32(),
 	}
-	data := &fftypes.Data{
+	data := &core.Data{
 		ID: fftypes.NewUUID(),
-		Blob: &fftypes.BlobRef{
+		Blob: &core.BlobRef{
 			Hash: blob.Hash,
 		},
 	}

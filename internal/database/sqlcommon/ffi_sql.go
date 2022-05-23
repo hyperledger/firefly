@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -44,7 +45,7 @@ var (
 
 const ffiTable = "ffi"
 
-func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
+func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *core.FFI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -71,7 +72,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 				Set("description", ffi.Description).
 				Set("message_id", ffi.Message),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeUpdated, ffi.Namespace, ffi.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeUpdated, ffi.Namespace, ffi.ID)
 			},
 		); err != nil {
 			return err
@@ -89,7 +90,7 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 					ffi.Message,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, fftypes.ChangeEventTypeCreated, ffi.Namespace, ffi.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIs, core.ChangeEventTypeCreated, ffi.Namespace, ffi.ID)
 			},
 		); err != nil {
 			return err
@@ -99,8 +100,8 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error)
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI, error) {
-	ffi := fftypes.FFI{}
+func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*core.FFI, error) {
+	ffi := core.FFI{}
 	err := row.Scan(
 		&ffi.ID,
 		&ffi.Namespace,
@@ -115,7 +116,7 @@ func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI,
 	return &ffi, nil
 }
 
-func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFI, error) {
+func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{}) (*core.FFI, error) {
 	rows, _, err := s.query(ctx, ffiTable,
 		sq.Select(ffiColumns...).
 			From(ffiTable).
@@ -139,7 +140,7 @@ func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{
 	return ffi, nil
 }
 
-func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filter) (ffis []*fftypes.FFI, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filter) (ffis []*core.FFI, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From(ffiTable).Where(sq.Eq{"namespace": ns}), filter, ffiFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -152,7 +153,7 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filt
 	}
 	defer rows.Close()
 
-	ffis = []*fftypes.FFI{}
+	ffis = []*core.FFI{}
 	for rows.Next() {
 		cd, err := s.ffiResult(ctx, rows)
 		if err != nil {
@@ -165,10 +166,10 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, ns string, filter database.Filt
 
 }
 
-func (s *SQLCommon) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
+func (s *SQLCommon) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
 	return s.getFFIPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error) {
+func (s *SQLCommon) GetFFI(ctx context.Context, ns, name, version string) (*core.FFI, error) {
 	return s.getFFIPred(ctx, ns+":"+name+":"+version, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"name": name}, sq.Eq{"version": version}})
 }

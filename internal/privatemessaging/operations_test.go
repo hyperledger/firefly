@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,21 +33,21 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBlob,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBlob,
 		ID:   fftypes.NewUUID(),
 	}
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Profile: fftypes.JSONObject{
 				"id": "peer1",
 			},
 		},
 	}
-	blob := &fftypes.Blob{
+	blob := &core.Blob{
 		Hash:       fftypes.NewRandB32(),
 		PayloadRef: "payload",
 	}
@@ -76,29 +77,29 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		ID:   fftypes.NewUUID(),
 	}
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Profile: fftypes.JSONObject{
 				"id": "peer1",
 			},
 		},
 	}
-	group := &fftypes.Group{
+	group := &core.Group{
 		Hash: fftypes.NewRandB32(),
 	}
-	bp := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	batch := &fftypes.Batch{
+	batch := &core.Batch{
 		BatchHeader: bp.BatchHeader,
 	}
 	addBatchSendInputs(op, node.ID, group.Hash, batch.ID)
@@ -132,29 +133,29 @@ func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		ID:   fftypes.NewUUID(),
 	}
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Profile: fftypes.JSONObject{
 				"id": "peer1",
 			},
 		},
 	}
-	group := &fftypes.Group{
+	group := &core.Group{
 		Hash: fftypes.NewRandB32(),
 	}
-	bp := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	bp := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	batch := &fftypes.Batch{
+	batch := &core.Batch{
 		BatchHeader: bp.BatchHeader,
 	}
 	addBatchSendInputs(op, node.ID, group.Hash, batch.ID)
@@ -177,7 +178,7 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	po, err := pm.PrepareOperation(context.Background(), &fftypes.Operation{})
+	po, err := pm.PrepareOperation(context.Background(), &core.Operation{})
 
 	assert.Nil(t, po)
 	assert.Regexp(t, "FF10371", err)
@@ -187,8 +188,8 @@ func TestPrepareOperationBlobSendBadInput(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeDataExchangeSendBlob,
+	op := &core.Operation{
+		Type:  core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{"node": "bad"},
 	}
 
@@ -202,8 +203,8 @@ func TestPrepareOperationBlobSendNodeFail(t *testing.T) {
 
 	nodeID := fftypes.NewUUID()
 	blobHash := fftypes.NewRandB32()
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBlob,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": nodeID.String(),
 			"hash": blobHash.String(),
@@ -225,8 +226,8 @@ func TestPrepareOperationBlobSendNodeNotFound(t *testing.T) {
 
 	nodeID := fftypes.NewUUID()
 	blobHash := fftypes.NewRandB32()
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBlob,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": nodeID.String(),
 			"hash": blobHash.String(),
@@ -247,18 +248,18 @@ func TestPrepareOperationBlobSendBlobFail(t *testing.T) {
 	defer cancel()
 
 	blobHash := fftypes.NewRandB32()
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Profile: fftypes.JSONObject{
 				"id": "peer1",
 			},
 		},
 	}
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBlob,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": node.ID.String(),
 			"hash": blobHash.String(),
@@ -280,18 +281,18 @@ func TestPrepareOperationBlobSendBlobNotFound(t *testing.T) {
 	defer cancel()
 
 	blobHash := fftypes.NewRandB32()
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Profile: fftypes.JSONObject{
 				"id": "peer1",
 			},
 		},
 	}
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBlob,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBlob,
 		Input: fftypes.JSONObject{
 			"node": node.ID.String(),
 			"hash": blobHash.String(),
@@ -312,8 +313,8 @@ func TestPrepareOperationBatchSendBadInput(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type:  core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{"node": "bad"},
 	}
 
@@ -328,8 +329,8 @@ func TestPrepareOperationBatchSendNodeFail(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
 	batchID := fftypes.NewUUID()
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  nodeID.String(),
 			"group": groupHash.String(),
@@ -353,8 +354,8 @@ func TestPrepareOperationBatchSendNodeNotFound(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
 	batchID := fftypes.NewUUID()
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  nodeID.String(),
 			"group": groupHash.String(),
@@ -377,13 +378,13 @@ func TestPrepareOperationBatchSendGroupFail(t *testing.T) {
 
 	groupHash := fftypes.NewRandB32()
 	batchID := fftypes.NewUUID()
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": groupHash.String(),
@@ -407,13 +408,13 @@ func TestPrepareOperationBatchSendGroupNotFound(t *testing.T) {
 
 	groupHash := fftypes.NewRandB32()
 	batchID := fftypes.NewUUID()
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": groupHash.String(),
@@ -436,16 +437,16 @@ func TestPrepareOperationBatchSendBatchFail(t *testing.T) {
 	defer cancel()
 
 	batchID := fftypes.NewUUID()
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	group := &fftypes.Group{
+	group := &core.Group{
 		Hash: fftypes.NewRandB32(),
 	}
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": group.Hash.String(),
@@ -469,16 +470,16 @@ func TestPrepareOperationBatchSendBatchNotFound(t *testing.T) {
 	defer cancel()
 
 	batchID := fftypes.NewUUID()
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	group := &fftypes.Group{
+	group := &core.Group{
 		Hash: fftypes.NewRandB32(),
 	}
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeDataExchangeSendBatch,
+	op := &core.Operation{
+		Type: core.OpTypeDataExchangeSendBatch,
 		Input: fftypes.JSONObject{
 			"node":  node.ID.String(),
 			"group": group.Hash.String(),
@@ -501,7 +502,7 @@ func TestRunOperationNotSupported(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	_, complete, err := pm.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := pm.RunOperation(context.Background(), &core.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
@@ -511,17 +512,17 @@ func TestRunOperationBatchSendInvalidData(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	op := &fftypes.Operation{}
-	node := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	op := &core.Operation{}
+	node := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	transport := &fftypes.TransportWrapper{
-		Group: &fftypes.Group{},
-		Batch: &fftypes.Batch{
-			Payload: fftypes.BatchPayload{
-				Data: fftypes.DataArray{
+	transport := &core.TransportWrapper{
+		Group: &core.Group{},
+		Batch: &core.Batch{
+			Payload: core.BatchPayload{
+				Data: core.DataArray{
 					{Value: fftypes.JSONAnyPtr(`!json`)},
 				},
 			},

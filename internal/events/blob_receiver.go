@@ -22,16 +22,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/retry"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type blobNotification struct {
-	blob       *fftypes.Blob
+	blob       *core.Blob
 	onComplete func()
 }
 
@@ -205,7 +206,7 @@ func (br *blobReceiver) insertNewBlobs(ctx context.Context, notifications []*blo
 	if err != nil {
 		return nil, err
 	}
-	newBlobs := make([]*fftypes.Blob, 0, len(existingBlobs))
+	newBlobs := make([]*core.Blob, 0, len(existingBlobs))
 	newHashes := make([]*fftypes.Bytes32, 0, len(existingBlobs))
 	for _, notification := range notifications {
 		foundExisting := false

@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Blockchain protocols
-parent: Understanding FireFly
+layout: i18n_page
+title: pages.blockchain_protocols
+parent: pages.understanding_firefly
 nav_order: 4
 ---
 

@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -42,16 +43,16 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				SignerRef: fftypes.SignerRef{
+	msg, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				SignerRef: core.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
 			},
 		},
-		InlineData: fftypes.InlineData{
+		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, false)
@@ -73,8 +74,8 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
-	replyMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	replyMsg := &core.Message{
+		Header: core.MessageHeader{
 			Namespace: "ns1",
 			ID:        fftypes.NewUUID(),
 		},
@@ -87,16 +88,16 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 		Return(replyMsg, nil)
 	mdm.On("WriteNewMessage", ctx, mock.Anything, mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				SignerRef: fftypes.SignerRef{
+	msg, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				SignerRef: core.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
 			},
 		},
-		InlineData: fftypes.InlineData{
+		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, true)
@@ -119,23 +120,23 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Run(
 		func(args mock.Arguments) {
 			newMsg := args[1].(*data.NewMessage)
-			newMsg.Message.Data = fftypes.DataRefs{
+			newMsg.Message.Data = core.DataRefs{
 				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32(), ValueSize: 1000001},
 			}
 		}).
 		Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				SignerRef: fftypes.SignerRef{
+	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				SignerRef: core.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
 			},
 		},
-		InlineData: fftypes.InlineData{
+		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, true)
@@ -154,8 +155,8 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		InlineData: fftypes.InlineData{
+	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, false)
@@ -172,8 +173,8 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &fftypes.MessageInOut{
-		InlineData: fftypes.InlineData{
+	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}, false)
@@ -192,16 +193,16 @@ func TestBroadcastPrepare(t *testing.T) {
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
-	msg := &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
-				SignerRef: fftypes.SignerRef{
+	msg := &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				SignerRef: core.SignerRef{
 					Author: "did:firefly:org/abcd",
 					Key:    "0x12345",
 				},
 			},
 		},
-		InlineData: fftypes.InlineData{
+		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}

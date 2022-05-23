@@ -22,15 +22,16 @@ import (
 	"math"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
@@ -68,7 +69,7 @@ type downloadManager struct {
 
 type downloadWork struct {
 	dispatchedAt time.Time
-	preparedOp   *fftypes.PreparedOperation
+	preparedOp   *core.PreparedOperation
 	attempts     int
 }
 
@@ -79,7 +80,7 @@ type Callbacks interface {
 
 func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
 	if di == nil || dx == nil || ss == nil || cb == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DownloadManager")
 	}
 
 	dmCtx, cancelFunc := context.WithCancel(ctx)
@@ -108,9 +109,9 @@ func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorag
 	}
 	dm.work = make(chan *downloadWork, workQueueLength)
 
-	dm.operations.RegisterHandler(ctx, dm, []fftypes.OpType{
-		fftypes.OpTypeSharedStorageDownloadBatch,
-		fftypes.OpTypeSharedStorageDownloadBlob,
+	dm.operations.RegisterHandler(ctx, dm, []core.OpType{
+		core.OpTypeSharedStorageDownloadBatch,
+		core.OpTypeSharedStorageDownloadBlob,
 	})
 
 	return dm, nil
@@ -160,10 +161,10 @@ func (dm *downloadManager) recoverDownloads(startupTime *fftypes.FFTime) {
 		fb := database.OperationQueryFactory.NewFilter(dm.ctx)
 		filter := fb.And(
 			fb.In("type", []driver.Value{
-				fftypes.OpTypeSharedStorageDownloadBatch,
-				fftypes.OpTypeSharedStorageDownloadBlob,
+				core.OpTypeSharedStorageDownloadBatch,
+				core.OpTypeSharedStorageDownloadBlob,
 			}),
-			fb.Eq("status", fftypes.OpStatusPending),
+			fb.Eq("status", core.OpStatusPending),
 			fb.Lt("created", startupTime), // retry is handled completely separately
 		).
 			Sort("created").
@@ -219,18 +220,18 @@ func (dm *downloadManager) waitAndRetryDownload(work *downloadWork) {
 }
 
 func (dm *downloadManager) InitiateDownloadBatch(ctx context.Context, ns string, tx *fftypes.UUID, payloadRef string) error {
-	op := fftypes.NewOperation(dm.sharedstorage, ns, tx, fftypes.OpTypeSharedStorageDownloadBatch)
+	op := core.NewOperation(dm.sharedstorage, ns, tx, core.OpTypeSharedStorageDownloadBatch)
 	addDownloadBatchInputs(op, ns, payloadRef)
 	return dm.createAndDispatchOp(ctx, op, opDownloadBatch(op, ns, payloadRef))
 }
 
 func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, ns string, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error {
-	op := fftypes.NewOperation(dm.sharedstorage, ns, tx, fftypes.OpTypeSharedStorageDownloadBlob)
+	op := core.NewOperation(dm.sharedstorage, ns, tx, core.OpTypeSharedStorageDownloadBlob)
 	addDownloadBlobInputs(op, ns, dataID, payloadRef)
 	return dm.createAndDispatchOp(ctx, op, opDownloadBlob(op, ns, dataID, payloadRef))
 }
 
-func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *fftypes.Operation, preparedOp *fftypes.PreparedOperation) error {
+func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *core.Operation, preparedOp *core.PreparedOperation) error {
 	err := dm.database.InsertOperation(ctx, op, func() {
 		// Use a closure hook to dispatch the work once the operation is successfully in the DB.
 		// Note we have crash recovery of pending operations on startup.

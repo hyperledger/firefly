@@ -23,21 +23,22 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/ghodss/yaml"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
-func testFFI() *fftypes.FFI {
-	return &fftypes.FFI{
+func testFFI() *core.FFI {
+	return &core.FFI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
 		Version:   "v1.0.0",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name:     "method1",
 				Pathname: "method1",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -58,7 +59,7 @@ func testFFI() *fftypes.FFI {
 }`),
 					},
 				},
-				Returns: fftypes.FFIParams{
+				Returns: core.FFIParams{
 					{
 						Name:   "success",
 						Schema: fftypes.JSONAnyPtr(`{"type": "boolean"}`),
@@ -71,13 +72,13 @@ func testFFI() *fftypes.FFI {
 				/* no params */
 			},
 		},
-		Events: []*fftypes.FFIEvent{
+		Events: []*core.FFIEvent{
 			{
 				ID:       fftypes.NewUUID(),
 				Pathname: "event1",
-				FFIEventDefinition: fftypes.FFIEventDefinition{
+				FFIEventDefinition: core.FFIEventDefinition{
 					Name: "event1",
-					Params: fftypes.FFIParams{
+					Params: core.FFIParams{
 						{
 							Name:   "result",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -107,7 +108,7 @@ func paramNames(p openapi3.Schemas) []string {
 
 func TestGenerate(t *testing.T) {
 	g := NewFFISwaggerGen()
-	api := &fftypes.ContractAPI{}
+	api := &core.ContractAPI{}
 	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
 
 	b, err := yaml.Marshal(doc)
@@ -143,7 +144,7 @@ func TestGenerate(t *testing.T) {
 
 func TestGenerateWithLocation(t *testing.T) {
 	g := NewFFISwaggerGen()
-	api := &fftypes.ContractAPI{Location: fftypes.JSONAnyPtr(`{}`)}
+	api := &core.ContractAPI{Location: fftypes.JSONAnyPtr(`{}`)}
 	doc := g.Generate(context.Background(), "http://localhost:12345", api, testFFI())
 
 	b, err := yaml.Marshal(doc)
@@ -178,7 +179,7 @@ func TestGenerateWithLocation(t *testing.T) {
 }
 
 func TestFFIParamBadSchema(t *testing.T) {
-	param := &fftypes.FFIParam{
+	param := &core.FFIParam{
 		Name:   "test",
 		Schema: fftypes.JSONAnyPtr(`{`),
 	}

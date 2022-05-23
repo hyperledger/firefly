@@ -17,10 +17,10 @@
 package webhooks
 
 import (
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
 )
 
-func (wh *WebHooks) InitPrefix(prefix config.Prefix) {
-	ffresty.InitPrefix(prefix)
+func (wh *WebHooks) InitConfig(config config.Section) {
+	ffresty.InitConfig(config)
 }

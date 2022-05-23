@@ -21,7 +21,8 @@ import (
 	"database/sql/driver"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -339,6 +340,6 @@ func TestStringsForTypes(t *testing.T) {
 	now := fftypes.Now()
 	assert.Equal(t, now.String(), (&timeField{t: now}).String())
 	assert.Equal(t, `{"some":"value"}`, (&jsonField{b: []byte(`{"some":"value"}`)}).String())
-	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: fftypes.FFStringArray{"t1", "t2"}}).String())
+	assert.Equal(t, "t1,t2", (&ffNameArrayField{na: core.FFStringArray{"t1", "t2"}}).String())
 	assert.Equal(t, "true", (&boolField{b: true}).String())
 }

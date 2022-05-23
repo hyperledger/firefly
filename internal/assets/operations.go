@@ -20,42 +20,43 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/txcommon"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 type createPoolData struct {
-	Pool *fftypes.TokenPool `json:"pool"`
+	Pool *core.TokenPool `json:"pool"`
 }
 
 type activatePoolData struct {
-	Pool *fftypes.TokenPool `json:"pool"`
+	Pool *core.TokenPool `json:"pool"`
 }
 
 type transferData struct {
-	Pool     *fftypes.TokenPool     `json:"pool"`
-	Transfer *fftypes.TokenTransfer `json:"transfer"`
+	Pool     *core.TokenPool     `json:"pool"`
+	Transfer *core.TokenTransfer `json:"transfer"`
 }
 
 type approvalData struct {
-	Pool     *fftypes.TokenPool     `json:"pool"`
-	Approval *fftypes.TokenApproval `json:"approval"`
+	Pool     *core.TokenPool     `json:"pool"`
+	Approval *core.TokenApproval `json:"approval"`
 }
 
-func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
-	case fftypes.OpTypeTokenCreatePool:
+	case core.OpTypeTokenCreatePool:
 		pool, err := txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
 		return opCreatePool(op, pool), nil
 
-	case fftypes.OpTypeTokenActivatePool:
+	case core.OpTypeTokenActivatePool:
 		poolID, err := txcommon.RetrieveTokenPoolActivateInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -68,7 +69,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		}
 		return opActivatePool(op, pool), nil
 
-	case fftypes.OpTypeTokenTransfer:
+	case core.OpTypeTokenTransfer:
 		transfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -81,7 +82,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 		}
 		return opTransfer(op, pool, transfer), nil
 
-	case fftypes.OpTypeTokenApproval:
+	case core.OpTypeTokenApproval:
 		approval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
 		if err != nil {
 			return nil, err
@@ -99,7 +100,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *fftypes.Operat
 	}
 }
 
-func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case createPoolData:
 		plugin, err := am.selectTokenPlugin(ctx, data.Pool.Connector)
@@ -123,11 +124,11 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 			return nil, false, err
 		}
 		switch data.Transfer.Type {
-		case fftypes.TokenTransferTypeMint:
+		case core.TokenTransferTypeMint:
 			return nil, false, plugin.MintTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
-		case fftypes.TokenTransferTypeTransfer:
+		case core.TokenTransferTypeTransfer:
 			return nil, false, plugin.TransferTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
-		case fftypes.TokenTransferTypeBurn:
+		case core.TokenTransferTypeBurn:
 			return nil, false, plugin.BurnTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
@@ -145,15 +146,15 @@ func (am *assetManager) RunOperation(ctx context.Context, op *fftypes.PreparedOp
 	}
 }
 
-func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Operation, update *operations.OperationUpdate) error {
+func (am *assetManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
 	// Write an event for failed pool operations
-	if op.Type == fftypes.OpTypeTokenCreatePool && update.Status == fftypes.OpStatusFailed {
+	if op.Type == core.OpTypeTokenCreatePool && update.Status == core.OpStatusFailed {
 		tokenPool, err := txcommon.RetrieveTokenPoolCreateInputs(ctx, op)
 		topic := ""
 		if tokenPool != nil {
 			topic = tokenPool.ID.String()
 		}
-		event := fftypes.NewEvent(fftypes.EventTypePoolOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		event := core.NewEvent(core.EventTypePoolOpFailed, op.Namespace, op.ID, op.Transaction, topic)
 		if err != nil || tokenPool.ID == nil {
 			log.L(ctx).Warnf("Could not parse token pool: %s (%+v)", err, op.Input)
 		} else {
@@ -165,13 +166,13 @@ func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Opera
 	}
 
 	// Write an event for failed transfer operations
-	if op.Type == fftypes.OpTypeTokenTransfer && update.Status == fftypes.OpStatusFailed {
+	if op.Type == core.OpTypeTokenTransfer && update.Status == core.OpStatusFailed {
 		tokenTransfer, err := txcommon.RetrieveTokenTransferInputs(ctx, op)
 		topic := ""
 		if tokenTransfer != nil {
 			topic = tokenTransfer.Pool.String()
 		}
-		event := fftypes.NewEvent(fftypes.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		event := core.NewEvent(core.EventTypeTransferOpFailed, op.Namespace, op.ID, op.Transaction, topic)
 		if err != nil || tokenTransfer.LocalID == nil || tokenTransfer.Type == "" {
 			log.L(ctx).Warnf("Could not parse token transfer: %s (%+v)", err, op.Input)
 		} else {
@@ -183,13 +184,13 @@ func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Opera
 	}
 
 	// Write an event for failed approval operations
-	if op.Type == fftypes.OpTypeTokenApproval && update.Status == fftypes.OpStatusFailed {
+	if op.Type == core.OpTypeTokenApproval && update.Status == core.OpStatusFailed {
 		tokenApproval, err := txcommon.RetrieveTokenApprovalInputs(ctx, op)
 		topic := ""
 		if tokenApproval != nil {
 			topic = tokenApproval.Pool.String()
 		}
-		event := fftypes.NewEvent(fftypes.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, topic)
+		event := core.NewEvent(core.EventTypeApprovalOpFailed, op.Namespace, op.ID, op.Transaction, topic)
 		if err != nil || tokenApproval.LocalID == nil {
 			log.L(ctx).Warnf("Could not parse token approval: %s (%+v)", err, op.Input)
 		} else {
@@ -203,8 +204,8 @@ func (am *assetManager) OnOperationUpdate(ctx context.Context, op *fftypes.Opera
 	return nil
 }
 
-func opCreatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opCreatePool(op *core.Operation, pool *core.TokenPool) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
@@ -212,8 +213,8 @@ func opCreatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.Prepa
 	}
 }
 
-func opActivatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opActivatePool(op *core.Operation, pool *core.TokenPool) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
@@ -221,8 +222,8 @@ func opActivatePool(op *fftypes.Operation, pool *fftypes.TokenPool) *fftypes.Pre
 	}
 }
 
-func opTransfer(op *fftypes.Operation, pool *fftypes.TokenPool, transfer *fftypes.TokenTransfer) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opTransfer(op *core.Operation, pool *core.TokenPool, transfer *core.TokenTransfer) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
@@ -230,8 +231,8 @@ func opTransfer(op *fftypes.Operation, pool *fftypes.TokenPool, transfer *fftype
 	}
 }
 
-func opApproval(op *fftypes.Operation, pool *fftypes.TokenPool, approval *fftypes.TokenApproval) *fftypes.PreparedOperation {
-	return &fftypes.PreparedOperation{
+func opApproval(op *core.Operation, pool *core.TokenPool, approval *core.TokenApproval) *core.PreparedOperation {
+	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,

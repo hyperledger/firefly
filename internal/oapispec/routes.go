@@ -19,9 +19,9 @@ package oapispec
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 // Route defines each API operation on the REST API of Firefly
@@ -63,6 +63,8 @@ type Route struct {
 	FormUploadHandler func(r *APIRequest) (output interface{}, err error)
 	// Deprecated whether this route is deprecated
 	Deprecated bool
+	// Tag a category identifier for this route in the generated OpenAPI spec
+	Tag string
 }
 
 // PathParam is a description of a path parameter

@@ -23,9 +23,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,25 +39,25 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 
 	// Create a new identity entry
 	identityID := fftypes.NewUUID()
-	identity := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	identity := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:        identityID,
 			DID:       "did:firefly:/ns/ns1/1",
 			Parent:    fftypes.NewUUID(),
-			Type:      fftypes.IdentityTypeCustom,
+			Type:      core.IdentityTypeCustom,
 			Namespace: "ns1",
 			Name:      "identity1",
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: "Identity One",
 		},
-		Messages: fftypes.IdentityMessages{
+		Messages: core.IdentityMessages{
 			Claim: fftypes.NewUUID(),
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, fftypes.ChangeEventTypeCreated, "ns1", identityID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, fftypes.ChangeEventTypeUpdated, "ns2", identityID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, core.ChangeEventTypeCreated, "ns1", identityID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, core.ChangeEventTypeUpdated, "ns2", identityID).Return()
 
 	err := s.UpsertIdentity(ctx, identity, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
@@ -71,20 +72,20 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 
 	// Update the identity (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	identityUpdated := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	identityUpdated := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:        identityID,
 			DID:       "did:firefly:/nodes/2",
 			Parent:    fftypes.NewUUID(),
-			Type:      fftypes.IdentityTypeNode,
+			Type:      core.IdentityTypeNode,
 			Namespace: "ns2",
 			Name:      "identity2",
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: "Identity Two",
 			Profile:     fftypes.JSONObject{"some": "value"},
 		},
-		Messages: fftypes.IdentityMessages{
+		Messages: core.IdentityMessages{
 			Claim:        fftypes.NewUUID(),
 			Verification: fftypes.NewUUID(),
 			Update:       fftypes.NewUUID(),
@@ -138,7 +139,7 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 func TestUpsertIdentityFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{}, database.UpsertOptimizationSkip)
+	err := s.UpsertIdentity(context.Background(), &core.Identity{}, database.UpsertOptimizationSkip)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -148,8 +149,8 @@ func TestUpsertIdentityFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	err := s.UpsertIdentity(context.Background(), &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
@@ -163,8 +164,8 @@ func TestUpsertIdentityFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	err := s.UpsertIdentity(context.Background(), &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
@@ -179,8 +180,8 @@ func TestUpsertIdentityFailUpdate(t *testing.T) {
 		AddRow("id1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	err := s.UpsertIdentity(context.Background(), &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
@@ -194,8 +195,8 @@ func TestUpsertIdentityFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertIdentity(context.Background(), &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	err := s.UpsertIdentity(context.Background(), &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}, database.UpsertOptimizationSkip)
@@ -214,7 +215,7 @@ func TestGetIdentityByIDSelectFail(t *testing.T) {
 func TestGetIdentityByNameSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetIdentityByName(context.Background(), fftypes.IdentityTypeOrg, "ff_system", "org1")
+	_, err := s.GetIdentityByName(context.Background(), core.IdentityTypeOrg, "ff_system", "org1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

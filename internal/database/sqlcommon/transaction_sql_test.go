@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -37,15 +38,15 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Create a new transaction entry
 	transactionID := fftypes.NewUUID()
-	transaction := &fftypes.Transaction{
+	transaction := &core.Transaction{
 		ID:            transactionID,
-		Type:          fftypes.TransactionTypeBatchPin,
+		Type:          core.TransactionTypeBatchPin,
 		Namespace:     "ns1",
-		BlockchainIDs: fftypes.FFStringArray{"tx1"},
+		BlockchainIDs: core.FFStringArray{"tx1"},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, fftypes.ChangeEventTypeCreated, "ns1", transactionID, mock.Anything).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, fftypes.ChangeEventTypeUpdated, "ns1", transactionID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, core.ChangeEventTypeCreated, "ns1", transactionID, mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTransactions, core.ChangeEventTypeUpdated, "ns1", transactionID, mock.Anything).Return()
 
 	err := s.InsertTransaction(ctx, transaction)
 	assert.NoError(t, err)
@@ -82,7 +83,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 
 	// Update
 	up := database.TransactionQueryFactory.NewUpdate(ctx).
-		Set("blockchainids", fftypes.FFStringArray{"0x12345", "0x23456"})
+		Set("blockchainids", core.FFStringArray{"0x12345", "0x23456"})
 	err = s.UpdateTransaction(ctx, transaction.ID, up)
 	assert.NoError(t, err)
 
@@ -99,7 +100,7 @@ func TestTransactionE2EWithDB(t *testing.T) {
 func TestInsertTransactionFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertTransaction(context.Background(), &fftypes.Transaction{})
+	err := s.InsertTransaction(context.Background(), &core.Transaction{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -110,7 +111,7 @@ func TestInsertTransactionFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	transactionID := fftypes.NewUUID()
-	err := s.InsertTransaction(context.Background(), &fftypes.Transaction{ID: transactionID})
+	err := s.InsertTransaction(context.Background(), &core.Transaction{ID: transactionID})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -121,7 +122,7 @@ func TestInsertTransactionFailCommit(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertTransaction(context.Background(), &fftypes.Transaction{ID: transactionID})
+	err := s.InsertTransaction(context.Background(), &core.Transaction{ID: transactionID})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

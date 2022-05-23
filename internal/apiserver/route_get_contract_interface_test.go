@@ -22,15 +22,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestGetContractInterfaceBadID(t *testing.T) {
 	_, r := newTestAPIServer()
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/contracts/interfaces/bad", &buf)
@@ -46,7 +47,7 @@ func TestGetContractInterface(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	id := fftypes.NewUUID()
@@ -55,7 +56,7 @@ func TestGetContractInterface(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFIByID", mock.Anything, id).
-		Return(&fftypes.FFI{}, nil)
+		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -65,7 +66,7 @@ func TestGetContractInterfaceWithChildren(t *testing.T) {
 	o, r := newTestAPIServer()
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	id := fftypes.NewUUID()
@@ -74,7 +75,7 @@ func TestGetContractInterfaceWithChildren(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, id).
-		Return(&fftypes.FFI{}, nil)
+		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

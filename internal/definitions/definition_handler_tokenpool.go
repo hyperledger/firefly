@@ -19,14 +19,14 @@ package definitions
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *fftypes.TokenPoolAnnouncement) (valid bool, err error) {
+func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *core.TokenPoolAnnouncement) (valid bool, err error) {
 	pool := announce.Pool
-	pool.State = fftypes.TokenPoolStatePending
+	pool.State = core.TokenPoolStatePending
 	err = dh.database.UpsertTokenPool(ctx, pool)
 	if err != nil {
 		if err == database.IDMismatch {
@@ -39,8 +39,8 @@ func (dh *definitionHandlers) persistTokenPool(ctx context.Context, announce *ff
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray) (HandlerResult, error) {
-	var announce fftypes.TokenPoolAnnouncement
+func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
+	var announce core.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
 		return HandlerResult{Action: ActionReject}, nil
 	}
@@ -60,7 +60,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
 	if existingPool, err := dh.database.GetTokenPoolByID(ctx, pool.ID); err != nil {
 		return HandlerResult{Action: ActionRetry}, err
-	} else if existingPool != nil && existingPool.State == fftypes.TokenPoolStateConfirmed {
+	} else if existingPool != nil && existingPool.State == core.TokenPoolStateConfirmed {
 		return HandlerResult{Action: ActionConfirm, CustomCorrelator: correlator}, nil
 	}
 
