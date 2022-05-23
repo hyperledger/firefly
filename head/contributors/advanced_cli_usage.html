@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>Advanced CLI Usage - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>pages.advanced_cli_usage | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="pages.advanced_cli_usage" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="pages.advanced_cli_usage" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"pages.advanced_cli_usage","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/contributors/advanced_cli_usage.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item  active"><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link active">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/contributors/">Contributors</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>Advanced CLI Usage</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 id="advanced-cli-usage">
+        
+        
+          <a href="#advanced-cli-usage" class="anchor-heading" aria-labelledby="advanced-cli-usage"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Advanced CLI Usage
+        
+        
+      </h1>
+    
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#advanced-cli-usage" id="markdown-toc-advanced-cli-usage">Advanced CLI Usage</a>    <ol>
+      <li><a href="#understanding-how-the-cli-uses-firefly-releases" id="markdown-toc-understanding-how-the-cli-uses-firefly-releases">Understanding how the CLI uses FireFly releases</a></li>
+      <li><a href="#the-manifestjson-file" id="markdown-toc-the-manifestjson-file">The <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a></li>
+      <li><a href="#default-cli-behavior-for-releases" id="markdown-toc-default-cli-behavior-for-releases">Default CLI behavior for releases</a></li>
+      <li><a href="#running-a-specific-release-of-firefly" id="markdown-toc-running-a-specific-release-of-firefly">Running a specific release of FireFly</a></li>
+      <li><a href="#running-an-unreleased-version-of-one-or-more-services" id="markdown-toc-running-an-unreleased-version-of-one-or-more-services">Running an unreleased version of one or more services</a>        <ol>
+          <li><a href="#build-a-new-image-of-fabconnect-locally" id="markdown-toc-build-a-new-image-of-fabconnect-locally">Build a new image of fabconnect locally</a></li>
+          <li><a href="#edit-your-manifestjson-file" id="markdown-toc-edit-your-manifestjson-file">Edit your <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a></li>
+          <li><a href="#initialize-the-stack-with-the-custom-manifestjson-file" id="markdown-toc-initialize-the-stack-with-the-custom-manifestjson-file">Initialize the stack with the custom <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a></li>
+        </ol>
+      </li>
+      <li><a href="#running-a-locally-built-firefly-core-image" id="markdown-toc-running-a-locally-built-firefly-core-image">Running a locally built FireFly Core image</a>        <ol>
+          <li><a href="#build-a-new-image-of-firefly-locally" id="markdown-toc-build-a-new-image-of-firefly-locally">Build a new image of FireFly locally</a></li>
+        </ol>
+      </li>
+      <li><a href="#edit-your-manifestjson-file-1" id="markdown-toc-edit-your-manifestjson-file-1">Edit your <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a>        <ol>
+          <li><a href="#initialize-the-stack-with-the-custom-manifestjson-file-1" id="markdown-toc-initialize-the-stack-with-the-custom-manifestjson-file-1">Initialize the stack with the custom <code class="language-plaintext highlighter-rouge">manifest.json</code> file</a></li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol><hr />
+
+<p>This page details some of the more advanced options of the FireFly CLI</p><hr />
+      <h2 id="understanding-how-the-cli-uses-firefly-releases">
+        
+        
+          <a href="#understanding-how-the-cli-uses-firefly-releases" class="anchor-heading" aria-labelledby="understanding-how-the-cli-uses-firefly-releases"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Understanding how the CLI uses FireFly releases
+        
+        
+      </h2>
+    
+      <h2 id="the-manifestjson-file">
+        
+        
+          <a href="#the-manifestjson-file" class="anchor-heading" aria-labelledby="the-manifestjson-file"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> The <code class="language-plaintext highlighter-rouge">manifest.json</code> file
+        
+        
+      </h2>
+    
+<p>FireFly has a <a href="https://github.com/hyperledger/firefly/blob/main/manifest.json"><code class="language-plaintext highlighter-rouge">manifest.json</code> file in the root of the repo</a>. This file contains a list of versions (both tag and sha) for each of the microservices that should be used with this specific commit.</p>
+
+<p>Here is an example of what the <code class="language-plaintext highlighter-rouge">manifest.json</code> looks like:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"ethconnect"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly-ethconnect"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tag"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v3.0.4"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"sha"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0b7ce0fb175b5910f401ff576ced809fe6f0b83894277c1cc86a73a2d61c6f41"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"fabconnect"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly-fabconnect"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tag"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v0.9.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"sha"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a79a4c66b0a2551d5122d019c15c6426e8cdadd6566ce3cbcb36e008fb7861ca"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"dataexchange-https"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly-dataexchange-https"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tag"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v0.9.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"sha"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0de5b1db891a02871505ba5e0507821416d9fa93c96ccb4b1ba2fac45eb37214"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"tokens-erc1155"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly-tokens-erc1155"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tag"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v0.9.0-20211019-01"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"sha"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aabc6c483db408896838329dab5f4b9e3c16d1e9fa9fffdb7e1ff05b7b2bbdd4"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="default-cli-behavior-for-releases">
+        
+        
+          <a href="#default-cli-behavior-for-releases" class="anchor-heading" aria-labelledby="default-cli-behavior-for-releases"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Default CLI behavior for releases
+        
+        
+      </h2>
+    
+<p>When creating a new stack, the CLI will by default, check the latest non-pre-release version of FireFly and look at its <code class="language-plaintext highlighter-rouge">manifest.json</code> file that was part of that commit. It will then use the Docker images referenced in that file to determine which images it should pull for the new stack. The specific image tag and sha is written to the <code class="language-plaintext highlighter-rouge">docker-compose.yml</code> file for that stack, so restarting or resetting a stack will never pull a newer image.</p>
+      <h2 id="running-a-specific-release-of-firefly">
+        
+        
+          <a href="#running-a-specific-release-of-firefly" class="anchor-heading" aria-labelledby="running-a-specific-release-of-firefly"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Running a specific release of FireFly
+        
+        
+      </h2>
+    
+<p>If you need to run some other version that is not the latest release of FireFly, you can tell the FireFly CLI which release to use by using the <code class="language-plaintext highlighter-rouge">--release</code> or <code class="language-plaintext highlighter-rouge">-r</code> flag. For example, to explicitly use <code class="language-plaintext highlighter-rouge">v0.9.0</code> run this command to initialize the stack:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff init -r v0.9.0
+</code></pre></div></div>
+      <h2 id="running-an-unreleased-version-of-one-or-more-services">
+        
+        
+          <a href="#running-an-unreleased-version-of-one-or-more-services" class="anchor-heading" aria-labelledby="running-an-unreleased-version-of-one-or-more-services"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Running an unreleased version of one or more services
+        
+        
+      </h2>
+    
+<p>If you need to run an unreleased version of FireFly or one of its microservices, you can point the CLI to a specific <code class="language-plaintext highlighter-rouge">manifest.json</code> on your local disk. To do this, use the <code class="language-plaintext highlighter-rouge">--manifest</code> or <code class="language-plaintext highlighter-rouge">-m</code> flag. For example, if you have a file at <code class="language-plaintext highlighter-rouge">~/firefly/manifest.json</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff init -m ~/firefly/manifest.json
+</code></pre></div></div>
+
+<p>If you need to test a locally built docker image of a specific service, you’ll want to edit the <code class="language-plaintext highlighter-rouge">manifest.json</code> before running <code class="language-plaintext highlighter-rouge">ff init</code>. Let’s look at an example where we want to run a locally built version of fabconnect. The same steps apply to any of FireFly’s microservices.</p>
+      <h3 id="build-a-new-image-of-fabconnect-locally">
+        
+        
+          <a href="#build-a-new-image-of-fabconnect-locally" class="anchor-heading" aria-labelledby="build-a-new-image-of-fabconnect-locally"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Build a new image of fabconnect locally
+        
+        
+      </h3>
+    
+<p>From the fabconnect project directory, build and tag a new Docker image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build -t ghcr.io/hyperledger/firefly-fabconnect .
+</code></pre></div></div>
+      <h3 id="edit-your-manifestjson-file">
+        
+        
+          <a href="#edit-your-manifestjson-file" class="anchor-heading" aria-labelledby="edit-your-manifestjson-file"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Edit your <code class="language-plaintext highlighter-rouge">manifest.json</code> file
+        
+        
+      </h3>
+    
+<p>Next, edit the <code class="language-plaintext highlighter-rouge">fabconnect</code> section of the <code class="language-plaintext highlighter-rouge">manifest.json</code> file. You’ll want to remove the <code class="language-plaintext highlighter-rouge">tag</code> and <code class="language-plaintext highlighter-rouge">sha</code> and a <code class="language-plaintext highlighter-rouge">"local": true</code> field, so it looks like this:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">...</span><span class="w">
+  </span><span class="nl">"fabconnect"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly-fabconnect"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"local"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+  </span><span class="p">}</span><span class="err">,</span><span class="w">
+</span><span class="err">...</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="initialize-the-stack-with-the-custom-manifestjson-file">
+        
+        
+          <a href="#initialize-the-stack-with-the-custom-manifestjson-file" class="anchor-heading" aria-labelledby="initialize-the-stack-with-the-custom-manifestjson-file"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Initialize the stack with the custom <code class="language-plaintext highlighter-rouge">manifest.json</code> file
+        
+        
+      </h3>
+    
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ff init local-test -b fabric -m ~/Code/hyperledger/firefly/manifest.json
+ ff start local-test
+</code></pre></div></div>
+
+<p>If you are iterating on changes locally, you can get the CLI to use an updated image by doing the following:</p>
+
+<ul>
+  <li>Whenever the CLI does its first time setup, it will use your newly built local docker image</li>
+  <li>If you’ve already run the stack, you can run <code class="language-plaintext highlighter-rouge">ff reset &lt;stack_name&gt;</code> and <code class="language-plaintext highlighter-rouge">ff start &lt;stack_name&gt;</code> to reset the data, and use the newer image</li>
+</ul>
+      <h2 id="running-a-locally-built-firefly-core-image">
+        
+        
+          <a href="#running-a-locally-built-firefly-core-image" class="anchor-heading" aria-labelledby="running-a-locally-built-firefly-core-image"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Running a locally built FireFly Core image
+        
+        
+      </h2>
+    
+<p>You may have noticed that FireFly core is actually not listed in the <code class="language-plaintext highlighter-rouge">manifest.json file</code>. If you want to run a locally built image of FireFly Core, you can follow the same steps above, but instead of editing an existing section in the file, we’ll add a new one for FireFly.</p>
+      <h3 id="build-a-new-image-of-firefly-locally">
+        
+        
+          <a href="#build-a-new-image-of-firefly-locally" class="anchor-heading" aria-labelledby="build-a-new-image-of-firefly-locally"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Build a new image of FireFly locally
+        
+        
+      </h3>
+    
+<p>From the firefly project directory, build and tag a new Docker image:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker build -t ghcr.io/hyperledger/firefly .
+</code></pre></div></div>
+      <h2 id="edit-your-manifestjson-file-1">
+        
+        
+          <a href="#edit-your-manifestjson-file-1" class="anchor-heading" aria-labelledby="edit-your-manifestjson-file-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Edit your <code class="language-plaintext highlighter-rouge">manifest.json</code> file
+        
+        
+      </h2>
+    
+<p>Next, edit the <code class="language-plaintext highlighter-rouge">fabconnect</code> section of the <code class="language-plaintext highlighter-rouge">manifest.json</code> file and add the following section:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">...</span><span class="w">
+  </span><span class="nl">"firefly"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"image"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ghcr.io/hyperledger/firefly"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"local"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+  </span><span class="p">}</span><span class="err">,</span><span class="w">
+</span><span class="err">...</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="initialize-the-stack-with-the-custom-manifestjson-file-1">
+        
+        
+          <a href="#initialize-the-stack-with-the-custom-manifestjson-file-1" class="anchor-heading" aria-labelledby="initialize-the-stack-with-the-custom-manifestjson-file-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Initialize the stack with the custom <code class="language-plaintext highlighter-rouge">manifest.json</code> file
+        
+        
+      </h3>
+    
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> ff init local-test -m ~/Code/hyperledger/firefly/manifest.json
+ ff start local-test
+</code></pre></div></div>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

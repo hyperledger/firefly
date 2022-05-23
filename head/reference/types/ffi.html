@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>FFI - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>FFI | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="FFI" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="FFI" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"FFI","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/types/ffi.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item  active">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link active">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/reference/">Reference</a></li>
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/reference/types/">Core Resources</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>FFI</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 class="no_toc" id="ffi">
+        
+        
+          <a href="#ffi" class="anchor-heading" aria-labelledby="ffi"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFI
+        
+        
+      </h1>
+    
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#ffi-1" id="markdown-toc-ffi-1">FFI</a>    <ol>
+      <li><a href="#example" id="markdown-toc-example">Example</a></li>
+      <li><a href="#field-descriptions" id="markdown-toc-field-descriptions">Field Descriptions</a></li>
+    </ol>
+  </li>
+  <li><a href="#ffimethod" id="markdown-toc-ffimethod">FFIMethod</a></li>
+  <li><a href="#ffiparam" id="markdown-toc-ffiparam">FFIParam</a></li>
+  <li><a href="#ffievent" id="markdown-toc-ffievent">FFIEvent</a></li>
+  <li><a href="#ffiparam-1" id="markdown-toc-ffiparam-1">FFIParam</a></li>
+</ol><hr />
+      <h2 id="ffi-1">
+        
+        
+          <a href="#ffi-1" class="anchor-heading" aria-labelledby="ffi-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFI
+        
+        
+      </h2>
+    
+
+<p>See <a href="../firefly_interface_format">FireFly Interface Format</a></p>
+      <h3 id="example">
+        
+        
+          <a href="#example" class="anchor-heading" aria-labelledby="example"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Example
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c35d3449-4f24-4676-8e64-91c9e46f06c4"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e4ad2077-5714-416e-81f9-7964a6223b6f"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ns1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SimpleStorage"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"A simple example contract in Solidity"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v0.0.1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8f3289dd-3a19-4a9f-aab3-cb05289b013c"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c35d3449-4f24-4676-8e64-91c9e46f06c4"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ns1"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Get the current value"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"output"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c35d3449-4f24-4676-8e64-91c9e46f06c4"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ns1"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Set the value"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9f653f93-86f4-45bc-be75-d7f5888fbbc0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c35d3449-4f24-4676-8e64-91c9e46f06c4"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ns1"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"signature"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed(address,uint256)"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Emitted when the value changes"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"_from"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+                            </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">},</span><span class="w">
+                </span><span class="p">{</span><span class="w">
+                    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"_value"</span><span class="p">,</span><span class="w">
+                    </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+                        </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+                        </span><span class="p">}</span><span class="w">
+                    </span><span class="p">}</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+            </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="field-descriptions">
+        
+        
+          <a href="#field-descriptions" class="anchor-heading" aria-labelledby="field-descriptions"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Field Descriptions
+        
+        
+      </h3>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>The UUID of the FireFly interface (FFI) smart contract definition</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">message</code></td>
+      <td>The UUID of the broadcast message that was used to publish this FFI to the network</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">namespace</code></td>
+      <td>The namespace of the FFI</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the FFI - usually matching the smart contract name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">description</code></td>
+      <td>A description of the smart contract this FFI represents</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">version</code></td>
+      <td>A version for the FFI - use of semantic versioning such as ‘v1.0.1’ is encouraged</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">methods</code></td>
+      <td>An array of smart contract method definitions</td>
+      <td><a href="#ffimethod"><code class="language-plaintext highlighter-rouge">FFIMethod[]</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">events</code></td>
+      <td>An array of smart contract event definitions</td>
+      <td><a href="#ffievent"><code class="language-plaintext highlighter-rouge">FFIEvent[]</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffimethod">
+        
+        
+          <a href="#ffimethod" class="anchor-heading" aria-labelledby="ffimethod"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIMethod
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>The UUID of the FFI method definition</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">interface</code></td>
+      <td>The UUID of the FFI smart contract definition that this method is part of</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the method</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">namespace</code></td>
+      <td>The namespace of the FFI</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pathname</code></td>
+      <td>The unique name allocated to this method within the FFI for use on URL paths. Supports contracts that have multiple method overrides with the same name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">description</code></td>
+      <td>A description of the smart contract method</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">params</code></td>
+      <td>An array of method parameter/argument definitions</td>
+      <td><a href="#ffiparam"><code class="language-plaintext highlighter-rouge">FFIParam[]</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">returns</code></td>
+      <td>An array of method return definitions</td>
+      <td><a href="#ffiparam"><code class="language-plaintext highlighter-rouge">FFIParam[]</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffiparam">
+        
+        
+          <a href="#ffiparam" class="anchor-heading" aria-labelledby="ffiparam"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIParam
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">schema</code></td>
+      <td>FireFly uses an extended subset of JSON Schema to describe parameters, similar to OpenAPI/Swagger. Converters are available for native blockchain interface definitions / type systems - such as an Ethereum ABI. See the documentation for more detail</td>
+      <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffievent">
+        
+        
+          <a href="#ffievent" class="anchor-heading" aria-labelledby="ffievent"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIEvent
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">id</code></td>
+      <td>The UUID of the FFI event definition</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">interface</code></td>
+      <td>The UUID of the FFI smart contract definition that this event is part of</td>
+      <td><a href="simpletypes#uuid"><code class="language-plaintext highlighter-rouge">UUID</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">namespace</code></td>
+      <td>The namespace of the FFI</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">pathname</code></td>
+      <td>The unique name allocated to this event within the FFI for use on URL paths. Supports contracts that have multiple event overrides with the same name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">signature</code></td>
+      <td>The stringified signature of the event, as computed by the blockchain plugin</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the event</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">description</code></td>
+      <td>A description of the smart contract event</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">params</code></td>
+      <td>An array of event parameter/argument definitions</td>
+      <td><a href="#ffiparam"><code class="language-plaintext highlighter-rouge">FFIParam[]</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="ffiparam-1">
+        
+        
+          <a href="#ffiparam-1" class="anchor-heading" aria-labelledby="ffiparam-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> FFIParam
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">schema</code></td>
+      <td>FireFly uses an extended subset of JSON Schema to describe parameters, similar to OpenAPI/Swagger. Converters are available for native blockchain interface definitions / type systems - such as an Ethereum ABI. See the documentation for more detail</td>
+      <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
+    </tr>
+  </tbody>
+</table>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

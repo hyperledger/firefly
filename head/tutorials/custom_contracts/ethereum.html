@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>Ethereum - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Ethereum | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Ethereum" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Ethereum" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"Ethereum","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/custom_contracts/ethereum.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item  active">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link active">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/">Tutorials</a></li>
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/custom_contracts/">Work with custom smart contracts</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>Ethereum</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 id="work-with-ethereum-smart-contracts">
+        
+        
+          <a href="#work-with-ethereum-smart-contracts" class="anchor-heading" aria-labelledby="work-with-ethereum-smart-contracts"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Work with Ethereum smart contracts
+        
+        
+      </h1>
+    
+
+<p class="no_toc">This guide describes the steps to deploy a smart contract to an Ethereum blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.</p>
+
+<blockquote>
+  <p><strong>NOTE:</strong> This guide assumes that you are running a local FireFly stack with at least 2 members and an Ethereum blockchain created by the FireFly CLI. If you need help getting that set up, please see the <a href="https://nguyer.github.io/firefly/gettingstarted/setup_env.html">Getting Started guide to Start your environment</a>.</p>
+</blockquote>
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#work-with-ethereum-smart-contracts" id="markdown-toc-work-with-ethereum-smart-contracts">Work with Ethereum smart contracts</a>    <ol>
+      <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
+      <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a>        <ol>
+          <li><a href="#using-truffle" id="markdown-toc-using-truffle">Using Truffle</a></li>
+          <li><a href="#using-the-firefly-cli" id="markdown-toc-using-the-firefly-cli">Using the FireFly CLI</a></li>
+        </ol>
+      </li>
+      <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>        <ol>
+          <li><a href="#request" id="markdown-toc-request">Request</a></li>
+          <li><a href="#response" id="markdown-toc-response">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#broadcast-the-contract-interface" id="markdown-toc-broadcast-the-contract-interface">Broadcast the contract interface</a>        <ol>
+          <li><a href="#request-1" id="markdown-toc-request-1">Request</a></li>
+          <li><a href="#response-1" id="markdown-toc-response-1">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-an-http-api-for-the-contract" id="markdown-toc-create-an-http-api-for-the-contract">Create an HTTP API for the contract</a>        <ol>
+          <li><a href="#request-2" id="markdown-toc-request-2">Request</a></li>
+          <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#view-openapi-spec-for-the-contract" id="markdown-toc-view-openapi-spec-for-the-contract">View OpenAPI spec for the contract</a></li>
+      <li><a href="#invoke-the-smart-contract" id="markdown-toc-invoke-the-smart-contract">Invoke the smart contract</a>        <ol>
+          <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
+          <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#query-the-current-value" id="markdown-toc-query-the-current-value">Query the current value</a>        <ol>
+          <li><a href="#request-4" id="markdown-toc-request-4">Request</a></li>
+          <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>        <ol>
+          <li><a href="#request-5" id="markdown-toc-request-5">Request</a></li>
+          <li><a href="#response-5" id="markdown-toc-response-5">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>        <ol>
+          <li><a href="#request-6" id="markdown-toc-request-6">Request</a></li>
+          <li><a href="#response-6" id="markdown-toc-response-6">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>        <ol>
+          <li><a href="#websocket-event" id="markdown-toc-websocket-event">WebSocket event</a></li>
+        </ol>
+      </li>
+      <li><a href="#appendix-i-work-with-a-custom-contract-without-creating-a-named-api" id="markdown-toc-appendix-i-work-with-a-custom-contract-without-creating-a-named-api">Appendix I: Work with a custom contract without creating a named API</a>        <ol>
+          <li><a href="#request-7" id="markdown-toc-request-7">Request</a></li>
+          <li><a href="#response-7" id="markdown-toc-response-7">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#appendix-ii-work-directly-with-contracts-with-inline-requests" id="markdown-toc-appendix-ii-work-directly-with-contracts-with-inline-requests">Appendix II: Work directly with contracts with inline requests</a>        <ol>
+          <li><a href="#request-8" id="markdown-toc-request-8">Request</a></li>
+          <li><a href="#response-8" id="markdown-toc-response-8">Response</a></li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol><hr />
+      <h2 id="example-smart-contract">
+        
+        
+          <a href="#example-smart-contract" class="anchor-heading" aria-labelledby="example-smart-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Example smart contract
+        
+        
+      </h2>
+    
+
+<p>For this tutorial, we will be using a well known, but slightly modified smart contract called <code class="language-plaintext highlighter-rouge">SimpleStorage</code>, and will be using this contract on an Ethereum blockchain. As the name implies, it’s a very simple contract which stores an unsigned 256 bit integer, emits and event when the value is updated, and allows you to retrieve the current value.</p>
+
+<p>Here is the source for this contract:</p>
+
+<div class="language-solidity highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// SPDX-License-Identifier: Apache-2.0
+</span><span class="k">pragma</span> <span class="n">solidity</span> <span class="o">^</span><span class="mf">0.8</span><span class="p">.</span><span class="mi">10</span><span class="p">;</span>
+
+<span class="c1">// Declares a new contract
+</span><span class="k">contract</span> <span class="n">SimpleStorage</span> <span class="p">{</span>
+    <span class="c1">// Storage. Persists in between transactions
+</span>    <span class="kt">uint256</span> <span class="n">x</span><span class="p">;</span>
+
+    <span class="c1">// Allows the unsigned integer stored to be changed
+</span>    <span class="k">function</span> <span class="n">set</span><span class="p">(</span><span class="kt">uint256</span> <span class="n">newValue</span><span class="p">)</span> <span class="k">public</span> <span class="p">{</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">newValue</span><span class="p">;</span>
+        <span class="k">emit</span> <span class="n">Changed</span><span class="p">(</span><span class="n">msg</span><span class="p">.</span><span class="n">sender</span><span class="p">,</span> <span class="n">newValue</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Returns the currently stored unsigned integer
+</span>    <span class="k">function</span> <span class="n">get</span><span class="p">()</span> <span class="k">public</span> <span class="k">view</span> <span class="k">returns</span> <span class="p">(</span><span class="kt">uint256</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">x</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">event</span> <span class="n">Changed</span><span class="p">(</span><span class="kt">address</span> <span class="k">indexed</span> <span class="n">from</span><span class="p">,</span> <span class="kt">uint256</span> <span class="n">value</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+      <h2 id="contract-deployment">
+        
+        
+          <a href="#contract-deployment" class="anchor-heading" aria-labelledby="contract-deployment"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Contract deployment
+        
+        
+      </h2>
+    
+
+<p>For the this guide, we will assume that the SimpleStorage contract is deployed at the Ethereum address of: <code class="language-plaintext highlighter-rouge">0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1</code></p>
+
+<p><strong>Deployment of smart contracts is not currently within the scope of responsibility for FireFly.</strong> You can use your standard blockchain specific tools to deploy your contract to whichever blockchain you are using. For Ethereum blockchains you could use <a href="https://trufflesuite.com/">Truffle</a> or <a href="https://hardhat.org/">Hardhat</a>.</p>
+      <h3 id="using-truffle">
+        
+        
+          <a href="#using-truffle" class="anchor-heading" aria-labelledby="using-truffle"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Using Truffle
+        
+        
+      </h3>
+    
+
+<p>If you’re using Truffle, you’ll need to set your <code class="language-plaintext highlighter-rouge">truffle-config.js</code> file to point to the locally running blockchain node that the FireFly CLI created. Make sure your <code class="language-plaintext highlighter-rouge">networks</code> section looks like this:</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">networks</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nl">development</span><span class="p">:</span> <span class="p">{</span>
+        <span class="na">host</span><span class="p">:</span> <span class="dl">"</span><span class="s2">127.0.0.1</span><span class="dl">"</span><span class="p">,</span>
+        <span class="na">port</span><span class="p">:</span> <span class="mi">5100</span><span class="p">,</span>
+        <span class="na">network_id</span><span class="p">:</span> <span class="dl">"</span><span class="s2">*</span><span class="dl">"</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+      <h3 id="using-the-firefly-cli">
+        
+        
+          <a href="#using-the-firefly-cli" class="anchor-heading" aria-labelledby="using-the-firefly-cli"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Using the FireFly CLI
+        
+        
+      </h3>
+    
+
+<p>The FireFly CLI also has a function to deploy an already-compiled smart contract to a local FireFly stack.</p>
+
+<blockquote>
+  <p><strong>NOTE:</strong> The contract deployment function of the FireFly CLI is a convenience function to speed up local development, and not intended for production applications</p>
+</blockquote>
+
+<p>We will use the <code class="language-plaintext highlighter-rouge">solc</code> compiler to compile our smart contract. For details on how to install <code class="language-plaintext highlighter-rouge">solc</code> on your system, please see the <a href="https://docs.soliditylang.org/en/v0.8.9/installing-solidity.html">Solidity Compiler Documentation</a>.</p>
+
+<p>If you take the smart contract source code in the example above, and save that to a file called <code class="language-plaintext highlighter-rouge">simple_storage.sol</code>, here is the command to compile the contract:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ solc --combined-json abi,bin simple_storage.sol &gt; simple_storage.json
+</code></pre></div></div>
+
+<p>Next, we’ll tell the FireFly to deploy the compiled contract to a running stack named <code class="language-plaintext highlighter-rouge">dev</code>. If your stack name is different, update the command accordingly:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ff deploy dev simple_storage.json
+reading stack config... done
+deploying simple_storage.sol:SimpleStorage... done
+
+contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
+</code></pre></div></div>
+
+<p>The FireFly CLI tells us that it has successfully deployed the contract with an address of <code class="language-plaintext highlighter-rouge">0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1</code>. We will use this contract address for the rest of this guide.</p>
+      <h2 id="the-firefly-interface-format">
+        
+        
+          <a href="#the-firefly-interface-format" class="anchor-heading" aria-labelledby="the-firefly-interface-format"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> The FireFly Interface Format
+        
+        
+      </h2>
+    
+
+<p>If you have an Ethereum ABI for an existing smart contract, there is an HTTP endpoint on the FireFly API that will take the ABI as input and automatically generate the FireFly Interface for you. Rather than handcrafting our FFI, we’ll let FireFly generate it for us using that endpoint now.</p>
+      <h3 id="request">
+        
+        
+          <a href="#request" class="anchor-heading" aria-labelledby="request"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p>Here we will take the JSON ABI generated by <code class="language-plaintext highlighter-rouge">truffle</code> or <code class="language-plaintext highlighter-rouge">solc</code> and <code class="language-plaintext highlighter-rouge">POST</code> that to FireFly to have it automatically generate the FireFly Interface for us. Copy the <code class="language-plaintext highlighter-rouge">abi</code> from the compiled JSON file, and put that inside an <code class="language-plaintext highlighter-rouge">input</code> object like the example below:</p>
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/interfaces/generate</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"abi"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"anonymous"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"inputs"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"from"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="w">
+          </span><span class="p">},</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"event"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"inputs"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="nl">"stateMutability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"view"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"function"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"inputs"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+          </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"outputs"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+        </span><span class="nl">"stateMutability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nonpayable"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"function"</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response">
+        
+        
+          <a href="#response" class="anchor-heading" aria-labelledby="response"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<p>FireFly generates and returns the the full FireFly Interface for the SimpleStorage contract in the response body:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"from"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="broadcast-the-contract-interface">
+        
+        
+          <a href="#broadcast-the-contract-interface" class="anchor-heading" aria-labelledby="broadcast-the-contract-interface"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Broadcast the contract interface
+        
+        
+      </h2>
+    
+
+<p>Now that we have a FireFly Interface representation of our smart contract, we want to broadcast that to the entire network. This broadcast will be pinned to the blockchain, so we can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.</p>
+
+<p>We will take the output from the previous HTTP response above, <strong>fill in the name and version</strong> and then <code class="language-plaintext highlighter-rouge">POST</code> that to the <code class="language-plaintext highlighter-rouge">/contracts/interfaces</code> API endpoint.</p>
+      <h3 id="request-1">
+        
+        
+          <a href="#request-1" class="anchor-heading" aria-labelledby="request-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/interfaces</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SimpleStorage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.0.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"from"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-1">
+        
+        
+          <a href="#response-1" class="anchor-heading" aria-labelledby="response-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3cd0dde2-1e39-4c9e-a4a1-569e87cca93a"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SimpleStorage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"v1.0.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"56467890-5713-4463-84b8-4537fcb63d8b"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"contract"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"get"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6b254d1d-5f5f-491e-bbd2-201e96892e1a"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"contract"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"newValue"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aa1fe67b-b2ac-41af-a7e7-7ad54a30a78d"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"contract"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"from"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="create-an-http-api-for-the-contract">
+        
+        
+          <a href="#create-an-http-api-for-the-contract" class="anchor-heading" aria-labelledby="create-an-http-api-for-the-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create an HTTP API for the contract
+        
+        
+      </h2>
+    
+
+<p>Now comes the fun part where we see some of the powerful, developer-friendly features of FireFly. The next thing we’re going to do is tell FireFly to build an HTTP API for this smart contract, complete with an OpenAPI Specification and Swagger UI. As part of this, we’ll also tell FireFly where the contract is on the blockchain. Like the interface broadcast above, this will also generate a broadcast which will be pinned to the blockchain so all the members of the network will be aware of and able to interact with this API.</p>
+
+<p>We need to copy the <code class="language-plaintext highlighter-rouge">id</code> field we got in the response from the previous step to the <code class="language-plaintext highlighter-rouge">interface.id</code> field in the request body below. We will also pick a name that will be part of the URL for our HTTP API, so be sure to pick a name that is URL friendly. In this case we’ll call it <code class="language-plaintext highlighter-rouge">simple-storage</code>. Lastly, in the <code class="language-plaintext highlighter-rouge">location.address</code> field, we’re telling FireFly where an instance of the contract is deployed on-chain.</p>
+
+<blockquote>
+  <p><strong>NOTE</strong>: The <code class="language-plaintext highlighter-rouge">location</code> field is optional here, but if it is omitted, it will be required in every request to invoke or query the contract. This can be useful if you have multiple instances of the same contract deployed to different addresses.</p>
+</blockquote>
+      <h3 id="request-2">
+        
+        
+          <a href="#request-2" class="anchor-heading" aria-labelledby="request-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-2">
+        
+        
+          <a href="#response-2" class="anchor-heading" aria-labelledby="response-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"9a681ec6-1dee-42a0-b91b-61d23a814b0f"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"d90d0386-8874-43fb-b7d3-485c22f35f47"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"urls"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"openapi"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/simple-storage/api/swagger.json"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ui"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/simple-storage/api"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="view-openapi-spec-for-the-contract">
+        
+        
+          <a href="#view-openapi-spec-for-the-contract" class="anchor-heading" aria-labelledby="view-openapi-spec-for-the-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> View OpenAPI spec for the contract
+        
+        
+      </h2>
+    
+
+<p>You’ll notice in the response body that there are a couple of URLs near the bottom. If you navigate to the one labeled <code class="language-plaintext highlighter-rouge">ui</code> in your browser, you should see the Swagger UI for your smart contract.</p>
+
+<p><img src="../../images/simple_storage_swagger.png" alt="Swagger UI" title="Swagger UI" /></p>
+      <h2 id="invoke-the-smart-contract">
+        
+        
+          <a href="#invoke-the-smart-contract" class="anchor-heading" aria-labelledby="invoke-the-smart-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Invoke the smart contract
+        
+        
+      </h2>
+    
+
+<p>Now that we’ve got everything set up, it’s time to use our smart contract! We’re going to make a <code class="language-plaintext highlighter-rouge">POST</code> request to the <code class="language-plaintext highlighter-rouge">invoke/set</code> endpoint to set the integer value on-chain. Let’s set it to the value of <code class="language-plaintext highlighter-rouge">3</code> right now.</p>
+      <h3 id="request-3">
+        
+        
+          <a href="#request-3" class="anchor-heading" aria-labelledby="request-3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/set</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"newValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-3">
+        
+        
+          <a href="#response-3" class="anchor-heading" aria-labelledby="response-3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"41c67c63-52cf-47ce-8a59-895fe2ffdc86"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>You’ll notice that we just get an ID back here, and that’s expected due to the asynchronous programming model of working with smart contracts in FireFly. To see what the value is now, we can query the smart contract. In a little bit, we’ll also subscribe to the events emitted by this contract so we can know when the value is updated in realtime.</p>
+      <h2 id="query-the-current-value">
+        
+        
+          <a href="#query-the-current-value" class="anchor-heading" aria-labelledby="query-the-current-value"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Query the current value
+        
+        
+      </h2>
+    
+
+<p>To make a read-only request to the blockchain to check the current value of the stored integer, we can make a <code class="language-plaintext highlighter-rouge">POST</code> to the <code class="language-plaintext highlighter-rouge">query/get</code> endpoint.</p>
+      <h3 id="request-4">
+        
+        
+          <a href="#request-4" class="anchor-heading" aria-labelledby="request-4"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/query/get</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-4">
+        
+        
+          <a href="#response-4" class="anchor-heading" aria-labelledby="response-4"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"output"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<blockquote>
+  <p><strong>NOTE:</strong> Some contracts may have queries that require input parameters. That’s why the query endpoint is a <code class="language-plaintext highlighter-rouge">POST</code>, rather than a <code class="language-plaintext highlighter-rouge">GET</code> so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.</p>
+</blockquote>
+      <h2 id="create-a-blockchain-event-listener">
+        
+        
+          <a href="#create-a-blockchain-event-listener" class="anchor-heading" aria-labelledby="create-a-blockchain-event-listener"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create a blockchain event listener
+        
+        
+      </h2>
+    
+
+<p>Now that we’ve seen how to submit transactions and preform read-only queries to the blockchain, let’s look at how to receive blockchain events so we know when things are happening in realtime.</p>
+
+<p>If you look at the source code for the smart contract we’re working with above, you’ll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an <strong>Event Listener</strong>. The <code class="language-plaintext highlighter-rouge">/contracts/listeners</code> endpoint is RESTful so there are <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">GET</code>, and <code class="language-plaintext highlighter-rouge">DELETE</code> methods available on it. To create a new listener, we will make a <code class="language-plaintext highlighter-rouge">POST</code> request. We are going to tell FireFly to listen to events with name <code class="language-plaintext highlighter-rouge">"Changed"</code> from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events.</p>
+      <h3 id="request-5">
+        
+        
+          <a href="#request-5" class="anchor-heading" aria-labelledby="request-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/listeners</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-5">
+        
+        
+          <a href="#response-5" class="anchor-heading" aria-labelledby="response-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1bfa3b0f-3d90-403e-94a4-af978d8c5b14"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8bdd27a5-67c1-4960-8d1e-7aa31b9084d3"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-66209ffc-d355-4ac0-7151-bc82490ca9df"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-66209ffc-d355-4ac0-7151-bc82490ca9df"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-02-17T22:02:36.34549538Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"from"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"indexed"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"internalType"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>We can see in the response, that FireFly pulls all the schema information from the FireFly Interface that we broadcasted earlier and creates the listener with that schema. This is useful so that we don’t have to enter all of that data again.</p>
+      <h2 id="subscribe-to-events-from-our-contract">
+        
+        
+          <a href="#subscribe-to-events-from-our-contract" class="anchor-heading" aria-labelledby="subscribe-to-events-from-our-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Subscribe to events from our contract
+        
+        
+      </h2>
+    
+
+<p>Now that we’ve told FireFly that it should listen for specific events on the blockchain, we can set up a <strong>Subscription</strong> for FireFly to send events to our app. To set up our subscription, we will make a <code class="language-plaintext highlighter-rouge">POST</code> to the <code class="language-plaintext highlighter-rouge">/subscriptions</code> endpoint.</p>
+
+<p>We will set a friendly name <code class="language-plaintext highlighter-rouge">simple-storage</code> to identify the Subscription when we are connecting to it in the next step.</p>
+
+<p>We’re also going to set up a filter to only send events blockchain events from our listener that we created in the previous step. To do that, we’ll <strong>copy the listener ID</strong> from the step above (<code class="language-plaintext highlighter-rouge">1bfa3b0f-3d90-403e-94a4-af978d8c5b14</code>) and set that as the value of the <code class="language-plaintext highlighter-rouge">listener</code> field in the example below:</p>
+      <h3 id="request-6">
+        
+        
+          <a href="#request-6" class="anchor-heading" aria-labelledby="request-6"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/subscriptions</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"transport"</span><span class="p">:</span><span class="w"> </span><span class="s2">"websockets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"filter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1bfa3b0f-3d90-403e-94a4-af978d8c5b14"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-6">
+        
+        
+          <a href="#response-6" class="anchor-heading" aria-labelledby="response-6"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f826269c-65ed-4634-b24c-4f399ec53a32"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"transport"</span><span class="p">:</span><span class="w"> </span><span class="s2">"websockets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"filter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"transaction"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1bfa3b0f-3d90-403e-94a4-af978d8c5b14"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"withData"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-03-15T17:35:30.131698921Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="receive-custom-smart-contract-events">
+        
+        
+          <a href="#receive-custom-smart-contract-events" class="anchor-heading" aria-labelledby="receive-custom-smart-contract-events"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Receive custom smart contract events
+        
+        
+      </h2>
+    
+
+<p>The last step is to connect a WebSocket client to FireFly to receive the event. You can use any WebSocket client you like, such as <a href="https://www.postman.com/">Postman</a> or a command line app like <a href="https://github.com/vi/websocat"><code class="language-plaintext highlighter-rouge">websocat</code></a>.</p>
+
+<p>Connect your WebSocket client to <code class="language-plaintext highlighter-rouge">ws://localhost:5000/ws</code>.</p>
+
+<p>After connecting the WebSocket client, send a message to tell FireFly to:</p>
+
+<ul>
+  <li>Start sending events</li>
+  <li>For the Subscription named <code class="language-plaintext highlighter-rouge">simple-storage</code></li>
+  <li>On the <code class="language-plaintext highlighter-rouge">default</code> namespace</li>
+  <li>Automatically “ack” each event which will let FireFly immediately send the next event when available</li>
+</ul>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"start"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"autoack"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="websocket-event">
+        
+        
+          <a href="#websocket-event" class="anchor-heading" aria-labelledby="websocket-event"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WebSocket event
+        
+        
+      </h3>
+    
+
+<p>After creating the subscription, you should see an event arrive on the connected WebSocket client that looks something like this:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0f4a31d6-9743-4537-82df-5a9c76ccbd1e"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"sequence"</span><span class="p">:</span><span class="w"> </span><span class="mi">24</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"reference"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dd3e1554-c832-47a8-898e-f1ee406bea41"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-03-15T17:32:27.824417878Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dd3e1554-c832-47a8-898e-f1ee406bea41"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"sequence"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ethereum"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1bfa3b0f-3d90-403e-94a4-af978d8c5b14"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"000000000010/000000/000000"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xb7e6a5eb07a75a2c81801a157192a82bcbce0f21"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"info"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"blockNumber"</span><span class="p">:</span><span class="w"> </span><span class="s2">"10"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"logIndex"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"signature"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Changed(address,uint256)"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"subId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-724b8416-786d-4e67-4cd3-5bae4a26eb0e"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1647365460"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"transactionHash"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xd5b5c716554097b2868d8705241bb2189bb76d16300f702ad05b0b02fccc4afb"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"transactionIndex"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x0"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-03-15T17:31:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"subscription"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f826269c-65ed-4634-b24c-4f399ec53a32"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"simple-storage"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>You can see in the event received over the WebSocket connection, the blockchain event that was emitted from our first transaction, which happened in the past. We received this event, because when we set up both the Listener, and the Subscription, we specified the <code class="language-plaintext highlighter-rouge">"firstEvent"</code> as <code class="language-plaintext highlighter-rouge">"oldest"</code>. This tells FireFly to look for this event from the beginning of the blockchain, and that your app is interested in FireFly events since the beginning of FireFly’s event history.</p>
+
+<p>In the event, we can also see the <code class="language-plaintext highlighter-rouge">blockchainevent</code> itself, which has an <code class="language-plaintext highlighter-rouge">output</code> object. These are the <code class="language-plaintext highlighter-rouge">params</code> in our FireFly Interface, and the actual output of the event. Here we can see the <code class="language-plaintext highlighter-rouge">value</code> is <code class="language-plaintext highlighter-rouge">3</code> which is what we set the integer to in our original transaction.</p>
+
+<p><strong>You’ve reached the end of the main guide to working with custom smart contracts in FireFly</strong>. Hopefully this was helpful and gives you what you need to get up and running with your own contracts. There are several additional ways to invoke or query smart contracts detailed below, so feel free to keep reading if you’re curious.</p>
+      <h2 id="appendix-i-work-with-a-custom-contract-without-creating-a-named-api">
+        
+        
+          <a href="#appendix-i-work-with-a-custom-contract-without-creating-a-named-api" class="anchor-heading" aria-labelledby="appendix-i-work-with-a-custom-contract-without-creating-a-named-api"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Appendix I: Work with a custom contract without creating a named API
+        
+        
+      </h2>
+    
+
+<p>FireFly aims to offer a developer-friendly and flexible approach to using custom smart contracts. The guide above has detailed the most robust and feature-rich way to use custom contracts with FireFly, but there are several alternative API usage patterns available as well.</p>
+
+<p>It is possible to broadcast a contract interface and use a smart contract that implements that interface without also broadcasting a named API as above. There are several key differences (which may or may not be desirable) compared to the method outlined in the full guide above:</p>
+
+<ul>
+  <li>OpenAPI Spec and Swagger UI are not available</li>
+  <li>Each HTTP request to invoke/query the contract will need to include the contract location</li>
+  <li>The contract location will <em>not</em> have been broadcasted to all other members of the network</li>
+  <li>The URL to invoke/query the contract will be different (described below)</li>
+</ul>
+      <h3 id="request-7">
+        
+        
+          <a href="#request-7" class="anchor-heading" aria-labelledby="request-7"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/interfaces/8bdd27a5-67c1-4960-8d1e-7aa31b9084d3/invoke/set</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"newValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-7">
+        
+        
+          <a href="#response-7" class="anchor-heading" aria-labelledby="response-7"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f310fa4a-73d8-4777-9f9d-dfa5012a052f"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>All of the same invoke, query, and subscribe endpoints are available on the contract interface itself.</p>
+      <h2 id="appendix-ii-work-directly-with-contracts-with-inline-requests">
+        
+        
+          <a href="#appendix-ii-work-directly-with-contracts-with-inline-requests" class="anchor-heading" aria-labelledby="appendix-ii-work-directly-with-contracts-with-inline-requests"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Appendix II: Work directly with contracts with inline requests
+        
+        
+      </h2>
+    
+
+<p>The final way of working with custom smart contracts with FireFly is to just put everything FireFly needs all in one request, each time a contract is invoked or queried. This is the most lightweight, but least feature-rich way of using a custom contract.</p>
+
+<p>To do this, we will need to put both the contract location, and a subset of the FireFly Interface that describes the method we want to invoke in the request body, in addition to the function input.</p>
+      <h3 id="request-8">
+        
+        
+          <a href="#request-8" class="anchor-heading" aria-labelledby="request-8"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/invoke</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"x"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"integer"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uint256"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"x"</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-8">
+        
+        
+          <a href="#response-8" class="anchor-heading" aria-labelledby="response-8"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"386d3e23-e4bc-4a9b-bc1f-452f0a8c9ae5"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

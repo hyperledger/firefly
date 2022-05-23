@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>WSStart - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>WSStart | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="WSStart" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="WSStart" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"WSStart","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/reference/types/wsstart.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item  active">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link active">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/reference/">Reference</a></li>
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/reference/types/">Core Resources</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>WSStart</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 class="no_toc" id="wsstart">
+        
+        
+          <a href="#wsstart" class="anchor-heading" aria-labelledby="wsstart"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WSStart
+        
+        
+      </h1>
+    
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#wsstart-1" id="markdown-toc-wsstart-1">WSStart</a>    <ol>
+      <li><a href="#example" id="markdown-toc-example">Example</a></li>
+      <li><a href="#field-descriptions" id="markdown-toc-field-descriptions">Field Descriptions</a></li>
+    </ol>
+  </li>
+  <li><a href="#subscriptionfilter" id="markdown-toc-subscriptionfilter">SubscriptionFilter</a></li>
+  <li><a href="#messagefilter" id="markdown-toc-messagefilter">MessageFilter</a></li>
+  <li><a href="#transactionfilter" id="markdown-toc-transactionfilter">TransactionFilter</a></li>
+  <li><a href="#blockchaineventfilter" id="markdown-toc-blockchaineventfilter">BlockchainEventFilter</a></li>
+  <li><a href="#subscriptionoptions" id="markdown-toc-subscriptionoptions">SubscriptionOptions</a></li>
+  <li><a href="#webhookinputoptions" id="markdown-toc-webhookinputoptions">WebhookInputOptions</a></li>
+</ol><hr />
+      <h2 id="wsstart-1">
+        
+        
+          <a href="#wsstart-1" class="anchor-heading" aria-labelledby="wsstart-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WSStart
+        
+        
+      </h2>
+    
+
+<p>The <code class="language-plaintext highlighter-rouge">start</code> payload is sent after an application connects to a WebSocket, to start
+delivery of events over that connection.</p>
+
+<p>The start command can refer to a subscription by name in order to reliably receive all matching
+events for that subscription, including those that were emitted when the application
+was disconnected.</p>
+
+<p>Alternatively the start command can request <code class="language-plaintext highlighter-rouge">"ephemeral": true</code> in order to dynamically create a new
+subscription that lasts only for the duration that the connection is active.</p>
+      <h3 id="example">
+        
+        
+          <a href="#example" class="anchor-heading" aria-labelledby="example"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Example
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"start"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"autoack"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ns1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"app1_subscription"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ephemeral"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"filter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+        </span><span class="nl">"transaction"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+        </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="field-descriptions">
+        
+        
+          <a href="#field-descriptions" class="anchor-heading" aria-labelledby="field-descriptions"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Field Descriptions
+        
+        
+      </h3>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">type</code></td>
+      <td>WSActionBase.type</td>
+      <td><code class="language-plaintext highlighter-rouge">FFEnum</code>:<br /><code class="language-plaintext highlighter-rouge">"start"</code><br /><code class="language-plaintext highlighter-rouge">"ack"</code><br /><code class="language-plaintext highlighter-rouge">"protocol_error"</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">autoack</code></td>
+      <td>WSStart.autoack</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">namespace</code></td>
+      <td>WSStart.namespace</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>WSStart.name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">ephemeral</code></td>
+      <td>WSStart.ephemeral</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">filter</code></td>
+      <td>WSStart.filter</td>
+      <td><a href="#subscriptionfilter"><code class="language-plaintext highlighter-rouge">SubscriptionFilter</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">options</code></td>
+      <td>WSStart.options</td>
+      <td><a href="#subscriptionoptions"><code class="language-plaintext highlighter-rouge">SubscriptionOptions</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="subscriptionfilter">
+        
+        
+          <a href="#subscriptionfilter" class="anchor-heading" aria-labelledby="subscriptionfilter"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> SubscriptionFilter
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">events</code></td>
+      <td>Regular expression to apply to the event type, to subscribe to a subset of event types</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">message</code></td>
+      <td>Filters specific to message events. If an event is not a message event, these filters are ignored</td>
+      <td><a href="#messagefilter"><code class="language-plaintext highlighter-rouge">MessageFilter</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">transaction</code></td>
+      <td>Filters specific to events with a transaction. If an event is not associated with a transaction, this filter is ignored</td>
+      <td><a href="#transactionfilter"><code class="language-plaintext highlighter-rouge">TransactionFilter</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">blockchainevent</code></td>
+      <td>Filters specific to blockchain events. If an event is not a blockchain event, these filters are ignored</td>
+      <td><a href="#blockchaineventfilter"><code class="language-plaintext highlighter-rouge">BlockchainEventFilter</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">topic</code></td>
+      <td>Regular expression to apply to the topic of the event, to subscribe to a subset of topics. Note for messages sent with multiple topics, a separate event is emitted for each topic</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">topics</code></td>
+      <td>Deprecated: Please use ‘topic’ instead</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tag</code></td>
+      <td>Deprecated: Please use ‘message.tag’ instead</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">group</code></td>
+      <td>Deprecated: Please use ‘message.group’ instead</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">author</code></td>
+      <td>Deprecated: Please use ‘message.author’ instead</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="messagefilter">
+        
+        
+          <a href="#messagefilter" class="anchor-heading" aria-labelledby="messagefilter"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> MessageFilter
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">tag</code></td>
+      <td>Regular expression to apply to the message ‘header.tag’ field</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">group</code></td>
+      <td>Regular expression to apply to the message ‘header.group’ field</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">author</code></td>
+      <td>Regular expression to apply to the message ‘header.author’ field</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="transactionfilter">
+        
+        
+          <a href="#transactionfilter" class="anchor-heading" aria-labelledby="transactionfilter"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> TransactionFilter
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">type</code></td>
+      <td>Regular expression to apply to the transaction ‘type’ field</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="blockchaineventfilter">
+        
+        
+          <a href="#blockchaineventfilter" class="anchor-heading" aria-labelledby="blockchaineventfilter"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> BlockchainEventFilter
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">name</code></td>
+      <td>Regular expression to apply to the blockchain event ‘name’ field, which is the name of the event in the underlying blockchain smart contract</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">listener</code></td>
+      <td>Regular expression to apply to the blockchain event ‘listener’ field, which is the UUID of the event listener. So you can restrict your subscription to certain blockchain listeners. Alternatively to avoid your application need to know listener UUIDs you can set the ‘topic’ field of blockchain event listeners, and use a topic filter on your subscriptions</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="subscriptionoptions">
+        
+        
+          <a href="#subscriptionoptions" class="anchor-heading" aria-labelledby="subscriptionoptions"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> SubscriptionOptions
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">firstEvent</code></td>
+      <td>Whether your appplication would like to receive events from the ‘oldest’ event emitted by your FireFly node (from the beginning of time), or the ‘newest’ event (from now), or a specific event sequence. Default is ‘newest’</td>
+      <td><code class="language-plaintext highlighter-rouge">SubOptsFirstEvent</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">readAhead</code></td>
+      <td>The number of events to stream ahead to your application, while waiting for confirmation of consumption of those events. At least once delivery semantics are used in FireFly, so if your application crashes/reconnects this is the maximum number of events you would expect to be redelivered after it restarts</td>
+      <td><code class="language-plaintext highlighter-rouge">uint16</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">withData</code></td>
+      <td>Whether message events delivered over the subscription, should be packaged with the full data of those messages in-line as part of the event JSON payload. Or if the application should make separate REST calls to download that data. May not be supported on some transports.</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">fastack</code></td>
+      <td>Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">url</code></td>
+      <td>Webhooks only: HTTP url to invoke. Can be relative if a base URL is set in the webhook plugin config</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">method</code></td>
+      <td>Webhooks only: HTTP method to invoke. Default=POST</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">json</code></td>
+      <td>Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">reply</code></td>
+      <td>Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook</td>
+      <td><code class="language-plaintext highlighter-rouge">bool</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">replytag</code></td>
+      <td>Webhooks only: The tag to set on the reply message</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">replytx</code></td>
+      <td>Webhooks only: The transaction type to set on the reply message</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">headers</code></td>
+      <td>Webhooks only: Static headers to set on the webhook request</td>
+      <td>``</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">query</code></td>
+      <td>Webhooks only: Static query params to set on the webhook request</td>
+      <td>``</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">input</code></td>
+      <td>Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true</td>
+      <td><a href="#webhookinputoptions"><code class="language-plaintext highlighter-rouge">WebhookInputOptions</code></a></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="webhookinputoptions">
+        
+        
+          <a href="#webhookinputoptions" class="anchor-heading" aria-labelledby="webhookinputoptions"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WebhookInputOptions
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Field Name</th>
+      <th>Description</th>
+      <th>Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">query</code></td>
+      <td>A top-level property of the first data input, to use for query parameters</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">headers</code></td>
+      <td>A top-level property of the first data input, to use for headers</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">body</code></td>
+      <td>A top-level property of the first data input, to use for the request body. Default is the whole first body</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">path</code></td>
+      <td>A top-level property of the first data input, to use for a path to append with escaping to the webhook path</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">replytx</code></td>
+      <td>A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+  </tbody>
+</table>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

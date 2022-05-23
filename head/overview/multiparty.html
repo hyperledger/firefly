@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>Multi-party Systems - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Multi-party Systems | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Multi-party Systems" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Multi-party Systems" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"Multi-party Systems","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/overview/multiparty.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item  active"><a href="/firefly/head/overview/multiparty.html" class="nav-list-link active">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/overview/">Understanding FireFly</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>Multi-party Systems</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 class="no_toc" id="enterprise-multi-party-systems">
+        
+        
+          <a href="#enterprise-multi-party-systems" class="anchor-heading" aria-labelledby="enterprise-multi-party-systems"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Enterprise multi-party systems
+        
+        
+      </h1>
+    
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#points-of-difference" id="markdown-toc-points-of-difference">Points of difference</a></li>
+</ol><hr />
+      <h2 id="introduction">
+        
+        
+          <a href="#introduction" class="anchor-heading" aria-labelledby="introduction"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Introduction
+        
+        
+      </h2>
+    
+
+<p>Multi-party systems are a class of application empowered by the technology revolution
+of blockchain digital ledger technology (DLT), and emerging cryptographic proof technologies
+like zero-knowledge proofs (ZKPs) and trusted execution environments (TEEs).</p>
+
+<p>By combining these technologies with existing best practice technologies for
+data security in regulated industries, multi-party systems allow businesses to
+collaborate in ways previously impossible.</p>
+
+<p><img src="../images/multiparty_system.png" alt="Multi-party Systems" title="Multi-Party System" /></p>
+
+<p>Through agreement on a common source of truth, such as the completion of a step in a
+business process to proceed, or the existence and ownership of a unique asset, businesses
+can cut out huge inefficiencies in existing multi-party processes.</p>
+
+<p>New business and transaction models can be achieved, unlocking value in assets and data
+that were previously siloed within a single organization. Governance and incentive
+models can be created to enable secure collaboration in new ways, without compromising
+the integrity of an individual organization.</p>
+
+<p>The technology is most powerful in ecosystems of “coopetition”, where privacy and security
+requirements are high. Multi-party systems establish new models of trust, with easy to
+prove outcomes that minimize the need for third party arbitration, and costly investigation
+into disputes.</p>
+      <h2 id="points-of-difference">
+        
+        
+          <a href="#points-of-difference" class="anchor-heading" aria-labelledby="points-of-difference"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Points of difference
+        
+        
+      </h2>
+    
+
+<p>Integration with existing systems of record is critical to unlock the potential
+of these new ecosystems. So multi-party systems embrace the existing investments of
+each party, rather than seeking to unify or replace them.</p>
+
+<p>Multi-party systems are different from centralized third-party systems, because each
+party retains sovereignty over:</p>
+<ul>
+  <li>Their application instance</li>
+  <li>Their private data</li>
+  <li>Their business processes</li>
+  <li>Their proprietary business logic</li>
+  <li>Their internal business processes and IT controls</li>
+</ul>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>ERC-20 - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>ERC-20 | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="ERC-20" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="ERC-20" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"ERC-20","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/tokens/erc20.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item  active">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link active">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/">Tutorials</a></li>
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/tokens/">Use tokens</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>ERC-20</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 class="no_toc" id="use-erc-20-tokens">
+        
+        
+          <a href="#use-erc-20-tokens" class="anchor-heading" aria-labelledby="use-erc-20-tokens"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Use ERC-20 tokens
+        
+        
+      </h1>
+    
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#previous-steps-start-your-environment" id="markdown-toc-previous-steps-start-your-environment">Previous steps: Start your environment</a></li>
+  <li><a href="#use-the-built-in-sample-token-factory" id="markdown-toc-use-the-built-in-sample-token-factory">Use the built in sample token factory</a></li>
+  <li><a href="#use-the-sandbox-optional" id="markdown-toc-use-the-sandbox-optional">Use the Sandbox (optional)</a></li>
+  <li><a href="#create-a-pool" id="markdown-toc-create-a-pool">Create a pool</a>    <ol>
+      <li><a href="#request" id="markdown-toc-request">Request</a></li>
+      <li><a href="#response" id="markdown-toc-response">Response</a></li>
+      <li><a href="#get-the-address-of-the-deployed-contract" id="markdown-toc-get-the-address-of-the-deployed-contract">Get the address of the deployed contract</a>        <ol>
+          <li><a href="#request-1" id="markdown-toc-request-1">Request</a></li>
+          <li><a href="#response-1" id="markdown-toc-response-1">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-a-pool-for-an-existing-contract" id="markdown-toc-create-a-pool-for-an-existing-contract">Create a pool for an existing contract</a></li>
+    </ol>
+  </li>
+  <li><a href="#mint-tokens" id="markdown-toc-mint-tokens">Mint tokens</a>    <ol>
+      <li><a href="#request-2" id="markdown-toc-request-2">Request</a></li>
+      <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#transfer-tokens" id="markdown-toc-transfer-tokens">Transfer tokens</a>    <ol>
+      <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
+      <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#sending-data-with-a-transfer" id="markdown-toc-sending-data-with-a-transfer">Sending data with a transfer</a>    <ol>
+      <li><a href="#broadcast-message" id="markdown-toc-broadcast-message">Broadcast message</a></li>
+      <li><a href="#private-message" id="markdown-toc-private-message">Private message</a></li>
+    </ol>
+  </li>
+  <li><a href="#burn-tokens" id="markdown-toc-burn-tokens">Burn tokens</a></li>
+  <li><a href="#token-approvals" id="markdown-toc-token-approvals">Token approvals</a>    <ol>
+      <li><a href="#request-4" id="markdown-toc-request-4">Request</a></li>
+      <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
+    </ol>
+  </li>
+  <li><a href="#use-metamask" id="markdown-toc-use-metamask">Use Metamask</a>    <ol>
+      <li><a href="#configure-a-new-network" id="markdown-toc-configure-a-new-network">Configure a new network</a></li>
+      <li><a href="#import-tokens" id="markdown-toc-import-tokens">Import tokens</a></li>
+      <li><a href="#transfer-tokens-1" id="markdown-toc-transfer-tokens-1">Transfer tokens</a></li>
+    </ol>
+  </li>
+</ol><hr />
+      <h2 id="previous-steps-start-your-environment">
+        
+        
+          <a href="#previous-steps-start-your-environment" class="anchor-heading" aria-labelledby="previous-steps-start-your-environment"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Previous steps: Start your environment
+        
+        
+      </h2>
+    
+<p>If you haven’t started a FireFly stack already, please go to the Getting Started guide on how to <a href="/firefly/head/gettingstarted/setup_env.html">Start your environment</a>. This will set up a token connector that works with both ERC-20 and ERC-721 by default.</p>
+
+<p><a href="/firefly/head/gettingstarted/setup_env.html" class="btn btn-purple mb-5">← ② Start your environment</a></p>
+      <h2 id="use-the-built-in-sample-token-factory">
+        
+        
+          <a href="#use-the-built-in-sample-token-factory" class="anchor-heading" aria-labelledby="use-the-built-in-sample-token-factory"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Use the built in sample token factory
+        
+        
+      </h2>
+    
+
+<p>If you are using the default ERC-20 / ERC-721 token connector, when the FireFly CLI set up your FireFly stack, it also deployed a token factory contract. When you create a token pool through FireFly’s token APIs, the token factory contract will automatically deploy an ERC-20 or ERC-721 contract, based on the pool <code class="language-plaintext highlighter-rouge">type</code> in the API request.</p>
+
+<div style="color: #ffffff; background: #ff7700; padding: 1em; border-radius: 5px;">⚠️ <span style="font-weight: bold;">WARNING</span>: The default token contract that was deployed by the FireFly CLI is only provided for the purpose of learning about FireFly. It is <span style="font-weight: bold;">not</span> a production grade contract. If you intend to deploy a production application using tokens FireFly you should research token contract best practices. For details, <a style="color: #ffffff;" href="https://github.com/hyperledger/firefly-tokens-erc20-erc721/blob/main/samples/solidity/contracts/TokenFactory.sol">please see the source code</a> for the contract that was deployed.</div>
+      <h2 id="use-the-sandbox-optional">
+        
+        
+          <a href="#use-the-sandbox-optional" class="anchor-heading" aria-labelledby="use-the-sandbox-optional"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Use the Sandbox (optional)
+        
+        
+      </h2>
+    
+<p>At this point you could open the Sandbox at <a href="http://127.0.0.1:5109/home?action=tokens.pools">http://127.0.0.1:5109/home?action=tokens.pools</a> and perform the functions outlined in the rest of this guide. Or you can keep reading to learn how to build HTTP requests to work with tokens in FireFly.
+<img src="/firefly/head/images/sandbox/sandbox_token_pool.png" alt="Tokens Sandbox" /></p>
+      <h2 id="create-a-pool">
+        
+        
+          <a href="#create-a-pool" class="anchor-heading" aria-labelledby="create-a-pool"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create a pool
+        
+        
+      </h2>
+    
+<p>After your stack is up and running, the first thing you need to do is create a Token Pool. Every application will need at least one Token Pool. At a minimum, you must always
+specify a <code class="language-plaintext highlighter-rouge">name</code> and <code class="language-plaintext highlighter-rouge">type</code> for the pool.</p>
+
+<p>If you’re using the default ERC-20 / ERC-721 token connector and its sample token factory, it will automatically deploy a new token contract, based on the <code class="language-plaintext highlighter-rouge">type</code> in the request to create the token pool.</p>
+      <h4 id="request">
+        
+        
+          <a href="#request" class="anchor-heading" aria-labelledby="request"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h4>
+    
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testpool"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fungible"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h4 id="response">
+        
+        
+          <a href="#response" class="anchor-heading" aria-labelledby="response"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h4>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1477ed5-7282-48e5-ad9d-1612296bb29d"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fungible"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testpool"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"connector"</span><span class="p">:</span><span class="w"> </span><span class="s2">"erc20_erc721"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_pool"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e901921e-ffc4-4776-b20a-9e9face70a47"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Other parameters:</p>
+<ul>
+  <li>You must specify a <code class="language-plaintext highlighter-rouge">connector</code> if you have configured multiple token connectors</li>
+  <li>You may pass through a <code class="language-plaintext highlighter-rouge">config</code> object of additional parameters, if supported by your token connector</li>
+  <li>You may specify a <code class="language-plaintext highlighter-rouge">key</code> understood by the connector (i.e. an Ethereum address) if you’d like to use a non-default signing identity</li>
+</ul>
+      <h3 id="get-the-address-of-the-deployed-contract">
+        
+        
+          <a href="#get-the-address-of-the-deployed-contract" class="anchor-heading" aria-labelledby="get-the-address-of-the-deployed-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Get the address of the deployed contract
+        
+        
+      </h3>
+    
+
+<p>To lookup the address of the new contract, you can lookup the Token Pool by its ID on the API. Creating the token pool will also emit an event which will contain the address. To query the token pool you can make a <code class="language-plaintext highlighter-rouge">GET</code> request to the pool’s ID:</p>
+      <h4 id="request-1">
+        
+        
+          <a href="#request-1" class="anchor-heading" aria-labelledby="request-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h4>
+    
+<p><code class="language-plaintext highlighter-rouge">GET</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools/5811e8d5-52d0-44b1-8b75-73f5ff88f598</code></p>
+      <h4 id="response-1">
+        
+        
+          <a href="#response-1" class="anchor-heading" aria-labelledby="response-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h4>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1477ed5-7282-48e5-ad9d-1612296bb29d"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fungible"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testpool"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"standard"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ERC20"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"locator"</span><span class="p">:</span><span class="w"> </span><span class="s2">"address=0xc4d02efcfab06f18ec0a68e00b98ffecf6bf7e3c&amp;schema=ERC20WithData&amp;type=fungible"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"decimals"</span><span class="p">:</span><span class="w"> </span><span class="mi">18</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"connector"</span><span class="p">:</span><span class="w"> </span><span class="s2">"erc20_erc721"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"7e2f6004-31fd-4ba8-9845-15c5fe5fbcd7"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"state"</span><span class="p">:</span><span class="w"> </span><span class="s2">"confirmed"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-04-28T14:03:16.732222381Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"info"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xc4d02efcfab06f18ec0a68e00b98ffecf6bf7e3c"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testpool"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ERC20WithData"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_pool"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e901921e-ffc4-4776-b20a-9e9face70a47"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="create-a-pool-for-an-existing-contract">
+        
+        
+          <a href="#create-a-pool-for-an-existing-contract" class="anchor-heading" aria-labelledby="create-a-pool-for-an-existing-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create a pool for an existing contract
+        
+        
+      </h3>
+    
+<p>If you wish to use a contract that is already on the chain, you can pass the address in a <code class="language-plaintext highlighter-rouge">config</code> object with an <code class="language-plaintext highlighter-rouge">address</code> when you make the request to create the Token Pool.</p>
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"testpool"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fungible"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"config"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"address"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xb1C845D32966c79E23f733742Ed7fCe4B41901FC"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="mint-tokens">
+        
+        
+          <a href="#mint-tokens" class="anchor-heading" aria-labelledby="mint-tokens"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Mint tokens
+        
+        
+      </h2>
+    
+
+<p>Once you have a token pool, you can mint tokens within it. With a token contract deployed by the default token factory, only the creator of a pool is allowed to mint, but a different contract may define its own permission model.</p>
+
+<blockquote>
+  <p><strong>NOTE:</strong> The default token factory creates an ERC-20 with 18 decimal places. This means that if you want to create 100 tokens, the number submitted to the API / blockchain should actually be 100×10<sup>18</sup> = <code class="language-plaintext highlighter-rouge">100000000000000000000</code>. This allows users to work with “fractional” tokens even though Ethereum virtual machines only support integer arithmetic.</p>
+</blockquote>
+      <h4 id="request-2">
+        
+        
+          <a href="#request-2" class="anchor-heading" aria-labelledby="request-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h4>
+    
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/mint</code></p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="s2">"100000000000000000000"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h4 id="response-2">
+        
+        
+          <a href="#response-2" class="anchor-heading" aria-labelledby="response-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h4>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"mint"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"localId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"835fe2a1-594b-4336-bc1d-b2f59d51064b"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"pool"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1477ed5-7282-48e5-ad9d-1612296bb29d"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"connector"</span><span class="p">:</span><span class="w"> </span><span class="s2">"erc20_erc721"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="s2">"100000000000000000000"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_transfer"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3fc97e24-fde1-4e80-bd82-660e479c0c43"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Other parameters:</p>
+<ul>
+  <li>You must specify a <code class="language-plaintext highlighter-rouge">pool</code> name if you’ve created more than one pool</li>
+  <li>You may specify a <code class="language-plaintext highlighter-rouge">key</code> understood by the connector (i.e. an Ethereum address) if you’d like to use a non-default signing identity</li>
+  <li>You may specify <code class="language-plaintext highlighter-rouge">to</code> if you’d like to send the minted tokens to a specific identity (default is the same as <code class="language-plaintext highlighter-rouge">key</code>)</li>
+</ul>
+      <h2 id="transfer-tokens">
+        
+        
+          <a href="#transfer-tokens" class="anchor-heading" aria-labelledby="transfer-tokens"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Transfer tokens
+        
+        
+      </h2>
+    
+
+<p>You may transfer tokens within a pool by specifying an amount and a destination understood by the connector (i.e. an Ethereum address). With a token contract deployed by the default token factory, only the owner of the tokens or another approved account may transfer their tokens, but a different contract may define its own permission model.</p>
+      <h4 id="request-3">
+        
+        
+          <a href="#request-3" class="anchor-heading" aria-labelledby="request-3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h4>
+    
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/transfers</code></p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="s2">"10000000000000000000"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa4222a4ae19448d43a338e6586edd5fb2ac398e1"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h4 id="response-3">
+        
+        
+          <a href="#response-3" class="anchor-heading" aria-labelledby="response-3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h4>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"transfer"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"localId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"61f0a71f-712b-4778-8b37-784fbee52657"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"pool"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1477ed5-7282-48e5-ad9d-1612296bb29d"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"connector"</span><span class="p">:</span><span class="w"> </span><span class="s2">"erc20_erc721"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"from"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0xa4222a4ae19448d43a338e6586edd5fb2ac398e1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="s2">"10000000000000000000"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_transfer"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c0c316a3-23a9-42f3-89b3-1cfdba6c948d"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Other parameters:</p>
+<ul>
+  <li>You must specify a <code class="language-plaintext highlighter-rouge">pool</code> name if you’ve created more than one pool</li>
+  <li>You may specify a <code class="language-plaintext highlighter-rouge">key</code> understood by the connector (i.e. an Ethereum address) if you’d like to use a non-default signing identity</li>
+  <li>You may specify <code class="language-plaintext highlighter-rouge">from</code> if you’d like to send tokens from a specific identity (default is the same as <code class="language-plaintext highlighter-rouge">key</code>)</li>
+</ul>
+      <h2 id="sending-data-with-a-transfer">
+        
+        
+          <a href="#sending-data-with-a-transfer" class="anchor-heading" aria-labelledby="sending-data-with-a-transfer"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Sending data with a transfer
+        
+        
+      </h2>
+    
+
+<p>All transfers (as well as mint/burn operations) support an optional <code class="language-plaintext highlighter-rouge">message</code> parameter that contains a broadcast or private
+message to be sent along with the transfer. This message follows the same convention as other FireFly messages, and may be comprised
+of text or blob data, and can provide context, metadata, or other supporting information about the transfer. The message will be
+batched, hashed, and pinned to the primary blockchain.</p>
+
+<p>The message ID and hash will also be sent to the token connector as part of the transfer operation, to be written to the token blockchain
+when the transaction is submitted. All recipients of the message will then be able to correlate the message with the token transfer.</p>
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/transfers</code></p>
+      <h3 id="broadcast-message">
+        
+        
+          <a href="#broadcast-message" class="anchor-heading" aria-labelledby="broadcast-message"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Broadcast message
+        
+        
+      </h3>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x07eab7731db665caf02bc92c286f51dea81f923f"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+      </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"payment for goods"</span><span class="w">
+    </span><span class="p">}]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="private-message">
+        
+        
+          <a href="#private-message" class="anchor-heading" aria-labelledby="private-message"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Private message
+        
+        
+      </h3>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x07eab7731db665caf02bc92c286f51dea81f923f"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"header"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"transfer_private"</span><span class="p">,</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"group"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"members"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+          </span><span class="nl">"identity"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org_1"</span><span class="w">
+      </span><span class="p">}]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="w">
+      </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"payment for goods"</span><span class="w">
+    </span><span class="p">}]</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Note that all parties in the network will be able to see the transfer (including the message ID and hash), but only
+the recipients of the message will be able to view the actual message data.</p>
+      <h2 id="burn-tokens">
+        
+        
+          <a href="#burn-tokens" class="anchor-heading" aria-labelledby="burn-tokens"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Burn tokens
+        
+        
+      </h2>
+    
+
+<p>You may burn tokens by simply specifying an amount. With a token contract deployed by the default token factory, only the owner of a token may
+burn it, but a different contract may define its own permission model.</p>
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/burn</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"amount"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Other parameters:</p>
+<ul>
+  <li>You must specify a <code class="language-plaintext highlighter-rouge">pool</code> name if you’ve created more than one pool</li>
+  <li>You may specify a <code class="language-plaintext highlighter-rouge">key</code> understood by the connector (i.e. an Ethereum address) if you’d like to use a non-default signing identity</li>
+  <li>You may specify <code class="language-plaintext highlighter-rouge">from</code> if you’d like to burn tokens from a specific identity (default is the same as <code class="language-plaintext highlighter-rouge">key</code>)</li>
+</ul>
+      <h2 id="token-approvals">
+        
+        
+          <a href="#token-approvals" class="anchor-heading" aria-labelledby="token-approvals"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Token approvals
+        
+        
+      </h2>
+    
+<p>You can also approve other wallets to transfer tokens on your behalf with the <code class="language-plaintext highlighter-rouge">/approvals</code> API. The important fields in a token approval API request are as follows:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">approved</code>: Sets whether another account is allowed to transfer tokens out of this wallet or not. If not specified, will default to <code class="language-plaintext highlighter-rouge">true</code>. Setting to <code class="language-plaintext highlighter-rouge">false</code> can revoke an existing approval.</li>
+  <li><code class="language-plaintext highlighter-rouge">operator</code>: The other account that is allowed to transfer tokens out of the wallet specified in the <code class="language-plaintext highlighter-rouge">key</code> field</li>
+  <li><code class="language-plaintext highlighter-rouge">config.allowance</code>: The number of tokens the other account is allowed to transfer. If <code class="language-plaintext highlighter-rouge">0</code> or not set, the approval is valid for any number.</li>
+  <li><code class="language-plaintext highlighter-rouge">key</code>: The wallet address for the approval. If not set, it defaults to the address of the FireFly node submitting the transaction</li>
+</ul>
+
+<p>Here is an example request that would let the signing account <code class="language-plaintext highlighter-rouge">0x634ee8c7d0894d086c7af1fc8514736aed251528</code> transfer up to 10×10<sup>18</sup> (<code class="language-plaintext highlighter-rouge">10000000000000000000</code>) tokens from my wallet</p>
+      <h4 id="request-4">
+        
+        
+          <a href="#request-4" class="anchor-heading" aria-labelledby="request-4"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h4>
+    
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/approvals</code></p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"operator"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x634ee8c7d0894d086c7af1fc8514736aed251528"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"config"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"allowance"</span><span class="p">:</span><span class="w"> </span><span class="s2">"10000000000000000000"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h4 id="response-4">
+        
+        
+          <a href="#response-4" class="anchor-heading" aria-labelledby="response-4"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h4>
+    
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"localId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"46fef50a-cf93-4f92-acf8-fae161b37362"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"pool"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1477ed5-7282-48e5-ad9d-1612296bb29d"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"connector"</span><span class="p">:</span><span class="w"> </span><span class="s2">"erc20_erc721"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x14ddd36a0c2f747130915bf5214061b1e4bec74c"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"operator"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0x634ee8c7d0894d086c7af1fc8514736aed251528"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"approved"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"token_approval"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"00faa011-f42c-403d-a047-2df7318967cd"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"config"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"allowance"</span><span class="p">:</span><span class="w"> </span><span class="s2">"10000000000000000000"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="use-metamask">
+        
+        
+          <a href="#use-metamask" class="anchor-heading" aria-labelledby="use-metamask"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Use Metamask
+        
+        
+      </h2>
+    
+<p>Now that you have an ERC-20 contract up and running, you may be wondering how to use Metamask (or some other wallet) with this contract. This section will walk you through how to connect Metamask to the blockchain and token contract that FireFly is using.</p>
+      <h3 id="configure-a-new-network">
+        
+        
+          <a href="#configure-a-new-network" class="anchor-heading" aria-labelledby="configure-a-new-network"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Configure a new network
+        
+        
+      </h3>
+    
+<p>The first thing we need to do is tell Metamask how to connect to our local blockchain node. To do that:</p>
+
+<ul>
+  <li>Click your account icon</li>
+  <li>
+    <p>In the drop down menu, click <strong>Settings</strong>
+<img src="/firefly/head/images/metamask/settings.png" alt="Metamask Settings" /></p>
+  </li>
+  <li>On the left hand side of the page, click <strong>Networks</strong></li>
+  <li>
+    <p>Click the <strong>Add a network</strong> button
+<img src="/firefly/head/images/metamask/add_network.png" alt="Metamask Add Network" /></p>
+  </li>
+  <li>Fill in the network details:
+    <ul>
+      <li>Network Name: <code class="language-plaintext highlighter-rouge">FireFly</code> (could be any name)</li>
+      <li>New RPC URL: <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5100</code></li>
+      <li>Chain ID: <code class="language-plaintext highlighter-rouge">2021</code></li>
+      <li>Currency Symbol: ETH</li>
+    </ul>
+  </li>
+  <li>Click <strong>Save</strong>
+<img src="/firefly/head/images/metamask/network_details.png" alt="Metamask Network Details" /></li>
+</ul>
+      <h3 id="import-tokens">
+        
+        
+          <a href="#import-tokens" class="anchor-heading" aria-labelledby="import-tokens"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Import tokens
+        
+        
+      </h3>
+    
+<p>Metamask won’t know about our custom ERC-20 contract until we give it the Ethereum address for the contract, so that’s what we’ll do next.</p>
+
+<ul>
+  <li>
+    <p>Click on <strong>Import tokens</strong>
+<img src="/firefly/head/images/metamask/import_tokens.png" alt="Metamask Import Tokens" /></p>
+  </li>
+  <li>Enter the Ethereum address of the contract</li>
+  <li>Enter a Token Symbol (can be anything you want)</li>
+  <li>Click <strong>Add Custom Token</strong></li>
+</ul>
+
+<blockquote>
+  <p><strong>NOTE:</strong> You can find the address of your contract from the response to the request to create the token pool above. You can also do a <code class="language-plaintext highlighter-rouge">GET</code> to <code class="language-plaintext highlighter-rouge">http://127.0.0.1:5000/api/v1/namespaces/default/tokens/pools</code> to lookup your configured token pools.</p>
+</blockquote>
+
+<p><img src="/firefly/head/images/metamask/contract_address.png" alt="Metamask Import Tokens" /></p>
+      <h3 id="transfer-tokens-1">
+        
+        
+          <a href="#transfer-tokens-1" class="anchor-heading" aria-labelledby="transfer-tokens-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Transfer tokens
+        
+        
+      </h3>
+    
+<p>Now you can copy your account address from your Metamask wallet, and perform a transfer from FireFly’s API (as described above) to your Metamask address.</p>
+
+<p><img src="/firefly/head/images/metamask/account_address.png" alt="Metamask Account Address" /></p>
+
+<p>After a couple seconds, you should see your tokens show up in your Metamask wallet.</p>
+
+<p><img src="/firefly/head/images/metamask/tokens_received.png" alt="Metamask Tokens Received" /></p>
+
+<p>You can also send tokens to a FireFly address or any other Ethereum address from your Metamask wallet.</p>
+
+<blockquote>
+  <p><strong>NOTE:</strong> You can find the Ethereum addresses for organizations in your FireFly network in the <a href="http://localhost:5000/ui/namespaces/default/network/organizations">Network → Organizations page</a> in the FireFly explorer. Click on an organization and look under the Verifiers header for the organization’s Ethereum address.</p>
+</blockquote>
+
+<p><img src="/firefly/head/images/metamask/send_tokens.png" alt="Metamask Send Tokens" /></p>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

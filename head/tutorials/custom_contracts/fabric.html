@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>Fabric - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Fabric | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Fabric" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Fabric" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"Fabric","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/tutorials/custom_contracts/fabric.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item  active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item  active">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link active">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/">Tutorials</a></li>
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/tutorials/custom_contracts/">Work with custom smart contracts</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>Fabric</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 id="work-with-hyperledger-fabric-chaincodes">
+        
+        
+          <a href="#work-with-hyperledger-fabric-chaincodes" class="anchor-heading" aria-labelledby="work-with-hyperledger-fabric-chaincodes"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Work with Hyperledger Fabric chaincodes
+        
+        
+      </h1>
+    
+
+<p class="no_toc">This guide describes the steps to deploy a chaincode to a Hyperledger Fabric blockchain and use FireFly to interact with it in order to submit transactions, query for states and listening for events.</p>
+
+<blockquote>
+  <p><strong>NOTE:</strong> This guide assumes that you are running a local FireFly stack with at least 2 members and a Fabric blockchain created by the FireFly CLI. If you need help getting that set up, please see the <a href="https://nguyer.github.io/firefly/gettingstarted/setup_env.html">Getting Started guide to Start your environment</a>.</p>
+</blockquote>
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#work-with-hyperledger-fabric-chaincodes" id="markdown-toc-work-with-hyperledger-fabric-chaincodes">Work with Hyperledger Fabric chaincodes</a>    <ol>
+      <li><a href="#example-smart-contract" id="markdown-toc-example-smart-contract">Example smart contract</a></li>
+      <li><a href="#create-the-chaincode-package" id="markdown-toc-create-the-chaincode-package">Create the chaincode package</a></li>
+      <li><a href="#contract-deployment" id="markdown-toc-contract-deployment">Contract deployment</a></li>
+      <li><a href="#the-firefly-interface-format" id="markdown-toc-the-firefly-interface-format">The FireFly Interface Format</a>        <ol>
+          <li><a href="#input-parameters" id="markdown-toc-input-parameters">Input parameters</a></li>
+          <li><a href="#return-values" id="markdown-toc-return-values">Return values</a></li>
+          <li><a href="#event-payloads" id="markdown-toc-event-payloads">Event payloads</a></li>
+        </ol>
+      </li>
+      <li><a href="#broadcast-the-contract-interface" id="markdown-toc-broadcast-the-contract-interface">Broadcast the contract interface</a>        <ol>
+          <li><a href="#request" id="markdown-toc-request">Request</a></li>
+          <li><a href="#response" id="markdown-toc-response">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-an-http-api-for-the-contract" id="markdown-toc-create-an-http-api-for-the-contract">Create an HTTP API for the contract</a>        <ol>
+          <li><a href="#request-1" id="markdown-toc-request-1">Request</a></li>
+          <li><a href="#response-1" id="markdown-toc-response-1">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#view-openapi-spec-for-the-contract" id="markdown-toc-view-openapi-spec-for-the-contract">View OpenAPI spec for the contract</a>        <ol>
+          <li><a href="#invoke-endpoints" id="markdown-toc-invoke-endpoints">/invoke/* endpoints</a></li>
+          <li><a href="#query-endpoints" id="markdown-toc-query-endpoints">/query/* endpoints</a></li>
+        </ol>
+      </li>
+      <li><a href="#invoke-the-chaincode" id="markdown-toc-invoke-the-chaincode">Invoke the chaincode</a>        <ol>
+          <li><a href="#request-2" id="markdown-toc-request-2">Request</a></li>
+          <li><a href="#response-2" id="markdown-toc-response-2">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#query-the-current-state" id="markdown-toc-query-the-current-state">Query the current state</a>        <ol>
+          <li><a href="#request-3" id="markdown-toc-request-3">Request</a></li>
+          <li><a href="#response-3" id="markdown-toc-response-3">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>        <ol>
+          <li><a href="#request-4" id="markdown-toc-request-4">Request</a></li>
+          <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>        <ol>
+          <li><a href="#request-5" id="markdown-toc-request-5">Request</a></li>
+          <li><a href="#response-5" id="markdown-toc-response-5">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>        <ol>
+          <li><a href="#websocket-event" id="markdown-toc-websocket-event">WebSocket event</a></li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+</ol><hr />
+      <h2 id="example-smart-contract">
+        
+        
+          <a href="#example-smart-contract" class="anchor-heading" aria-labelledby="example-smart-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Example smart contract
+        
+        
+      </h2>
+    
+
+<p>For this tutorial, we will be using a well known, but slightly modified smart contract called <code class="language-plaintext highlighter-rouge">asset_transfer</code>. It’s based on the <code class="language-plaintext highlighter-rouge">asset-transfer-basic</code> chaincode in the <a href="https://github.com/hyperledger/fabric-samples">fabric-samples</a> project. Check out the code repository and use the source code provided below to replace part of the content of the file <code class="language-plaintext highlighter-rouge">fabric-samples/asset-transfer-basic/chaincode-go/chaincode/smartcontract.go</code>.</p>
+
+<p>Find the following return statement in the function <code class="language-plaintext highlighter-rouge">CreateAsset</code>:</p>
+
+<div class="language-golang highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	<span class="k">return</span> <span class="n">ctx</span><span class="o">.</span><span class="n">GetStub</span><span class="p">()</span><span class="o">.</span><span class="n">PutState</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">assetJSON</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>and replace it with the following, so that an event will be emitted when the transaction is committed to the channel ledger:</p>
+
+<div class="language-golang highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="n">err</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">GetStub</span><span class="p">()</span><span class="o">.</span><span class="n">PutState</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">assetJSON</span><span class="p">)</span>
+  <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">err</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">ctx</span><span class="o">.</span><span class="n">GetStub</span><span class="p">()</span><span class="o">.</span><span class="n">SetEvent</span><span class="p">(</span><span class="s">"AssetCreated"</span><span class="p">,</span> <span class="n">assetJSON</span><span class="p">)</span>
+</code></pre></div></div>
+      <h2 id="create-the-chaincode-package">
+        
+        
+          <a href="#create-the-chaincode-package" class="anchor-heading" aria-labelledby="create-the-chaincode-package"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create the chaincode package
+        
+        
+      </h2>
+    
+
+<p>Use the <code class="language-plaintext highlighter-rouge">peer</code> command to create the chaincode package for deployment. You can download the peer binary from the <a href="https://github.com/hyperledger/fabric/releases">releases page of the Fabric project</a> or build it from source.</p>
+
+<div class="language-console highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gp">  ~ johndoe$</span><span class="w"> </span><span class="nb">cd </span>fabric-samples/asset-transfer-basic/chaincode-go
+<span class="gp">  chaincode-go johndoe$</span><span class="w"> </span><span class="nb">touch </span>core.yaml
+<span class="gp">  chaincode-go johndoe$</span><span class="w"> </span>peer lifecycle chaincode package <span class="nt">-p</span> <span class="nb">.</span> <span class="nt">--label</span> asset_transfer ./asset_transfer.zip
+</code></pre></div></div>
+
+<blockquote>
+  <p>The <code class="language-plaintext highlighter-rouge">peer</code> command requires an empty core.yaml file to be present in the working directory to perform the packaging. That’s what <code class="language-plaintext highlighter-rouge">touch core.yaml</code> did above</p>
+</blockquote>
+
+<p>The resulting <code class="language-plaintext highlighter-rouge">asset_transfer.zip</code> archive file will be used in the next step to deploy to the Fabric network used in FireFly.</p>
+      <h2 id="contract-deployment">
+        
+        
+          <a href="#contract-deployment" class="anchor-heading" aria-labelledby="contract-deployment"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Contract deployment
+        
+        
+      </h2>
+    
+
+<p><strong>Deployment of smart contracts is not currently within the scope of responsibility for FireFly.</strong> You can use your standard blockchain specific tools to deploy your contract to the blockchain you are using.</p>
+
+<p>The FireFly CLI provides a convenient function to deploy a chaincode package to a local FireFly stack.</p>
+
+<blockquote>
+  <p><strong>NOTE:</strong> The contract deployment function of the FireFly CLI is a convenience function to speed up local development, and not intended for production applications</p>
+</blockquote>
+
+<div class="language-console highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="gp">~ johndoe$</span><span class="w"> </span>ff <span class="nb">help </span>deploy fabric
+<span class="go">Deploy a packaged chaincode to the Fabric network used by a FireFly stack
+
+Usage:
+</span><span class="gp">  ff deploy fabric &lt;stack_name&gt;</span><span class="w"> </span>&lt;chaincode_package&gt; &lt;channel&gt; &lt;chaincodeName&gt; &lt;version&gt; <span class="o">[</span>flags]
+</code></pre></div></div>
+
+<p>Notice the various parameters used by the command <code class="language-plaintext highlighter-rouge">ff deploy fabric</code>. We’ll tell the FireFly to deploy using the following parameter values, if your stack setup is different, update the command accordingly:</p>
+
+<ul>
+  <li>stack name: <code class="language-plaintext highlighter-rouge">dev</code></li>
+  <li>channel: <code class="language-plaintext highlighter-rouge">firefly</code> (this is the channel that is created by the FireFly CLI when bootstrapping the stack, replace if you use a different channel in your setup)</li>
+  <li>chaincode name: <code class="language-plaintext highlighter-rouge">asset_transfer</code> (must match the value of the <code class="language-plaintext highlighter-rouge">--label</code> parameter when creating the chaincode package)</li>
+  <li>version: <code class="language-plaintext highlighter-rouge">1.0</code></li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ff deploy fabric dev asset_transfer.zip firefly asset_transfer 1.0
+installing chaincode
+querying installed chaincode
+approving chaincode
+committing chaincode
+{
+  "chaincode": "asset_transfer",
+  "channel": "firefly"
+}
+</code></pre></div></div>
+      <h2 id="the-firefly-interface-format">
+        
+        
+          <a href="#the-firefly-interface-format" class="anchor-heading" aria-labelledby="the-firefly-interface-format"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> The FireFly Interface Format
+        
+        
+      </h2>
+    
+
+<p>In order to teach FireFly how to interact with the chaincode, a FireFly Interface (FFI) document is needed. While Ethereum (or other EVM based blockchains) requires an Application Binary Interface (ABI) to govern the interaction between the client and the smart contract, which is specific to each smart contract interface design, Fabric defines a generic <a href="https://hyperledger-fabric.readthedocs.io/en/release-2.0/chaincode4ade.html#chaincode-api">chaincode interface</a> and leaves the encoding and decoding of the parameter values to the discretion of the chaincode developer.</p>
+
+<p>As a result, the FFI document for a Fabric chaincode must be hand-crafted. The following FFI sample demonstrates the specification for the following common cases:</p>
+
+<ul>
+  <li>structured JSON, used here for the list of chaincode function <code class="language-plaintext highlighter-rouge">CreateAsset</code> input parameters</li>
+  <li>array of JSON, used here for the chaincode function <code class="language-plaintext highlighter-rouge">GetAllAssets</code> output</li>
+  <li>structured JSON, used here for the list of chaincode event <code class="language-plaintext highlighter-rouge">AssetCreated</code> properties</li>
+</ul>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Spec interface for the asset-transfer-basic golang chaincode"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GetAllAssets"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"color"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"size"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"owner"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="input-parameters">
+        
+        
+          <a href="#input-parameters" class="anchor-heading" aria-labelledby="input-parameters"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Input parameters
+        
+        
+      </h3>
+    
+
+<p>For the <code class="language-plaintext highlighter-rouge">params</code> section of the <code class="language-plaintext highlighter-rouge">CreateAsset</code> function, it is critical that the sequence of the properties (<code class="language-plaintext highlighter-rouge">id</code>, <code class="language-plaintext highlighter-rouge">color</code>, <code class="language-plaintext highlighter-rouge">size</code>, <code class="language-plaintext highlighter-rouge">owner</code>, <code class="language-plaintext highlighter-rouge">value</code>) matches the order of the input parameters in the chaincode’s function signature:</p>
+
+<div class="language-golang highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">func</span> <span class="n">CreateAsset</span><span class="p">(</span><span class="n">ctx</span> <span class="n">contractapi</span><span class="o">.</span><span class="n">TransactionContextInterface</span><span class="p">,</span> <span class="n">id</span> <span class="kt">string</span><span class="p">,</span> <span class="n">color</span> <span class="kt">string</span><span class="p">,</span> <span class="n">size</span> <span class="kt">int</span><span class="p">,</span> <span class="n">owner</span> <span class="kt">string</span><span class="p">,</span> <span class="n">appraisedValue</span> <span class="kt">int</span><span class="p">)</span> <span class="kt">error</span>
+</code></pre></div></div>
+      <h3 id="return-values">
+        
+        
+          <a href="#return-values" class="anchor-heading" aria-labelledby="return-values"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Return values
+        
+        
+      </h3>
+    
+
+<p>FireFly can automatically decode JSON payloads in the return values. That’s why the <code class="language-plaintext highlighter-rouge">returns</code> section of the <code class="language-plaintext highlighter-rouge">GetAllAssets</code> function only needs to specify the type as <code class="language-plaintext highlighter-rouge">array of objects</code>, without having to specify the detailed structure of the JSON payload.</p>
+
+<p>On the other hand, if certain properties of the returned value are to be hidden, then you can provide a detailed structure of the JSON object with the desired properties. This is demonstrated in the JSON structure for the event payload, see below, where the property <code class="language-plaintext highlighter-rouge">AppraisedValue</code> is omitted from the output.</p>
+      <h3 id="event-payloads">
+        
+        
+          <a href="#event-payloads" class="anchor-heading" aria-labelledby="event-payloads"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Event payloads
+        
+        
+      </h3>
+    
+
+<p>For events, FireFly automatically decodes JSON payloads. If the event payload is not JSON, base64 encoded bytes will be returned instead. For the <code class="language-plaintext highlighter-rouge">events</code> section of the FFI, only the <code class="language-plaintext highlighter-rouge">name</code> property needs to be specified.</p>
+      <h2 id="broadcast-the-contract-interface">
+        
+        
+          <a href="#broadcast-the-contract-interface" class="anchor-heading" aria-labelledby="broadcast-the-contract-interface"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Broadcast the contract interface
+        
+        
+      </h2>
+    
+
+<p>Now that we have a FireFly Interface representation of our chaincode, we want to broadcast that to the entire network. This broadcast will be pinned to the blockchain, so we can always refer to this specific name and version, and everyone in the network will know exactly which contract interface we are talking about.</p>
+
+<p>We will use the FFI JSON constructed above and <code class="language-plaintext highlighter-rouge">POST</code> that to the <code class="language-plaintext highlighter-rouge">/contracts/interfaces</code> API endpoint.</p>
+      <h3 id="request">
+        
+        
+          <a href="#request" class="anchor-heading" aria-labelledby="request"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/interfaces</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Spec interface for the asset-transfer-basic golang chaincode"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GetAllAssets"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"color"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"size"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"owner"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response">
+        
+        
+          <a href="#response" class="anchor-heading" aria-labelledby="response"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"8a01fc83-5729-418b-9706-6fc17c8d2aac"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Spec interface for the asset-transfer-basic golang chaincode"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.1"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"methods"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"b31e3623-35e8-4918-bf8c-1b0d6c01de25"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GetAllAssets"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GetAllAssets"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"array"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+              </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"object"</span><span class="p">,</span><span class="w">
+              </span><span class="nl">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e5a170d1-0be1-4697-800b-f4bcfaf71cf6"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"color"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"size"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"owner"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"27564533-30bd-4536-884e-02e5d79ec238"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"signature"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="create-an-http-api-for-the-contract">
+        
+        
+          <a href="#create-an-http-api-for-the-contract" class="anchor-heading" aria-labelledby="create-an-http-api-for-the-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create an HTTP API for the contract
+        
+        
+      </h2>
+    
+
+<p>Now comes the fun part where we see some of the powerful, developer-friendly features of FireFly. The next thing we’re going to do is tell FireFly to build an HTTP API for this chaincode, complete with an OpenAPI Specification and Swagger UI. As part of this, we’ll also tell FireFly where the chaincode is on the blockchain.</p>
+
+<p>Like the interface broadcast above, this will also generate a broadcast which will be pinned to the blockchain so all the members of the network will be aware of and able to interact with this API.</p>
+
+<p>We need to copy the <code class="language-plaintext highlighter-rouge">id</code> field we got in the response from the previous step to the <code class="language-plaintext highlighter-rouge">interface.id</code> field in the request body below. We will also pick a name that will be part of the URL for our HTTP API, so be sure to pick a name that is URL friendly. In this case we’ll call it <code class="language-plaintext highlighter-rouge">asset_transfer</code>. Lastly, in the <code class="language-plaintext highlighter-rouge">location</code> field, we’re telling FireFly where an instance of the chaincode is deployed on-chain, which is a chaincode named <code class="language-plaintext highlighter-rouge">asset_transfer</code> in the channel <code class="language-plaintext highlighter-rouge">firefly</code>.</p>
+
+<blockquote>
+  <p><strong>NOTE</strong>: The <code class="language-plaintext highlighter-rouge">location</code> field is optional here, but if it is omitted, it will be required in every request to invoke or query the chaincode. This can be useful if you have multiple instances of the same chaincode deployed to different channels.</p>
+</blockquote>
+      <h3 id="request-1">
+        
+        
+          <a href="#request-1" class="anchor-heading" aria-labelledby="request-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"channel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firefly"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"chaincode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-1">
+        
+        
+          <a href="#response-1" class="anchor-heading" aria-labelledby="response-1"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"a9a9ab4e-2544-45d5-8824-3c05074fbf75"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"channel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firefly"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"chaincode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5f1556a1-5cb1-4bc6-8611-d8f88ccf9c30"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"urls"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"openapi"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/asset_transfer/api/swagger.json"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ui"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://127.0.0.1:5000/api/v1/namespaces/default/apis/asset_transfer/api"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="view-openapi-spec-for-the-contract">
+        
+        
+          <a href="#view-openapi-spec-for-the-contract" class="anchor-heading" aria-labelledby="view-openapi-spec-for-the-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> View OpenAPI spec for the contract
+        
+        
+      </h2>
+    
+
+<p>You’ll notice in the response body that there are a couple of URLs near the bottom. If you navigate to the one labeled <code class="language-plaintext highlighter-rouge">ui</code> in your browser, you should see the Swagger UI for your chaincode.</p>
+
+<p><img src="../../images/asset_transfer_swagger.png" alt="Swagger UI" title="Swagger UI" /></p>
+      <h3 id="invoke-endpoints">
+        
+        
+          <a href="#invoke-endpoints" class="anchor-heading" aria-labelledby="invoke-endpoints"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> /invoke/* endpoints
+        
+        
+      </h3>
+    
+
+<p>The <code class="language-plaintext highlighter-rouge">/invoke</code> endpoints in the generated API are for submitting transactions. These endpoints will be mapped to the <code class="language-plaintext highlighter-rouge">POST /transactions</code> endpoint of the <a href="https://github.com/hyperledger/firefly-fabconnect">FabConnect API</a>.</p>
+      <h3 id="query-endpoints">
+        
+        
+          <a href="#query-endpoints" class="anchor-heading" aria-labelledby="query-endpoints"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> /query/* endpoints
+        
+        
+      </h3>
+    
+
+<p>The <code class="language-plaintext highlighter-rouge">/query</code> endpoints in the generated API, on the other hand, are for sending query requests. These endpoints will be mapped to the <code class="language-plaintext highlighter-rouge">POST /query</code> endpoint of the Fabconnect API, which under the cover only sends chaincode endorsement requests to the target peer node without sending a trasaction payload to the orderer node.</p>
+      <h2 id="invoke-the-chaincode">
+        
+        
+          <a href="#invoke-the-chaincode" class="anchor-heading" aria-labelledby="invoke-the-chaincode"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Invoke the chaincode
+        
+        
+      </h2>
+    
+
+<p>Now that we’ve got everything set up, it’s time to use our chaincode! We’re going to make a <code class="language-plaintext highlighter-rouge">POST</code> request to the <code class="language-plaintext highlighter-rouge">invoke/CreateAsset</code> endpoint to create a new asset.</p>
+      <h3 id="request-2">
+        
+        
+          <a href="#request-2" class="anchor-heading" aria-labelledby="request-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/asset_transfer/invoke/CreateAsset</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"color"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset-01"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"owner"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Harry"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"size"</span><span class="p">:</span><span class="w"> </span><span class="s2">"30"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"23400"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-2">
+        
+        
+          <a href="#response-2" class="anchor-heading" aria-labelledby="response-2"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"b8e905cc-bc23-434a-af7d-13c6d85ae545"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="s2">"79d2668e-4626-4634-9448-1b40fa0d9dfd"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_invoke"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Pending"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"plugin"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fabric"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"color"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset-02"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"owner"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Harry"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"size"</span><span class="p">:</span><span class="w"> </span><span class="s2">"30"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="s2">"23400"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Org1MSP::x509::CN=org_0,OU=client::CN=fabric_ca.org1.example.com,OU=Hyperledger FireFly,O=org1.example.com,L=Raleigh,ST=North Carolina,C=US"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"chaincode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"channel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firefly"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"method"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e5a170d1-0be1-4697-800b-f4bcfaf71cf6"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"id"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"color"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"size"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"owner"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"schema"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">],</span><span class="w">
+      </span><span class="nl">"pathname"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"methodPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CreateAsset"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"invoke"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-02T17:08:40.811630044Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-02T17:08:40.811630044Z"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>You’ll notice that we got an ID back with status <code class="language-plaintext highlighter-rouge">Pending</code>, and that’s expected due to the asynchronous programming model of working with custom onchain logic in FireFly. To see what the latest state is now, we can query the chaincode. In a little bit, we’ll also subscribe to the events emitted by this chaincode so we can know when the state is updated in realtime.</p>
+      <h2 id="query-the-current-state">
+        
+        
+          <a href="#query-the-current-state" class="anchor-heading" aria-labelledby="query-the-current-state"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Query the current state
+        
+        
+      </h2>
+    
+
+<p>To make a read-only request to the blockchain to check the current list of assets, we can make a <code class="language-plaintext highlighter-rouge">POST</code> to the <code class="language-plaintext highlighter-rouge">query/GetAllAssets</code> endpoint.</p>
+      <h3 id="request-3">
+        
+        
+          <a href="#request-3" class="anchor-heading" aria-labelledby="request-3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/asset_transfer/query/GetAllAssets</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-3">
+        
+        
+          <a href="#response-3" class="anchor-heading" aria-labelledby="response-3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"AppraisedValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">23400</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Color"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ID"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset-01"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Owner"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Harry"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"Size"</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre></div></div>
+
+<blockquote>
+  <p><strong>NOTE:</strong> Some chaincodes may have queries that require input parameters. That’s why the query endpoint is a <code class="language-plaintext highlighter-rouge">POST</code>, rather than a <code class="language-plaintext highlighter-rouge">GET</code> so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.</p>
+</blockquote>
+      <h2 id="create-a-blockchain-event-listener">
+        
+        
+          <a href="#create-a-blockchain-event-listener" class="anchor-heading" aria-labelledby="create-a-blockchain-event-listener"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Create a blockchain event listener
+        
+        
+      </h2>
+    
+
+<p>Now that we’ve seen how to submit transactions and preform read-only queries to the blockchain, let’s look at how to receive blockchain events so we know when things are happening in realtime.</p>
+
+<p>If you look at the source code for the smart contract we’re working with above, you’ll notice that it emits an event when a new asset is created. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an <strong>Event Listener</strong>.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">/contracts/listeners</code> endpoint is RESTful so there are <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">GET</code>, and <code class="language-plaintext highlighter-rouge">DELETE</code> methods available on it. To create a new listener, we will make a <code class="language-plaintext highlighter-rouge">POST</code> request. We are going to tell FireFly to listen to events with name <code class="language-plaintext highlighter-rouge">"AssetCreated"</code> from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which channel and chaincode we expect to emit these events.</p>
+      <h3 id="request-4">
+        
+        
+          <a href="#request-4" class="anchor-heading" aria-labelledby="request-4"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/contracts/listeners</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"interface"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"f1e5522c-59a5-4787-bbfd-89975e5b0954"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"channel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firefly"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"chaincode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assets"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-4">
+        
+        
+          <a href="#response-4" class="anchor-heading" aria-labelledby="response-4"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6e7f5dd8-5a57-4163-a1d2-5654e784dc31"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-2cac2bfa-38af-4408-4ff3-973421410e5d"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"backendId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-2cac2bfa-38af-4408-4ff3-973421410e5d"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"location"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"channel"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firefly"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"chaincode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-02T17:19:13.144561086Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"event"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"signature"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="subscribe-to-events-from-our-contract">
+        
+        
+          <a href="#subscribe-to-events-from-our-contract" class="anchor-heading" aria-labelledby="subscribe-to-events-from-our-contract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Subscribe to events from our contract
+        
+        
+      </h2>
+    
+
+<p>Now that we’ve told FireFly that it should listen for specific events on the blockchain, we can set up a <strong>Subscription</strong> for FireFly to send events to our client app. To set up our subscription, we will make a <code class="language-plaintext highlighter-rouge">POST</code> to the <code class="language-plaintext highlighter-rouge">/subscriptions</code> endpoint.</p>
+
+<p>We will set a friendly name <code class="language-plaintext highlighter-rouge">asset_transfer</code> to identify the Subscription when we are connecting to it in the next step.</p>
+
+<p>We’re also going to set up a filter to only send events blockchain events from our listener that we created in the previous step. To do that, we’ll <strong>copy the listener ID</strong> from the step above (<code class="language-plaintext highlighter-rouge">6e7f5dd8-5a57-4163-a1d2-5654e784dc31</code>) and set that as the value of the <code class="language-plaintext highlighter-rouge">listener</code> field in the example below:</p>
+      <h3 id="request-5">
+        
+        
+          <a href="#request-5" class="anchor-heading" aria-labelledby="request-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/subscriptions</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"transport"</span><span class="p">:</span><span class="w"> </span><span class="s2">"websockets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"filter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6e7f5dd8-5a57-4163-a1d2-5654e784dc31"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"oldest"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-5">
+        
+        
+          <a href="#response-5" class="anchor-heading" aria-labelledby="response-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"06d18b49-e763-4f5c-9e97-c25024fe57c8"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"transport"</span><span class="p">:</span><span class="w"> </span><span class="s2">"websockets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"filter"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"transaction"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w">
+    </span><span class="nl">"blockchainevent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6e7f5dd8-5a57-4163-a1d2-5654e784dc31"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"firstEvent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"-1"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"withData"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-02T17:22:06.480181291Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"updated"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h2 id="receive-custom-smart-contract-events">
+        
+        
+          <a href="#receive-custom-smart-contract-events" class="anchor-heading" aria-labelledby="receive-custom-smart-contract-events"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Receive custom smart contract events
+        
+        
+      </h2>
+    
+
+<p>The last step is to connect a WebSocket client to FireFly to receive the event. You can use any WebSocket client you like, such as <a href="https://www.postman.com/">Postman</a> or a command line app like <a href="https://github.com/vi/websocat"><code class="language-plaintext highlighter-rouge">websocat</code></a>.</p>
+
+<p>Connect your WebSocket client to <code class="language-plaintext highlighter-rouge">ws://localhost:5000/ws</code>.</p>
+
+<p>After connecting the WebSocket client, send a message to tell FireFly to:</p>
+
+<ul>
+  <li>Start sending events</li>
+  <li>For the Subscription named <code class="language-plaintext highlighter-rouge">asset_transfer</code></li>
+  <li>On the <code class="language-plaintext highlighter-rouge">default</code> namespace</li>
+  <li>Automatically “ack” each event which will let FireFly immediately send the next event when available</li>
+</ul>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"start"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"autoack"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="websocket-event">
+        
+        
+          <a href="#websocket-event" class="anchor-heading" aria-labelledby="websocket-event"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> WebSocket event
+        
+        
+      </h3>
+    
+
+<p>After creating the subscription, you should see an event arrive on the connected WebSocket client that looks something like this:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"d9fb86b2-b25b-43b8-80d3-936c5daa5a66"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"sequence"</span><span class="p">:</span><span class="w"> </span><span class="mi">29</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"blockchain_event_received"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"reference"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e0d670b4-a1b6-4efd-a985-06dfaaa58fe3"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"topic"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assets"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-02T17:26:57.57612001Z"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"blockchainEvent"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e0d670b4-a1b6-4efd-a985-06dfaaa58fe3"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fabric"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"listener"</span><span class="p">:</span><span class="w"> </span><span class="s2">"6e7f5dd8-5a57-4163-a1d2-5654e784dc31"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"protocolId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"000000000015/000000/000000"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"output"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"AppraisedValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">12300</span><span class="p">,</span><span class="w"> </span><span class="nl">"Color"</span><span class="p">:</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="nl">"ID"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset-01"</span><span class="p">,</span><span class="w"> </span><span class="nl">"Owner"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Jerry"</span><span class="p">,</span><span class="w"> </span><span class="nl">"Size"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="w"> </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"info"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"blockNumber"</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"chaincodeId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"eventIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"eventName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AssetCreated"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"subId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"sb-2cac2bfa-38af-4408-4ff3-973421410e5d"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="mi">1651512414920972300</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"transactionId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"172637bf59a3520ca6dd02f716e1043ba080e10e1cd2f98b4e6b85abcc6a6d69"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"transactionIndex"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2022-05-02T17:26:54.9209723Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="nl">"blockchainId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"172637bf59a3520ca6dd02f716e1043ba080e10e1cd2f98b4e6b85abcc6a6d69"</span><span class="w"> </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"subscription"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"06d18b49-e763-4f5c-9e97-c25024fe57c8"</span><span class="p">,</span><span class="w"> </span><span class="nl">"namespace"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span><span class="w"> </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"asset_transfer"</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>You can see in the event received over the WebSocket connection, the blockchain event that was emitted from our first transaction, which happened in the past. We received this event, because when we set up both the Listener, and the Subscription, we specified the <code class="language-plaintext highlighter-rouge">"firstEvent"</code> as <code class="language-plaintext highlighter-rouge">"oldest"</code>. This tells FireFly to look for this event from the beginning of the blockchain, and that your app is interested in FireFly events since the beginning of FireFly’s event history.</p>
+
+<p>In the event, we can also see the <code class="language-plaintext highlighter-rouge">blockchainEvent</code> itself, which has an <code class="language-plaintext highlighter-rouge">output</code> object. This contains the event payload that was set by the chaincode.</p>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+
+  
+    <title>Introduction to Supernodes - Hyperledger FireFly Docs</title>
+
+    
+  
+
+  <link rel="shortcut icon" href="/firefly/head/favicon.ico" type="image/x-icon">
+
+  <link rel="stylesheet" href="/firefly/head/assets/css/just-the-docs-default.css">
+
+  
+
+  
+    <script type="text/javascript" src="/firefly/head/assets/js/vendor/lunr.min.js"></script>
+  
+  <script type="text/javascript" src="/firefly/head/assets/js/just-the-docs.js"></script>
+
+  <script type="text/javascript" src="/firefly/assets/js/versions.js" data-proofer-ignore></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Introduction to Supernodes | Hyperledger FireFly Docs</title>
+<meta name="generator" content="Jekyll v3.9.2" />
+<meta property="og:title" content="Introduction to Supernodes" />
+<meta property="og:locale" content="en" />
+<meta name="description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:description" content="Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols." />
+<meta property="og:site_name" content="Hyperledger FireFly Docs" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Introduction to Supernodes" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Hyperledger FireFly is the first open source Supernode: a complete stack for enterprises to build and scale secure Web3 applications. The FireFly API for digital assets, data flows, and blockchain transactions makes it radically faster to build production-ready apps on popular chains and protocols.","headline":"Introduction to Supernodes","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"/firefly/head/images/hyperledger-firefly_color.svg"}},"url":"/firefly/head/overview/firefly_supernode.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+  
+
+</head>
+
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="svg-link" viewBox="0 0 24 24">
+      <title>Link</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+      </svg>
+    </symbol>
+    <symbol id="svg-search" viewBox="0 0 24 24">
+      <title>Search</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+      <title>Menu</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+        <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+      <title>Expand</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </symbol>
+    <symbol id="svg-doc" viewBox="0 0 24 24">
+      <title>Document</title>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+      </svg>
+    </symbol>
+  </svg>
+
+  <div class="side-bar">
+    <div class="site-header">
+      <a href="/firefly/head/" class="site-title lh-tight">
+  <div class="site-logo"></div>
+
+</a>
+      <a href="#" id="menu-button" class="site-button">
+        <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+      </a>
+    </div>
+    <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+      
+        <ul class="nav-list"><li class="nav-list-item"><a href="/firefly/head/" class="nav-list-link">Home</a></li><li class="nav-list-item active"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/overview/" class="nav-list-link">Understanding FireFly</a><ul class="nav-list "><li class="nav-list-item  active"><a href="/firefly/head/overview/firefly_supernode.html" class="nav-list-link active">Introduction to Supernodes</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty.html" class="nav-list-link">Multi-party Systems</a></li><li class="nav-list-item "><a href="/firefly/head/overview/firefly_node.html" class="nav-list-link">The FireFly node</a></li><li class="nav-list-item "><a href="/firefly/head/overview/blockchain_protocols.html" class="nav-list-link">Blockchain protocols</a></li><li class="nav-list-item "><a href="/firefly/head/overview/public_vs_permissioned.html" class="nav-list-link">Public and Permissioned</a></li><li class="nav-list-item "><a href="/firefly/head/overview/deterministic_compute.html" class="nav-list-link">Deterministic compute</a></li><li class="nav-list-item "><a href="/firefly/head/overview/data_exchange.html" class="nav-list-link">Private data exchange</a></li><li class="nav-list-item "><a href="/firefly/head/overview/broadcast.html" class="nav-list-link">Broadcast / shared data</a></li><li class="nav-list-item "><a href="/firefly/head/overview/multiparty_process_flow.html" class="nav-list-link">Multi-party process flow</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/gettingstarted/" class="nav-list-link">Getting Started</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/gettingstarted/firefly_cli.html" class="nav-list-link">① Install the FireFly CLI</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/setup_env.html" class="nav-list-link">② Start your environment</a></li><li class="nav-list-item "><a href="/firefly/head/gettingstarted/sandbox.html" class="nav-list-link">③ Use the Sandbox</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/" class="nav-list-link">Tutorials</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/tutorials/broadcast_data.html" class="nav-list-link">Broadcast data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/private_send.html" class="nav-list-link">Privately send data</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/query_messages.html" class="nav-list-link">Explore messages</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/events.html" class="nav-list-link">Listen for events</a></li><li class="nav-list-item "><a href="/firefly/head/tutorials/define_datatype.html" class="nav-list-link">Define a datatype</a></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/tokens/" class="nav-list-link">Use tokens</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc20.html" class="nav-list-link">ERC-20</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc721.html" class="nav-list-link">ERC-721</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/tokens/erc1155.html" class="nav-list-link">ERC-1155</a>
+                  </li></ul></li><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/tutorials/custom_contracts/" class="nav-list-link">Work with custom smart contracts</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/ethereum.html" class="nav-list-link">Ethereum</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/tutorials/custom_contracts/fabric.html" class="nav-list-link">Fabric</a>
+                  </li></ul></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/" class="nav-list-link">Reference</a><ul class="nav-list "><li class="nav-list-item "><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/reference/types/" class="nav-list-link">Core Resources</a><ul class="nav-list"><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/simpletypes.html" class="nav-list-link">Simple Types</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/event.html" class="nav-list-link">Event</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/subscription.html" class="nav-list-link">Subscription</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractapi.html" class="nav-list-link">ContractAPI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/blockchainevent.html" class="nav-list-link">BlockchainEvent</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/transaction.html" class="nav-list-link">Transaction</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/operation.html" class="nav-list-link">Operation</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/ffi.html" class="nav-list-link">FFI</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/contractlistener.html" class="nav-list-link">ContractListener</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenpool.html" class="nav-list-link">TokenPool</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokentransfer.html" class="nav-list-link">TokenTransfer</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/tokenapproval.html" class="nav-list-link">TokenApproval</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/identity.html" class="nav-list-link">Identity</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/verifier.html" class="nav-list-link">Verifier</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/message.html" class="nav-list-link">Message</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/data.html" class="nav-list-link">Data</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/datatype.html" class="nav-list-link">Datatype</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/group.html" class="nav-list-link">Group</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/batch.html" class="nav-list-link">Batch</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/namespace.html" class="nav-list-link">Namespace</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsstart.html" class="nav-list-link">WSStart</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wsack.html" class="nav-list-link">WSAck</a>
+                  </li><li class="nav-list-item ">
+                    <a href="/firefly/head/reference/types/wserror.html" class="nav-list-link">WSError</a>
+                  </li></ul></li><li class="nav-list-item "><a href="/firefly/head/reference/api_query_syntax.html" class="nav-list-link">API Query Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/api_post_syntax.html" class="nav-list-link">API Post Syntax</a></li><li class="nav-list-item "><a href="/firefly/head/reference/events.html" class="nav-list-link">Event Bus</a></li><li class="nav-list-item "><a href="/firefly/head/reference/firefly_interface_format.html" class="nav-list-link">FireFly Interface Format</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/architecture/" class="nav-list-link">Architecture</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/architecture/node_component_architecture.html" class="nav-list-link">Node Component Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/multiparty_event_sequencing.html" class="nav-list-link">Multiparty Event Sequencing</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/ping_pong_txflow.html" class="nav-list-link">Example Transaction Flow</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/plugin_architecture.html" class="nav-list-link">Plugin Architecture</a></li><li class="nav-list-item "><a href="/firefly/head/architecture/internal_event_sequencing.html" class="nav-list-link">Internal Event Sequencing</a></li></ul></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/contributors/" class="nav-list-link">Contributors</a><ul class="nav-list "><li class="nav-list-item "><a href="/firefly/head/contributors/code_overview.html" class="nav-list-link">FireFly Code Overview</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_hierarchy.html" class="nav-list-link">FireFly Code Hierarchy</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/code_repositories.html" class="nav-list-link">Code Repositories</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/dev_environment_setup.html" class="nav-list-link">Setting up a FireFly Core Development Environment</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/advanced_cli_usage.html" class="nav-list-link">Advanced CLI Usage</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/docs_setup.html" class="nav-list-link">Contributing to Documentation</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/version_scheme.html" class="nav-list-link">Versioning Scheme</a></li><li class="nav-list-item "><a href="/firefly/head/contributors/release_guide.html" class="nav-list-link">Release Guide</a></li></ul></li><li class="nav-list-item"><a href="/firefly/head/swagger/swagger.html" class="nav-list-link">API Spec</a></li><li class="nav-list-item"><a href="#" class="nav-list-expander"><svg viewBox="0 0 24 24"><use xlink:href="#svg-arrow-right"></use></svg></a><a href="/firefly/head/faqs/faqs.html" class="nav-list-link">FAQs</a><ul class="nav-list "></ul></li></ul>
+
+      
+    </nav>
+    <footer class="site-footer">
+      This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.
+    </footer>
+  </div>
+  <div class="main" id="top">
+    <div id="main-header" class="main-header">
+      
+        <div class="search">
+          <div class="search-input-wrap">
+            <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search Hyperledger FireFly Docs" aria-label="Search Hyperledger FireFly Docs" autocomplete="off">
+            <label for="search-input" class="search-label"><svg viewBox="0 0 24 24" class="search-icon"><use xlink:href="#svg-search"></use></svg></label>
+          </div>
+          <div id="search-results" class="search-results"></div>
+        </div>
+      
+      
+      
+        <nav aria-label="Auxiliary" class="aux-nav">
+          <ul class="aux-nav-list">
+            
+              <li class="aux-nav-list-item">
+                <a href="//github.com/hyperledger/firefly" class="site-button"
+                  
+                >
+                  GitHub
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://wiki.hyperledger.org/display/FIR" class="site-button"
+                  
+                >
+                  Wiki
+                </a>
+              </li>
+            
+              <li class="aux-nav-list-item">
+                <a href="https://discord.gg/hyperledger" class="site-button"
+                  
+                >
+                  Discord
+                </a>
+              </li>
+            
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">English
+                </a>
+                <div class="dropdown-content"></div>
+              </span>
+            </li>
+            <li class="aux-nav-list-item">
+              <span class="dropdown">
+                <a class="site-button">
+                  Version: head
+                </a>
+                <div class="dropdown-content" id="versionDropdown">
+                </div>
+              </span>
+            </li>
+          </ul>
+        </nav>
+      
+    </div>
+    <div id="main-content-wrap" class="main-content-wrap">
+      
+        <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+            <ol class="breadcrumb-nav-list">
+              
+              
+              
+                <li class="breadcrumb-nav-list-item"><a href="/firefly/head/overview/">Understanding FireFly</a></li>
+              
+              <li class="breadcrumb-nav-list-item"><span>Introduction to Supernodes</span></li>
+            </ol>
+          </nav>
+        
+      
+      <div id="main-content" class="main-content" role="main">
+        
+          <h1 class="no_toc" id="introduction-to-supernodes">
+        
+        
+          <a href="#introduction-to-supernodes" class="anchor-heading" aria-labelledby="introduction-to-supernodes"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Introduction to Supernodes
+        
+        
+      </h1>
+    
+      <h2 class="no_toc text-delta" id="table-of-contents">
+        
+        
+          <a href="#table-of-contents" class="anchor-heading" aria-labelledby="table-of-contents"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Table of contents
+        
+        
+      </h2>
+    
+
+<ol id="markdown-toc">
+  <li><a href="#what-is-a-supernode" id="markdown-toc-what-is-a-supernode">What is a Supernode</a></li>
+  <li><a href="#your-project-with-or-without-a-supernode" id="markdown-toc-your-project-with-or-without-a-supernode">Your project with or without a Supernode</a></li>
+  <li><a href="#types-of-blockchain-project-that-benefit" id="markdown-toc-types-of-blockchain-project-that-benefit">Types of blockchain project that benefit</a>    <ol>
+      <li><a href="#solution-builders" id="markdown-toc-solution-builders">Solution builders</a></li>
+      <li><a href="#organizations-needing-a-gateway-to-web3" id="markdown-toc-organizations-needing-a-gateway-to-web3">Organizations needing a gateway to Web3</a></li>
+    </ol>
+  </li>
+  <li><a href="#feature-view" id="markdown-toc-feature-view">Feature view</a></li>
+  <li><a href="#application-features" id="markdown-toc-application-features">Application features</a>    <ol>
+      <li><a href="#api-gateway" id="markdown-toc-api-gateway">API Gateway</a></li>
+      <li><a href="#event-streams" id="markdown-toc-event-streams">Event Streams</a></li>
+      <li><a href="#api-generation" id="markdown-toc-api-generation">API Generation</a></li>
+    </ol>
+  </li>
+  <li><a href="#flow-features" id="markdown-toc-flow-features">Flow features</a>    <ol>
+      <li><a href="#private-data-flow" id="markdown-toc-private-data-flow">Private data flow</a></li>
+      <li><a href="#multi-party-business-process-flow" id="markdown-toc-multi-party-business-process-flow">Multi-party business process flow</a></li>
+      <li><a href="#data-exchange" id="markdown-toc-data-exchange">Data exchange</a></li>
+    </ol>
+  </li>
+  <li><a href="#digital-asset-features" id="markdown-toc-digital-asset-features">Digital asset features</a>    <ol>
+      <li><a href="#token-api" id="markdown-toc-token-api">Token API</a></li>
+      <li><a href="#transfer-history--audit-trail" id="markdown-toc-transfer-history--audit-trail">Transfer history / audit trail</a></li>
+      <li><a href="#wallets" id="markdown-toc-wallets">Wallets</a></li>
+    </ol>
+  </li>
+</ol><hr />
+      <h2 id="what-is-a-supernode">
+        
+        
+          <a href="#what-is-a-supernode" class="anchor-heading" aria-labelledby="what-is-a-supernode"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> What is a Supernode
+        
+        
+      </h2>
+    
+
+<p>Over the last decade of enterprise blockchain projects, architects and developers have realized
+that they need much more than a blockchain node for their projects to be successful.</p>
+
+<p>The development stack needed for an enterprise grade Web3 application,
+is just as sophisticated as the stack required for the Web 2.0 applications
+that came before.</p>
+
+<p>A raw blockchain node is simply not enough.</p>
+      <h2 id="your-project-with-or-without-a-supernode">
+        
+        
+          <a href="#your-project-with-or-without-a-supernode" class="anchor-heading" aria-labelledby="your-project-with-or-without-a-supernode"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Your project with or without a Supernode
+        
+        
+      </h2>
+    
+
+<p><img src="/firefly/head/images/without_firefly_with_firefly.png" alt="Without FireFly / with FireFly" /></p>
+
+<p>So your choice as a development team for a blockchain project becomes whether you build
+and update all of the “plumbing” / “middleware” components needed underneath your business
+logic yourself, or whether you look for pre-built solutions.</p>
+
+<p>The Hyperledger FireFly approach is to allow the community to collaborate on the development and hardening of
+these components, across industries and projects. Then fit them into an open source, enterprise grade,
+pluggable development and runtime stack… the <em>Supernode</em>.</p>
+
+<p>The application developers then code against these APIs, and can be confident that the business logic that works
+on their local laptop against a sandbox, is being written in a way that scales to an enterprise
+decentralized application and can be deployed against one or more public/private blockchains in production.</p>
+
+<p>Thus allowing development teams to focus on differentiation where it matters - at the solution layer.</p>
+      <h2 id="types-of-blockchain-project-that-benefit">
+        
+        
+          <a href="#types-of-blockchain-project-that-benefit" class="anchor-heading" aria-labelledby="types-of-blockchain-project-that-benefit"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Types of blockchain project that benefit
+        
+        
+      </h2>
+    
+
+<p>There are two main reasons your project might be exploring Supernodes, and considering the open source
+approach of Hyperledger FireFly.</p>
+      <h3 id="solution-builders">
+        
+        
+          <a href="#solution-builders" class="anchor-heading" aria-labelledby="solution-builders"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Solution builders
+        
+        
+      </h3>
+    
+
+<p>Teams building new decentralized Web3 solutions need a full technology stack for
+the application, to manage both private and blockchain data. Particularly in the enterprise space
+due to data security, regulatory and privacy concerns.</p>
+
+<p>For theses solutions to be successful, they need decentralized deployment to multiple parties.
+Each party needs to customize the deployment to their SecDevOps environment, as well as
+onboard it to their key management solution etc.</p>
+
+<p>So the complexity of requiring a bespoke technology stack for a solution can be a barrier to its adoption.</p>
+
+<p>Whereas, building on top of a standardized and open technology stack can ease adoption, as well
+as radically reducing the amount of engineering needed by the solution developer.</p>
+      <h3 id="organizations-needing-a-gateway-to-web3">
+        
+        
+          <a href="#organizations-needing-a-gateway-to-web3" class="anchor-heading" aria-labelledby="organizations-needing-a-gateway-to-web3"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Organizations needing a gateway to Web3
+        
+        
+      </h3>
+    
+
+<p>Organizations are increasingly participating in multiple blockchain projects, and integrating with
+digital assets in multiple blockchain ecosystems.</p>
+
+<p>This means core IT security policy needs to scale to the challenge of adding these connections,
+and managing the wallets / signing identities, data flow, and SecDevOps requirements across multiple
+projects.</p>
+
+<p>A gateway tier at the edge between the core systems of the enterprise, and the Web3 transactions,
+helps reduce the overhead, and reduce risk.</p>
+      <h2 id="feature-view">
+        
+        
+          <a href="#feature-view" class="anchor-heading" aria-labelledby="feature-view"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Feature view
+        
+        
+      </h2>
+    
+
+<p>So what makes a Supernode?</p>
+
+<p><img src="/firefly/head/images/firefly_functionality_overview.png" alt="Hyperledger FireFly features" /></p>
+
+<p>Let’s break down the functionality that is needed for an enterprise blockchain solution.</p>
+      <h2 id="application-features">
+        
+        
+          <a href="#application-features" class="anchor-heading" aria-labelledby="application-features"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Application features
+        
+        
+      </h2>
+    
+
+<p>Rapidly accelerating development is a key requirement of any Supernode.</p>
+
+<p>The business logic APIs, web and mobile user experiences for Web3 applications need to be just as rich
+and feature-full as the Web 2.0 / centralized applications.</p>
+
+<p>That means developers skilled in these application layers, must have the tools they need.</p>
+
+<p>Capabilities fitting their application development toolchain, and optimized to their skillset.</p>
+      <h3 id="api-gateway">
+        
+        
+          <a href="#api-gateway" class="anchor-heading" aria-labelledby="api-gateway"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> API Gateway
+        
+        
+      </h3>
+    
+
+<p>Modern APIs that:</p>
+
+<ul>
+  <li>Are fast and efficient</li>
+  <li>Have rich query support</li>
+  <li>Give deterministic outcomes and clear instruction for safe use</li>
+  <li>Integrate with your security frameworks like OAuth 2.0 / OpenID Connect single sign-on</li>
+  <li>Provide Open API 3 / Swagger definitions</li>
+  <li>Come with code SDKs, with rich type information</li>
+  <li>Conform as closely as possible to the principles of REST</li>
+  <li>Do not pretend to be RESTful in cases when it is impossible to be</li>
+</ul>
+      <h3 id="event-streams">
+        
+        
+          <a href="#event-streams" class="anchor-heading" aria-labelledby="event-streams"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Event Streams
+        
+        
+      </h3>
+    
+
+<p>The reality is that the only programming paradigm that works for a decentralized solutions,
+is an event-driven one.</p>
+
+<p>All blockchain technologies are for this reason event-driven programming interfaces at their core.</p>
+
+<p>In an overall solution, those on-chain events must be coordinated with off-chain private
+data transfers, and existing core-systems / human workflows.</p>
+
+<p>This means great event support is a must:</p>
+
+<ul>
+  <li>Convenient WebSocket APIs that work for your microservices development stack</li>
+  <li>Support for Webhooks to integrated serverless functions</li>
+  <li>Integration with your core enterprise message queue (MQ) or enterprise service bus (ESB)</li>
+  <li>At-least-once delivery assurance, with simple instructions at the application layer</li>
+</ul>
+      <h3 id="api-generation">
+        
+        
+          <a href="#api-generation" class="anchor-heading" aria-labelledby="api-generation"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> API Generation
+        
+        
+      </h3>
+    
+
+<p>The blockchain is going to be at the heart of your Web3 project. While usually small in overall surface
+area compared to the lines of code in the traditional application tiers, this kernel of
+mission-critical code is what makes your solution transformational compared to a centralized / Web 2.0 solution.</p>
+
+<p>Whether the smart contract is hand crafted for your project, an existing contract on a public blockchain,
+or a built-in pattern of a framework like FireFly - it must be interacted with correctly.</p>
+
+<p>So there can be no room for misinterpretation in the hand-off between the blockchain
+Smart Contract specialist, familiar with EVM contracts in Solidity/Vyper, Fabric chaincode
+(or maybe even raw block transition logic in Rust or Go), and the backend/full-stack
+application developer / core-system integrator.</p>
+
+<p>Well documented APIs are the modern norm for this, and it is no different for blockchain. This means:</p>
+
+<ul>
+  <li>Generating the interface for methods and events on your smart contract</li>
+  <li>Providing robust transaction submission, and event streaming</li>
+  <li>Publishing the API, version, and location, of your smart contracts to the network</li>
+</ul>
+      <h2 id="flow-features">
+        
+        
+          <a href="#flow-features" class="anchor-heading" aria-labelledby="flow-features"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Flow features
+        
+        
+      </h2>
+    
+
+<p>Data, value, and process flow are how decentralized systems function. In an enterprise context
+not all of this data can be shared with all parties, and some is very sensitive.</p>
+      <h3 id="private-data-flow">
+        
+        
+          <a href="#private-data-flow" class="anchor-heading" aria-labelledby="private-data-flow"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Private data flow
+        
+        
+      </h3>
+    
+
+<p>Managing the flows of data so that the right information is shared with the right parties,
+at the right time, means thinking carefully about what data flows over what channel.</p>
+
+<p>The number of enterprise solutions where all data can flow directly through the blockchain,
+is vanishingly small.</p>
+
+<p>Coordinating these different data flows is often one of the biggest pieces of heavy lifting solved
+on behalf of the application by a robust framework like FireFly:</p>
+
+<ul>
+  <li>Establishing the identity of participants so data can be shared</li>
+  <li>Securing the transfer of data off-chain</li>
+  <li>Coordinating off-chain data flow with on-chain data flow</li>
+  <li>Managing sequence for deterministic outcomes for all parties</li>
+  <li>Integrating off-chain private execution with multi-step stateful business logic</li>
+</ul>
+      <h3 id="multi-party-business-process-flow">
+        
+        
+          <a href="#multi-party-business-process-flow" class="anchor-heading" aria-labelledby="multi-party-business-process-flow"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Multi-party business process flow
+        
+        
+      </h3>
+    
+
+<p>Web3 has the potential to transform how ecosystems interact. Digitally transforming
+legacy process flows, by giving deterministic outcomes that are trusted by all parties,
+backed by new forms of digital trust between parties.</p>
+
+<p>Some of the most interesting use cases require complex multi-step business process across
+participants. The Web3 version of business process management, comes with a some new challenges.</p>
+
+<p>So you need the platform to:</p>
+
+<ul>
+  <li>Provide a robust event-driven programming model fitting a “state machine” approach</li>
+  <li>Integrate with the decentralized application stack of each participant</li>
+  <li>Allow integration with the core-systems and human decision making of each participant</li>
+  <li>Provide deterministic ordering between all parties</li>
+  <li>Provide identity assurance and proofs for data flow / transition logic</li>
+</ul>
+      <h3 id="data-exchange">
+        
+        
+          <a href="#data-exchange" class="anchor-heading" aria-labelledby="data-exchange"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Data exchange
+        
+        
+      </h3>
+    
+
+<p>Business processes need data, and that data comes in many shapes and sizes.</p>
+
+<p>The platform needs to handle all of them:</p>
+
+<ul>
+  <li>Large files and documents, as well as application data</li>
+  <li>Uniqueness / Enterprise NFTs - agreement on a single “foreign key” for a record</li>
+  <li>Non-repudiation, and acknowledgement of receipt</li>
+  <li>Coordination of flows of data, with flows of value - delivery vs. payment scenarios</li>
+</ul>
+      <h2 id="digital-asset-features">
+        
+        
+          <a href="#digital-asset-features" class="anchor-heading" aria-labelledby="digital-asset-features"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Digital asset features
+        
+        
+      </h2>
+    
+
+<p>The modelling, transfer and management of digital assets is the core programming
+foundation of blockchain.</p>
+
+<p>Yet out of the box, raw blockchains designed to efficiently manage these assets
+in large ecosystems, do not come with all the building blocks needed by applications.</p>
+      <h3 id="token-api">
+        
+        
+          <a href="#token-api" class="anchor-heading" aria-labelledby="token-api"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Token API
+        
+        
+      </h3>
+    
+
+<p>Tokens are such a fundamental construct, that they justify a standard API.
+This has been evolving in the industry through standards like ERC-20/ERC-721,
+and Web3 signing wallets and that support these.</p>
+
+<p>Supernodes bring this same standardization to applications. Providing APIs
+that work across token standards, and blockchain implementations, providing
+consistent and interoperable support.</p>
+
+<p>This means one application or set of back-end systems, can integrate with multiple
+blockchains, and different token implementations.</p>
+
+<p>Pluggability here is key, so that the rules of governance of each digital
+asset ecosystem can be exposed and enforced. Whether tokens are fungible,
+non-fungible, or some hybrid in between.</p>
+      <h3 id="transfer-history--audit-trail">
+        
+        
+          <a href="#transfer-history--audit-trail" class="anchor-heading" aria-labelledby="transfer-history--audit-trail"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Transfer history / audit trail
+        
+        
+      </h3>
+    
+
+<p>For efficiency blockchains seldom provide in their core the ability to
+query historical transaction information. Sometimes even the ability
+to query balances is unavailable, for blockchains based on a UTXO model.</p>
+
+<p>So off-chain indexing of transaction history is an absolute must-have
+for any digital asset solution, or even a simple wallet application.</p>
+
+<p>A platform like Hyperledger FireFly provides:</p>
+
+<ul>
+  <li>Automatic indexing of tokens, whether existing or newly deployed</li>
+  <li>Off-chain indexing of fungible and non-fungible asset transfers &amp; balances</li>
+  <li>Off-chain indexing of approvals</li>
+  <li>Integration with digital identity</li>
+  <li>Full extensibility across both token standards and blockchain technologies</li>
+</ul>
+      <h3 id="wallets">
+        
+        
+          <a href="#wallets" class="anchor-heading" aria-labelledby="wallets"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Wallets
+        
+        
+      </h3>
+    
+
+<p>Wallet and signing-key management is a critical requirement for any
+blockchain solution, particularly those involving the transfer
+of digital assets between wallets.</p>
+
+<p>A platform like Hyperledger FireFly provides you the ability to:</p>
+
+<ul>
+  <li>Integrate multiple different signing/custody solutions in a proven way</li>
+  <li>Manage the mapping of off-chain identities to on-chain signing identities</li>
+  <li>Provide a plug-point for policy-based decision making on high value transactions</li>
+  <li>Manage connections to multiple different blockchain solutions</li>
+</ul>
+
+        
+
+        
+
+        
+        
+
+      </div>
+    </div>
+
+    
+      
+
+      <div class="search-overlay"></div>
+    
+  </div>
+  <script>
+    getVersions("en")
+  </script>
+</body>
+</html>
