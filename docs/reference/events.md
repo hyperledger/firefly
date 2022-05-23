@@ -199,7 +199,7 @@ Once you have configured the blockchain event listener, every event detected
 from the blockchain will result in a FireFly event delivered to your application
 of type `blockchain_event_received`.
 
-Check out the [Custom Contracts Tutorial](../tutorials/custom_contracts.md) for
+Check out the [Custom Contracts Tutorial](../tutorials/custom_contracts/index.md) for
 a walk-through of how to set up listeners for the events from your smart contracts.
 
 FireFly automatically establishes listeners for some blockchain events:
