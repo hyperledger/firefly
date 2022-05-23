@@ -76,7 +76,7 @@ applying the changes to your **Application Database**.
 In a decentralized system, you need to consider that each organization
 runs its own applications, and has its own private database.
 
-Any any given point in time different organizations will have slightly
+At any given point in time different organizations will have slightly
 different views of what the most up to date information is - even for
 the blockchain state.
 
