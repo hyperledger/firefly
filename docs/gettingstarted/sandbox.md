@@ -113,7 +113,7 @@ The Tokens tab is where you can create token pools, and mint, burn, or transfer 
 
 ## Contracts
 
-The Contracts section of the Sandbox lets you interact with custom smart contracts, right from your web browser! The Sandbox also provides some helpful tips on deploying your smart contract to the blockchain. For more details, please see the tutorial on [Working with custom smart contracts](../tutorials/custom_contracts.md).
+The Contracts section of the Sandbox lets you interact with custom smart contracts, right from your web browser! The Sandbox also provides some helpful tips on deploying your smart contract to the blockchain. For more details, please see the tutorial on [Working with custom smart contracts](../tutorials/custom_contracts/index.md).
 
 ![Sandbox Tokens](../images/sandbox/sandbox_contracts_api.png)
 
