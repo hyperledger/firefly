@@ -14,11 +14,9 @@ The hash is a function of the header, and all of the data payloads. Calculated a
 
 - The hash of each Data element is calculated individually
 - A JSON array of `[{"id":"{{DATA_UUID}}","hash":"{{DATA_HASH}}"}]` is hashed, and that hash is stored in `header.datahash`
-- The `header` is serialized as JSON with the deterministic order listed below, and hashed
-
-All JSON data is serialized without whitespace to hash it.
-
-All hashes are SHA256.
+- The `header` is serialized as JSON with the deterministic order (listed [below](#messageheader)) and hashed
+  - JSON data is serialized without whitespace to hash it.
+  - The hashing algorithm is SHA-256
 
 Each node independently calculates the hash, and the hash is included in the manifest of the [Batch](./(batch.md) by the
 node that sends the message.
