@@ -160,11 +160,11 @@ var (
 	BatchManifestData     = ffm("BatchManifest.data", "Array of manifest entries, succinctly summarizing the data in the batch")
 
 	// BatchPersisted field descriptions
-	BatchPersistedHash       = ffm("BatchPersisted.hash", "The hash of the manifest of the batch")
-	BatchPersistedManifest   = ffm("BatchPersisted.manifest", "The manifest of the batch")
-	BatchPersistedTX         = ffm("BatchPersisted.tx", "The FireFly transaction associated with this batch")
-	BatchPersistedPayloadRef = ffm("BatchPersisted.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
-	BatchPersistedConfirmed  = ffm("BatchPersisted.confirmed", "The time when the batch was confirmed")
+	BatchPersistedHash       = ffm("Batch.hash", "The hash of the manifest of the batch")
+	BatchPersistedManifest   = ffm("Batch.manifest", "The manifest of the batch")
+	BatchPersistedTX         = ffm("Batch.tx", "The FireFly transaction associated with this batch")
+	BatchPersistedPayloadRef = ffm("Batch.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
+	BatchPersistedConfirmed  = ffm("Batch.confirmed", "The time when the batch was confirmed")
 
 	// Transaction field descriptions
 	TransactionID            = ffm("Transaction.id", "The UUID of the FireFly transaction")
@@ -593,4 +593,20 @@ var (
 	WSSubscriptionStatusEphemeral = ffm("WSSubscriptionStatus.ephemeral", "Indicates whether the subscription is ephemeral (vs durable)")
 	WSSubscriptionStatusNamespace = ffm("WSSubscriptionStatus.namespace", "The subscription namespace")
 	WSSubscriptionStatusName      = ffm("WSSubscriptionStatus.name", "The subscription name (for durable subscriptions only)")
+
+	WebhooksOptJSON         = ffm("WebhookSubOptions.json", "Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type")
+	WebhooksOptReply        = ffm("WebhookSubOptions.reply", "Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook")
+	WebhooksOptHeaders      = ffm("WebhookSubOptions.headers", "Webhooks only: Static headers to set on the webhook request")
+	WebhooksOptQuery        = ffm("WebhookSubOptions.query", "Webhooks only: Static query params to set on the webhook request")
+	WebhooksOptInput        = ffm("WebhookSubOptions.input", "Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true")
+	WebhooksOptFastAck      = ffm("WebhookSubOptions.fastack", "Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations")
+	WebhooksOptURL          = ffm("WebhookSubOptions.url", "Webhooks only: HTTP url to invoke. Can be relative if a base URL is set in the webhook plugin config")
+	WebhooksOptMethod       = ffm("WebhookSubOptions.method", "Webhooks only: HTTP method to invoke. Default=POST")
+	WebhooksOptReplyTag     = ffm("WebhookSubOptions.replytag", "Webhooks only: The tag to set on the reply message")
+	WebhooksOptReplyTx      = ffm("WebhookSubOptions.replytx", "Webhooks only: The transaction type to set on the reply message")
+	WebhooksOptInputQuery   = ffm("WebhookInputOptions.query", "A top-level property of the first data input, to use for query parameters")
+	WebhooksOptInputHeaders = ffm("WebhookInputOptions.headers", "A top-level property of the first data input, to use for headers")
+	WebhooksOptInputBody    = ffm("WebhookInputOptions.body", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
+	WebhooksOptInputPath    = ffm("WebhookInputOptions.path", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
+	WebhooksOptInputReplyTx = ffm("WebhookInputOptions.replytx", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
 )

@@ -49,20 +49,6 @@ func (_m *Plugin) DeliveryRequest(connID string, sub *core.Subscription, event *
 	return r0
 }
 
-// GetOptionsSchema provides a mock function with given fields: _a0
-func (_m *Plugin) GetOptionsSchema(_a0 context.Context) string {
-	ret := _m.Called(_a0)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
 // Init provides a mock function with given fields: ctx, _a1, callbacks
 func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks events.Callbacks) error {
 	ret := _m.Called(ctx, _a1, callbacks)

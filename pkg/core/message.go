@@ -72,7 +72,7 @@ type MessageHeader struct {
 	ID     *fftypes.UUID   `ffstruct:"MessageHeader" json:"id,omitempty" ffexcludeinput:"true"`
 	CID    *fftypes.UUID   `ffstruct:"MessageHeader" json:"cid,omitempty"`
 	Type   MessageType     `ffstruct:"MessageHeader" json:"type" ffenum:"messagetype"`
-	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty"`
+	TxType TransactionType `ffstruct:"MessageHeader" json:"txtype,omitempty" ffenum:"txtype"`
 	SignerRef
 	Created   *fftypes.FFTime  `ffstruct:"MessageHeader" json:"created,omitempty" ffexcludeinput:"true"`
 	Namespace string           `ffstruct:"MessageHeader" json:"namespace,omitempty" ffexcludeinput:"true"`

@@ -78,11 +78,11 @@ type Batch struct {
 // BatchPersisted is the structure written to the database
 type BatchPersisted struct {
 	BatchHeader
-	Hash       *fftypes.Bytes32 `ffstruct:"BatchPersisted" json:"hash"`
-	Manifest   *fftypes.JSONAny `ffstruct:"BatchPersisted" json:"manifest"`
-	TX         TransactionRef   `ffstruct:"BatchPersisted" json:"tx"`
-	PayloadRef string           `ffstruct:"BatchPersisted" json:"payloadRef,omitempty"`
-	Confirmed  *fftypes.FFTime  `ffstruct:"BatchPersisted" json:"confirmed"`
+	Hash       *fftypes.Bytes32 `ffstruct:"Batch" json:"hash"`
+	Manifest   *fftypes.JSONAny `ffstruct:"Batch" json:"manifest"`
+	TX         TransactionRef   `ffstruct:"Batch" json:"tx"`
+	PayloadRef string           `ffstruct:"Batch" json:"payloadRef,omitempty"`
+	Confirmed  *fftypes.FFTime  `ffstruct:"Batch" json:"confirmed"`
 }
 
 // BatchPayload contains the full JSON of the messages and data, but

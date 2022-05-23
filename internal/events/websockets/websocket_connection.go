@@ -86,7 +86,7 @@ func (wc *websocketConnection) processAutoStart(req *http.Request) {
 	isAutoack := hasAutoack && (len(autoAck) == 0 || autoAck[0] != "false")
 	if hasEphemeral || hasName {
 		filter := core.NewSubscriptionFilterFromQuery(query)
-		err := wc.handleStart(&core.WSClientActionStartPayload{
+		err := wc.handleStart(&core.WSStart{
 			AutoAck:   &isAutoack,
 			Ephemeral: isEphemeral,
 			Namespace: query.Get("namespace"),
@@ -131,7 +131,7 @@ func (wc *websocketConnection) receiveLoop() {
 	defer close(wc.receiverDone)
 	for {
 		var msgData []byte
-		var msgHeader core.WSClientActionBase
+		var msgHeader core.WSActionBase
 		_, reader, err := wc.wsConn.NextReader()
 		if err == nil {
 			msgData, err = ioutil.ReadAll(reader)
@@ -150,13 +150,13 @@ func (wc *websocketConnection) receiveLoop() {
 		l.Tracef("Received: %s", string(msgData))
 		switch msgHeader.Type {
 		case core.WSClientActionStart:
-			var msg core.WSClientActionStartPayload
+			var msg core.WSStart
 			err = json.Unmarshal(msgData, &msg)
 			if err == nil {
 				err = wc.handleStart(&msg)
 			}
 		case core.WSClientActionAck:
-			var msg core.WSClientActionAckPayload
+			var msg core.WSAck
 			err = json.Unmarshal(msgData, &msg)
 			if err == nil {
 				err = wc.handleAck(&msg)
@@ -200,7 +200,7 @@ func (wc *websocketConnection) dispatch(event *core.EventDelivery) error {
 
 func (wc *websocketConnection) protocolError(err error) {
 	log.L(wc.ctx).Errorf("Sending protocol error to client: %s", err)
-	sendErr := wc.send(&core.WSProtocolErrorPayload{
+	sendErr := wc.send(&core.WSError{
 		Type:  core.WSProtocolErrorEventType,
 		Error: err.Error(),
 	})
@@ -221,7 +221,7 @@ func (wc *websocketConnection) send(msg interface{}) error {
 	}
 }
 
-func (wc *websocketConnection) handleStart(start *core.WSClientActionStartPayload) (err error) {
+func (wc *websocketConnection) handleStart(start *core.WSStart) (err error) {
 	wc.mux.Lock()
 	if start.AutoAck != nil {
 		if *start.AutoAck != wc.autoAck && len(wc.started) > 0 {
@@ -250,7 +250,7 @@ func (wc *websocketConnection) durableSubMatcher(sr core.SubscriptionRef) bool {
 	return false
 }
 
-func (wc *websocketConnection) checkAck(ack *core.WSClientActionAckPayload) (*core.EventDeliveryResponse, error) {
+func (wc *websocketConnection) checkAck(ack *core.WSAck) (*core.EventDeliveryResponse, error) {
 	l := log.L(wc.ctx)
 	var inflight *core.EventDeliveryResponse
 	wc.mux.Lock()
@@ -303,7 +303,7 @@ func (wc *websocketConnection) checkAck(ack *core.WSClientActionAckPayload) (*co
 	return inflight, nil
 }
 
-func (wc *websocketConnection) handleAck(ack *core.WSClientActionAckPayload) error {
+func (wc *websocketConnection) handleAck(ack *core.WSAck) error {
 	// Perform a locked set of check
 	inflight, err := wc.checkAck(ack)
 	if err != nil {

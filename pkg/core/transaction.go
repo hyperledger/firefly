@@ -47,7 +47,7 @@ type TransactionRef struct {
 
 // BlockchainTransactionRef refers to a transaction and a transaction blockchain ID, in other types
 type BlockchainTransactionRef struct {
-	Type         TransactionType `ffstruct:"Transaction" json:"type"`
+	Type         TransactionType `ffstruct:"Transaction" json:"type,omitempty"`
 	ID           *fftypes.UUID   `ffstruct:"Transaction" json:"id,omitempty"`
 	BlockchainID string          `ffstruct:"Transaction" json:"blockchainId,omitempty"`
 }
