@@ -1,6 +1,6 @@
 Every Event emitted by FireFly shares a common structure.
 
-> See [Events](../(events.md) for a reference for how the overall event bus
+> See [Events](../events.html) for a reference for how the overall event bus
 in Hyperledger FireFly operates, and descriptions of all the sub-categories
 of events.
 
