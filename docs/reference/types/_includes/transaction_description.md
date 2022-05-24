@@ -1,4 +1,4 @@
-FireFly Transactions are a grouping construct for a number of [Operations](./(operations.md) and [Events](./(events.md)
+FireFly Transactions are a grouping construct for a number of [Operations](./operation.html) and [Events](./event.html)
 that need to complete or fail as unit.
 
 > FireFly Transactions are not themselves Blockchain transactions, but in many cases there is
@@ -24,7 +24,7 @@ event as well.
 [![FireFly Transactions - Explorer View](../../images/firefly_transactions_explorer_view.png)](../../images/firefly_transactions_explorer_view.png)
 
 Each FireFly transaction has a UUID. This UUID is propagated through to all participants in a FireFly transaction.
-For example in a [Token Transfer](./(tokentransfer.md) that is coordinated with an off-chain private [Message](./(message.md),
+For example in a [Token Transfer](./tokentransfer.html) that is coordinated with an off-chain private [Message](./message.html),
 the transaction ID is propagated to all parties who are part of that transaction. So the same UUID can be used
 to find the transaction in the FireFly Explorer of any member who has access to the message.
 This is possible because hash-pinned off-chain data is associated with that on-chain transfer.
