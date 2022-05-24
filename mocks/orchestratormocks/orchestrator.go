@@ -1262,20 +1262,6 @@ func (_m *Orchestrator) Metrics() metrics.Manager {
 	return r0
 }
 
-// MigrateNetwork provides a mock function with given fields: ctx
-func (_m *Orchestrator) MigrateNetwork(ctx context.Context) error {
-	ret := _m.Called(ctx)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // NetworkMap provides a mock function with given fields:
 func (_m *Orchestrator) NetworkMap() networkmap.Manager {
 	ret := _m.Called()
@@ -1354,6 +1340,20 @@ func (_m *Orchestrator) Start() error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SubmitOperatorAction provides a mock function with given fields: ctx, action
+func (_m *Orchestrator) SubmitOperatorAction(ctx context.Context, action *core.OperatorAction) error {
+	ret := _m.Called(ctx, action)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.OperatorAction) error); ok {
+		r0 = rf(ctx, action)
 	} else {
 		r0 = ret.Error(0)
 	}

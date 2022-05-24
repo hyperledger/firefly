@@ -383,6 +383,7 @@ var (
 	FireFlyContractIndex       = ffm("FireFlyContractInfo.index", "The index of this contract in the config file")
 	FireFlyContractFinalEvent  = ffm("FireFlyContractInfo.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
 	FireFlyContractInfo        = ffm("FireFlyContractInfo.info", "Blockchain-specific info on the contract, such as its location on chain")
+	OperatorActionType         = ffm("OperatorAction.type", "The action to be performed")
 
 	// NodeStatus field descriptions
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")

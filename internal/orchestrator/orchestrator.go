@@ -142,7 +142,7 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
-	MigrateNetwork(ctx context.Context) error
+	SubmitOperatorAction(ctx context.Context, action *core.OperatorAction) error
 }
 
 type orchestrator struct {
@@ -880,10 +880,13 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 	return or.namespace.Init(ctx, or.database)
 }
 
-func (or *orchestrator) MigrateNetwork(ctx context.Context) error {
+func (or *orchestrator) SubmitOperatorAction(ctx context.Context, action *core.OperatorAction) error {
 	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx)
 	if err != nil {
 		return err
 	}
-	return or.blockchain.SubmitOperatorAction(ctx, fftypes.NewUUID(), verifier.Value, blockchain.OperatorActionTerminate)
+	if action.Type != core.OperatorActionTerminate {
+		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedOperatorAction, action.Type)
+	}
+	return or.blockchain.SubmitOperatorAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type.String())
 }

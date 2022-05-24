@@ -41,7 +41,7 @@ func (em *eventManager) BlockchainOperatorAction(bi blockchain.Plugin, action st
 	return em.retry.Do(em.ctx, "handle operator action", func(attempt int) (retry bool, err error) {
 		// TODO: verify signing identity
 
-		if action == blockchain.OperatorActionTerminate {
+		if action == core.OperatorActionTerminate.String() {
 			err = em.actionTerminate(bi, event)
 		} else {
 			log.L(em.ctx).Errorf("Ignoring unrecognized operator action: %s", action)

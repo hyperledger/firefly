@@ -27,16 +27,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostNetworkMigrate(t *testing.T) {
+func TestPostNetworkOperatorAction(t *testing.T) {
 	o, r := newTestAPIServer()
-	input := core.NamespaceMigrationRequest{}
+	input := core.OperatorAction{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/network/migrate", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/network/operatoraction", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("MigrateNetwork", mock.Anything).Return(nil)
+	o.On("SubmitOperatorAction", mock.Anything, mock.AnythingOfType("*core.OperatorAction")).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

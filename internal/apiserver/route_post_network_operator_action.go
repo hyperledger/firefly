@@ -24,19 +24,19 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNetworkMigrate = &oapispec.Route{
-	Name:            "postNetworkMigrate",
-	Path:            "network/migrate",
+var postNetworkOperatorAction = &oapispec.Route{
+	Name:            "postNetworkOperatorAction",
+	Path:            "network/operatoraction",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNetworkMigrate,
-	JSONInputValue:  func() interface{} { return &core.NamespaceMigrationRequest{} },
-	JSONOutputValue: func() interface{} { return &core.NamespaceMigrationRequest{} },
+	Description:     coremsgs.APIEndpointsPostNetworkOperatorAction,
+	JSONInputValue:  func() interface{} { return &core.OperatorAction{} },
+	JSONOutputValue: func() interface{} { return &core.OperatorAction{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).MigrateNetwork(r.Ctx)
+		err = getOr(r.Ctx).SubmitOperatorAction(r.Ctx, r.Input.(*core.OperatorAction))
 		return r.Input, err
 	},
 }

@@ -91,11 +91,6 @@ type Plugin interface {
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
 }
 
-const (
-	// OperatorActionTerminate request all network members to stop using the current contract and move to the next one configured
-	OperatorActionTerminate = "terminate"
-)
-
 const FireFlyActionPrefix = "firefly:"
 
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.

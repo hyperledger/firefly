@@ -2620,7 +2620,7 @@ func TestSubmitOperatorAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitOperatorAction(context.Background(), fftypes.NewUUID(), "0x123", blockchain.OperatorActionTerminate)
+	err := e.SubmitOperatorAction(context.Background(), fftypes.NewUUID(), "0x123", core.OperatorActionTerminate.String())
 	assert.NoError(t, err)
 }
 
