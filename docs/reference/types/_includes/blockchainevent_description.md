@@ -1,9 +1,9 @@
 Blockchain Events are detected by the blockchain plugin:
 
-1. When a [ContractListener](./(contractlistener.md) has been
+1. When a [ContractListener](./contractlistener.html) has been
    configured against any custom smart contract through the FireFly API
 2. Indirectly via a Token Connector, which understands the correct events
-   to listen to for a [Token Pool](./(tokenpool.md) configured against a
+   to listen to for a [Token Pool](./tokenpool.html) configured against a
    standard such as ERC-20/ERC-721/ERC-1155
 3. Automatically by FireFly core, for the BatchPin contract that can
    be used for high throughput batched pinning of off-chain data transfers
