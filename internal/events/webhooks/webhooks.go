@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -77,97 +76,6 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section, callbacks e
 
 func (wh *WebHooks) Capabilities() *events.Capabilities {
 	return wh.capabilities
-}
-
-func (wh *WebHooks) GetOptionsSchema(ctx context.Context) string {
-	return fmt.Sprintf(`{
-		"properties": {
-			"fastack": {
-				"type": "boolean",
-				"description": "%s"
-			},
-			"url": {
-				"type": "string",
-				"description": "%s"
-			},
-			"method": {
-				"type": "string",
-				"description": "%s"
-			},
-			"json": {
-				"type": "boolean",
-				"description": "%s"
-			},
-			"reply": {
-				"type": "boolean",
-				"description": "%s"
-			},
-			"replytag": {
-				"type": "string",
-				"description": "%s"
-			},
-			"replytx": {
-				"type": "string",
-				"description": "%s"
-			},
-			"headers": {
-				"type": "object",
-				"description": "%s",
-				"additionalProperties": {
-					"type": "string"
-				}
-			},
-			"query": {
-				"type": "object",
-				"description": "%s",
-				"additionalProperties": {
-					"type": "string"
-				}
-			},
-			"input": {
-				"type": "object",
-				"description": "%s",
-				"properties": {
-					"query": {
-						"type": "string",
-						"description": "%s"
-					},
-					"headers": {
-						"type": "string",
-						"description": "%s"
-					},
-					"body": {
-						"type": "string",
-						"description": "%s"
-					},
-					"path": {
-						"type": "string",
-						"description": "%s"
-					},
-					"replytx": {
-						"type": "string",
-						"description": "%s"
-					}
-				}
-			}
-		}
-	}`,
-		i18n.Expand(ctx, coremsgs.WebhooksOptFastAck),
-		i18n.Expand(ctx, coremsgs.WebhooksOptURL),
-		i18n.Expand(ctx, coremsgs.WebhooksOptMethod),
-		i18n.Expand(ctx, coremsgs.WebhooksOptJSON),
-		i18n.Expand(ctx, coremsgs.WebhooksOptReply),
-		i18n.Expand(ctx, coremsgs.WebhooksOptReplyTag),
-		i18n.Expand(ctx, coremsgs.WebhooksOptReplyTx),
-		i18n.Expand(ctx, coremsgs.WebhooksOptHeaders),
-		i18n.Expand(ctx, coremsgs.WebhooksOptQuery),
-		i18n.Expand(ctx, coremsgs.WebhooksOptInput),
-		i18n.Expand(ctx, coremsgs.WebhooksOptInputQuery),
-		i18n.Expand(ctx, coremsgs.WebhooksOptInputHeaders),
-		i18n.Expand(ctx, coremsgs.WebhooksOptInputBody),
-		i18n.Expand(ctx, coremsgs.WebhooksOptInputPath),
-		i18n.Expand(ctx, coremsgs.WebhooksOptInputReplyTx),
-	)
 }
 
 func (wh *WebHooks) buildRequest(options fftypes.JSONObject, firstData fftypes.JSONObject) (req *whRequest, err error) {

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Types
+title: Core Resources
 parent: pages.reference
 nav_order: 1
 has_children: true

@@ -52,13 +52,13 @@ type Namespace struct {
 
 type FireFlyContracts struct {
 	Active     FireFlyContractInfo   `ffstruct:"FireFlyContracts" json:"active"`
-	Terminated []FireFlyContractInfo `ffstruct:"FireFlyContracts" json:"terminated"`
+	Terminated []FireFlyContractInfo `ffstruct:"FireFlyContracts" json:"terminated,omitempty"`
 }
 
 type FireFlyContractInfo struct {
 	Index      int                `ffstruct:"FireFlyContractInfo" json:"index"`
 	FinalEvent string             `ffstruct:"FireFlyContractInfo" json:"finalEvent,omitempty"`
-	Info       fftypes.JSONObject `ffstruct:"FireFlyContractInfo" json:"info"`
+	Info       fftypes.JSONObject `ffstruct:"FireFlyContractInfo" json:"info,omitempty"`
 }
 
 // OperatorActionType is a type of action to perform

@@ -481,7 +481,7 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{
 		Active: core.FireFlyContractInfo{Index: 1},
 	})
-	assert.Regexp(t, "FF10387", err)
+	assert.Regexp(t, "FF10388", err)
 }
 
 func TestInitNewConfigSwitchBack(t *testing.T) {
@@ -518,7 +518,7 @@ func TestInitNewConfigSwitchBack(t *testing.T) {
 			},
 		},
 	})
-	assert.Regexp(t, "FF10388", err)
+	assert.Regexp(t, "FF10389", err)
 }
 
 func TestInitTerminateContract(t *testing.T) {
