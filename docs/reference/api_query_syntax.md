@@ -2,7 +2,7 @@
 layout: i18n_page
 title: pages.api_query_syntax
 parent: pages.reference
-nav_order: 2
+nav_order: 4
 ---
 
 # API Query Syntax

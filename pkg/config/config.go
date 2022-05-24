@@ -603,7 +603,7 @@ func getGlobalDescriptionforConfigKey(ctx context.Context, key string) (string, 
 const configDocHeader = `---
 layout: default
 title: Configuration Reference
-parent: Reference
+parent: pages.reference
 nav_order: 3
 ---
 
