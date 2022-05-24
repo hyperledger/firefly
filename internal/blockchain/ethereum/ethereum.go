@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -52,6 +53,7 @@ type Ethereum struct {
 	topic            string
 	fireflyContract  string
 	fireflyFromBlock string
+	fireflyMux       sync.Mutex
 	prefixShort      string
 	prefixLong       string
 	capabilities     *blockchain.Capabilities
@@ -273,10 +275,12 @@ func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFl
 		return err
 	}
 
-	e.fireflyContract = address
-	e.fireflyFromBlock = fromBlock
-	e.initInfo.sub, err = e.streams.ensureFireFlySubscription(ctx, e.fireflyContract, e.fireflyFromBlock, e.initInfo.stream.ID, batchPinEventABI)
+	e.initInfo.sub, err = e.streams.ensureFireFlySubscription(ctx, address, fromBlock, e.initInfo.stream.ID, batchPinEventABI)
 	if err == nil {
+		e.fireflyMux.Lock()
+		e.fireflyContract = address
+		e.fireflyFromBlock = fromBlock
+		e.fireflyMux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"address":      address,
 			"fromBlock":    fromBlock,
@@ -292,10 +296,14 @@ func (e *Ethereum) TerminateContract(ctx context.Context, contracts *core.FireFl
 	if err != nil {
 		return err
 	}
+	e.fireflyMux.Lock()
 	if address != e.fireflyContract {
 		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, e.fireflyContract)
+		e.fireflyMux.Unlock()
 		return nil
 	}
+	e.fireflyMux.Unlock()
+
 	log.L(ctx).Infof("Processing termination request from address %s", address)
 	contracts.Active.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
@@ -500,6 +508,7 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		l1.Tracef("Message: %+v", msgJSON)
 
 		if sub == e.initInfo.sub.ID {
+			// Matches the active FireFly BatchPin subscription
 			switch signature {
 			case broadcastBatchEventSignature:
 				if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
@@ -508,8 +517,12 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			default:
 				l.Infof("Ignoring event with unknown signature: %s", signature)
 			}
-		} else if err := e.handleContractEvent(ctx1, msgJSON); err != nil {
-			return err
+		} else {
+			// Subscription not recognized - assume it's from a custom contract listener
+			// (event manager will reject it if it's not)
+			if err := e.handleContractEvent(ctx1, msgJSON); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -652,6 +665,8 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
+	e.fireflyMux.Lock()
+	defer e.fireflyMux.Unlock()
 	return e.invokeContractMethod(ctx, e.fireflyContract, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
@@ -663,6 +678,8 @@ func (e *Ethereum) SubmitOperatorAction(ctx context.Context, operationID *fftype
 		"",
 		[]string{},
 	}
+	e.fireflyMux.Lock()
+	defer e.fireflyMux.Unlock()
 	return e.invokeContractMethod(ctx, e.fireflyContract, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 

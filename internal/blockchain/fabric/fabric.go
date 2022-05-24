@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -48,6 +49,7 @@ type Fabric struct {
 	defaultChannel   string
 	fireflyChaincode string
 	fireflyFromBlock string
+	fireflyMux       sync.Mutex
 	signer           string
 	prefixShort      string
 	prefixLong       string
@@ -246,11 +248,13 @@ func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyC
 		return err
 	}
 
-	f.fireflyChaincode = chaincode
-	f.fireflyFromBlock = fromBlock
 	location := &Location{Channel: f.defaultChannel, Chaincode: chaincode}
-	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(ctx, location, f.fireflyFromBlock, f.initInfo.stream.ID, batchPinEvent)
+	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(ctx, location, fromBlock, f.initInfo.stream.ID, batchPinEvent)
 	if err == nil {
+		f.fireflyMux.Lock()
+		f.fireflyChaincode = chaincode
+		f.fireflyFromBlock = fromBlock
+		f.fireflyMux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"chaincode":    chaincode,
 			"fromBlock":    fromBlock,
@@ -263,10 +267,14 @@ func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyC
 func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
 
 	chaincode := termination.Info.GetString("chaincodeId")
+	f.fireflyMux.Lock()
 	if chaincode != f.fireflyChaincode {
 		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyChaincode)
+		f.fireflyMux.Unlock()
 		return nil
 	}
+	f.fireflyMux.Unlock()
+
 	log.L(ctx).Infof("Processing termination request from chaincode %s", chaincode)
 	contracts.Active.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
@@ -467,6 +475,7 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		l1.Tracef("Message: %+v", msgJSON)
 
 		if sub == f.initInfo.sub.ID {
+			// Matches the active FireFly BatchPin subscription
 			switch eventName {
 			case broadcastBatchEventName:
 				if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
@@ -475,8 +484,12 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 			default:
 				l.Infof("Ignoring event with unknown name: %s", eventName)
 			}
-		} else if err := f.handleContractEvent(ctx, msgJSON); err != nil {
-			return err
+		} else {
+			// Subscription not recognized - assume it's from a custom contract listener
+			// (event manager will reject it if it's not)
+			if err := f.handleContractEvent(ctx, msgJSON); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -628,6 +641,8 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		"contexts":   hashes,
 	}
 	input, _ := jsonEncodeInput(pinInput)
+	f.fireflyMux.Lock()
+	defer f.fireflyMux.Unlock()
 	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
@@ -640,6 +655,8 @@ func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.
 		"contexts":   []string{},
 	}
 	input, _ := jsonEncodeInput(pinInput)
+	f.fireflyMux.Lock()
+	defer f.fireflyMux.Unlock()
 	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
