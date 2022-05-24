@@ -862,7 +862,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 	if or.namespace == nil {
-		or.namespace = namespace.NewNamespaceManager(ctx)
+		or.namespace = namespace.NewNamespaceManager(ctx, or.blockchains, or.databases, or.dataexchangePlugins, or.sharedstoragePlugins, or.tokens)
 	}
 	return or.namespace.Init(ctx, or.database)
 }

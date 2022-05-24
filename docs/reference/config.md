@@ -618,6 +618,8 @@ nav_order: 3
 |---|-----------|----|-------------|
 |description|A description for the namespace|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
+|plugins|The list of plugins for this namespace|`string`|`<nil>`
+|remoteName|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
 
 ## node
 

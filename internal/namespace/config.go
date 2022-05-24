@@ -34,8 +34,12 @@ var (
 func InitConfig(withDefaults bool) {
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDescription)
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceRemoteName)
+	namespacePredefined.AddKnownKey(coreconfig.NamespacePlugins)
+	// do we need to set the default mode?
 	if withDefaults {
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceName, "default")
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceDescription, "Default predefined namespace")
+		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceMode, "multiparty")
 	}
 }

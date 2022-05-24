@@ -29,6 +29,12 @@ const (
 	PluginConfigName = "name"
 	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
+	// NamespaceMode is a the configured mode of a namespace
+	NamespaceMode = "mode"
+	// NamespaceRemoteName is a the configured mode of a namespace
+	NamespaceRemoteName = "remoteName"
+	// NamespacePlugins is a the list of namespace plugins
+	NamespacePlugins = "plugins"
 	// NamespaceName is a short name for a pre-defined namespace
 	NamespaceName = "name"
 	// NamespaceName is a long description for a pre-defined namespace

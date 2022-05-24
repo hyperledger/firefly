@@ -253,6 +253,9 @@ var (
 	ConfigNamespacesDefault               = ffc("config.namespaces.default", "The default namespace - must be in the predefined list", i18n.StringType)
 	ConfigNamespacesPredefined            = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+i18n.StringType)
 	ConfigNamespacesPredefinedName        = ffc("config.namespaces.predefined[].name", "The name of the namespace (must be unique)", i18n.StringType)
+	ConfigNamespacesPredefinedPlugins     = ffc("config.namespaces.predefined[].plugins", "The list of plugins for this namespace", i18n.StringType)
+	ConfigNamespacesPredefinedMode        = ffc("config.namespaces.predefined[].mode", "The namespace mode", i18n.StringType)
+	ConfigNamespacesPredefinedRemoteName  = ffc("config.namespaces.predefined[].remoteName", "The namespace name to be sent in plugin calls, if it differs from namespace name", i18n.StringType)
 	ConfigNamespacesPredefinedDescription = ffc("config.namespaces.predefined[].description", "A description for the namespace", i18n.StringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", i18n.StringType)
