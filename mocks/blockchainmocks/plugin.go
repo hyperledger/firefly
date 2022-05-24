@@ -52,13 +52,13 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
-// ConfigureContract provides a mock function with given fields: contracts
-func (_m *Plugin) ConfigureContract(contracts *core.FireFlyContracts) error {
-	ret := _m.Called(contracts)
+// ConfigureContract provides a mock function with given fields: ctx, contracts
+func (_m *Plugin) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) error {
+	ret := _m.Called(ctx, contracts)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*core.FireFlyContracts) error); ok {
-		r0 = rf(contracts)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts) error); ok {
+		r0 = rf(ctx, contracts)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -283,11 +283,11 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 }
 
 // SubmitOperatorAction provides a mock function with given fields: ctx, operationID, signingKey, action
-func (_m *Plugin) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action string) error {
+func (_m *Plugin) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.FFEnum) error {
 	ret := _m.Called(ctx, operationID, signingKey, action)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, core.FFEnum) error); ok {
 		r0 = rf(ctx, operationID, signingKey, action)
 	} else {
 		r0 = ret.Error(0)
@@ -296,13 +296,13 @@ func (_m *Plugin) SubmitOperatorAction(ctx context.Context, operationID *fftypes
 	return r0
 }
 
-// TerminateContract provides a mock function with given fields: contracts, termination
-func (_m *Plugin) TerminateContract(contracts *core.FireFlyContracts, termination *blockchain.Event) error {
-	ret := _m.Called(contracts, termination)
+// TerminateContract provides a mock function with given fields: ctx, contracts, termination
+func (_m *Plugin) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) error {
+	ret := _m.Called(ctx, contracts, termination)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*core.FireFlyContracts, *blockchain.Event) error); ok {
-		r0 = rf(contracts, termination)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts, *blockchain.Event) error); ok {
+		r0 = rf(ctx, contracts, termination)
 	} else {
 		r0 = ret.Error(0)
 	}

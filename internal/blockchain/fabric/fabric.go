@@ -240,55 +240,51 @@ func (f *Fabric) resolveFireFlyContract(ctx context.Context, contractIndex int) 
 	return chaincode, fromBlock, nil
 }
 
-func (f *Fabric) ConfigureContract(contracts *core.FireFlyContracts) (err error) {
+func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
 
-	fireflyChaincode, fireflyFromBlock, err := f.resolveFireFlyContract(f.ctx, contracts.Active.Index)
-	if err != nil {
-		return err
-	}
-	if _, ok := f.finalEvents[fireflyChaincode]; ok {
-		log.L(f.ctx).Warnf("Cannot switch back to previously-used chaincode %s", fireflyChaincode)
-		return nil
-	}
-	contracts.Active.Info = fftypes.JSONObject{
-		"chaincode": fireflyChaincode,
-		"fromBlock": fireflyFromBlock,
-	}
-
-	f.fireflyChaincode = fireflyChaincode
-	f.fireflyFromBlock = fireflyFromBlock
-	f.finalEvents = make(map[string]string, len(contracts.Terminated))
-
+	finalEvents := make(map[string]string, len(contracts.Terminated))
 	for i, oldContract := range contracts.Terminated {
 		chaincode := oldContract.Info.GetString("chaincode")
 		if chaincode != "" {
-			f.finalEvents[chaincode] = contracts.Terminated[i].FinalEvent
+			finalEvents[chaincode] = contracts.Terminated[i].FinalEvent
 		}
 	}
 
-	location := &Location{
-		Channel:   f.defaultChannel,
-		Chaincode: f.fireflyChaincode,
+	chaincode, fromBlock, err := f.resolveFireFlyContract(ctx, contracts.Active.Index)
+	if err != nil {
+		return err
 	}
-	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(f.ctx, location, f.fireflyFromBlock, f.initInfo.stream.ID, batchPinEvent)
+	if _, ok := finalEvents[chaincode]; ok {
+		return i18n.NewError(ctx, coremsgs.MsgCannotReuseFireFlyContract, chaincode)
+	}
+
+	f.fireflyChaincode = chaincode
+	f.fireflyFromBlock = fromBlock
+	f.finalEvents = finalEvents
+	location := &Location{Channel: f.defaultChannel, Chaincode: chaincode}
+	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(ctx, location, f.fireflyFromBlock, f.initInfo.stream.ID, batchPinEvent)
+	if err == nil {
+		contracts.Active.Info = fftypes.JSONObject{
+			"chaincode":    chaincode,
+			"fromBlock":    fromBlock,
+			"subscription": f.initInfo.sub.ID,
+		}
+	}
 	return err
 }
 
-func (f *Fabric) TerminateContract(contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
+func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
 
 	chaincode := termination.Info.GetString("chaincodeId")
 	if chaincode != f.fireflyChaincode {
-		log.L(f.ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyChaincode)
+		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyChaincode)
 		return nil
 	}
-	log.L(f.ctx).Infof("Processing termination request from chaincode %s", chaincode)
-	contracts.Terminated = append(contracts.Terminated, core.FireFlyContractInfo{
-		Index:      contracts.Active.Index,
-		Info:       contracts.Active.Info,
-		FinalEvent: termination.ProtocolID,
-	})
+	log.L(ctx).Infof("Processing termination request from chaincode %s", chaincode)
+	contracts.Active.FinalEvent = termination.ProtocolID
+	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
-	return f.ConfigureContract(contracts)
+	return f.ConfigureContract(ctx, contracts)
 }
 
 func (f *Fabric) Start() (err error) {
@@ -656,7 +652,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
-func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action string) error {
+func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.OperatorActionType) error {
 	pinInput := map[string]interface{}{
 		"namespace":  "firefly:" + action,
 		"uuids":      hexFormatB32(nil),

@@ -47,7 +47,7 @@ func TestOperatorAction(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mbi.On("TerminateContract", mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
 	err := em.BlockchainOperatorAction(mbi, "terminate", event, &core.VerifierRef{})
 	assert.NoError(t, err)
@@ -85,6 +85,23 @@ func TestActionTerminateQueryFail(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestActionTerminateFail(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mbi := &blockchainmocks.Plugin{}
+	mdi := em.database.(*databasemocks.Plugin)
+
+	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
+	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
+
+	err := em.actionTerminate(mbi, &blockchain.Event{})
+	assert.EqualError(t, err, "pop")
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+}
+
 func TestActionTerminateUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -94,7 +111,7 @@ func TestActionTerminateUpsertFail(t *testing.T) {
 
 	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
-	mbi.On("TerminateContract", mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
 	err := em.actionTerminate(mbi, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")

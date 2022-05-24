@@ -38,13 +38,13 @@ type Plugin interface {
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
 	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
-	ConfigureContract(contracts *core.FireFlyContracts) (err error)
+	ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error)
 
 	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
 	// - Validates that the event came from the currently active FireFly contract
 	// - Re-initializes the plugin against the next configured FireFly contract
 	// - Updates the provided contract info to record the point of termination and the newly active contract
-	TerminateContract(contracts *core.FireFlyContracts, termination *Event) (err error)
+	TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *Event) (err error)
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -64,7 +64,7 @@ type Plugin interface {
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
 	// SubmitOperatorAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action string) error
+	SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.OperatorActionType) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error

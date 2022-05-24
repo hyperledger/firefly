@@ -230,7 +230,7 @@ func (or *orchestrator) Start() (err error) {
 	}
 	if err == nil {
 		for _, el := range or.blockchains {
-			if err = el.ConfigureContract(&ns.Contracts); err != nil {
+			if err = el.ConfigureContract(or.ctx, &ns.Contracts); err != nil {
 				break
 			}
 			if err = el.Start(); err != nil {
@@ -888,5 +888,5 @@ func (or *orchestrator) SubmitOperatorAction(ctx context.Context, action *core.O
 	if action.Type != core.OperatorActionTerminate {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedOperatorAction, action.Type)
 	}
-	return or.blockchain.SubmitOperatorAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type.String())
+	return or.blockchain.SubmitOperatorAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
 }

@@ -30,7 +30,7 @@ func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.
 		if err != nil {
 			return err
 		}
-		if err := bi.TerminateContract(&ns.Contracts, event); err != nil {
+		if err := bi.TerminateContract(ctx, &ns.Contracts, event); err != nil {
 			return err
 		}
 		return em.database.UpsertNamespace(ctx, ns, true)

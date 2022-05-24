@@ -980,7 +980,7 @@ func TestStartTokensFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.database = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
-	or.mbi.On("ConfigureContract", &core.FireFlyContracts{}).Return(nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
@@ -1000,8 +1000,20 @@ func TestStartBlockchainsFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.database = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
-	or.mbi.On("ConfigureContract", &core.FireFlyContracts{}).Return(nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(fmt.Errorf("pop"))
+	or.mba.On("Start").Return(nil)
+	err := or.Start()
+	assert.EqualError(t, err, "pop")
+}
+
+func TestStartBlockchainsConfigureFail(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -1013,7 +1025,7 @@ func TestStartStopOk(t *testing.T) {
 	defer or.cleanup(t)
 	or.database = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
-	or.mbi.On("ConfigureContract", &core.FireFlyContracts{}).Return(nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
@@ -1128,7 +1140,7 @@ func TestOperatorAction(t *testing.T) {
 	or.blockchain = or.mbi
 	verifier := &core.VerifierRef{Value: "0x123"}
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
-	or.mbi.On("SubmitOperatorAction", context.Background(), mock.Anything, "0x123", "terminate").Return(nil)
+	or.mbi.On("SubmitOperatorAction", context.Background(), mock.Anything, "0x123", core.OperatorActionTerminate).Return(nil)
 	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: core.OperatorActionTerminate})
 	assert.NoError(t, err)
 }
@@ -1138,4 +1150,12 @@ func TestOperatorActionBadKey(t *testing.T) {
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
 	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: core.OperatorActionTerminate})
 	assert.EqualError(t, err, "pop")
+}
+
+func TestOperatorActionBadType(t *testing.T) {
+	or := newTestOrchestrator()
+	verifier := &core.VerifierRef{Value: "0x123"}
+	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
+	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: "bad"})
+	assert.Regexp(t, "FF10389", err)
 }

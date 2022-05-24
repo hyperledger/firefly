@@ -266,7 +266,7 @@ func (e *Ethereum) resolveFireFlyContract(ctx context.Context, contractIndex int
 	return address, fromBlock, err
 }
 
-func (e *Ethereum) ConfigureContract(contracts *core.FireFlyContracts) (err error) {
+func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
 
 	finalEvents := make(map[string]string, len(contracts.Terminated))
 	for i, oldContract := range contracts.Terminated {
@@ -276,44 +276,44 @@ func (e *Ethereum) ConfigureContract(contracts *core.FireFlyContracts) (err erro
 		}
 	}
 
-	log.L(e.ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
-	address, fromBlock, err := e.resolveFireFlyContract(e.ctx, contracts.Active.Index)
+	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
+	address, fromBlock, err := e.resolveFireFlyContract(ctx, contracts.Active.Index)
 	if err != nil {
 		return err
 	}
 	if _, ok := finalEvents[address]; ok {
-		return i18n.NewError(e.ctx, coremsgs.MsgCannotReuseFireFlyContract, address)
-	}
-	contracts.Active.Info = fftypes.JSONObject{
-		"address":   address,
-		"fromBlock": fromBlock,
+		return i18n.NewError(ctx, coremsgs.MsgCannotReuseFireFlyContract, address)
 	}
 
 	e.fireflyContract = address
 	e.fireflyFromBlock = fromBlock
 	e.finalEvents = finalEvents
-	e.initInfo.sub, err = e.streams.ensureFireFlySubscription(e.ctx, e.fireflyContract, e.fireflyFromBlock, e.initInfo.stream.ID, batchPinEventABI)
+	e.initInfo.sub, err = e.streams.ensureFireFlySubscription(ctx, e.fireflyContract, e.fireflyFromBlock, e.initInfo.stream.ID, batchPinEventABI)
+	if err == nil {
+		contracts.Active.Info = fftypes.JSONObject{
+			"address":      address,
+			"fromBlock":    fromBlock,
+			"subscription": e.initInfo.sub.ID,
+		}
+	}
 	return err
 }
 
-func (e *Ethereum) TerminateContract(contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
+func (e *Ethereum) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
 
-	address, err := validateEthAddress(e.ctx, termination.Info.GetString("address"))
+	address, err := validateEthAddress(ctx, termination.Info.GetString("address"))
 	if err != nil {
 		return err
 	}
 	if address != e.fireflyContract {
-		log.L(e.ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, e.fireflyContract)
+		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, e.fireflyContract)
 		return nil
 	}
-	log.L(e.ctx).Infof("Processing termination request from address %s", address)
-	contracts.Terminated = append(contracts.Terminated, core.FireFlyContractInfo{
-		Index:      contracts.Active.Index,
-		Info:       contracts.Active.Info,
-		FinalEvent: termination.ProtocolID,
-	})
+	log.L(ctx).Infof("Processing termination request from address %s", address)
+	contracts.Active.FinalEvent = termination.ProtocolID
+	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
-	return e.ConfigureContract(contracts)
+	return e.ConfigureContract(ctx, contracts)
 }
 
 func (e *Ethereum) Capabilities() *blockchain.Capabilities {
@@ -468,13 +468,13 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
 	event := e.parseBlockchainEvent(ctx, msgJSON)
-	if event == nil {
-		return nil // move on
+	if event != nil {
+		err = e.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+			Event:        *event,
+			Subscription: msgJSON.GetString("subId"),
+		})
 	}
-	return e.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
-		Event:        *event,
-		Subscription: msgJSON.GetString("subId"),
-	})
+	return err
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
@@ -680,7 +680,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return e.invokeContractMethod(ctx, e.fireflyContract, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
-func (e *Ethereum) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action string) error {
+func (e *Ethereum) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.OperatorActionType) error {
 	input := []interface{}{
 		blockchain.FireFlyActionPrefix + action,
 		ethHexFormatB32(nil),
