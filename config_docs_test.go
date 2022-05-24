@@ -34,7 +34,7 @@ import (
 
 func TestConfigDocsUpToDate(t *testing.T) {
 	// Initialize config of all plugins
-	orchestrator.NewOrchestrator(false)
+	orchestrator.NewOrchestrator()
 	apiserver.InitConfig()
 	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), config.GetKnownKeys())
 	assert.NoError(t, err)
