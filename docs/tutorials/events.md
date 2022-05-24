@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Listen for events
-parent: Tutorials
+parent: pages.tutorials
 nav_order: 6
 ---
 
@@ -36,7 +36,7 @@ We focus on WebSockets in this getting started guide.
 
 ## Additional info
 
-- Key Concepts: [Multi-party process flow](/firefly/keyconcepts/multiparty_process_flow.html)
+- Key Concepts: [Multi-party process flow](../overview//multiparty_process_flow.md)
 - Reference: _coming soon_
 
 ## WebSockets Example 1: Ephemeral subscription with auto-commit

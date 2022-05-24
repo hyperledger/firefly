@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Versioning Scheme
-parent: Contributors
+parent: pages.contributors
 nav_order: 7
 ---
 

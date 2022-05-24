@@ -1,8 +1,8 @@
 ---
-layout: default
-title: API Query Syntax
-parent: Reference
-nav_order: 1
+layout: i18n_page
+title: pages.api_query_syntax
+parent: pages.reference
+nav_order: 2
 ---
 
 # API Query Syntax

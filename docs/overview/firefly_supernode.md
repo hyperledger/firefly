@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Introduction to Supernodes
-parent: Understanding FireFly
+parent: pages.understanding_firefly
 nav_order: 1
 ---
 

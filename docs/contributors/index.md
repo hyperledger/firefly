@@ -1,6 +1,6 @@
 ---
-layout: default
-title: Contributors
+layout: i18n_page
+title: pages.contributors
 nav_order: 7
 has_children: true
 ---
