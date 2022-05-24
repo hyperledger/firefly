@@ -234,4 +234,5 @@ var (
 	MsgInvalidOutputOption          = ffe("FF10385", "invalid output option '%s'")
 	MsgInvalidPluginConfiguration   = ffe("FF10386", "Invalid %s plugin configuration - name and type are required")
 	MsgInvalidFireFlyContractIndex  = ffe("FF10387", "No configuration found for FireFly contract at %s")
+	MsgCannotReuseFireFlyContract   = ffe("FF10388", "Cannot reuse previously-terminated FireFly contract at %s")
 )

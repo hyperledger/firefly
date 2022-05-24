@@ -19,6 +19,8 @@ package core
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql/driver"
+	"encoding/json"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -39,17 +41,27 @@ var (
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	ID            *fftypes.UUID   `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
-	Message       *fftypes.UUID   `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
-	Name          string          `ffstruct:"Namespace" json:"name"`
-	Description   string          `ffstruct:"Namespace" json:"description"`
-	Type          NamespaceType   `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
-	Created       *fftypes.FFTime `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
-	ContractIndex int             `ffstruct:"Namespace" json:"contractIndex" ffexcludeinput:"true"`
+	ID          *fftypes.UUID    `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
+	Message     *fftypes.UUID    `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
+	Name        string           `ffstruct:"Namespace" json:"name"`
+	Description string           `ffstruct:"Namespace" json:"description"`
+	Type        NamespaceType    `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
+	Created     *fftypes.FFTime  `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
+	Contracts   FireFlyContracts `ffstruct:"Namespace" json:"fireflyContract" ffexcludeinput:"true"`
 }
 
-type NamespaceMigration struct {
-	ContractIndex int `ffstruct:"Namespace" json:"contractIndex" `
+type FireFlyContracts struct {
+	Active     FireFlyContractInfo   `ffstruct:"FireFlyContracts" json:"active"`
+	Terminated []FireFlyContractInfo `ffstruct:"FireFlyContracts" json:"terminated"`
+}
+
+type FireFlyContractInfo struct {
+	Index      int                `ffstruct:"FireFlyContractInfo" json:"index"`
+	FinalEvent string             `ffstruct:"FireFlyContractInfo" json:"finalEvent,omitempty"`
+	Info       fftypes.JSONObject `ffstruct:"FireFlyContractInfo" json:"info"`
+}
+
+type NamespaceMigrationRequest struct {
 }
 
 func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
@@ -83,4 +95,24 @@ func (ns *Namespace) Topic() string {
 
 func (ns *Namespace) SetBroadcastMessage(msgID *fftypes.UUID) {
 	ns.Message = msgID
+}
+
+// Scan implements sql.Scanner
+func (fc *FireFlyContracts) Scan(src interface{}) error {
+	switch src := src.(type) {
+	case []byte:
+		if len(src) == 0 {
+			return nil
+		}
+		return json.Unmarshal(src, fc)
+	case string:
+		return fc.Scan([]byte(src))
+	default:
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, fc)
+	}
+}
+
+// Value implements sql.Valuer
+func (fc FireFlyContracts) Value() (driver.Value, error) {
+	return json.Marshal(fc)
 }

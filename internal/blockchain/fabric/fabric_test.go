@@ -56,15 +56,15 @@ func newTestFabric() (*Fabric, func()) {
 	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
-		ctx:            ctx,
-		client:         resty.New().SetBaseURL("http://localhost:12345"),
-		defaultChannel: "firefly",
-		chaincode:      "firefly",
-		topic:          "topic1",
-		prefixShort:    defaultPrefixShort,
-		prefixLong:     defaultPrefixLong,
-		callbacks:      em,
-		wsconn:         wsm,
+		ctx:              ctx,
+		client:           resty.New().SetBaseURL("http://localhost:12345"),
+		defaultChannel:   "firefly",
+		fireflyChaincode: "firefly",
+		topic:            "topic1",
+		prefixShort:      defaultPrefixShort,
+		prefixLong:       defaultPrefixLong,
+		callbacks:        em,
+		wsconn:           wsm,
 	}
 	return e, func() {
 		cancel()
@@ -107,19 +107,6 @@ func TestInitMissingURL(t *testing.T) {
 	resetConf(e)
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestInitMissingChaincode(t *testing.T) {
-	e, cancel := newTestFabric()
-	defer cancel()
-	resetConf(e)
-	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
-
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.NoError(t, err)
-	err = e.initStreams(0)
-	assert.Regexp(t, "FF10138.*chaincode", err)
 }
 
 func TestInitMissingTopic(t *testing.T) {
@@ -179,7 +166,9 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	assert.Equal(t, "fabric", e.Name())
 	assert.Equal(t, core.VerifierTypeMSPIdentity, e.VerifierType())
 
-	err = e.Start(0)
+	err = e.ConfigureContract(&core.FireFlyContracts{})
+	assert.NoError(t, err)
+	err = e.Start()
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
@@ -214,21 +203,7 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.NoError(t, err)
-	err = e.Start(0)
 	assert.Regexp(t, "FF00149", err)
-
-}
-
-func TestWSClose(t *testing.T) {
-
-	wsm := &wsmocks.WSClient{}
-	e := &Fabric{
-		ctx:    context.Background(),
-		wsconn: wsm,
-	}
-	wsm.On("Close").Return(nil)
-	e.Stop()
 
 }
 
@@ -257,7 +232,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	err = e.initStreams(0)
+	err = e.ConfigureContract(&core.FireFlyContracts{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
@@ -291,7 +266,7 @@ func TestInitNewConfig(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	err = e.initStreams(0)
+	err = e.ConfigureContract(&core.FireFlyContracts{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, httpmock.GetTotalCallCount())
@@ -309,6 +284,9 @@ func TestInitNewConfigError(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -318,7 +296,7 @@ func TestInitNewConfigError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	err = e.initStreams(0)
+	err = e.ConfigureContract(&core.FireFlyContracts{})
 	assert.Regexp(t, "FF10138", err)
 
 }
@@ -332,6 +310,9 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	httpmock.ActivateNonDefault(mockedClient)
 	defer httpmock.DeactivateAndReset()
 
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
@@ -341,7 +322,9 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	err = e.initStreams(1)
+	err = e.ConfigureContract(&core.FireFlyContracts{
+		Active: core.FireFlyContractInfo{Index: 1},
+	})
 	assert.Regexp(t, "FF10387", err)
 
 }
@@ -367,8 +350,6 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.NoError(t, err)
-	err = e.initStreams(0)
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -396,8 +377,6 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.NoError(t, err)
-	err = e.initStreams(0)
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -428,7 +407,7 @@ func TestSubQueryError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	err = e.initStreams(0)
+	err = e.ConfigureContract(&core.FireFlyContracts{})
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -461,7 +440,7 @@ func TestSubQueryCreateError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	err = e.initStreams(0)
+	err = e.ConfigureContract(&core.FireFlyContracts{})
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -1783,11 +1762,11 @@ func TestSubmitOperatorAction(t *testing.T) {
 			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
 			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", (body["args"].(map[string]interface{}))["uuids"])
 			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", (body["args"].(map[string]interface{}))["batchHash"])
-			assert.Equal(t, "1", (body["args"].(map[string]interface{}))["payloadRef"])
+			assert.Equal(t, "", (body["args"].(map[string]interface{}))["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitOperatorAction(context.Background(), nil, signer, "migrate", "1")
+	err := e.SubmitOperatorAction(context.Background(), nil, signer, "terminate")
 	assert.NoError(t, err)
 
 }
@@ -1802,7 +1781,7 @@ func TestHandleOperatorAction(t *testing.T) {
 		"transactionIndex": 2,
 		"eventIndex": 50,
 		"eventName": "BatchPin",
-		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoiZmlyZWZseTptaWdyYXRlIiwidXVpZHMiOiIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJiYXRjaEhhc2giOiIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJwYXlsb2FkUmVmIjoiMSIsImNvbnRleHRzIjpbXX0=",
+		"payload": "eyJzaWduZXIiOiJ1MHZnd3U5czAwLXg1MDk6OkNOPXVzZXIyLE9VPWNsaWVudDo6Q049ZmFicmljLWNhLXNlcnZlciIsInRpbWVzdGFtcCI6eyJzZWNvbmRzIjoxNjMwMDMxNjY3LCJuYW5vcyI6NzkxNDk5MDAwfSwibmFtZXNwYWNlIjoiZmlyZWZseTp0ZXJtaW5hdGUiLCJ1dWlkcyI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImJhdGNoSGFzaCI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsInBheWxvYWRSZWYiOiIiLCJjb250ZXh0cyI6W119",
 		"subId": "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
   }
 ]`)
@@ -1820,7 +1799,7 @@ func TestHandleOperatorAction(t *testing.T) {
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
-	em.On("BlockchainOperatorAction", "migrate", "1", expectedSigningKeyRef).Return(nil)
+	em.On("BlockchainOperatorAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)

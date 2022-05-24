@@ -52,6 +52,20 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	return r0
 }
 
+// ConfigureContract provides a mock function with given fields: contracts
+func (_m *Plugin) ConfigureContract(contracts *core.FireFlyContracts) error {
+	ret := _m.Called(contracts)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*core.FireFlyContracts) error); ok {
+		r0 = rf(contracts)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeleteContractListener provides a mock function with given fields: ctx, subscription
 func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error {
 	ret := _m.Called(ctx, subscription)
@@ -240,23 +254,18 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// Start provides a mock function with given fields: contractIndex
-func (_m *Plugin) Start(contractIndex int) error {
-	ret := _m.Called(contractIndex)
+// Start provides a mock function with given fields:
+func (_m *Plugin) Start() error {
+	ret := _m.Called()
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int) error); ok {
-		r0 = rf(contractIndex)
+	if rf, ok := ret.Get(0).(func() error); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
-}
-
-// Stop provides a mock function with given fields:
-func (_m *Plugin) Stop() {
-	_m.Called()
 }
 
 // SubmitBatchPin provides a mock function with given fields: ctx, operationID, signingKey, batch
@@ -273,13 +282,27 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 	return r0
 }
 
-// SubmitOperatorAction provides a mock function with given fields: ctx, operationID, signingKey, action, payload
-func (_m *Plugin) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action string, payload string) error {
-	ret := _m.Called(ctx, operationID, signingKey, action, payload)
+// SubmitOperatorAction provides a mock function with given fields: ctx, operationID, signingKey, action
+func (_m *Plugin) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action string) error {
+	ret := _m.Called(ctx, operationID, signingKey, action)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string, string) error); ok {
-		r0 = rf(ctx, operationID, signingKey, action, payload)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) error); ok {
+		r0 = rf(ctx, operationID, signingKey, action)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TerminateContract provides a mock function with given fields: contracts, termination
+func (_m *Plugin) TerminateContract(contracts *core.FireFlyContracts, termination *blockchain.Event) error {
+	ret := _m.Called(contracts, termination)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*core.FireFlyContracts, *blockchain.Event) error); ok {
+		r0 = rf(contracts, termination)
 	} else {
 		r0 = ret.Error(0)
 	}

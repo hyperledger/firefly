@@ -29,14 +29,14 @@ import (
 
 func TestPostNetworkMigrate(t *testing.T) {
 	o, r := newTestAPIServer()
-	input := core.NamespaceMigration{ContractIndex: 1}
+	input := core.NamespaceMigrationRequest{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/network/migrate", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("MigrateNetwork", mock.Anything, 1).Return(nil)
+	o.On("MigrateNetwork", mock.Anything).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

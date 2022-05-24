@@ -66,7 +66,7 @@ type EventManager interface {
 	// Bound blockchain callbacks
 	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
-	BlockchainOperatorAction(bi blockchain.Plugin, action, payload string, signingKey *core.VerifierRef) error
+	BlockchainOperatorAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error
 
 	// Bound dataexchange callbacks
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)

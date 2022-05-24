@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -44,27 +43,30 @@ const (
 )
 
 type Fabric struct {
-	ctx            context.Context
-	topic          string
-	defaultChannel string
-	chaincode      string
-	signer         string
-	prefixShort    string
-	prefixLong     string
-	capabilities   *blockchain.Capabilities
-	callbacks      blockchain.Callbacks
-	client         *resty.Client
-	streams        *streamManager
-	initInfo       struct {
+	ctx              context.Context
+	topic            string
+	defaultChannel   string
+	fireflyChaincode string
+	fireflyFromBlock string
+	finalEvents      map[string]string
+	signer           string
+	prefixShort      string
+	prefixLong       string
+	capabilities     *blockchain.Capabilities
+	callbacks        blockchain.Callbacks
+	client           *resty.Client
+	streams          *streamManager
+	initInfo         struct {
 		stream *eventStream
 		sub    *subscription
 	}
-	idCache        map[string]*fabIdentity
-	wsconn         wsclient.WSClient
-	closed         chan struct{}
-	metrics        metrics.Manager
-	fabconnectConf config.Section
-	contractConf   config.ArraySection
+	idCache          map[string]*fabIdentity
+	wsconn           wsclient.WSClient
+	closed           chan struct{}
+	metrics          metrics.Manager
+	fabconnectConf   config.Section
+	contractConf     config.ArraySection
+	contractConfSize int
 }
 
 type eventStreamWebsocket struct {
@@ -164,6 +166,7 @@ func (f *Fabric) VerifierType() core.VerifierType {
 
 func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
 	f.InitConfig(config)
+	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
 	f.callbacks = callbacks
@@ -171,73 +174,37 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
 
-	if f.fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
+	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
 	}
-	f.defaultChannel = f.fabconnectConf.GetString(FabconnectConfigDefaultChannel)
+	f.client = ffresty.New(f.ctx, fabconnectConf)
+
+	f.defaultChannel = fabconnectConf.GetString(FabconnectConfigDefaultChannel)
 	// the org identity is guaranteed to be configured by the core
-	f.signer = f.fabconnectConf.GetString(FabconnectConfigSigner)
-	f.topic = f.fabconnectConf.GetString(FabconnectConfigTopic)
+	f.signer = fabconnectConf.GetString(FabconnectConfigSigner)
+	f.topic = fabconnectConf.GetString(FabconnectConfigTopic)
 	if f.topic == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.fabric.fabconnect")
 	}
+	f.prefixShort = fabconnectConf.GetString(FabconnectPrefixShort)
+	f.prefixLong = fabconnectConf.GetString(FabconnectPrefixLong)
 
-	f.prefixShort = f.fabconnectConf.GetString(FabconnectPrefixShort)
-	f.prefixLong = f.fabconnectConf.GetString(FabconnectPrefixLong)
-
-	f.client = ffresty.New(f.ctx, f.fabconnectConf)
-
-	return nil
-}
-
-func (f *Fabric) initStreams(contractIndex int) (err error) {
-	ctx := f.ctx
-	wsConfig := wsclient.GenerateConfig(f.fabconnectConf)
+	wsConfig := wsclient.GenerateConfig(fabconnectConf)
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}
-	f.wsconn, err = wsclient.New(ctx, wsConfig, nil, f.afterConnect)
+	f.wsconn, err = wsclient.New(f.ctx, wsConfig, nil, f.afterConnect)
 	if err != nil {
 		return err
 	}
 
 	f.streams = &streamManager{client: f.client, signer: f.signer}
-	if f.contractConf.ArraySize() > 0 || contractIndex > 0 {
-		// New config (array of objects under "fireflyContract")
-		if contractIndex >= f.contractConf.ArraySize() {
-			return i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.fabric.fireflyContract[%d]", contractIndex))
-		}
-		f.chaincode = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractChaincode)
-		if f.chaincode == "" {
-			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.fabric.fireflyContract")
-		}
-		f.streams.fireFlySubscriptionFromBlock = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
-	} else {
-		// Old config (attributes under "ethconnect")
-		f.chaincode = f.fabconnectConf.GetString(FabconnectConfigChaincodeDeprecated)
-		if f.chaincode != "" {
-			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-				FabconnectConfigKey, FabconnectConfigChaincodeDeprecated,
-				FireFlyContractConfigKey, FireFlyContractChaincode)
-			f.streams.fireFlySubscriptionFromBlock = string(core.SubOptsFirstEventOldest)
-		} else {
-			return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fabconnect")
-		}
-	}
-
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 	if f.initInfo.stream, err = f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout); err != nil {
 		return err
 	}
 	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
-	location := &Location{
-		Channel:   f.defaultChannel,
-		Chaincode: f.chaincode,
-	}
-	if f.initInfo.sub, err = f.streams.ensureSubscription(f.ctx, location, f.initInfo.stream.ID, batchPinEvent); err != nil {
-		return err
-	}
 
 	f.closed = make(chan struct{})
 	go f.eventLoop()
@@ -245,15 +212,87 @@ func (f *Fabric) initStreams(contractIndex int) (err error) {
 	return nil
 }
 
-func (f *Fabric) Start(contractIndex int) (err error) {
-	if err = f.initStreams(contractIndex); err != nil {
-		return err
+func (f *Fabric) resolveFireFlyContract(ctx context.Context, contractIndex int) (chaincode, fromBlock string, err error) {
+
+	if f.contractConfSize > 0 || contractIndex > 0 {
+		// New config (array of objects under "fireflyContract")
+		if contractIndex >= f.contractConfSize {
+			return "", "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.fabric.fireflyContract[%d]", contractIndex))
+		}
+		chaincode = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractChaincode)
+		if chaincode == "" {
+			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.fabric.fireflyContract")
+		}
+		fromBlock = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
+	} else {
+		// Old config (attributes under "ethconnect")
+		chaincode = f.fabconnectConf.GetString(FabconnectConfigChaincodeDeprecated)
+		if chaincode != "" {
+			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
+				FabconnectConfigKey, FabconnectConfigChaincodeDeprecated,
+				FireFlyContractConfigKey, FireFlyContractChaincode)
+			fromBlock = string(core.SubOptsFirstEventOldest)
+		} else {
+			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fabconnect")
+		}
 	}
-	return f.wsconn.Connect()
+
+	return chaincode, fromBlock, nil
 }
 
-func (f *Fabric) Stop() {
-	f.wsconn.Close()
+func (f *Fabric) ConfigureContract(contracts *core.FireFlyContracts) (err error) {
+
+	fireflyChaincode, fireflyFromBlock, err := f.resolveFireFlyContract(f.ctx, contracts.Active.Index)
+	if err != nil {
+		return err
+	}
+	if _, ok := f.finalEvents[fireflyChaincode]; ok {
+		log.L(f.ctx).Warnf("Cannot switch back to previously-used chaincode %s", fireflyChaincode)
+		return nil
+	}
+	contracts.Active.Info = fftypes.JSONObject{
+		"chaincode": fireflyChaincode,
+		"fromBlock": fireflyFromBlock,
+	}
+
+	f.fireflyChaincode = fireflyChaincode
+	f.fireflyFromBlock = fireflyFromBlock
+	f.finalEvents = make(map[string]string, len(contracts.Terminated))
+
+	for i, oldContract := range contracts.Terminated {
+		chaincode := oldContract.Info.GetString("chaincode")
+		if chaincode != "" {
+			f.finalEvents[chaincode] = contracts.Terminated[i].FinalEvent
+		}
+	}
+
+	location := &Location{
+		Channel:   f.defaultChannel,
+		Chaincode: f.fireflyChaincode,
+	}
+	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(f.ctx, location, f.fireflyFromBlock, f.initInfo.stream.ID, batchPinEvent)
+	return err
+}
+
+func (f *Fabric) TerminateContract(contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
+
+	chaincode := termination.Info.GetString("chaincodeId")
+	if chaincode != f.fireflyChaincode {
+		log.L(f.ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyChaincode)
+		return nil
+	}
+	log.L(f.ctx).Infof("Processing termination request from chaincode %s", chaincode)
+	contracts.Terminated = append(contracts.Terminated, core.FireFlyContractInfo{
+		Index:      contracts.Active.Index,
+		Info:       contracts.Active.Info,
+		FinalEvent: termination.ProtocolID,
+	})
+	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
+	return f.ConfigureContract(contracts)
+}
+
+func (f *Fabric) Start() (err error) {
+	return f.wsconn.Connect()
 }
 
 func (f *Fabric) Capabilities() *blockchain.Capabilities {
@@ -291,7 +330,7 @@ func decodeJSONPayload(ctx context.Context, payloadString string) *fftypes.JSONO
 	return &payload
 }
 
-func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONObject) *blockchain.Event {
 	payloadString := msgJSON.GetString("payload")
 	payload := decodeJSONPayload(ctx, payloadString)
 	if payload == nil {
@@ -302,13 +341,44 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	blockNumber := msgJSON.GetInt64("blockNumber")
 	transactionIndex := msgJSON.GetInt64("transactionIndex")
 	eventIndex := msgJSON.GetInt64("eventIndex")
+	name := msgJSON.GetString("eventName")
 	timestamp := msgJSON.GetInt64("timestamp")
-	signer := payload.GetString("signer")
-	nsOrAction := payload.GetString("namespace")
-	sUUIDs := payload.GetString("uuids")
-	sBatchHash := payload.GetString("batchHash")
-	sPayloadRef := payload.GetString("payloadRef")
-	sContexts := payload.GetStringArray("contexts")
+	chaincode := msgJSON.GetString("chaincodeId")
+
+	delete(msgJSON, "payload")
+	return &blockchain.Event{
+		BlockchainTXID: sTransactionHash,
+		Source:         f.Name(),
+		Name:           name,
+		ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
+		Output:         *payload,
+		Info:           msgJSON,
+		Timestamp:      fftypes.UnixTime(timestamp),
+		Location:       f.buildEventLocationString(chaincode),
+		Signature:      name,
+	}
+}
+
+func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	event := f.parseBlockchainEvent(ctx, msgJSON)
+	if event == nil {
+		return nil // move on
+	}
+
+	chaincode := event.Info.GetString("chaincodeId")
+	if finalEvent, ok := f.finalEvents[chaincode]; ok {
+		if event.ProtocolID > finalEvent {
+			log.L(ctx).Warnf("Ignoring BatchPin event %s received after termination event %s", event.ProtocolID, finalEvent)
+			return nil // move on
+		}
+	}
+
+	signer := event.Output.GetString("signer")
+	nsOrAction := event.Output.GetString("namespace")
+	sUUIDs := event.Output.GetString("uuids")
+	sBatchHash := event.Output.GetString("batchHash")
+	sPayloadRef := event.Output.GetString("payloadRef")
+	sContexts := event.Output.GetStringArray("contexts")
 
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeMSPIdentity,
@@ -318,7 +388,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	// Check if this is actually an operator action
 	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
 		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-		return f.callbacks.BlockchainOperatorAction(action, sPayloadRef, verifier)
+		return f.callbacks.BlockchainOperatorAction(action, event, verifier)
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -349,7 +419,6 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		contexts[i] = &hash
 	}
 
-	delete(msgJSON, "payload")
 	batch := &blockchain.BatchPin{
 		Namespace:       nsOrAction,
 		TransactionID:   &txnID,
@@ -357,64 +426,26 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 		BatchHash:       &batchHash,
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
-		Event: blockchain.Event{
-			BlockchainTXID: sTransactionHash,
-			Source:         f.Name(),
-			Name:           "BatchPin",
-			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
-			Output:         *payload,
-			Info:           msgJSON,
-			Timestamp:      fftypes.UnixTime(timestamp),
-			Location:       f.buildEventLocationString(msgJSON),
-			Signature:      "BatchPin",
-		},
+		Event:           *event,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
 	return f.callbacks.BatchPinComplete(batch, verifier)
 }
 
-func (f *Fabric) buildEventLocationString(msgJSON fftypes.JSONObject) string {
-	return fmt.Sprintf("chaincode=%s", msgJSON.GetString("chaincodeId"))
+func (f *Fabric) buildEventLocationString(chaincode string) string {
+	return fmt.Sprintf("chaincode=%s", chaincode)
 }
 
 func (f *Fabric) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
-	payloadString := msgJSON.GetString("payload")
-	payload := decodeJSONPayload(ctx, payloadString)
-	if payload == nil {
+	event := f.parseBlockchainEvent(ctx, msgJSON)
+	if event == nil {
 		return nil // move on
 	}
-	delete(msgJSON, "payload")
-
-	sTransactionHash := msgJSON.GetString("transactionId")
-	blockNumber := msgJSON.GetInt64("blockNumber")
-	transactionIndex := msgJSON.GetInt64("transactionIndex")
-	eventIndex := msgJSON.GetInt64("eventIndex")
-	sub := msgJSON.GetString("subId")
-	name := msgJSON.GetString("eventName")
-	sTimestamp := msgJSON.GetString("timestamp")
-	timestamp, err := strconv.ParseInt(sTimestamp, 10, 64)
-	if err != nil {
-		log.L(ctx).Errorf("Blockchain event is not valid - bad timestamp (%s): %s", sTimestamp, err)
-		// Continue with zero timestamp
-	}
-
-	event := &blockchain.EventWithSubscription{
-		Subscription: sub,
-		Event: blockchain.Event{
-			BlockchainTXID: sTransactionHash,
-			Source:         f.Name(),
-			Name:           name,
-			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, transactionIndex, eventIndex),
-			Output:         *payload,
-			Info:           msgJSON,
-			Timestamp:      fftypes.UnixTime(timestamp),
-			Location:       f.buildEventLocationString(msgJSON),
-			Signature:      name,
-		},
-	}
-
-	return f.callbacks.BlockchainEvent(event)
+	return f.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+		Event:        *event,
+		Subscription: msgJSON.GetString("subId"),
+	})
 }
 
 func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
@@ -622,19 +653,19 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		"contexts":   hashes,
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
-func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action, payload string) error {
+func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action string) error {
 	pinInput := map[string]interface{}{
 		"namespace":  "firefly:" + action,
 		"uuids":      hexFormatB32(nil),
 		"batchHash":  hexFormatB32(nil),
-		"payloadRef": payload,
+		"payloadRef": "",
 		"contexts":   []string{},
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, f.defaultChannel, f.chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
 func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {

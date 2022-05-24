@@ -32,11 +32,11 @@ var postNetworkMigrate = &oapispec.Route{
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNetworkMigrate,
-	JSONInputValue:  func() interface{} { return &core.NamespaceMigration{} },
-	JSONOutputValue: func() interface{} { return &core.NamespaceMigration{} },
+	JSONInputValue:  func() interface{} { return &core.NamespaceMigrationRequest{} },
+	JSONOutputValue: func() interface{} { return &core.NamespaceMigrationRequest{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).MigrateNetwork(r.Ctx, r.Input.(*core.NamespaceMigration).ContractIndex)
+		err = getOr(r.Ctx).MigrateNetwork(r.Ctx)
 		return r.Input, err
 	},
 }

@@ -50,6 +50,7 @@ func TestBoundCallbacks(t *testing.T) {
 	pool := &tokens.TokenPool{}
 	transfer := &tokens.TokenTransfer{}
 	approval := &tokens.TokenApproval{}
+	event := &blockchain.Event{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
@@ -57,8 +58,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BlockchainOperatorAction", mbi, "migrate", "1", &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainOperatorAction("migrate", "1", &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
+	mei.On("BlockchainOperatorAction", mbi, "migrate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainOperatorAction("migrate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{

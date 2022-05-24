@@ -73,4 +73,5 @@ func (f *Fabric) InitConfig(config config.Section) {
 	f.contractConf = config.SubArray(FireFlyContractConfigKey)
 	f.contractConf.AddKnownKey(FireFlyContractChaincode)
 	f.contractConf.AddKnownKey(FireFlyContractFromBlock, "oldest")
+	f.contractConfSize = f.contractConf.ArraySize()
 }

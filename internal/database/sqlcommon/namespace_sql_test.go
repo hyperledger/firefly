@@ -40,12 +40,16 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 
 	// Create a new namespace entry
 	namespace := &core.Namespace{
-		ID:            nil, // generated for us
-		Message:       fftypes.NewUUID(),
-		Type:          core.NamespaceTypeLocal,
-		Name:          "namespace1",
-		Created:       fftypes.Now(),
-		ContractIndex: 1,
+		ID:      nil, // generated for us
+		Message: fftypes.NewUUID(),
+		Type:    core.NamespaceTypeLocal,
+		Name:    "namespace1",
+		Created: fftypes.Now(),
+		Contracts: core.FireFlyContracts{
+			Active: core.FireFlyContractInfo{
+				Index: 1,
+			},
+		},
 	}
 
 	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, core.ChangeEventTypeCreated, mock.Anything, mock.Anything).Return()
@@ -240,15 +244,14 @@ func TestGetNamespaceByIDSuccess(t *testing.T) {
 	nsID := fftypes.NewUUID()
 	currTime := fftypes.Now()
 	nsMock := &core.Namespace{
-		ID:            nsID,
-		Message:       msgID,
-		Name:          "ns1",
-		Type:          core.NamespaceTypeLocal,
-		Description:   "foo",
-		Created:       currTime,
-		ContractIndex: 0,
+		ID:          nsID,
+		Message:     msgID,
+		Name:        "ns1",
+		Type:        core.NamespaceTypeLocal,
+		Description: "foo",
+		Created:     currTime,
 	}
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "message", "type", "name", "description", "created", "contract_index"}).AddRow(nsID.String(), msgID.String(), core.NamespaceTypeLocal, "ns1", "foo", currTime.String(), 0))
+	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "message", "type", "name", "description", "created", "firefly_contracts"}).AddRow(nsID.String(), msgID.String(), core.NamespaceTypeLocal, "ns1", "foo", currTime.String(), ""))
 	ns, err := s.GetNamespaceByID(context.Background(), nsID)
 	assert.NoError(t, err)
 	assert.Equal(t, nsMock, ns)

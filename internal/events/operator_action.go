@@ -17,42 +17,43 @@
 package events
 
 import (
-	"strconv"
+	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (em *eventManager) actionMigrate(bi blockchain.Plugin, payload string) error {
-	ns, err := em.database.GetNamespace(em.ctx, core.SystemNamespace)
-	if err != nil {
-		return err
-	}
-	idx, err := strconv.Atoi(payload)
-	if err != nil {
-		return err
-	}
-	if ns.ContractIndex == idx {
-		log.L(em.ctx).Debugf("Ignoring namespace migration for %s (already at %d)", ns.Name, ns.ContractIndex)
-		return nil
-	}
-	ns.ContractIndex = idx
-	log.L(em.ctx).Infof("Migrating namespace %s to contract index %d", ns.Name, ns.ContractIndex)
-	bi.Stop()
-	if err := bi.Start(ns.ContractIndex); err != nil {
-		return err
-	}
-	return em.database.UpsertNamespace(em.ctx, ns, true)
+func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.Event) error {
+	return em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+		ns, err := em.database.GetNamespace(ctx, core.SystemNamespace)
+		if err != nil {
+			return err
+		}
+		if err := bi.TerminateContract(&ns.Contracts, event); err != nil {
+			return err
+		}
+		return em.database.UpsertNamespace(ctx, ns, true)
+	})
 }
 
-func (em *eventManager) BlockchainOperatorAction(bi blockchain.Plugin, action, payload string, signingKey *core.VerifierRef) error {
-	return em.retry.Do(em.ctx, "handle operator action", func(attempt int) (bool, error) {
+func (em *eventManager) BlockchainOperatorAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	return em.retry.Do(em.ctx, "handle operator action", func(attempt int) (retry bool, err error) {
 		// TODO: verify signing identity
-		if action == blockchain.OperatorActionMigrate {
-			return true, em.actionMigrate(bi, payload)
+
+		if action == blockchain.OperatorActionTerminate {
+			err = em.actionTerminate(bi, event)
+		} else {
+			log.L(em.ctx).Errorf("Ignoring unrecognized operator action: %s", action)
+			return false, nil
 		}
-		log.L(em.ctx).Errorf("Ignoring unrecognized operator action: %s", action)
-		return false, nil
+
+		if err == nil {
+			chainEvent := buildBlockchainEvent(core.SystemNamespace, nil, event, &core.BlockchainTransactionRef{
+				BlockchainID: event.BlockchainTXID,
+			})
+			err = em.maybePersistBlockchainEvent(em.ctx, chainEvent)
+		}
+		return true, err
 	})
 }

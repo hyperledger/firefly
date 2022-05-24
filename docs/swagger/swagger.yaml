@@ -8136,10 +8136,6 @@ paths:
               schema:
                 items:
                   properties:
-                    contractIndex:
-                      description: The index of the configured FireFly smart contract
-                        currently being used
-                      type: integer
                     created:
                       description: The time the namespace was created
                       format: date-time
@@ -8147,6 +8143,52 @@ paths:
                     description:
                       description: A description of the namespace
                       type: string
+                    fireflyContract:
+                      description: Info on the FireFly smart contract configured for
+                        this namespace
+                      properties:
+                        active:
+                          description: The currently active FireFly smart contract
+                          properties:
+                            finalEvent:
+                              description: The identifier for the final blockchain
+                                event received from this contract before termination
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              additionalProperties:
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                              type: object
+                          type: object
+                        terminated:
+                          description: Previously-terminated FireFly smart contracts
+                          items:
+                            description: Previously-terminated FireFly smart contracts
+                            properties:
+                              finalEvent:
+                                description: The identifier for the final blockchain
+                                  event received from this contract before termination
+                                type: string
+                              index:
+                                description: The index of this contract in the config
+                                  file
+                                type: integer
+                              info:
+                                additionalProperties:
+                                  description: Blockchain-specific info on the contract,
+                                    such as its location on chain
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                                type: object
+                            type: object
+                          type: array
+                      type: object
                     id:
                       description: The UUID of the namespace. For locally established
                         namespaces will be different on each node in the network.
@@ -8210,10 +8252,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  contractIndex:
-                    description: The index of the configured FireFly smart contract
-                      currently being used
-                    type: integer
                   created:
                     description: The time the namespace was created
                     format: date-time
@@ -8221,6 +8259,52 @@ paths:
                   description:
                     description: A description of the namespace
                     type: string
+                  fireflyContract:
+                    description: Info on the FireFly smart contract configured for
+                      this namespace
+                    properties:
+                      active:
+                        description: The currently active FireFly smart contract
+                        properties:
+                          finalEvent:
+                            description: The identifier for the final blockchain event
+                              received from this contract before termination
+                            type: string
+                          index:
+                            description: The index of this contract in the config
+                              file
+                            type: integer
+                          info:
+                            additionalProperties:
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                            description: Blockchain-specific info on the contract,
+                              such as its location on chain
+                            type: object
+                        type: object
+                      terminated:
+                        description: Previously-terminated FireFly smart contracts
+                        items:
+                          description: Previously-terminated FireFly smart contracts
+                          properties:
+                            finalEvent:
+                              description: The identifier for the final blockchain
+                                event received from this contract before termination
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              additionalProperties:
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                              type: object
+                          type: object
+                        type: array
+                    type: object
                   id:
                     description: The UUID of the namespace. For locally established
                       namespaces will be different on each node in the network. For
@@ -8249,10 +8333,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  contractIndex:
-                    description: The index of the configured FireFly smart contract
-                      currently being used
-                    type: integer
                   created:
                     description: The time the namespace was created
                     format: date-time
@@ -8260,6 +8340,52 @@ paths:
                   description:
                     description: A description of the namespace
                     type: string
+                  fireflyContract:
+                    description: Info on the FireFly smart contract configured for
+                      this namespace
+                    properties:
+                      active:
+                        description: The currently active FireFly smart contract
+                        properties:
+                          finalEvent:
+                            description: The identifier for the final blockchain event
+                              received from this contract before termination
+                            type: string
+                          index:
+                            description: The index of this contract in the config
+                              file
+                            type: integer
+                          info:
+                            additionalProperties:
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                            description: Blockchain-specific info on the contract,
+                              such as its location on chain
+                            type: object
+                        type: object
+                      terminated:
+                        description: Previously-terminated FireFly smart contracts
+                        items:
+                          description: Previously-terminated FireFly smart contracts
+                          properties:
+                            finalEvent:
+                              description: The identifier for the final blockchain
+                                event received from this contract before termination
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              additionalProperties:
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                              type: object
+                          type: object
+                        type: array
+                    type: object
                   id:
                     description: The UUID of the namespace. For locally established
                       namespaces will be different on each node in the network. For
@@ -8312,10 +8438,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  contractIndex:
-                    description: The index of the configured FireFly smart contract
-                      currently being used
-                    type: integer
                   created:
                     description: The time the namespace was created
                     format: date-time
@@ -8323,6 +8445,52 @@ paths:
                   description:
                     description: A description of the namespace
                     type: string
+                  fireflyContract:
+                    description: Info on the FireFly smart contract configured for
+                      this namespace
+                    properties:
+                      active:
+                        description: The currently active FireFly smart contract
+                        properties:
+                          finalEvent:
+                            description: The identifier for the final blockchain event
+                              received from this contract before termination
+                            type: string
+                          index:
+                            description: The index of this contract in the config
+                              file
+                            type: integer
+                          info:
+                            additionalProperties:
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                            description: Blockchain-specific info on the contract,
+                              such as its location on chain
+                            type: object
+                        type: object
+                      terminated:
+                        description: Previously-terminated FireFly smart contracts
+                        items:
+                          description: Previously-terminated FireFly smart contracts
+                          properties:
+                            finalEvent:
+                              description: The identifier for the final blockchain
+                                event received from this contract before termination
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              additionalProperties:
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                              type: object
+                          type: object
+                        type: array
+                    type: object
                   id:
                     description: The UUID of the namespace. For locally established
                       namespaces will be different on each node in the network. For
@@ -22427,24 +22595,12 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              properties:
-                contractIndex:
-                  description: The index of the configured FireFly smart contract
-                    currently being used
-                  type: integer
-              type: object
+            schema: {}
       responses:
         "202":
           content:
             application/json:
-              schema:
-                properties:
-                  contractIndex:
-                    description: The index of the configured FireFly smart contract
-                      currently being used
-                    type: integer
-                type: object
+              schema: {}
           description: Success
         default:
           description: ""

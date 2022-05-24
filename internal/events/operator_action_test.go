@@ -20,8 +20,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,21 +34,27 @@ func TestOperatorAction(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	event := &blockchain.Event{ProtocolID: "0001"}
+
 	mbi := &blockchainmocks.Plugin{}
 	mdi := em.database.(*databasemocks.Plugin)
+	mth := em.txHelper.(*txcommonmocks.Helper)
 
+	mdi.On("GetBlockchainEventByProtocolID", em.ctx, "ff_system", (*fftypes.UUID)(nil), "0001").Return(nil, nil)
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
+		return be.ProtocolID == "0001"
+	})).Return(nil)
+	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
-	mdi.On("UpsertNamespace", em.ctx, mock.MatchedBy(func(ns *core.Namespace) bool {
-		return ns.ContractIndex == 1
-	}), true).Return(nil)
-	mbi.On("Stop").Return()
-	mbi.On("Start", 1).Return(nil)
+	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
+	mbi.On("TerminateContract", mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainOperatorAction(mbi, "migrate", "1", &core.VerifierRef{})
+	err := em.BlockchainOperatorAction(mbi, "terminate", event, &core.VerifierRef{})
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mth.AssertExpectations(t)
 }
 
 func TestOperatorActionUnknown(t *testing.T) {
@@ -54,13 +63,13 @@ func TestOperatorActionUnknown(t *testing.T) {
 
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BlockchainOperatorAction(mbi, "bad", "", &core.VerifierRef{})
+	err := em.BlockchainOperatorAction(mbi, "bad", &blockchain.Event{}, &core.VerifierRef{})
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
 }
 
-func TestActionMigrateQueryFail(t *testing.T) {
+func TestActionTerminateQueryFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
@@ -69,14 +78,14 @@ func TestActionMigrateQueryFail(t *testing.T) {
 
 	mdi.On("GetNamespace", em.ctx, "ff_system").Return(nil, fmt.Errorf("pop"))
 
-	err := em.actionMigrate(mbi, "1")
+	err := em.actionTerminate(mbi, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
-func TestActionMigrateBadIndex(t *testing.T) {
+func TestActionTerminateUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
@@ -84,63 +93,10 @@ func TestActionMigrateBadIndex(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
+	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
+	mbi.On("TerminateContract", mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.actionMigrate(mbi, "!bad")
-	assert.Regexp(t, "Atoi", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestActionMigrateSkip(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mbi := &blockchainmocks.Plugin{}
-	mdi := em.database.(*databasemocks.Plugin)
-
-	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{ContractIndex: 1}, nil)
-
-	err := em.actionMigrate(mbi, "1")
-	assert.NoError(t, err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestActionMigrateStartFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mbi := &blockchainmocks.Plugin{}
-	mdi := em.database.(*databasemocks.Plugin)
-
-	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
-	mbi.On("Stop").Return(nil)
-	mbi.On("Start", 1).Return(fmt.Errorf("pop"))
-
-	err := em.actionMigrate(mbi, "1")
-	assert.EqualError(t, err, "pop")
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-}
-
-func TestActionMigrateUpsertFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mbi := &blockchainmocks.Plugin{}
-	mdi := em.database.(*databasemocks.Plugin)
-
-	mdi.On("GetNamespace", em.ctx, "ff_system").Return(&core.Namespace{}, nil)
-	mdi.On("UpsertNamespace", em.ctx, mock.MatchedBy(func(ns *core.Namespace) bool {
-		return ns.ContractIndex == 1
-	}), true).Return(fmt.Errorf("pop"))
-	mbi.On("Stop").Return(nil)
-	mbi.On("Start", 1).Return(nil)
-
-	err := em.actionMigrate(mbi, "1")
+	err := em.actionTerminate(mbi, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)

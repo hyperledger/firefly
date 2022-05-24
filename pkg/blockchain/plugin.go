@@ -35,11 +35,19 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section, callbacks Callbacks, metrics metrics.Manager) error
 
-	// Blockchain interface must not deliver any events until start is called
-	Start(contractIndex int) error
+	// ConfigureContract initializes the subscription to the FireFly contract
+	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
+	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
+	ConfigureContract(contracts *core.FireFlyContracts) (err error)
 
-	// Stop listening for events until start is called again
-	Stop()
+	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
+	// - Validates that the event came from the currently active FireFly contract
+	// - Re-initializes the plugin against the next configured FireFly contract
+	// - Updates the provided contract info to record the point of termination and the newly active contract
+	TerminateContract(contracts *core.FireFlyContracts, termination *Event) (err error)
+
+	// Blockchain interface must not deliver any events until start is called
+	Start() error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -56,7 +64,7 @@ type Plugin interface {
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
 	// SubmitOperatorAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action, payload string) error
+	SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey, action string) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error
@@ -84,8 +92,8 @@ type Plugin interface {
 }
 
 const (
-	// OperatorActionMigrate request all network members to stop using the current contract and move to the next one configured
-	OperatorActionMigrate = "migrate"
+	// OperatorActionTerminate request all network members to stop using the current contract and move to the next one configured
+	OperatorActionTerminate = "terminate"
 )
 
 const FireFlyActionPrefix = "firefly:"
@@ -112,7 +120,7 @@ type Callbacks interface {
 	// BlockchainOperatorAction notifies on the arrival of a network operator action
 	//
 	// Error should only be returned in shutdown scenarios
-	BlockchainOperatorAction(action, payload string, signingKey *core.VerifierRef) error
+	BlockchainOperatorAction(action string, event *Event, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error
@@ -175,7 +183,7 @@ type Event struct {
 	// Name is a short name for the event
 	Name string
 
-	// ProtocolID is a protocol-specific identifier for the event
+	// ProtocolID is an alphanumerically sortable string that represents this event uniquely on the blockchain
 	ProtocolID string
 
 	// Output is the raw output data from the event

@@ -1,3 +1,3 @@
 BEGIN;
-ALTER TABLE namespaces ADD COLUMN contract_index INTEGER DEFAULT 0;
+ALTER TABLE namespaces ADD COLUMN firefly_contracts TEXT;
 COMMIT;

@@ -980,7 +980,8 @@ func TestStartTokensFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.database = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
-	or.mbi.On("Start", 0).Return(nil)
+	or.mbi.On("ConfigureContract", &core.FireFlyContracts{}).Return(nil)
+	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
@@ -988,6 +989,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -998,7 +1000,8 @@ func TestStartBlockchainsFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.database = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
-	or.mbi.On("Start", 0).Return(fmt.Errorf("pop"))
+	or.mbi.On("ConfigureContract", &core.FireFlyContracts{}).Return(nil)
+	or.mbi.On("Start").Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -1010,7 +1013,8 @@ func TestStartStopOk(t *testing.T) {
 	defer or.cleanup(t)
 	or.database = or.mdi
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
-	or.mbi.On("Start", 0).Return(nil)
+	or.mbi.On("ConfigureContract", &core.FireFlyContracts{}).Return(nil)
+	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
@@ -1025,6 +1029,7 @@ func TestStartStopOk(t *testing.T) {
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
 	or.mae.On("WaitStop").Return(nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -1123,14 +1128,14 @@ func TestMigrateNetwork(t *testing.T) {
 	or.blockchain = or.mbi
 	verifier := &core.VerifierRef{Value: "0x123"}
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
-	or.mbi.On("SubmitOperatorAction", context.Background(), mock.Anything, "0x123", "migrate", "1").Return(nil)
-	err := or.MigrateNetwork(context.Background(), 1)
+	or.mbi.On("SubmitOperatorAction", context.Background(), mock.Anything, "0x123", "terminate").Return(nil)
+	err := or.MigrateNetwork(context.Background())
 	assert.NoError(t, err)
 }
 
 func TestMigrateNetworkBadKey(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
-	err := or.MigrateNetwork(context.Background(), 1)
+	err := or.MigrateNetwork(context.Background())
 	assert.EqualError(t, err, "pop")
 }

@@ -1,1 +1,1 @@
-ALTER TABLE namespaces DROP COLUMN contract_index;
+ALTER TABLE namespaces DROP COLUMN firefly_contracts;

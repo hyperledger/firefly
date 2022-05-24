@@ -27,9 +27,8 @@ import (
 )
 
 type streamManager struct {
-	client                       *resty.Client
-	signer                       string
-	fireFlySubscriptionFromBlock string
+	client *resty.Client
+	signer string
 }
 
 type eventStream struct {
@@ -151,7 +150,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureSubscription(ctx context.Context, location *Location, stream, event string) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, location *Location, fromBlock, stream, event string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
@@ -165,7 +164,7 @@ func (s *streamManager) ensureSubscription(ctx context.Context, location *Locati
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, event, s.fireFlySubscriptionFromBlock); err != nil {
+		if sub, err = s.createSubscription(ctx, location, stream, subName, event, fromBlock); err != nil {
 			return nil, err
 		}
 	}

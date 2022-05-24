@@ -49,13 +49,13 @@ func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *f
 	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
 }
 
-// BlockchainOperatorAction provides a mock function with given fields: action, payload, signingKey
-func (_m *Callbacks) BlockchainOperatorAction(action string, payload string, signingKey *core.VerifierRef) error {
-	ret := _m.Called(action, payload, signingKey)
+// BlockchainOperatorAction provides a mock function with given fields: action, event, signingKey
+func (_m *Callbacks) BlockchainOperatorAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	ret := _m.Called(action, event, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, *core.VerifierRef) error); ok {
-		r0 = rf(action, payload, signingKey)
+	if rf, ok := ret.Get(0).(func(string, *blockchain.Event, *core.VerifierRef) error); ok {
+		r0 = rf(action, event, signingKey)
 	} else {
 		r0 = ret.Error(0)
 	}

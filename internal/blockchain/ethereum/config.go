@@ -96,6 +96,7 @@ func (e *Ethereum) InitConfig(config config.Section) {
 	e.contractConf = config.SubArray(FireFlyContractConfigKey)
 	e.contractConf.AddKnownKey(FireFlyContractAddress)
 	e.contractConf.AddKnownKey(FireFlyContractFromBlock, "oldest")
+	e.contractConfSize = e.contractConf.ArraySize()
 
 	fftmConf := config.SubSection(FFTMConfigKey)
 	ffresty.InitConfig(fftmConf)
