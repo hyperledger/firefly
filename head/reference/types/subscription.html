@@ -398,14 +398,14 @@ module for Golang applications. These both contain reliable WebSocket clients fo
 sending you events on a particular subscription. You can do this in two
 ways (described in detail below):
     <ol>
-      <li>Send a [WSStart](./(wsstart.md) JSON payload</li>
+      <li>Send a <a href="./wsstart.html">WSStart</a> JSON payload</li>
       <li>Include a <code class="language-plaintext highlighter-rouge">namespace</code> and <code class="language-plaintext highlighter-rouge">name</code> query parameter in the URL when you
-connect, along with query params for other fields of [WSStart](./(wsstart.md)</li>
+connect, along with query params for other fields of <a href="./wsstart.html">WSStart</a></li>
     </ol>
   </li>
   <li>One you have started your subscription, each event flows from
-the server, to your application as a JSON [Event](./(event.md) payload</li>
-  <li>For each event you receive, you need to send a [WSAck](./(wsack.md) payload.
+the server, to your application as a JSON <a href="./event.html">Event</a> payload</li>
+  <li>For each event you receive, you need to send a <a href="./wsack.html">WSAck</a> payload.
     <ul>
       <li>Unless you specified <code class="language-plaintext highlighter-rouge">autoack</code> in step (1)</li>
     </ul>

@@ -301,8 +301,8 @@ order that they are delivered to your application.</p>
     
 
 <p>Events have a <code class="language-plaintext highlighter-rouge">reference</code> to the UUID of an object that is the subject of the event,
-such as a detailed [Blockchain Event](./(blockchainevent.md), or an off-chain
-[Message](./(message.md).</p>
+such as a detailed <a href="./blockchainevent.html">Blockchain Event</a>, or an off-chain
+<a href="./message.html">Message</a>.</p>
 
 <p>When events are delivered to your application, the <code class="language-plaintext highlighter-rouge">reference</code> field is
 automatically retrieved and included in the JSON payload
@@ -344,7 +344,7 @@ the type of event. This is intended to be a property you would use to
 filter events to your application, or query all historical events
 associated with a given business data stream.</p>
 
-<p>For example when you send a [Message](./(message.md), you set the <code class="language-plaintext highlighter-rouge">topics</code>
+<p>For example when you send a <a href="./message.html">Message</a>, you set the <code class="language-plaintext highlighter-rouge">topics</code>
 you want that message to apply to, and FireFly ensures a consistent global
 order between all parties that receive that message.</p>
       <h3 id="transaction">
@@ -357,7 +357,7 @@ order between all parties that receive that message.</p>
     
 
 <p>When actions are submitted by a FireFly node, they are performed
-within a FireFly [Transaction](./(transaction.md). The events that occur
+within a FireFly <a href="./transaction.html">Transaction</a>. The events that occur
 as a direct result of that transaction, are tagged with the transaction
 ID so that they can be grouped together.</p>
 
@@ -398,97 +398,97 @@ with them (and included a <code class="language-plaintext highlighter-rouge">dat
   <tbody>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">transaction_submitted</code></td>
-      <td>[Transaction](./(transaction.md)</td>
+      <td><a href="./transaction.html">Transaction</a></td>
       <td><code class="language-plaintext highlighter-rouge">transaction.type</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">message_confirmed</code><br /><code class="language-plaintext highlighter-rouge">message_rejected</code></td>
-      <td>[Message](./(message.md)</td>
+      <td><a href="./message.html">Message</a></td>
       <td><code class="language-plaintext highlighter-rouge">message.header.topics[i]</code>*</td>
       <td><code class="language-plaintext highlighter-rouge">message.header.cid</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">token_pool_confirmed</code></td>
-      <td>[TokenPool](./(tokenpool.md)</td>
+      <td><a href="./tokenpool.html">TokenPool</a></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">token_pool_op_failed</code></td>
-      <td>[Operation](./(operation.md)</td>
+      <td><a href="./operation.html">Operation</a></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">token_transfer_confirmed</code></td>
-      <td>[TokenTransfer](./(tokentransfer.md)</td>
+      <td><a href="./tokentransfer.html">TokenTransfer</a></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">token_transfer_op_failed</code></td>
-      <td>[Operation](./(operation.md)</td>
+      <td><a href="./operation.html">Operation</a></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
       <td><code class="language-plaintext highlighter-rouge">tokenTransfer.localId</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">token_approval_confirmed</code></td>
-      <td>[TokenApproval](./(tokenapproval.md)</td>
+      <td><a href="./tokenapproval.html">TokenApproval</a></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">token_approval_op_failed</code></td>
-      <td>[Operation](./(operation.md)</td>
+      <td><a href="./operation.html">Operation</a></td>
       <td><code class="language-plaintext highlighter-rouge">tokenPool.id</code></td>
       <td><code class="language-plaintext highlighter-rouge">tokenApproval.localId</code></td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">namespace_confirmed</code></td>
-      <td>[Namespace](./(namespace.md)</td>
+      <td><a href="./namespace.html">Namespace</a></td>
       <td><code class="language-plaintext highlighter-rouge">"ff_definition"</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">datatype_confirmed</code></td>
-      <td>[Datatype](./(datatype.md)</td>
+      <td><a href="./datatype.html">Datatype</a></td>
       <td><code class="language-plaintext highlighter-rouge">"ff_definition"</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">identity_confirmed</code><br /><code class="language-plaintext highlighter-rouge">identity_updated</code></td>
-      <td>[Identity](./(identity.md)</td>
+      <td><a href="./identity.html">Identity</a></td>
       <td><code class="language-plaintext highlighter-rouge">"ff_definition"</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">contract_interface_confirmed</code></td>
-      <td>[FFI](./(ffi.md)</td>
+      <td><a href="./ffi.html">FFI</a></td>
       <td><code class="language-plaintext highlighter-rouge">"ff_definition"</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">contract_api_confirmed</code></td>
-      <td>[ContractAPI](./(contractapi.md)</td>
+      <td><a href="./contractapi.html">ContractAPI</a></td>
       <td><code class="language-plaintext highlighter-rouge">"ff_definition"</code></td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">blockchain_event_received</code></td>
-      <td>[BlockchainEvent](./(blockchainevent.md)</td>
+      <td><a href="./blockchainevent.html">BlockchainEvent</a></td>
       <td>From listener **</td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">blockchain_invoke_op_succeeded</code></td>
-      <td>[Operation](./(operation.md)</td>
+      <td><a href="./operation.html">Operation</a></td>
       <td> </td>
       <td> </td>
     </tr>
     <tr>
       <td><code class="language-plaintext highlighter-rouge">blockchain_invoke_op_failed</code></td>
-      <td>[Operation](./(operation.md)</td>
+      <td><a href="./operation.html">Operation</a></td>
       <td> </td>
       <td> </td>
     </tr>
@@ -497,7 +497,7 @@ with them (and included a <code class="language-plaintext highlighter-rouge">dat
 
 <blockquote>
   <ul>
-    <li>A separate event is emitted for <em>each topic</em> associated with a [Message](./(message.md).</li>
+    <li>A separate event is emitted for <em>each topic</em> associated with a <a href="./message.html">Message</a>.</li>
   </ul>
 </blockquote>
 

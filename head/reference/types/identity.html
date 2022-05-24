@@ -284,12 +284,12 @@ that is happening to Hyperledger FireFly to allow:</p>
 transaction from a particular blockchain account, to bind a DID with a
 <code class="language-plaintext highlighter-rouge">name</code> that is unique within the network, to that signing key.</p>
 
-<p>The signing key then becomes a [Verifier](./(verifier.md) for that identity.
+<p>The signing key then becomes a <a href="./verifier.html">Verifier</a> for that identity.
 Using that key the root identity can be used to register a new FireFly node
 in the network, send and receive messages, and register child identities.</p>
 
 <p>When child identities are registered, a <code class="language-plaintext highlighter-rouge">claim</code> using a key that is going
-to be the [Verifier](./(verifier.md) for that child identity is required.
+to be the <a href="./verifier.html">Verifier</a> for that child identity is required.
 However, this is insufficient to establish that identity as a child identity
 of the parent. There must be an additional <code class="language-plaintext highlighter-rouge">verification</code> that references
 the <code class="language-plaintext highlighter-rouge">claim</code> (by UUID) using the key verifier of the parent identity.</p>
