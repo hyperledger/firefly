@@ -484,43 +484,6 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	assert.Regexp(t, "FF10388", err)
 }
 
-func TestInitNewConfigSwitchBack(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	resetConf(e)
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{
-		Terminated: []core.FireFlyContractInfo{
-			{
-				Info:       fftypes.JSONObject{"address": "0x71c7656ec7ab88b098defb751b7401b5f6d8976f"},
-				FinalEvent: "1",
-			},
-		},
-	})
-	assert.Regexp(t, "FF10389", err)
-}
-
 func TestInitTerminateContract(t *testing.T) {
 	e, _ := newTestEthereum()
 
@@ -1068,53 +1031,6 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 }
 
-func TestHandleMessageBatchPinIgnore(t *testing.T) {
-	data := fftypes.JSONAnyPtr(`
-[
-  {
-		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
-		"blockNumber": "38011",
-		"transactionIndex": "0x0",
-		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
-		"data": {
-			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
-			"namespace": "ns1",
-			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
-			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
-			"payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-			"contexts": [
-				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
-				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
-			]
-    },
-		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
-		"logIndex": "50",
-		"timestamp": "1620576488"
-  }
-]`)
-
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{
-		callbacks: em,
-		finalEvents: map[string]string{
-			"0x1c197604587f046fd40684a8f21f4609fb811a7b": "000000038011/000000/000049",
-		},
-	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
-
-	var events []interface{}
-	err := json.Unmarshal(data.Bytes(), &events)
-	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
-	assert.NoError(t, err)
-
-	em.AssertExpectations(t)
-
-}
-
 func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`
 [
@@ -1125,50 +1041,6 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
 		"data": {
 			"author": "",
-			"namespace": "ns1",
-			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
-			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
-			"payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
-			"contexts": [
-				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
-				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
-			]
-    },
-		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
-		"logIndex": "50",
-		"timestamp": "1620576488"
-  }
-]`)
-
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{
-		callbacks: em,
-	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
-
-	var events []interface{}
-	err := json.Unmarshal(data.Bytes(), &events)
-	assert.NoError(t, err)
-	err = e.handleMessageBatch(context.Background(), events)
-	assert.NoError(t, err)
-
-	em.AssertExpectations(t)
-
-}
-
-func TestHandleMessageBatchPinBadAddress(t *testing.T) {
-	data := fftypes.JSONAnyPtr(`
-[
-  {
-		"address": "!bad",
-		"blockNumber": "38011",
-		"transactionIndex": "0x0",
-		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
-		"data": {
-			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
 			"namespace": "ns1",
 			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
 			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",

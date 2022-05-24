@@ -1157,5 +1157,5 @@ func TestOperatorActionBadType(t *testing.T) {
 	verifier := &core.VerifierRef{Value: "0x123"}
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
 	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: "bad"})
-	assert.Regexp(t, "FF10390", err)
+	assert.Regexp(t, "FF10389", err)
 }

@@ -52,7 +52,6 @@ type Ethereum struct {
 	topic            string
 	fireflyContract  string
 	fireflyFromBlock string
-	finalEvents      map[string]string
 	prefixShort      string
 	prefixLong       string
 	capabilities     *blockchain.Capabilities
@@ -268,26 +267,14 @@ func (e *Ethereum) resolveFireFlyContract(ctx context.Context, contractIndex int
 
 func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
 
-	finalEvents := make(map[string]string, len(contracts.Terminated))
-	for i, oldContract := range contracts.Terminated {
-		address := oldContract.Info.GetString("address")
-		if address != "" {
-			finalEvents[address] = contracts.Terminated[i].FinalEvent
-		}
-	}
-
 	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
 	address, fromBlock, err := e.resolveFireFlyContract(ctx, contracts.Active.Index)
 	if err != nil {
 		return err
 	}
-	if _, ok := finalEvents[address]; ok {
-		return i18n.NewError(ctx, coremsgs.MsgCannotReuseFireFlyContract, address)
-	}
 
 	e.fireflyContract = address
 	e.fireflyFromBlock = fromBlock
-	e.finalEvents = finalEvents
 	e.initInfo.sub, err = e.streams.ensureFireFlySubscription(ctx, e.fireflyContract, e.fireflyFromBlock, e.initInfo.stream.ID, batchPinEventABI)
 	if err == nil {
 		contracts.Active.Info = fftypes.JSONObject{
@@ -382,18 +369,6 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
-	}
-	address, err := validateEthAddress(ctx, event.Info.GetString("address"))
-	if err != nil {
-		log.L(ctx).Errorf("Failed to parse blockchain event address: %s", err)
-		return nil // move on
-	}
-
-	if finalEvent, ok := e.finalEvents[address]; ok {
-		if event.ProtocolID > finalEvent {
-			log.L(ctx).Warnf("Ignoring BatchPin event %s received after termination event %s", event.ProtocolID, finalEvent)
-			return nil // move on
-		}
 	}
 
 	authorAddress := event.Output.GetString("author")

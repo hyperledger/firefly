@@ -235,6 +235,5 @@ var (
 	MsgInvalidPluginConfiguration   = ffe("FF10386", "Invalid %s plugin configuration - name and type are required")
 	MsgReferenceMarkdownMissing     = ffe("FF10387", "Reference markdown file missing: '%s'")
 	MsgInvalidFireFlyContractIndex  = ffe("FF10388", "No configuration found for FireFly contract at %s")
-	MsgCannotReuseFireFlyContract   = ffe("FF10389", "Cannot reuse previously-terminated FireFly contract at %s")
-	MsgUnrecognizedOperatorAction   = ffe("FF10390", "Unrecognized operator action: %s", 400)
+	MsgUnrecognizedOperatorAction   = ffe("FF10389", "Unrecognized operator action: %s", 400)
 )

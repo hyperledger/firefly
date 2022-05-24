@@ -48,7 +48,6 @@ type Fabric struct {
 	defaultChannel   string
 	fireflyChaincode string
 	fireflyFromBlock string
-	finalEvents      map[string]string
 	signer           string
 	prefixShort      string
 	prefixLong       string
@@ -242,25 +241,13 @@ func (f *Fabric) resolveFireFlyContract(ctx context.Context, contractIndex int) 
 
 func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
 
-	finalEvents := make(map[string]string, len(contracts.Terminated))
-	for i, oldContract := range contracts.Terminated {
-		chaincode := oldContract.Info.GetString("chaincode")
-		if chaincode != "" {
-			finalEvents[chaincode] = contracts.Terminated[i].FinalEvent
-		}
-	}
-
 	chaincode, fromBlock, err := f.resolveFireFlyContract(ctx, contracts.Active.Index)
 	if err != nil {
 		return err
 	}
-	if _, ok := finalEvents[chaincode]; ok {
-		return i18n.NewError(ctx, coremsgs.MsgCannotReuseFireFlyContract, chaincode)
-	}
 
 	f.fireflyChaincode = chaincode
 	f.fireflyFromBlock = fromBlock
-	f.finalEvents = finalEvents
 	location := &Location{Channel: f.defaultChannel, Chaincode: chaincode}
 	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(ctx, location, f.fireflyFromBlock, f.initInfo.stream.ID, batchPinEvent)
 	if err == nil {
@@ -359,14 +346,6 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
-	}
-
-	chaincode := event.Info.GetString("chaincodeId")
-	if finalEvent, ok := f.finalEvents[chaincode]; ok {
-		if event.ProtocolID > finalEvent {
-			log.L(ctx).Warnf("Ignoring BatchPin event %s received after termination event %s", event.ProtocolID, finalEvent)
-			return nil // move on
-		}
 	}
 
 	signer := event.Output.GetString("signer")
