@@ -32,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -114,32 +115,11 @@ func (s *Schema) ToJSON() string {
 	return string(b)
 }
 
-// ABIArgumentMarshaling is abi.ArgumentMarshaling
-type ABIArgumentMarshaling struct {
-	Name         string                  `json:"name"`
-	Type         string                  `json:"type"`
-	InternalType string                  `json:"internalType,omitempty"`
-	Components   []ABIArgumentMarshaling `json:"components,omitempty"`
-	Indexed      bool                    `json:"indexed,omitempty"`
-}
-
-// ABIElementMarshaling is the serialized representation of a method or event in an ABI
-type ABIElementMarshaling struct {
-	Type            string                  `json:"type,omitempty"`
-	Name            string                  `json:"name,omitempty"`
-	Payable         bool                    `json:"payable,omitempty"`
-	Constant        bool                    `json:"constant,omitempty"`
-	Anonymous       bool                    `json:"anonymous,omitempty"`
-	StateMutability string                  `json:"stateMutability,omitempty"`
-	Inputs          []ABIArgumentMarshaling `json:"inputs"`
-	Outputs         []ABIArgumentMarshaling `json:"outputs"`
-}
-
 type EthconnectMessageRequest struct {
 	Headers EthconnectMessageHeaders `json:"headers,omitempty"`
 	To      string                   `json:"to"`
 	From    string                   `json:"from,omitempty"`
-	Method  ABIElementMarshaling     `json:"method"`
+	Method  *abi.Entry               `json:"method"`
 	Params  []interface{}            `json:"params"`
 }
 
@@ -149,7 +129,7 @@ type EthconnectMessageHeaders struct {
 }
 
 type FFIGenerationInput struct {
-	ABI []ABIElementMarshaling `json:"abi,omitempty"`
+	ABI *abi.ABI `json:"abi,omitempty"`
 }
 
 var addressVerify = regexp.MustCompile("^[0-9a-f]{40}$")
@@ -602,7 +582,7 @@ func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err e
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) error {
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi *abi.Entry, requestID string, input []interface{}) error {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
@@ -632,7 +612,7 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	return nil
 }
 
-func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}) (*resty.Response, error) {
+func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi *abi.Entry, input []interface{}) (*resty.Response, error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainQuery(address, abi.Name)
 	}
@@ -771,11 +751,11 @@ func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (core.FFIParamValid
 	return &FFIParamValidator{}, nil
 }
 
-func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *core.FFIEventDefinition) (ABIElementMarshaling, error) {
-	abiElement := ABIElementMarshaling{
+func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *core.FFIEventDefinition) (*abi.Entry, error) {
+	abiElement := &abi.Entry{
 		Name:   event.Name,
 		Type:   "event",
-		Inputs: make([]ABIArgumentMarshaling, len(event.Params)),
+		Inputs: make(abi.ParameterArray, len(event.Params)),
 	}
 
 	if err := e.addParamsToList(ctx, abiElement.Inputs, event.Params); err != nil {
@@ -784,25 +764,25 @@ func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *core.FFIE
 	return abiElement, nil
 }
 
-func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *core.FFIMethod) (ABIElementMarshaling, error) {
-	abiElement := ABIElementMarshaling{
+func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *core.FFIMethod) (*abi.Entry, error) {
+	abiEntry := &abi.Entry{
 		Name:    method.Name,
 		Type:    "function",
-		Inputs:  make([]ABIArgumentMarshaling, len(method.Params)),
-		Outputs: make([]ABIArgumentMarshaling, len(method.Returns)),
+		Inputs:  make(abi.ParameterArray, len(method.Params)),
+		Outputs: make(abi.ParameterArray, len(method.Returns)),
 	}
 
-	if err := e.addParamsToList(ctx, abiElement.Inputs, method.Params); err != nil {
-		return abiElement, err
+	if err := e.addParamsToList(ctx, abiEntry.Inputs, method.Params); err != nil {
+		return abiEntry, err
 	}
-	if err := e.addParamsToList(ctx, abiElement.Outputs, method.Returns); err != nil {
-		return abiElement, err
+	if err := e.addParamsToList(ctx, abiEntry.Outputs, method.Returns); err != nil {
+		return abiEntry, err
 	}
 
-	return abiElement, nil
+	return abiEntry, nil
 }
 
-func ABIArgumentToTypeString(typeName string, components []ABIArgumentMarshaling) string {
+func ABIArgumentToTypeString(typeName string, components abi.ParameterArray) string {
 	if strings.HasPrefix(typeName, "tuple") {
 		suffix := typeName[5:]
 		children := make([]string, len(components))
@@ -814,7 +794,7 @@ func ABIArgumentToTypeString(typeName string, components []ABIArgumentMarshaling
 	return typeName
 }
 
-func ABIMethodToSignature(abi *ABIElementMarshaling) string {
+func ABIMethodToSignature(abi *abi.Entry) string {
 	result := abi.Name + "("
 	if len(abi.Inputs) > 0 {
 		types := make([]string, len(abi.Inputs))
@@ -832,10 +812,10 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *core.FFIEv
 	if err != nil {
 		return ""
 	}
-	return ABIMethodToSignature(&abi)
+	return ABIMethodToSignature(abi)
 }
 
-func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgumentMarshaling, params core.FFIParams) error {
+func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList abi.ParameterArray, params core.FFIParams) error {
 	for i, param := range params {
 		c := core.NewFFISchemaCompiler()
 		v, _ := e.GetFFIParamValidator(ctx)
@@ -853,28 +833,28 @@ func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList []ABIArgume
 	return nil
 }
 
-func processField(name string, schema *jsonschema.Schema) ABIArgumentMarshaling {
+func processField(name string, schema *jsonschema.Schema) *abi.Parameter {
 	details := getParamDetails(schema)
-	arg := ABIArgumentMarshaling{
+	parameter := &abi.Parameter{
 		Name:         name,
 		Type:         details.Type,
 		InternalType: details.InternalType,
 		Indexed:      details.Indexed,
 	}
 	if schema.Types[0] == objectType {
-		arg.Components = buildABIArgumentArray(schema.Properties)
+		parameter.Components = buildABIArgumentArray(schema.Properties)
 	}
-	return arg
+	return parameter
 }
 
-func buildABIArgumentArray(properties map[string]*jsonschema.Schema) []ABIArgumentMarshaling {
-	args := make([]ABIArgumentMarshaling, len(properties))
+func buildABIArgumentArray(properties map[string]*jsonschema.Schema) abi.ParameterArray {
+	parameters := make(abi.ParameterArray, len(properties))
 	for propertyName, propertySchema := range properties {
 		details := getParamDetails(propertySchema)
-		arg := processField(propertyName, propertySchema)
-		args[*details.Index] = arg
+		parameter := processField(propertyName, propertySchema)
+		parameters[*details.Index] = parameter
 	}
-	return args
+	return parameters
 }
 
 func getParamDetails(schema *jsonschema.Schema) *paramDetails {
@@ -898,7 +878,7 @@ func getParamDetails(schema *jsonschema.Schema) *paramDetails {
 	return paramDetails
 }
 
-func (e *Ethereum) prepareRequest(ctx context.Context, method *core.FFIMethod, input map[string]interface{}) (ABIElementMarshaling, []interface{}, error) {
+func (e *Ethereum) prepareRequest(ctx context.Context, method *core.FFIMethod, input map[string]interface{}) (*abi.Entry, []interface{}, error) {
 	orderedInput := make([]interface{}, len(method.Params))
 	abi, err := e.FFIMethodToABI(ctx, method)
 	if err != nil {
@@ -930,79 +910,97 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *core.FFIG
 	if err != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "unable to deserialize JSON as ABI")
 	}
-	if len(input.ABI) == 0 {
+	if len(*input.ABI) == 0 {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "ABI is empty")
 	}
 	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 	return ffi, nil
 }
 
-func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi []ABIElementMarshaling) *core.FFI {
+func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi *abi.ABI) *core.FFI {
 	ffi := &core.FFI{
 		Namespace:   ns,
 		Name:        name,
 		Version:     version,
 		Description: description,
-		Methods:     []*core.FFIMethod{},
-		Events:      []*core.FFIEvent{},
+		Methods:     make([]*core.FFIMethod, len(abi.Functions())),
+		Events:      make([]*core.FFIEvent, len(abi.Events())),
 	}
-
-	for _, element := range abi {
-		switch element.Type {
-		case "event":
-			event := &core.FFIEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
-					Name:   element.Name,
-					Params: e.convertABIArgumentsToFFI(element.Inputs),
-				},
-			}
-			ffi.Events = append(ffi.Events, event)
-		case "function":
-			method := &core.FFIMethod{
-				Name:    element.Name,
-				Params:  e.convertABIArgumentsToFFI(element.Inputs),
-				Returns: e.convertABIArgumentsToFFI(element.Outputs),
-			}
-			ffi.Methods = append(ffi.Methods, method)
-		}
+	i := 0
+	for _, f := range abi.Functions() {
+		ffi.Methods[i] = e.convertABIFunctionToFFIMethod(f)
+		i++
+	}
+	i = 0
+	for _, f := range abi.Events() {
+		ffi.Events[i] = e.convertABIEventToFFIEvent(f)
+		i++
 	}
 	return ffi
 }
 
-func (e *Ethereum) convertABIArgumentsToFFI(args []ABIArgumentMarshaling) core.FFIParams {
-	ffiParams := core.FFIParams{}
-	for _, arg := range args {
+func (e *Ethereum) convertABIFunctionToFFIMethod(abiFunction *abi.Entry) *core.FFIMethod {
+	params := make([]*core.FFIParam, len(abiFunction.Inputs))
+	returns := make([]*core.FFIParam, len(abiFunction.Outputs))
+	for i, input := range abiFunction.Inputs {
+		schema := e.getSchemaForABIInput(input)
 		param := &core.FFIParam{
-			Name: arg.Name,
+			Name:   input.Name,
+			Schema: fftypes.JSONAnyPtr(schema.ToJSON()),
 		}
-		s := e.getSchema(arg)
-		param.Schema = fftypes.JSONAnyPtr(s.ToJSON())
-		ffiParams = append(ffiParams, param)
+		params[i] = param
 	}
-	return ffiParams
+	for i, input := range abiFunction.Outputs {
+		schema := e.getSchemaForABIInput(input)
+		param := &core.FFIParam{
+			Name:   input.Name,
+			Schema: fftypes.JSONAnyPtr(schema.ToJSON()),
+		}
+		returns[i] = param
+	}
+	return &core.FFIMethod{
+		Name:    abiFunction.Name,
+		Params:  params,
+		Returns: returns,
+	}
 }
 
-func (e *Ethereum) getSchema(arg ABIArgumentMarshaling) *Schema {
-	s := &Schema{
-		Type: e.getFFIType(arg.Type),
-		Details: &paramDetails{
-			Type:         arg.Type,
-			InternalType: arg.InternalType,
-			Indexed:      arg.Indexed,
+func (e *Ethereum) convertABIEventToFFIEvent(abiEvent *abi.Entry) *core.FFIEvent {
+	params := make([]*core.FFIParam, len(abiEvent.Inputs))
+	for i, input := range abiEvent.Inputs {
+		schema := e.getSchemaForABIInput(input)
+		param := &core.FFIParam{
+			Name:   input.Name,
+			Schema: fftypes.JSONAnyPtr(schema.ToJSON()),
+		}
+		params[i] = param
+	}
+	return &core.FFIEvent{
+		FFIEventDefinition: core.FFIEventDefinition{
+			Name:   abiEvent.Name,
+			Params: params,
 		},
 	}
-	var properties map[string]*Schema
-	if len(arg.Components) > 0 {
-		properties = e.getSchemaForObjectComponents(arg)
+}
+
+func (e *Ethereum) getSchemaForABIInput(input *abi.Parameter) *Schema {
+	schema := &Schema{
+		Type: e.getFFIType(input.Type),
+		Details: &paramDetails{
+			Type:         input.Type,
+			InternalType: input.InternalType,
+			Indexed:      input.Indexed,
+		},
 	}
-	if s.Type == arrayType {
-		levels := strings.Count(arg.Type, "[]")
-		innerType := e.getFFIType(strings.ReplaceAll(arg.Type, "[]", ""))
+
+	if schema.Type == arrayType {
+		levels := strings.Count(input.Type, "[]")
+		innerType := e.getFFIType(strings.ReplaceAll(input.Type, "[]", ""))
 		innerSchema := &Schema{
 			Type: innerType,
 		}
-		if len(arg.Components) > 0 {
-			innerSchema.Properties = e.getSchemaForObjectComponents(arg)
+		if len(input.Components) > 0 {
+			innerSchema.Properties = e.getSchemaForABIComponents(input.Components)
 		}
 		for i := 1; i < levels; i++ {
 			innerSchema = &Schema{
@@ -1010,22 +1008,21 @@ func (e *Ethereum) getSchema(arg ABIArgumentMarshaling) *Schema {
 				Items: innerSchema,
 			}
 		}
-		s.Items = innerSchema
+		schema.Items = innerSchema
 	} else {
-		s.Properties = properties
+		schema.Properties = e.getSchemaForABIComponents(input.Components)
 	}
-	return s
+	return schema
 }
 
-func (e *Ethereum) getSchemaForObjectComponents(arg ABIArgumentMarshaling) map[string]*Schema {
-	m := make(map[string]*Schema, len(arg.Components))
-	for i, component := range arg.Components {
-		componentSchema := e.getSchema(component)
-		componentSchema.Details.Index = new(int)
-		*componentSchema.Details.Index = i
-		m[component.Name] = componentSchema
+func (e *Ethereum) getSchemaForABIComponents(components abi.ParameterArray) map[string]*Schema {
+	schemas := make(map[string]*Schema, len(components))
+	for i, component := range components {
+		schemas[component.Name] = e.getSchemaForABIInput(component)
+		schemas[component.Name].Details.Index = new(int)
+		*schemas[component.Name].Details.Index = i
 	}
-	return m
+	return schemas
 }
 
 func (e *Ethereum) getFFIType(solitidyType string) string {

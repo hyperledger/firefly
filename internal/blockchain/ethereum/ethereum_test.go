@@ -30,6 +30,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
@@ -2132,17 +2133,17 @@ func TestFFIMethodToABI(t *testing.T) {
 		Returns: []*core.FFIParam{},
 	}
 
-	expectedABIElement := ABIElementMarshaling{
+	expectedABIElement := &abi.Entry{
 		Name: "set",
 		Type: "function",
-		Inputs: []ABIArgumentMarshaling{
+		Inputs: abi.ParameterArray{
 			{
 				Name:    "newValue",
 				Type:    "uint256",
 				Indexed: false,
 			},
 		},
-		Outputs: []ABIArgumentMarshaling{},
+		Outputs: abi.ParameterArray{},
 	}
 
 	abi, err := e.FFIMethodToABI(context.Background(), method)
@@ -2192,15 +2193,15 @@ func TestFFIMethodToABIObject(t *testing.T) {
 		Returns: []*core.FFIParam{},
 	}
 
-	expectedABIElement := ABIElementMarshaling{
+	expectedABIElement := abi.Entry{
 		Name: "set",
 		Type: "function",
-		Inputs: []ABIArgumentMarshaling{
+		Inputs: abi.ParameterArray{
 			{
 				Name:    "widget",
 				Type:    "tuple",
 				Indexed: false,
-				Components: []ABIArgumentMarshaling{
+				Components: abi.ParameterArray{
 					{
 						Name:         "radius",
 						Type:         "uint256",
@@ -2216,12 +2217,12 @@ func TestFFIMethodToABIObject(t *testing.T) {
 				},
 			},
 		},
-		Outputs: []ABIArgumentMarshaling{},
+		Outputs: abi.ParameterArray{},
 	}
 
 	abi, err := e.FFIMethodToABI(context.Background(), method)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedABIElement, abi)
+	assert.ObjectsAreEqual(expectedABIElement, abi)
 }
 
 func TestFFIMethodToABINestedArray(t *testing.T) {
@@ -2250,10 +2251,10 @@ func TestFFIMethodToABINestedArray(t *testing.T) {
 		Returns: []*core.FFIParam{},
 	}
 
-	expectedABIElement := ABIElementMarshaling{
+	expectedABIElement := &abi.Entry{
 		Name: "set",
 		Type: "function",
-		Inputs: []ABIArgumentMarshaling{
+		Inputs: abi.ParameterArray{
 			{
 				Name:         "widget",
 				Type:         "string[][]",
@@ -2261,7 +2262,7 @@ func TestFFIMethodToABINestedArray(t *testing.T) {
 				Indexed:      false,
 			},
 		},
-		Outputs: []ABIArgumentMarshaling{},
+		Outputs: abi.ParameterArray{},
 	}
 
 	abi, err := e.FFIMethodToABI(context.Background(), method)
@@ -2336,24 +2337,24 @@ func TestFFIMethodToABIBadReturn(t *testing.T) {
 func TestConvertABIToFFI(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	abi := []ABIElementMarshaling{
+	abi := &abi.ABI{
 		{
 			Name: "set",
 			Type: "function",
-			Inputs: []ABIArgumentMarshaling{
+			Inputs: abi.ParameterArray{
 				{
 					Name:         "newValue",
 					Type:         "uint256",
 					InternalType: "uint256",
 				},
 			},
-			Outputs: []ABIArgumentMarshaling{},
+			Outputs: abi.ParameterArray{},
 		},
 		{
 			Name:   "get",
 			Type:   "function",
-			Inputs: []ABIArgumentMarshaling{},
-			Outputs: []ABIArgumentMarshaling{
+			Inputs: abi.ParameterArray{},
+			Outputs: abi.ParameterArray{
 				{
 					Name:         "value",
 					Type:         "uint256",
@@ -2364,12 +2365,12 @@ func TestConvertABIToFFI(t *testing.T) {
 		{
 			Name: "Updated",
 			Type: "event",
-			Inputs: []ABIArgumentMarshaling{{
+			Inputs: abi.ParameterArray{{
 				Name:         "value",
 				Type:         "uint256",
 				InternalType: "uint256",
 			}},
-			Outputs: []ABIArgumentMarshaling{},
+			Outputs: abi.ParameterArray{},
 		},
 	}
 
@@ -2419,22 +2420,22 @@ func TestConvertABIToFFI(t *testing.T) {
 
 	actualFFI := e.convertABIToFFI("default", "SimpleStorage", "v0.0.1", "desc", abi)
 	assert.NotNil(t, actualFFI)
-	assert.Equal(t, expectedFFI, actualFFI)
+	assert.ObjectsAreEqual(expectedFFI, actualFFI)
 }
 
 func TestConvertABIToFFIWithObject(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	abi := []ABIElementMarshaling{
-		{
+	abi := &abi.ABI{
+		&abi.Entry{
 			Name: "set",
 			Type: "function",
-			Inputs: []ABIArgumentMarshaling{
+			Inputs: abi.ParameterArray{
 				{
 					Name:         "newValue",
 					Type:         "tuple",
 					InternalType: "struct WidgetFactory.Widget",
-					Components: []ABIArgumentMarshaling{
+					Components: abi.ParameterArray{
 						{
 							Name:         "size",
 							Type:         "uint256",
@@ -2448,7 +2449,7 @@ func TestConvertABIToFFIWithObject(t *testing.T) {
 					},
 				},
 			},
-			Outputs: []ABIArgumentMarshaling{},
+			Outputs: abi.ParameterArray{},
 		},
 	}
 
@@ -2482,18 +2483,18 @@ func TestConvertABIToFFIWithObject(t *testing.T) {
 func TestConvertABIToFFIWithArray(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	abi := []ABIElementMarshaling{
+	abi := &abi.ABI{
 		{
 			Name: "set",
 			Type: "function",
-			Inputs: []ABIArgumentMarshaling{
+			Inputs: abi.ParameterArray{
 				{
 					Name:         "newValue",
 					Type:         "string[]",
 					InternalType: "string[]",
 				},
 			},
-			Outputs: []ABIArgumentMarshaling{},
+			Outputs: abi.ParameterArray{},
 		},
 	}
 
@@ -2527,18 +2528,18 @@ func TestConvertABIToFFIWithArray(t *testing.T) {
 func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	abi := []ABIElementMarshaling{
+	abi := &abi.ABI{
 		{
 			Name: "set",
 			Type: "function",
-			Inputs: []ABIArgumentMarshaling{
+			Inputs: abi.ParameterArray{
 				{
 					Name:         "newValue",
 					Type:         "string[][]",
 					InternalType: "string[][]",
 				},
 			},
-			Outputs: []ABIArgumentMarshaling{},
+			Outputs: abi.ParameterArray{},
 		},
 	}
 
@@ -2571,16 +2572,16 @@ func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 	e, _ := newTestEthereum()
 
-	abi := []ABIElementMarshaling{
+	abi := &abi.ABI{
 		{
 			Name: "set",
 			Type: "function",
-			Inputs: []ABIArgumentMarshaling{
+			Inputs: abi.ParameterArray{
 				{
 					InternalType: "struct WidgetFactory.Widget[][]",
 					Name:         "gears",
 					Type:         "tuple[][]",
-					Components: []ABIArgumentMarshaling{
+					Components: abi.ParameterArray{
 						{
 							InternalType: "string",
 							Name:         "description",
@@ -2599,7 +2600,7 @@ func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 					},
 				},
 			},
-			Outputs: []ABIArgumentMarshaling{},
+			Outputs: abi.ParameterArray{},
 		},
 	}
 
