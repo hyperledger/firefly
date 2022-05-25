@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Broadcast data
-parent: Tutorials
+layout: i18n_page
+title: pages.broadcast_data
+parent: pages.tutorials
 nav_order: 4
 ---
 
@@ -33,8 +33,8 @@ nav_order: 4
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](/firefly/keyconcepts/broadcast.html)
-- Swagger: [POST /api/v1/namespaces/{ns}/broadcast/message](/firefly/swagger/swagger.html#/default/postBroadcastMessage)
+- Key Concepts: [Broadcast / shared data](../overview/broadcast.md)
+- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast]</a>
 
 ## Example 1: Inline string data
 

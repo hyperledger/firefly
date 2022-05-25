@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -32,18 +33,18 @@ func TestBlobReceiverBackgroundDispatchOK(t *testing.T) {
 	em.blobReceiver.start()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	mdi.On("InsertBlobs", mock.Anything, mock.Anything).Return(nil, nil)
 
 	blobHash := fftypes.NewRandB32()
 	done := make(chan struct{})
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
-		blob: &fftypes.Blob{
+		blob: &core.Blob{
 			Hash: blobHash,
 		},
 	})
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
-		blob: &fftypes.Blob{
+		blob: &core.Blob{
 			Hash: blobHash, // de-dup'd
 		},
 		onComplete: func() {
@@ -64,7 +65,7 @@ func TestBlobReceiverBackgroundDispatchCancelled(t *testing.T) {
 	em.blobReceiver.start()
 
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
-		blob: &fftypes.Blob{
+		blob: &core.Blob{
 			Hash: fftypes.NewRandB32(),
 		},
 	})
@@ -85,7 +86,7 @@ func TestBlobReceiverBackgroundDispatchFail(t *testing.T) {
 	})
 
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
-		blob: &fftypes.Blob{
+		blob: &core.Blob{
 			Hash: fftypes.NewRandB32(),
 		},
 	})
@@ -104,12 +105,12 @@ func TestBlobReceiverDispatchDup(t *testing.T) {
 	blobHash := fftypes.NewRandB32()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*fftypes.Blob{
+	mdi.On("GetBlobs", mock.Anything, mock.Anything).Return([]*core.Blob{
 		{Hash: blobHash, PayloadRef: "payload1"},
 	}, nil, nil)
 
 	em.blobReceiver.blobReceived(em.ctx, &blobNotification{
-		blob: &fftypes.Blob{
+		blob: &core.Blob{
 			Hash:       blobHash,
 			PayloadRef: "payload1",
 		},

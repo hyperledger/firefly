@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -28,8 +29,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,21 +53,21 @@ func TestBoundCallbacks(t *testing.T) {
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
-	err := bc.BatchPinComplete(batch, &fftypes.VerifierRef{Value: "0x12345", Type: fftypes.VerifierTypeEthAddress})
+	mei.On("BatchPinComplete", mbi, batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
 		ID:             opID,
-		Status:         fftypes.OpStatusFailed,
+		Status:         core.OpStatusFailed,
 		BlockchainTXID: "0xffffeeee",
 		ErrorMessage:   "error info",
 		Output:         info,
 	}).Return()
 
-	bc.BlockchainOpUpdate(mbi, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
+	bc.BlockchainOpUpdate(mbi, opID, core.OpStatusFailed, "0xffffeeee", "error info", info)
 
-	bc.TokenOpUpdate(mti, opID, fftypes.OpStatusFailed, "0xffffeeee", "error info", info)
+	bc.TokenOpUpdate(mti, opID, core.OpStatusFailed, "0xffffeeee", "error info", info)
 
 	mde := &dataexchangemocks.DXEvent{}
 	mom.On("TransferResult", mdx, mde).Return()

@@ -15,7 +15,7 @@ The FireFly API for digital assets, data flows, and blockchain transactions make
 
 The best place to learn about FireFly is in the [documentation](https://hyperledger.github.io/firefly).
 
-There you will find our [Getting Started Guide](https://hyperledger.github.io/firefly/gettingstarted/gettingstarted.html),
+There you will find our [Getting Started Guide](https://hyperledger.github.io/firefly/gettingstarted/),
 which will get you a running FireFly network of Supernodes on your local machine in a few minutes.
 
 Your development environment will come with:

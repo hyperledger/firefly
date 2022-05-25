@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Multiparty Event Sequencing
-parent: Architecture
+parent: pages.architecture
 nav_order: 2
 ---
 

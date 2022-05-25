@@ -22,30 +22,31 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func testOrgIdentity(t *testing.T, name string) *fftypes.Identity {
-	i := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+func testOrgIdentity(t *testing.T, name string) *core.Identity {
+	i := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.IdentityTypeOrg,
-			Namespace: fftypes.SystemNamespace,
+			Type:      core.IdentityTypeOrg,
+			Namespace: core.SystemNamespace,
 			Name:      name,
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: "desc",
 			Profile: fftypes.JSONObject{
 				"some": "profiledata",
 			},
 		},
-		Messages: fftypes.IdentityMessages{
+		Messages: core.IdentityMessages{
 			Claim: fftypes.NewUUID(),
 		},
 	}
@@ -55,22 +56,22 @@ func testOrgIdentity(t *testing.T, name string) *fftypes.Identity {
 	return i
 }
 
-func testCustomIdentity(t *testing.T, name string, parent *fftypes.Identity) *fftypes.Identity {
-	i := &fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+func testCustomIdentity(t *testing.T, name string, parent *core.Identity) *core.Identity {
+	i := &core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
-			Type:      fftypes.IdentityTypeCustom,
+			Type:      core.IdentityTypeCustom,
 			Namespace: "ns1",
 			Name:      name,
 			Parent:    parent.ID,
 		},
-		IdentityProfile: fftypes.IdentityProfile{
+		IdentityProfile: core.IdentityProfile{
 			Description: "custom 1",
 			Profile: fftypes.JSONObject{
 				"some": "profiledata",
 			},
 		},
-		Messages: fftypes.IdentityMessages{
+		Messages: core.IdentityMessages{
 			Claim: fftypes.NewUUID(),
 		},
 	}
@@ -80,27 +81,27 @@ func testCustomIdentity(t *testing.T, name string, parent *fftypes.Identity) *ff
 	return i
 }
 
-func testCustomClaimAndVerification(t *testing.T) (*fftypes.Identity, *fftypes.Identity, *fftypes.Message, *fftypes.Data, *fftypes.Message, *fftypes.Data) {
+func testCustomClaimAndVerification(t *testing.T) (*core.Identity, *core.Identity, *core.Message, *core.Data, *core.Message, *core.Data) {
 	org1 := testOrgIdentity(t, "org1")
 	custom1 := testCustomIdentity(t, "custom1", org1)
 
-	ic := &fftypes.IdentityClaim{
+	ic := &core.IdentityClaim{
 		Identity: custom1,
 	}
 	b, err := json.Marshal(&ic)
 	assert.NoError(t, err)
-	claimData := &fftypes.Data{
+	claimData := &core.Data{
 		ID:    fftypes.NewUUID(),
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	claimMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	claimMsg := &core.Message{
+		Header: core.MessageHeader{
 			ID:     custom1.Messages.Claim,
-			Type:   fftypes.MessageTypeDefinition,
-			Tag:    fftypes.SystemTagIdentityClaim,
-			Topics: fftypes.FFStringArray{custom1.Topic()},
-			SignerRef: fftypes.SignerRef{
+			Type:   core.MessageTypeDefinition,
+			Tag:    core.SystemTagIdentityClaim,
+			Topics: core.FFStringArray{custom1.Topic()},
+			SignerRef: core.SignerRef{
 				Author: custom1.DID,
 				Key:    "0x12345",
 			},
@@ -108,26 +109,26 @@ func testCustomClaimAndVerification(t *testing.T) (*fftypes.Identity, *fftypes.I
 	}
 	claimMsg.Hash = fftypes.NewRandB32()
 
-	iv := &fftypes.IdentityVerification{
+	iv := &core.IdentityVerification{
 		Identity: custom1.IdentityBase,
-		Claim: fftypes.MessageRef{
+		Claim: core.MessageRef{
 			ID:   claimMsg.Header.ID,
 			Hash: claimMsg.Hash,
 		},
 	}
 	b, err = json.Marshal(&iv)
 	assert.NoError(t, err)
-	verifyData := &fftypes.Data{
+	verifyData := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
-	verifyMsg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	verifyMsg := &core.Message{
+		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
-			Type:   fftypes.MessageTypeDefinition,
-			Tag:    fftypes.SystemTagIdentityVerification,
-			Topics: fftypes.FFStringArray{custom1.Topic()},
-			SignerRef: fftypes.SignerRef{
+			Type:   core.MessageTypeDefinition,
+			Tag:    core.SystemTagIdentityVerification,
+			Topics: core.FFStringArray{custom1.Topic()},
+			SignerRef: core.SignerRef{
 				Author: org1.DID,
 				Key:    "0x2456",
 			},
@@ -149,32 +150,32 @@ func TestHandleDefinitionIdentityClaimCustomWithExistingParentVerificationOk(t *
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{
+		{Header: core.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
 	}, nil, nil)
-	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *fftypes.Identity) bool {
+	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *claimMsg.Header.ID, *identity.Messages.Claim)
 		assert.Equal(t, *verifyMsg.Header.ID, *identity.Messages.Verification)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *fftypes.Verifier) bool {
-		assert.Equal(t, fftypes.VerifierTypeEthAddress, verifier.Type)
+	mdi.On("UpsertVerifier", ctx, mock.MatchedBy(func(verifier *core.Verifier) bool {
+		assert.Equal(t, core.VerifierTypeEthAddress, verifier.Type)
 		assert.Equal(t, "0x12345", verifier.Value)
 		assert.Equal(t, *custom1.ID, *verifier.Identity)
 		return true
 	}), database.UpsertOptimizationNew).Return(nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypeIdentityConfirmed
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, false, nil).Once()
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, false, nil).Once()
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	assert.Equal(t, bs.confirmedDIDClaims, []string{custom1.DID})
@@ -200,28 +201,28 @@ func TestHandleDefinitionIdentityClaimIdempotentReplay(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(custom1, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(&fftypes.Verifier{
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(&core.Verifier{
 		Identity:  custom1.ID,
 		Namespace: "ns1",
-		VerifierRef: fftypes.VerifierRef{
-			Type:  fftypes.VerifierTypeEthAddress,
+		VerifierRef: core.VerifierRef{
+			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		},
 	}, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{
-		{Header: fftypes.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{
+		{Header: core.MessageHeader{ID: fftypes.NewUUID(), Tag: "skipped missing data"}},
 	}, nil, nil)
-	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *fftypes.Event) bool {
-		return event.Type == fftypes.EventTypeIdentityConfirmed
+	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(event *core.Event) bool {
+		return event.Type == core.EventTypeIdentityConfirmed
 	})).Return(nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, false, nil).Once()
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, false, nil).Once()
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -245,17 +246,17 @@ func TestHandleDefinitionIdentityClaimFailInsertIdentity(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{}, nil, nil)
 	mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertIdentity", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -277,15 +278,15 @@ func TestHandleDefinitionIdentityClaimVerificationDataFail(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{}, nil, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -307,15 +308,15 @@ func TestHandleDefinitionIdentityClaimVerificationMissingData(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{}, nil, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 
@@ -337,16 +338,16 @@ func TestHandleDefinitionIdentityClaimFailInsertVerifier(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{}, nil, nil)
 	mdi.On("UpsertVerifier", ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(fftypes.DataArray{verifyData}, true, nil)
+	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{verifyData}, true, nil)
 
 	bs.pendingConfirms[*verifyMsg.Header.ID] = verifyMsg
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -368,10 +369,10 @@ func TestHandleDefinitionIdentityClaimCustomMissingParentVerificationOk(t *testi
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
-	mdi.On("GetMessages", ctx, mock.Anything).Return([]*fftypes.Message{}, nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetMessages", ctx, mock.Anything).Return([]*core.Message{}, nil, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action) // Just wait for the verification to come in later
 	assert.NoError(t, err)
 
@@ -392,10 +393,10 @@ func TestHandleDefinitionIdentityClaimCustomParentVerificationFail(t *testing.T)
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
 	mdi.On("GetMessages", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -416,11 +417,11 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(&fftypes.Verifier{
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(&core.Verifier{
 		Hash: fftypes.NewRandB32(),
 	}, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -441,9 +442,9 @@ func TestHandleDefinitionIdentityClaimVerifierError(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, fftypes.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -462,13 +463,13 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(&fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
 	}, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -490,7 +491,7 @@ func TestHandleDefinitionIdentityClaimIdentityError(t *testing.T) {
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -509,7 +510,7 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -527,7 +528,7 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(org1, false, nil)
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 
@@ -545,7 +546,7 @@ func TestHandleDefinitionIdentityVerifyChainFail(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, true, fmt.Errorf("pop"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 
@@ -563,7 +564,7 @@ func TestHandleDefinitionIdentityVerifyChainInvalid(t *testing.T) {
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", ctx, custom1).Return(nil, false, fmt.Errorf("wrong"))
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{claimData}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionWait}, action)
 	assert.NoError(t, err)
 
@@ -578,7 +579,7 @@ func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
 	_, org1, claimMsg, _, _, _ := testCustomClaimAndVerification(t)
 	claimMsg.Header.Author = org1.DID // should be the child for the claim
 
-	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, fftypes.DataArray{}, fftypes.NewUUID())
+	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 

@@ -22,19 +22,17 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postData = &oapispec.Route{
-	Name:   "postData",
-	Path:   "namespaces/{ns}/data",
-	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
-	},
+	Name:        "postData",
+	Path:        "data",
+	Method:      http.MethodPost,
+	PathParams:  nil,
 	QueryParams: nil,
 	FormParams: []*oapispec.FormParam{
 		{Name: "autometa", Description: coremsgs.APIParamsAutometa},
@@ -45,21 +43,21 @@ var postData = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostData,
-	JSONInputValue:  func() interface{} { return &fftypes.DataRefOrValue{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Data{} },
+	JSONInputValue:  func() interface{} { return &core.DataRefOrValue{} },
+	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Data().UploadJSON(r.Ctx, r.PP["ns"], r.Input.(*fftypes.DataRefOrValue))
+		output, err = getOr(r.Ctx).Data().UploadJSON(r.Ctx, extractNamespace(r.PP), r.Input.(*core.DataRefOrValue))
 		return output, err
 	},
 	FormUploadHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		data := &fftypes.DataRefOrValue{}
+		data := &core.DataRefOrValue{}
 		validator := r.FP["validator"]
 		if len(validator) > 0 {
-			data.Validator = fftypes.ValidatorType(validator)
+			data.Validator = core.ValidatorType(validator)
 		}
 		if r.FP["datatype.name"] != "" {
-			data.Datatype = &fftypes.DatatypeRef{
+			data.Datatype = &core.DatatypeRef{
 				Name:    r.FP["datatype.name"],
 				Version: r.FP["datatype.version"],
 			}
@@ -73,7 +71,7 @@ var postData = &oapispec.Route{
 			}
 			data.Value = fftypes.JSONAnyPtr(metadata)
 		}
-		output, err = getOr(r.Ctx).Data().UploadBlob(r.Ctx, r.PP["ns"], data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
+		output, err = getOr(r.Ctx).Data().UploadBlob(r.Ctx, extractNamespace(r.PP), data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err
 	},
 }

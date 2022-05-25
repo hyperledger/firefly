@@ -20,14 +20,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftypes.MessageInOut) error {
+func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *core.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
 		group, err := pm.database.GetGroupByHash(ctx, in.Header.Group)
@@ -57,13 +58,13 @@ func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *fftype
 	return err
 }
 
-func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *fftypes.Identity) (*fftypes.Identity, error) {
+func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *core.Identity) (*core.Identity, error) {
 	node := pm.orgFirstNodes[*identity.ID]
-	if node == nil && identity.Type == fftypes.IdentityTypeOrg {
+	if node == nil && identity.Type == core.IdentityTypeOrg {
 		fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
 		filter := fb.And(
 			fb.Eq("parent", identity.ID),
-			fb.Eq("type", fftypes.IdentityTypeNode),
+			fb.Eq("type", core.IdentityTypeNode),
 		)
 		nodes, _, err := pm.database.GetIdentities(ctx, filter)
 		if err != nil || len(nodes) == 0 {
@@ -75,7 +76,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *ff
 	return node, nil
 }
 
-func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.Identity, nodeInput string) (node *fftypes.Identity, err error) {
+func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Identity, nodeInput string) (node *core.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
 		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, nodeInput)
@@ -104,7 +105,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *fftypes.I
 	return node, nil
 }
 
-func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.MessageInOut) (gi *fftypes.GroupIdentity, err error) {
+func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageInOut) (gi *core.GroupIdentity, err error) {
 
 	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
@@ -112,10 +113,10 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	}
 
 	foundLocal := false
-	gi = &fftypes.GroupIdentity{
+	gi = &core.GroupIdentity{
 		Namespace: in.Message.Header.Namespace,
 		Name:      in.Group.Name,
-		Members:   make(fftypes.Members, len(in.Group.Members)),
+		Members:   make(core.Members, len(in.Group.Members)),
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the identity
@@ -131,7 +132,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 		isLocal := (node.Parent.Equals(localOrg.ID) && node.Name == pm.localNodeName)
 		foundLocal = foundLocal || isLocal
 		log.L(ctx).Debugf("Resolved group identity %s node=%s to identity %s node=%s local=%t", rInput.Identity, rInput.Node, identity.DID, node.ID, isLocal)
-		gi.Members[i] = &fftypes.Member{
+		gi.Members[i] = &core.Member{
 			Identity: identity.DID,
 			Node:     node.ID,
 		}
@@ -142,7 +143,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 		if err != nil {
 			return nil, err
 		}
-		gi.Members = append(gi.Members, &fftypes.Member{
+		gi.Members = append(gi.Members, &core.Member{
 			Identity: localOrg.DID,
 			Node:     localNodeID,
 		})
@@ -150,14 +151,14 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *fftypes.Messa
 	return gi, nil
 }
 
-func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *fftypes.Identity) (*fftypes.UUID, error) {
+func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *core.Identity) (*fftypes.UUID, error) {
 	if pm.localNodeID != nil {
 		return pm.localNodeID, nil
 	}
 	fb := database.IdentityQueryFactory.NewFilterLimit(ctx, 1)
 	filter := fb.And(
 		fb.Eq("parent", localOrg.ID),
-		fb.Eq("type", fftypes.IdentityTypeNode),
+		fb.Eq("type", core.IdentityTypeNode),
 		fb.Eq("name", pm.localNodeName),
 	)
 	nodes, _, err := pm.database.GetIdentities(ctx, filter)
@@ -171,7 +172,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *ffty
 	return pm.localNodeID, nil
 }
 
-func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes.MessageInOut) (group *fftypes.Group, isNew bool, err error) {
+func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *core.MessageInOut) (group *core.Group, isNew bool, err error) {
 	gi, err := pm.getRecipients(ctx, in)
 	if err != nil {
 		return nil, false, err
@@ -181,7 +182,7 @@ func (pm *privateMessaging) findOrGenerateGroup(ctx context.Context, in *fftypes
 	// generate the deterministic hash. We then search on that group to see if it
 	// exists. If it doesn't, we go ahead and create it. If it does - we don't return
 	// this candidate - we return the existing group.
-	newCandidate := &fftypes.Group{
+	newCandidate := &core.Group{
 		GroupIdentity: *gi,
 		Created:       fftypes.Now(),
 	}

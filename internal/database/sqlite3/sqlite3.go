@@ -27,8 +27,8 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
 	migratesqlite3 "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
-	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 
 	// Import the derivation of SQLite3 CGO suported by golang-migrate
@@ -46,7 +46,7 @@ func connHook(conn *sqlite3.SQLiteConn) error {
 	return err
 }
 
-func (sqlite *SQLite3) Init(ctx context.Context, prefix config.Prefix, callbacks database.Callbacks) error {
+func (sqlite *SQLite3) Init(ctx context.Context, config config.Section, callbacks database.Callbacks) error {
 	capabilities := &database.Capabilities{}
 	if !ffSQLiteRegistered {
 		sql.Register("sqlite3_ff",
@@ -55,7 +55,7 @@ func (sqlite *SQLite3) Init(ctx context.Context, prefix config.Prefix, callbacks
 			})
 		ffSQLiteRegistered = true
 	}
-	return sqlite.SQLCommon.Init(ctx, sqlite, prefix, callbacks, capabilities)
+	return sqlite.SQLCommon.Init(ctx, sqlite, config, callbacks, capabilities)
 }
 
 func (sqlite *SQLite3) Name() string {

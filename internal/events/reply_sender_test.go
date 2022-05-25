@@ -21,16 +21,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestSendReplyBroadcastFail(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(&subscription{
-		definition: &fftypes.Subscription{},
+		definition: &core.Subscription{},
 	})
 	defer cancel()
 
@@ -39,10 +40,10 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	ed.sendReply(context.Background(), &fftypes.Event{
+	ed.sendReply(context.Background(), &core.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-	}, &fftypes.MessageInOut{})
+	}, &core.MessageInOut{})
 
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
@@ -50,7 +51,7 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 
 func TestSendReplyPrivateFail(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(&subscription{
-		definition: &fftypes.Subscription{},
+		definition: &core.Subscription{},
 	})
 	defer cancel()
 
@@ -59,12 +60,12 @@ func TestSendReplyPrivateFail(t *testing.T) {
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
-	ed.sendReply(context.Background(), &fftypes.Event{
+	ed.sendReply(context.Background(), &core.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-	}, &fftypes.MessageInOut{
-		Message: fftypes.Message{
-			Header: fftypes.MessageHeader{
+	}, &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
 				Group: fftypes.NewRandB32(),
 			},
 		},
@@ -76,12 +77,12 @@ func TestSendReplyPrivateFail(t *testing.T) {
 
 func TestSendReplyPrivateOk(t *testing.T) {
 	ed, cancel := newTestEventDispatcher(&subscription{
-		definition: &fftypes.Subscription{},
+		definition: &core.Subscription{},
 	})
 	defer cancel()
 
-	msg := &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	msg := &core.Message{
+		Header: core.MessageHeader{
 			Group: fftypes.NewRandB32(),
 		},
 	}
@@ -91,10 +92,10 @@ func TestSendReplyPrivateOk(t *testing.T) {
 	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	ed.sendReply(context.Background(), &fftypes.Event{
+	ed.sendReply(context.Background(), &core.Event{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-	}, &fftypes.MessageInOut{
+	}, &core.MessageInOut{
 		Message: *msg,
 	})
 

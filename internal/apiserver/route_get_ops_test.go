@@ -20,7 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestGetOperations(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetOperationsNamespaced", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Operation{}, nil, nil)
+		Return([]*core.Operation{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

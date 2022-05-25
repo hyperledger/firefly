@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,15 +32,15 @@ func TestPostNewDatatypes(t *testing.T) {
 	o, r := newTestAPIServer()
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/datatypes", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype"), false).
-		Return(&fftypes.Message{}, nil)
+	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*core.Datatype"), false).
+		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
@@ -50,15 +50,15 @@ func TestPostNewDatatypesSync(t *testing.T) {
 	o, r := newTestAPIServer()
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
-	input := fftypes.Datatype{}
+	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/datatypes?confirm", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Datatype"), true).
-		Return(&fftypes.Message{}, nil)
+	mbm.On("BroadcastDatatype", mock.Anything, "ns1", mock.AnythingOfType("*core.Datatype"), true).
+		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

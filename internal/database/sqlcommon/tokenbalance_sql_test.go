@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,7 +37,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 
 	// Create a new token account
 	uri := "firefly://token/1"
-	transfer := &fftypes.TokenTransfer{
+	transfer := &core.TokenTransfer{
 		Pool:       fftypes.NewUUID(),
 		TokenIndex: "1",
 		URI:        uri,
@@ -45,7 +46,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 		To:         "0x0",
 		Amount:     *fftypes.NewFFBigInt(10),
 	}
-	balance := &fftypes.TokenBalance{
+	balance := &core.TokenBalance{
 		Pool:       transfer.Pool,
 		TokenIndex: "1",
 		URI:        uri,
@@ -135,7 +136,7 @@ func TestTokenBalanceE2EWithDB(t *testing.T) {
 func TestUpdateTokenBalancesFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{})
+	err := s.UpdateTokenBalances(context.Background(), &core.TokenTransfer{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -144,7 +145,7 @@ func TestUpdateTokenBalancesFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
+	err := s.UpdateTokenBalances(context.Background(), &core.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -155,7 +156,7 @@ func TestUpdateTokenBalancesFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{From: "0x0"})
+	err := s.UpdateTokenBalances(context.Background(), &core.TokenTransfer{From: "0x0"})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -166,7 +167,7 @@ func TestUpdateTokenBalancesFailInsert2(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
+	err := s.UpdateTokenBalances(context.Background(), &core.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -177,7 +178,7 @@ func TestUpdateTokenBalancesFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(tokenBalanceColumns).AddRow(fftypes.NewUUID().String(), "1", "", "", "", "0x0", "0", 0))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
+	err := s.UpdateTokenBalances(context.Background(), &core.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -188,7 +189,7 @@ func TestUpdateTokenBalancesFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpdateTokenBalances(context.Background(), &fftypes.TokenTransfer{To: "0x0"})
+	err := s.UpdateTokenBalances(context.Background(), &core.TokenTransfer{To: "0x0"})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

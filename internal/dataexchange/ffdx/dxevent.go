@@ -17,11 +17,12 @@
 package ffdx
 
 import (
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type wsEvent struct {
@@ -91,22 +92,22 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		e.dxType = dataexchange.DXEventTypeTransferResult
 		e.transferResult = &dataexchange.TransferResult{
 			TrackingID: msg.RequestID,
-			Status:     fftypes.OpStatusFailed,
-			TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Status:     core.OpStatusFailed,
+			TransportStatusUpdate: core.TransportStatusUpdate{
 				Error: msg.Error,
 				Info:  msg.Info,
 			},
 		}
 	case messageDelivered:
-		status := fftypes.OpStatusSucceeded
+		status := core.OpStatusSucceeded
 		if h.capabilities.Manifest {
-			status = fftypes.OpStatusPending
+			status = core.OpStatusPending
 		}
 		e.dxType = dataexchange.DXEventTypeTransferResult
 		e.transferResult = &dataexchange.TransferResult{
 			TrackingID: msg.RequestID,
 			Status:     status,
-			TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			TransportStatusUpdate: core.TransportStatusUpdate{
 				Info: msg.Info,
 			},
 		}
@@ -114,8 +115,8 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		e.dxType = dataexchange.DXEventTypeTransferResult
 		e.transferResult = &dataexchange.TransferResult{
 			TrackingID: msg.RequestID,
-			Status:     fftypes.OpStatusSucceeded,
-			TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Status:     core.OpStatusSucceeded,
+			TransportStatusUpdate: core.TransportStatusUpdate{
 				Manifest: msg.Manifest,
 				Info:     msg.Info,
 			},
@@ -130,22 +131,22 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		e.dxType = dataexchange.DXEventTypeTransferResult
 		e.transferResult = &dataexchange.TransferResult{
 			TrackingID: msg.RequestID,
-			Status:     fftypes.OpStatusFailed,
-			TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Status:     core.OpStatusFailed,
+			TransportStatusUpdate: core.TransportStatusUpdate{
 				Error: msg.Error,
 				Info:  msg.Info,
 			},
 		}
 	case blobDelivered:
-		status := fftypes.OpStatusSucceeded
+		status := core.OpStatusSucceeded
 		if h.capabilities.Manifest {
-			status = fftypes.OpStatusPending
+			status = core.OpStatusPending
 		}
 		e.dxType = dataexchange.DXEventTypeTransferResult
 		e.transferResult = &dataexchange.TransferResult{
 			TrackingID: msg.RequestID,
 			Status:     status,
-			TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			TransportStatusUpdate: core.TransportStatusUpdate{
 				Info: msg.Info,
 			},
 		}
@@ -165,8 +166,8 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		e.dxType = dataexchange.DXEventTypeTransferResult
 		e.transferResult = &dataexchange.TransferResult{
 			TrackingID: msg.RequestID,
-			Status:     fftypes.OpStatusSucceeded,
-			TransportStatusUpdate: fftypes.TransportStatusUpdate{
+			Status:     core.OpStatusSucceeded,
+			TransportStatusUpdate: core.TransportStatusUpdate{
 				Hash: msg.Hash,
 				Info: msg.Info,
 			},

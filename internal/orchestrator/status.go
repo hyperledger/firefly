@@ -20,51 +20,72 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (or *orchestrator) getPlugins() fftypes.NodeStatusPlugins {
-	// Tokens can have more than one name, so they must be iterated over
-	tokensArray := make([]*fftypes.NodeStatusPlugin, 0)
+func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
+	// Plugins can have more than one name, so they must be iterated over
+	tokensArray := make([]*core.NodeStatusPlugin, 0)
 	for name, plugin := range or.tokens {
-		tokensArray = append(tokensArray, &fftypes.NodeStatusPlugin{
+		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
 			Name:       name,
 			PluginType: plugin.Name(),
 		})
 	}
 
-	return fftypes.NodeStatusPlugins{
-		Blockchain: []*fftypes.NodeStatusPlugin{
-			{
-				PluginType: or.blockchain.Name(),
-			},
-		},
-		Database: []*fftypes.NodeStatusPlugin{
-			{
-				PluginType: or.database.Name(),
-			},
-		},
-		DataExchange: []*fftypes.NodeStatusPlugin{
-			{
-				PluginType: or.dataexchange.Name(),
-			},
-		},
-		Events: or.events.GetPlugins(),
-		Identity: []*fftypes.NodeStatusPlugin{
-			{
-				PluginType: or.identityPlugin.Name(),
-			},
-		},
-		SharedStorage: []*fftypes.NodeStatusPlugin{
-			{
-				PluginType: or.sharedstorage.Name(),
-			},
-		},
-		Tokens: tokensArray,
+	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.blockchains {
+		blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	databasesArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.databases {
+		databasesArray = append(databasesArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.sharedstoragePlugins {
+		sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.dataexchangePlugins {
+		dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	identityPluginArray := make([]*core.NodeStatusPlugin, 0)
+	for name, plugin := range or.identityPlugins {
+		identityPluginArray = append(identityPluginArray, &core.NodeStatusPlugin{
+			Name:       name,
+			PluginType: plugin.Name(),
+		})
+	}
+
+	return core.NodeStatusPlugins{
+		Blockchain:    blockchainsArray,
+		Database:      databasesArray,
+		SharedStorage: sharedstorageArray,
+		DataExchange:  dataexchangeArray,
+		Events:        or.events.GetPlugins(),
+		Identity:      identityPluginArray,
+		Tokens:        tokensArray,
 	}
 }
 
@@ -85,20 +106,20 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 	return or.node
 }
 
-func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStatus, err error) {
+func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus, err error) {
 
 	org, err := or.identity.GetNodeOwnerOrg(ctx)
 	if err != nil {
 		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}
-	status = &fftypes.NodeStatus{
-		Node: fftypes.NodeStatusNode{
+	status = &core.NodeStatus{
+		Node: core.NodeStatusNode{
 			Name: config.GetString(coreconfig.NodeName),
 		},
-		Org: fftypes.NodeStatusOrg{
+		Org: core.NodeStatusOrg{
 			Name: config.GetString(coreconfig.OrgName),
 		},
-		Defaults: fftypes.NodeStatusDefaults{
+		Defaults: core.NodeStatusDefaults{
 			Namespace: config.GetString(coreconfig.NamespacesDefault),
 		},
 		Plugins: or.getPlugins(),
@@ -108,16 +129,16 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *fftypes.NodeStat
 		status.Org.Registered = true
 		status.Org.ID = org.ID
 		status.Org.DID = org.DID
-		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, fftypes.SystemNamespace, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
+		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, core.SystemNamespace, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
 		if err != nil {
 			return nil, err
 		}
-		status.Org.Verifiers = make([]*fftypes.VerifierRef, len(verifiers))
+		status.Org.Verifiers = make([]*core.VerifierRef, len(verifiers))
 		for i, v := range verifiers {
 			status.Org.Verifiers[i] = &v.VerifierRef
 		}
 
-		node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, fmt.Sprintf("%s%s", fftypes.FireFlyNodeDIDPrefix, status.Node.Name))
+		node, _, err := or.identity.CachedIdentityLookupNilOK(ctx, fmt.Sprintf("%s%s", core.FireFlyNodeDIDPrefix, status.Node.Name))
 		if err != nil {
 			return nil, err
 		}

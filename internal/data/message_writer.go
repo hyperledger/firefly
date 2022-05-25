@@ -20,30 +20,30 @@ import (
 	"context"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 type NewMessage struct {
-	Message *fftypes.MessageInOut
-	AllData fftypes.DataArray
-	NewData fftypes.DataArray
+	Message *core.MessageInOut
+	AllData core.DataArray
+	NewData core.DataArray
 }
 
 // writeRequest is a combination of a message and a list of data that is new and needs to be
 // inserted into the database.
 type writeRequest struct {
-	newMessage *fftypes.Message
-	newData    fftypes.DataArray
+	newMessage *core.Message
+	newData    core.DataArray
 	result     chan error
 }
 
 type messageWriterBatch struct {
-	messages       []*fftypes.Message
-	data           fftypes.DataArray
+	messages       []*core.Message
+	data           core.DataArray
 	listeners      []chan error
 	timeoutContext context.Context
 	timeoutCancel  func()
@@ -105,16 +105,16 @@ func (mw *messageWriter) WriteNewMessage(ctx context.Context, newMsg *NewMessage
 	}
 	// Otherwise do it in-line on this context
 	return mw.database.RunAsGroup(ctx, func(ctx context.Context) error {
-		return mw.writeMessages(ctx, []*fftypes.Message{&newMsg.Message.Message}, newMsg.NewData)
+		return mw.writeMessages(ctx, []*core.Message{&newMsg.Message.Message}, newMsg.NewData)
 	})
 }
 
 // WriteData writes a piece of data independently of a message
-func (mw *messageWriter) WriteData(ctx context.Context, data *fftypes.Data) error {
+func (mw *messageWriter) WriteData(ctx context.Context, data *core.Data) error {
 	if mw.conf.workerCount > 0 {
 		// Dispatch to background worker
 		nmi := &writeRequest{
-			newData: fftypes.DataArray{data},
+			newData: core.DataArray{data},
 			result:  make(chan error),
 		}
 		select {
@@ -179,7 +179,7 @@ func (mw *messageWriter) writerLoop(index int) {
 	}
 }
 
-func (mw *messageWriter) writeMessages(ctx context.Context, msgs []*fftypes.Message, data fftypes.DataArray) error {
+func (mw *messageWriter) writeMessages(ctx context.Context, msgs []*core.Message, data core.DataArray) error {
 	if len(data) > 0 {
 		if err := mw.database.InsertDataArray(ctx, data); err != nil {
 			return err

@@ -1,7 +1,7 @@
 ---
-layout: default
-title: Code Repositories
-parent: Contributors
+layout: i18n_page
+title: pages.code_repositories
+parent: pages.contributors
 nav_order: 3
 ---
 

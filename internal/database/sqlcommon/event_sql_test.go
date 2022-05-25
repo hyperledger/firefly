@@ -24,8 +24,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -38,17 +39,17 @@ func TestEventE2EWithDB(t *testing.T) {
 
 	// Create a new event entry
 	eventID := fftypes.NewUUID()
-	event := &fftypes.Event{
+	event := &core.Event{
 		ID:         eventID,
 		Namespace:  "ns1",
-		Type:       fftypes.EventTypeMessageConfirmed,
+		Type:       core.EventTypeMessageConfirmed,
 		Reference:  fftypes.NewUUID(),
 		Correlator: fftypes.NewUUID(),
 		Topic:      "topic1",
 		Created:    fftypes.Now(),
 	}
 
-	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", eventID, mock.Anything).Return()
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, core.ChangeEventTypeCreated, "ns1", eventID, mock.Anything).Return()
 
 	err := s.InsertEvent(ctx, event)
 	assert.NoError(t, err)
@@ -107,7 +108,7 @@ func TestEventE2EWithDB(t *testing.T) {
 func TestInsertEventFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertEvent(context.Background(), &fftypes.Event{})
+	err := s.InsertEvent(context.Background(), &core.Event{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -118,7 +119,7 @@ func TestInsertEventFailLock(t *testing.T) {
 	mock.ExpectExec("LOCK .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	eventID := fftypes.NewUUID()
-	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})
+	err := s.InsertEvent(context.Background(), &core.Event{ID: eventID})
 	assert.Regexp(t, "FF10345", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -130,7 +131,7 @@ func TestInsertEventFailInsert(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
 	eventID := fftypes.NewUUID()
-	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})
+	err := s.InsertEvent(context.Background(), &core.Event{ID: eventID})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -142,7 +143,7 @@ func TestInsertEventFailCommit(t *testing.T) {
 	mock.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.InsertEvent(context.Background(), &fftypes.Event{ID: eventID})
+	err := s.InsertEvent(context.Background(), &core.Event{ID: eventID})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -152,10 +153,10 @@ func TestInsertEventsPreCommitMultiRowOK(t *testing.T) {
 	s.features.MultiRowInsert = true
 	s.fakePSQLInsert = true
 
-	ev1 := &fftypes.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
-	ev2 := &fftypes.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
-	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", ev1.ID, int64(1001))
-	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, fftypes.ChangeEventTypeCreated, "ns1", ev2.ID, int64(1002))
+	ev1 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	ev2 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, core.ChangeEventTypeCreated, "ns1", ev1.ID, int64(1001))
+	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionEvents, core.ChangeEventTypeCreated, "ns1", ev2.ID, int64(1002))
 
 	mock.ExpectBegin()
 	mock.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
@@ -165,7 +166,7 @@ func TestInsertEventsPreCommitMultiRowOK(t *testing.T) {
 	)
 	mock.ExpectCommit()
 	ctx, tx, autoCommit, err := s.beginOrUseTx(context.Background())
-	tx.preCommitEvents = []*fftypes.Event{ev1, ev2}
+	tx.preCommitEvents = []*core.Event{ev1, ev2}
 	assert.NoError(t, err)
 	err = s.commitTx(ctx, tx, autoCommit)
 	assert.NoError(t, err)
@@ -177,12 +178,12 @@ func TestInsertEventsPreCommitMultiRowFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	s.features.MultiRowInsert = true
 	s.fakePSQLInsert = true
-	ev1 := &fftypes.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	ev1 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
 	mock.ExpectBegin()
 	mock.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
 	mock.ExpectQuery("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	ctx, tx, autoCommit, err := s.beginOrUseTx(context.Background())
-	tx.preCommitEvents = []*fftypes.Event{ev1}
+	tx.preCommitEvents = []*core.Event{ev1}
 	assert.NoError(t, err)
 	err = s.commitTx(ctx, tx, autoCommit)
 	assert.Regexp(t, "FF10116", err)
@@ -192,12 +193,12 @@ func TestInsertEventsPreCommitMultiRowFail(t *testing.T) {
 
 func TestInsertEventsPreCommitSingleRowFail(t *testing.T) {
 	s, mock := newMockProvider().init()
-	ev1 := &fftypes.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
+	ev1 := &core.Event{ID: fftypes.NewUUID(), Namespace: "ns1"}
 	mock.ExpectBegin()
 	mock.ExpectExec("LOCK .*").WillReturnResult(driver.ResultNoRows)
 	mock.ExpectExec("INSERT.*").WillReturnError(fmt.Errorf("pop"))
 	ctx, tx, autoCommit, err := s.beginOrUseTx(context.Background())
-	tx.preCommitEvents = []*fftypes.Event{ev1}
+	tx.preCommitEvents = []*core.Event{ev1}
 	assert.NoError(t, err)
 	err = s.commitTx(ctx, tx, autoCommit)
 	assert.Regexp(t, "FF10116", err)

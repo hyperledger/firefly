@@ -26,12 +26,12 @@ import (
 	"syscall"
 
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/apiserver"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -83,12 +83,11 @@ func getOrchestrator() orchestrator.Orchestrator {
 	if _utOrchestrator != nil {
 		return _utOrchestrator
 	}
-	return orchestrator.NewOrchestrator()
+	return orchestrator.NewOrchestrator(true)
 }
 
 // Execute is called by the main method of the package
 func Execute() error {
-	apiserver.InitConfig()
 	return rootCmd.Execute()
 }
 
@@ -96,6 +95,7 @@ func run() error {
 
 	// Read the configuration
 	coreconfig.Reset()
+	apiserver.InitConfig()
 	err := config.ReadConfig(configSuffix, cfgFile)
 
 	// Setup logging after reading config (even if failed), to output header correctly

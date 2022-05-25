@@ -21,19 +21,20 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfPrefix = config.NewPluginConfig("metrics")
+var utConfig = config.RootSection("metrics")
 
 func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitter {
 	coreconfig.Reset()
@@ -72,31 +73,31 @@ func TestSubmitPinnedBatchOk(t *testing.T) {
 	mmi := bp.metrics.(*metricsmocks.Manager)
 	mom := bp.operations.(*operationmocks.Manager)
 
-	batch := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "id1",
 				Key:    "0x12345",
 			},
 		},
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID: fftypes.NewUUID(),
 		},
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, op.Type)
+	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainPinBatch, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.TX.ID, *op.Transaction)
 		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
 		return true
 	})).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(false)
-	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(batchPinData)
-		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
+		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil, nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
@@ -115,31 +116,31 @@ func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
 	mmi := bp.metrics.(*metricsmocks.Manager)
 	mom := bp.operations.(*operationmocks.Manager)
 
-	batch := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "id1",
 				Key:    "0x12345",
 			},
 		},
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID: fftypes.NewUUID(),
 		},
 	}
 	contexts := []*fftypes.Bytes32{}
 
-	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *fftypes.Operation) bool {
-		assert.Equal(t, fftypes.OpTypeBlockchainPinBatch, op.Type)
+	mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainPinBatch, op.Type)
 		assert.Equal(t, "ut", op.Plugin)
 		assert.Equal(t, *batch.TX.ID, *op.Transaction)
 		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
 		return true
 	})).Return(nil)
 	mmi.On("IsMetricsEnabled").Return(true)
-	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *fftypes.PreparedOperation) bool {
+	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(batchPinData)
-		return op.Type == fftypes.OpTypeBlockchainPinBatch && data.Batch == batch
+		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
 	})).Return(nil, nil)
 
 	err := bp.SubmitPinnedBatch(ctx, batch, contexts, "payload1")
@@ -157,15 +158,15 @@ func TestSubmitPinnedBatchOpFail(t *testing.T) {
 	mom := bp.operations.(*operationmocks.Manager)
 	mmi := bp.metrics.(*metricsmocks.Manager)
 
-	batch := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "id1",
 				Key:    "0x12345",
 			},
 		},
-		TX: fftypes.TransactionRef{
+		TX: core.TransactionRef{
 			ID: fftypes.NewUUID(),
 		},
 	}

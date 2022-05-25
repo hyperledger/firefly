@@ -3,8 +3,8 @@
 package eventsmocks
 
 import (
+	core "github.com/hyperledger/firefly/pkg/core"
 	events "github.com/hyperledger/firefly/pkg/events"
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,16 +20,16 @@ func (_m *Callbacks) ConnectionClosed(connID string) {
 }
 
 // DeliveryResponse provides a mock function with given fields: connID, inflight
-func (_m *Callbacks) DeliveryResponse(connID string, inflight *fftypes.EventDeliveryResponse) {
+func (_m *Callbacks) DeliveryResponse(connID string, inflight *core.EventDeliveryResponse) {
 	_m.Called(connID, inflight)
 }
 
 // EphemeralSubscription provides a mock function with given fields: connID, namespace, filter, options
-func (_m *Callbacks) EphemeralSubscription(connID string, namespace string, filter *fftypes.SubscriptionFilter, options *fftypes.SubscriptionOptions) error {
+func (_m *Callbacks) EphemeralSubscription(connID string, namespace string, filter *core.SubscriptionFilter, options *core.SubscriptionOptions) error {
 	ret := _m.Called(connID, namespace, filter, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string, *fftypes.SubscriptionFilter, *fftypes.SubscriptionOptions) error); ok {
+	if rf, ok := ret.Get(0).(func(string, string, *core.SubscriptionFilter, *core.SubscriptionOptions) error); ok {
 		r0 = rf(connID, namespace, filter, options)
 	} else {
 		r0 = ret.Error(0)

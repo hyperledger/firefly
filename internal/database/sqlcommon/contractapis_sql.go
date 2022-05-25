@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -45,7 +46,7 @@ var (
 
 const contractapisTable = "contractapis"
 
-func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.ContractAPI) (err error) {
+func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -83,7 +84,7 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 				Set("namespace", api.Namespace).
 				Set("message_id", api.Message),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, fftypes.ChangeEventTypeUpdated, api.Namespace, api.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeUpdated, api.Namespace, api.ID)
 			},
 		); err != nil {
 			return err
@@ -101,7 +102,7 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 					api.Message,
 				),
 			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, fftypes.ChangeEventTypeCreated, api.Namespace, api.ID)
+				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractAPIs, core.ChangeEventTypeCreated, api.Namespace, api.ID)
 			},
 		); err != nil {
 			return err
@@ -111,9 +112,9 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *fftypes.Contract
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*fftypes.ContractAPI, error) {
-	api := fftypes.ContractAPI{
-		Interface: &fftypes.FFIReference{},
+func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*core.ContractAPI, error) {
+	api := core.ContractAPI{
+		Interface: &core.FFIReference{},
 	}
 	err := row.Scan(
 		&api.ID,
@@ -129,7 +130,7 @@ func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*ffty
 	return &api, nil
 }
 
-func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred interface{}) (*fftypes.ContractAPI, error) {
+func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred interface{}) (*core.ContractAPI, error) {
 	rows, _, err := s.query(ctx, contractapisTable,
 		sq.Select(contractAPIsColumns...).
 			From(contractapisTable).
@@ -153,7 +154,7 @@ func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred in
 	return api, nil
 }
 
-func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (contractAPIs []*fftypes.ContractAPI, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (contractAPIs []*core.ContractAPI, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractAPIsColumns...).From(contractapisTable).Where(sq.Eq{"namespace": ns}), filter, contractAPIsFilterFieldMap, []interface{}{"sequence"})
 	if err != nil {
@@ -166,7 +167,7 @@ func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter datab
 	}
 	defer rows.Close()
 
-	apis := []*fftypes.ContractAPI{}
+	apis := []*core.ContractAPI{}
 	for rows.Next() {
 		api, err := s.contractAPIResult(ctx, rows)
 		if err != nil {
@@ -179,10 +180,10 @@ func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter datab
 
 }
 
-func (s *SQLCommon) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.ContractAPI, error) {
+func (s *SQLCommon) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error) {
 	return s.getContractAPIPred(ctx, id.String(), sq.Eq{"id": id})
 }
 
-func (s *SQLCommon) GetContractAPIByName(ctx context.Context, ns, name string) (*fftypes.ContractAPI, error) {
+func (s *SQLCommon) GetContractAPIByName(ctx context.Context, ns, name string) (*core.ContractAPI, error) {
 	return s.getContractAPIPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"name": name}})
 }

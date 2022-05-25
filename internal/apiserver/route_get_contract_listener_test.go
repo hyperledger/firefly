@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/contractmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func TestGetContractListener(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetContractListeners", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.ContractListener{}, nil, nil)
+		Return([]*core.ContractListener{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

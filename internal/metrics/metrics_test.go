@@ -21,18 +21,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 var msgID = fftypes.NewUUID()
-var Message = &fftypes.Message{
-	Header: fftypes.MessageHeader{
+var Message = &core.Message{
+	Header: core.MessageHeader{
 		ID: msgID,
-		SignerRef: fftypes.SignerRef{
+		SignerRef: core.SignerRef{
 			Author: "did:firefly:org/abcd",
 			Key:    "0x12345",
 		},
@@ -41,7 +42,7 @@ var Message = &fftypes.Message{
 }
 
 var tokenLocalID = fftypes.NewUUID()
-var TokenTransfer = &fftypes.TokenTransfer{
+var TokenTransfer = &core.TokenTransfer{
 	Amount:  *fftypes.NewFFBigInt(1),
 	LocalID: tokenLocalID,
 	Type:    "",
@@ -73,7 +74,7 @@ func TestCountBatchPin(t *testing.T) {
 func TestMessageSubmittedBroadcast(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	Message.Header.Type = fftypes.MessageTypeBroadcast
+	Message.Header.Type = core.MessageTypeBroadcast
 	mm.MessageSubmitted(Message)
 	assert.Equal(t, len(mm.timeMap), 1)
 	assert.NotNil(t, mm.timeMap[msgID.String()])
@@ -82,7 +83,7 @@ func TestMessageSubmittedBroadcast(t *testing.T) {
 func TestMessageSubmittedPrivate(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	Message.Header.Type = fftypes.MessageTypePrivate
+	Message.Header.Type = core.MessageTypePrivate
 	mm.MessageSubmitted(Message)
 	assert.Equal(t, len(mm.timeMap), 1)
 	assert.NotNil(t, mm.timeMap[msgID.String()])
@@ -91,43 +92,43 @@ func TestMessageSubmittedPrivate(t *testing.T) {
 func TestMessageConfirmedBroadcastSuccess(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	Message.Header.Type = fftypes.MessageTypeBroadcast
+	Message.Header.Type = core.MessageTypeBroadcast
 	mm.timeMap[msgID.String()] = time.Now()
-	mm.MessageConfirmed(Message, fftypes.EventTypeMessageConfirmed)
+	mm.MessageConfirmed(Message, core.EventTypeMessageConfirmed)
 	assert.Equal(t, len(mm.timeMap), 0)
 }
 
 func TestMessageConfirmedBroadcastRejected(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	Message.Header.Type = fftypes.MessageTypeBroadcast
+	Message.Header.Type = core.MessageTypeBroadcast
 	mm.timeMap[msgID.String()] = time.Now()
-	mm.MessageConfirmed(Message, fftypes.EventTypeMessageRejected)
+	mm.MessageConfirmed(Message, core.EventTypeMessageRejected)
 	assert.Equal(t, len(mm.timeMap), 0)
 }
 
 func TestMessageConfirmedPrivateSuccess(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	Message.Header.Type = fftypes.MessageTypePrivate
+	Message.Header.Type = core.MessageTypePrivate
 	mm.timeMap[msgID.String()] = time.Now()
-	mm.MessageConfirmed(Message, fftypes.EventTypeMessageConfirmed)
+	mm.MessageConfirmed(Message, core.EventTypeMessageConfirmed)
 	assert.Equal(t, len(mm.timeMap), 0)
 }
 
 func TestMessageConfirmedPrivateRejected(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	Message.Header.Type = fftypes.MessageTypePrivate
+	Message.Header.Type = core.MessageTypePrivate
 	mm.timeMap[msgID.String()] = time.Now()
-	mm.MessageConfirmed(Message, fftypes.EventTypeMessageRejected)
+	mm.MessageConfirmed(Message, core.EventTypeMessageRejected)
 	assert.Equal(t, len(mm.timeMap), 0)
 }
 
 func TestTokenSubmittedMint(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	TokenTransfer.Type = fftypes.TokenTransferTypeMint
+	TokenTransfer.Type = core.TokenTransferTypeMint
 	mm.TransferSubmitted(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 1)
 	assert.NotNil(t, mm.timeMap[tokenLocalID.String()])
@@ -136,7 +137,7 @@ func TestTokenSubmittedMint(t *testing.T) {
 func TestTransferSubmittedTransfer(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	TokenTransfer.Type = fftypes.TokenTransferTypeTransfer
+	TokenTransfer.Type = core.TokenTransferTypeTransfer
 	mm.TransferSubmitted(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 1)
 	assert.NotNil(t, mm.timeMap[tokenLocalID.String()])
@@ -145,7 +146,7 @@ func TestTransferSubmittedTransfer(t *testing.T) {
 func TestTransferSubmittedBurn(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	TokenTransfer.Type = fftypes.TokenTransferTypeBurn
+	TokenTransfer.Type = core.TokenTransferTypeBurn
 	mm.TransferSubmitted(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 1)
 	assert.NotNil(t, mm.timeMap[tokenLocalID.String()])
@@ -154,7 +155,7 @@ func TestTransferSubmittedBurn(t *testing.T) {
 func TestTransferConfirmedMintSuccess(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	TokenTransfer.Type = fftypes.TokenTransferTypeMint
+	TokenTransfer.Type = core.TokenTransferTypeMint
 	mm.timeMap[tokenLocalID.String()] = time.Now()
 	mm.TransferConfirmed(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 0)
@@ -162,7 +163,7 @@ func TestTransferConfirmedMintSuccess(t *testing.T) {
 func TestTransferConfirmedTransferSuccess(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	TokenTransfer.Type = fftypes.TokenTransferTypeTransfer
+	TokenTransfer.Type = core.TokenTransferTypeTransfer
 	mm.timeMap[tokenLocalID.String()] = time.Now()
 	mm.TransferConfirmed(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 0)
@@ -170,7 +171,7 @@ func TestTransferConfirmedTransferSuccess(t *testing.T) {
 func TestTransferConfirmedMintBurn(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()
-	TokenTransfer.Type = fftypes.TokenTransferTypeBurn
+	TokenTransfer.Type = core.TokenTransferTypeBurn
 	mm.timeMap[tokenLocalID.String()] = time.Now()
 	mm.TransferConfirmed(TokenTransfer)
 	assert.Equal(t, len(mm.timeMap), 0)

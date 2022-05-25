@@ -22,9 +22,9 @@ import (
 	"strings"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/i18n"
 )
 
 func (s *SQLCommon) filterSelect(ctx context.Context, tableName string, sel sq.SelectBuilder, filter database.Filter, typeMap map[string]string, defaultSort []interface{}, preconditions ...sq.Sqlizer) (sq.SelectBuilder, sq.Sqlizer, *database.FilterInfo, error) {
@@ -81,9 +81,7 @@ func (s *SQLCommon) filterSelectFinalized(ctx context.Context, tableName string,
 	}
 	if len(preconditions) > 0 {
 		and := make(sq.And, len(preconditions)+1)
-		for i, p := range preconditions {
-			and[i] = p
-		}
+		copy(and, preconditions)
 		and[len(preconditions)] = fop
 		fop = and
 	}

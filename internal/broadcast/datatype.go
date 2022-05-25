@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,17 +19,18 @@ package broadcast
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *fftypes.Datatype, waitConfirm bool) (*fftypes.Message, error) {
+func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
 	datatype.Created = fftypes.Now()
 	datatype.Namespace = ns
 	if datatype.Validator == "" {
-		datatype.Validator = fftypes.ValidatorTypeJSON
+		datatype.Validator = core.ValidatorTypeJSON
 	}
 	if err := datatype.Validate(ctx, false); err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, da
 	if err := bm.data.CheckDatatype(ctx, ns, datatype); err != nil {
 		return nil, err
 	}
-	msg, err := bm.BroadcastDefinitionAsNode(ctx, ns, datatype, fftypes.SystemTagDefineDatatype, waitConfirm)
+	msg, err := bm.BroadcastDefinitionAsNode(ctx, ns, datatype, core.SystemTagDefineDatatype, waitConfirm)
 	if msg != nil {
 		datatype.Message = msg.Header.ID
 	}

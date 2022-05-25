@@ -21,11 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -41,7 +41,7 @@ var (
 
 const offsetsTable = "offsets"
 
-func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, allowExisting bool) (err error) {
+func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *core.Offset, allowExisting bool) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -103,8 +103,8 @@ func (s *SQLCommon) UpsertOffset(ctx context.Context, offset *fftypes.Offset, al
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*fftypes.Offset, error) {
-	offset := fftypes.Offset{}
+func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*core.Offset, error) {
+	offset := core.Offset{}
 	err := row.Scan(
 		&offset.Type,
 		&offset.Name,
@@ -117,7 +117,7 @@ func (s *SQLCommon) offsetResult(ctx context.Context, row *sql.Rows) (*fftypes.O
 	return &offset, nil
 }
 
-func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, name string) (message *fftypes.Offset, err error) {
+func (s *SQLCommon) GetOffset(ctx context.Context, t core.OffsetType, name string) (message *core.Offset, err error) {
 
 	cols := append([]string{}, offsetColumns...)
 	cols = append(cols, sequenceColumn)
@@ -147,7 +147,7 @@ func (s *SQLCommon) GetOffset(ctx context.Context, t fftypes.OffsetType, name st
 	return offset, nil
 }
 
-func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*fftypes.Offset, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (message []*core.Offset, fr *database.FilterResult, err error) {
 
 	cols := append([]string{}, offsetColumns...)
 	cols = append(cols, sequenceColumn)
@@ -162,7 +162,7 @@ func (s *SQLCommon) GetOffsets(ctx context.Context, filter database.Filter) (mes
 	}
 	defer rows.Close()
 
-	offset := []*fftypes.Offset{}
+	offset := []*core.Offset{}
 	for rows.Next() {
 		d, err := s.offsetResult(ctx, rows)
 		if err != nil {
@@ -197,7 +197,7 @@ func (s *SQLCommon) UpdateOffset(ctx context.Context, rowID int64, update databa
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) DeleteOffset(ctx context.Context, t fftypes.OffsetType, name string) (err error) {
+func (s *SQLCommon) DeleteOffset(ctx context.Context, t core.OffsetType, name string) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {

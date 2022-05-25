@@ -17,10 +17,10 @@
 package fftokens
 
 import (
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/wsclient"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 )
 
-func (ft *FFTokens) InitPrefix(prefix config.PrefixArray) {
-	wsclient.InitPrefix(prefix)
+func (ft *FFTokens) InitConfig(config config.KeySet) {
+	wsclient.InitConfig(config)
 }

@@ -31,8 +31,8 @@ import (
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -92,7 +92,7 @@ func TestGetTokenBalances(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenBalances", context.Background(), f).Return([]*fftypes.TokenBalance{}, nil, nil)
+	mdi.On("GetTokenBalances", context.Background(), f).Return([]*core.TokenBalance{}, nil, nil)
 	_, _, err := am.GetTokenBalances(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
@@ -104,7 +104,7 @@ func TestGetTokenAccounts(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*fftypes.TokenAccount{}, nil, nil)
+	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*core.TokenAccount{}, nil, nil)
 	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }
@@ -116,7 +116,7 @@ func TestGetTokenAccountPools(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccountPools", context.Background(), "0x1", f).Return([]*fftypes.TokenAccountPool{}, nil, nil)
+	mdi.On("GetTokenAccountPools", context.Background(), "0x1", f).Return([]*core.TokenAccountPool{}, nil, nil)
 	_, _, err := am.GetTokenAccountPools(context.Background(), "ns1", "0x1", f)
 	assert.NoError(t, err)
 }

@@ -21,11 +21,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,8 +36,8 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	b, _ := json.Marshal(&batch)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -68,8 +69,8 @@ func TestSharedStorageBatchDownloadedPersistFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel()
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	b, _ := json.Marshal(&batch)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -78,7 +79,7 @@ func TestSharedStorageBatchDownloadedPersistFail(t *testing.T) {
 	mss.On("Name").Return("utdx").Maybe()
 
 	_, err := em.SharedStorageBatchDownloaded(mss, batch.Namespace, "payload1", b)
-	assert.Regexp(t, "FF10158", err)
+	assert.Regexp(t, "FF00154", err)
 
 	mdi.AssertExpectations(t)
 	mss.AssertExpectations(t)
@@ -90,8 +91,8 @@ func TestSharedStorageBatchDownloadedNSMismatch(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	data := &fftypes.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
-	batch := sampleBatch(t, fftypes.BatchTypeBroadcast, fftypes.TransactionTypeBatchPin, fftypes.DataArray{data})
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	b, _ := json.Marshal(&batch)
 
 	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
@@ -127,7 +128,7 @@ func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
 	mss.On("Name").Return("utsd")
-	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*fftypes.Blob{}, nil, nil)
+	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)
 
 	hash := fftypes.NewRandB32()

@@ -19,12 +19,13 @@ package definitions
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
-func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) (valid bool, err error) {
+func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (valid bool, err error) {
 	if err := dh.contracts.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
 		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
 		return false, nil
@@ -52,7 +53,7 @@ func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) 
 	return true, nil
 }
 
-func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftypes.ContractAPI) (valid bool, err error) {
+func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.ContractAPI) (valid bool, err error) {
 	existing, err := dh.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 	if err != nil {
 		return false, err // retryable
@@ -74,9 +75,9 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *fftyp
 	return true, nil
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	var broadcast fftypes.FFI
+	var broadcast core.FFI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
 		if validationErr := broadcast.Validate(ctx, true); validationErr != nil {
@@ -99,15 +100,15 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 
 	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx, broadcast.Topic())
+		event := core.NewEvent(core.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx, broadcast.Topic())
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state DefinitionBatchState, msg *fftypes.Message, data fftypes.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	var broadcast fftypes.ContractAPI
+	var broadcast core.ContractAPI
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
 	if valid {
 		if validateErr := broadcast.Validate(ctx, true); validateErr != nil {
@@ -130,7 +131,7 @@ func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, st
 
 	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := fftypes.NewEvent(fftypes.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx, fftypes.SystemTopicDefinitions)
+		event := core.NewEvent(core.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

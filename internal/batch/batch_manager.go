@@ -22,22 +22,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || dm == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchManager")
 	}
 	pCtx, cancelCtx := context.WithCancel(log.WithLogField(ctx, "role", "batchmgr"))
 	readPageSize := config.GetUint(coreconfig.BatchManagerReadPageSize)
@@ -70,7 +71,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 }
 
 type Manager interface {
-	RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
+	RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
 	NewMessages() chan<- int64
 	Start() error
 	Close()
@@ -117,7 +118,7 @@ type batchManager struct {
 type DispatchHandler func(context.Context, *DispatchState) error
 
 type DispatcherOptions struct {
-	BatchType      fftypes.BatchType
+	BatchType      core.BatchType
 	BatchMaxSize   uint
 	BatchMaxBytes  int64
 	BatchTimeout   time.Duration
@@ -131,15 +132,15 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
-func (bm *batchManager) getProcessorKey(namespace string, identity *fftypes.SignerRef, groupID *fftypes.Bytes32) string {
+func (bm *batchManager) getProcessorKey(namespace string, identity *core.SignerRef, groupID *fftypes.Bytes32) string {
 	return fmt.Sprintf("%s|%s|%v", namespace, identity.Author, groupID)
 }
 
-func (bm *batchManager) getDispatcherKey(txType fftypes.TransactionType, msgType fftypes.MessageType) string {
+func (bm *batchManager) getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
 	return fmt.Sprintf("tx:%s/%s", txType, msgType)
 }
 
-func (bm *batchManager) RegisterDispatcher(name string, txType fftypes.TransactionType, msgTypes []fftypes.MessageType, handler DispatchHandler, options DispatcherOptions) {
+func (bm *batchManager) RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, options DispatcherOptions) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -166,7 +167,7 @@ func (bm *batchManager) NewMessages() chan<- int64 {
 	return bm.newMessages
 }
 
-func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fftypes.MessageType, group *fftypes.Bytes32, namespace string, signer *fftypes.SignerRef) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, namespace string, signer *core.SignerRef) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
@@ -199,7 +200,7 @@ func (bm *batchManager) getProcessor(txType fftypes.TransactionType, msgType fft
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *fftypes.Message, retData fftypes.DataArray, err error) {
+func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *core.Message, retData core.DataArray, err error) {
 	var foundAll = false
 	err = bm.retry.Do(bm.ctx, "retrieve message", func(attempt int) (retry bool, err error) {
 		msg, retData, foundAll, err = bm.data.GetMessageWithDataCached(bm.ctx, id)
@@ -226,11 +227,11 @@ func (bm *batchManager) popRewind() {
 }
 
 // filterFlushed is called after we read a page, to remove in-flight IDs, and clean up our flush map
-func (bm *batchManager) filterFlushed(entries []*fftypes.IDAndSequence) []*fftypes.IDAndSequence {
+func (bm *batchManager) filterFlushed(entries []*core.IDAndSequence) []*core.IDAndSequence {
 	bm.inflightMux.Lock()
 
 	// Remove inflight entries
-	unflushedEntries := make([]*fftypes.IDAndSequence, 0, len(entries))
+	unflushedEntries := make([]*core.IDAndSequence, 0, len(entries))
 	for _, entry := range entries {
 		if _, inflight := bm.inflightSequences[entry.Sequence]; !inflight {
 			unflushedEntries = append(unflushedEntries, entry)
@@ -257,7 +258,7 @@ func (bm *batchManager) notifyFlushed(sequences []int64) {
 	bm.inflightMux.Unlock()
 }
 
-func (bm *batchManager) readPage(lastPageFull bool) ([]*fftypes.IDAndSequence, bool, error) {
+func (bm *batchManager) readPage(lastPageFull bool) ([]*core.IDAndSequence, bool, error) {
 
 	// Pop out any rewind that has been queued, but each time we read to the front before we rewind
 	if !lastPageFull {
@@ -265,12 +266,12 @@ func (bm *batchManager) readPage(lastPageFull bool) ([]*fftypes.IDAndSequence, b
 	}
 
 	// Read a page from the DB
-	var ids []*fftypes.IDAndSequence
+	var ids []*core.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
 		ids, err = bm.database.GetMessageIDs(bm.ctx, fb.And(
 			fb.Gt("sequence", bm.readOffset),
-			fb.Eq("state", fftypes.MessageStateReady),
+			fb.Eq("state", core.MessageStateReady),
 		).Sort("sequence").Limit(bm.readPageSize))
 		return true, err
 	})
@@ -393,7 +394,7 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 	}
 }
 
-func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *fftypes.Message, data fftypes.DataArray) {
+func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *core.Message, data core.DataArray) {
 	l := log.L(bm.ctx)
 	l.Debugf("Dispatching message %s (seq=%d) to %s batch processor %s", msg.Header.ID, msg.Sequence, msg.Header.Type, processor.conf.name)
 

@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -36,8 +37,8 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a new subscription entry
-	subscription := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	subscription := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        nil, // generated for us
 			Namespace: "ns1",
 			Name:      "subscription1",
@@ -45,7 +46,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		Created: fftypes.Now(),
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeCreated, "ns1", mock.Anything).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, core.ChangeEventTypeCreated, "ns1", mock.Anything).Return()
 
 	err := s.UpsertSubscription(ctx, subscription, true)
 	assert.NoError(t, err)
@@ -60,26 +61,26 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 
 	// Update the subscription (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
-	newest := fftypes.SubOptsFirstEventNewest
+	newest := core.SubOptsFirstEventNewest
 	fifty := uint16(50)
-	subOpts := fftypes.SubscriptionOptions{
-		SubscriptionCoreOptions: fftypes.SubscriptionCoreOptions{
+	subOpts := core.SubscriptionOptions{
+		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 			FirstEvent: &newest,
 			ReadAhead:  &fifty,
 		},
 	}
 	subOpts.TransportOptions()["my-transport-option"] = true
-	subscriptionUpdated := &fftypes.Subscription{
-		SubscriptionRef: fftypes.SubscriptionRef{
+	subscriptionUpdated := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(), // will fail with us trying to update this
 			Namespace: "ns1",
 			Name:      "subscription1",
 		},
 		Transport: "websockets",
-		Filter: fftypes.SubscriptionFilter{
-			Events: string(fftypes.EventTypeMessageConfirmed),
+		Filter: core.SubscriptionFilter{
+			Events: string(core.EventTypeMessageConfirmed),
 			Topic:  "topics.*",
-			Message: fftypes.MessageFilter{
+			Message: core.MessageFilter{
 				Tag:   "tag.*",
 				Group: "group.*",
 			},
@@ -94,7 +95,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.Equal(t, database.IDMismatch, err)
 
 	// Blank out the ID and retry
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeUpdated, "ns1", subscription.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, core.ChangeEventTypeUpdated, "ns1", subscription.ID).Return()
 	subscriptionUpdated.ID = nil
 	err = s.UpsertSubscription(context.Background(), subscriptionUpdated, true)
 	assert.NoError(t, err)
@@ -136,7 +137,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(subscriptions))
 
 	// Test delete, and refind no return
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, fftypes.ChangeEventTypeDeleted, "ns1", subscription.ID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, core.ChangeEventTypeDeleted, "ns1", subscription.ID).Return()
 	err = s.DeleteSubscriptionByID(ctx, subscriptionUpdated.ID)
 	assert.NoError(t, err)
 	subscriptions, _, err = s.GetSubscriptions(ctx, filter)
@@ -149,7 +150,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 func TestUpsertSubscriptionFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{}, true)
+	err := s.UpsertSubscription(context.Background(), &core.Subscription{}, true)
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -159,7 +160,7 @@ func TestUpsertSubscriptionFailSelect(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{Name: "name1"}}, true)
+	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -170,7 +171,7 @@ func TestUpsertSubscriptionFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{Name: "name1"}}, true)
+	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -182,7 +183,7 @@ func TestUpsertSubscriptionFailUpdate(t *testing.T) {
 		AddRow("name1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{Name: "name1"}}, true)
+	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -193,7 +194,7 @@ func TestUpsertSubscriptionFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"name"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertSubscription(context.Background(), &fftypes.Subscription{SubscriptionRef: fftypes.SubscriptionRef{Name: "name1"}}, true)
+	err := s.UpsertSubscription(context.Background(), &core.Subscription{SubscriptionRef: core.SubscriptionRef{Name: "name1"}}, true)
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

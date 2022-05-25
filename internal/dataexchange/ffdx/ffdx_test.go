@@ -26,20 +26,21 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffresty"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/ffresty"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/wsclient"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-var utConfPrefix = config.NewPluginConfig("ffdx_unit_tests")
+var utConfig = config.RootSection("ffdx_unit_tests")
 
 func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromServer chan string, httpURL string, done func()) {
 	mockedClient := &http.Client{}
@@ -52,17 +53,17 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	httpURL = u.String()
 
 	coreconfig.Reset()
-	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(ffresty.HTTPConfigURL, httpURL)
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	utConfPrefix.Set(DataExchangeManifestEnabled, manifestEnabled)
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeManifestEnabled, manifestEnabled)
 
 	h = &FFDX{initialized: true}
 	nodes := make([]fftypes.JSONObject, 0)
-	h.InitPrefix(utConfPrefix)
+	h.InitConfig(utConfig)
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(dxCtx, utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -77,9 +78,9 @@ func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
 	nodes := make([]fftypes.JSONObject, 0)
-	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
+	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -87,8 +88,8 @@ func TestInitMissingURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
 	nodes := make([]fftypes.JSONObject, 0)
-	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	h.InitConfig(utConfig)
+	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -450,7 +451,7 @@ func TestEvents(t *testing.T) {
 		return ev.ID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == fftypes.OpStatusFailed &&
+			ev.TransferResult().Status == core.OpStatusFailed &&
 			ev.TransferResult().Error == "pop"
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-failed","requestID":"tx12345","error":"pop"}`
@@ -461,7 +462,7 @@ func TestEvents(t *testing.T) {
 		return ev.ID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == fftypes.OpStatusSucceeded
+			ev.TransferResult().Status == core.OpStatusSucceeded
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"2","type":"message-delivered","requestID":"tx12345"}`
 	msg = <-toServer
@@ -471,7 +472,7 @@ func TestEvents(t *testing.T) {
 		return ev.ID() == "3" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == fftypes.OpStatusSucceeded &&
+			ev.TransferResult().Status == core.OpStatusSucceeded &&
 			ev.TransferResult().Manifest == `{"manifest":true}` &&
 			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
 	})).Run(acker()).Return(nil)
@@ -493,7 +494,7 @@ func TestEvents(t *testing.T) {
 		return ev.ID() == "5" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == fftypes.OpStatusFailed &&
+			ev.TransferResult().Status == core.OpStatusFailed &&
 			ev.TransferResult().Error == "pop"
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"5","type":"blob-failed","requestID":"tx12345","error":"pop"}`
@@ -504,7 +505,7 @@ func TestEvents(t *testing.T) {
 		return ev.ID() == "6" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == fftypes.OpStatusSucceeded &&
+			ev.TransferResult().Status == core.OpStatusSucceeded &&
 			ev.TransferResult().Info.String() == `{"some":"details"}`
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"6","type":"blob-delivered","requestID":"tx12345","info":{"some":"details"}}`
@@ -534,7 +535,7 @@ func TestEvents(t *testing.T) {
 		return ev.ID() == "10" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == fftypes.OpStatusSucceeded &&
+			ev.TransferResult().Status == core.OpStatusSucceeded &&
 			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"10","type":"blob-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
@@ -562,7 +563,7 @@ func TestEventsWithManifest(t *testing.T) {
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.ID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().Status == fftypes.OpStatusPending
+			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-delivered","requestID":"tx12345"}`
 	msg = <-toServer
@@ -571,7 +572,7 @@ func TestEventsWithManifest(t *testing.T) {
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.ID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().Status == fftypes.OpStatusPending
+			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"2","type":"blob-delivered","requestID":"tx12345"}`
 	msg = <-toServer
@@ -648,10 +649,10 @@ func TestWebsocketWithReinit(t *testing.T) {
 	nodes := []fftypes.JSONObject{{}}
 
 	coreconfig.Reset()
-	h.InitPrefix(utConfPrefix)
-	utConfPrefix.Set(ffresty.HTTPConfigURL, httpURL)
-	utConfPrefix.Set(ffresty.HTTPCustomClient, mockedClient)
-	utConfPrefix.Set(DataExchangeInitEnabled, true)
+	h.InitConfig(utConfig)
+	utConfig.Set(ffresty.HTTPConfigURL, httpURL)
+	utConfig.Set(ffresty.HTTPCustomClient, mockedClient)
+	utConfig.Set(DataExchangeInitEnabled, true)
 
 	count := 0
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
@@ -677,8 +678,8 @@ func TestWebsocketWithReinit(t *testing.T) {
 			})
 		})
 
-	h.InitPrefix(utConfPrefix)
-	err := h.Init(context.Background(), utConfPrefix, nodes, &dataexchangemocks.Callbacks{})
+	h.InitConfig(utConfig)
+	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
 	assert.NoError(t, err)
 
 	err = h.Start()

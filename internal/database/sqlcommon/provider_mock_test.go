@@ -24,9 +24,9 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	sq "github.com/Masterminds/squirrel"
 	migratedb "github.com/golang-migrate/migrate/v4/database"
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/pkg/config"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
@@ -35,7 +35,7 @@ type mockProvider struct {
 	SQLCommon
 	callbacks    *databasemocks.Callbacks
 	capabilities *database.Capabilities
-	prefix       config.Prefix
+	config       config.Section
 
 	mockDB *sql.DB
 	mdb    sqlmock.Sqlmock
@@ -48,20 +48,22 @@ type mockProvider struct {
 
 func newMockProvider() *mockProvider {
 	coreconfig.Reset()
+	conf := config.RootSection("unittest.db")
+	conf.AddKnownKey("url", "test")
 	mp := &mockProvider{
 		capabilities: &database.Capabilities{},
 		callbacks:    &databasemocks.Callbacks{},
-		prefix:       config.NewPluginConfig("unittest.mockdb"),
+		config:       conf,
 	}
-	mp.SQLCommon.InitPrefix(mp, mp.prefix)
-	mp.prefix.Set(SQLConfMaxConnections, 10)
+	mp.SQLCommon.InitConfig(mp, mp.config)
+	mp.config.Set(SQLConfMaxConnections, 10)
 	mp.mockDB, mp.mdb, _ = sqlmock.New()
 	return mp
 }
 
 // init is a convenience to init for tests that aren't testing init itself
 func (mp *mockProvider) init() (*mockProvider, sqlmock.Sqlmock) {
-	_ = mp.Init(context.Background(), mp, mp.prefix, mp.callbacks, mp.capabilities)
+	_ = mp.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
 	return mp, mp.mdb
 }
 

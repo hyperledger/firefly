@@ -21,8 +21,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,7 +34,7 @@ func TestGetMessages(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Message{}, nil, nil)
+		Return([]*core.Message{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -48,7 +48,7 @@ func TestGetMessagesWithCount(t *testing.T) {
 
 	var ten int64 = 10
 	o.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.Message{}, &database.FilterResult{
+		Return([]*core.Message{}, &database.FilterResult{
 			TotalCount: &ten,
 		}, nil)
 	r.ServeHTTP(res, req)
@@ -70,7 +70,7 @@ func TestGetMessagesWithCountAndData(t *testing.T) {
 
 	var ten int64 = 10
 	o.On("GetMessagesWithData", mock.Anything, "mynamespace", mock.Anything).
-		Return([]*fftypes.MessageInOut{}, &database.FilterResult{
+		Return([]*core.MessageInOut{}, &database.FilterResult{
 			TotalCount: &ten,
 		}, nil)
 	r.ServeHTTP(res, req)

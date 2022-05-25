@@ -1,0 +1,10 @@
+pages:
+  home: Página principal
+  architecture: Arquitectura
+  api_spec: API Especificación
+  contributors: Colaboradores
+  faqs: Preguntas más frecuentes
+  getting_started: Empezando
+  reference: Referencia
+  tutorials: Tutoriales
+  understanding_firefly: Comprender FireFly

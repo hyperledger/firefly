@@ -22,7 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewNamespace = &oapispec.Route{
@@ -34,13 +34,13 @@ var postNewNamespace = &oapispec.Route{
 	},
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewNamespace,
-	JSONInputValue:  func() interface{} { return &fftypes.Namespace{} },
-	JSONOutputValue: func() interface{} { return &fftypes.Namespace{} },
+	JSONInputValue:  func() interface{} { return &core.Namespace{} },
+	JSONOutputValue: func() interface{} { return &core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = getOr(r.Ctx).Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*fftypes.Namespace), waitConfirm)
+		_, err = getOr(r.Ctx).Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*core.Namespace), waitConfirm)
 		return r.Input, err
 	},
 }

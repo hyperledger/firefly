@@ -19,27 +19,25 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var getBlockchainEventByID = &oapispec.Route{
 	Name:   "getBlockchainEventByID",
-	Path:   "namespaces/{ns}/blockchainevents/{id}",
+	Path:   "blockchainevents/{id}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "id", Description: coremsgs.APIParamsBlockchainEventID},
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetBlockchainEventByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.BlockchainEvent{} },
+	JSONOutputValue: func() interface{} { return &core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, r.PP["ns"], r.PP["id"])
+		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, extractNamespace(r.PP), r.PP["id"])
 	},
 }

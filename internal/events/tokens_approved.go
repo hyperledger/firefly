@@ -19,10 +19,11 @@ package events
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/txcommon"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -35,12 +36,12 @@ import (
 //   allowed to trigger side-effects in other pools, but only the event from the targeted pool should use the original LocalID.
 // - The LocalID must not have been used yet. Connectors are allowed to emit multiple events in response to a single operation,
 //   but only the first of them can use the original LocalID.
-func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, approval *fftypes.TokenApproval) (*fftypes.UUID, error) {
+func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, approval *core.TokenApproval) (*fftypes.UUID, error) {
 	// Find a matching operation within the transaction
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", tx),
-		fb.Eq("type", fftypes.OpTypeTokenApproval),
+		fb.Eq("type", core.OpTypeTokenApproval),
 	)
 	operations, _, err := em.database.GetOperations(ctx, filter)
 	if err != nil {
@@ -99,7 +100,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		}
 	}
 
-	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &fftypes.BlockchainTransactionRef{
+	chainEvent := buildBlockchainEvent(approval.Namespace, nil, &approval.Event, &core.BlockchainTransactionRef{
 		ID:           approval.TX.ID,
 		Type:         approval.TX.Type,
 		BlockchainID: approval.Event.BlockchainTXID,
@@ -138,7 +139,7 @@ func (em *eventManager) TokensApproved(ti tokens.Plugin, approval *tokens.TokenA
 				return err
 			}
 
-			event := fftypes.NewEvent(fftypes.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID, approval.TX.ID, approval.Pool.String())
+			event := core.NewEvent(core.EventTypeApprovalConfirmed, approval.Namespace, approval.LocalID, approval.TX.ID, approval.Pool.String())
 			return em.database.InsertEvent(ctx, event)
 		})
 		return err != nil, err // retry indefinitely (until context closes)

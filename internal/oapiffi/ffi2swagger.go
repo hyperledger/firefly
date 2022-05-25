@@ -23,19 +23,20 @@ import (
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 )
 
 type FFISwaggerGen interface {
-	Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) *openapi3.T
+	Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *core.FFI) *openapi3.T
 }
 
 type ContractListenerInput struct {
-	Name    string                           `ffstruct:"ContractListener" json:"name,omitempty"`
-	Topic   string                           `ffstruct:"ContractListener" json:"topic,omitempty"`
-	Options *fftypes.ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
+	Name    string                        `ffstruct:"ContractListener" json:"name,omitempty"`
+	Topic   string                        `ffstruct:"ContractListener" json:"topic,omitempty"`
+	Options *core.ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
 }
 
 type ContractListenerInputWithLocation struct {
@@ -51,7 +52,7 @@ func NewFFISwaggerGen() FFISwaggerGen {
 	return &ffiSwaggerGen{}
 }
 
-func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) (swagger *openapi3.T) {
+func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *core.FFI) (swagger *openapi3.T) {
 	hasLocation := !api.Location.IsNil()
 
 	routes := []*oapispec.Route{
@@ -60,7 +61,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 			Path:            "interface", // must match a route defined in apiserver routes!
 			Method:          http.MethodGet,
 			JSONInputValue:  nil,
-			JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
+			JSONOutputValue: func() interface{} { return &core.FFI{} },
 			JSONOutputCodes: []int{http.StatusOK},
 		},
 	}
@@ -79,7 +80,7 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *ffty
 	})
 }
 
-func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFIMethod, hasLocation bool) []*oapispec.Route {
+func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *core.FFIMethod, hasLocation bool) []*oapispec.Route {
 	routes = append(routes, &oapispec.Route{
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
@@ -99,7 +100,7 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *fftypes.FFI
 	return routes
 }
 
-func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEvent, hasLocation bool) []*oapispec.Route {
+func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *core.FFIEvent, hasLocation bool) []*oapispec.Route {
 	routes = append(routes, &oapispec.Route{
 		Name:   fmt.Sprintf("createlistener_%s", event.Pathname),
 		Path:   fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
@@ -110,7 +111,7 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
 			}
 			return &ContractListenerInputWithLocation{}
 		},
-		JSONOutputValue: func() interface{} { return &fftypes.ContractListener{} },
+		JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	})
 	routes = append(routes, &oapispec.Route{
@@ -119,7 +120,7 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
 		Method:          http.MethodGet,
 		FilterFactory:   database.ContractListenerQueryFactory,
 		JSONInputValue:  nil,
-		JSONOutputValue: func() interface{} { return []*fftypes.ContractListener{} },
+		JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	})
 	return routes
@@ -129,8 +130,8 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *fftypes.FFIEv
  * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke".
  * Returns the JSON Schema as an `fftypes.JSONObject`.
  */
-func contractCallJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
-	req := &fftypes.ContractCallRequest{
+func contractCallJSONSchema(params *core.FFIParams, hasLocation bool) *fftypes.JSONObject {
+	req := &core.ContractCallRequest{
 		Input: *ffiParamsJSONSchema(params),
 	}
 	if !hasLocation {
@@ -142,7 +143,7 @@ func contractCallJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftype
 	}
 }
 
-func ffiParamsJSONSchema(params *fftypes.FFIParams) *fftypes.JSONObject {
+func ffiParamsJSONSchema(params *core.FFIParams) *fftypes.JSONObject {
 	out := make(fftypes.JSONObject, len(*params))
 	for _, param := range *params {
 		out[param.Name] = ffiParamJSONSchema(param)
@@ -153,7 +154,7 @@ func ffiParamsJSONSchema(params *fftypes.FFIParams) *fftypes.JSONObject {
 	}
 }
 
-func ffiParamJSONSchema(param *fftypes.FFIParam) *fftypes.JSONObject {
+func ffiParamJSONSchema(param *core.FFIParam) *fftypes.JSONObject {
 	out := fftypes.JSONObject{}
 	if err := json.Unmarshal(param.Schema.Bytes(), &out); err == nil {
 		return &out

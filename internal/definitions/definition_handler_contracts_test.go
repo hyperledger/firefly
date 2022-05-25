@@ -22,24 +22,25 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func testFFI() *fftypes.FFI {
-	return &fftypes.FFI{
+func testFFI() *core.FFI {
+	return &core.FFI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
 		Version:   "v1.0.0",
-		Methods: []*fftypes.FFIMethod{
+		Methods: []*core.FFIMethod{
 			{
 				Name: "sum",
-				Params: fftypes.FFIParams{
+				Params: core.FFIParams{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -49,7 +50,7 @@ func testFFI() *fftypes.FFI {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 					},
 				},
-				Returns: fftypes.FFIParams{
+				Returns: core.FFIParams{
 					{
 						Name:   "result",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -57,12 +58,12 @@ func testFFI() *fftypes.FFI {
 				},
 			},
 		},
-		Events: []*fftypes.FFIEvent{
+		Events: []*core.FFIEvent{
 			{
 				ID: fftypes.NewUUID(),
-				FFIEventDefinition: fftypes.FFIEventDefinition{
+				FFIEventDefinition: core.FFIEventDefinition{
 					Name: "event1",
-					Params: fftypes.FFIParams{
+					Params: core.FFIParams{
 						{
 							Name:   "result",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -74,12 +75,12 @@ func testFFI() *fftypes.FFI {
 	}
 }
 
-func testContractAPI() *fftypes.ContractAPI {
-	return &fftypes.ContractAPI{
+func testContractAPI() *core.ContractAPI {
+	return &core.ContractAPI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
-		Interface: &fftypes.FFIReference{
+		Interface: &core.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 		Location: fftypes.JSONAnyPtr(""),
@@ -91,7 +92,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -103,11 +104,11 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
 
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineFFI,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineFFI,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
@@ -131,11 +132,11 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	action, err := dh.handleFFIBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineFFI,
+	action, err := dh.handleFFIBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineFFI,
 		},
-	}, fftypes.DataArray{}, fftypes.NewUUID())
+	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -186,16 +187,16 @@ func TestHandleFFIBroadcastValidateFail(t *testing.T) {
 	ffi.Name = "*%^!$%^&*"
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineFFI,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineFFI,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -206,7 +207,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	ffi := testFFI()
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mdi := dh.database.(*databasemocks.Plugin)
@@ -214,11 +215,11 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineFFI,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineFFI,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()
@@ -229,7 +230,7 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 
 	b, err := json.Marshal(testFFI())
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 
@@ -237,11 +238,11 @@ func TestHandleContractAPIBroadcastOk(t *testing.T) {
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineContractAPI,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineContractAPI,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
 	assert.NoError(t, err)
 	err = bs.finalizers[0](context.Background())
@@ -297,16 +298,16 @@ func TestHandleContractAPIBroadcastValidateFail(t *testing.T) {
 	api.Name = "*%^!$%^&*"
 	b, err := json.Marshal(api)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineContractAPI,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineContractAPI,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
 	assert.NoError(t, err)
 	bs.assertNoFinalizers()
@@ -317,18 +318,18 @@ func TestHandleContractAPIBroadcastPersistFail(t *testing.T) {
 	ffi := testFFI()
 	b, err := json.Marshal(ffi)
 	assert.NoError(t, err)
-	data := &fftypes.Data{
+	data := &core.Data{
 		Value: fftypes.JSONAnyPtrBytes(b),
 	}
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetContractAPIByName", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
 	mbi.On("UpsertContractAPI", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &fftypes.Message{
-		Header: fftypes.MessageHeader{
-			Tag: fftypes.SystemTagDefineContractAPI,
+	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
+		Header: core.MessageHeader{
+			Tag: core.SystemTagDefineContractAPI,
 		},
-	}, fftypes.DataArray{data}, fftypes.NewUUID())
+	}, core.DataArray{data}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
 	assert.Regexp(t, "pop", err)
 	bs.assertNoFinalizers()

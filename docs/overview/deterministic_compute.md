@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Deterministic compute
-parent: Understanding FireFly
+parent: pages.understanding_firefly
 nav_order: 6
 ---
 

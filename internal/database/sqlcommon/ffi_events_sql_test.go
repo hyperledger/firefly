@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,15 +38,15 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	// Create a new event entry
 	interfaceID := fftypes.NewUUID()
 	eventID := fftypes.NewUUID()
-	event := &fftypes.FFIEvent{
+	event := &core.FFIEvent{
 		ID:        eventID,
 		Interface: interfaceID,
 		Namespace: "ns",
 		Pathname:  "Changed_1",
-		FFIEventDefinition: fftypes.FFIEventDefinition{
+		FFIEventDefinition: core.FFIEventDefinition{
 			Name:        "Changed",
 			Description: "Things changed",
-			Params: fftypes.FFIParams{
+			Params: core.FFIParams{
 				{
 					Name:   "value",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -54,8 +55,8 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, fftypes.ChangeEventTypeCreated, "ns", eventID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, fftypes.ChangeEventTypeUpdated, "ns", eventID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, core.ChangeEventTypeCreated, "ns", eventID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionFFIEvents, core.ChangeEventTypeUpdated, "ns", eventID).Return()
 
 	err := s.UpsertFFIEvent(ctx, event)
 	assert.NoError(t, err)
@@ -82,7 +83,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 
 	// Update event
-	event.Params = fftypes.FFIParams{}
+	event.Params = core.FFIParams{}
 	err = s.UpsertFFIEvent(ctx, event)
 	assert.NoError(t, err)
 
@@ -100,7 +101,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 func TestFFIEventDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIEvent(context.Background(), &fftypes.FFIEvent{})
+	err := s.UpsertFFIEvent(context.Background(), &core.FFIEvent{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -109,7 +110,7 @@ func TestFFIEventDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIEvent(context.Background(), &fftypes.FFIEvent{})
+	err := s.UpsertFFIEvent(context.Background(), &core.FFIEvent{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -119,7 +120,7 @@ func TestFFIEventDBFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	event := &fftypes.FFIEvent{
+	event := &core.FFIEvent{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIEvent(context.Background(), event)
@@ -134,7 +135,7 @@ func TestFFIEventDBFailUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	event := &fftypes.FFIEvent{
+	event := &core.FFIEvent{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIEvent(context.Background(), event)

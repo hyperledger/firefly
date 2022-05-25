@@ -20,7 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,7 +32,7 @@ func TestAdminGetOperationByID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	o.On("GetOperationByID", mock.Anything, "abcd12345").
-		Return(&fftypes.Operation{}, nil)
+		Return(&core.Operation{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

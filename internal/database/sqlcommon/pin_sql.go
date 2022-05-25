@@ -21,11 +21,11 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -48,7 +48,7 @@ var (
 
 const pinsTable = "pins"
 
-func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error) {
+func (s *SQLCommon) UpsertPin(ctx context.Context, pin *core.Pin) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -88,18 +88,18 @@ func (s *SQLCommon) UpsertPin(ctx context.Context, pin *fftypes.Pin) (err error)
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *fftypes.Pin) (err error) {
+func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *core.Pin) (err error) {
 	pin.Sequence, err = s.insertTx(ctx, pinsTable, tx,
 		s.setPinInsertValues(sq.Insert(pinsTable).Columns(pinColumns...), pin),
 		func() {
 			log.L(ctx).Debugf("Triggering creation event for pin %d", pin.Sequence)
-			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
+			s.callbacks.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Sequence)
 		},
 	)
 	return err
 }
 
-func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *fftypes.Pin) sq.InsertBuilder {
+func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *core.Pin) sq.InsertBuilder {
 	return query.Values(
 		pin.Masked,
 		pin.Hash,
@@ -112,7 +112,7 @@ func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *fftypes.Pin)
 	)
 }
 
-func (s *SQLCommon) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
+func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
 		err := s.insertTxRows(ctx, pinsTable, tx, query, func() {
 			for i, pin := range pins {
 				pin.Sequence = sequences[i]
-				s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeCreated, pin.Sequence)
+				s.callbacks.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Sequence)
 			}
 		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
@@ -146,8 +146,8 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*fftypes.Pin) error {
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin, error) {
-	pin := fftypes.Pin{}
+func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*core.Pin, error) {
+	pin := core.Pin{}
 	err := row.Scan(
 		&pin.Masked,
 		&pin.Hash,
@@ -165,7 +165,7 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*fftypes.Pin,
 	return &pin, nil
 }
 
-func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (message []*fftypes.Pin, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (message []*core.Pin, fr *database.FilterResult, err error) {
 
 	cols := append([]string{}, pinColumns...)
 	cols = append(cols, sequenceColumn)
@@ -180,7 +180,7 @@ func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (messag
 	}
 	defer rows.Close()
 
-	pin := []*fftypes.Pin{}
+	pin := []*core.Pin{}
 	for rows.Next() {
 		d, err := s.pinResult(ctx, rows)
 		if err != nil {
@@ -231,7 +231,7 @@ func (s *SQLCommon) DeletePin(ctx context.Context, sequence int64) (err error) {
 		sequenceColumn: sequence,
 	}),
 		func() {
-			s.callbacks.OrderedCollectionEvent(database.CollectionPins, fftypes.ChangeEventTypeDeleted, sequence)
+			s.callbacks.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeDeleted, sequence)
 		})
 	if err != nil {
 		return err

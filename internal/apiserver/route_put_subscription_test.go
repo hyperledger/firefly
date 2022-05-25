@@ -22,22 +22,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPutSubscription(t *testing.T) {
 	o, r := newTestAPIServer()
-	input := fftypes.Subscription{}
+	input := core.Subscription{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("PUT", "/api/v1/namespaces/ns1/subscriptions", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("CreateUpdateSubscription", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.Subscription")).
-		Return(&fftypes.Subscription{}, nil)
+	o.On("CreateUpdateSubscription", mock.Anything, "ns1", mock.AnythingOfType("*core.Subscription")).
+		Return(&core.Subscription{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

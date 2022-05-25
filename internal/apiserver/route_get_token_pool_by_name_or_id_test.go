@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -35,7 +35,7 @@ func TestGetTokenPoolByNameOrID(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mam.On("GetTokenPoolByNameOrID", mock.Anything, "ns1", "abc").
-		Return(&fftypes.TokenPool{}, nil)
+		Return(&core.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

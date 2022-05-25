@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -34,7 +35,7 @@ func TestGroupInitSealFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, &fftypes.Group{})
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, &core.Group{})
 	assert.Regexp(t, "FF10137", err)
 }
 
@@ -46,16 +47,16 @@ func TestGroupInitWriteGroupFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: fftypes.Members{
+			Members: core.Members{
 				{Identity: "id1", Node: fftypes.NewUUID()},
 			},
 		},
 	}
 	group.Seal()
-	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, group)
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -68,16 +69,16 @@ func TestGroupInitWriteDataFail(t *testing.T) {
 	mdi.On("UpsertGroup", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: fftypes.Members{
+			Members: core.Members{
 				{Identity: "id1", Node: fftypes.NewUUID()},
 			},
 		},
 	}
 	group.Seal()
-	err := pm.groupInit(pm.ctx, &fftypes.SignerRef{}, group)
+	err := pm.groupInit(pm.ctx, &core.SignerRef{}, group)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -86,15 +87,15 @@ func TestResolveInitGroupMissingData(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{}, false, nil)
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(core.DataArray{}, false, nil)
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineGroup,
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -109,17 +110,17 @@ func TestResolveInitGroupBadData(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`!json`)},
 	}, true, nil)
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineGroup,
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -134,17 +135,17 @@ func TestResolveInitGroupBadValidation(t *testing.T) {
 	defer cancel()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`{}`)},
 	}, true, nil)
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineGroup,
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -158,11 +159,11 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: fftypes.Members{
+			Members: core.Members{
 				{Identity: "abce12345", Node: fftypes.NewUUID()},
 			},
 		},
@@ -172,17 +173,17 @@ func TestResolveInitGroupBadGroupID(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineGroup,
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineGroup,
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -196,11 +197,11 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: fftypes.Members{
+			Members: core.Members{
 				{Identity: "abce12345", Node: fftypes.NewUUID()},
 			},
 		},
@@ -210,19 +211,19 @@ func TestResolveInitGroupUpsertFail(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineGroup,
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineGroup,
 			Group:     group.Hash,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -236,11 +237,11 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Name:      "group1",
 			Namespace: "ns1",
-			Members: fftypes.Members{
+			Members: core.Members{
 				{Identity: "abce12345", Node: fftypes.NewUUID()},
 			},
 		},
@@ -250,20 +251,20 @@ func TestResolveInitGroupNewOk(t *testing.T) {
 	b, _ := json.Marshal(&group)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(fftypes.DataArray{
+	mdm.On("GetMessageDataCached", pm.ctx, mock.Anything).Return(core.DataArray{
 		{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtrBytes(b)},
 	}, true, nil)
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdi.On("InsertEvent", pm.ctx, mock.Anything).Return(nil)
 
-	group, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	group, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
-			Namespace: fftypes.SystemNamespace,
-			Tag:       fftypes.SystemTagDefineGroup,
+			Namespace: core.SystemNamespace,
+			Tag:       core.SystemTagDefineGroup,
 			Group:     group.Hash,
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -279,15 +280,15 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&fftypes.Group{}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&core.Group{}, nil)
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -303,13 +304,13 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -325,13 +326,13 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
 
-	group, err := pm.ResolveInitGroup(pm.ctx, &fftypes.Message{
-		Header: fftypes.MessageHeader{
+	group, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
+		Header: core.MessageHeader{
 			ID:        fftypes.NewUUID(),
 			Namespace: "ns1",
 			Tag:       "mytag",
 			Group:     fftypes.NewRandB32(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Author: "author1",
 				Key:    "0x12345",
 			},
@@ -347,7 +348,7 @@ func TestGetGroupByIDOk(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&fftypes.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&core.Group{Hash: groupID}, nil)
 
 	group, err := pm.GetGroupByID(pm.ctx, groupID.String())
 	assert.NoError(t, err)
@@ -366,7 +367,7 @@ func TestGetGroupsOk(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*fftypes.Group{}, nil, nil)
+	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*core.Group{}, nil, nil)
 
 	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
 	groups, _, err := pm.GetGroups(pm.ctx, fb.And(fb.Eq("description", "mygroup")))
@@ -385,7 +386,7 @@ func TestGetGroupsNSOk(t *testing.T) {
 		assert.Contains(t, f.String(), "namespace")
 		assert.Contains(t, f.String(), "ns1")
 		return true
-	})).Return([]*fftypes.Group{}, nil, nil)
+	})).Return([]*core.Group{}, nil, nil)
 
 	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
 	groups, _, err := pm.GetGroupsNS(pm.ctx, "ns1", fb.And(fb.Eq("description", "mygroup")))
@@ -398,10 +399,10 @@ func TestGetGroupNodesCache(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1},
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
+				&core.Member{Node: node1},
 			},
 		},
 	}
@@ -409,10 +410,10 @@ func TestGetGroupNodesCache(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, mock.Anything).Return(&fftypes.Identity{
-		IdentityBase: fftypes.IdentityBase{
+	mdi.On("GetIdentityByID", pm.ctx, mock.Anything).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
 			ID:   node1,
-			Type: fftypes.IdentityTypeNode,
+			Type: core.IdentityTypeNode,
 		},
 	}, nil).Once()
 
@@ -457,10 +458,10 @@ func TestGetGroupNodesNodeLookupFail(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1},
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
+				&core.Member{Node: node1},
 			},
 		},
 	}
@@ -479,10 +480,10 @@ func TestGetGroupNodesNodeLookupNotFound(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1},
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
+				&core.Member{Node: node1},
 			},
 		},
 	}
@@ -500,11 +501,11 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1, Identity: "id1"},
+			Members: core.Members{
+				&core.Member{Node: node1, Identity: "id1"},
 			},
 		},
 	}
@@ -535,10 +536,10 @@ func TestEnsureLocalGroupExistingOk(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1},
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
+				&core.Member{Node: node1},
 			},
 		},
 	}
@@ -558,10 +559,10 @@ func TestEnsureLocalGroupLookupErr(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1},
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
+			Members: core.Members{
+				&core.Member{Node: node1},
 			},
 		},
 	}
@@ -581,11 +582,11 @@ func TestEnsureLocalGroupInsertErr(t *testing.T) {
 	defer cancel()
 
 	node1 := fftypes.NewUUID()
-	group := &fftypes.Group{
-		GroupIdentity: fftypes.GroupIdentity{
+	group := &core.Group{
+		GroupIdentity: core.GroupIdentity{
 			Namespace: "ns1",
-			Members: fftypes.Members{
-				&fftypes.Member{Node: node1, Identity: "id1"},
+			Members: core.Members{
+				&core.Member{Node: node1, Identity: "id1"},
 			},
 		},
 	}
@@ -606,7 +607,7 @@ func TestEnsureLocalGroupBadGroup(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	group := &fftypes.Group{}
+	group := &core.Group{}
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)

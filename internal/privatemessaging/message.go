@@ -19,15 +19,16 @@ package privatemessaging
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysmessaging.MessageSender {
+func (pm *privateMessaging) NewMessage(ns string, in *core.MessageInOut) sysmessaging.MessageSender {
 	message := &messageSender{
 		mgr:       pm,
 		namespace: ns,
@@ -39,7 +40,7 @@ func (pm *privateMessaging) NewMessage(ns string, in *fftypes.MessageInOut) sysm
 	return message
 }
 
-func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *fftypes.MessageInOut, waitConfirm bool) (out *fftypes.Message, err error) {
+func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	message := pm.NewMessage(ns, in)
 	if pm.metrics.IsMetricsEnabled() {
 		pm.metrics.MessageSubmitted(&in.Message)
@@ -52,7 +53,7 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *ffty
 	return &in.Message, err
 }
 
-func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *fftypes.MessageInOut) (*fftypes.MessageInOut, error) {
+func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *core.MessageInOut) (*core.MessageInOut, error) {
 	if in.Header.Tag == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgRequestReplyTagRequired)
 	}
@@ -99,17 +100,17 @@ func (s *messageSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
 	msg.Header.Namespace = s.namespace
-	msg.State = fftypes.MessageStateReady
+	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
-		msg.Header.Type = fftypes.MessageTypePrivate
+		msg.Header.Type = core.MessageTypePrivate
 	}
 	switch msg.Header.TxType {
-	case fftypes.TransactionTypeUnpinned, fftypes.TransactionTypeNone:
+	case core.TransactionTypeUnpinned, core.TransactionTypeNone:
 		// "unpinned" used to be called "none" (before we introduced batching + a TX on unppinned sends)
-		msg.Header.TxType = fftypes.TransactionTypeUnpinned
+		msg.Header.TxType = core.TransactionTypeUnpinned
 	default:
 		// the only other valid option is "batch_pin"
-		msg.Header.TxType = fftypes.TransactionTypeBatchPin
+		msg.Header.TxType = core.TransactionTypeBatchPin
 	}
 }
 

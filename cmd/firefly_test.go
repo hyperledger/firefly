@@ -78,7 +78,6 @@ func TestExecEngineStartFail(t *testing.T) {
 func TestExecOkExitSIGINT(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
 	o.On("Init", mock.Anything, mock.Anything).Return(nil)
-	o.On("IsPreInit").Return(false)
 	o.On("Start").Return(nil)
 	o.On("WaitStop").Return()
 	_utOrchestrator = o
@@ -94,7 +93,6 @@ func TestExecOkExitSIGINT(t *testing.T) {
 
 func TestExecOkRestartThenExit(t *testing.T) {
 	o := &orchestratormocks.Orchestrator{}
-	o.On("IsPreInit").Return(false)
 	var orContext context.Context
 	initCount := 0
 	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -125,7 +123,6 @@ func TestExecOkRestartConfigProblem(t *testing.T) {
 	tmpDir, err := os.MkdirTemp(os.TempDir(), "ut")
 	assert.NoError(t, err)
 	defer os.RemoveAll(tmpDir)
-	o.On("IsPreInit").Return(false)
 	var orContext context.Context
 	init := o.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	init.RunFn = func(a mock.Arguments) {

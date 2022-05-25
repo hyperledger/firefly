@@ -17,14 +17,23 @@
 package coreconfig
 
 import (
-	"net/http"
-
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/spf13/viper"
 )
 
 var ffc = config.AddRootKey
+
+const (
+	// PluginConfigName is the user-supplied name for this plugin type
+	PluginConfigName = "name"
+	// PluginConfigType is the type of the plugin to be loaded
+	PluginConfigType = "type"
+	// NamespaceName is a short name for a pre-defined namespace
+	NamespaceName = "name"
+	// NamespaceName is a long description for a pre-defined namespace
+	NamespaceDescription = "description"
+)
 
 // The following keys can be access from the root configuration.
 // Plugins are responsible for defining their own keys using the Config interface
@@ -39,8 +48,6 @@ var (
 	APIRequestTimeout = ffc("api.requestTimeout")
 	// APIRequestMaxTimeout is the maximum timeout an application can set using a Request-Timeout header
 	APIRequestMaxTimeout = ffc("api.requestMaxTimeout")
-	// APIShutdownTimeout is the amount of time to wait for any in-flight requests to finish before killing the HTTP server
-	APIShutdownTimeout = ffc("api.shutdownTimeout")
 	// APIOASPanicOnMissingDescription controls whether the OpenAPI Spec generator will strongly enforce descriptions on every field or not
 	APIOASPanicOnMissingDescription = ffc("api.oas.panicOnMissingDescription")
 	// BatchCacheSize
@@ -75,8 +82,6 @@ var (
 	BlockchainEventCacheSize = ffc("blockchainevent.cache.size")
 	// BlockchainEventCacheTTL time to live of cache for blockchain events
 	BlockchainEventCacheTTL = ffc("blockchainevent.cache.ttl")
-	// BlockchainType is the name of the blockchain interface plugin being used by this firefly node
-	BlockchainType = ffc("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	BroadcastBatchAgentTimeout = ffc("broadcast.batch.agentTimeout")
 	// BroadcastBatchSize is the maximum number of messages that can be packed into a batch
@@ -111,28 +116,22 @@ var (
 	PrivateMessagingRetryInitDelay = ffc("privatemessaging.retry.initDelay")
 	// PrivateMessagingRetryMaxDelay the maximum delay to use for retry of data base operations
 	PrivateMessagingRetryMaxDelay = ffc("privatemessaging.retry.maxDelay")
-	// CorsAllowCredentials CORS setting to control whether a browser allows credentials to be sent to this API
-	CorsAllowCredentials = ffc("cors.credentials")
-	// CorsAllowedHeaders CORS setting to control the allowed headers
-	CorsAllowedHeaders = ffc("cors.headers")
-	// CorsAllowedMethods CORS setting to control the allowed methods
-	CorsAllowedMethods = ffc("cors.methods")
-	// CorsAllowedOrigins CORS setting to control the allowed origins
-	CorsAllowedOrigins = ffc("cors.origins")
-	// CorsDebug is whether debug is enabled for the CORS implementation
-	CorsDebug = ffc("cors.debug")
-	// CorsEnabled is whether cors is enabled
-	CorsEnabled = ffc("cors.enabled")
-	// CorsMaxAge is the maximum age a browser should rely on CORS checks
-	CorsMaxAge = ffc("cors.maxAge")
-	// DataexchangeType is the name of the data exchange plugin being used by this firefly node
-	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
-	DatabaseType = ffc("database.type")
-	// HistogramsMaxChartRows the maximum rows to fetch for each histogram bucket
 	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = ffc("tokens")
+	// PluginsTokensList is the key containing a list of supported tokens plugins
+	PluginsTokensList = ffc("plugins.tokens")
+	// PluginsBlockchainList is the key containing a list of configured blockchain plugins
+	PluginsBlockchainList = ffc("plugins.blockchain")
+	// PluginsSharedStorageList is the key containing a list of configured shared storage plugins
+	PluginsSharedStorageList = ffc("plugins.sharedstorage")
+	// PluginsDatabaseList is the key containing a list of configured database plugins
+	PluginsDatabaseList = ffc("plugins.database")
+	// PluginsDataExchangeList is the key containing a list of configured database plugins
+	PluginsDataExchangeList = ffc("plugins.dataexchange")
+	// PluginsIdentityList is the key containing a list of configured identity plugins
+	PluginsIdentityList = ffc("plugins.identity")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions
@@ -183,8 +182,6 @@ var (
 	GroupCacheTTL = ffc("group.cache.ttl")
 	// AdminEnabled determines whether the admin interface will be enabled or not
 	AdminEnabled = ffc("admin.enabled")
-	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
-	AdminPreinit = ffc("admin.preinit")
 	// AdminWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
 	AdminWebSocketEventQueueLength = ffc("admin.ws.eventQueueLength")
 	// AdminWebSocketBlockedWarnInterval how often to emit a warning if an admin.ws is blocked and not receiving events
@@ -193,8 +190,6 @@ var (
 	AdminWebSocketReadBufferSize = ffc("admin.ws.readBufferSize")
 	// AdminWebSocketWriteBufferSize is the WebSocket write buffer size for the admin change-event WebSocket
 	AdminWebSocketWriteBufferSize = ffc("admin.ws.writeBufferSize")
-	// IdentityType the type of the identity plugin in use
-	IdentityType = ffc("identity.type")
 	// IdentityManagerCacheTTL the identity manager cache time to live
 	IdentityManagerCacheTTL = ffc("identity.manager.cache.ttl")
 	// IdentityManagerCacheLimit the identity manager cache limit in count of items
@@ -245,10 +240,6 @@ var (
 	OrgDescription = ffc("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = ffc("orchestrator.startupAttempts")
-	// SharedStorageType specifies which shared storage interface plugin to use
-	SharedStorageType = ffc("sharedstorage.type")
-	// PublicStorageType specifies which shared storage interface plugin to use - deprecated in favor of SharedStorageType
-	PublicStorageType = ffc("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = ffc("subscription.defaults.batchSize")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
@@ -283,7 +274,6 @@ func setDefaults() {
 	viper.SetDefault(string(APIMaxFilterLimit), 250)
 	viper.SetDefault(string(APIMaxFilterSkip), 1000) // protects database (skip+limit pagination is not for bulk operations)
 	viper.SetDefault(string(APIRequestTimeout), "120s")
-	viper.SetDefault(string(APIShutdownTimeout), "10s")
 	viper.SetDefault(string(AssetManagerKeyNormalization), "blockchain_plugin")
 	viper.SetDefault(string(BatchCacheSize), "1Mb")
 	viper.SetDefault(string(BatchCacheTTL), "5m")
@@ -306,13 +296,6 @@ func setDefaults() {
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
-	viper.SetDefault(string(CorsAllowCredentials), true)
-	viper.SetDefault(string(CorsAllowedHeaders), []string{"*"})
-	viper.SetDefault(string(CorsAllowedMethods), []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete})
-	viper.SetDefault(string(CorsAllowedOrigins), []string{"*"})
-	viper.SetDefault(string(CorsEnabled), true)
-	viper.SetDefault(string(CorsMaxAge), 600)
-	viper.SetDefault(string(DataexchangeType), "ffdx")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
@@ -320,7 +303,7 @@ func setDefaults() {
 	viper.SetDefault(string(DownloadRetryInitDelay), "100ms")
 	viper.SetDefault(string(DownloadRetryMaxDelay), "1m")
 	viper.SetDefault(string(DownloadRetryFactor), 2.0)
-	viper.SetDefault(string(EventAggregatorFirstEvent), fftypes.SubOptsFirstEventOldest)
+	viper.SetDefault(string(EventAggregatorFirstEvent), core.SubOptsFirstEventOldest)
 	viper.SetDefault(string(EventAggregatorBatchSize), 200)
 	viper.SetDefault(string(EventAggregatorBatchTimeout), "250ms")
 	viper.SetDefault(string(EventAggregatorPollTimeout), "30s")
@@ -345,14 +328,12 @@ func setDefaults() {
 	viper.SetDefault(string(AdminWebSocketWriteBufferSize), "16Kb")
 	viper.SetDefault(string(AdminWebSocketBlockedWarnInterval), "1m")
 	viper.SetDefault(string(AdminWebSocketEventQueueLength), 250)
-	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)
 	viper.SetDefault(string(MessageWriterBatchTimeout), "10ms")
 	viper.SetDefault(string(MessageWriterCount), 5)
 	viper.SetDefault(string(NamespacesDefault), "default")
-	viper.SetDefault(string(NamespacesPredefined), fftypes.JSONObjectArray{{"name": "default", "description": "Default predefined namespace"}})
 	viper.SetDefault(string(OrchestratorStartupAttempts), 5)
 	viper.SetDefault(string(OpUpdateRetryInitDelay), "250ms")
 	viper.SetDefault(string(OpUpdateRetryMaxDelay), "1m")

@@ -5,7 +5,7 @@ package identitymocks
 import (
 	context "context"
 
-	config "github.com/hyperledger/firefly/pkg/config"
+	config "github.com/hyperledger/firefly-common/pkg/config"
 
 	identity "github.com/hyperledger/firefly/pkg/identity"
 
@@ -33,13 +33,13 @@ func (_m *Plugin) Capabilities() *identity.Capabilities {
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx, prefix, callbacks
-func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks identity.Callbacks) error {
-	ret := _m.Called(ctx, prefix, callbacks)
+// Init provides a mock function with given fields: ctx, _a1, callbacks
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks identity.Callbacks) error {
+	ret := _m.Called(ctx, _a1, callbacks)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Prefix, identity.Callbacks) error); ok {
-		r0 = rf(ctx, prefix, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, identity.Callbacks) error); ok {
+		r0 = rf(ctx, _a1, callbacks)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -47,9 +47,9 @@ func (_m *Plugin) Init(ctx context.Context, prefix config.Prefix, callbacks iden
 	return r0
 }
 
-// InitPrefix provides a mock function with given fields: prefix
-func (_m *Plugin) InitPrefix(prefix config.Prefix) {
-	_m.Called(prefix)
+// InitConfig provides a mock function with given fields: _a0
+func (_m *Plugin) InitConfig(_a0 config.Section) {
+	_m.Called(_a0)
 }
 
 // Name provides a mock function with given fields:

@@ -2,7 +2,7 @@
 layout: default
 title: ERC-20
 parent: Use tokens
-grand_parent: Tutorials
+grand_parent: pages.tutorials
 nav_order: 1
 ---
 

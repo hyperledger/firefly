@@ -22,21 +22,22 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/retry"
 	"github.com/hyperledger/firefly/internal/txcommon"
-	"github.com/hyperledger/firefly/pkg/config"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 // OperationUpdate is dispatched asynchronously to perform an update.
 type OperationUpdate struct {
 	ID             *fftypes.UUID
-	Status         fftypes.OpStatus
+	Status         core.OpStatus
 	BlockchainTXID string
 	ErrorMessage   string
 	Output         fftypes.JSONObject
@@ -214,7 +215,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 			txIDs = append(txIDs, op.Transaction)
 		}
 	}
-	var transactions []*fftypes.Transaction
+	var transactions []*core.Transaction
 	if len(txIDs) > 0 {
 		txFilter := database.TransactionQueryFactory.NewFilter(ctx).In("id", txIDs)
 		transactions, _, err = ou.database.GetTransactions(ctx, txFilter)
@@ -233,10 +234,10 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 	return nil
 }
 
-func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdate, ops []*fftypes.Operation, transactions []*fftypes.Transaction) error {
+func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdate, ops []*core.Operation, transactions []*core.Transaction) error {
 
 	// Find the operation we already retrieved, and do the update
-	var op *fftypes.Operation
+	var op *core.Operation
 	for _, candidate := range ops {
 		if update.ID.Equals(candidate.ID) {
 			op = candidate
@@ -249,7 +250,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 	}
 
 	// Match a TX we already retrieved, if found add a specified Blockchain Transaction ID to it
-	var tx *fftypes.Transaction
+	var tx *core.Transaction
 	if op.Transaction != nil && update.BlockchainTXID != "" {
 		for _, candidate := range transactions {
 			if op.Transaction.Equals(candidate.ID) {
@@ -284,9 +285,9 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 	return nil
 }
 
-func (ou *operationUpdater) verifyManifest(ctx context.Context, update *OperationUpdate, op *fftypes.Operation) error {
+func (ou *operationUpdater) verifyManifest(ctx context.Context, update *OperationUpdate, op *core.Operation) error {
 
-	if op.Type == fftypes.OpTypeDataExchangeSendBatch && update.Status == fftypes.OpStatusSucceeded {
+	if op.Type == core.OpTypeDataExchangeSendBatch && update.Status == core.OpStatusSucceeded {
 		batchID, _ := fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 		expectedManifest := ""
 		if batchID != nil {
@@ -300,21 +301,21 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 		}
 		if update.DXManifest != expectedManifest {
 			// Log and map to failure for user to see that the receiver did not provide a matching acknowledgement
-			mismatchErr := i18n.NewError(ctx, coremsgs.MsgManifestMismatch, fftypes.OpStatusSucceeded, update.DXManifest)
+			mismatchErr := i18n.NewError(ctx, coremsgs.MsgManifestMismatch, core.OpStatusSucceeded, update.DXManifest)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
-			update.Status = fftypes.OpStatusFailed
+			update.Status = core.OpStatusFailed
 		}
 	}
 
-	if op.Type == fftypes.OpTypeDataExchangeSendBlob && update.Status == fftypes.OpStatusSucceeded {
+	if op.Type == core.OpTypeDataExchangeSendBlob && update.Status == core.OpStatusSucceeded {
 		expectedHash := op.Input.GetString("hash")
 		if update.DXHash != expectedHash {
 			// Log and map to failure for user to see that the receiver did not provide a matching hash
 			mismatchErr := i18n.NewError(ctx, coremsgs.MsgBlobHashMismatch, expectedHash, update.DXHash)
 			log.L(ctx).Errorf("DX transfer %s: %s", op.ID, mismatchErr.Error())
 			update.ErrorMessage = mismatchErr.Error()
-			update.Status = fftypes.OpStatusFailed
+			update.Status = core.OpStatusFailed
 		}
 	}
 

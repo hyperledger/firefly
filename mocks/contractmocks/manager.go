@@ -5,9 +5,11 @@ package contractmocks
 import (
 	context "context"
 
+	core "github.com/hyperledger/firefly/pkg/core"
+
 	database "github.com/hyperledger/firefly/pkg/database"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -18,20 +20,20 @@ type Manager struct {
 }
 
 // AddContractAPIListener provides a mock function with given fields: ctx, ns, apiName, eventPath, listener
-func (_m *Manager) AddContractAPIListener(ctx context.Context, ns string, apiName string, eventPath string, listener *fftypes.ContractListener) (*fftypes.ContractListener, error) {
+func (_m *Manager) AddContractAPIListener(ctx context.Context, ns string, apiName string, eventPath string, listener *core.ContractListener) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, ns, apiName, eventPath, listener)
 
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractListener) *fftypes.ContractListener); ok {
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *core.ContractListener) *core.ContractListener); ok {
 		r0 = rf(ctx, ns, apiName, eventPath, listener)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
+			r0 = ret.Get(0).(*core.ContractListener)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractListener) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *core.ContractListener) error); ok {
 		r1 = rf(ctx, ns, apiName, eventPath, listener)
 	} else {
 		r1 = ret.Error(1)
@@ -41,20 +43,20 @@ func (_m *Manager) AddContractAPIListener(ctx context.Context, ns string, apiNam
 }
 
 // AddContractListener provides a mock function with given fields: ctx, ns, listener
-func (_m *Manager) AddContractListener(ctx context.Context, ns string, listener *fftypes.ContractListenerInput) (*fftypes.ContractListener, error) {
+func (_m *Manager) AddContractListener(ctx context.Context, ns string, listener *core.ContractListenerInput) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, ns, listener)
 
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractListenerInput) *fftypes.ContractListener); ok {
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.ContractListenerInput) *core.ContractListener); ok {
 		r0 = rf(ctx, ns, listener)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
+			r0 = ret.Get(0).(*core.ContractListener)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractListenerInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.ContractListenerInput) error); ok {
 		r1 = rf(ctx, ns, listener)
 	} else {
 		r1 = ret.Error(1)
@@ -64,20 +66,20 @@ func (_m *Manager) AddContractListener(ctx context.Context, ns string, listener 
 }
 
 // BroadcastContractAPI provides a mock function with given fields: ctx, httpServerURL, ns, api, waitConfirm
-func (_m *Manager) BroadcastContractAPI(ctx context.Context, httpServerURL string, ns string, api *fftypes.ContractAPI, waitConfirm bool) (*fftypes.ContractAPI, error) {
+func (_m *Manager) BroadcastContractAPI(ctx context.Context, httpServerURL string, ns string, api *core.ContractAPI, waitConfirm bool) (*core.ContractAPI, error) {
 	ret := _m.Called(ctx, httpServerURL, ns, api, waitConfirm)
 
-	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.ContractAPI, bool) *fftypes.ContractAPI); ok {
+	var r0 *core.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.ContractAPI, bool) *core.ContractAPI); ok {
 		r0 = rf(ctx, httpServerURL, ns, api, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractAPI)
+			r0 = ret.Get(0).(*core.ContractAPI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, *fftypes.ContractAPI, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *core.ContractAPI, bool) error); ok {
 		r1 = rf(ctx, httpServerURL, ns, api, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -87,20 +89,20 @@ func (_m *Manager) BroadcastContractAPI(ctx context.Context, httpServerURL strin
 }
 
 // BroadcastFFI provides a mock function with given fields: ctx, ns, ffi, waitConfirm
-func (_m *Manager) BroadcastFFI(ctx context.Context, ns string, ffi *fftypes.FFI, waitConfirm bool) (*fftypes.FFI, error) {
+func (_m *Manager) BroadcastFFI(ctx context.Context, ns string, ffi *core.FFI, waitConfirm bool) (*core.FFI, error) {
 	ret := _m.Called(ctx, ns, ffi, waitConfirm)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.FFI, bool) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.FFI, bool) *core.FFI); ok {
 		r0 = rf(ctx, ns, ffi, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.FFI, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.FFI, bool) error); ok {
 		r1 = rf(ctx, ns, ffi, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -124,20 +126,20 @@ func (_m *Manager) DeleteContractListenerByNameOrID(ctx context.Context, ns stri
 }
 
 // GenerateFFI provides a mock function with given fields: ctx, ns, generationRequest
-func (_m *Manager) GenerateFFI(ctx context.Context, ns string, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
+func (_m *Manager) GenerateFFI(ctx context.Context, ns string, generationRequest *core.FFIGenerationRequest) (*core.FFI, error) {
 	ret := _m.Called(ctx, ns, generationRequest)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.FFIGenerationRequest) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.FFIGenerationRequest) *core.FFI); ok {
 		r0 = rf(ctx, ns, generationRequest)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.FFIGenerationRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.FFIGenerationRequest) error); ok {
 		r1 = rf(ctx, ns, generationRequest)
 	} else {
 		r1 = ret.Error(1)
@@ -147,15 +149,15 @@ func (_m *Manager) GenerateFFI(ctx context.Context, ns string, generationRequest
 }
 
 // GetContractAPI provides a mock function with given fields: ctx, httpServerURL, ns, apiName
-func (_m *Manager) GetContractAPI(ctx context.Context, httpServerURL string, ns string, apiName string) (*fftypes.ContractAPI, error) {
+func (_m *Manager) GetContractAPI(ctx context.Context, httpServerURL string, ns string, apiName string) (*core.ContractAPI, error) {
 	ret := _m.Called(ctx, httpServerURL, ns, apiName)
 
-	var r0 *fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.ContractAPI); ok {
+	var r0 *core.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.ContractAPI); ok {
 		r0 = rf(ctx, httpServerURL, ns, apiName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractAPI)
+			r0 = ret.Get(0).(*core.ContractAPI)
 		}
 	}
 
@@ -170,15 +172,15 @@ func (_m *Manager) GetContractAPI(ctx context.Context, httpServerURL string, ns 
 }
 
 // GetContractAPIInterface provides a mock function with given fields: ctx, ns, apiName
-func (_m *Manager) GetContractAPIInterface(ctx context.Context, ns string, apiName string) (*fftypes.FFI, error) {
+func (_m *Manager) GetContractAPIInterface(ctx context.Context, ns string, apiName string) (*core.FFI, error) {
 	ret := _m.Called(ctx, ns, apiName)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.FFI); ok {
 		r0 = rf(ctx, ns, apiName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -193,15 +195,15 @@ func (_m *Manager) GetContractAPIInterface(ctx context.Context, ns string, apiNa
 }
 
 // GetContractAPIListeners provides a mock function with given fields: ctx, ns, apiName, eventPath, filter
-func (_m *Manager) GetContractAPIListeners(ctx context.Context, ns string, apiName string, eventPath string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
+func (_m *Manager) GetContractAPIListeners(ctx context.Context, ns string, apiName string, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, apiName, eventPath, filter)
 
-	var r0 []*fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, database.AndFilter) []*fftypes.ContractListener); ok {
+	var r0 []*core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, database.AndFilter) []*core.ContractListener); ok {
 		r0 = rf(ctx, ns, apiName, eventPath, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractListener)
+			r0 = ret.Get(0).([]*core.ContractListener)
 		}
 	}
 
@@ -225,15 +227,15 @@ func (_m *Manager) GetContractAPIListeners(ctx context.Context, ns string, apiNa
 }
 
 // GetContractAPIs provides a mock function with given fields: ctx, httpServerURL, ns, filter
-func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns string, filter database.AndFilter) ([]*fftypes.ContractAPI, *database.FilterResult, error) {
+func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, httpServerURL, ns, filter)
 
-	var r0 []*fftypes.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*fftypes.ContractAPI); ok {
+	var r0 []*core.ContractAPI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*core.ContractAPI); ok {
 		r0 = rf(ctx, httpServerURL, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractAPI)
+			r0 = ret.Get(0).([]*core.ContractAPI)
 		}
 	}
 
@@ -257,15 +259,15 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns
 }
 
 // GetContractListenerByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
-func (_m *Manager) GetContractListenerByNameOrID(ctx context.Context, ns string, nameOrID string) (*fftypes.ContractListener, error) {
+func (_m *Manager) GetContractListenerByNameOrID(ctx context.Context, ns string, nameOrID string) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, ns, nameOrID)
 
-	var r0 *fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *fftypes.ContractListener); ok {
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.ContractListener); ok {
 		r0 = rf(ctx, ns, nameOrID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ContractListener)
+			r0 = ret.Get(0).(*core.ContractListener)
 		}
 	}
 
@@ -280,15 +282,15 @@ func (_m *Manager) GetContractListenerByNameOrID(ctx context.Context, ns string,
 }
 
 // GetContractListeners provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.ContractListener, *database.FilterResult, error) {
+func (_m *Manager) GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.ContractListener); ok {
+	var r0 []*core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.ContractListener); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ContractListener)
+			r0 = ret.Get(0).([]*core.ContractListener)
 		}
 	}
 
@@ -312,15 +314,15 @@ func (_m *Manager) GetContractListeners(ctx context.Context, ns string, filter d
 }
 
 // GetFFI provides a mock function with given fields: ctx, ns, name, version
-func (_m *Manager) GetFFI(ctx context.Context, ns string, name string, version string) (*fftypes.FFI, error) {
+func (_m *Manager) GetFFI(ctx context.Context, ns string, name string, version string) (*core.FFI, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.FFI); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -335,15 +337,15 @@ func (_m *Manager) GetFFI(ctx context.Context, ns string, name string, version s
 }
 
 // GetFFIByID provides a mock function with given fields: ctx, id
-func (_m *Manager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
+func (_m *Manager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -358,15 +360,15 @@ func (_m *Manager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.F
 }
 
 // GetFFIByIDWithChildren provides a mock function with given fields: ctx, id
-func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
+func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -381,15 +383,15 @@ func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID)
 }
 
 // GetFFIWithChildren provides a mock function with given fields: ctx, ns, name, version
-func (_m *Manager) GetFFIWithChildren(ctx context.Context, ns string, name string, version string) (*fftypes.FFI, error) {
+func (_m *Manager) GetFFIWithChildren(ctx context.Context, ns string, name string, version string) (*core.FFI, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
+	var r0 *core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.FFI); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.FFI)
+			r0 = ret.Get(0).(*core.FFI)
 		}
 	}
 
@@ -404,15 +406,15 @@ func (_m *Manager) GetFFIWithChildren(ctx context.Context, ns string, name strin
 }
 
 // GetFFIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*fftypes.FFI, *database.FilterResult, error) {
+func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*fftypes.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*fftypes.FFI); ok {
+	var r0 []*core.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.FFI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.FFI)
+			r0 = ret.Get(0).([]*core.FFI)
 		}
 	}
 
@@ -436,11 +438,11 @@ func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFi
 }
 
 // InvokeContract provides a mock function with given fields: ctx, ns, req, waitConfirm
-func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error) {
+func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error) {
 	ret := _m.Called(ctx, ns, req, waitConfirm)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractCallRequest, bool) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.ContractCallRequest, bool) interface{}); ok {
 		r0 = rf(ctx, ns, req, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -449,7 +451,7 @@ func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.C
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.ContractCallRequest, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.ContractCallRequest, bool) error); ok {
 		r1 = rf(ctx, ns, req, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -459,11 +461,11 @@ func (_m *Manager) InvokeContract(ctx context.Context, ns string, req *fftypes.C
 }
 
 // InvokeContractAPI provides a mock function with given fields: ctx, ns, apiName, methodPath, req, waitConfirm
-func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodPath string, req *fftypes.ContractCallRequest, waitConfirm bool) (interface{}, error) {
+func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName string, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error) {
 	ret := _m.Called(ctx, ns, apiName, methodPath, req, waitConfirm)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *fftypes.ContractCallRequest, bool) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, *core.ContractCallRequest, bool) interface{}); ok {
 		r0 = rf(ctx, ns, apiName, methodPath, req, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
@@ -472,7 +474,7 @@ func (_m *Manager) InvokeContractAPI(ctx context.Context, ns string, apiName str
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *fftypes.ContractCallRequest, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, *core.ContractCallRequest, bool) error); ok {
 		r1 = rf(ctx, ns, apiName, methodPath, req, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -496,20 +498,20 @@ func (_m *Manager) Name() string {
 }
 
 // PrepareOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	ret := _m.Called(ctx, op)
 
-	var r0 *fftypes.PreparedOperation
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) *fftypes.PreparedOperation); ok {
+	var r0 *core.PreparedOperation
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation) *core.PreparedOperation); ok {
 		r0 = rf(ctx, op)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.PreparedOperation)
+			r0 = ret.Get(0).(*core.PreparedOperation)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Operation) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Operation) error); ok {
 		r1 = rf(ctx, op)
 	} else {
 		r1 = ret.Error(1)
@@ -519,11 +521,11 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) 
 }
 
 // RunOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation) (fftypes.JSONObject, bool, error) {
+func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation) (fftypes.JSONObject, bool, error) {
 	ret := _m.Called(ctx, op)
 
 	var r0 fftypes.JSONObject
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation) fftypes.JSONObject); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation) fftypes.JSONObject); ok {
 		r0 = rf(ctx, op)
 	} else {
 		if ret.Get(0) != nil {
@@ -532,14 +534,14 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 	}
 
 	var r1 bool
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation) bool); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation) bool); ok {
 		r1 = rf(ctx, op)
 	} else {
 		r1 = ret.Get(1).(bool)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, *fftypes.PreparedOperation) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *core.PreparedOperation) error); ok {
 		r2 = rf(ctx, op)
 	} else {
 		r2 = ret.Error(2)
@@ -549,11 +551,11 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 }
 
 // ValidateFFIAndSetPathnames provides a mock function with given fields: ctx, ffi
-func (_m *Manager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *fftypes.FFI) error {
+func (_m *Manager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *core.FFI) error {
 	ret := _m.Called(ctx, ffi)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI) error); ok {
 		r0 = rf(ctx, ffi)
 	} else {
 		r0 = ret.Error(0)

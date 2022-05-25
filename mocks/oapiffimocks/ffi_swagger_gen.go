@@ -5,7 +5,7 @@ package oapiffimocks
 import (
 	context "context"
 
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+	core "github.com/hyperledger/firefly/pkg/core"
 	mock "github.com/stretchr/testify/mock"
 
 	openapi3 "github.com/getkin/kin-openapi/openapi3"
@@ -17,11 +17,11 @@ type FFISwaggerGen struct {
 }
 
 // Generate provides a mock function with given fields: ctx, baseURL, api, ffi
-func (_m *FFISwaggerGen) Generate(ctx context.Context, baseURL string, api *fftypes.ContractAPI, ffi *fftypes.FFI) *openapi3.T {
+func (_m *FFISwaggerGen) Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *core.FFI) *openapi3.T {
 	ret := _m.Called(ctx, baseURL, api, ffi)
 
 	var r0 *openapi3.T
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.ContractAPI, *fftypes.FFI) *openapi3.T); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.ContractAPI, *core.FFI) *openapi3.T); ok {
 		r0 = rf(ctx, baseURL, api, ffi)
 	} else {
 		if ret.Get(0) != nil {

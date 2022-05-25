@@ -29,6 +29,10 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/httpserver"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -37,10 +41,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/oapiffimocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
-	"github.com/hyperledger/firefly/pkg/config"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/httpserver"
-	"github.com/hyperledger/firefly/pkg/i18n"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -64,6 +65,7 @@ func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
 }
 
 func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
+	config.Set(coreconfig.NamespacesDefault, "default")
 	mor, as := newTestServer()
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
@@ -75,15 +77,14 @@ func TestStartStopServer(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	apiConfigPrefix.Set(httpserver.HTTPConfPort, 0)
-	adminConfigPrefix.Set(httpserver.HTTPConfPort, 0)
+	apiConfig.Set(httpserver.HTTPConfPort, 0)
+	adminConfig.Set(httpserver.HTTPConfPort, 0)
 	config.Set(coreconfig.UIPath, "test")
 	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(false)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
@@ -94,42 +95,39 @@ func TestStartAPIFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	apiConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	apiConfig.Set(httpserver.HTTPConfAddress, "...://")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(false)
 	err := as.Serve(ctx, mor)
-	assert.Regexp(t, "FF10104", err)
+	assert.Regexp(t, "FF00151", err)
 }
 
 func TestStartAdminFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	adminConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	adminConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(true)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
-	assert.Regexp(t, "FF10104", err)
+	assert.Regexp(t, "FF00151", err)
 }
 
 func TestStartAdminWSHandler(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	adminConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	adminConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	as := NewAPIServer().(*apiServer)
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(true)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	mae.On("ServeHTTPWebSocketListener", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
@@ -145,17 +143,16 @@ func TestStartMetricsFail(t *testing.T) {
 	coreconfig.Reset()
 	metrics.Clear()
 	InitConfig()
-	metricsConfigPrefix.Set(httpserver.HTTPConfAddress, "...://")
+	metricsConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.MetricsEnabled, true)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(true)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
-	assert.Regexp(t, "FF10104", err)
+	assert.Regexp(t, "FF00151", err)
 }
 
 func TestJSONHTTPServePOST201(t *testing.T) {
@@ -466,9 +463,9 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	ffi := &fftypes.FFI{}
-	api := &fftypes.ContractAPI{
-		Interface: &fftypes.FFIReference{
+	ffi := &core.FFI{}
+	api := &core.ContractAPI{
+		Interface: &core.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -520,8 +517,8 @@ func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	api := &fftypes.ContractAPI{
-		Interface: &fftypes.FFIReference{
+	api := &core.ContractAPI{
+		Interface: &core.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}

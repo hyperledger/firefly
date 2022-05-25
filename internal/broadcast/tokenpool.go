@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,10 +19,10 @@ package broadcast
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, pool *fftypes.TokenPoolAnnouncement, waitConfirm bool) (msg *fftypes.Message, err error) {
+func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error) {
 	if err := pool.Pool.Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, p
 		return nil, err
 	}
 
-	msg, err = bm.BroadcastDefinitionAsNode(ctx, ns, pool, fftypes.SystemTagDefinePool, waitConfirm)
+	msg, err = bm.BroadcastDefinitionAsNode(ctx, ns, pool, core.SystemTagDefinePool, waitConfirm)
 	if msg != nil {
 		pool.Pool.Message = msg.Header.ID
 	}

@@ -21,11 +21,12 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/i18n"
-	"github.com/hyperledger/firefly/pkg/log"
 )
 
 var (
@@ -43,7 +44,7 @@ var (
 
 const blobsTable = "blobs"
 
-func (s *SQLCommon) InsertBlob(ctx context.Context, blob *fftypes.Blob) (err error) {
+func (s *SQLCommon) InsertBlob(ctx context.Context, blob *core.Blob) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -58,7 +59,7 @@ func (s *SQLCommon) InsertBlob(ctx context.Context, blob *fftypes.Blob) (err err
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *fftypes.Blob) sq.InsertBuilder {
+func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *core.Blob) sq.InsertBuilder {
 	return query.Values(
 		blob.Hash,
 		blob.PayloadRef,
@@ -68,7 +69,7 @@ func (s *SQLCommon) setBlobInsertValues(query sq.InsertBuilder, blob *fftypes.Bl
 	)
 }
 
-func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *txWrapper, blob *fftypes.Blob) (err error) {
+func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *txWrapper, blob *core.Blob) (err error) {
 	blob.Sequence, err = s.insertTx(ctx, blobsTable, tx,
 		s.setBlobInsertValues(sq.Insert(blobsTable).Columns(blobColumns...), blob),
 		nil, // no change events for blobs
@@ -76,7 +77,7 @@ func (s *SQLCommon) attemptBlobInsert(ctx context.Context, tx *txWrapper, blob *
 	return err
 }
 
-func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err error) {
+func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*core.Blob) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -111,8 +112,8 @@ func (s *SQLCommon) InsertBlobs(ctx context.Context, blobs []*fftypes.Blob) (err
 
 }
 
-func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blob, error) {
-	blob := fftypes.Blob{}
+func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*core.Blob, error) {
+	blob := core.Blob{}
 	err := row.Scan(
 		&blob.Hash,
 		&blob.PayloadRef,
@@ -127,7 +128,7 @@ func (s *SQLCommon) blobResult(ctx context.Context, row *sql.Rows) (*fftypes.Blo
 	return &blob, nil
 }
 
-func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface{}) (message *fftypes.Blob, err error) {
+func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface{}) (message *core.Blob, err error) {
 	cols := append([]string{}, blobColumns...)
 	cols = append(cols, sequenceColumn)
 	rows, _, err := s.query(ctx, blobsTable,
@@ -154,13 +155,13 @@ func (s *SQLCommon) getBlobPred(ctx context.Context, desc string, pred interface
 	return blob, nil
 }
 
-func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *fftypes.Blob, err error) {
+func (s *SQLCommon) GetBlobMatchingHash(ctx context.Context, hash *fftypes.Bytes32) (message *core.Blob, err error) {
 	return s.getBlobPred(ctx, hash.String(), sq.Eq{
 		"hash": hash,
 	})
 }
 
-func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (message []*fftypes.Blob, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (message []*core.Blob, res *database.FilterResult, err error) {
 
 	cols := append([]string{}, blobColumns...)
 	cols = append(cols, sequenceColumn)
@@ -175,7 +176,7 @@ func (s *SQLCommon) GetBlobs(ctx context.Context, filter database.Filter) (messa
 	}
 	defer rows.Close()
 
-	blob := []*fftypes.Blob{}
+	blob := []*core.Blob{}
 	for rows.Next() {
 		d, err := s.blobResult(ctx, rows)
 		if err != nil {

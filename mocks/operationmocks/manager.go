@@ -5,8 +5,10 @@ package operationmocks
 import (
 	context "context"
 
+	core "github.com/hyperledger/firefly/pkg/core"
 	dataexchange "github.com/hyperledger/firefly/pkg/dataexchange"
-	fftypes "github.com/hyperledger/firefly/pkg/fftypes"
+
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -19,11 +21,11 @@ type Manager struct {
 }
 
 // AddOrReuseOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *fftypes.Operation) error {
+func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *core.Operation) error {
 	ret := _m.Called(ctx, op)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation) error); ok {
 		r0 = rf(ctx, op)
 	} else {
 		r0 = ret.Error(0)
@@ -33,20 +35,20 @@ func (_m *Manager) AddOrReuseOperation(ctx context.Context, op *fftypes.Operatio
 }
 
 // PrepareOperation provides a mock function with given fields: ctx, op
-func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) (*fftypes.PreparedOperation, error) {
+func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	ret := _m.Called(ctx, op)
 
-	var r0 *fftypes.PreparedOperation
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.Operation) *fftypes.PreparedOperation); ok {
+	var r0 *core.PreparedOperation
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Operation) *core.PreparedOperation); ok {
 		r0 = rf(ctx, op)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.PreparedOperation)
+			r0 = ret.Get(0).(*core.PreparedOperation)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.Operation) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Operation) error); ok {
 		r1 = rf(ctx, op)
 	} else {
 		r1 = ret.Error(1)
@@ -56,25 +58,25 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *fftypes.Operation) 
 }
 
 // RegisterHandler provides a mock function with given fields: ctx, handler, ops
-func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.OperationHandler, ops []fftypes.FFEnum) {
+func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.OperationHandler, ops []core.FFEnum) {
 	_m.Called(ctx, handler, ops)
 }
 
 // ResolveOperationByID provides a mock function with given fields: ctx, id, op
-func (_m *Manager) ResolveOperationByID(ctx context.Context, id string, op *fftypes.Operation) (*fftypes.Operation, error) {
+func (_m *Manager) ResolveOperationByID(ctx context.Context, id string, op *core.Operation) (*core.Operation, error) {
 	ret := _m.Called(ctx, id, op)
 
-	var r0 *fftypes.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.Operation) *fftypes.Operation); ok {
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Operation) *core.Operation); ok {
 		r0 = rf(ctx, id, op)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Operation)
+			r0 = ret.Get(0).(*core.Operation)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.Operation) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.Operation) error); ok {
 		r1 = rf(ctx, id, op)
 	} else {
 		r1 = ret.Error(1)
@@ -84,15 +86,15 @@ func (_m *Manager) ResolveOperationByID(ctx context.Context, id string, op *ffty
 }
 
 // RetryOperation provides a mock function with given fields: ctx, ns, opID
-func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*fftypes.Operation, error) {
+func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*core.Operation, error) {
 	ret := _m.Called(ctx, ns, opID)
 
-	var r0 *fftypes.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *fftypes.Operation); ok {
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.Operation); ok {
 		r0 = rf(ctx, ns, opID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.Operation)
+			r0 = ret.Get(0).(*core.Operation)
 		}
 	}
 
@@ -107,7 +109,7 @@ func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.
 }
 
 // RunOperation provides a mock function with given fields: ctx, op, options
-func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperation, options ...operations.RunOperationOption) (fftypes.JSONObject, error) {
+func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation, options ...operations.RunOperationOption) (fftypes.JSONObject, error) {
 	_va := make([]interface{}, len(options))
 	for _i := range options {
 		_va[_i] = options[_i]
@@ -118,7 +120,7 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 	ret := _m.Called(_ca...)
 
 	var r0 fftypes.JSONObject
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.PreparedOperation, ...operations.RunOperationOption) fftypes.JSONObject); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.PreparedOperation, ...operations.RunOperationOption) fftypes.JSONObject); ok {
 		r0 = rf(ctx, op, options...)
 	} else {
 		if ret.Get(0) != nil {
@@ -127,7 +129,7 @@ func (_m *Manager) RunOperation(ctx context.Context, op *fftypes.PreparedOperati
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.PreparedOperation, ...operations.RunOperationOption) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *core.PreparedOperation, ...operations.RunOperationOption) error); ok {
 		r1 = rf(ctx, op, options...)
 	} else {
 		r1 = ret.Error(1)
@@ -151,7 +153,7 @@ func (_m *Manager) Start() error {
 }
 
 // SubmitOperationUpdate provides a mock function with given fields: plugin, update
-func (_m *Manager) SubmitOperationUpdate(plugin fftypes.Named, update *operations.OperationUpdate) {
+func (_m *Manager) SubmitOperationUpdate(plugin core.Named, update *operations.OperationUpdate) {
 	_m.Called(plugin, update)
 }
 

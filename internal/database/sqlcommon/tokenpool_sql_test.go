@@ -23,9 +23,10 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/fftypes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -37,20 +38,20 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 
 	// Create a new token pool entry
 	poolID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID:        poolID,
 		Namespace: "ns1",
 		Name:      "my-pool",
 		Standard:  "ERC1155",
-		Type:      fftypes.TokenTypeFungible,
+		Type:      core.TokenTypeFungible,
 		Locator:   "12345",
 		Connector: "erc1155",
 		Symbol:    "COIN",
 		Decimals:  18,
 		Message:   fftypes.NewUUID(),
-		State:     fftypes.TokenPoolStateConfirmed,
-		TX: fftypes.TransactionRef{
-			Type: fftypes.TransactionTypeTokenPool,
+		State:     core.TokenPoolStateConfirmed,
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeTokenPool,
 			ID:   fftypes.NewUUID(),
 		},
 		Info: fftypes.JSONObject{
@@ -58,9 +59,9 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 		},
 	}
 
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeCreated, "ns1", poolID, mock.Anything).
 		Return().Once()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, fftypes.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionTokenPools, core.ChangeEventTypeUpdated, "ns1", poolID, mock.Anything).
 		Return().Once()
 
 	err := s.UpsertTokenPool(ctx, pool)
@@ -109,7 +110,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 
 	// Update the token pool
 	pool.Locator = "67890"
-	pool.Type = fftypes.TokenTypeNonFungible
+	pool.Type = core.TokenTypeNonFungible
 	err = s.UpsertTokenPool(ctx, pool)
 	assert.NoError(t, err)
 
@@ -125,7 +126,7 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 func TestUpsertTokenPoolFailBegin(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -134,7 +135,7 @@ func TestUpsertTokenPoolFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -145,7 +146,7 @@ func TestUpsertTokenPoolFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{}))
 	mock.ExpectExec("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF10116", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -156,7 +157,7 @@ func TestUpsertTokenPoolFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
 	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	mock.ExpectRollback()
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF10117", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -167,7 +168,7 @@ func TestUpsertTokenPoolFailCommit(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertTokenPool(context.Background(), &fftypes.TokenPool{})
+	err := s.UpsertTokenPool(context.Background(), &core.TokenPool{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -177,7 +178,7 @@ func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
 	callbacks := &databasemocks.Callbacks{}
 	s.SQLCommon.callbacks = callbacks
 	poolID := fftypes.NewUUID()
-	pool := &fftypes.TokenPool{
+	pool := &core.TokenPool{
 		ID:        poolID,
 		Namespace: "ns1",
 	}

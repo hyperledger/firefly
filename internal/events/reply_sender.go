@@ -19,11 +19,11 @@ package events
 import (
 	"context"
 
-	"github.com/hyperledger/firefly/pkg/fftypes"
-	"github.com/hyperledger/firefly/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (ed *eventDispatcher) sendReply(ctx context.Context, event *fftypes.Event, reply *fftypes.MessageInOut) {
+func (ed *eventDispatcher) sendReply(ctx context.Context, event *core.Event, reply *core.MessageInOut) {
 	var err error
 	if reply.Header.Group != nil {
 		err = ed.messaging.NewMessage(event.Namespace, reply).Send(ctx)

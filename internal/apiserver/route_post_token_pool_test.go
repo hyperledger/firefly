@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/assetmocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -32,15 +32,15 @@ func TestPostTokenPool(t *testing.T) {
 	o, r := newTestAPIServer()
 	mam := &assetmocks.Manager{}
 	o.On("Assets").Return(mam)
-	input := fftypes.TokenPool{}
+	input := core.TokenPool{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
 	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/tokens/pools", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("CreateTokenPool", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.TokenPool"), false).
-		Return(&fftypes.TokenPool{}, nil)
+	mam.On("CreateTokenPool", mock.Anything, "ns1", mock.AnythingOfType("*core.TokenPool"), false).
+		Return(&core.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

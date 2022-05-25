@@ -19,7 +19,6 @@ package apiserver
 import (
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/oapispec"
@@ -27,10 +26,9 @@ import (
 
 var getIdentityDID = &oapispec.Route{
 	Name:   "getIdentityDID",
-	Path:   "namespaces/{ns}/identities/{iid}/did",
+	Path:   "identities/{iid}/did",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
-		{Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace},
 		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams:     nil,
@@ -39,6 +37,6 @@ var getIdentityDID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByID(r.Ctx, r.PP["ns"], r.PP["iid"])
+		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByID(r.Ctx, extractNamespace(r.PP), r.PP["iid"])
 	},
 }

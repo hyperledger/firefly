@@ -21,7 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var adminGetOpByID = &oapispec.Route{
@@ -35,7 +35,7 @@ var adminGetOpByID = &oapispec.Route{
 	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsAdminGetOpByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &fftypes.Operation{} },
+	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		output, err = getOr(r.Ctx).GetOperationByID(r.Ctx, r.PP["opid"])

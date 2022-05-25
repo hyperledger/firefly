@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -30,14 +31,14 @@ import (
 func TestPrepareAndRunBatchPin(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainPinBatch,
+	op := &core.Operation{
+		Type: core.OpTypeBlockchainPinBatch,
 		ID:   fftypes.NewUUID(),
 	}
-	batch := &fftypes.BatchPersisted{
-		BatchHeader: fftypes.BatchHeader{
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
 			ID: fftypes.NewUUID(),
-			SignerRef: fftypes.SignerRef{
+			SignerRef: core.SignerRef{
 				Key: "0x123",
 			},
 		},
@@ -51,7 +52,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(batch, nil)
-	mbi.On("SubmitBatchPin", context.Background(), op.ID, mock.Anything, "0x123", mock.Anything).Return(nil)
+	mbi.On("SubmitBatchPin", context.Background(), op.ID, "0x123", mock.Anything).Return(nil)
 
 	po, err := bp.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -68,7 +69,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 func TestPrepareOperationNotSupported(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
-	po, err := bp.PrepareOperation(context.Background(), &fftypes.Operation{})
+	po, err := bp.PrepareOperation(context.Background(), &core.Operation{})
 
 	assert.Nil(t, po)
 	assert.Regexp(t, "FF10371", err)
@@ -77,8 +78,8 @@ func TestPrepareOperationNotSupported(t *testing.T) {
 func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
-	op := &fftypes.Operation{
-		Type:  fftypes.OpTypeBlockchainPinBatch,
+	op := &core.Operation{
+		Type:  core.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{"batch": "bad"},
 	}
 
@@ -89,8 +90,8 @@ func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
 func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainPinBatch,
+	op := &core.Operation{
+		Type: core.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{
 			"batch":    fftypes.NewUUID().String(),
 			"contexts": []string{"bad"},
@@ -104,7 +105,7 @@ func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 func TestRunOperationNotSupported(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
-	_, complete, err := bp.RunOperation(context.Background(), &fftypes.PreparedOperation{})
+	_, complete, err := bp.RunOperation(context.Background(), &core.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
@@ -114,8 +115,8 @@ func TestPrepareOperationBatchPinError(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
 	batchID := fftypes.NewUUID()
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainPinBatch,
+	op := &core.Operation{
+		Type: core.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{
 			"batch":    batchID.String(),
 			"contexts": []string{},
@@ -133,8 +134,8 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
 	batchID := fftypes.NewUUID()
-	op := &fftypes.Operation{
-		Type: fftypes.OpTypeBlockchainPinBatch,
+	op := &core.Operation{
+		Type: core.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{
 			"batch":    batchID.String(),
 			"contexts": []string{},
