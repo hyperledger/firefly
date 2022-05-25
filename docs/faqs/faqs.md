@@ -35,12 +35,7 @@ For additional information about Smart Contracts, please see the official [Ether
 ## 🦊 Can I connect FireFly to MetaMask?
 Yes! In order to do this, you'll want to set up a FireFly stack and deploy an ERC-20 or ERC-721 contract to the chain (see the FAQ above on how to deploy a smart contract). 
 
-Once this contract is deployed, you'll follow these steps to add your network and token to MetaMask:
-- Open up the MetaMask browser extension, click on the My Accounts button (top-right corner) and go to Settings
-- If you are hosting the FireFly stack on your machine, the default RPC URL is http://localhost:5100 and the Chain ID is 2021.
-- If you are hosting your FF stack somewhere other than your local machine, you'll use the domain where your stack is hosted as the RPC URL (ex. https://polygon-rpc.com/ for the Polygon Chain) and you can either keep the default ChainID of 2021 or you can change your ChainID to the value shown in your genesis configuration file
-
-Once all of these are done, you can send/receive tokens from FireFly nodes to any wallet address!
+Once this contract is deployed, follow the steps listed [here](https://hyperledger.github.io/firefly/tutorials/tokens/erc721.html#use-metamask)
 
 ## 🚀 Connect with us on Discord
-If your question isn't answered here or if you have immediate questions please don't hesitate to reach out to us on Discord in the `firefly` channel:
+If your question isn't answered here or if you have immediate questions please don't hesitate to reach out to us on [Discord](https://discord.gg/hyperledger_) in the `firefly` channel:
