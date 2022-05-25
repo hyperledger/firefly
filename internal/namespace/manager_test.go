@@ -19,6 +19,7 @@ package namespace
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -35,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -236,23 +238,23 @@ func TestInitNamespacesMultipartyMultipleDB(t *testing.T) {
 	assert.Regexp(t, "FF10394", err)
 }
 
-func TestInitNamespacesDeprecatedConfig(t *testing.T) {
+func TestInitNamespacesDeprecatedConfigMultipleBlockchains(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode)
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
-	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	nm.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	// nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
+	// nm.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 
 	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.NoError(t, err)
+	assert.Regexp(t, "FF10394", err)
 }
 
 func TestInitNamespacesGatewayMultipleDB(t *testing.T) {
@@ -313,26 +315,6 @@ func TestInitNamespacesGatewayWithDX(t *testing.T) {
 
 	err := nm.initNamespaces(context.Background(), nm.mdi)
 	assert.Regexp(t, "FF10393", err)
-}
-
-func TestInitNamespacesDeprecatedConfigNoPlugins(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode)
-	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-	nm.bcPlugins = nil
-	nm.dbPlugins = nil
-	nm.ssPlugins = nil
-	nm.dxPlugins = nil
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10391", err)
 }
 
 func TestInitNamespacesGatewayWithSharedStorage(t *testing.T) {
@@ -427,24 +409,42 @@ func TestInitNamespacesDefaultMissing(t *testing.T) {
 
 func TestInitNamespacesDupName(t *testing.T) {
 	coreconfig.Reset()
-	InitConfig(true)
+	InitConfig(false)
 
-	namespaceConfig.AddKnownKey("predefined.0.name", "ns1")
-	namespaceConfig.AddKnownKey("predefined.0.remoteName", "ns1")
-	namespaceConfig.AddKnownKey("predefined.0.mode", "gateway")
-	namespaceConfig.AddKnownKey("predefined.0.plugins", []string{"ethereum", "postgres", "erc721"})
-
-	namespaceConfig.AddKnownKey("predefined.1.name", "ns2")
-	namespaceConfig.AddKnownKey("predefined.1.remoteName", "ns2")
-	namespaceConfig.AddKnownKey("predefined.1.mode", "gateway")
-	namespaceConfig.AddKnownKey("predefined.1.plugins", []string{"ethereum", "postgres", "erc721"})
-
-	namespaceConfig.AddKnownKey("predefined.2.name", "ns2")
-	namespaceConfig.AddKnownKey("predefined.2.remoteName", "ns2")
-	namespaceConfig.AddKnownKey("predefined.2.mode", "gateway")
-	namespaceConfig.AddKnownKey("predefined.2.plugins", []string{"ethereum", "postgres", "erc721"})
-
-	config.Set(coreconfig.NamespacesDefault, "ns1")
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      remoteName: ns1
+      mode: gateway
+      org:
+        key: 0x123456
+      plugins:
+      - sqlite3
+      - ethereum
+      - erc721
+    - name: ns2
+      remoteName: ns2
+      mode: gateway
+      org:
+        key: 0x223456
+      plugins:
+      - sqlite3
+      - ethereum
+      - erc721
+    - name: ns2
+      remoteName: ns2
+      mode: gateway
+      org:
+        key: 0x223456
+      plugins:
+      - sqlite3
+      - ethereum
+      - erc721
+  `))
+	assert.NoError(t, err)
 
 	nm := newTestNamespaceManager(false)
 	defer nm.cleanup(t)

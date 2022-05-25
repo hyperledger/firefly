@@ -126,8 +126,9 @@ func newTestOrchestrator() *testOrchestrator {
 	ctx, cancel := context.WithCancel(context.Background())
 	tor := &testOrchestrator{
 		orchestrator: orchestrator{
-			ctx:       ctx,
-			cancelCtx: cancel,
+			ctx:         ctx,
+			cancelCtx:   cancel,
+			pluginNames: make(map[string]bool),
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -745,6 +746,18 @@ func TestBadTokensPlugin(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := or.Init(ctx, cancelCtx)
 	assert.Error(t, err)
+}
+
+func TestDuplicatePluginNames(t *testing.T) {
+	or := newTestOrchestrator()
+	or.pluginNames["duplicate"] = true
+	tifactory.InitConfig(tokensConfig)
+	utConfig := config.RootSection("test")
+	utConfig.AddKnownKey(coreconfig.PluginConfigName, "duplicate")
+	utConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
+	ctx := context.Background()
+	err := or.validatePluginConfig(ctx, utConfig, "test")
+	assert.Regexp(t, "FF10395", err)
 }
 
 func TestGoodTokensPlugin(t *testing.T) {

@@ -617,6 +617,7 @@ nav_order: 3
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |description|A description for the namespace|`string`|`<nil>`
+|mode|The namespace mode. Valid values: gateway, multiparty|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
 |remoteName|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`

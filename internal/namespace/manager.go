@@ -19,7 +19,6 @@ package namespace
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -145,25 +144,35 @@ func (nm *namespaceManager) validateNamespaceConfig(ctx context.Context, name st
 		return err
 	}
 
-	if strings.ToLower(name) == "ff_system" || strings.ToLower(conf.GetString(coreconfig.NamespaceRemoteName)) == "ff_system" {
-		return i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName)
+	if name == core.SystemNamespace || conf.GetString(coreconfig.NamespaceRemoteName) == core.SystemNamespace {
+		return i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.SystemNamespace)
 	}
 
 	mode := conf.GetString(coreconfig.NamespaceMode)
 	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
 
-	// If the no plugins are found when querying the config, assume older config file
+	// If no plugins are found when querying the config, assume older config file
 	if len(plugins) == 0 {
-		// Still check to ensure at least one bc, dx, ss, and db plugin exist
-		if len(nm.bcPlugins) == 0 || len(nm.dxPlugins) == 0 || len(nm.ssPlugins) == 0 || len(nm.dbPlugins) == 0 {
-			return i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
+		for plugin := range nm.bcPlugins {
+			plugins = append(plugins, plugin)
 		}
-		return nil
+
+		for plugin := range nm.dxPlugins {
+			plugins = append(plugins, plugin)
+		}
+
+		for plugin := range nm.ssPlugins {
+			plugins = append(plugins, plugin)
+		}
+
+		for plugin := range nm.dbPlugins {
+			plugins = append(plugins, plugin)
+		}
 	}
 
 	switch mode {
 	// Multiparty is the default mode when none is provided
-	case "multiparty", "":
+	case "multiparty":
 		if err := nm.validateMultiPartyConfig(ctx, name, plugins); err != nil {
 			return err
 		}
@@ -220,7 +229,6 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	}
 
 	if !dbPlugin || !ssPlugin || !dxPlugin || !bcPlugin {
-		fmt.Printf("plugins: %+v\n", nm)
 		return i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
 	}
 
