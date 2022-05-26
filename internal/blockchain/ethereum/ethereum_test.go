@@ -2818,3 +2818,89 @@ func TestHandleNetworkAction(t *testing.T) {
 	em.AssertExpectations(t)
 
 }
+
+func TestNetworkVersion(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "2"})(req)
+		})
+
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, version)
+}
+
+func TestNetworkVersionCached(t *testing.T) {
+	e, _ := newTestEthereum()
+	e.networkVersion = 2
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, version)
+}
+
+func TestNetworkVersionNotFound(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"})(req)
+		})
+
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, version)
+}
+
+func TestNetworkVersionError(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(500, ethError{Error: "Unknown"})(req)
+		})
+
+	_, err := e.NetworkVersion(context.Background())
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestNetworkVersionBadResponse(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	_, err := e.NetworkVersion(context.Background())
+	assert.Regexp(t, "json: cannot unmarshal", err)
+}

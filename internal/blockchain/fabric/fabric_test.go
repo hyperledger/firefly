@@ -1941,3 +1941,77 @@ func TestHandleNetworkAction(t *testing.T) {
 	em.AssertExpectations(t)
 
 }
+
+func TestNetworkVersion(t *testing.T) {
+	e, _ := newTestFabric()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "NetworkVersion", body["func"])
+			return httpmock.NewJsonResponderOrPanic(200, fabQueryNamedOutput{Result: 2})(req)
+		})
+
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, version)
+}
+
+func TestNetworkVersionCached(t *testing.T) {
+	e, _ := newTestFabric()
+	e.networkVersion = 2
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, version)
+}
+
+func TestNetworkVersionNotFound(t *testing.T) {
+	e, _ := newTestFabric()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "NetworkVersion", body["func"])
+			return httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Function NetworkVersion not found"})(req)
+		})
+
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, version)
+}
+
+func TestNetworkVersionError(t *testing.T) {
+	e, _ := newTestFabric()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "NetworkVersion", body["func"])
+			return httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Unknown"})(req)
+		})
+
+	_, err := e.NetworkVersion(context.Background())
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestNetworkVersionBadResponse(t *testing.T) {
+	e, _ := newTestFabric()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, "NetworkVersion", body["func"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	_, err := e.NetworkVersion(context.Background())
+	assert.Regexp(t, "json: cannot unmarshal", err)
+}

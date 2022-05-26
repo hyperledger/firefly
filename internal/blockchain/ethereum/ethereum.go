@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -54,6 +55,7 @@ type Ethereum struct {
 	fireflyContract  string
 	fireflyFromBlock string
 	fireflyMux       sync.Mutex
+	networkVersion   int
 	prefixShort      string
 	prefixLong       string
 	capabilities     *blockchain.Capabilities
@@ -280,6 +282,7 @@ func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFl
 		e.fireflyMux.Lock()
 		e.fireflyContract = address
 		e.fireflyFromBlock = fromBlock
+		e.networkVersion = 0
 		e.fireflyMux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"address":      address,
@@ -644,10 +647,16 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 		Method: abi,
 		Params: input,
 	}
-	return e.client.R().
+	var resErr ethError
+	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
+		SetError(&resErr).
 		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return res, wrapError(ctx, &resErr, res, err)
+	}
+	return res, nil
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
@@ -708,7 +717,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	}
 	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput)
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, err
 	}
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -1048,4 +1057,35 @@ func (e *Ethereum) getFFIType(solitidyType string) string {
 		}
 	}
 	return ""
+}
+
+func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, error) {
+	res, err := e.queryContractMethod(ctx, address, networkVersionMethodABI, []interface{}{})
+	if err != nil || !res.IsSuccess() {
+		// "Call failed" is interpreted as "method does not exist, default to version 1"
+		if strings.Contains(err.Error(), "FFEC100148") {
+			return 1, nil
+		}
+		return 0, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+	}
+	output := &queryOutput{}
+	if err = json.Unmarshal(res.Body(), output); err != nil {
+		return 0, err
+	}
+	return strconv.Atoi(output.Output.(string))
+}
+
+func (e *Ethereum) NetworkVersion(ctx context.Context) (int, error) {
+	e.fireflyMux.Lock()
+	if e.networkVersion > 0 {
+		e.fireflyMux.Unlock()
+		return e.networkVersion, nil
+	}
+	address := e.fireflyContract
+	e.fireflyMux.Unlock()
+	version, err := e.getNetworkVersion(ctx, address)
+	if err == nil {
+		e.networkVersion = version
+	}
+	return version, err
 }

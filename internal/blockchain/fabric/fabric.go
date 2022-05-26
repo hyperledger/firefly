@@ -50,6 +50,7 @@ type Fabric struct {
 	fireflyChaincode string
 	fireflyFromBlock string
 	fireflyMux       sync.Mutex
+	networkVersion   int
 	signer           string
 	prefixShort      string
 	prefixLong       string
@@ -152,6 +153,7 @@ var batchPinPrefixItems = []*PrefixItem{
 		Type: "string",
 	},
 }
+var networkVersionMethodName = "NetworkVersion"
 
 var fullIdentityPattern = regexp.MustCompile(".+::x509::(.+)::.+")
 
@@ -222,7 +224,7 @@ func (f *Fabric) resolveFireFlyContract(ctx context.Context, contractIndex int) 
 		}
 		chaincode = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractChaincode)
 		if chaincode == "" {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.fabric.fireflyContract")
+			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fireflyContract")
 		}
 		fromBlock = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
 	} else {
@@ -254,6 +256,7 @@ func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyC
 		f.fireflyMux.Lock()
 		f.fireflyChaincode = chaincode
 		f.fireflyFromBlock = fromBlock
+		f.networkVersion = 0
 		f.fireflyMux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"chaincode":    chaincode,
@@ -606,6 +609,33 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 	return nil
 }
 
+func (f *Fabric) queryContractMethod(ctx context.Context, channel, chaincode, methodName string, prefixItems []*PrefixItem, input map[string]string) (*resty.Response, error) {
+	in := &fabTxNamedInput{
+		Headers: &fabTxInputHeaders{
+			PayloadSchema: &PayloadSchema{
+				Type:        "array",
+				PrefixItems: prefixItems,
+			},
+			Channel:   channel,
+			Chaincode: chaincode,
+			Signer:    f.signer,
+		},
+		Func: methodName,
+		Args: input,
+	}
+
+	var resErr fabError
+	res, err := f.client.R().
+		SetContext(ctx).
+		SetBody(in).
+		SetError(&resErr).
+		Post("/query")
+	if err != nil || !res.IsSuccess() {
+		return res, wrapError(ctx, &resErr, res, err)
+	}
+	return res, nil
+}
+
 func getUserName(fullIDString string) string {
 	matches := fullIdentityPattern.FindStringSubmatch(fullIDString)
 	if len(matches) == 0 {
@@ -712,27 +742,9 @@ func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, m
 		}
 	}
 
-	in := &fabTxNamedInput{
-		Headers: &fabTxInputHeaders{
-			PayloadSchema: &PayloadSchema{
-				Type:        "array",
-				PrefixItems: prefixItems,
-			},
-			Channel:   fabricOnChainLocation.Channel,
-			Chaincode: fabricOnChainLocation.Chaincode,
-			Signer:    f.signer,
-		},
-		Func: method.Name,
-		Args: args,
-	}
-
-	res, err := f.client.R().
-		SetContext(ctx).
-		SetBody(in).
-		Post("/query")
-
-	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
+	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, prefixItems, args)
+	if err != nil {
+		return nil, err
 	}
 	output := &fabQueryNamedOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -813,4 +825,36 @@ func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *core.FFIGen
 
 func (f *Fabric) GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string {
 	return event.Name
+}
+
+func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, error) {
+	res, err := f.queryContractMethod(ctx, f.defaultChannel, chaincode, networkVersionMethodName, []*PrefixItem{}, map[string]string{})
+	if err != nil || !res.IsSuccess() {
+		// "Function not found" is interpreted as "default to version 1"
+		notFoundError := fmt.Sprintf("Function %s not found", networkVersionMethodName)
+		if strings.Contains(err.Error(), notFoundError) {
+			return 1, nil
+		}
+		return 0, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+	}
+	output := &fabQueryNamedOutput{}
+	if err = json.Unmarshal(res.Body(), output); err != nil {
+		return 0, err
+	}
+	return int(output.Result.(float64)), nil
+}
+
+func (f *Fabric) NetworkVersion(ctx context.Context) (int, error) {
+	f.fireflyMux.Lock()
+	if f.networkVersion > 0 {
+		f.fireflyMux.Unlock()
+		return f.networkVersion, nil
+	}
+	chaincode := f.fireflyChaincode
+	f.fireflyMux.Unlock()
+	version, err := f.getNetworkVersion(ctx, chaincode)
+	if err == nil {
+		f.networkVersion = version
+	}
+	return version, err
 }
