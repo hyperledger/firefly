@@ -26,8 +26,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/sharedstorage"
+	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
 type Manager interface {
@@ -36,14 +40,24 @@ type Manager interface {
 }
 
 type namespaceManager struct {
-	ctx      context.Context
-	nsConfig map[string]config.Section
+	ctx           context.Context
+	nsConfig      map[string]config.Section
+	bcPlugins     map[string]blockchain.Plugin
+	dbPlugins     map[string]database.Plugin
+	dxPlugins     map[string]dataexchange.Plugin
+	ssPlugins     map[string]sharedstorage.Plugin
+	tokensPlugins map[string]tokens.Plugin
 }
 
-func NewNamespaceManager(ctx context.Context) Manager {
+func NewNamespaceManager(ctx context.Context, bc map[string]blockchain.Plugin, db map[string]database.Plugin, dx map[string]dataexchange.Plugin, ss map[string]sharedstorage.Plugin, tokens map[string]tokens.Plugin) Manager {
 	nm := &namespaceManager{
-		ctx:      ctx,
-		nsConfig: buildNamespaceMap(ctx),
+		ctx:           ctx,
+		nsConfig:      buildNamespaceMap(ctx),
+		bcPlugins:     bc,
+		dbPlugins:     db,
+		dxPlugins:     dx,
+		ssPlugins:     ss,
+		tokensPlugins: tokens,
 	}
 	return nm
 }
@@ -80,7 +94,7 @@ func (nm *namespaceManager) getPredefinedNamespaces(ctx context.Context) ([]*cor
 	i := 0
 	foundDefault := false
 	for name, nsObject := range nm.nsConfig {
-		if err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", i)); err != nil {
+		if err := nm.validateNamespaceConfig(ctx, name, i, nsObject); err != nil {
 			return nil, err
 		}
 		i++
@@ -122,5 +136,140 @@ func (nm *namespaceManager) initNamespaces(ctx context.Context, di database.Plug
 			}
 		}
 	}
+	return nil
+}
+
+func (nm *namespaceManager) validateNamespaceConfig(ctx context.Context, name string, index int, conf config.Section) error {
+	if err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
+		return err
+	}
+
+	if name == core.SystemNamespace || conf.GetString(coreconfig.NamespaceRemoteName) == core.SystemNamespace {
+		return i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.SystemNamespace)
+	}
+
+	mode := conf.GetString(coreconfig.NamespaceMode)
+	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
+
+	// If no plugins are found when querying the config, assume older config file
+	if len(plugins) == 0 {
+		for plugin := range nm.bcPlugins {
+			plugins = append(plugins, plugin)
+		}
+
+		for plugin := range nm.dxPlugins {
+			plugins = append(plugins, plugin)
+		}
+
+		for plugin := range nm.ssPlugins {
+			plugins = append(plugins, plugin)
+		}
+
+		for plugin := range nm.dbPlugins {
+			plugins = append(plugins, plugin)
+		}
+	}
+
+	switch mode {
+	// Multiparty is the default mode when none is provided
+	case "multiparty":
+		if err := nm.validateMultiPartyConfig(ctx, name, plugins); err != nil {
+			return err
+		}
+	case "gateway":
+		if err := nm.validateGatewayConfig(ctx, name, plugins); err != nil {
+			return err
+		}
+	default:
+		return i18n.NewError(ctx, coremsgs.MsgInvalidNamespaceMode, name)
+	}
+	return nil
+}
+
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) error {
+	var dbPlugin bool
+	var ssPlugin bool
+	var dxPlugin bool
+	var bcPlugin bool
+
+	for _, pluginName := range plugins {
+		if _, ok := nm.bcPlugins[pluginName]; ok {
+			if bcPlugin {
+				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+			}
+			bcPlugin = true
+			continue
+		}
+		if _, ok := nm.dxPlugins[pluginName]; ok {
+			if dxPlugin {
+				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "dataexchange")
+			}
+			dxPlugin = true
+			continue
+		}
+		if _, ok := nm.ssPlugins[pluginName]; ok {
+			if ssPlugin {
+				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "sharedstorage")
+			}
+			ssPlugin = true
+			continue
+		}
+		if _, ok := nm.dbPlugins[pluginName]; ok {
+			if dbPlugin {
+				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+			}
+			dbPlugin = true
+			continue
+		}
+		if _, ok := nm.tokensPlugins[pluginName]; ok {
+			continue
+		}
+
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+	}
+
+	if !dbPlugin || !ssPlugin || !dxPlugin || !bcPlugin {
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
+	}
+
+	return nil
+}
+
+func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, plugins []string) error {
+	var dbPlugin bool
+	var bcPlugin bool
+
+	for _, pluginName := range plugins {
+		if _, ok := nm.bcPlugins[pluginName]; ok {
+			if bcPlugin {
+				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+			}
+			bcPlugin = true
+			continue
+		}
+		if _, ok := nm.dxPlugins[pluginName]; ok {
+			return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+		}
+		if _, ok := nm.ssPlugins[pluginName]; ok {
+			return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+		}
+		if _, ok := nm.dbPlugins[pluginName]; ok {
+			if dbPlugin {
+				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+			}
+			dbPlugin = true
+			continue
+		}
+		if _, ok := nm.tokensPlugins[pluginName]; ok {
+			continue
+		}
+
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+	}
+
+	if !dbPlugin {
+		return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayNoDB, name)
+	}
+
 	return nil
 }

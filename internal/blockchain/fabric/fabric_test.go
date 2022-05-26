@@ -351,7 +351,7 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{
 		Active: core.FireFlyContractInfo{Index: 1},
 	})
-	assert.Regexp(t, "FF10388", err)
+	assert.Regexp(t, "FF10396", err)
 
 }
 

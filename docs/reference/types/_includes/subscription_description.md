@@ -75,12 +75,12 @@ FireFly has a simple protocol on top of WebSockets:
 1. Each time you connect/reconnect you need to tell FireFly to start
    sending you events on a particular subscription. You can do this in two
    ways (described in detail below):
-    1. Send a [WSStart](./(wsstart.md) JSON payload
+    1. Send a [WSStart](./wsstart.html) JSON payload
     2. Include a `namespace` and `name` query parameter in the URL when you
-       connect, along with query params for other fields of [WSStart](./(wsstart.md)
+       connect, along with query params for other fields of [WSStart](./wsstart.html)
 2. One you have started your subscription, each event flows from
-   the server, to your application as a JSON [Event](./(event.md) payload
-3. For each event you receive, you need to send a [WSAck](./(wsack.md) payload.
+   the server, to your application as a JSON [Event](./event.html) payload
+3. For each event you receive, you need to send a [WSAck](./wsack.html) payload.
     - Unless you specified `autoack` in step (1)
 
 > The SDK libraries for FireFly help you ensure you send the `start`

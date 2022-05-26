@@ -13,8 +13,8 @@ order that they are delivered to your application.
 ### Reference
 
 Events have a `reference` to the UUID of an object that is the subject of the event,
-such as a detailed [Blockchain Event](./(blockchainevent.md), or an off-chain
-[Message](./(message.md).
+such as a detailed [Blockchain Event](./blockchainevent.html), or an off-chain
+[Message](./message.html).
 
 When events are delivered to your application, the `reference` field is
 automatically retrieved and included in the JSON payload
@@ -44,14 +44,14 @@ the type of event. This is intended to be a property you would use to
 filter events to your application, or query all historical events
 associated with a given business data stream.
 
-For example when you send a [Message](./(message.md), you set the `topics`
+For example when you send a [Message](./message.html), you set the `topics`
 you want that message to apply to, and FireFly ensures a consistent global
 order between all parties that receive that message.
 
 ### Transaction
 
 When actions are submitted by a FireFly node, they are performed
-within a FireFly [Transaction](./(transaction.md). The events that occur
+within a FireFly [Transaction](./transaction.html). The events that occur
 as a direct result of that transaction, are tagged with the transaction
 ID so that they can be grouped together.
 
@@ -74,24 +74,24 @@ Note that some events cannot be tagged with a Transaction ID:
 
 | Types                                       | Reference                            | Topic                       | Correlator              |
 |---------------------------------------------|--------------------------------------|-----------------------------|-------------------------|
-| `transaction_submitted`                     | [Transaction](./(transaction.md)         | `transaction.type`          |                         |
-| `message_confirmed`<br/>`message_rejected`  | [Message](./(message.md)                 | `message.header.topics[i]`* | `message.header.cid`    |
-| `token_pool_confirmed`                      | [TokenPool](./(tokenpool.md)             | `tokenPool.id`              |                         |
-| `token_pool_op_failed`                      | [Operation](./(operation.md)             | `tokenPool.id`              | `tokenPool.id`          |
-| `token_transfer_confirmed`                  | [TokenTransfer](./(tokentransfer.md)     | `tokenPool.id`              |                         |
-| `token_transfer_op_failed`                  | [Operation](./(operation.md)             | `tokenPool.id`              | `tokenTransfer.localId` |
-| `token_approval_confirmed`                  | [TokenApproval](./(tokenapproval.md)     | `tokenPool.id`              |                         |
-| `token_approval_op_failed`                  | [Operation](./(operation.md)             | `tokenPool.id`              | `tokenApproval.localId` |
-| `namespace_confirmed`                       | [Namespace](./(namespace.md)             | `"ff_definition"`           |                         |
-| `datatype_confirmed`                        | [Datatype](./(datatype.md)               | `"ff_definition"`           |                         |
-| `identity_confirmed`<br/>`identity_updated` | [Identity](./(identity.md)               | `"ff_definition"`           |                         |
-| `contract_interface_confirmed`              | [FFI](./(ffi.md)                         | `"ff_definition"`           |                         |
-| `contract_api_confirmed`                    | [ContractAPI](./(contractapi.md)         | `"ff_definition"`           |                         |
-| `blockchain_event_received`                 | [BlockchainEvent](./(blockchainevent.md) | From listener **            |                         |
-| `blockchain_invoke_op_succeeded`            | [Operation](./(operation.md)             |                             |                         |
-| `blockchain_invoke_op_failed`               | [Operation](./(operation.md)             |                             |                         |
+| `transaction_submitted`                     | [Transaction](./transaction.html)         | `transaction.type`          |                         |
+| `message_confirmed`<br/>`message_rejected`  | [Message](./message.html)                 | `message.header.topics[i]`* | `message.header.cid`    |
+| `token_pool_confirmed`                      | [TokenPool](./tokenpool.html)             | `tokenPool.id`              |                         |
+| `token_pool_op_failed`                      | [Operation](./operation.html)             | `tokenPool.id`              | `tokenPool.id`          |
+| `token_transfer_confirmed`                  | [TokenTransfer](./tokentransfer.html)     | `tokenPool.id`              |                         |
+| `token_transfer_op_failed`                  | [Operation](./operation.html)             | `tokenPool.id`              | `tokenTransfer.localId` |
+| `token_approval_confirmed`                  | [TokenApproval](./tokenapproval.html)     | `tokenPool.id`              |                         |
+| `token_approval_op_failed`                  | [Operation](./operation.html)             | `tokenPool.id`              | `tokenApproval.localId` |
+| `namespace_confirmed`                       | [Namespace](./namespace.html)             | `"ff_definition"`           |                         |
+| `datatype_confirmed`                        | [Datatype](./datatype.html)               | `"ff_definition"`           |                         |
+| `identity_confirmed`<br/>`identity_updated` | [Identity](./identity.html)               | `"ff_definition"`           |                         |
+| `contract_interface_confirmed`              | [FFI](./ffi.html)                         | `"ff_definition"`           |                         |
+| `contract_api_confirmed`                    | [ContractAPI](./contractapi.html)         | `"ff_definition"`           |                         |
+| `blockchain_event_received`                 | [BlockchainEvent](./blockchainevent.html) | From listener **            |                         |
+| `blockchain_invoke_op_succeeded`            | [Operation](./operation.html)             |                             |                         |
+| `blockchain_invoke_op_failed`               | [Operation](./operation.html)             |                             |                         |
 
-> * A separate event is emitted for _each topic_ associated with a [Message](./(message.md).
+> * A separate event is emitted for _each topic_ associated with a [Message](./message.html).
 
 > ** The topic for a blockchain event is inherited from the blockchain listener,
 >    allowing you to create multiple blockchain listeners that all deliver messages

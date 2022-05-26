@@ -179,6 +179,8 @@ type orchestrator struct {
 	sharedDownload       shareddownload.Manager
 	txHelper             txcommon.Helper
 	namespace            namespace.Manager
+	// Used to detect duplicate plugin names
+	pluginNames map[string]bool
 }
 
 func NewOrchestrator(withDefaults bool) Orchestrator {
@@ -382,15 +384,20 @@ func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []datab
 
 func (or *orchestrator) validatePluginConfig(ctx context.Context, config config.Section, sectionName string) error {
 	name := config.GetString(coreconfig.PluginConfigName)
-	dxType := config.GetString(coreconfig.PluginConfigType)
+	pluginType := config.GetString(coreconfig.PluginConfigType)
 
-	if name == "" || dxType == "" {
+	if name == "" || pluginType == "" {
 		return i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, sectionName)
 	}
 
 	if err := core.ValidateFFNameField(ctx, name, "name"); err != nil {
 		return err
 	}
+
+	if _, ok := or.pluginNames[name]; ok {
+		return i18n.NewError(ctx, coremsgs.MsgDuplicatePluginName, name)
+	}
+	or.pluginNames[name] = true
 
 	return nil
 }
@@ -457,6 +464,7 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
+	or.pluginNames = make(map[string]bool)
 	if or.metrics == nil {
 		or.metrics = metrics.NewMetricsManager(ctx)
 	}
@@ -875,7 +883,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 	if or.namespace == nil {
-		or.namespace = namespace.NewNamespaceManager(ctx)
+		or.namespace = namespace.NewNamespaceManager(ctx, or.blockchains, or.databases, or.dataexchangePlugins, or.sharedstoragePlugins, or.tokens)
 	}
 	return or.namespace.Init(ctx, or.database)
 }
