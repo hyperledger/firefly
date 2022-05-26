@@ -36,7 +36,7 @@ var postNetworkAction = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.NetworkAction{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).SubmitNetworkAction(r.Ctx, r.Input.(*core.NetworkAction))
+		err = getOr(r.Ctx).SubmitNetworkAction(r.Ctx, extractNamespace(r.PP), r.Input.(*core.NetworkAction))
 		return r.Input, err
 	},
 }

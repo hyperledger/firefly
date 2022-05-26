@@ -142,7 +142,7 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
-	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
+	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
 }
 
 type orchestrator struct {
@@ -887,12 +887,17 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 	return or.namespace.Init(ctx, or.database)
 }
 
-func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
-	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx, core.LegacySystemNamespace)
+func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
+	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx, ns)
 	if err != nil {
 		return err
 	}
-	if action.Type != core.NetworkActionTerminate {
+	if action.Type == core.NetworkActionTerminate {
+		if ns != core.LegacySystemNamespace {
+			// For now, "terminate" only works on ff_system
+			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, ns)
+		}
+	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
 	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
