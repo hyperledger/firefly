@@ -1,0 +1,27 @@
+langs:
+  en: English
+  es: Español
+site:
+  title: Hyperledger FireFly Docs
+pages:
+  home: Home
+  advanced_cli_usage: Advanced CLI Usage
+  api_spec: API Spec
+  architecture: Architecture
+  api_post_syntax: API Post Syntax
+  api_query_syntax: API Query Syntax
+  blockchain_protocols: Blockchain protocols
+  broadcast_shared_data: Broadcast / shared data
+  broadcast_data: Broadcast data
+  code_hierarchy: FireFly Code Hierarchy
+  code_overview: FireFly Code Overview
+  code_repositories: Code Repositories
+  configuration_reference: Configuration Reference
+  contributors: Contributors
+  custom_smart_contracts: Work with custom smart contracts
+  faqs: FAQs
+  getting_started: Getting Started
+  private_data_exchange: Private data exchange
+  reference: Reference
+  tutorials: Tutorials
+  understanding_firefly: Understanding FireFly
