@@ -23,6 +23,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -35,11 +36,17 @@ func TestNetworkAction(t *testing.T) {
 	defer cancel()
 
 	event := &blockchain.Event{ProtocolID: "0001"}
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x1234",
+	}
 
 	mbi := &blockchainmocks.Plugin{}
 	mdi := em.database.(*databasemocks.Plugin)
 	mth := em.txHelper.(*txcommonmocks.Helper)
+	mii := em.identity.(*identitymanagermocks.Manager)
 
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{}, nil)
 	mdi.On("GetBlockchainEventByProtocolID", em.ctx, "ff_system", (*fftypes.UUID)(nil), "0001").Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
 		return be.ProtocolID == "0001"
@@ -49,24 +56,81 @@ func TestNetworkAction(t *testing.T) {
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainNetworkAction(mbi, "terminate", event, &core.VerifierRef{})
+	err := em.BlockchainNetworkAction(mbi, "terminate", event, verifier)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
+	mii.AssertExpectations(t)
+}
+
+func TestNetworkActionUnknownIdentity(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x1234",
+	}
+
+	mbi := &blockchainmocks.Plugin{}
+	mii := em.identity.(*identitymanagermocks.Manager)
+
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(nil, fmt.Errorf("pop")).Once()
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(nil, nil).Once()
+
+	err := em.BlockchainNetworkAction(mbi, "terminate", &blockchain.Event{}, verifier)
+	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+	mii.AssertExpectations(t)
+}
+
+func TestNetworkActionNonRootIdentity(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x1234",
+	}
+
+	mbi := &blockchainmocks.Plugin{}
+	mii := em.identity.(*identitymanagermocks.Manager)
+
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			Parent: fftypes.NewUUID(),
+		},
+	}, nil)
+
+	err := em.BlockchainNetworkAction(mbi, "terminate", &blockchain.Event{}, verifier)
+	assert.NoError(t, err)
+
+	mbi.AssertExpectations(t)
+	mii.AssertExpectations(t)
 }
 
 func TestNetworkActionUnknown(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mbi := &blockchainmocks.Plugin{}
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x1234",
+	}
 
-	err := em.BlockchainNetworkAction(mbi, "bad", &blockchain.Event{}, &core.VerifierRef{})
+	mbi := &blockchainmocks.Plugin{}
+	mii := em.identity.(*identitymanagermocks.Manager)
+
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{}, nil)
+
+	err := em.BlockchainNetworkAction(mbi, "bad", &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
+	mii.AssertExpectations(t)
 }
 
 func TestActionTerminateQueryFail(t *testing.T) {

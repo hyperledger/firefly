@@ -39,7 +39,19 @@ func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.
 
 func (em *eventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
 	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
-		// TODO: verify signing identity
+		// Verify that the action came from a registered root org
+		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, signingKey)
+		if err != nil {
+			return true, err
+		}
+		if resolvedAuthor == nil {
+			log.L(em.ctx).Errorf("Ignoring network action %s from unknown identity %s", action, signingKey.Value)
+			return false, nil
+		}
+		if resolvedAuthor.Parent != nil {
+			log.L(em.ctx).Errorf("Ignoring network action %s from non-root identity %s", action, signingKey.Value)
+			return false, nil
+		}
 
 		if action == core.NetworkActionTerminate.String() {
 			err = em.actionTerminate(bi, event)
