@@ -799,7 +799,7 @@
   },"133": {
     "doc": "Configuration Reference",
     "title": "namespaces.predefined[]",
-    "content": "| Key | Description | Type | Default Value | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | description | A description for the namespace | string | &lt;nil&gt; | . | mode | The namespace mode. Valid values: gateway, multiparty | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remoteName | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefined",
     "relUrl": "/reference/config.html#namespacespredefined"
   },"134": {
