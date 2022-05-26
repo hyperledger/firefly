@@ -169,6 +169,7 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NetworkVersion", ctx).Return(1, nil)
 
 	idID := fftypes.NewUUID()
 
@@ -207,6 +208,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NetworkVersion", ctx).Return(1, nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
@@ -272,6 +274,7 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NetworkVersion", ctx).Return(1, nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
@@ -583,6 +586,9 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 	}
 	config.Set(coreconfig.OrgName, "org1")
 
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion", ctx).Return(1, nil)
+
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(nil, nil)
@@ -590,6 +596,30 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 	err := im.ResolveNodeOwnerSigningIdentity(ctx, "ns1", &core.SignerRef{})
 	assert.Regexp(t, "FF10281", err)
 
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+
+}
+
+func TestResolveNodeOwnerSigningIdentityVersionError(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	im.nodeOwnerBlockchainKey["ns1"] = &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "key12345",
+	}
+	config.Set(coreconfig.OrgName, "org1")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion", ctx).Return(1, fmt.Errorf("pop"))
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
+
+	err := im.ResolveNodeOwnerSigningIdentity(ctx, "ns1", &core.SignerRef{})
+	assert.Regexp(t, "FF10281", err)
+
+	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 
 }
@@ -619,6 +649,9 @@ func TestResolveNodeOwnerSigningIdentitySystemFallback(t *testing.T) {
 		},
 	}
 
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion", ctx).Return(1, nil)
+
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(verifier, nil)
@@ -630,6 +663,7 @@ func TestResolveNodeOwnerSigningIdentitySystemFallback(t *testing.T) {
 	assert.Equal(t, "did:firefly:org/org1", ref.Author)
 	assert.Equal(t, "key12345", ref.Key)
 
+	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 
 }

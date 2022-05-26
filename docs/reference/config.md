@@ -542,12 +542,6 @@ nav_order: 2
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
 
-## identity.manager
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|legacySystemIdentities|Whether the identity manager should resolve legacy identities registered on the ff_system namespace|`boolean`|`<nil>`
-
 ## identity.manager.cache
 
 |Key|Description|Type|Default Value|
