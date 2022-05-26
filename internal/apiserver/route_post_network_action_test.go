@@ -27,16 +27,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostNetworkOperatorAction(t *testing.T) {
+func TestPostNetworkAction(t *testing.T) {
 	o, r := newTestAPIServer()
-	input := core.OperatorAction{}
+	input := core.NetworkAction{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/network/operatoraction", &buf)
+	req := httptest.NewRequest("POST", "/api/v1/network/action", &buf)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("SubmitOperatorAction", mock.Anything, mock.AnythingOfType("*core.OperatorAction")).Return(nil)
+	o.On("SubmitNetworkAction", mock.Anything, mock.AnythingOfType("*core.NetworkAction")).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

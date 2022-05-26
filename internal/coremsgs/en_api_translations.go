@@ -168,7 +168,7 @@ var (
 	APIEndpointsPutContractAPI                  = ffm("api.endpoints.putContractAPI", "Updates an existing contract API")
 	APIEndpointsPutSubscription                 = ffm("api.endpoints.putSubscription", "Update an existing subscription")
 	APIEndpointsGetContractAPIInterface         = ffm("api.endpoints.getContractAPIInterface", "Gets a contract interface for a contract API")
-	APIEndpointsPostNetworkOperatorAction       = ffm("api.endpoints.postNetworkOperatorAction", "Notify all nodes in the network of a new governance action")
+	APIEndpointsPostNetworkAction               = ffm("api.endpoints.postNetworkAction", "Notify all nodes in the network of a new governance action")
 
 	APISuccessResponse         = ffm("api.success", "Success")
 	APIRequestTimeoutDesc      = ffm("api.requestTimeout", "Server-side request timeout (millseconds, or set a custom suffix like 10s)")

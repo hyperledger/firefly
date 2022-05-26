@@ -61,16 +61,16 @@ type FireFlyContractInfo struct {
 	Info       fftypes.JSONObject `ffstruct:"FireFlyContractInfo" json:"info,omitempty"`
 }
 
-// OperatorActionType is a type of action to perform
-type OperatorActionType = FFEnum
+// NetworkActionType is a type of action to perform
+type NetworkActionType = FFEnum
 
 var (
-	// OperatorActionTerminate request all network members to stop using the current contract and move to the next one configured
-	OperatorActionTerminate = ffEnum("operatoractiontype", "terminate")
+	// NetworkActionTerminate request all network members to stop using the current contract and move to the next one configured
+	NetworkActionTerminate = ffEnum("networkactiontype", "terminate")
 )
 
-type OperatorAction struct {
-	Type OperatorActionType `ffstruct:"OperatorAction" json:"type" ffenum:"operatoractiontype"`
+type NetworkAction struct {
+	Type NetworkActionType `ffstruct:"NetworkAction" json:"type" ffenum:"networkactiontype"`
 }
 
 func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {

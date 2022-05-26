@@ -282,8 +282,8 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 	return r0
 }
 
-// SubmitOperatorAction provides a mock function with given fields: ctx, operationID, signingKey, action
-func (_m *Plugin) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.FFEnum) error {
+// SubmitNetworkAction provides a mock function with given fields: ctx, operationID, signingKey, action
+func (_m *Plugin) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.FFEnum) error {
 	ret := _m.Called(ctx, operationID, signingKey, action)
 
 	var r0 error

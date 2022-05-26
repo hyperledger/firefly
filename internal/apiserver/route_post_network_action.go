@@ -24,19 +24,19 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNetworkOperatorAction = &oapispec.Route{
-	Name:            "postNetworkOperatorAction",
-	Path:            "network/operatoraction",
+var postNetworkAction = &oapispec.Route{
+	Name:            "postNetworkAction",
+	Path:            "network/action",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNetworkOperatorAction,
-	JSONInputValue:  func() interface{} { return &core.OperatorAction{} },
-	JSONOutputValue: func() interface{} { return &core.OperatorAction{} },
+	Description:     coremsgs.APIEndpointsPostNetworkAction,
+	JSONInputValue:  func() interface{} { return &core.NetworkAction{} },
+	JSONOutputValue: func() interface{} { return &core.NetworkAction{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).SubmitOperatorAction(r.Ctx, r.Input.(*core.OperatorAction))
+		err = getOr(r.Ctx).SubmitNetworkAction(r.Ctx, r.Input.(*core.NetworkAction))
 		return r.Input, err
 	},
 }

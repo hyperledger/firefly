@@ -1135,27 +1135,27 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestOperatorAction(t *testing.T) {
+func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchain = or.mbi
 	verifier := &core.VerifierRef{Value: "0x123"}
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
-	or.mbi.On("SubmitOperatorAction", context.Background(), mock.Anything, "0x123", core.OperatorActionTerminate).Return(nil)
-	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: core.OperatorActionTerminate})
+	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.NoError(t, err)
 }
 
-func TestOperatorActionBadKey(t *testing.T) {
+func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
-	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: core.OperatorActionTerminate})
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
 }
 
-func TestOperatorActionBadType(t *testing.T) {
+func TestNetworkActionBadType(t *testing.T) {
 	or := newTestOrchestrator()
 	verifier := &core.VerifierRef{Value: "0x123"}
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
-	err := or.SubmitOperatorAction(context.Background(), &core.OperatorAction{Type: "bad"})
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10389", err)
 }

@@ -37,14 +37,14 @@ func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.
 	})
 }
 
-func (em *eventManager) BlockchainOperatorAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	return em.retry.Do(em.ctx, "handle operator action", func(attempt int) (retry bool, err error) {
+func (em *eventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
 		// TODO: verify signing identity
 
-		if action == core.OperatorActionTerminate.String() {
+		if action == core.NetworkActionTerminate.String() {
 			err = em.actionTerminate(bi, event)
 		} else {
-			log.L(em.ctx).Errorf("Ignoring unrecognized operator action: %s", action)
+			log.L(em.ctx).Errorf("Ignoring unrecognized network action: %s", action)
 			return false, nil
 		}
 

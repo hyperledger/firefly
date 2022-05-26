@@ -38,7 +38,7 @@ var routes = append(
 		getStatusBatchManager,
 		getStatusPins,
 		getStatusWebSockets,
-		postNetworkOperatorAction,
+		postNetworkAction,
 		postNewNamespace,
 		postNewOrganization,
 		postNewOrganizationSelf,

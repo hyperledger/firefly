@@ -63,8 +63,8 @@ type Plugin interface {
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
 	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
 
-	// SubmitOperatorAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.OperatorActionType) error
+	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
+	SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error
@@ -112,10 +112,10 @@ type Callbacks interface {
 	// Error should only be returned in shutdown scenarios
 	BatchPinComplete(batch *BatchPin, signingKey *core.VerifierRef) error
 
-	// BlockchainOperatorAction notifies on the arrival of a network operator action
+	// BlockchainNetworkAction notifies on the arrival of a network operator action
 	//
 	// Error should only be returned in shutdown scenarios
-	BlockchainOperatorAction(action string, event *Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, event *Event, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

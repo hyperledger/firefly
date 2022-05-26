@@ -404,7 +404,7 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	// Check if this is actually an operator action
 	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
 		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-		return e.callbacks.BlockchainOperatorAction(action, event, verifier)
+		return e.callbacks.BlockchainNetworkAction(action, event, verifier)
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -670,7 +670,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	return e.invokeContractMethod(ctx, e.fireflyContract, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
-func (e *Ethereum) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.OperatorActionType) error {
+func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
 	input := []interface{}{
 		blockchain.FireFlyActionPrefix + action,
 		ethHexFormatB32(nil),

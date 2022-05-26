@@ -69,8 +69,8 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return r0
 }
 
-// BlockchainOperatorAction provides a mock function with given fields: bi, action, event, signingKey
-func (_m *EventManager) BlockchainOperatorAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+// BlockchainNetworkAction provides a mock function with given fields: bi, action, event, signingKey
+func (_m *EventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
 	ret := _m.Called(bi, action, event, signingKey)
 
 	var r0 error

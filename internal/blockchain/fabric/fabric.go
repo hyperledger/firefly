@@ -371,7 +371,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	// Check if this is actually an operator action
 	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
 		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-		return f.callbacks.BlockchainOperatorAction(action, event, verifier)
+		return f.callbacks.BlockchainNetworkAction(action, event, verifier)
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -646,7 +646,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
-func (f *Fabric) SubmitOperatorAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.OperatorActionType) error {
+func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
 	pinInput := map[string]interface{}{
 		"namespace":  "firefly:" + action,
 		"uuids":      hexFormatB32(nil),

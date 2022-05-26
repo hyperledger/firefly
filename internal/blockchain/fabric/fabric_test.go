@@ -1877,7 +1877,7 @@ func TestGenerateEventSignature(t *testing.T) {
 	assert.Equal(t, "Changed", signature)
 }
 
-func TestSubmitOperatorAction(t *testing.T) {
+func TestSubmitNetworkAction(t *testing.T) {
 
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -1897,12 +1897,12 @@ func TestSubmitOperatorAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitOperatorAction(context.Background(), nil, signer, core.OperatorActionTerminate)
+	err := e.SubmitNetworkAction(context.Background(), nil, signer, core.NetworkActionTerminate)
 	assert.NoError(t, err)
 
 }
 
-func TestHandleOperatorAction(t *testing.T) {
+func TestHandleNetworkAction(t *testing.T) {
 	data := []byte(`
 [
   {
@@ -1930,7 +1930,7 @@ func TestHandleOperatorAction(t *testing.T) {
 		Value: "u0vgwu9s00-x509::CN=user2,OU=client::CN=fabric-ca-server",
 	}
 
-	em.On("BlockchainOperatorAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(nil)
+	em.On("BlockchainNetworkAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)

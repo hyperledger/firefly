@@ -22786,6 +22786,46 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /network/action:
+    post:
+      description: Notify all nodes in the network of a new governance action
+      operationId: postNetworkAction
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                type:
+                  description: The action to be performed
+                  enum:
+                  - terminate
+                  type: string
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  type:
+                    description: The action to be performed
+                    enum:
+                    - terminate
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Global
   /network/diddocs/{did}:
     get:
       description: Gets a DID document by its DID
@@ -23664,46 +23704,6 @@ paths:
                   updated:
                     description: The last update time of the identity profile
                     format: date-time
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
-      tags:
-      - Global
-  /network/operatoraction:
-    post:
-      description: Notify all nodes in the network of a new governance action
-      operationId: postNetworkOperatorAction
-      parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                type:
-                  description: The action to be performed
-                  enum:
-                  - terminate
-                  type: string
-              type: object
-      responses:
-        "202":
-          content:
-            application/json:
-              schema:
-                properties:
-                  type:
-                    description: The action to be performed
-                    enum:
-                    - terminate
                     type: string
                 type: object
           description: Success

@@ -2750,7 +2750,7 @@ func TestGenerateEventSignatureInvalid(t *testing.T) {
 	assert.Equal(t, "", signature)
 }
 
-func TestSubmitOperatorAction(t *testing.T) {
+func TestSubmitNetworkAction(t *testing.T) {
 	e, _ := newTestEthereum()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
@@ -2767,11 +2767,11 @@ func TestSubmitOperatorAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitOperatorAction(context.Background(), fftypes.NewUUID(), "0x123", core.OperatorActionTerminate)
+	err := e.SubmitNetworkAction(context.Background(), fftypes.NewUUID(), "0x123", core.NetworkActionTerminate)
 	assert.NoError(t, err)
 }
 
-func TestHandleOperatorAction(t *testing.T) {
+func TestHandleNetworkAction(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`
 [
   {
@@ -2807,7 +2807,7 @@ func TestHandleOperatorAction(t *testing.T) {
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BlockchainOperatorAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(nil)
+	em.On("BlockchainNetworkAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)

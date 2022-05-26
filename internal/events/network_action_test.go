@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestOperatorAction(t *testing.T) {
+func TestNetworkAction(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
@@ -49,7 +49,7 @@ func TestOperatorAction(t *testing.T) {
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainOperatorAction(mbi, "terminate", event, &core.VerifierRef{})
+	err := em.BlockchainNetworkAction(mbi, "terminate", event, &core.VerifierRef{})
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -57,13 +57,13 @@ func TestOperatorAction(t *testing.T) {
 	mth.AssertExpectations(t)
 }
 
-func TestOperatorActionUnknown(t *testing.T) {
+func TestNetworkActionUnknown(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
 	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BlockchainOperatorAction(mbi, "bad", &blockchain.Event{}, &core.VerifierRef{})
+	err := em.BlockchainNetworkAction(mbi, "bad", &blockchain.Event{}, &core.VerifierRef{})
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
