@@ -642,8 +642,9 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	}
 	input, _ := jsonEncodeInput(pinInput)
 	f.fireflyMux.Lock()
-	defer f.fireflyMux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+	chaincode := f.fireflyChaincode
+	f.fireflyMux.Unlock()
+	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
 func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
@@ -656,8 +657,9 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.U
 	}
 	input, _ := jsonEncodeInput(pinInput)
 	f.fireflyMux.Lock()
-	defer f.fireflyMux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, f.fireflyChaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+	chaincode := f.fireflyChaincode
+	f.fireflyMux.Unlock()
+	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
 func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {

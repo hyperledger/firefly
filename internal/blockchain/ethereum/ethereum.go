@@ -666,8 +666,9 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		ethHashes,
 	}
 	e.fireflyMux.Lock()
-	defer e.fireflyMux.Unlock()
-	return e.invokeContractMethod(ctx, e.fireflyContract, signingKey, batchPinMethodABI, operationID.String(), input)
+	address := e.fireflyContract
+	e.fireflyMux.Unlock()
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
@@ -679,8 +680,9 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes
 		[]string{},
 	}
 	e.fireflyMux.Lock()
-	defer e.fireflyMux.Unlock()
-	return e.invokeContractMethod(ctx, e.fireflyContract, signingKey, batchPinMethodABI, operationID.String(), input)
+	address := e.fireflyContract
+	e.fireflyMux.Unlock()
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
