@@ -68,7 +68,6 @@ type broadcastManager struct {
 	blockchain            blockchain.Plugin
 	exchange              dataexchange.Plugin
 	sharedstorage         sharedstorage.Plugin
-	batch                 batch.Manager
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
 	maxBatchPayloadLength int64
@@ -88,7 +87,6 @@ func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Ma
 		blockchain:            bi,
 		exchange:              dx,
 		sharedstorage:         si,
-		batch:                 ba,
 		syncasync:             sa,
 		batchpin:              bp,
 		maxBatchPayloadLength: config.GetByteSize(coreconfig.BroadcastBatchPayloadLimit),
