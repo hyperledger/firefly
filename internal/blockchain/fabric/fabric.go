@@ -598,6 +598,7 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 	res, err := f.client.R().
 		SetContext(ctx).
 		SetBody(in).
+		SetHeader("x-firefly-sync", "false").
 		SetError(&resErr).
 		Post("/transactions")
 	if err != nil || !res.IsSuccess() {
