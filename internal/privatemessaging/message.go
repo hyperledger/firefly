@@ -42,7 +42,7 @@ func (pm *privateMessaging) NewMessage(ns string, in *core.MessageInOut) sysmess
 
 func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	message := pm.NewMessage(ns, in)
-	in.Header.Type = fftypes.MessageTypePrivate
+	in.Header.Type = core.MessageTypePrivate
 	if pm.metrics.IsMetricsEnabled() {
 		pm.metrics.MessageSubmitted(&in.Message)
 	}
