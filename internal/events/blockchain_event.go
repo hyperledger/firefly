@@ -117,7 +117,7 @@ func (em *eventManager) emitBlockchainEventMetric(event *blockchain.Event) {
 }
 
 func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	return em.retry.Do(em.ctx, "persist contract event", func(attempt int) (bool, error) {
+	return em.retry.Do(em.ctx, "persist blockchain event", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
 			sub, err := em.getChainListenerByProtocolIDCached(ctx, event.Subscription)
 			if err != nil {

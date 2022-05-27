@@ -140,6 +140,9 @@ type Orchestrator interface {
 
 	// Message Routing
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
+
+	// Network Operations
+	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
 }
 
 type orchestrator struct {
@@ -223,11 +226,21 @@ func (or *orchestrator) Start() (err error) {
 	if err == nil {
 		err = or.batch.Start()
 	}
+	var ns *core.Namespace
+	if err == nil {
+		ns, err = or.database.GetNamespace(or.ctx, core.SystemNamespace)
+	}
 	if err == nil {
 		for _, el := range or.blockchains {
+			if err = el.ConfigureContract(or.ctx, &ns.Contracts); err != nil {
+				break
+			}
 			if err = el.Start(); err != nil {
 				break
 			}
+		}
+		if err == nil {
+			err = or.database.UpsertNamespace(or.ctx, ns, true)
 		}
 	}
 	if err == nil {
@@ -873,4 +886,15 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 		or.namespace = namespace.NewNamespaceManager(ctx, or.blockchains, or.databases, or.dataexchangePlugins, or.sharedstoragePlugins, or.tokens)
 	}
 	return or.namespace.Init(ctx, or.database)
+}
+
+func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
+	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx)
+	if err != nil {
+		return err
+	}
+	if action.Type != core.NetworkActionTerminate {
+		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
+	}
+	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
 }

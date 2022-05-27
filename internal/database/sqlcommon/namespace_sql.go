@@ -37,6 +37,7 @@ var (
 		"name",
 		"description",
 		"created",
+		"firefly_contracts",
 	}
 	namespaceFilterFieldMap = map[string]string{
 		"message": "message_id",
@@ -90,6 +91,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 				Set("name", namespace.Name).
 				Set("description", namespace.Description).
 				Set("created", namespace.Created).
+				Set("firefly_contracts", namespace.Contracts).
 				Where(sq.Eq{"name": namespace.Name}),
 			func() {
 				s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeUpdated, namespace.ID)
@@ -112,6 +114,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 					namespace.Name,
 					namespace.Description,
 					namespace.Created,
+					namespace.Contracts,
 				),
 			func() {
 				s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeCreated, namespace.ID)
@@ -133,6 +136,7 @@ func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*core.N
 		&namespace.Name,
 		&namespace.Description,
 		&namespace.Created,
+		&namespace.Contracts,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, namespacesTable)

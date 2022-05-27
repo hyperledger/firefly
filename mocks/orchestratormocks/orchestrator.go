@@ -1347,6 +1347,20 @@ func (_m *Orchestrator) Start() error {
 	return r0
 }
 
+// SubmitNetworkAction provides a mock function with given fields: ctx, action
+func (_m *Orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
+	ret := _m.Called(ctx, action)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.NetworkAction) error); ok {
+		r0 = rf(ctx, action)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // WaitStop provides a mock function with given fields:
 func (_m *Orchestrator) WaitStop() {
 	_m.Called()

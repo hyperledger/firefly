@@ -371,12 +371,19 @@ var (
 	VerifierCreated   = ffm("Verifier.created", "The time this verifier was created on this node")
 
 	// Namespace field descriptions
-	NamespaceID          = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
-	NamespaceMessage     = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
-	NamespaceName        = ffm("Namespace.name", "The namespace name")
-	NamespaceDescription = ffm("Namespace.description", "A description of the namespace")
-	NamespaceType        = ffm("Namespace.type", "The type of the namespace")
-	NamespaceCreated     = ffm("Namespace.created", "The time the namespace was created")
+	NamespaceID                = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
+	NamespaceMessage           = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
+	NamespaceName              = ffm("Namespace.name", "The namespace name")
+	NamespaceDescription       = ffm("Namespace.description", "A description of the namespace")
+	NamespaceType              = ffm("Namespace.type", "The type of the namespace")
+	NamespaceCreated           = ffm("Namespace.created", "The time the namespace was created")
+	NamespaceContract          = ffm("Namespace.fireflyContract", "Info on the FireFly smart contract configured for this namespace")
+	FireFlyContractsActive     = ffm("FireFlyContracts.active", "The currently active FireFly smart contract")
+	FireFlyContractsTerminated = ffm("FireFlyContracts.terminated", "Previously-terminated FireFly smart contracts")
+	FireFlyContractIndex       = ffm("FireFlyContractInfo.index", "The index of this contract in the config file")
+	FireFlyContractFinalEvent  = ffm("FireFlyContractInfo.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
+	FireFlyContractInfo        = ffm("FireFlyContractInfo.info", "Blockchain-specific info on the contract, such as its location on chain")
+	NetworkActionType          = ffm("NetworkAction.type", "The action to be performed")
 
 	// NodeStatus field descriptions
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")

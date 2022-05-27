@@ -991,6 +991,9 @@ func TestStartTokensFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
@@ -999,6 +1002,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1007,7 +1011,22 @@ func TestStartBlockchainsFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(fmt.Errorf("pop"))
+	or.mba.On("Start").Return(nil)
+	err := or.Start()
+	assert.EqualError(t, err, "pop")
+}
+
+func TestStartBlockchainsConfigureFail(t *testing.T) {
+	coreconfig.Reset()
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -1017,6 +1036,9 @@ func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.database = or.mdi
+	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
@@ -1032,6 +1054,7 @@ func TestStartStopOk(t *testing.T) {
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
 	or.mae.On("WaitStop").Return(nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
@@ -1123,4 +1146,29 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 
 	err := or.initDataExchange(or.ctx)
 	assert.NoError(t, err)
+}
+
+func TestNetworkAction(t *testing.T) {
+	or := newTestOrchestrator()
+	or.blockchain = or.mbi
+	verifier := &core.VerifierRef{Value: "0x123"}
+	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
+	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.NoError(t, err)
+}
+
+func TestNetworkActionBadKey(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.EqualError(t, err, "pop")
+}
+
+func TestNetworkActionBadType(t *testing.T) {
+	or := newTestOrchestrator()
+	verifier := &core.VerifierRef{Value: "0x123"}
+	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
+	assert.Regexp(t, "FF10397", err)
 }
