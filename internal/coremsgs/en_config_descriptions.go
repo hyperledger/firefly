@@ -31,12 +31,12 @@ var (
 	ConfigGlobalMigrationsDirectory = ffc("config.global.migrations.directory", "The directory containing the numerically ordered migration DDL files to apply to the database", i18n.StringType)
 	ConfigGlobalShutdownTimeout     = ffc("config.global.shutdownTimeout", "The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server", i18n.TimeDurationType)
 
-	ConfigAdminAddress      = ffc("config.admin.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
-	ConfigAdminEnabled      = ffc("config.admin.enabled", "Enables the admin HTTP API", i18n.BooleanType)
-	ConfigAdminPort         = ffc("config.admin.port", "The port on which the admin HTTP API should listen", i18n.IntType)
-	ConfigAdminPublicURL    = ffc("config.admin.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
-	ConfigAdminReadTimeout  = ffc("config.admin.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
-	ConfigAdminWriteTimeout = ffc("config.admin.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
+	ConfigSPIAddress      = ffc("config.spi.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
+	ConfigSPIEnabled      = ffc("config.spi.enabled", "Enables the admin HTTP API", i18n.BooleanType)
+	ConfigSPIPort         = ffc("config.spi.port", "The port on which the admin HTTP API should listen", i18n.IntType)
+	ConfigSPIPublicURL    = ffc("config.spi.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
+	ConfigSPIReadTimeout  = ffc("config.spi.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
+	ConfigSPIWriteTimeout = ffc("config.spi.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
 	ConfigAPIDefaultFilterLimit        = ffc("config.api.defaultFilterLimit", "The maximum number of rows to return if no limit is specified on an API request", i18n.IntType)
 	ConfigAPIMaxFilterLimit            = ffc("config.api.maxFilterLimit", "The largest value of `limit` that an HTTP client can specify in a request", i18n.IntType)
@@ -313,6 +313,6 @@ var (
 
 	ConfigAPIOASPanicOnMissingDescription = ffc("config.api.oas.panicOnMissingDescription", "Used for testing purposes only", i18n.IgnoredType)
 
-	ConfigAdminWebSocketBlockedWarnInternal = ffc("config.admin.ws.blockedWarnInterval", "How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events", i18n.TimeDurationType)
-	ConfigAdminWebSocketEventQueueLength    = ffc("config.admin.ws.eventQueueLength", "Server-side queue length for events waiting for delivery over an admin change event listener websocket", i18n.IntType)
+	ConfigSPIWebSocketBlockedWarnInternal = ffc("config.spi.ws.blockedWarnInterval", "How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events", i18n.TimeDurationType)
+	ConfigSPIWebSocketEventQueueLength    = ffc("config.spi.ws.eventQueueLength", "Server-side queue length for events waiting for delivery over an admin change event listener websocket", i18n.IntType)
 )

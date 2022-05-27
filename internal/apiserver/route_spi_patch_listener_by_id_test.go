@@ -17,22 +17,24 @@
 package apiserver
 
 import (
+	"bytes"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestAdminGetOperations(t *testing.T) {
-	o, r := newTestAdminServer()
-	req := httptest.NewRequest("GET", "/admin/api/v1/operations", nil)
+func TestSPIPatchContractListenerByID(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("PATCH", "/spi/v1/contractlisteners/ns1/abcd12345", bytes.NewReader([]byte("{}")))
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperations", mock.Anything, mock.Anything).
-		Return([]*core.Operation{}, nil, nil)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	mcm.On("UpdateContractListener", mock.Anything, "ns1", "abcd12345", mock.AnythingOfType("*core.ContractListenerUpdateDTO")).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

@@ -25,6 +25,7 @@ var (
 	APIParamsOperationIDGet                 = ffm("api.params.operationID.get", "The operation ID key to get")
 	APIParamsNamespace                      = ffm("api.params.namespace", "The namespace which scopes this request")
 	APIParamsContractListenerNameOrID       = ffm("api.params.contractListenerNameOrID", "The contract listener name or ID")
+	APIParamsContractListenerID             = ffm("api.params.contractListenerID", "The contract listener ID")
 	APIParamsSubscriptionID                 = ffm("api.params.subscriptionID", "The subscription ID")
 	APIParamsBatchID                        = ffm("api.params.batchId", "The batch ID")
 	APIParamsBlockchainEventID              = ffm("api.params.blockchainEventID", "The blockchain event ID")
@@ -70,6 +71,8 @@ var (
 	APIEndpointsAdminPutConfigRecord    = ffm("api.endpoints.adminPutConfigRecord", "Sets a configuration key in the database. This will override matching configuration keys set in the core config file.")
 	APIEndpointsAdminPostResetConfig    = ffm("api.endpoints.adminPostResetConfig", "Restarts FireFly Core HTTP servers and apply all configuration updates. This will apply any new changes that have been made to the core config file, or through the admin API.")
 	APIEndpointsAdminPatchOpByID        = ffm("api.endpoints.adminPatchOpByID", "Updates an operation by ID")
+	APIEndpointsAdminGetListenerByID    = ffm("api.endpoints.adminGetListenerByID", "Gets a contract listener by ID")
+	APIEndpointsAdminGetListeners       = ffm("api.endpoints.adminGetListeners", "Lists contract listeners")
 
 	APIEndpointsDeleteContractListener          = ffm("api.endpoints.deleteContractListener", "Deletes a contract listener referenced by its name or its ID")
 	APIEndpointsDeleteSubscription              = ffm("api.endpoints.deleteSubscription", "Deletes a subscription")

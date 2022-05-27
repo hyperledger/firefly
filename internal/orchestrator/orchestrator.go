@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/adminevents"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -46,6 +45,7 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
+	"github.com/hyperledger/firefly/internal/spievents"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -78,7 +78,7 @@ type Orchestrator interface {
 	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
-	AdminEvents() adminevents.Manager
+	SPIEvents() spievents.Manager
 	Assets() assets.Manager
 	BatchManager() batch.Manager
 	Broadcast() broadcast.Manager
@@ -172,7 +172,7 @@ type orchestrator struct {
 	node                 *fftypes.UUID
 	metrics              metrics.Manager
 	operations           operations.Manager
-	adminEvents          adminevents.Manager
+	adminEvents          spievents.Manager
 	sharedDownload       shareddownload.Manager
 	txHelper             txcommon.Helper
 	namespace            namespace.Manager
@@ -330,7 +330,7 @@ func (or *orchestrator) Operations() operations.Manager {
 	return or.operations
 }
 
-func (or *orchestrator) AdminEvents() adminevents.Manager {
+func (or *orchestrator) SPIEvents() spievents.Manager {
 	return or.adminEvents
 }
 
@@ -484,7 +484,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	// Not really a plugin, but this has to be initialized here after the database (at least temporarily).
 	// Shortly after this step, namespaces will be synced to the database and will generate notifications to adminEvents.
 	if or.adminEvents == nil {
-		or.adminEvents = adminevents.NewAdminEventManager(ctx)
+		or.adminEvents = spievents.NewAdminEventManager(ctx)
 	}
 
 	if or.identityPlugins == nil {

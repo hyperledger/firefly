@@ -807,7 +807,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -934,6 +944,10 @@ paths:
                       description: The stringified signature of the event, as computed
                         by the blockchain plugin
                       type: string
+                    state:
+                      description: This field is provided for the event listener implementation
+                        of the blockchain provider to record state, such as checkpoint
+                        information
                     topic:
                       description: A topic to set on the FireFly event that is emitted
                         each time a blockchain event is detected from the blockchain.
@@ -994,6 +1008,10 @@ paths:
                         is 'newest'
                       type: string
                   type: object
+                state:
+                  description: This field is provided for the event listener implementation
+                    of the blockchain provider to record state, such as checkpoint
+                    information
                 topic:
                   description: A topic to set on the FireFly event that is emitted
                     each time a blockchain event is detected from the blockchain.
@@ -1090,6 +1108,10 @@ paths:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
                     type: string
+                  state:
+                    description: This field is provided for the event listener implementation
+                      of the blockchain provider to record state, such as checkpoint
+                      information
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
@@ -3291,7 +3313,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -3418,6 +3450,10 @@ paths:
                       description: The stringified signature of the event, as computed
                         by the blockchain plugin
                       type: string
+                    state:
+                      description: This field is provided for the event listener implementation
+                        of the blockchain provider to record state, such as checkpoint
+                        information
                     topic:
                       description: A topic to set on the FireFly event that is emitted
                         each time a blockchain event is detected from the blockchain.
@@ -3514,6 +3550,10 @@ paths:
                         is 'newest'
                       type: string
                   type: object
+                state:
+                  description: This field is provided for the event listener implementation
+                    of the blockchain provider to record state, such as checkpoint
+                    information
                 topic:
                   description: A topic to set on the FireFly event that is emitted
                     each time a blockchain event is detected from the blockchain.
@@ -3610,6 +3650,10 @@ paths:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
                     type: string
+                  state:
+                    description: This field is provided for the event listener implementation
+                      of the blockchain provider to record state, such as checkpoint
+                      information
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
@@ -3755,6 +3799,10 @@ paths:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
                     type: string
+                  state:
+                    description: This field is provided for the event listener implementation
+                      of the blockchain provider to record state, such as checkpoint
+                      information
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
@@ -9325,7 +9373,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -9452,6 +9510,10 @@ paths:
                       description: The stringified signature of the event, as computed
                         by the blockchain plugin
                       type: string
+                    state:
+                      description: This field is provided for the event listener implementation
+                        of the blockchain provider to record state, such as checkpoint
+                        information
                     topic:
                       description: A topic to set on the FireFly event that is emitted
                         each time a blockchain event is detected from the blockchain.
@@ -9563,6 +9625,10 @@ paths:
                         is 'newest'
                       type: string
                   type: object
+                state:
+                  description: This field is provided for the event listener implementation
+                    of the blockchain provider to record state, such as checkpoint
+                    information
                 topic:
                   description: A topic to set on the FireFly event that is emitted
                     each time a blockchain event is detected from the blockchain.
@@ -9659,6 +9725,10 @@ paths:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
                     type: string
+                  state:
+                    description: This field is provided for the event listener implementation
+                      of the blockchain provider to record state, such as checkpoint
+                      information
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
@@ -12016,7 +12086,17 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
+        name: state
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
         name: topic
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -12143,6 +12223,10 @@ paths:
                       description: The stringified signature of the event, as computed
                         by the blockchain plugin
                       type: string
+                    state:
+                      description: This field is provided for the event listener implementation
+                        of the blockchain provider to record state, such as checkpoint
+                        information
                     topic:
                       description: A topic to set on the FireFly event that is emitted
                         each time a blockchain event is detected from the blockchain.
@@ -12246,6 +12330,10 @@ paths:
                         is 'newest'
                       type: string
                   type: object
+                state:
+                  description: This field is provided for the event listener implementation
+                    of the blockchain provider to record state, such as checkpoint
+                    information
                 topic:
                   description: A topic to set on the FireFly event that is emitted
                     each time a blockchain event is detected from the blockchain.
@@ -12342,6 +12430,10 @@ paths:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
                     type: string
+                  state:
+                    description: This field is provided for the event listener implementation
+                      of the blockchain provider to record state, such as checkpoint
+                      information
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.
@@ -12501,6 +12593,10 @@ paths:
                     description: The stringified signature of the event, as computed
                       by the blockchain plugin
                     type: string
+                  state:
+                    description: This field is provided for the event listener implementation
+                      of the blockchain provider to record state, such as checkpoint
+                      information
                   topic:
                     description: A topic to set on the FireFly event that is emitted
                       each time a blockchain event is detected from the blockchain.

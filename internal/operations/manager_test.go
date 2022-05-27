@@ -565,23 +565,21 @@ func TestResolveOperationByIDOk(t *testing.T) {
 	defer cancel()
 
 	ctx := context.Background()
-	op := &core.Operation{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Type:      core.OpTypeBlockchainPinBatch,
-		Status:    core.OpStatusSucceeded,
-		Error:     "my error",
+	opID := fftypes.NewUUID()
+	opUpdate := &core.OperationUpdateDTO{
+		Status: core.OpStatusSucceeded,
+		Error:  "my error",
 		Output: fftypes.JSONObject{
 			"my": "data",
 		},
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, "my error", fftypes.JSONObject{
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, "my error", fftypes.JSONObject{
 		"my": "data",
 	}).Return(nil)
 
-	_, err := om.ResolveOperationByID(ctx, op.ID.String(), op)
+	err := om.ResolveOperationByID(ctx, "ns1", opID.String(), opUpdate)
 
 	assert.NoError(t, err)
 
@@ -593,9 +591,9 @@ func TestResolveOperationBadID(t *testing.T) {
 	defer cancel()
 
 	ctx := context.Background()
-	op := &core.Operation{}
+	op := &core.OperationUpdateDTO{}
 
-	_, err := om.ResolveOperationByID(ctx, "badness", op)
+	err := om.ResolveOperationByID(ctx, "ns1", "badness", op)
 
 	assert.Regexp(t, "FF00138", err)
 

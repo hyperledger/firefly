@@ -74,6 +74,7 @@ nav_order: 9
 | `signature` | The stringified signature of the event, as computed by the blockchain plugin | `string` |
 | `topic` | A topic to set on the FireFly event that is emitted each time a blockchain event is detected from the blockchain. Setting this topic on a number of listeners allows applications to easily subscribe to all events they need | `string` |
 | `options` | Options that control how the listener subscribes to events from the underlying blockchain | [`ContractListenerOptions`](#contractlisteneroptions) |
+| `state` | This field is provided for the event listener implementation of the blockchain provider to record state, such as checkpoint information | [`JSONAny`](simpletypes#jsonany) |
 
 ## FFIReference
 

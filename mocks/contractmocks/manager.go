@@ -258,6 +258,29 @@ func (_m *Manager) GetContractAPIs(ctx context.Context, httpServerURL string, ns
 	return r0, r1, r2
 }
 
+// GetContractListenerByIDGlobal provides a mock function with given fields: ctx, nameOrID
+func (_m *Manager) GetContractListenerByIDGlobal(ctx context.Context, nameOrID string) (*core.ContractListener, error) {
+	ret := _m.Called(ctx, nameOrID)
+
+	var r0 *core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.ContractListener); ok {
+		r0 = rf(ctx, nameOrID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.ContractListener)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nameOrID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetContractListenerByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
 func (_m *Manager) GetContractListenerByNameOrID(ctx context.Context, ns string, nameOrID string) (*core.ContractListener, error) {
 	ret := _m.Called(ctx, ns, nameOrID)
@@ -306,6 +329,38 @@ func (_m *Manager) GetContractListeners(ctx context.Context, ns string, filter d
 	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
 		r2 = rf(ctx, ns, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetContractListenersGlobal provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetContractListenersGlobal(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*core.ContractListener
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.ContractListener); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*core.ContractListener)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -548,6 +603,20 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 	}
 
 	return r0, r1, r2
+}
+
+// UpdateContractListener provides a mock function with given fields: ctx, ns, id, dto
+func (_m *Manager) UpdateContractListener(ctx context.Context, ns string, id string, dto *core.ContractListenerUpdateDTO) error {
+	ret := _m.Called(ctx, ns, id, dto)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.ContractListenerUpdateDTO) error); ok {
+		r0 = rf(ctx, ns, id, dto)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // ValidateFFIAndSetPathnames provides a mock function with given fields: ctx, ffi

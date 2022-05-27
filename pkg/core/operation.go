@@ -97,6 +97,13 @@ type Operation struct {
 	Retry       *fftypes.UUID      `ffstruct:"Operation" json:"retry,omitempty" ffexcludeinput:"true"`
 }
 
+// OperationUpdateDTO is the subset of fields on an operation that are mutable, via the SPI
+type OperationUpdateDTO struct {
+	Status OpStatus           `ffstruct:"Operation" json:"status"`
+	Output fftypes.JSONObject `ffstruct:"Operation" json:"output,omitempty"`
+	Error  string             `ffstruct:"Operation" json:"error,omitempty"`
+}
+
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin
 // It is never stored, but it should always be possible for the owning Manager to generate a
 // PreparedOperation from an Operation. Data is defined by the Manager, but should be JSON-serializable

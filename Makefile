@@ -69,7 +69,7 @@ $(eval $(call makemock, internal/namespace,        Manager,            namespace
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))
 $(eval $(call makemock, internal/contracts,        Manager,            contractmocks))
-$(eval $(call makemock, internal/adminevents,      Manager,            admineventsmocks))
+$(eval $(call makemock, internal/spievents,      Manager,            spieventsmocks))
 $(eval $(call makemock, internal/oapiffi,          FFISwaggerGen,      oapiffimocks))
 $(eval $(call makemock, internal/orchestrator,     Orchestrator,       orchestratormocks))
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))

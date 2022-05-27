@@ -22,23 +22,20 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var adminPatchOpByID = &oapispec.Route{
-	Name:   "adminPatchOpByID",
-	Path:   "operations/{opid}",
-	Method: http.MethodPut,
-	PathParams: []*oapispec.PathParam{
-		{Name: "opid", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
-	},
+var spiGetContractListeners = &oapispec.Route{
+	Name:            "spiGetContractListeners",
+	Path:            "contractlisteners",
+	Method:          http.MethodGet,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
-	JSONInputValue:  func() interface{} { return &core.Operation{} },
-	JSONOutputValue: func() interface{} { return &core.Operation{} },
+	FilterFactory:   database.OperationQueryFactory,
+	Description:     coremsgs.APIEndpointsAdminGetListeners,
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Operations().ResolveOperationByID(r.Ctx, r.PP["opid"], r.Input.(*core.Operation))
-		return output, err
+		return filterResult(getOr(r.Ctx).Contracts().GetContractListenersGlobal(r.Ctx, r.Filter))
 	},
 }

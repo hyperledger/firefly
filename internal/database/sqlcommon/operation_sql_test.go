@@ -96,14 +96,18 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.Equal(t, 0, len(operations))
 
 	// Update
-	err = s.ResolveOperation(ctx, operation.Namespace, operation.ID, core.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
+	err = s.ResolveOperation(ctx, operation.Namespace, operation.ID, core.OpStatusFailed, "FF10143", fftypes.JSONObject{"extra": "info"})
 	assert.NoError(t, err)
+
+	// Update not found is 4040
+	err = s.ResolveOperation(ctx, operation.Namespace, fftypes.NewUUID(), core.OpStatusSucceeded, "", fftypes.JSONObject{"extra": "info"})
+	assert.Regexp(t, "FF10143", err)
 
 	// Test find updated value
 	filter = fb.And(
 		fb.Eq("id", operation.ID.String()),
-		fb.Eq("status", core.OpStatusSucceeded),
-		fb.Eq("error", ""),
+		fb.Eq("status", core.OpStatusFailed),
+		fb.Eq("error", "FF10143"),
 	)
 	operations, _, err = s.GetOperations(ctx, filter)
 	assert.NoError(t, err)

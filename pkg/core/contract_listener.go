@@ -37,6 +37,12 @@ type ContractListener struct {
 	Signature string                   `ffstruct:"ContractListener" json:"signature" ffexcludeinput:"true"`
 	Topic     string                   `ffstruct:"ContractListener" json:"topic,omitempty"`
 	Options   *ContractListenerOptions `ffstruct:"ContractListener" json:"options,omitempty"`
+	State     *fftypes.JSONAny         `ffstruct:"ContractListener" json:"state,omitempty"`
+}
+
+// ContractListenerUpdateDTO are the mutable fields of the contract listener, via the SPI
+type ContractListenerUpdateDTO struct {
+	State *fftypes.JSONAny `ffstruct:"ContractListener" json:"state,omitempty"`
 }
 
 type ContractListenerOptions struct {

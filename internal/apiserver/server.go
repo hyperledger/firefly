@@ -57,7 +57,7 @@ type orchestratorContextKey struct{}
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 var (
-	adminConfig   = config.RootSection("admin")
+	spiConfig     = config.RootSection("spi")
 	apiConfig     = config.RootSection("http")
 	metricsConfig = config.RootSection("metrics")
 	corsConfig    = config.RootSection("cors")
@@ -81,7 +81,7 @@ type apiServer struct {
 
 func InitConfig() {
 	httpserver.InitHTTPConfig(apiConfig, 5000)
-	httpserver.InitHTTPConfig(adminConfig, 5001)
+	httpserver.InitHTTPConfig(spiConfig, 5001)
 	httpserver.InitHTTPConfig(metricsConfig, 6000)
 	httpserver.InitCORSConfig(corsConfig)
 	initMetricsConfig(metricsConfig)
@@ -106,7 +106,7 @@ func getOr(ctx context.Context) orchestrator.Orchestrator {
 // Serve is the main entry point for the API Server
 func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (err error) {
 	httpErrChan := make(chan error)
-	adminErrChan := make(chan error)
+	spiErrChan := make(chan error)
 	metricsErrChan := make(chan error)
 
 	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfig, corsConfig)
@@ -115,12 +115,12 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	}
 	go apiHTTPServer.ServeHTTP(ctx)
 
-	if config.GetBool(coreconfig.AdminEnabled) {
-		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfig, corsConfig)
+	if config.GetBool(coreconfig.SPIEnabled) {
+		spiHTTPServer, err := httpserver.NewHTTPServer(ctx, "spi", as.createAdminMuxRouter(o), spiErrChan, spiConfig, corsConfig)
 		if err != nil {
 			return err
 		}
-		go adminHTTPServer.ServeHTTP(ctx)
+		go spiHTTPServer.ServeHTTP(ctx)
 	}
 
 	if as.metricsEnabled {
@@ -131,14 +131,14 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 		go metricsHTTPServer.ServeHTTP(ctx)
 	}
 
-	return as.waitForServerStop(httpErrChan, adminErrChan, metricsErrChan)
+	return as.waitForServerStop(httpErrChan, spiErrChan, metricsErrChan)
 }
 
-func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan, metricsErrChan chan error) error {
+func (as *apiServer) waitForServerStop(httpErrChan, spiErrChan, metricsErrChan chan error) error {
 	select {
 	case err := <-httpErrChan:
 		return err
-	case err := <-adminErrChan:
+	case err := <-spiErrChan:
 		return err
 	case err := <-metricsErrChan:
 		return err
@@ -527,10 +527,10 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	return r
 }
 
-func (as *apiServer) adminWSHandler(o orchestrator.Orchestrator) http.HandlerFunc {
-	// The admin events listener will be initialized when we start, so we access it it from Orchestrator on demand
+func (as *apiServer) spiWSHandler(o orchestrator.Orchestrator) http.HandlerFunc {
+	// The SPI events listener will be initialized when we start, so we access it it from Orchestrator on demand
 	return func(w http.ResponseWriter, r *http.Request) {
-		o.AdminEvents().ServeHTTPWebSocketListener(w, r)
+		o.SPIEvents().ServeHTTPWebSocketListener(w, r)
 	}
 }
 
@@ -540,19 +540,19 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
 	}
 
-	publicURL := as.getPublicURL(adminConfig, "admin")
-	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)
-	for _, route := range adminRoutes {
+	publicURL := as.getPublicURL(spiConfig, "spi")
+	apiBaseURL := fmt.Sprintf("%s/v1", publicURL)
+	for _, route := range spiRoutes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
+			r.HandleFunc(fmt.Sprintf("/spi/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(adminRoutes, apiBaseURL))))
-	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
+	r.HandleFunc(`/spi/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(spiRoutes, apiBaseURL))))
+	r.HandleFunc(`/spi`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/spi/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
-	r.HandleFunc(`/admin/ws`, as.adminWSHandler(o))
+	r.HandleFunc(`/spi/ws`, as.spiWSHandler(o))
 
 	return r
 }

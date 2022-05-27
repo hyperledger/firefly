@@ -62,27 +62,18 @@ func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.Opera
 	_m.Called(ctx, handler, ops)
 }
 
-// ResolveOperationByID provides a mock function with given fields: ctx, id, op
-func (_m *Manager) ResolveOperationByID(ctx context.Context, id string, op *core.Operation) (*core.Operation, error) {
-	ret := _m.Called(ctx, id, op)
+// ResolveOperationByID provides a mock function with given fields: ctx, ns, id, op
+func (_m *Manager) ResolveOperationByID(ctx context.Context, ns string, id string, op *core.OperationUpdateDTO) error {
+	ret := _m.Called(ctx, ns, id, op)
 
-	var r0 *core.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Operation) *core.Operation); ok {
-		r0 = rf(ctx, id, op)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.OperationUpdateDTO) error); ok {
+		r0 = rf(ctx, ns, id, op)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Operation)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.Operation) error); ok {
-		r1 = rf(ctx, id, op)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // RetryOperation provides a mock function with given fields: ctx, ns, opID

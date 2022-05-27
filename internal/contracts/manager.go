@@ -58,7 +58,10 @@ type Manager interface {
 	AddContractAPIListener(ctx context.Context, ns, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
 	GetContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) (*core.ContractListener, error)
 	GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
+	GetContractListenerByIDGlobal(ctx context.Context, nameOrID string) (*core.ContractListener, error)
+	GetContractListenersGlobal(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
 	GetContractAPIListeners(ctx context.Context, ns string, apiName, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
+	UpdateContractListener(ctx context.Context, ns, id string, dto *core.ContractListenerUpdateDTO) error
 	DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GenerateFFI(ctx context.Context, ns string, generationRequest *core.FFIGenerationRequest) (*core.FFI, error)
 
@@ -571,7 +574,7 @@ func (cm *contractManager) AddContractListener(ctx context.Context, ns string, l
 	if listener.Name == "" {
 		listener.Name = listener.BackendID
 	}
-	if err = cm.database.UpsertContractListener(ctx, &listener.ContractListener); err != nil {
+	if err = cm.database.InsertContractListener(ctx, &listener.ContractListener); err != nil {
 		return nil, err
 	}
 
@@ -614,8 +617,20 @@ func (cm *contractManager) GetContractListenerByNameOrID(ctx context.Context, ns
 	return listener, nil
 }
 
+func (cm *contractManager) GetContractListenerByIDGlobal(ctx context.Context, id string) (listener *core.ContractListener, err error) {
+	uuid, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return cm.database.GetContractListenerByID(ctx, uuid)
+}
+
 func (cm *contractManager) GetContractListeners(ctx context.Context, ns string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
 	return cm.database.GetContractListeners(ctx, cm.scopeNS(ns, filter))
+}
+
+func (cm *contractManager) GetContractListenersGlobal(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
+	return cm.database.GetContractListeners(ctx, filter)
 }
 
 func (cm *contractManager) GetContractAPIListeners(ctx context.Context, ns string, apiName, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error) {
@@ -641,6 +656,14 @@ func (cm *contractManager) GetContractAPIListeners(ctx context.Context, ns strin
 		f = fb.And(f, fb.Eq("location", api.Location.Bytes()))
 	}
 	return cm.database.GetContractListeners(ctx, cm.scopeNS(ns, f))
+}
+
+func (cm *contractManager) UpdateContractListener(ctx context.Context, ns, id string, dto *core.ContractListenerUpdateDTO) error {
+	uuid, err := fftypes.ParseUUID(ctx, id)
+	if err != nil {
+		return err
+	}
+	return cm.database.UpdateContractListener(ctx, ns, uuid, dto)
 }
 
 func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error {

@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Configuration Reference
+title: pages.reference
 parent: Reference
-nav_order: 3
+nav_order: 2
 ---
 
 # Configuration Reference
@@ -16,37 +16,6 @@ nav_order: 3
 
 ---
 
-
-## admin
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
-|enabled|Enables the admin HTTP API|`boolean`|`<nil>`
-|port|The port on which the admin HTTP API should listen|`int`|`5001`
-|publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
-|readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
-|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
-
-## admin.tls
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
-|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
-|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
-|enabled|Enables or disables TLS on this API|`boolean`|`false`
-|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
-
-## admin.ws
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`<nil>`
-|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 
 ## api
 
@@ -1189,6 +1158,37 @@ nav_order: 3
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## spi
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
+|enabled|Enables the admin HTTP API|`boolean`|`<nil>`
+|port|The port on which the admin HTTP API should listen|`int`|`5001`
+|publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
+|readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+
+## spi.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
+## spi.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 
 ## subscription
 

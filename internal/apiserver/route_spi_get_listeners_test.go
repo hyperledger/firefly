@@ -20,19 +20,23 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestAdminGetOperationByID(t *testing.T) {
-	o, r := newTestAdminServer()
-	req := httptest.NewRequest("GET", "/admin/api/v1/operations/abcd12345", nil)
+func TestSPIGetListeners(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/contractlisteners", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperationByID", mock.Anything, "abcd12345").
-		Return(&core.Operation{}, nil)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+
+	mcm.On("GetContractListenersGlobal", mock.Anything, mock.Anything).
+		Return([]*core.ContractListener{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

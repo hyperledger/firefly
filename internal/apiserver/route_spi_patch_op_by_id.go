@@ -1,0 +1,45 @@
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package apiserver
+
+import (
+	"net/http"
+
+	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/pkg/core"
+)
+
+var spiPatchOpByID = &oapispec.Route{
+	Name:   "spiPatchOpByID",
+	Path:   "operations/{ns}/{opid}",
+	Method: http.MethodPatch,
+	PathParams: []*oapispec.PathParam{
+		{Name: "ns", Description: coremsgs.APIParamsNamespace},
+		{Name: "opid", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
+	},
+	QueryParams:     nil,
+	FilterFactory:   nil,
+	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
+	JSONInputValue:  func() interface{} { return &core.OperationUpdateDTO{} },
+	JSONOutputValue: func() interface{} { return &core.EmptyInput{} },
+	JSONOutputCodes: []int{http.StatusOK},
+	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		err = getOr(r.Ctx).Operations().ResolveOperationByID(r.Ctx, r.PP["ns"], r.PP["opid"], r.Input.(*core.OperationUpdateDTO))
+		return &core.EmptyInput{}, err
+	},
+}

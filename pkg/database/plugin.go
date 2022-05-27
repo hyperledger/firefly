@@ -483,8 +483,8 @@ type iContractAPICollection interface {
 }
 
 type iContractListenerCollection interface {
-	// UpsertContractListener - upsert a subscription to an external smart contract
-	UpsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
+	// InsertContractListener - upsert a subscription to an external smart contract
+	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
 	// GetContractListener - get smart contract subscription by name
 	GetContractListener(ctx context.Context, ns, name string) (sub *core.ContractListener, err error)
@@ -497,6 +497,9 @@ type iContractListenerCollection interface {
 
 	// GetContractListeners - get smart contract subscriptions
 	GetContractListeners(ctx context.Context, filter Filter) ([]*core.ContractListener, *FilterResult, error)
+
+	// UpdateContractListener - update the state of the contract listener
+	UpdateContractListener(ctx context.Context, ns string, id *fftypes.UUID, dto *core.ContractListenerUpdateDTO) error
 
 	// DeleteContractListener - delete a subscription to an external smart contract
 	DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error)
@@ -1032,6 +1035,8 @@ var ContractListenerQueryFactory = &queryFields{
 	"signature": &StringField{},
 	"backendid": &StringField{},
 	"created":   &TimeField{},
+	"updated":   &TimeField{},
+	"state":     &JSONField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events

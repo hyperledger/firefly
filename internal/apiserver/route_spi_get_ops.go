@@ -22,23 +22,20 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var adminGetOpByID = &oapispec.Route{
-	Name:   "adminGetOpByID",
-	Path:   "operations/{opid}",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
-	},
+var spiGetOps = &oapispec.Route{
+	Name:            "spiGetOps",
+	Path:            "operations",
+	Method:          http.MethodGet,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsAdminGetOpByID,
+	FilterFactory:   database.OperationQueryFactory,
+	Description:     coremsgs.APIEndpointsAdminGetOps,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Operation{} },
+	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetOperationByID(r.Ctx, r.PP["opid"])
-		return output, err
+		return filterResult(getOr(r.Ctx).GetOperations(r.Ctx, r.Filter))
 	},
 }
