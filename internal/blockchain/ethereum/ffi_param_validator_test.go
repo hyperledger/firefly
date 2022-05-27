@@ -103,7 +103,7 @@ func TestSchemaTypeInvalidFFIType(t *testing.T) {
 		"type": "uint256"
 	}
 }`)
-	assert.Regexp(t, "'/type' does not validate", err)
+	assert.Regexp(t, "oneOf failed", err)
 }
 
 func TestSchemaTypeMissing(t *testing.T) {
@@ -298,6 +298,34 @@ func TestInputInvalidNestedBlockchainType(t *testing.T) {
 	}
 }`)
 	assert.Regexp(t, "cannot cast integer to string", err)
+}
+
+func TestInputInvalidOneOf(t *testing.T) {
+	_, err := NewTestSchema(`
+	{
+		"oneOf": "banana",
+		"details": {
+			"type": "uint256",
+			"internalType": "uint256"
+		}
+	}`)
+	assert.Regexp(t, "'/oneOf' does not validate", err)
+}
+
+func TestInputInvalidOneOfType(t *testing.T) {
+	_, err := NewTestSchema(`
+	{
+		"oneOf": [
+			{
+				"type": "banana"
+			}
+		],
+		"details": {
+			"type": "uint256",
+			"internalType": "uint256"
+		}
+	}`)
+	assert.Regexp(t, "'/oneOf/0/type' does not validate", err)
 }
 
 func TestInputNoAdditionalProperties(t *testing.T) {

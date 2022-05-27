@@ -26,6 +26,22 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
+// FFIInputType is the type of a JSON field in a request to FireFly's API
+type FFIInputType = FFEnum
+
+var (
+	// FFIInputTypeInteger is a json integer or string to be treated as an integer
+	FFIInputTypeInteger = ffEnum("ffiinputtype", "integer")
+	// FFIInputTypeString is a JSON string
+	FFIInputTypeString = ffEnum("ffiinputtype", "string")
+	// FFIInputTypeArray is a JSON boolean
+	FFIInputTypeBoolean = ffEnum("ffiinputtype", "boolean")
+	// FFIInputTypeArray is a JSON array
+	FFIInputTypeArray = ffEnum("ffiinputtype", "array")
+	// FFIInputTypeObject is a JSON object
+	FFIInputTypeObject = ffEnum("ffiinputtype", "object")
+)
+
 type FFIParamValidator interface {
 	Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error)
 	GetMetaSchema() *jsonschema.Schema

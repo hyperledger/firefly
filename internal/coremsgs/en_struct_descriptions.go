@@ -100,7 +100,7 @@ var (
 
 	// Member field descriptions
 	MemberIdentity = ffm("Member.identity", "The DID of the group member")
-	MembertNode    = ffm("Member.node", "The UUID of the node that receives a copy of the off-chain message for the identity")
+	MemberNode     = ffm("Member.node", "The UUID of the node that receives a copy of the off-chain message for the identity")
 
 	// DataRef field descriptions
 	DataRefID   = ffm("DataRef.id", "The UUID of the referenced data resource")

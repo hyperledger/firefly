@@ -42,8 +42,11 @@ import (
 
 const (
 	broadcastBatchEventSignature = "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
+	addressType                  = "address"
+	boolType                     = "bool"
 	booleanType                  = "boolean"
 	integerType                  = "integer"
+	tupleType                    = "tuple"
 	stringType                   = "string"
 	arrayType                    = "array"
 	objectType                   = "object"
@@ -104,10 +107,16 @@ type paramDetails struct {
 }
 
 type Schema struct {
-	Type       string             `json:"type"`
-	Details    *paramDetails      `json:"details,omitempty"`
-	Properties map[string]*Schema `json:"properties,omitempty"`
-	Items      *Schema            `json:"items,omitempty"`
+	OneOf       []SchemaType       `json:"oneOf,omitempty"`
+	Type        string             `json:"type,omitempty"`
+	Details     *paramDetails      `json:"details,omitempty"`
+	Properties  map[string]*Schema `json:"properties,omitempty"`
+	Items       *Schema            `json:"items,omitempty"`
+	Description string             `json:"description,omitempty"`
+}
+
+type SchemaType struct {
+	Type string `json:"type"`
 }
 
 func (s *Schema) ToJSON() string {
@@ -752,34 +761,33 @@ func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (core.FFIParamValid
 }
 
 func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *core.FFIEventDefinition) (*abi.Entry, error) {
-	abiElement := &abi.Entry{
+	abiInputs, err := e.convertFFIParamsToABIParameters(ctx, event.Params)
+	if err != nil {
+		return nil, err
+	}
+	return &abi.Entry{
 		Name:   event.Name,
 		Type:   "event",
-		Inputs: make(abi.ParameterArray, len(event.Params)),
-	}
-
-	if err := e.addParamsToList(ctx, abiElement.Inputs, event.Params); err != nil {
-		return abiElement, err
-	}
-	return abiElement, nil
+		Inputs: abiInputs,
+	}, nil
 }
 
-func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *core.FFIMethod) (*abi.Entry, error) {
-	abiEntry := &abi.Entry{
+func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *core.FFIMethod, input map[string]interface{}) (*abi.Entry, error) {
+	abiInputs, err := e.convertFFIParamsToABIParameters(ctx, method.Params)
+	if err != nil {
+		return nil, err
+	}
+
+	abiOutputs, err := e.convertFFIParamsToABIParameters(ctx, method.Returns)
+	if err != nil {
+		return nil, err
+	}
+	return &abi.Entry{
 		Name:    method.Name,
 		Type:    "function",
-		Inputs:  make(abi.ParameterArray, len(method.Params)),
-		Outputs: make(abi.ParameterArray, len(method.Returns)),
-	}
-
-	if err := e.addParamsToList(ctx, abiEntry.Inputs, method.Params); err != nil {
-		return abiEntry, err
-	}
-	if err := e.addParamsToList(ctx, abiEntry.Outputs, method.Returns); err != nil {
-		return abiEntry, err
-	}
-
-	return abiEntry, nil
+		Inputs:  abiInputs,
+		Outputs: abiOutputs,
+	}, nil
 }
 
 func ABIArgumentToTypeString(typeName string, components abi.ParameterArray) string {
@@ -815,22 +823,23 @@ func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *core.FFIEv
 	return ABIMethodToSignature(abi)
 }
 
-func (e *Ethereum) addParamsToList(ctx context.Context, abiParamList abi.ParameterArray, params core.FFIParams) error {
+func (e *Ethereum) convertFFIParamsToABIParameters(ctx context.Context, params core.FFIParams) (abi.ParameterArray, error) {
+	abiParamList := make(abi.ParameterArray, len(params))
 	for i, param := range params {
 		c := core.NewFFISchemaCompiler()
 		v, _ := e.GetFFIParamValidator(ctx)
 		c.RegisterExtension(v.GetExtensionName(), v.GetMetaSchema(), v)
 		err := c.AddResource(param.Name, strings.NewReader(param.Schema.String()))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		s, err := c.Compile(param.Name)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		abiParamList[i] = processField(param.Name, s)
 	}
-	return nil
+	return abiParamList, nil
 }
 
 func processField(name string, schema *jsonschema.Schema) *abi.Parameter {
@@ -841,7 +850,7 @@ func processField(name string, schema *jsonschema.Schema) *abi.Parameter {
 		InternalType: details.InternalType,
 		Indexed:      details.Indexed,
 	}
-	if schema.Types[0] == objectType {
+	if len(schema.Types) > 0 && schema.Types[0] == objectType {
 		parameter.Components = buildABIArgumentArray(schema.Properties)
 	}
 	return parameter
@@ -880,11 +889,12 @@ func getParamDetails(schema *jsonschema.Schema) *paramDetails {
 
 func (e *Ethereum) prepareRequest(ctx context.Context, method *core.FFIMethod, input map[string]interface{}) (*abi.Entry, []interface{}, error) {
 	orderedInput := make([]interface{}, len(method.Params))
-	abi, err := e.FFIMethodToABI(ctx, method)
+	abi, err := e.FFIMethodToABI(ctx, method, input)
 	if err != nil {
 		return abi, orderedInput, err
 	}
 	for i, ffiParam := range method.Params {
+
 		orderedInput[i] = input[ffiParam.Name]
 	}
 	return abi, orderedInput, nil
@@ -913,11 +923,11 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *core.FFIG
 	if len(*input.ABI) == 0 {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "ABI is empty")
 	}
-	ffi := e.convertABIToFFI(generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
+	ffi := e.convertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 	return ffi, nil
 }
 
-func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi *abi.ABI) *core.FFI {
+func (e *Ethereum) convertABIToFFI(ctx context.Context, ns, name, version, description string, abi *abi.ABI) *core.FFI {
 	ffi := &core.FFI{
 		Namespace:   ns,
 		Name:        name,
@@ -928,22 +938,22 @@ func (e *Ethereum) convertABIToFFI(ns, name, version, description string, abi *a
 	}
 	i := 0
 	for _, f := range abi.Functions() {
-		ffi.Methods[i] = e.convertABIFunctionToFFIMethod(f)
+		ffi.Methods[i] = e.convertABIFunctionToFFIMethod(ctx, f)
 		i++
 	}
 	i = 0
 	for _, f := range abi.Events() {
-		ffi.Events[i] = e.convertABIEventToFFIEvent(f)
+		ffi.Events[i] = e.convertABIEventToFFIEvent(ctx, f)
 		i++
 	}
 	return ffi
 }
 
-func (e *Ethereum) convertABIFunctionToFFIMethod(abiFunction *abi.Entry) *core.FFIMethod {
+func (e *Ethereum) convertABIFunctionToFFIMethod(ctx context.Context, abiFunction *abi.Entry) *core.FFIMethod {
 	params := make([]*core.FFIParam, len(abiFunction.Inputs))
 	returns := make([]*core.FFIParam, len(abiFunction.Outputs))
 	for i, input := range abiFunction.Inputs {
-		schema := e.getSchemaForABIInput(input)
+		schema := e.getSchemaForABIInput(ctx, input)
 		param := &core.FFIParam{
 			Name:   input.Name,
 			Schema: fftypes.JSONAnyPtr(schema.ToJSON()),
@@ -951,7 +961,7 @@ func (e *Ethereum) convertABIFunctionToFFIMethod(abiFunction *abi.Entry) *core.F
 		params[i] = param
 	}
 	for i, input := range abiFunction.Outputs {
-		schema := e.getSchemaForABIInput(input)
+		schema := e.getSchemaForABIInput(ctx, input)
 		param := &core.FFIParam{
 			Name:   input.Name,
 			Schema: fftypes.JSONAnyPtr(schema.ToJSON()),
@@ -965,10 +975,10 @@ func (e *Ethereum) convertABIFunctionToFFIMethod(abiFunction *abi.Entry) *core.F
 	}
 }
 
-func (e *Ethereum) convertABIEventToFFIEvent(abiEvent *abi.Entry) *core.FFIEvent {
+func (e *Ethereum) convertABIEventToFFIEvent(ctx context.Context, abiEvent *abi.Entry) *core.FFIEvent {
 	params := make([]*core.FFIParam, len(abiEvent.Inputs))
 	for i, input := range abiEvent.Inputs {
-		schema := e.getSchemaForABIInput(input)
+		schema := e.getSchemaForABIInput(ctx, input)
 		param := &core.FFIParam{
 			Name:   input.Name,
 			Schema: fftypes.JSONAnyPtr(schema.ToJSON()),
@@ -983,65 +993,79 @@ func (e *Ethereum) convertABIEventToFFIEvent(abiEvent *abi.Entry) *core.FFIEvent
 	}
 }
 
-func (e *Ethereum) getSchemaForABIInput(input *abi.Parameter) *Schema {
+func (e *Ethereum) getSchemaForABIInput(ctx context.Context, input *abi.Parameter) *Schema {
+	inputType := e.getFFIType(input.Type)
 	schema := &Schema{
-		Type: e.getFFIType(input.Type),
 		Details: &paramDetails{
 			Type:         input.Type,
 			InternalType: input.InternalType,
 			Indexed:      input.Indexed,
 		},
 	}
+	if inputType == core.FFIInputTypeInteger {
+		schema.OneOf = []SchemaType{
+			{Type: "string"},
+			{Type: "integer"},
+		}
+		schema.Description = i18n.Expand(ctx, coremsgs.APIIntegerDescription)
+	} else {
+		schema.Type = inputType.String()
+	}
 
-	if schema.Type == arrayType {
+	if inputType == core.FFIInputTypeArray {
 		levels := strings.Count(input.Type, "[]")
 		innerType := e.getFFIType(strings.ReplaceAll(input.Type, "[]", ""))
-		innerSchema := &Schema{
-			Type: innerType,
+		innerSchema := &Schema{}
+		if innerType == core.FFIInputTypeInteger {
+			innerSchema.OneOf = []SchemaType{
+				{Type: "string"},
+				{Type: "integer"},
+			}
+		} else {
+			innerSchema.Type = innerType.String()
 		}
 		if len(input.Components) > 0 {
-			innerSchema.Properties = e.getSchemaForABIComponents(input.Components)
+			innerSchema.Properties = e.getSchemaForABIComponents(ctx, input.Components)
 		}
 		for i := 1; i < levels; i++ {
 			innerSchema = &Schema{
-				Type:  arrayType,
+				Type:  core.FFIInputTypeArray.String(),
 				Items: innerSchema,
 			}
 		}
 		schema.Items = innerSchema
 	} else {
-		schema.Properties = e.getSchemaForABIComponents(input.Components)
+		schema.Properties = e.getSchemaForABIComponents(ctx, input.Components)
 	}
 	return schema
 }
 
-func (e *Ethereum) getSchemaForABIComponents(components abi.ParameterArray) map[string]*Schema {
+func (e *Ethereum) getSchemaForABIComponents(ctx context.Context, components abi.ParameterArray) map[string]*Schema {
 	schemas := make(map[string]*Schema, len(components))
 	for i, component := range components {
-		schemas[component.Name] = e.getSchemaForABIInput(component)
+		schemas[component.Name] = e.getSchemaForABIInput(ctx, component)
 		schemas[component.Name].Details.Index = new(int)
 		*schemas[component.Name].Details.Index = i
 	}
 	return schemas
 }
 
-func (e *Ethereum) getFFIType(solitidyType string) string {
-
-	switch solitidyType {
+func (e *Ethereum) getFFIType(solidityType string) core.FFIInputType {
+	switch solidityType {
 	case stringType, "address":
-		return stringType
-	case "bool":
-		return booleanType
-	case "tuple":
-		return objectType
+		return core.FFIInputTypeString
+	case boolType:
+		return core.FFIInputTypeBoolean
+	case tupleType:
+		return core.FFIInputTypeObject
 	default:
 		switch {
-		case strings.HasSuffix(solitidyType, "[]"):
-			return arrayType
-		case strings.Contains(solitidyType, "byte"):
-			return stringType
-		case strings.Contains(solitidyType, "int"):
-			return integerType
+		case strings.HasSuffix(solidityType, "[]"):
+			return core.FFIInputTypeArray
+		case strings.Contains(solidityType, "byte"):
+			return core.FFIInputTypeString
+		case strings.Contains(solidityType, "int"):
+			return core.FFIInputTypeInteger
 		}
 	}
 	return ""

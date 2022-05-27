@@ -28,20 +28,59 @@ func (v BaseFFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[str
 
 func (v *BaseFFIParamValidator) GetMetaSchema() *jsonschema.Schema {
 	return jsonschema.MustCompileString("ffi.json", `{
-	"properties" : {
-		"type": {
-			"type": "string",
-			"enum": [
-				"boolean",
-				"integer",
-				"string",
-				"array",
-				"object"
-			]
+		"$ref": "#/$defs/ffiParam",
+		"$defs": {
+			"integerTypeOptions": {
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": [
+							"integer",
+							"string"
+						]
+					}
+				}
+			},
+			"ffiParam": {
+				"oneOf": [
+					{
+						"properties": {
+							"type": {
+								"type": [
+									"string"
+								],
+								"enum": [
+									"boolean",
+									"integer",
+									"string",
+									"array",
+									"object"
+								]
+							}
+						},
+						"required": [
+							"type"
+						]
+					},
+					{
+						"type": "object",
+						"properties": {
+							"oneOf": {
+								"type": "array",
+								"items": {
+									"$ref": "#/$defs/integerTypeOptions"
+								}
+							}
+						},
+						"required": [
+							"oneOf"
+						]
+					}
+				]
+			}
 		}
-	},
-	"required": ["type"]
-}`)
+	}`)
 }
 
 func (v *BaseFFIParamValidator) GetExtensionName() string {
