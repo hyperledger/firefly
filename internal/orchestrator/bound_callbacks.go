@@ -59,6 +59,10 @@ func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKe
 	return bc.ei.BatchPinComplete(bc.bi, batch, signingKey)
 }
 
+func (bc *boundCallbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	return bc.ei.BlockchainNetworkAction(bc.bi, action, event, signingKey)
+}
+
 func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {
 	switch event.Type() {
 	case dataexchange.DXEventTypeTransferResult:

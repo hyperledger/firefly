@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Node Component Architecture
-parent: Architecture
+parent: pages.architecture
 nav_order: 1
 ---
 

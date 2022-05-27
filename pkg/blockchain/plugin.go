@@ -33,8 +33,18 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	// Returns the supported featureset of the interface
 	Init(ctx context.Context, config config.Section, callbacks Callbacks, metrics metrics.Manager) error
+
+	// ConfigureContract initializes the subscription to the FireFly contract
+	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
+	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
+	ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error)
+
+	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
+	// - Validates that the event came from the currently active FireFly contract
+	// - Re-initializes the plugin against the next configured FireFly contract
+	// - Updates the provided contract info to record the point of termination and the newly active contract
+	TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *Event) (err error)
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -51,7 +61,10 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *BatchPin) error
+	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
+
+	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
+	SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error
@@ -78,6 +91,8 @@ type Plugin interface {
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
 }
 
+const FireFlyActionPrefix = "firefly:"
+
 // Callbacks is the interface provided to the blockchain plugin, to allow it to pass events back to firefly.
 //
 // Events must be delivered sequentially, such that event 2 is not delivered until the callback invoked for event 1
@@ -89,15 +104,18 @@ type Callbacks interface {
 	// opOutput can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
-	//
-	// Error should will only be returned in shutdown scenarios
 	BlockchainOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	//
-	// Error should will only be returned in shutdown scenarios
+	// Error should only be returned in shutdown scenarios
 	BatchPinComplete(batch *BatchPin, signingKey *core.VerifierRef) error
+
+	// BlockchainNetworkAction notifies on the arrival of a network operator action
+	//
+	// Error should only be returned in shutdown scenarios
+	BlockchainNetworkAction(action string, event *Event, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error
@@ -106,9 +124,6 @@ type Callbacks interface {
 // Capabilities the supported featureset of the blockchain
 // interface implemented by the plugin, with the specified config
 type Capabilities struct {
-	// GlobalSequencer means submitting an ordered piece of data visible to all
-	// participants of the network (requires an all-participant chain)
-	GlobalSequencer bool
 }
 
 // TransactionStatus is the only architecturally significant thing that Firefly tracks on blockchain transactions.
@@ -163,7 +178,7 @@ type Event struct {
 	// Name is a short name for the event
 	Name string
 
-	// ProtocolID is a protocol-specific identifier for the event
+	// ProtocolID is an alphanumerically sortable string that represents this event uniquely on the blockchain
 	ProtocolID string
 
 	// Output is the raw output data from the event

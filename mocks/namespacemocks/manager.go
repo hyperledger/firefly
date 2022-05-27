@@ -7,6 +7,8 @@ import (
 
 	config "github.com/hyperledger/firefly-common/pkg/config"
 
+	database "github.com/hyperledger/firefly/pkg/database"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -29,13 +31,13 @@ func (_m *Manager) GetConfigWithFallback(ns string, key config.RootKey) string {
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx
-func (_m *Manager) Init(ctx context.Context) error {
-	ret := _m.Called(ctx)
+// Init provides a mock function with given fields: ctx, di
+func (_m *Manager) Init(ctx context.Context, di database.Plugin) error {
+	ret := _m.Called(ctx, di)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, database.Plugin) error); ok {
+		r0 = rf(ctx, di)
 	} else {
 		r0 = ret.Error(0)
 	}

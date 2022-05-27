@@ -20,16 +20,21 @@
 package reference
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/language"
 )
 
 func TestGenerateMarkdownPages(t *testing.T) {
-	markdownMap, err := GenerateObjectsReferenceMarkdown()
+	// TODO: Generate multiple languages when supported in the future here
+	ctx := i18n.WithLang(context.Background(), language.AmericanEnglish)
+	markdownMap, err := GenerateObjectsReferenceMarkdown(ctx)
 	assert.NoError(t, err)
 	assert.NotNil(t, markdownMap)
 

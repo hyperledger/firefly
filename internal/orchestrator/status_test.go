@@ -35,16 +35,19 @@ var (
 	pluginsResult = core.NodeStatusPlugins{
 		Blockchain: []*core.NodeStatusPlugin{
 			{
+				Name:       "ethereum",
 				PluginType: "mock-bi",
 			},
 		},
 		Database: []*core.NodeStatusPlugin{
 			{
+				Name:       "postgres",
 				PluginType: "mock-di",
 			},
 		},
 		DataExchange: []*core.NodeStatusPlugin{
 			{
+				Name:       "ffdx",
 				PluginType: "mock-dx",
 			},
 		},
@@ -55,11 +58,13 @@ var (
 		},
 		Identity: []*core.NodeStatusPlugin{
 			{
+				Name:       "identity",
 				PluginType: "mock-ii",
 			},
 		},
 		SharedStorage: []*core.NodeStatusPlugin{
 			{
+				Name:       "ipfs",
 				PluginType: "mock-ps",
 			},
 		},

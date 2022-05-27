@@ -25,13 +25,17 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/text/language"
 )
 
 func TestCheckGeneratedMarkdownPages(t *testing.T) {
-	markdownMap, err := GenerateObjectsReferenceMarkdown()
+	ctx := i18n.WithLang(context.Background(), language.Spanish)
+	markdownMap, err := GenerateObjectsReferenceMarkdown(ctx)
 	assert.NoError(t, err)
 	assert.NotNil(t, markdownMap)
 
@@ -47,13 +51,34 @@ func TestCheckGeneratedMarkdownPages(t *testing.T) {
 }
 
 func TestGenerateMarkdownPagesNonPointer(t *testing.T) {
-	markdownMap, err := generateMarkdownPages(context.Background(), []interface{}{"foo"}, []interface{}{}, "")
+	_, _, err := generateObjectReferenceMarkdown(context.Background(), false, "foo", reflect.TypeOf("foo"), []string{}, []string{}, []string{}, "outputPath")
 	assert.NoError(t, err)
-	assert.NotNil(t, markdownMap)
 }
 
 func TestGenerateMarkdownPagesBadJSON(t *testing.T) {
-	badJSON := map[bool]bool{true: false}
-	_, err := generateMarkdownPages(context.Background(), []interface{}{badJSON}, []interface{}{}, "")
-	assert.Error(t, err)
+	type badJSON map[bool]bool
+	_, err := generateMarkdownPages(context.Background(), []interface{}{badJSON{true: false}}, []interface{}{}, "../../test")
+	assert.Regexp(t, "badJSON", err)
+}
+
+func TestGenerateMarkdownDescriptionMissing(t *testing.T) {
+	type thingy struct{}
+	_, err := generateMarkdownPages(context.Background(), []interface{}{thingy{}}, []interface{}{}, "")
+	assert.Regexp(t, "FF10387.*thingy_description.md", err)
+}
+
+func TestGenerateMarkdownAnonymousStruct(t *testing.T) {
+	type thing2 struct {
+		Kite string `json:"kite" ffstruct:"thing2"`
+	}
+	type thing1 struct {
+		thing2
+	}
+	refdocs, err := generateMarkdownPages(context.Background(), []interface{}{thing1{
+		thing2{
+			Kite: "green and yellow",
+		},
+	}}, []interface{}{}, "../../test")
+	assert.NoError(t, err)
+	assert.Regexp(t, "\\| `kite` \\|", string(refdocs["thing1"]))
 }

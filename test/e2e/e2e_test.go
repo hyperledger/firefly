@@ -321,7 +321,7 @@ func wsReader(conn *websocket.Conn, dbChanges bool) chan *core.EventDelivery {
 				fmt.Printf("Websocket %s closing, error: %s\n", conn.RemoteAddr(), err)
 				return
 			}
-			var wsa core.WSClientActionBase
+			var wsa core.WSActionBase
 			err = json.Unmarshal(b, &wsa)
 			if err != nil {
 				panic(fmt.Errorf("Invalid JSON received on WebSocket: %s", err))

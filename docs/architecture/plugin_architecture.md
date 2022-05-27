@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Plugin Architecture
-parent: Architecture
+parent: pages.architecture
 nav_order: 4
 ---
 

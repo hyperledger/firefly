@@ -4643,6 +4643,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -6605,6 +6613,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -6786,6 +6802,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7250,6 +7274,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -7346,6 +7378,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7460,6 +7500,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7623,6 +7671,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -7725,6 +7781,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -7845,6 +7909,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -8004,6 +8076,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -8138,6 +8218,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -8269,6 +8357,52 @@ paths:
                     description:
                       description: A description of the namespace
                       type: string
+                    fireflyContract:
+                      description: Info on the FireFly smart contract configured for
+                        this namespace
+                      properties:
+                        active:
+                          description: The currently active FireFly smart contract
+                          properties:
+                            finalEvent:
+                              description: The identifier for the final blockchain
+                                event received from this contract before termination
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              additionalProperties:
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                              type: object
+                          type: object
+                        terminated:
+                          description: Previously-terminated FireFly smart contracts
+                          items:
+                            description: Previously-terminated FireFly smart contracts
+                            properties:
+                              finalEvent:
+                                description: The identifier for the final blockchain
+                                  event received from this contract before termination
+                                type: string
+                              index:
+                                description: The index of this contract in the config
+                                  file
+                                type: integer
+                              info:
+                                additionalProperties:
+                                  description: Blockchain-specific info on the contract,
+                                    such as its location on chain
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                                type: object
+                            type: object
+                          type: array
+                      type: object
                     id:
                       description: The UUID of the namespace. For locally established
                         namespaces will be different on each node in the network.
@@ -8329,6 +8463,52 @@ paths:
                   description:
                     description: A description of the namespace
                     type: string
+                  fireflyContract:
+                    description: Info on the FireFly smart contract configured for
+                      this namespace
+                    properties:
+                      active:
+                        description: The currently active FireFly smart contract
+                        properties:
+                          finalEvent:
+                            description: The identifier for the final blockchain event
+                              received from this contract before termination
+                            type: string
+                          index:
+                            description: The index of this contract in the config
+                              file
+                            type: integer
+                          info:
+                            additionalProperties:
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                            description: Blockchain-specific info on the contract,
+                              such as its location on chain
+                            type: object
+                        type: object
+                      terminated:
+                        description: Previously-terminated FireFly smart contracts
+                        items:
+                          description: Previously-terminated FireFly smart contracts
+                          properties:
+                            finalEvent:
+                              description: The identifier for the final blockchain
+                                event received from this contract before termination
+                              type: string
+                            index:
+                              description: The index of this contract in the config
+                                file
+                              type: integer
+                            info:
+                              additionalProperties:
+                                description: Blockchain-specific info on the contract,
+                                  such as its location on chain
+                              description: Blockchain-specific info on the contract,
+                                such as its location on chain
+                              type: object
+                          type: object
+                        type: array
+                    type: object
                   id:
                     description: The UUID of the namespace. For locally established
                       namespaces will be different on each node in the network. For
@@ -13365,6 +13545,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -15425,6 +15613,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -15613,6 +15809,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16143,6 +16347,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -16245,6 +16457,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16365,6 +16585,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16535,6 +16763,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -16637,6 +16873,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16757,6 +17001,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -16923,6 +17175,14 @@ paths:
                     txtype:
                       description: The type of transaction used to order/deliver this
                         message
+                      enum:
+                      - none
+                      - unpinned
+                      - batch_pin
+                      - token_pool
+                      - token_transfer
+                      - contract_invoke
+                      - token_approval
                       type: string
                     type:
                       description: The type of the message
@@ -17057,6 +17317,14 @@ paths:
                       txtype:
                         description: The type of transaction used to order/deliver
                           this message
+                        enum:
+                        - none
+                        - unpinned
+                        - batch_pin
+                        - token_pool
+                        - token_transfer
+                        - contract_invoke
+                        - token_approval
                         type: string
                       type:
                         description: The type of the message
@@ -19506,12 +19774,69 @@ paths:
                     options:
                       description: Subscription options
                       properties:
+                        fastack:
+                          description: 'Webhooks only: When true the event will be
+                            acknowledged before the webhook is invoked, allowing parallel
+                            invocations'
+                          type: boolean
                         firstEvent:
                           description: Whether your appplication would like to receive
                             events from the 'oldest' event emitted by your FireFly
                             node (from the beginning of time), or the 'newest' event
                             (from now), or a specific event sequence. Default is 'newest'
                           type: string
+                        headers:
+                          additionalProperties:
+                            description: 'Webhooks only: Static headers to set on
+                              the webhook request'
+                            type: string
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: object
+                        input:
+                          description: 'Webhooks only: A set of options to extract
+                            data from the first JSON input data in the incoming message.
+                            Only applies if withData=true'
+                          properties:
+                            body:
+                              description: A top-level property of the first data
+                                input, to use for the request body. Default is the
+                                whole first body
+                              type: string
+                            headers:
+                              description: A top-level property of the first data
+                                input, to use for headers
+                              type: string
+                            path:
+                              description: A top-level property of the first data
+                                input, to use for a path to append with escaping to
+                                the webhook path
+                              type: string
+                            query:
+                              description: A top-level property of the first data
+                                input, to use for query parameters
+                              type: string
+                            replytx:
+                              description: A top-level property of the first data
+                                input, to use to dynamically set whether to pin the
+                                response (so the requester can choose)
+                              type: string
+                          type: object
+                        json:
+                          description: 'Webhooks only: Whether to assume the response
+                            body is JSON, regardless of the returned Content-Type'
+                          type: boolean
+                        method:
+                          description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                          type: string
+                        query:
+                          additionalProperties:
+                            description: 'Webhooks only: Static query params to set
+                              on the webhook request'
+                            type: string
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: object
                         readAhead:
                           description: The number of events to stream ahead to your
                             application, while waiting for confirmation of consumption
@@ -19522,6 +19847,22 @@ paths:
                           maximum: 65535
                           minimum: 0
                           type: integer
+                        reply:
+                          description: 'Webhooks only: Whether to automatically send
+                            a reply event, using the body returned by the webhook'
+                          type: boolean
+                        replytag:
+                          description: 'Webhooks only: The tag to set on the reply
+                            message'
+                          type: string
+                        replytx:
+                          description: 'Webhooks only: The transaction type to set
+                            on the reply message'
+                          type: string
+                        url:
+                          description: 'Webhooks only: HTTP url to invoke. Can be
+                            relative if a base URL is set in the webhook plugin config'
+                          type: string
                         withData:
                           description: Whether message events delivered over the subscription,
                             should be packaged with the full data of those messages
@@ -19655,12 +19996,68 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    fastack:
+                      description: 'Webhooks only: When true the event will be acknowledged
+                        before the webhook is invoked, allowing parallel invocations'
+                      type: boolean
                     firstEvent:
                       description: Whether your appplication would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
                       type: string
+                    headers:
+                      additionalProperties:
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: string
+                      description: 'Webhooks only: Static headers to set on the webhook
+                        request'
+                      type: object
+                    input:
+                      description: 'Webhooks only: A set of options to extract data
+                        from the first JSON input data in the incoming message. Only
+                        applies if withData=true'
+                      properties:
+                        body:
+                          description: A top-level property of the first data input,
+                            to use for the request body. Default is the whole first
+                            body
+                          type: string
+                        headers:
+                          description: A top-level property of the first data input,
+                            to use for headers
+                          type: string
+                        path:
+                          description: A top-level property of the first data input,
+                            to use for a path to append with escaping to the webhook
+                            path
+                          type: string
+                        query:
+                          description: A top-level property of the first data input,
+                            to use for query parameters
+                          type: string
+                        replytx:
+                          description: A top-level property of the first data input,
+                            to use to dynamically set whether to pin the response
+                            (so the requester can choose)
+                          type: string
+                      type: object
+                    json:
+                      description: 'Webhooks only: Whether to assume the response
+                        body is JSON, regardless of the returned Content-Type'
+                      type: boolean
+                    method:
+                      description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                      type: string
+                    query:
+                      additionalProperties:
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: string
+                      description: 'Webhooks only: Static query params to set on the
+                        webhook request'
+                      type: object
                     readAhead:
                       description: The number of events to stream ahead to your application,
                         while waiting for confirmation of consumption of those events.
@@ -19670,6 +20067,21 @@ paths:
                       maximum: 65535
                       minimum: 0
                       type: integer
+                    reply:
+                      description: 'Webhooks only: Whether to automatically send a
+                        reply event, using the body returned by the webhook'
+                      type: boolean
+                    replytag:
+                      description: 'Webhooks only: The tag to set on the reply message'
+                      type: string
+                    replytx:
+                      description: 'Webhooks only: The transaction type to set on
+                        the reply message'
+                      type: string
+                    url:
+                      description: 'Webhooks only: HTTP url to invoke. Can be relative
+                        if a base URL is set in the webhook plugin config'
+                      type: string
                     withData:
                       description: Whether message events delivered over the subscription,
                         should be packaged with the full data of those messages in-line
@@ -19790,12 +20202,68 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      fastack:
+                        description: 'Webhooks only: When true the event will be acknowledged
+                          before the webhook is invoked, allowing parallel invocations'
+                        type: boolean
                       firstEvent:
                         description: Whether your appplication would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
                         type: string
+                      headers:
+                        additionalProperties:
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: string
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: object
+                      input:
+                        description: 'Webhooks only: A set of options to extract data
+                          from the first JSON input data in the incoming message.
+                          Only applies if withData=true'
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: 'Webhooks only: Whether to assume the response
+                          body is JSON, regardless of the returned Content-Type'
+                        type: boolean
+                      method:
+                        description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                        type: string
+                      query:
+                        additionalProperties:
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: string
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: object
                       readAhead:
                         description: The number of events to stream ahead to your
                           application, while waiting for confirmation of consumption
@@ -19806,6 +20274,21 @@ paths:
                         maximum: 65535
                         minimum: 0
                         type: integer
+                      reply:
+                        description: 'Webhooks only: Whether to automatically send
+                          a reply event, using the body returned by the webhook'
+                        type: boolean
+                      replytag:
+                        description: 'Webhooks only: The tag to set on the reply message'
+                        type: string
+                      replytx:
+                        description: 'Webhooks only: The transaction type to set on
+                          the reply message'
+                        type: string
+                      url:
+                        description: 'Webhooks only: HTTP url to invoke. Can be relative
+                          if a base URL is set in the webhook plugin config'
+                        type: string
                       withData:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
@@ -19937,12 +20420,68 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    fastack:
+                      description: 'Webhooks only: When true the event will be acknowledged
+                        before the webhook is invoked, allowing parallel invocations'
+                      type: boolean
                     firstEvent:
                       description: Whether your appplication would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
                       type: string
+                    headers:
+                      additionalProperties:
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: string
+                      description: 'Webhooks only: Static headers to set on the webhook
+                        request'
+                      type: object
+                    input:
+                      description: 'Webhooks only: A set of options to extract data
+                        from the first JSON input data in the incoming message. Only
+                        applies if withData=true'
+                      properties:
+                        body:
+                          description: A top-level property of the first data input,
+                            to use for the request body. Default is the whole first
+                            body
+                          type: string
+                        headers:
+                          description: A top-level property of the first data input,
+                            to use for headers
+                          type: string
+                        path:
+                          description: A top-level property of the first data input,
+                            to use for a path to append with escaping to the webhook
+                            path
+                          type: string
+                        query:
+                          description: A top-level property of the first data input,
+                            to use for query parameters
+                          type: string
+                        replytx:
+                          description: A top-level property of the first data input,
+                            to use to dynamically set whether to pin the response
+                            (so the requester can choose)
+                          type: string
+                      type: object
+                    json:
+                      description: 'Webhooks only: Whether to assume the response
+                        body is JSON, regardless of the returned Content-Type'
+                      type: boolean
+                    method:
+                      description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                      type: string
+                    query:
+                      additionalProperties:
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: string
+                      description: 'Webhooks only: Static query params to set on the
+                        webhook request'
+                      type: object
                     readAhead:
                       description: The number of events to stream ahead to your application,
                         while waiting for confirmation of consumption of those events.
@@ -19952,6 +20491,21 @@ paths:
                       maximum: 65535
                       minimum: 0
                       type: integer
+                    reply:
+                      description: 'Webhooks only: Whether to automatically send a
+                        reply event, using the body returned by the webhook'
+                      type: boolean
+                    replytag:
+                      description: 'Webhooks only: The tag to set on the reply message'
+                      type: string
+                    replytx:
+                      description: 'Webhooks only: The transaction type to set on
+                        the reply message'
+                      type: string
+                    url:
+                      description: 'Webhooks only: HTTP url to invoke. Can be relative
+                        if a base URL is set in the webhook plugin config'
+                      type: string
                     withData:
                       description: Whether message events delivered over the subscription,
                         should be packaged with the full data of those messages in-line
@@ -20072,12 +20626,68 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      fastack:
+                        description: 'Webhooks only: When true the event will be acknowledged
+                          before the webhook is invoked, allowing parallel invocations'
+                        type: boolean
                       firstEvent:
                         description: Whether your appplication would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
                         type: string
+                      headers:
+                        additionalProperties:
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: string
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: object
+                      input:
+                        description: 'Webhooks only: A set of options to extract data
+                          from the first JSON input data in the incoming message.
+                          Only applies if withData=true'
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: 'Webhooks only: Whether to assume the response
+                          body is JSON, regardless of the returned Content-Type'
+                        type: boolean
+                      method:
+                        description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                        type: string
+                      query:
+                        additionalProperties:
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: string
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: object
                       readAhead:
                         description: The number of events to stream ahead to your
                           application, while waiting for confirmation of consumption
@@ -20088,6 +20698,21 @@ paths:
                         maximum: 65535
                         minimum: 0
                         type: integer
+                      reply:
+                        description: 'Webhooks only: Whether to automatically send
+                          a reply event, using the body returned by the webhook'
+                        type: boolean
+                      replytag:
+                        description: 'Webhooks only: The tag to set on the reply message'
+                        type: string
+                      replytx:
+                        description: 'Webhooks only: The transaction type to set on
+                          the reply message'
+                        type: string
+                      url:
+                        description: 'Webhooks only: HTTP url to invoke. Can be relative
+                          if a base URL is set in the webhook plugin config'
+                        type: string
                       withData:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
@@ -20275,12 +20900,68 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      fastack:
+                        description: 'Webhooks only: When true the event will be acknowledged
+                          before the webhook is invoked, allowing parallel invocations'
+                        type: boolean
                       firstEvent:
                         description: Whether your appplication would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
                         type: string
+                      headers:
+                        additionalProperties:
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: string
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: object
+                      input:
+                        description: 'Webhooks only: A set of options to extract data
+                          from the first JSON input data in the incoming message.
+                          Only applies if withData=true'
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: 'Webhooks only: Whether to assume the response
+                          body is JSON, regardless of the returned Content-Type'
+                        type: boolean
+                      method:
+                        description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                        type: string
+                      query:
+                        additionalProperties:
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: string
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: object
                       readAhead:
                         description: The number of events to stream ahead to your
                           application, while waiting for confirmation of consumption
@@ -20291,6 +20972,21 @@ paths:
                         maximum: 65535
                         minimum: 0
                         type: integer
+                      reply:
+                        description: 'Webhooks only: Whether to automatically send
+                          a reply event, using the body returned by the webhook'
+                        type: boolean
+                      replytag:
+                        description: 'Webhooks only: The tag to set on the reply message'
+                        type: string
+                      replytx:
+                        description: 'Webhooks only: The transaction type to set on
+                          the reply message'
+                        type: string
+                      url:
+                        description: 'Webhooks only: HTTP url to invoke. Can be relative
+                          if a base URL is set in the webhook plugin config'
+                        type: string
                       withData:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
@@ -21231,6 +21927,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -21648,6 +22352,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -22853,6 +23565,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -23942,6 +24662,46 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /network/action:
+    post:
+      description: Notify all nodes in the network of a new governance action
+      operationId: postNetworkAction
+      parameters:
+      - description: Server-side request timeout (millseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 120s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                type:
+                  description: The action to be performed
+                  enum:
+                  - terminate
+                  type: string
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  type:
+                    description: The action to be performed
+                    enum:
+                    - terminate
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Global
   /network/diddocs/{did}:
     get:
       description: Gets a DID document by its DID
@@ -26549,12 +27309,69 @@ paths:
                     options:
                       description: Subscription options
                       properties:
+                        fastack:
+                          description: 'Webhooks only: When true the event will be
+                            acknowledged before the webhook is invoked, allowing parallel
+                            invocations'
+                          type: boolean
                         firstEvent:
                           description: Whether your appplication would like to receive
                             events from the 'oldest' event emitted by your FireFly
                             node (from the beginning of time), or the 'newest' event
                             (from now), or a specific event sequence. Default is 'newest'
                           type: string
+                        headers:
+                          additionalProperties:
+                            description: 'Webhooks only: Static headers to set on
+                              the webhook request'
+                            type: string
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: object
+                        input:
+                          description: 'Webhooks only: A set of options to extract
+                            data from the first JSON input data in the incoming message.
+                            Only applies if withData=true'
+                          properties:
+                            body:
+                              description: A top-level property of the first data
+                                input, to use for the request body. Default is the
+                                whole first body
+                              type: string
+                            headers:
+                              description: A top-level property of the first data
+                                input, to use for headers
+                              type: string
+                            path:
+                              description: A top-level property of the first data
+                                input, to use for a path to append with escaping to
+                                the webhook path
+                              type: string
+                            query:
+                              description: A top-level property of the first data
+                                input, to use for query parameters
+                              type: string
+                            replytx:
+                              description: A top-level property of the first data
+                                input, to use to dynamically set whether to pin the
+                                response (so the requester can choose)
+                              type: string
+                          type: object
+                        json:
+                          description: 'Webhooks only: Whether to assume the response
+                            body is JSON, regardless of the returned Content-Type'
+                          type: boolean
+                        method:
+                          description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                          type: string
+                        query:
+                          additionalProperties:
+                            description: 'Webhooks only: Static query params to set
+                              on the webhook request'
+                            type: string
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: object
                         readAhead:
                           description: The number of events to stream ahead to your
                             application, while waiting for confirmation of consumption
@@ -26565,6 +27382,22 @@ paths:
                           maximum: 65535
                           minimum: 0
                           type: integer
+                        reply:
+                          description: 'Webhooks only: Whether to automatically send
+                            a reply event, using the body returned by the webhook'
+                          type: boolean
+                        replytag:
+                          description: 'Webhooks only: The tag to set on the reply
+                            message'
+                          type: string
+                        replytx:
+                          description: 'Webhooks only: The transaction type to set
+                            on the reply message'
+                          type: string
+                        url:
+                          description: 'Webhooks only: HTTP url to invoke. Can be
+                            relative if a base URL is set in the webhook plugin config'
+                          type: string
                         withData:
                           description: Whether message events delivered over the subscription,
                             should be packaged with the full data of those messages
@@ -26691,12 +27524,68 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    fastack:
+                      description: 'Webhooks only: When true the event will be acknowledged
+                        before the webhook is invoked, allowing parallel invocations'
+                      type: boolean
                     firstEvent:
                       description: Whether your appplication would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
                       type: string
+                    headers:
+                      additionalProperties:
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: string
+                      description: 'Webhooks only: Static headers to set on the webhook
+                        request'
+                      type: object
+                    input:
+                      description: 'Webhooks only: A set of options to extract data
+                        from the first JSON input data in the incoming message. Only
+                        applies if withData=true'
+                      properties:
+                        body:
+                          description: A top-level property of the first data input,
+                            to use for the request body. Default is the whole first
+                            body
+                          type: string
+                        headers:
+                          description: A top-level property of the first data input,
+                            to use for headers
+                          type: string
+                        path:
+                          description: A top-level property of the first data input,
+                            to use for a path to append with escaping to the webhook
+                            path
+                          type: string
+                        query:
+                          description: A top-level property of the first data input,
+                            to use for query parameters
+                          type: string
+                        replytx:
+                          description: A top-level property of the first data input,
+                            to use to dynamically set whether to pin the response
+                            (so the requester can choose)
+                          type: string
+                      type: object
+                    json:
+                      description: 'Webhooks only: Whether to assume the response
+                        body is JSON, regardless of the returned Content-Type'
+                      type: boolean
+                    method:
+                      description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                      type: string
+                    query:
+                      additionalProperties:
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: string
+                      description: 'Webhooks only: Static query params to set on the
+                        webhook request'
+                      type: object
                     readAhead:
                       description: The number of events to stream ahead to your application,
                         while waiting for confirmation of consumption of those events.
@@ -26706,6 +27595,21 @@ paths:
                       maximum: 65535
                       minimum: 0
                       type: integer
+                    reply:
+                      description: 'Webhooks only: Whether to automatically send a
+                        reply event, using the body returned by the webhook'
+                      type: boolean
+                    replytag:
+                      description: 'Webhooks only: The tag to set on the reply message'
+                      type: string
+                    replytx:
+                      description: 'Webhooks only: The transaction type to set on
+                        the reply message'
+                      type: string
+                    url:
+                      description: 'Webhooks only: HTTP url to invoke. Can be relative
+                        if a base URL is set in the webhook plugin config'
+                      type: string
                     withData:
                       description: Whether message events delivered over the subscription,
                         should be packaged with the full data of those messages in-line
@@ -26826,12 +27730,68 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      fastack:
+                        description: 'Webhooks only: When true the event will be acknowledged
+                          before the webhook is invoked, allowing parallel invocations'
+                        type: boolean
                       firstEvent:
                         description: Whether your appplication would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
                         type: string
+                      headers:
+                        additionalProperties:
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: string
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: object
+                      input:
+                        description: 'Webhooks only: A set of options to extract data
+                          from the first JSON input data in the incoming message.
+                          Only applies if withData=true'
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: 'Webhooks only: Whether to assume the response
+                          body is JSON, regardless of the returned Content-Type'
+                        type: boolean
+                      method:
+                        description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                        type: string
+                      query:
+                        additionalProperties:
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: string
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: object
                       readAhead:
                         description: The number of events to stream ahead to your
                           application, while waiting for confirmation of consumption
@@ -26842,6 +27802,21 @@ paths:
                         maximum: 65535
                         minimum: 0
                         type: integer
+                      reply:
+                        description: 'Webhooks only: Whether to automatically send
+                          a reply event, using the body returned by the webhook'
+                        type: boolean
+                      replytag:
+                        description: 'Webhooks only: The tag to set on the reply message'
+                        type: string
+                      replytx:
+                        description: 'Webhooks only: The transaction type to set on
+                          the reply message'
+                        type: string
+                      url:
+                        description: 'Webhooks only: HTTP url to invoke. Can be relative
+                          if a base URL is set in the webhook plugin config'
+                        type: string
                       withData:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
@@ -26966,12 +27941,68 @@ paths:
                 options:
                   description: Subscription options
                   properties:
+                    fastack:
+                      description: 'Webhooks only: When true the event will be acknowledged
+                        before the webhook is invoked, allowing parallel invocations'
+                      type: boolean
                     firstEvent:
                       description: Whether your appplication would like to receive
                         events from the 'oldest' event emitted by your FireFly node
                         (from the beginning of time), or the 'newest' event (from
                         now), or a specific event sequence. Default is 'newest'
                       type: string
+                    headers:
+                      additionalProperties:
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: string
+                      description: 'Webhooks only: Static headers to set on the webhook
+                        request'
+                      type: object
+                    input:
+                      description: 'Webhooks only: A set of options to extract data
+                        from the first JSON input data in the incoming message. Only
+                        applies if withData=true'
+                      properties:
+                        body:
+                          description: A top-level property of the first data input,
+                            to use for the request body. Default is the whole first
+                            body
+                          type: string
+                        headers:
+                          description: A top-level property of the first data input,
+                            to use for headers
+                          type: string
+                        path:
+                          description: A top-level property of the first data input,
+                            to use for a path to append with escaping to the webhook
+                            path
+                          type: string
+                        query:
+                          description: A top-level property of the first data input,
+                            to use for query parameters
+                          type: string
+                        replytx:
+                          description: A top-level property of the first data input,
+                            to use to dynamically set whether to pin the response
+                            (so the requester can choose)
+                          type: string
+                      type: object
+                    json:
+                      description: 'Webhooks only: Whether to assume the response
+                        body is JSON, regardless of the returned Content-Type'
+                      type: boolean
+                    method:
+                      description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                      type: string
+                    query:
+                      additionalProperties:
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: string
+                      description: 'Webhooks only: Static query params to set on the
+                        webhook request'
+                      type: object
                     readAhead:
                       description: The number of events to stream ahead to your application,
                         while waiting for confirmation of consumption of those events.
@@ -26981,6 +28012,21 @@ paths:
                       maximum: 65535
                       minimum: 0
                       type: integer
+                    reply:
+                      description: 'Webhooks only: Whether to automatically send a
+                        reply event, using the body returned by the webhook'
+                      type: boolean
+                    replytag:
+                      description: 'Webhooks only: The tag to set on the reply message'
+                      type: string
+                    replytx:
+                      description: 'Webhooks only: The transaction type to set on
+                        the reply message'
+                      type: string
+                    url:
+                      description: 'Webhooks only: HTTP url to invoke. Can be relative
+                        if a base URL is set in the webhook plugin config'
+                      type: string
                     withData:
                       description: Whether message events delivered over the subscription,
                         should be packaged with the full data of those messages in-line
@@ -27101,12 +28147,68 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      fastack:
+                        description: 'Webhooks only: When true the event will be acknowledged
+                          before the webhook is invoked, allowing parallel invocations'
+                        type: boolean
                       firstEvent:
                         description: Whether your appplication would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
                         type: string
+                      headers:
+                        additionalProperties:
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: string
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: object
+                      input:
+                        description: 'Webhooks only: A set of options to extract data
+                          from the first JSON input data in the incoming message.
+                          Only applies if withData=true'
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: 'Webhooks only: Whether to assume the response
+                          body is JSON, regardless of the returned Content-Type'
+                        type: boolean
+                      method:
+                        description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                        type: string
+                      query:
+                        additionalProperties:
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: string
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: object
                       readAhead:
                         description: The number of events to stream ahead to your
                           application, while waiting for confirmation of consumption
@@ -27117,6 +28219,21 @@ paths:
                         maximum: 65535
                         minimum: 0
                         type: integer
+                      reply:
+                        description: 'Webhooks only: Whether to automatically send
+                          a reply event, using the body returned by the webhook'
+                        type: boolean
+                      replytag:
+                        description: 'Webhooks only: The tag to set on the reply message'
+                        type: string
+                      replytx:
+                        description: 'Webhooks only: The transaction type to set on
+                          the reply message'
+                        type: string
+                      url:
+                        description: 'Webhooks only: HTTP url to invoke. Can be relative
+                          if a base URL is set in the webhook plugin config'
+                        type: string
                       withData:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
@@ -27290,12 +28407,68 @@ paths:
                   options:
                     description: Subscription options
                     properties:
+                      fastack:
+                        description: 'Webhooks only: When true the event will be acknowledged
+                          before the webhook is invoked, allowing parallel invocations'
+                        type: boolean
                       firstEvent:
                         description: Whether your appplication would like to receive
                           events from the 'oldest' event emitted by your FireFly node
                           (from the beginning of time), or the 'newest' event (from
                           now), or a specific event sequence. Default is 'newest'
                         type: string
+                      headers:
+                        additionalProperties:
+                          description: 'Webhooks only: Static headers to set on the
+                            webhook request'
+                          type: string
+                        description: 'Webhooks only: Static headers to set on the
+                          webhook request'
+                        type: object
+                      input:
+                        description: 'Webhooks only: A set of options to extract data
+                          from the first JSON input data in the incoming message.
+                          Only applies if withData=true'
+                        properties:
+                          body:
+                            description: A top-level property of the first data input,
+                              to use for the request body. Default is the whole first
+                              body
+                            type: string
+                          headers:
+                            description: A top-level property of the first data input,
+                              to use for headers
+                            type: string
+                          path:
+                            description: A top-level property of the first data input,
+                              to use for a path to append with escaping to the webhook
+                              path
+                            type: string
+                          query:
+                            description: A top-level property of the first data input,
+                              to use for query parameters
+                            type: string
+                          replytx:
+                            description: A top-level property of the first data input,
+                              to use to dynamically set whether to pin the response
+                              (so the requester can choose)
+                            type: string
+                        type: object
+                      json:
+                        description: 'Webhooks only: Whether to assume the response
+                          body is JSON, regardless of the returned Content-Type'
+                        type: boolean
+                      method:
+                        description: 'Webhooks only: HTTP method to invoke. Default=POST'
+                        type: string
+                      query:
+                        additionalProperties:
+                          description: 'Webhooks only: Static query params to set
+                            on the webhook request'
+                          type: string
+                        description: 'Webhooks only: Static query params to set on
+                          the webhook request'
+                        type: object
                       readAhead:
                         description: The number of events to stream ahead to your
                           application, while waiting for confirmation of consumption
@@ -27306,6 +28479,21 @@ paths:
                         maximum: 65535
                         minimum: 0
                         type: integer
+                      reply:
+                        description: 'Webhooks only: Whether to automatically send
+                          a reply event, using the body returned by the webhook'
+                        type: boolean
+                      replytag:
+                        description: 'Webhooks only: The tag to set on the reply message'
+                        type: string
+                      replytx:
+                        description: 'Webhooks only: The transaction type to set on
+                          the reply message'
+                        type: string
+                      url:
+                        description: 'Webhooks only: HTTP url to invoke. Can be relative
+                          if a base URL is set in the webhook plugin config'
+                        type: string
                       withData:
                         description: Whether message events delivered over the subscription,
                           should be packaged with the full data of those messages
@@ -28204,6 +29392,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -28599,6 +29795,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message
@@ -29769,6 +30973,14 @@ paths:
                         txtype:
                           description: The type of transaction used to order/deliver
                             this message
+                          enum:
+                          - none
+                          - unpinned
+                          - batch_pin
+                          - token_pool
+                          - token_transfer
+                          - contract_invoke
+                          - token_approval
                           type: string
                         type:
                           description: The type of the message

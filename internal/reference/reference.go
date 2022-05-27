@@ -28,7 +28,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	_ "github.com/hyperledger/firefly/internal/coremsgs" // required to pull in translations of struct fields
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -47,49 +47,493 @@ type TypeReferenceDoc struct {
  * array which is passed to generateMarkdownPages(). Note: It is the responsibility of
  * some other caller function to actually write the bytes to disk.
  */
-func GenerateObjectsReferenceMarkdown() (map[string][]byte, error) {
-	message := &core.Message{
-		Header: core.MessageHeader{
-			ID:        fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
-			Type:      core.MessageTypeBroadcast,
-			Namespace: "default",
-		},
-		Data: []*core.DataRef{
-			{
-				ID: fftypes.MustParseUUID("fdf9f118-eb81-4086-a63d-b06715b3bb4e"),
-			},
-		},
-		State: core.MessageStateConfirmed,
-	}
+func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, error) {
 
-	tokenTransfer := &core.TokenTransfer{
-		Message: fftypes.MustParseUUID("855af8e7-2b02-4e05-ad7d-9ae0d4c409ba"),
-		Pool:    fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
-		From:    "0x98151D8AB3af082A5DC07746C220Fb6C95Bc4a50",
-		To:      "0x7b746b92869De61649d148823808653430682C0d",
-		Type:    core.TokenTransferTypeTransfer,
-	}
-
-	dataRef := &core.DataRef{
-		ID:   fftypes.MustParseUUID("5bea782a-6cf2-4e01-95ee-cb5fa05873e9"),
-		Hash: fftypes.HashString("blah"),
-	}
-
-	ffi := &core.FFI{}
+	newest := core.SubOptsFirstEventNewest
+	fifty := uint16(50)
+	falseVar := false
 
 	types := []interface{}{
-		message,
-		tokenTransfer,
-		dataRef,
-		ffi,
+
+		&core.Event{
+			ID:          fftypes.MustParseUUID("5f875824-b36b-4559-9791-a57a2e2b30dd"),
+			Sequence:    168,
+			Type:        core.EventTypeTransactionSubmitted,
+			Namespace:   "ns1",
+			Reference:   fftypes.MustParseUUID("0d12aa75-5ed8-48a7-8b54-45274c6edcb1"),
+			Transaction: fftypes.MustParseUUID("0d12aa75-5ed8-48a7-8b54-45274c6edcb1"),
+			Topic:       core.TransactionTypeBatchPin.String(),
+			Created:     fftypes.UnixTime(1652664195),
+		},
+
+		&core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{
+				ID:        fftypes.MustParseUUID("c38d69fd-442e-4d6f-b5a4-bab1411c7fe8"),
+				Namespace: "ns1",
+				Name:      "app1",
+			},
+			Transport: "websockets",
+			Filter: core.SubscriptionFilter{
+				Events: "^(message_.*|token_.*)$",
+				Message: core.MessageFilter{
+					Tag: "^(red|blue)$",
+				},
+			},
+			Options: core.SubscriptionOptions{
+				SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+					FirstEvent: &newest,
+					ReadAhead:  &fifty,
+				},
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.ContractAPI{
+			ID:        fftypes.MustParseUUID("0f12317b-85a0-4a77-a722-857ea2b0a5fa"),
+			Name:      "my_contract_api",
+			Namespace: "ns1",
+			Interface: &core.FFIReference{
+				ID: fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+			},
+			Location: fftypes.JSONAnyPtr(`{
+				"address": "0x95a6c4895c7806499ba35f75069198f45e88fc69"
+			}`),
+			Message: fftypes.MustParseUUID("b09d9f77-7b16-4760-a8d7-0e3c319b2a16"),
+			URLs: core.ContractURLs{
+				OpenAPI: "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api/swagger.json",
+				UI:      "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my_contract_api/api",
+			},
+		},
+
+		&core.BlockchainEvent{
+			ID:         fftypes.MustParseUUID("e9bc4735-a332-4071-9975-b1066e51ab8b"),
+			Source:     "ethereum",
+			Namespace:  "ns1",
+			Name:       "MyEvent",
+			Listener:   fftypes.MustParseUUID("c29b4595-03c2-411a-89e3-8b7f27ef17bb"),
+			ProtocolID: "000000000048/000000/000000",
+			Output: fftypes.JSONObject{
+				"addr1":  "0x55860105d6a675dbe6e4d83f67b834377ba677ad",
+				"value2": "42",
+			},
+			Info: fftypes.JSONObject{
+				"address":          "0x57A9bE18CCB50D06B7567012AaF6031D669BBcAA",
+				"blockHash":        "0xae7382ef2573553f517913b927d8b9691ada8d617266b8b16f74bb37aa78cae8",
+				"blockNumber":      "48",
+				"logIndex":         "0",
+				"signature":        "Changed(address,uint256)",
+				"subId":            "sb-e4d5efcd-2eba-4ed1-43e8-24831353fffc",
+				"timestamp":        "1653048837",
+				"transactionHash":  "0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d",
+				"transactionIndex": "0x0",
+			},
+			Timestamp: fftypes.UnixTime(1652664195),
+			TX: core.BlockchainTransactionRef{
+				BlockchainID: "0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d",
+			},
+		},
+
+		&core.Transaction{
+			ID:            fftypes.MustParseUUID("4e7e0943-4230-4f67-89b6-181adf471edc"),
+			Namespace:     "ns1",
+			Type:          core.TransactionTypeContractInvoke,
+			Created:       fftypes.UnixTime(1652664195),
+			BlockchainIDs: core.NewFFStringArray("0x34b0327567fefed09ac7b4429549bc609302b08a9cbd8f019a078ec44447593d"),
+		},
+
+		&core.Operation{
+			ID:          fftypes.MustParseUUID("04a8b0c4-03c2-4935-85a1-87d17cddc20a"),
+			Namespace:   "ns1",
+			Type:        core.OpTypeSharedStorageUploadBatch,
+			Transaction: fftypes.MustParseUUID("99543134-769b-42a8-8be4-a5f8873f969d"),
+			Status:      core.OpStatusSucceeded,
+			Plugin:      "ipfs",
+			Input: fftypes.JSONObject{
+				"id": "80d89712-57f3-48fe-b085-a8cba6e0667d",
+			},
+			Output: fftypes.JSONObject{
+				"payloadRef": "QmWj3tr2aTHqnRYovhS2mQAjYneRtMWJSU4M4RdAJpJwEC",
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.FFI{
+			ID:          fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+			Namespace:   "ns1",
+			Name:        "SimpleStorage",
+			Description: "A simple example contract in Solidity",
+			Version:     "v0.0.1",
+			Message:     fftypes.MustParseUUID("e4ad2077-5714-416e-81f9-7964a6223b6f"),
+			Methods: []*core.FFIMethod{
+				{
+					ID:          fftypes.MustParseUUID("8f3289dd-3a19-4a9f-aab3-cb05289b013c"),
+					Interface:   fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+					Name:        "get",
+					Namespace:   "ns1",
+					Pathname:    "get",
+					Description: "Get the current value",
+					Params:      core.FFIParams{},
+					Returns: core.FFIParams{
+						{
+							Name: "output",
+							Schema: fftypes.JSONAnyPtr(`{
+								"type": "integer",
+								"details": {
+								  "type": "uint256"
+								}
+							}`),
+						},
+					},
+				},
+				{
+					ID:          fftypes.MustParseUUID("fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b"),
+					Interface:   fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+					Name:        "set",
+					Namespace:   "ns1",
+					Pathname:    "set",
+					Description: "Set the value",
+					Params: core.FFIParams{
+						{
+							Name: "newValue",
+							Schema: fftypes.JSONAnyPtr(`{
+								"type": "integer",
+								"details": {
+								  "type": "uint256"
+								}
+							}`),
+						},
+					},
+					Returns: core.FFIParams{},
+				},
+			},
+			Events: []*core.FFIEvent{
+				{
+					ID:        fftypes.MustParseUUID("9f653f93-86f4-45bc-be75-d7f5888fbbc0"),
+					Interface: fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
+					Namespace: "ns1",
+					Pathname:  "Changed",
+					Signature: "Changed(address,uint256)",
+					FFIEventDefinition: core.FFIEventDefinition{
+						Name:        "Changed",
+						Description: "Emitted when the value changes",
+						Params: core.FFIParams{
+							{
+								Name: "_from",
+								Schema: fftypes.JSONAnyPtr(`{
+									"type": "string",
+									"details": {
+									  "type": "address",
+									  "indexed": true
+									}
+								}`),
+							},
+							{
+								Name: "_value",
+								Schema: fftypes.JSONAnyPtr(`{
+									"type": "integer",
+									"details": {
+									  "type": "uint256"
+									}
+								}`),
+							},
+						},
+					},
+				},
+			},
+		},
+
+		&core.ContractListener{
+			ID: fftypes.MustParseUUID("d61980a9-748c-4c72-baf5-8b485b514d59"),
+			Interface: &core.FFIReference{
+				ID: fftypes.MustParseUUID("ff1da3c1-f9e7-40c2-8d93-abb8855e8a1d"),
+			},
+			Namespace: "ns1",
+			Name:      "contract1_events",
+			BackendID: "sb-dd8795fc-a004-4554-669d-c0cf1ee2c279",
+			Location: fftypes.JSONAnyPtr(`{
+				"address": "0x596003a91a97757ef1916c8d6c0d42592630d2cf"
+			}`),
+			Created: fftypes.UnixTime(1652664195),
+			Event: &core.FFISerializedEvent{
+				FFIEventDefinition: core.FFIEventDefinition{
+					Name: "Changed",
+					Params: core.FFIParams{
+						{
+							Name: "x",
+							Schema: fftypes.JSONAnyPtr(`{
+								"type": "integer",
+								"details": {
+								  "type": "uint256",
+								  "internalType": "uint256"
+								}
+							}`),
+						},
+					},
+				},
+			},
+			Signature: "Changed(uint256)",
+			Topic:     "app1_topic",
+			Options: &core.ContractListenerOptions{
+				FirstEvent: "newest",
+			},
+		},
+
+		&core.TokenPool{
+			ID:        fftypes.MustParseUUID("90ebefdf-4230-48a5-9d07-c59751545859"),
+			Type:      core.TokenTypeFungible,
+			Namespace: "ns1",
+			Name:      "my_token",
+			Standard:  "ERC-20",
+			Locator:   "address=0x056df1c53c3c00b0e13d37543f46930b42f71db0&schema=ERC20WithData&type=fungible",
+			Decimals:  18,
+			Connector: "erc20_erc721",
+			State:     core.TokenPoolStateConfirmed,
+			Message:   fftypes.MustParseUUID("43923040-b1e5-4164-aa20-47636c7177ee"),
+			Info: fftypes.JSONObject{
+				"address": "0x056df1c53c3c00b0e13d37543f46930b42f71db0",
+				"name":    "pool8197",
+				"schema":  "ERC20WithData",
+			},
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenPool,
+				ID:   fftypes.MustParseUUID("a23ffc87-81a2-4cbc-97d6-f53d320c36cd"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.TokenTransfer{
+			Namespace:       "ns1",
+			Connector:       "erc20_erc721",
+			URI:             "firefly://token/1",
+			Type:            core.TokenTransferTypeTransfer,
+			Key:             "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+			From:            "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+			To:              "0x55860105D6A675dBE6e4d83F67b834377Ba677AD",
+			Amount:          *fftypes.NewFFBigInt(1000000000000000000),
+			ProtocolID:      "000000000041/000000/000000",
+			Message:         fftypes.MustParseUUID("780b9b90-e3b0-4510-afac-b4b1f2940b36"),
+			MessageHash:     fftypes.MustParseBytes32("780204e634364c42779920eddc8d9fecccb33e3607eeac9f53abd1b31184ae4e"),
+			Pool:            fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
+			BlockchainEvent: fftypes.MustParseUUID("b57fcaa2-156e-4c3f-9b0b-ddec9ee25933"),
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenTransfer,
+				ID:   fftypes.MustParseUUID("62767ca8-99f9-439c-9deb-d80c6672c158"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.TokenApproval{
+			Namespace: "ns1",
+			Connector: "erc20_erc721",
+			LocalID:   fftypes.MustParseUUID("1CD3E2E2-DD6A-441D-94C5-02439DE9897B"),
+			Pool:      fftypes.MustParseUUID("1244ecbe-5862-41c3-99ec-4666a18b9dd5"),
+			Key:       "0x55860105d6a675dbe6e4d83f67b834377ba677ad",
+			Operator:  "0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+			Approved:  true,
+			Info: fftypes.JSONObject{
+				"owner":   "0x55860105d6a675dbe6e4d83f67b834377ba677ad",
+				"spender": "0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+				"value":   "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+			},
+			ProtocolID: "000000000032/000000/000000",
+			Subject:    "0x55860105d6a675dbe6e4d83f67b834377ba677ad:0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+			Active:     true,
+			TX: core.TransactionRef{
+				Type: core.TransactionTypeTokenApproval,
+				ID:   fftypes.MustParseUUID("4b6e086d-0e31-482d-9683-cd18b2045031"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.Identity{
+			IdentityBase: core.IdentityBase{
+				ID:        fftypes.MustParseUUID("114f5857-9983-46fb-b1fc-8c8f0a20846c"),
+				DID:       "did:firefly:org/org_1",
+				Parent:    fftypes.MustParseUUID("688072c3-4fa0-436c-a86b-5d89673b8938"),
+				Type:      core.IdentityTypeOrg,
+				Namespace: "ff_system",
+				Name:      "org_1",
+			},
+			Messages: core.IdentityMessages{
+				Claim:        fftypes.MustParseUUID("911b364b-5863-4e49-a3f8-766dbbae7c4c"),
+				Verification: fftypes.MustParseUUID("24636f11-c1f9-4bbb-9874-04dd24c7502f"),
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.Verifier{
+			Identity: fftypes.MustParseUUID("114f5857-9983-46fb-b1fc-8c8f0a20846c"),
+			Hash:     fftypes.MustParseBytes32("6818c41093590b862b781082d4df5d4abda6d2a4b71d737779edf6d2375d810b"),
+			VerifierRef: core.VerifierRef{
+				Type:  core.VerifierTypeEthAddress,
+				Value: "0x30017fd084715e41aa6536ab777a8f3a2b11a5a1",
+			},
+			Created: fftypes.UnixTime(1652664195),
+		},
+
+		&core.Message{
+			Header: core.MessageHeader{
+				ID:     fftypes.MustParseUUID("4ea27cce-a103-4187-b318-f7b20fd87bf3"),
+				Type:   core.MessageTypePrivate,
+				CID:    fftypes.MustParseUUID("00d20cba-76ed-431d-b9ff-f04b4cbee55c"),
+				TxType: core.TransactionTypeBatchPin,
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/acme",
+					Key:    "0xD53B0294B6a596D404809b1d51D1b4B3d1aD4945",
+				},
+				Created:   fftypes.UnixTime(1652664190),
+				Group:     fftypes.HashString("testgroup"),
+				Namespace: "ns1",
+				Topics:    core.NewFFStringArray("topic1"),
+				Tag:       "blue_message",
+				DataHash:  fftypes.HashString("testmsghash"),
+			},
+			Data: []*core.DataRef{
+				{
+					ID:   fftypes.MustParseUUID("fdf9f118-eb81-4086-a63d-b06715b3bb4e"),
+					Hash: fftypes.HashString("refhash"),
+				},
+			},
+			State:     core.MessageStateConfirmed,
+			Confirmed: fftypes.UnixTime(1652664196),
+		},
+
+		&core.Data{
+			ID:        fftypes.MustParseUUID("4f11e022-01f4-4c3f-909f-5226947d9ef0"),
+			Validator: core.ValidatorTypeJSON,
+			Namespace: "ns1",
+			Created:   fftypes.UnixTime(1652664195),
+			Hash:      fftypes.HashString("testdatahash"),
+			Datatype: &core.DatatypeRef{
+				Name:    "widget",
+				Version: "v1.2.3",
+			},
+			Value: fftypes.JSONAnyPtr(`{
+				"name": "filename.pdf",
+				"a": "example",
+				"b": { "c": 12345 }
+			}`),
+			Blob: &core.BlobRef{
+				Hash: fftypes.HashString("testblobhash"),
+				Size: 12345,
+				Name: "filename.pdf",
+			},
+		},
+
+		&core.Datatype{
+			ID:        fftypes.MustParseUUID("3a479f7e-ddda-4bda-aa24-56d06c0bf08e"),
+			Message:   fftypes.MustParseUUID("bfcf904c-bdf7-40aa-bbd7-567f625c26c0"),
+			Validator: core.ValidatorTypeJSON,
+			Namespace: "ns1",
+			Name:      "widget",
+			Version:   "1.0.0",
+			Hash:      fftypes.MustParseBytes32("639cd98c893fa45a9df6fd87bd0393a9b39e31e26fbb1eeefe90cb40c3fa02d2"),
+			Created:   fftypes.UnixTime(1652664196),
+			Value: fftypes.JSONAnyPtr(`{
+				"$id": "https://example.com/widget.schema.json",
+				"$schema": "https://json-schema.org/draft/2020-12/schema",
+				"title": "Widget",
+				"type": "object",
+				"properties": {
+				  "id": {
+					"type": "string",
+					"description": "The unique identifier for the widget."
+				  },
+				  "name": {
+					"type": "string",
+					"description": "The person's last name."
+				  }
+				},
+				"additionalProperties": false				
+			}`),
+		},
+
+		&core.Group{
+			Hash: fftypes.HashString("testgrouphash"),
+			GroupIdentity: core.GroupIdentity{
+				Namespace: "ns1",
+				Members: core.Members{
+					{
+						Identity: "did:firefly:org/1111",
+						Node:     fftypes.MustParseUUID("4f563179-b4bd-4161-86e0-c2c1c0869c4f"),
+					},
+					{
+						Identity: "did:firefly:org/2222",
+						Node:     fftypes.MustParseUUID("61a99af8-c1f7-48ea-8fcc-489e4822a0ed"),
+					},
+				},
+			},
+			Message: fftypes.MustParseUUID("0b9dfb76-103d-443d-92fd-b114fe07c54d"),
+			Created: fftypes.UnixTime(1652664196),
+		},
+
+		&core.Batch{
+			BatchHeader: core.BatchHeader{
+				ID:        fftypes.MustParseUUID("894bc0ea-0c2e-4ca4-bbca-b4c39a816bbb"),
+				Type:      core.BatchTypePrivate,
+				Namespace: "ns1",
+				Node:      fftypes.MustParseUUID("5802ab80-fa71-4f52-9189-fb534de93756"),
+				Group:     fftypes.HashString("examplegroup"),
+				Created:   fftypes.UnixTime(1652664196),
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/example",
+					Key:    "0x0a989907dcd17272257f3ebcf72f4351df65a846",
+				},
+			},
+			Hash: fftypes.HashString("examplebatchhash"),
+			Payload: core.BatchPayload{
+				TX: core.TransactionRef{
+					Type: core.BatchTypePrivate,
+					ID:   fftypes.MustParseUUID("04930D84-0227-4044-9D6D-82C2952A0108"),
+				},
+				Messages: []*core.Message{},
+				Data:     core.DataArray{},
+			},
+		},
+
+		&core.Namespace{
+			ID:          fftypes.MustParseUUID("7b2d9c7e-3d60-452c-a409-05e77c855d3a"),
+			Name:        "default",
+			Description: "Default predefined namespace",
+			Type:        core.NamespaceTypeLocal,
+			Created:     fftypes.UnixTime(1652664196),
+		},
+
+		&core.WSStart{
+			WSActionBase: core.WSActionBase{
+				Type: core.WSClientActionStart,
+			},
+			AutoAck:   &falseVar,
+			Namespace: "ns1",
+			Name:      "app1_subscription",
+		},
+
+		&core.WSAck{
+			WSActionBase: core.WSActionBase{
+				Type: core.WSClientActionAck,
+			},
+			ID: fftypes.MustParseUUID("f78bf82b-1292-4c86-8a08-e53d855f1a64"),
+			Subscription: &core.SubscriptionRef{
+				Name:      "app1_subscription",
+				Namespace: "ns1",
+			},
+		},
+
+		&core.WSError{
+			Type:  core.WSProtocolErrorEventType,
+			Error: i18n.NewError(ctx, coremsgs.MsgWSMsgSubNotMatched).Error(),
+		},
 	}
 
-	time := fftypes.FFTime{}
-	bigInt := fftypes.FFBigInt{}
+	simpleTypes := []interface{}{
+		fftypes.UUID{},
+		fftypes.FFTime{},
+		fftypes.FFBigInt{},
+		fftypes.JSONAny(""),
+		fftypes.JSONObject{},
+	}
 
-	simpleTypes := []interface{}{time, bigInt}
-
-	return generateMarkdownPages(context.Background(), types, simpleTypes, filepath.Join("..", "..", "docs", "reference", "types"))
+	return generateMarkdownPages(ctx, types, simpleTypes, filepath.Join("..", "..", "docs", "reference", "types"))
 }
 
 func getType(v interface{}) reflect.Type {
@@ -114,7 +558,7 @@ func generateMarkdownPages(ctx context.Context, types []interface{}, simpleTypes
 		// Page index starts at 1. Simple types will be the first page. Everything else comes after that.
 		pageHeader := generatePageHeader(pageTitle, i+2)
 		b := bytes.NewBuffer([]byte(pageHeader))
-		markdown, _, err := generateObjectReferenceMarkdown(ctx, o, reflect.TypeOf(o), rootPageNames, simpleTypesNames, []string{}, outputPath)
+		markdown, _, err := generateObjectReferenceMarkdown(ctx, true, o, reflect.TypeOf(o), rootPageNames, simpleTypesNames, []string{}, outputPath)
 		if err != nil {
 			return nil, err
 		}
@@ -134,13 +578,13 @@ func generateSimpleTypesMarkdown(ctx context.Context, simpleTypes []interface{},
 
 	b := bytes.NewBuffer([]byte(pageHeader))
 	for _, simpleType := range simpleTypes {
-		markdown, _, _ := generateObjectReferenceMarkdown(ctx, nil, reflect.TypeOf(simpleType), []string{}, simpleTypeNames, []string{}, outputPath)
+		markdown, _, _ := generateObjectReferenceMarkdown(ctx, true, nil, reflect.TypeOf(simpleType), []string{}, simpleTypeNames, []string{}, outputPath)
 		b.Write(markdown)
 	}
 	return b.Bytes(), simpleTypeNames
 }
 
-func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string) ([]byte, []string, error) {
+func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, example interface{}, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string) ([]byte, []string, error) {
 	typeReferenceDoc := TypeReferenceDoc{}
 
 	if t.Kind() == reflect.Ptr {
@@ -151,8 +595,14 @@ func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t
 	generatedTableNames = append(generatedTableNames, strings.ToLower(t.Name()))
 
 	// If a detailed type_description.md file exists, include that in a Description section here
-	if _, err := os.Stat(filepath.Join(outputPath, "includes", fmt.Sprintf("%s_description.md", strings.ToLower(t.Name())))); err == nil {
-		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
+	filename, _ := filepath.Abs(filepath.Join(outputPath, "_includes", fmt.Sprintf("%s_description.md", strings.ToLower(t.Name()))))
+	_, err := os.Stat(filename)
+	if err != nil {
+		if descRequired {
+			return nil, nil, i18n.NewError(ctx, coremsgs.MsgReferenceMarkdownMissing, filename)
+		}
+	} else {
+		typeReferenceDoc.Description = []byte(fmt.Sprintf("{%% include_relative _includes/%s_description.md %%}\n\n", strings.ToLower(t.Name())))
 	}
 
 	// Include an example JSON representation if we have one available
@@ -210,109 +660,141 @@ func generateObjectReferenceMarkdown(ctx context.Context, example interface{}, t
 	return buff.Bytes(), generatedTableNames, nil
 }
 
+func generateEnumList(f reflect.StructField) string {
+	enumName := f.Tag.Get("ffenum")
+	enumOptions := core.FFEnumValues(enumName)
+	buff := new(strings.Builder)
+	buff.WriteString("`FFEnum`:")
+	for _, v := range enumOptions {
+		buff.WriteString(fmt.Sprintf("<br/>`\"%s\"`", v))
+	}
+	return buff.String()
+}
+
 func generateFieldDescriptionsForStruct(ctx context.Context, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string) ([]byte, []byte, []string) {
 	fieldDescriptionsBytes := []byte{}
 	// subFieldBuff is where we write any additional tables for sub fields that may be on this struct
 	subFieldBuff := bytes.NewBuffer([]byte{})
-	numField := t.NumField()
-	if numField > 0 {
+	if t.NumField() > 0 {
 		// Write the table to a temporary buffer - we will throw it away if there are no
 		// public JSON serializable fields on the struct
 		tableRowCount := 0
 		tableBuff := bytes.NewBuffer([]byte{})
 		tableBuff.WriteString("| Field Name | Description | Type |\n")
 		tableBuff.WriteString("|------------|-------------|------|\n")
-		for i := 0; i < numField; i++ {
-			field := t.Field(i)
-			jsonTag := field.Tag.Get("json")
-			ffstructTag := field.Tag.Get("ffstruct")
-			ffexcludeTag := field.Tag.Get("ffexclude")
 
-			// If the field is specifically excluded, or doesn't have a json tag, skip it
-			if ffexcludeTag != "" || jsonTag == "" || jsonTag == "-" {
-				continue
-			}
+		tableRowCount = writeStructFields(ctx, t, rootPageNames, simpleTypeNames, generatedTableNames, outputPath, subFieldBuff, tableBuff, tableRowCount)
 
-			jsonFieldName := strings.Split(jsonTag, ",")[0]
-			messageKeyName := fmt.Sprintf("%s.%s", ffstructTag, jsonFieldName)
-			description := i18n.Expand(ctx, i18n.MessageKey(messageKeyName))
-			isArray := false
-
-			fieldType := field.Type
-			fireflyType := fieldType.Name()
-
-			if fieldType.Kind() == reflect.Slice {
-				fieldType = fieldType.Elem()
-				fireflyType = fieldType.Name()
-				isArray = true
-			}
-
-			if fieldType.Kind() == reflect.Ptr {
-				fieldType = fieldType.Elem()
-				fireflyType = fieldType.Name()
-			}
-
-			if isArray {
-				fireflyType = fmt.Sprintf("%s[]", fireflyType)
-			}
-
-			fireflyType = fmt.Sprintf("`%s`", fireflyType)
-
-			if fieldType.Kind() == reflect.Struct {
-				fieldInRootPages := false
-				fieldInSimpleTypes := false
-				for _, rootPageName := range rootPageNames {
-					if strings.ToLower(fieldType.Name()) == rootPageName {
-						fieldInRootPages = true
-						break
-					}
-				}
-				for _, simpleTypeName := range simpleTypeNames {
-					if strings.ToLower(fieldType.Name()) == simpleTypeName {
-						fieldInSimpleTypes = true
-						break
-					}
-				}
-
-				link := fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
-				if fieldInRootPages {
-					link = fmt.Sprintf("%s#%s", fieldType.Name(), strings.ToLower(fieldType.Name()))
-				} else if fieldInSimpleTypes {
-					link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
-				}
-				fireflyType = fmt.Sprintf("[%s](%s)", fireflyType, link)
-
-				// Generate the table for the sub type
-				tableAlreadyGenerated := false
-				for _, tableName := range generatedTableNames {
-					if strings.ToLower(fieldType.Name()) == tableName {
-						tableAlreadyGenerated = true
-						break
-					}
-				}
-				if !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
-					subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
-					generatedTableNames = newTableNames
-					subFieldBuff.Write(subFieldMarkdown)
-					subFieldBuff.WriteString("\n")
-				}
-			}
-			tableBuff.WriteString(fmt.Sprintf("| %s | %s | %s |\n", jsonFieldName, description, fireflyType))
-			tableRowCount++
-		}
-		if tableRowCount > 1 {
+		if tableRowCount > 0 {
 			fieldDescriptionsBytes = tableBuff.Bytes()
 		}
 	}
 	return fieldDescriptionsBytes, subFieldBuff.Bytes(), generatedTableNames
 }
 
+func writeStructFields(ctx context.Context, t reflect.Type, rootPageNames, simpleTypeNames, generatedTableNames []string, outputPath string, subFieldBuff, tableBuff *bytes.Buffer, tableRowCount int) int {
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		jsonTag := field.Tag.Get("json")
+		ffstructTag := field.Tag.Get("ffstruct")
+		ffexcludeTag := field.Tag.Get("ffexclude")
+
+		// If this is a nested struct, we need to recurse into it
+		if field.Anonymous {
+			tableRowCount = writeStructFields(ctx, field.Type, rootPageNames, simpleTypeNames, generatedTableNames, outputPath, subFieldBuff, tableBuff, tableRowCount)
+			continue
+		}
+
+		// If the field is specifically excluded, or doesn't have a json tag, skip it
+		if ffexcludeTag != "" || jsonTag == "" || jsonTag == "-" {
+			continue
+		}
+
+		jsonFieldName := strings.Split(jsonTag, ",")[0]
+		messageKeyName := fmt.Sprintf("%s.%s", ffstructTag, jsonFieldName)
+		description := i18n.Expand(ctx, i18n.MessageKey(messageKeyName))
+		isArray := false
+
+		fieldType := field.Type
+		fireflyType := fieldType.Name()
+
+		if fieldType.Kind() == reflect.Slice {
+			fieldType = fieldType.Elem()
+			fireflyType = fieldType.Name()
+			isArray = true
+		}
+
+		if fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+			fireflyType = fieldType.Name()
+		}
+
+		if isArray {
+			fireflyType = fmt.Sprintf("%s[]", fireflyType)
+		}
+
+		fireflyType = fmt.Sprintf("`%s`", fireflyType)
+
+		isStruct := fieldType.Kind() == reflect.Struct
+		isEnum := strings.ToLower(fieldType.Name()) == "ffenum"
+
+		fieldInRootPages := false
+		fieldInSimpleTypes := false
+		for _, rootPageName := range rootPageNames {
+			if strings.ToLower(fieldType.Name()) == rootPageName {
+				fieldInRootPages = true
+				break
+			}
+		}
+		for _, simpleTypeName := range simpleTypeNames {
+			if strings.ToLower(fieldType.Name()) == simpleTypeName {
+				fieldInSimpleTypes = true
+				break
+			}
+		}
+
+		link := ""
+		switch {
+		case isEnum:
+			fireflyType = generateEnumList(field)
+		case fieldInRootPages:
+			link = fmt.Sprintf("%s#%s", strings.ToLower(fieldType.Name()), strings.ToLower(fieldType.Name()))
+		case fieldInSimpleTypes:
+			link = fmt.Sprintf("simpletypes#%s", strings.ToLower(fieldType.Name()))
+		case isStruct:
+			link = fmt.Sprintf("#%s", strings.ToLower(fieldType.Name()))
+		}
+		if link != "" {
+			fireflyType = fmt.Sprintf("[%s](%s)", fireflyType, link)
+
+			// Generate the table for the sub type
+			tableAlreadyGenerated := false
+			for _, tableName := range generatedTableNames {
+				if strings.ToLower(fieldType.Name()) == tableName {
+					tableAlreadyGenerated = true
+					break
+				}
+			}
+			if isStruct && !tableAlreadyGenerated && !fieldInRootPages && !fieldInSimpleTypes {
+				subFieldMarkdown, newTableNames, _ := generateObjectReferenceMarkdown(ctx, false, nil, fieldType, rootPageNames, simpleTypeNames, generatedTableNames, outputPath)
+				generatedTableNames = newTableNames
+				subFieldBuff.Write(subFieldMarkdown)
+				subFieldBuff.WriteString("\n")
+			}
+		}
+
+		tableBuff.WriteString(fmt.Sprintf("| `%s` | %s | %s |\n", jsonFieldName, description, fireflyType))
+		tableRowCount++
+	}
+	return tableRowCount
+}
+
 func generatePageHeader(pageTitle string, navOrder int) string {
 	return fmt.Sprintf(`---
 layout: default
 title: %s
-parent: Types
-grand_parent: Reference
+parent: Core Resources
+grand_parent: pages.reference
 nav_order: %v
 ---
 

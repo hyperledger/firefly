@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Privately send data
-parent: Tutorials
+parent: pages.tutorials
 nav_order: 4
 ---
 
@@ -48,8 +48,8 @@ nav_order: 4
 
 ## Additional info
 
-- Key Concepts: [Private data exchange](/firefly/keyconcepts/data_exchange.html)
-- Swagger: [POST /api/v1/namespaces/{ns}/send/message](/firefly/swagger/swagger.html#/default/postSendMessage)
+- Key Concepts: [Private data exchange](../overview/data_exchange.md)
+- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessagePrivate" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/private</a>
 
 ## Example 1: Pinned private send of in-line string data
 

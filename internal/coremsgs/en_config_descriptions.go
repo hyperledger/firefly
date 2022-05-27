@@ -18,9 +18,12 @@ package coremsgs
 
 import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"golang.org/x/text/language"
 )
 
-var ffc = i18n.FFC
+var ffc = func(key, translation, fieldType string) i18n.ConfigMessageKey {
+	return i18n.FFC(language.AmericanEnglish, key, translation, fieldType)
+}
 
 //revive:disable
 var (
@@ -31,8 +34,7 @@ var (
 	ConfigAdminAddress      = ffc("config.admin.address", "The IP address on which the admin HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigAdminEnabled      = ffc("config.admin.enabled", "Enables the admin HTTP API", i18n.BooleanType)
 	ConfigAdminPort         = ffc("config.admin.port", "The port on which the admin HTTP API should listen", i18n.IntType)
-	ConfigAdminPreInit      = ffc("config.admin.preinit", "Enables the pre-init mode. This mode will let the FireFly Core process start, but not initialize any plugins, besides the database to read any configuration overrides. This allows the admin HTTP API to be used to define custom configuration before starting the rest of FireFly Core.", i18n.BooleanType)
-	ConfigAdminPublicURL    = ffc("config.admin.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.", "URL "+i18n.StringType)
+	ConfigAdminPublicURL    = ffc("config.admin.publicURL", "The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
 	ConfigAdminReadTimeout  = ffc("config.admin.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigAdminWriteTimeout = ffc("config.admin.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
@@ -49,7 +51,7 @@ var (
 	ConfigBlobreceiverWorkerBatchTimeout    = ffc("config.blobreceiver.worker.batchTimeout", "The maximum amount of the the blob receiver worker will wait", i18n.TimeDurationType)
 	ConfigBlobreceiverWorkerCount           = ffc("config.blobreceiver.worker.count", "The number of blob receiver workers", i18n.IntType)
 
-	ConfigBlockchainType = ffc("config.blockchain.type", "A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section.", i18n.StringType)
+	ConfigBlockchainType = ffc("config.blockchain.type", "A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section", i18n.StringType)
 
 	ConfigBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.blockchain.ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", i18n.GoTemplateType)
 	ConfigBlockchainEthereumAddressResolverCustomClient          = ffc("config.blockchain.ethereum.addressResolver.customClient", "Used for testing purposes only", i18n.IgnoredType)
@@ -66,31 +68,100 @@ var (
 
 	ConfigBlockchainEthereumAddressResolverProxyURL = ffc("config.blockchain.ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
 
-	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.", i18n.IntType)
-	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream.", i18n.TimeDurationType)
-	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
-	ConfigBlockchainEthereumEthconnectFromBlock    = ffc("config.blockchain.ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectBatchSize    = ffc("config.blockchain.ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
+	ConfigBlockchainEthereumEthconnectBatchTimeout = ffc("config.blockchain.ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
+	ConfigBlockchainEthereumEthconnectInstance     = ffc("config.blockchain.ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use fireflyContract[].address)", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectFromBlock    = ffc("config.blockchain.ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use fireflyContract[].fromBlock)", "Address "+i18n.StringType)
 	ConfigBlockchainEthereumEthconnectPrefixLong   = ffc("config.blockchain.ethereum.ethconnect.prefixLong", "The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectPrefixShort  = ffc("config.blockchain.ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectTopic        = ffc("config.blockchain.ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
 	ConfigBlockchainEthereumEthconnectURL          = ffc("config.blockchain.ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
+	ConfigBlockchainEthereumEthconnectProxyURL     = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
+
+	ConfigBlockchainEthereumContractAddress   = ffc("config.blockchain.ethereum.fireflyContract[].address", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
+	ConfigBlockchainEthereumContractFromBlock = ffc("config.blockchain.ethereum.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigBlockchainEthereumFFTMURL      = ffc("config.blockchain.ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
 	ConfigBlockchainEthereumFFTMProxyURL = ffc("config.blockchain.ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
 
-	ConfigBlockchainEthereumEthconnectProxyURL = ffc("config.blockchain.ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
-
-	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.", i18n.IntType)
+	ConfigBlockchainFabricFabconnectBatchSize    = ffc("config.blockchain.fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
 	ConfigBlockchainFabricFabconnectBatchTimeout = ffc("config.blockchain.fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", i18n.TimeDurationType)
-	ConfigBlockchainFabricFabconnectChaincode    = ffc("config.blockchain.fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigBlockchainFabricFabconnectChaincode    = ffc("config.blockchain.fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)", i18n.StringType)
 	ConfigBlockchainFabricFabconnectChannel      = ffc("config.blockchain.fabric.fabconnect.channel", "The Fabric channel that FireFly will use for BatchPin transactions", i18n.StringType)
 	ConfigBlockchainFabricFabconnectPrefixLong   = ffc("config.blockchain.fabric.fabconnect.prefixLong", "The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectPrefixShort  = ffc("config.blockchain.fabric.fabconnect.prefixShort", "The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectSigner       = ffc("config.blockchain.fabric.fabconnect.signer", "The Fabric signing key to use when submitting transactions to Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectTopic        = ffc("config.blockchain.fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", i18n.StringType)
 	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
+	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
-	ConfigBlockchainFabricFabconnectProxyURL = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
+	ConfigBlockchainFabricContractChaincode = ffc("config.blockchain.fabric.fireflyContract[].chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigBlockchainFabricContractFromBlock = ffc("config.blockchain.fabric.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+
+	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
+	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
+	ConfigPluginDatabaseType = ffc("config.plugins.database[].type", "The type of the configured Database plugin", i18n.StringType)
+
+	ConfigPluginDatabasePostgresMaxConnIdleTime = ffc("config.plugins.database[].postgres.maxConnIdleTime", "The maximum amount of time a database connection can be idle", i18n.TimeDurationType)
+	ConfigPluginDatabasePostgresMaxConnLifetime = ffc("config.plugins.database[].postgres.maxConnLifetime", "The maximum amount of time to keep a database connection open", i18n.TimeDurationType)
+	ConfigPluginDatabasePostgresMaxConns        = ffc("config.plugins.database[].postgres.maxConns", "Maximum connections to the database", i18n.IntType)
+	ConfigPluginDatabasePostgresMaxIdleConns    = ffc("config.plugins.database[].postgres.maxIdleConns", "The maximum number of idle connections to the database", i18n.IntType)
+	ConfigPluginDatabasePostgresURL             = ffc("config.plugins.database[].postgres.url", "The PostgreSQL connection string for the database", i18n.StringType)
+
+	ConfigPluginDatabaseSqlite3MaxConnIdleTime = ffc("config.plugins.database[].sqlite3.maxConnIdleTime", "The maximum amount of time a database connection can be idle", i18n.TimeDurationType)
+	ConfigPluginDatabaseSqlite3MaxConnLifetime = ffc("config.plugins.database[].sqlite3.maxConnLifetime", "The maximum amount of time to keep a database connection open", i18n.TimeDurationType)
+	ConfigPluginDatabaseSqlite3MaxConns        = ffc("config.plugins.database[].sqlite3.maxConns", "Maximum connections to the database", i18n.IntType)
+	ConfigPluginDatabaseSqlite3MaxIdleConns    = ffc("config.plugins.database[].sqlite3.maxIdleConns", "The maximum number of idle connections to the database", i18n.IntType)
+	ConfigPluginDatabaseSqlite3URL             = ffc("config.plugins.database[].sqlite3.url", "The SQLite connection string for the database", i18n.StringType)
+
+	ConfigPluginBlockchain     = ffc("config.plugins.blockchain", "The list of configured Blockchain plugins", i18n.StringType)
+	ConfigPluginBlockchainName = ffc("config.plugins.blockchain[].name", "The name of the configured Blockchain plugin", i18n.StringType)
+	ConfigPluginBlockchainType = ffc("config.plugins.blockchain[].type", "The type of the configured Blockchain Connector plugin", i18n.StringType)
+
+	ConfigPluginBlockchainEthereumAddressResolverBodyTemplate          = ffc("config.plugins.blockchain[].ethereum.addressResolver.bodyTemplate", "The body go template string to use when making HTTP requests", i18n.GoTemplateType)
+	ConfigPluginBlockchainEthereumAddressResolverCustomClient          = ffc("config.plugins.blockchain[].ethereum.addressResolver.customClient", "Used for testing purposes only", i18n.IgnoredType)
+	ConfigPluginBlockchainEthereumAddressResolverExpectContinueTimeout = ffc("config.plugins.blockchain[].ethereum.addressResolver.expectContinueTimeout", "See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)", i18n.TimeDurationType)
+	ConfigPluginBlockchainEthereumAddressResolverHeaders               = ffc("config.plugins.blockchain[].ethereum.addressResolver.headers", "Adds custom headers to HTTP requests", i18n.StringType)
+	ConfigPluginBlockchainEthereumAddressResolverIdleTimeout           = ffc("config.plugins.blockchain[].ethereum.addressResolver.idleTimeout", "The max duration to hold a HTTP keepalive connection between calls", i18n.TimeDurationType)
+	ConfigPluginBlockchainEthereumAddressResolverMaxIdleConns          = ffc("config.plugins.blockchain[].ethereum.addressResolver.maxIdleConns", "The max number of idle connections to hold pooled", i18n.IntType)
+	ConfigPluginBlockchainEthereumAddressResolverMethod                = ffc("config.plugins.blockchain[].ethereum.addressResolver.method", "The HTTP method to use when making requests to the Address Resolver", i18n.StringType)
+
+	ConfigPluginBlockchainEthereumAddressResolverResponseField  = ffc("config.plugins.blockchain[].ethereum.addressResolver.responseField", "The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)", i18n.StringType)
+	ConfigPluginBlockchainEthereumAddressResolverRetainOriginal = ffc("config.plugins.blockchain[].ethereum.addressResolver.retainOriginal", "When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address", i18n.BooleanType)
+	ConfigPluginBlockchainEthereumAddressResolverURL            = ffc("config.plugins.blockchain[].ethereum.addressResolver.url", "The URL of the Address Resolver", i18n.StringType)
+	ConfigPluginBlockchainEthereumAddressResolverURLTemplate    = ffc("config.plugins.blockchain[].ethereum.addressResolver.urlTemplate", "The URL Go template string to use when calling the Address Resolver", i18n.GoTemplateType)
+
+	ConfigPluginBlockchainEthereumAddressResolverProxyURL = ffc("config.plugins.blockchain[].ethereum.addressResolver.proxy.url", "Optional HTTP proxy server to use when connecting to the Address Resolver", "URL "+i18n.StringType)
+
+	ConfigPluginBlockchainEthereumEthconnectBatchSize    = ffc("config.plugins.blockchain[].ethereum.ethconnect.batchSize", "The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
+	ConfigPluginBlockchainEthereumEthconnectBatchTimeout = ffc("config.plugins.blockchain[].ethereum.ethconnect.batchTimeout", "How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream", i18n.TimeDurationType)
+	ConfigPluginBlockchainEthereumEthconnectInstance     = ffc("config.plugins.blockchain[].ethereum.ethconnect.instance", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectFromBlock    = ffc("config.plugins.blockchain[].ethereum.ethconnect.fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectPrefixLong   = ffc("config.plugins.blockchain[].ethereum.ethconnect.prefixLong", "The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect", i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectPrefixShort  = ffc("config.plugins.blockchain[].ethereum.ethconnect.prefixShort", "The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect", i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectTopic        = ffc("config.plugins.blockchain[].ethereum.ethconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect", i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectURL          = ffc("config.plugins.blockchain[].ethereum.ethconnect.url", "The URL of the Ethconnect instance", "URL "+i18n.StringType)
+	ConfigPluginBlockchainEthereumEthconnectProxyURL     = ffc("config.plugins.blockchain[].ethereum.ethconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Ethconnect", "URL "+i18n.StringType)
+
+	ConfigPluginBlockchainEthereumContractAddress   = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].address", "The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain", "Address "+i18n.StringType)
+	ConfigPluginBlockchainEthereumContractFromBlock = ffc("config.plugins.blockchain[].ethereum.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
+
+	ConfigPluginBlockchainEthereumFFTMURL      = ffc("config.plugins.blockchain[].ethereum.fftm.url", "The URL of the FireFly Transaction Manager runtime, if enabled", i18n.StringType)
+	ConfigPluginBlockchainEthereumFFTMProxyURL = ffc("config.plugins.blockchain[].ethereum.fftm.proxy.url", "Optional HTTP proxy server to use when connecting to the Transaction Manager", i18n.StringType)
+
+	ConfigPluginBlockchainFabricFabconnectBatchSize    = ffc("config.plugins.blockchain[].fabric.fabconnect.batchSize", "The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream", i18n.IntType)
+	ConfigPluginBlockchainFabricFabconnectBatchTimeout = ffc("config.plugins.blockchain[].fabric.fabconnect.batchTimeout", "The maximum amount of time to wait for a batch to complete", i18n.TimeDurationType)
+	ConfigPluginBlockchainFabricFabconnectChaincode    = ffc("config.plugins.blockchain[].fabric.fabconnect.chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectChannel      = ffc("config.plugins.blockchain[].fabric.fabconnect.channel", "The Fabric channel that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectPrefixLong   = ffc("config.plugins.blockchain[].fabric.fabconnect.prefixLong", "The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectPrefixShort  = ffc("config.plugins.blockchain[].fabric.fabconnect.prefixShort", "The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectSigner       = ffc("config.plugins.blockchain[].fabric.fabconnect.signer", "The Fabric signing key to use when submitting transactions to Fabconnect", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectTopic        = ffc("config.plugins.blockchain[].fabric.fabconnect.topic", "The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect", i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectURL          = ffc("config.plugins.blockchain[].fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
+	ConfigPluginBlockchainFabricFabconnectProxyURL     = ffc("config.plugins.blockchain[].fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
+
+	ConfigPluginBlockchainFabricContractChaincode = ffc("config.plugins.blockchain[].fabric.fireflyContract[].chaincode", "The name of the Fabric chaincode that FireFly will use for BatchPin transactions", i18n.StringType)
+	ConfigPluginBlockchainFabricContractFromBlock = ffc("config.plugins.blockchain[].fabric.fireflyContract[].fromBlock", "The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream", "Address "+i18n.StringType)
 
 	ConfigBroadcastBatchAgentTimeout = ffc("config.broadcast.batch.agentTimeout", "How long to keep around a batching agent for a sending identity before disposal", i18n.StringType)
 	ConfigBroadcastBatchPayloadLimit = ffc("config.broadcast.batch.payloadLimit", "The maximum payload size of a batch for broadcast messages", i18n.ByteSizeType)
@@ -119,6 +190,16 @@ var (
 
 	ConfigDataexchangeFfdxProxyURL = ffc("config.dataexchange.ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
 
+	ConfigPluginDataexchange     = ffc("config.plugins.dataexchange", "The array of configured Data Exchange plugins ", i18n.StringType)
+	ConfigPluginDataexchangeType = ffc("config.plugins.dataexchange[].type", "The Data Exchange plugin to use", i18n.StringType)
+	ConfigPluginDataexchangeName = ffc("config.plugins.dataexchange[].name", "The name of the configured Data Exchange plugin", i18n.StringType)
+
+	ConfigPluginDataexchangeFfdxInitEnabled     = ffc("config.plugins.dataexchange[].ffdx.initEnabled", "Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector", i18n.BooleanType)
+	ConfigPluginDataexchangeFfdxManifestEnabled = ffc("config.plugins.dataexchange[].ffdx.manifestEnabled", "Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector", i18n.StringType)
+	ConfigPluginDataexchangeFfdxURL             = ffc("config.plugins.dataexchange[].ffdx.url", "The URL of the Data Exchange instance", "URL "+i18n.StringType)
+
+	ConfigPluginDataexchangeFfdxProxyURL = ffc("config.plugins.dataexchange[].ffdx.proxy.url", "Optional HTTP proxy server to use when connecting to the Data Exchange", "URL "+i18n.StringType)
+
 	ConfigDebugPort = ffc("config.debug.port", "An HTTP port on which to enable the go debugger", i18n.IntType)
 
 	ConfigDownloadWorkerCount       = ffc("config.download.worker.count", "The number of download workers", i18n.IntType)
@@ -144,11 +225,13 @@ var (
 
 	ConfigHTTPAddress      = ffc("config.http.address", "The IP address on which the HTTP API should listen", "IP Address "+i18n.StringType)
 	ConfigHTTPPort         = ffc("config.http.port", "The port on which the HTTP API should listen", i18n.IntType)
-	ConfigHTTPPublicURL    = ffc("config.http.publicURL", "The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.", "URL "+i18n.StringType)
+	ConfigHTTPPublicURL    = ffc("config.http.publicURL", "The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
 	ConfigHTTPReadTimeout  = ffc("config.http.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigHTTPWriteTimeout = ffc("config.http.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
-	ConfigIdentityType = ffc("config.identity.type", "The Identity plugin to use", i18n.StringType)
+	ConfigPluginIdentity     = ffc("config.plugins.identity", "The list of available Identity plugins", i18n.StringType)
+	ConfigPluginIdentityType = ffc("config.plugins.identity[].type", "The type of a configured Identity plugin", i18n.StringType)
+	ConfigPluginIdentityName = ffc("config.plugins.identity[].name", "The name of a configured Identity plugin", i18n.StringType)
 
 	ConfigIdentityManagerCacheLimit              = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
 	ConfigIdentityManagerLegacySystemIdentitites = ffc("config.identity.manager.legacySystemIdentities", "Whether the identity manager should resolve legacy identities registered on the ff_system namespace", i18n.BooleanType)
@@ -158,7 +241,7 @@ var (
 	ConfigLogFilesize   = ffc("config.log.filesize", "MaxSize is the maximum size the log file before it gets rotated", i18n.ByteSizeType)
 	ConfigLogForceColor = ffc("config.log.forceColor", "Force color to be enabled, even when a non-TTY output is detected", i18n.BooleanType)
 	ConfigLogLevel      = ffc("config.log.level", "The log level - error, warn, info, debug, trace", i18n.StringType)
-	ConfigLogMaxAge     = ffc("config.log.maxAge", "The maximum time to retain old log files based on the timestamp encoded in their filename.", i18n.TimeDurationType)
+	ConfigLogMaxAge     = ffc("config.log.maxAge", "The maximum time to retain old log files based on the timestamp encoded in their filename", i18n.TimeDurationType)
 	ConfigLogMaxBackups = ffc("config.log.maxBackups", "Maximum number of old log files to retain", i18n.IntType)
 	ConfigLogNoColor    = ffc("config.log.noColor", "Force color to be disabled, event when TTY output is detected", i18n.BooleanType)
 	ConfigLogTimeFormat = ffc("config.log.timeFormat", "Custom time format for logs", i18n.TimeFormatType)
@@ -172,13 +255,16 @@ var (
 	ConfigMetricsEnabled      = ffc("config.metrics.enabled", "Enables the metrics API", i18n.BooleanType)
 	ConfigMetricsPath         = ffc("config.metrics.path", "The path from which to serve the Prometheus metrics", i18n.StringType)
 	ConfigMetricsPort         = ffc("config.metrics.port", "The port on which the metrics HTTP API should listen", i18n.IntType)
-	ConfigMetricsPublicURL    = ffc("config.metrics.publicURL", "The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.", "URL "+i18n.StringType)
+	ConfigMetricsPublicURL    = ffc("config.metrics.publicURL", "The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation", "URL "+i18n.StringType)
 	ConfigMetricsReadTimeout  = ffc("config.metrics.readTimeout", "The maximum time to wait when reading from an HTTP connection", i18n.TimeDurationType)
 	ConfigMetricsWriteTimeout = ffc("config.metrics.writeTimeout", "The maximum time to wait when writing to an HTTP connection", i18n.TimeDurationType)
 
 	ConfigNamespacesDefault               = ffc("config.namespaces.default", "The default namespace - must be in the predefined list", i18n.StringType)
 	ConfigNamespacesPredefined            = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+i18n.StringType)
 	ConfigNamespacesPredefinedName        = ffc("config.namespaces.predefined[].name", "The name of the namespace (must be unique)", i18n.StringType)
+	ConfigNamespacesPredefinedPlugins     = ffc("config.namespaces.predefined[].plugins", "The list of plugins for this namespace", i18n.StringType)
+	ConfigNamespacesPredefinedMode        = ffc("config.namespaces.predefined[].mode", "The namespace mode. Valid values: gateway, multiparty", i18n.StringType)
+	ConfigNamespacesPredefinedRemoteName  = ffc("config.namespaces.predefined[].remoteName", "The namespace name to be sent in plugin calls, if it differs from namespace name", i18n.StringType)
 	ConfigNamespacesPredefinedDescription = ffc("config.namespaces.predefined[].description", "A description for the namespace", i18n.StringType)
 	ConfigNamespacesPredefinedOrgKey      = ffc("config.namespaces.predefined[].org.key", "A default signing key for blockchain transactions within the namespace (overrides top-level org.key)", i18n.StringType)
 
@@ -202,17 +288,19 @@ var (
 	ConfigPrivatemessagingBatchSize         = ffc("config.privatemessaging.batch.size", "The maximum number of messages in a batch for private messages", i18n.IntType)
 	ConfigPrivatemessagingBatchTimeout      = ffc("config.privatemessaging.batch.timeout", "The timeout to wait for a batch to fill, before sending", i18n.TimeDurationType)
 
-	ConfigPublicstorageType = ffc("config.publicstorage.type", "`DEPRECATED` Please use `config.sharedstorage.type` instead", i18n.StringType)
-
-	ConfigPublicstorageIpfsAPIURL          = ffc("config.publicstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
-	ConfigPublicstorageIpfsAPIProxyURL     = ffc("config.publicstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
-	ConfigPublicstorageIpfsGatewayURL      = ffc("config.publicstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
-	ConfigPublicstorageIpfsGatewayProxyURL = ffc("config.publicstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
 	ConfigSharedstorageType                = ffc("config.sharedstorage.type", "The Shared Storage plugin to use", i18n.StringType)
 	ConfigSharedstorageIpfsAPIURL          = ffc("config.sharedstorage.ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
 	ConfigSharedstorageIpfsAPIProxyURL     = ffc("config.sharedstorage.ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
 	ConfigSharedstorageIpfsGatewayURL      = ffc("config.sharedstorage.ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
 	ConfigSharedstorageIpfsGatewayProxyURL = ffc("config.sharedstorage.ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
+
+	ConfigPluginSharedstorage                    = ffc("config.plugins.sharedstorage", "The list of configured Shared Storage plugins", i18n.StringType)
+	ConfigPluginSharedstorageName                = ffc("config.plugins.sharedstorage[].name", "The name of the Shared Storage plugin to use", i18n.StringType)
+	ConfigPluginSharedstorageType                = ffc("config.plugins.sharedstorage[].type", "The Shared Storage plugin to use", i18n.StringType)
+	ConfigPluginSharedstorageIpfsAPIURL          = ffc("config.plugins.sharedstorage[].ipfs.api.url", "The URL for the IPFS API", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsAPIProxyURL     = ffc("config.plugins.sharedstorage[].ipfs.api.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS API", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsGatewayURL      = ffc("config.plugins.sharedstorage[].ipfs.gateway.url", "The URL for the IPFS Gateway", "URL "+i18n.StringType)
+	ConfigPluginSharedstorageIpfsGatewayProxyURL = ffc("config.plugins.sharedstorage[].ipfs.gateway.proxy.url", "Optional HTTP proxy server to use when connecting to the IPFS Gateway", "URL "+i18n.StringType)
 
 	ConfigSubscriptionMax               = ffc("config.subscription.max", "The maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)", i18n.IntType)
 	ConfigSubscriptionDefaultsBatchSize = ffc("config.subscription.defaults.batchSize", "Default read ahead to enable for subscriptions that do not explicitly configure readahead", i18n.IntType)
@@ -221,6 +309,12 @@ var (
 	ConfigTokensName      = ffc("config.tokens[].name", "The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector", i18n.StringType)
 	ConfigTokensPlugin    = ffc("config.tokens[].plugin", "The name of the Tokens Connector plugin to use", i18n.StringType)
 	ConfigTokensURL       = ffc("config.tokens[].url", "The URL of the Token Connector", "URL "+i18n.StringType)
+
+	ConfigPluginTokens         = ffc("config.plugins.tokens", "The tokens plugin configurations. This will be used to configure tokens connectors", i18n.StringType)
+	ConfigPluginTokensName     = ffc("config.plugins.tokens[].name", "The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector", i18n.StringType)
+	ConfigPluginTokensType     = ffc("config.plugins.tokens[].type", "The type of the Tokens Connector plugin to use", i18n.StringType)
+	ConfigPluginTokensURL      = ffc("config.plugins.tokens[].fftokens.url", "The URL of the Token Connector", "URL "+i18n.StringType)
+	ConfigPluginTokensProxyURL = ffc("config.plugins.tokens[].fftokens.proxy.url", "Optional HTTP proxy server to use when connecting to the Token Connector", "URL "+i18n.StringType)
 
 	ConfigTokensProxyURL = ffc("config.tokens[].proxy.url", "Optional HTTP proxy server to use when connecting to the Token Connector", "URL "+i18n.StringType)
 

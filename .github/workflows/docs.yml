@@ -1,0 +1,121 @@
+name: Docs Site
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  release:
+    types: [released]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+
+        # This is a regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+        # It is used in this GitHub action in a couple places to find semver named directories (with a 'v' on the front)
+      - name: Set SEMVER_REGEX
+        run: echo "SEMVER_REGEX='^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'" >> $GITHUB_ENV
+
+      - name: Checkout the current commit
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      # If this is a new release, get the previous versions of the docs to build the full list of versions
+      - name: Checkout the gh-pages branch
+        if: github.event_name == 'release'
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+
+      - name: Install bundler
+        run: gem install bundler:1.17.2
+
+      # If this was a merge to main, set the version to "head"
+      - name: Set version env var to 'head'
+        if: github.event_name == 'push'
+        run: echo "DOCS_VERSION=head" >> $GITHUB_ENV
+
+      # If this was a release, set the version number
+      - name: Set version env var
+        if: github.event_name == 'release'
+        run: echo "DOCS_VERSION=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Set version in _config.yml
+        run: |
+          echo "version: ${{ env.DOCS_VERSION }}" >> ./docs/_config.yml
+
+      # Only need to build the full list of versions every time there is a new release
+      # This uses a regex to determine which existing directories are "versions" and should be listed in the version.json file.
+      # The output of this command is a version.json file containing a JSON array of all semver released versions of the docs, plus "latest" and "head"
+      - name: Update version.json list
+        if: github.event_name == 'release'
+        run: ls ./gh-pages | grep -E ${{ env.SEMVER_REGEX }} | sed 's/^/"/;s/$/"/' | tr '\n' ',' | sed 's/.$//' | sed 's/^/[/;s/$/]/' | jq '. += ["${{ env.DOCS_VERSION }}"] | sort_by(.) | reverse | . += ["latest", "head"]' > ./docs/assets/js/versions.json
+
+      - name: Install dependencies
+        working-directory: docs
+        run: bundle install
+
+      - name: Build doc site version
+        working-directory: docs
+        run: bundle exec jekyll build --baseurl /firefly/${{ env.DOCS_VERSION }}
+
+      - name: Check the docs for broken links (root)
+        if: github.event_name == 'pull_request'
+        working-directory: docs
+        run: bundle exec htmlproofer --disable-external --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/:/' --url-ignore /127.0.0.1/,/localhost/
+
+      - name: Check the docs for broken links (version)
+        if: github.event_name != 'pull_request'
+        working-directory: docs
+        run: bundle exec htmlproofer --disable-external --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/${{ env.DOCS_VERSION }}/:/' --url-ignore /127.0.0.1/,/localhost/
+
+      - name: Deploy docs (version)
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./docs/_site
+          destination_dir: ./${{ env.DOCS_VERSION }}
+
+      ## FINAL STEPS TO COMPLETE IF THIS WAS A NEW RELEASE ##
+
+      - name: Copy new version into version directory
+        if: github.event_name == 'release'
+        working-directory: docs
+        run: mv _site ${{ env.DOCS_VERSION }}
+
+      # This uses a regex from to determine which existing directories are "versions" and should be copied over
+      - name: Copy existing versions into working directory
+        if: github.event_name == 'release'
+        run: ls ./gh-pages | grep -E ${{ env.SEMVER_REGEX }} | xargs -I '{}' mv './gh-pages/{}' ./docs
+
+      - name: Copy existing 'head' directory into working directory
+        if: github.event_name == 'release'
+        run: mv ./gh-pages/head ./docs
+
+      - name: Build doc site (latest)
+        if: github.event_name == 'release'
+        working-directory: docs
+        run: bundle exec jekyll build --baseurl /firefly
+      
+      - name: Deploy docs (latest)
+        if: github.event_name == 'release'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./docs/_site
+

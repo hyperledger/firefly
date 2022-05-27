@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Setting up a FireFly Core Development Environment
-parent: Contributors
+parent: pages.contributors
 nav_order: 4
 ---
 

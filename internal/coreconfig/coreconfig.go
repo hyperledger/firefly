@@ -24,6 +24,25 @@ import (
 
 var ffc = config.AddRootKey
 
+const (
+	// PluginConfigName is the user-supplied name for this plugin type
+	PluginConfigName = "name"
+	// PluginConfigType is the type of the plugin to be loaded
+	PluginConfigType = "type"
+	// NamespaceName is the short name for a pre-defined namespace
+	NamespaceName = "name"
+	// NamespaceName is the long description for a pre-defined namespace
+	NamespaceDescription = "description"
+	// NamespaceMode is the configured mode of a namespace
+	NamespaceMode = "mode"
+	// NamespaceRemoteName is the namespace name to be sent in plugin calls
+	NamespaceRemoteName = "remoteName"
+	// NamespacePlugins is the list of namespace plugins
+	NamespacePlugins = "plugins"
+	// NamespaceOrgKey is a default signing key for blockchain transactions within a namespace (overrides top-level org.key)
+	NamespaceOrgKey = "org.key"
+)
+
 // The following keys can be access from the root configuration.
 // Plugins are responsible for defining their own keys using the Config interface
 var (
@@ -71,8 +90,6 @@ var (
 	BlockchainEventCacheSize = ffc("blockchainevent.cache.size")
 	// BlockchainEventCacheTTL time to live of cache for blockchain events
 	BlockchainEventCacheTTL = ffc("blockchainevent.cache.ttl")
-	// BlockchainType is the name of the blockchain interface plugin being used by this firefly node
-	BlockchainType = ffc("blockchain.type")
 	// BroadcastBatchAgentTimeout how long to keep around a batching agent for a sending identity before disposal
 	BroadcastBatchAgentTimeout = ffc("broadcast.batch.agentTimeout")
 	// BroadcastBatchSize is the maximum number of messages that can be packed into a batch
@@ -107,14 +124,22 @@ var (
 	PrivateMessagingRetryInitDelay = ffc("privatemessaging.retry.initDelay")
 	// PrivateMessagingRetryMaxDelay the maximum delay to use for retry of data base operations
 	PrivateMessagingRetryMaxDelay = ffc("privatemessaging.retry.maxDelay")
-	// DataexchangeType is the name of the data exchange plugin being used by this firefly node
-	DataexchangeType = ffc("dataexchange.type")
 	// DatabaseType the type of the database interface plugin to use
-	DatabaseType = ffc("database.type")
-	// HistogramsMaxChartRows the maximum rows to fetch for each histogram bucket
 	HistogramsMaxChartRows = ffc("histograms.maxChartRows")
 	// TokensList is the root key containing a list of supported token connectors
 	TokensList = ffc("tokens")
+	// PluginsTokensList is the key containing a list of supported tokens plugins
+	PluginsTokensList = ffc("plugins.tokens")
+	// PluginsBlockchainList is the key containing a list of configured blockchain plugins
+	PluginsBlockchainList = ffc("plugins.blockchain")
+	// PluginsSharedStorageList is the key containing a list of configured shared storage plugins
+	PluginsSharedStorageList = ffc("plugins.sharedstorage")
+	// PluginsDatabaseList is the key containing a list of configured database plugins
+	PluginsDatabaseList = ffc("plugins.database")
+	// PluginsDataExchangeList is the key containing a list of configured database plugins
+	PluginsDataExchangeList = ffc("plugins.dataexchange")
+	// PluginsIdentityList is the key containing a list of configured identity plugins
+	PluginsIdentityList = ffc("plugins.identity")
 	// DebugPort a HTTP port on which to enable the go debugger
 	DebugPort = ffc("debug.port")
 	// EventTransportsDefault the default event transport for new subscriptions
@@ -165,8 +190,6 @@ var (
 	GroupCacheTTL = ffc("group.cache.ttl")
 	// AdminEnabled determines whether the admin interface will be enabled or not
 	AdminEnabled = ffc("admin.enabled")
-	// AdminPreinit waits for at least one ConfigREcord to be posted to the server before it starts (the database must be available on startup)
-	AdminPreinit = ffc("admin.preinit")
 	// AdminWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
 	AdminWebSocketEventQueueLength = ffc("admin.ws.eventQueueLength")
 	// AdminWebSocketBlockedWarnInterval how often to emit a warning if an admin.ws is blocked and not receiving events
@@ -175,8 +198,6 @@ var (
 	AdminWebSocketReadBufferSize = ffc("admin.ws.readBufferSize")
 	// AdminWebSocketWriteBufferSize is the WebSocket write buffer size for the admin change-event WebSocket
 	AdminWebSocketWriteBufferSize = ffc("admin.ws.writeBufferSize")
-	// IdentityType the type of the identity plugin in use
-	IdentityType = ffc("identity.type")
 	// IdentityManagerCacheTTL the identity manager cache time to live
 	IdentityManagerCacheTTL = ffc("identity.manager.cache.ttl")
 	// IdentityManagerCacheLimit the identity manager cache limit in count of items
@@ -229,10 +250,6 @@ var (
 	OrgDescription = ffc("org.description")
 	// OrchestratorStartupAttempts is how many time to attempt to connect to core infrastructure on startup
 	OrchestratorStartupAttempts = ffc("orchestrator.startupAttempts")
-	// SharedStorageType specifies which shared storage interface plugin to use
-	SharedStorageType = ffc("sharedstorage.type")
-	// PublicStorageType specifies which shared storage interface plugin to use - deprecated in favor of SharedStorageType
-	PublicStorageType = ffc("publicstorage.type")
 	// SubscriptionDefaultsReadAhead default read ahead to enable for subscriptions that do not explicitly configure readahead
 	SubscriptionDefaultsReadAhead = ffc("subscription.defaults.batchSize")
 	// SubscriptionMax maximum number of pre-defined subscriptions that can exist (note for high fan-out consider connecting a dedicated pub/sub broker to the dispatcher)
@@ -289,7 +306,6 @@ func setDefaults() {
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
-	viper.SetDefault(string(DataexchangeType), "ffdx")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
@@ -322,7 +338,6 @@ func setDefaults() {
 	viper.SetDefault(string(AdminWebSocketWriteBufferSize), "16Kb")
 	viper.SetDefault(string(AdminWebSocketBlockedWarnInterval), "1m")
 	viper.SetDefault(string(AdminWebSocketEventQueueLength), 250)
-	viper.SetDefault(string(IdentityType), "onchain")
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)

@@ -63,10 +63,6 @@ func (ws *WebSockets) Capabilities() *events.Capabilities {
 	return ws.capabilities
 }
 
-func (ws *WebSockets) GetOptionsSchema(ctx context.Context) string {
-	return `{}` // no extra options currently
-}
-
 func (ws *WebSockets) ValidateOptions(options *core.SubscriptionOptions) error {
 	// We don't support streaming the full data over websockets
 	if options.WithData != nil && *options.WithData {
@@ -106,7 +102,7 @@ func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {
 	ws.callbacks.DeliveryResponse(connID, inflight)
 }
 
-func (ws *WebSockets) start(wc *websocketConnection, start *core.WSClientActionStartPayload) error {
+func (ws *WebSockets) start(wc *websocketConnection, start *core.WSStart) error {
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
 		return i18n.NewError(ws.ctx, coremsgs.MsgWSInvalidStartAction)
 	}

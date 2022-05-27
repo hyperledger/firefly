@@ -22,8 +22,6 @@ import (
 
 	events "github.com/hyperledger/firefly/internal/events"
 
-	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
-
 	metrics "github.com/hyperledger/firefly/internal/metrics"
 
 	mock "github.com/stretchr/testify/mock"
@@ -177,20 +175,6 @@ func (_m *Orchestrator) Data() data.Manager {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(data.Manager)
 		}
-	}
-
-	return r0
-}
-
-// DeleteConfigRecord provides a mock function with given fields: ctx, key
-func (_m *Orchestrator) DeleteConfigRecord(ctx context.Context, key string) error {
-	ret := _m.Called(ctx, key)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, key)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -357,77 +341,6 @@ func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startT
 	}
 
 	return r0, r1
-}
-
-// GetConfig provides a mock function with given fields: ctx
-func (_m *Orchestrator) GetConfig(ctx context.Context) fftypes.JSONObject {
-	ret := _m.Called(ctx)
-
-	var r0 fftypes.JSONObject
-	if rf, ok := ret.Get(0).(func(context.Context) fftypes.JSONObject); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(fftypes.JSONObject)
-		}
-	}
-
-	return r0
-}
-
-// GetConfigRecord provides a mock function with given fields: ctx, key
-func (_m *Orchestrator) GetConfigRecord(ctx context.Context, key string) (*fftypes.ConfigRecord, error) {
-	ret := _m.Called(ctx, key)
-
-	var r0 *fftypes.ConfigRecord
-	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.ConfigRecord); ok {
-		r0 = rf(ctx, key)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.ConfigRecord)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, key)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetConfigRecords provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetConfigRecords(ctx context.Context, filter database.AndFilter) ([]*fftypes.ConfigRecord, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*fftypes.ConfigRecord
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*fftypes.ConfigRecord); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*fftypes.ConfigRecord)
-		}
-	}
-
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
-		r2 = rf(ctx, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
 }
 
 // GetData provides a mock function with given fields: ctx, ns, filter
@@ -1333,20 +1246,6 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	return r0
 }
 
-// IsPreInit provides a mock function with given fields:
-func (_m *Orchestrator) IsPreInit() bool {
-	ret := _m.Called()
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
 // Metrics provides a mock function with given fields:
 func (_m *Orchestrator) Metrics() metrics.Manager {
 	ret := _m.Called()
@@ -1411,29 +1310,6 @@ func (_m *Orchestrator) PrivateMessaging() privatemessaging.Manager {
 	return r0
 }
 
-// PutConfigRecord provides a mock function with given fields: ctx, key, configRecord
-func (_m *Orchestrator) PutConfigRecord(ctx context.Context, key string, configRecord *fftypes.JSONAny) (*fftypes.JSONAny, error) {
-	ret := _m.Called(ctx, key, configRecord)
-
-	var r0 *fftypes.JSONAny
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny) *fftypes.JSONAny); ok {
-		r0 = rf(ctx, key, configRecord)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*fftypes.JSONAny)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny) error); ok {
-		r1 = rf(ctx, key, configRecord)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // RequestReply provides a mock function with given fields: ctx, ns, msg
 func (_m *Orchestrator) RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (*core.MessageInOut, error) {
 	ret := _m.Called(ctx, ns, msg)
@@ -1457,11 +1333,6 @@ func (_m *Orchestrator) RequestReply(ctx context.Context, ns string, msg *core.M
 	return r0, r1
 }
 
-// ResetConfig provides a mock function with given fields: ctx
-func (_m *Orchestrator) ResetConfig(ctx context.Context) {
-	_m.Called(ctx)
-}
-
 // Start provides a mock function with given fields:
 func (_m *Orchestrator) Start() error {
 	ret := _m.Called()
@@ -1469,6 +1340,20 @@ func (_m *Orchestrator) Start() error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func() error); ok {
 		r0 = rf()
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SubmitNetworkAction provides a mock function with given fields: ctx, action
+func (_m *Orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
+	ret := _m.Called(ctx, action)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.NetworkAction) error); ok {
+		r0 = rf(ctx, action)
 	} else {
 		r0 = ret.Error(0)
 	}
