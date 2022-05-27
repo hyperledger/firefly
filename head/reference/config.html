@@ -975,7 +975,7 @@
     </tr>
     <tr>
       <td>fromBlock</td>
-      <td>The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream</td>
+      <td>The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use fireflyContract[].fromBlock)</td>
       <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">0</code></td>
     </tr>
@@ -993,7 +993,7 @@
     </tr>
     <tr>
       <td>instance</td>
-      <td>The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain</td>
+      <td>The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use fireflyContract[].address)</td>
       <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -1371,6 +1371,39 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="blockchainethereumfireflycontract">
+        
+        
+          <a href="#blockchainethereumfireflycontract" class="anchor-heading" aria-labelledby="blockchainethereumfireflycontract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> blockchain.ethereum.fireflyContract[]
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>address</td>
+      <td>The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain</td>
+      <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>fromBlock</td>
+      <td>The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream</td>
+      <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="blockchainfabricfabconnect">
         
         
@@ -1404,7 +1437,7 @@
     </tr>
     <tr>
       <td>chaincode</td>
-      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions</td>
+      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -1641,6 +1674,39 @@
       <td>The size in bytes of the write buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="blockchainfabricfireflycontract">
+        
+        
+          <a href="#blockchainfabricfireflycontract" class="anchor-heading" aria-labelledby="blockchainfabricfireflycontract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> blockchain.fabric.fireflyContract[]
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>chaincode</td>
+      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>fromBlock</td>
+      <td>The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream</td>
+      <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
 </table>
@@ -4221,6 +4287,39 @@
     </tr>
   </tbody>
 </table>
+      <h2 id="pluginsblockchainethereumfireflycontract">
+        
+        
+          <a href="#pluginsblockchainethereumfireflycontract" class="anchor-heading" aria-labelledby="pluginsblockchainethereumfireflycontract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.blockchain[].ethereum.fireflyContract[]
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>address</td>
+      <td>The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain</td>
+      <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>fromBlock</td>
+      <td>The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream</td>
+      <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
       <h2 id="pluginsblockchainfabricfabconnect">
         
         
@@ -4254,7 +4353,7 @@
     </tr>
     <tr>
       <td>chaincode</td>
-      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions</td>
+      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -4491,6 +4590,39 @@
       <td>The size in bytes of the write buffer for the WebSocket connection</td>
       <td><a href="https://pkg.go.dev/github.com/docker/go-units#BytesSize"><code class="language-plaintext highlighter-rouge">BytesSize</code></a></td>
       <td><code class="language-plaintext highlighter-rouge">16Kb</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="pluginsblockchainfabricfireflycontract">
+        
+        
+          <a href="#pluginsblockchainfabricfireflycontract" class="anchor-heading" aria-labelledby="pluginsblockchainfabricfireflycontract"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> plugins.blockchain[].fabric.fireflyContract[]
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>chaincode</td>
+      <td>The name of the Fabric chaincode that FireFly will use for BatchPin transactions</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>fromBlock</td>
+      <td>The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream</td>
+      <td>Address <code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
   </tbody>
 </table>
