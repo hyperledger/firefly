@@ -18,23 +18,33 @@ package orchestrator
 
 import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/adminevents"
+	"github.com/hyperledger/firefly/internal/batch"
+	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
+type persistenceEvents struct {
+	database    database.Plugin
+	batch       batch.Manager
+	events      events.EventManager
+	adminEvents adminevents.Manager
+}
+
+func (pe *persistenceEvents) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
 	switch {
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionMessages:
-		or.batch.NewMessages() <- sequence
+		pe.batch.NewMessages() <- sequence
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionEvents:
-		or.events.NewEvents() <- sequence
+		pe.events.NewEvents() <- sequence
 	}
 	var ces *int64
 	if eventType == core.ChangeEventTypeCreated {
 		// Sequence is only provided on create events
 		ces = &sequence
 	}
-	or.adminEvents.Dispatch(&core.ChangeEvent{
+	pe.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,
@@ -43,27 +53,27 @@ func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUI
 	})
 }
 
-func (or *orchestrator) OrderedCollectionEvent(resType database.OrderedCollection, eventType core.ChangeEventType, sequence int64) {
+func (pe *persistenceEvents) OrderedCollectionEvent(resType database.OrderedCollection, eventType core.ChangeEventType, sequence int64) {
 	if eventType == core.ChangeEventTypeCreated && resType == database.CollectionPins {
-		or.events.NewPins() <- sequence
+		pe.events.NewPins() <- sequence
 	}
-	or.adminEvents.Dispatch(&core.ChangeEvent{
+	pe.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Sequence:   &sequence,
 	})
 }
 
-func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID) {
+func (pe *persistenceEvents) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID) {
 	switch {
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionSubscriptions:
-		or.events.NewSubscriptions() <- id
+		pe.events.NewSubscriptions() <- id
 	case eventType == core.ChangeEventTypeDeleted && resType == database.CollectionSubscriptions:
-		or.events.DeletedSubscriptions() <- id
+		pe.events.DeletedSubscriptions() <- id
 	case eventType == core.ChangeEventTypeUpdated && resType == database.CollectionSubscriptions:
-		or.events.SubscriptionUpdates() <- id
+		pe.events.SubscriptionUpdates() <- id
 	}
-	or.adminEvents.Dispatch(&core.ChangeEvent{
+	pe.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,
@@ -71,16 +81,16 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 	})
 }
 
-func (or *orchestrator) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	or.adminEvents.Dispatch(&core.ChangeEvent{
+func (pe *persistenceEvents) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
+	pe.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		ID:         id,
 	})
 }
 
-func (or *orchestrator) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
-	or.adminEvents.Dispatch(&core.ChangeEvent{
+func (pe *persistenceEvents) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
+	pe.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
 		Namespace:  ns,

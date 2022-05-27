@@ -31,7 +31,7 @@ import (
 func TestMessageCreated(t *testing.T) {
 	mb := &batchmocks.Manager{}
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		batch:       mb,
 		adminEvents: mae,
 	}
@@ -45,7 +45,7 @@ func TestMessageCreated(t *testing.T) {
 func TestPinCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 		events:      mem,
 	}
@@ -59,7 +59,7 @@ func TestPinCreated(t *testing.T) {
 func TestEventCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 		events:      mem,
 	}
@@ -73,7 +73,7 @@ func TestEventCreated(t *testing.T) {
 func TestSubscriptionCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 		events:      mem,
 	}
@@ -87,7 +87,7 @@ func TestSubscriptionCreated(t *testing.T) {
 func TestSubscriptionUpdated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 		events:      mem,
 	}
@@ -101,7 +101,7 @@ func TestSubscriptionUpdated(t *testing.T) {
 func TestSubscriptionDeleted(t *testing.T) {
 	mem := &eventmocks.EventManager{}
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 		events:      mem,
 	}
@@ -114,7 +114,7 @@ func TestSubscriptionDeleted(t *testing.T) {
 
 func TestUUIDCollectionEventFull(t *testing.T) {
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 	}
 	mae.On("Dispatch", mock.Anything).Return()
@@ -124,7 +124,7 @@ func TestUUIDCollectionEventFull(t *testing.T) {
 
 func TestHashCollectionNSEventOk(t *testing.T) {
 	mae := &admineventsmocks.Manager{}
-	o := &orchestrator{
+	o := &persistenceEvents{
 		adminEvents: mae,
 	}
 	mae.On("Dispatch", mock.Anything).Return()

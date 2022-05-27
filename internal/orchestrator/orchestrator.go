@@ -352,9 +352,15 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 }
 
 func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []database.Plugin) (err error) {
+	callbacks := &persistenceEvents{
+		database:    or.database,
+		batch:       or.batch,
+		events:      or.events,
+		adminEvents: or.adminEvents,
+	}
 	for idx, plugin := range plugins {
 		config := databaseConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), or)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), callbacks)
 		if err != nil {
 			return err
 		}
@@ -681,7 +687,13 @@ func (or *orchestrator) initDeprecatedBlockchainPlugin(ctx context.Context, plug
 
 func (or *orchestrator) initDeprecatedDatabasePlugin(ctx context.Context, plugin database.Plugin) (err error) {
 	log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
-	err = plugin.Init(ctx, deprecatedDatabaseConfig.SubSection(plugin.Name()), or)
+	callbacks := &persistenceEvents{
+		database:    or.database,
+		batch:       or.batch,
+		events:      or.events,
+		adminEvents: or.adminEvents,
+	}
+	err = plugin.Init(ctx, deprecatedDatabaseConfig.SubSection(plugin.Name()), callbacks)
 	if err != nil {
 		return err
 	}
