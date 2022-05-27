@@ -6,6 +6,8 @@ import (
 	batch "github.com/hyperledger/firefly/internal/batch"
 	core "github.com/hyperledger/firefly/pkg/core"
 
+	database "github.com/hyperledger/firefly/pkg/database"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -19,20 +21,9 @@ func (_m *Manager) Close() {
 	_m.Called()
 }
 
-// NewMessages provides a mock function with given fields:
-func (_m *Manager) NewMessages() chan<- int64 {
-	ret := _m.Called()
-
-	var r0 chan<- int64
-	if rf, ok := ret.Get(0).(func() chan<- int64); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(chan<- int64)
-		}
-	}
-
-	return r0
+// NewMessage provides a mock function with given fields: _a0, seq
+func (_m *Manager) NewMessage(_a0 database.Plugin, seq int64) {
+	_m.Called(_a0, seq)
 }
 
 // RegisterDispatcher provides a mock function with given fields: name, txType, msgTypes, handler, batchOptions

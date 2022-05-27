@@ -35,7 +35,7 @@ type persistenceEvents struct {
 func (pe *persistenceEvents) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
 	switch {
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionMessages:
-		pe.batch.NewMessages() <- sequence
+		pe.batch.NewMessage(pe.database, sequence)
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionEvents:
 		pe.events.NewEvents() <- sequence
 	}

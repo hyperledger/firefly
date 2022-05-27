@@ -76,7 +76,7 @@ type FlushStatus struct {
 
 type batchProcessor struct {
 	ctx                context.Context
-	bm                 *batchManager
+	assembler          *batchAssembler
 	ni                 sysmessaging.LocalNodeInfo
 	data               data.Manager
 	database           database.Plugin
@@ -110,16 +110,16 @@ type DispatchState struct {
 
 const batchSizeEstimateBase = int64(512)
 
-func newBatchProcessor(bm *batchManager, conf *batchProcessorConf, baseRetryConf *retry.Retry, txHelper txcommon.Helper) *batchProcessor {
-	pCtx := log.WithLogField(log.WithLogField(bm.ctx, "d", conf.dispatcherName), "p", conf.name)
+func newBatchProcessor(assembler *batchAssembler, conf *batchProcessorConf, baseRetryConf *retry.Retry, ni sysmessaging.LocalNodeInfo, txHelper txcommon.Helper) *batchProcessor {
+	pCtx := log.WithLogField(log.WithLogField(assembler.ctx, "d", conf.dispatcherName), "p", conf.name)
 	pCtx, cancelCtx := context.WithCancel(pCtx)
 	bp := &batchProcessor{
 		ctx:       pCtx,
 		cancelCtx: cancelCtx,
-		bm:        bm,
-		ni:        bm.ni,
-		database:  bm.database,
-		data:      bm.data,
+		assembler: assembler,
+		ni:        ni,
+		database:  assembler.database,
+		data:      assembler.data,
 		txHelper:  txHelper,
 		newWork:   make(chan *batchWork, conf.BatchMaxSize),
 		quiescing: make(chan bool, 1),
@@ -221,7 +221,7 @@ func (bp *batchProcessor) notifyFlushComplete(flushWork []*batchWork) {
 	for i, work := range flushWork {
 		sequences[i] = work.msg.Sequence
 	}
-	bp.bm.notifyFlushed(sequences)
+	bp.assembler.notifyFlushed(sequences)
 }
 
 func (bp *batchProcessor) updateFlushStats(state *DispatchState, byteSize int64) {

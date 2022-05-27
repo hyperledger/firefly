@@ -37,13 +37,13 @@ import (
 )
 
 func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *databasemocks.Plugin, *batchProcessor) {
-	bm, cancel := newTestBatchManager(t)
-	mdi := bm.database.(*databasemocks.Plugin)
+	bm, ba, cancel := newTestBatchManager(t)
+	mdi := ba.database.(*databasemocks.Plugin)
 	mni := bm.ni.(*sysmessagingmocks.LocalNodeInfo)
-	mdm := bm.data.(*datamocks.Manager)
+	mdm := ba.data.(*datamocks.Manager)
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mni.On("GetNodeUUID", mock.Anything).Return(fftypes.NewUUID()).Maybe()
-	bp := newBatchProcessor(bm, &batchProcessorConf{
+	bp := newBatchProcessor(ba, &batchProcessorConf{
 		namespace: "ns1",
 		txType:    core.TransactionTypeBatchPin,
 		signer:    core.SignerRef{Author: "did:firefly:org/abcd", Key: "0x12345"},
@@ -57,7 +57,7 @@ func newTestBatchProcessor(t *testing.T, dispatch DispatchHandler) (func(), *dat
 	}, &retry.Retry{
 		InitialDelay: 1 * time.Microsecond,
 		MaximumDelay: 1 * time.Microsecond,
-	}, txHelper)
+	}, mni, txHelper)
 	bp.txHelper = &txcommonmocks.Helper{}
 	return cancel, mdi, bp
 }

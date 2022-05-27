@@ -36,43 +36,50 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
-	if di == nil || dm == nil {
+func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, databases map[string]database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
+	if len(databases) == 0 || dm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchManager")
 	}
 	pCtx, cancelCtx := context.WithCancel(log.WithLogField(ctx, "role", "batchmgr"))
 	readPageSize := config.GetUint(coreconfig.BatchManagerReadPageSize)
+	retry := &retry.Retry{
+		InitialDelay: config.GetDuration(coreconfig.BatchRetryInitDelay),
+		MaximumDelay: config.GetDuration(coreconfig.BatchRetryMaxDelay),
+		Factor:       config.GetFloat64(coreconfig.BatchRetryFactor),
+	}
 	bm := &batchManager{
-		ctx:                        pCtx,
-		cancelCtx:                  cancelCtx,
-		ni:                         ni,
-		database:                   di,
-		data:                       dm,
-		txHelper:                   txHelper,
-		readOffset:                 -1, // On restart we trawl for all ready messages
-		readPageSize:               uint64(readPageSize),
-		minimumPollDelay:           config.GetDuration(coreconfig.BatchManagerMinimumPollDelay),
-		messagePollTimeout:         config.GetDuration(coreconfig.BatchManagerReadPollTimeout),
-		startupOffsetRetryAttempts: config.GetInt(coreconfig.OrchestratorStartupAttempts),
-		dispatcherMap:              make(map[string]*dispatcher),
-		allDispatchers:             make([]*dispatcher, 0),
-		newMessages:                make(chan int64, readPageSize),
-		inflightSequences:          make(map[int64]*batchProcessor),
-		shoulderTap:                make(chan bool, 1),
-		rewindOffset:               -1,
-		done:                       make(chan struct{}),
-		retry: &retry.Retry{
-			InitialDelay: config.GetDuration(coreconfig.BatchRetryInitDelay),
-			MaximumDelay: config.GetDuration(coreconfig.BatchRetryMaxDelay),
-			Factor:       config.GetFloat64(coreconfig.BatchRetryFactor),
-		},
+		ctx:                pCtx,
+		cancelCtx:          cancelCtx,
+		ni:                 ni,
+		done:               make(chan struct{}),
+		txHelper:           txHelper,
+		minimumPollDelay:   config.GetDuration(coreconfig.BatchManagerMinimumPollDelay),
+		messagePollTimeout: config.GetDuration(coreconfig.BatchManagerReadPollTimeout),
+		dispatcherMap:      make(map[string]*dispatcher),
+		allDispatchers:     make([]*dispatcher, 0),
+		shoulderTap:        make(chan bool, 1),
+		retry:              retry,
+		assemblers:         make(map[database.Plugin]*batchAssembler, len(databases)),
+	}
+	for _, database := range databases {
+		bm.assemblers[database] = &batchAssembler{
+			ctx:               pCtx,
+			database:          database,
+			data:              dm,
+			readOffset:        -1, // On restart we trawl for all ready messages
+			readPageSize:      uint64(readPageSize),
+			newMessages:       make(chan int64, readPageSize),
+			inflightSequences: make(map[int64]*batchProcessor),
+			rewindOffset:      -1,
+			retry:             retry,
+		}
 	}
 	return bm, nil
 }
 
 type Manager interface {
 	RegisterDispatcher(name string, txType core.TransactionType, msgTypes []core.MessageType, handler DispatchHandler, batchOptions DispatcherOptions)
-	NewMessages() chan<- int64
+	NewMessage(database database.Plugin, seq int64)
 	Start() error
 	Close()
 	WaitStop()
@@ -90,29 +97,34 @@ type ProcessorStatus struct {
 }
 
 type batchManager struct {
-	ctx                        context.Context
-	cancelCtx                  func()
-	ni                         sysmessaging.LocalNodeInfo
-	database                   database.Plugin
-	data                       data.Manager
-	txHelper                   txcommon.Helper
-	dispatcherMux              sync.Mutex
-	dispatcherMap              map[string]*dispatcher
-	allDispatchers             []*dispatcher
-	newMessages                chan int64
-	done                       chan struct{}
-	retry                      *retry.Retry
-	readOffset                 int64
-	rewindOffsetMux            sync.Mutex
-	rewindOffset               int64
-	inflightMux                sync.Mutex
-	inflightSequences          map[int64]*batchProcessor
-	inflightFlushed            []int64
-	shoulderTap                chan bool
-	readPageSize               uint64
-	minimumPollDelay           time.Duration
-	messagePollTimeout         time.Duration
-	startupOffsetRetryAttempts int
+	ctx                context.Context
+	cancelCtx          func()
+	ni                 sysmessaging.LocalNodeInfo
+	txHelper           txcommon.Helper
+	dispatcherMux      sync.Mutex
+	dispatcherMap      map[string]*dispatcher
+	allDispatchers     []*dispatcher
+	done               chan struct{}
+	retry              *retry.Retry
+	shoulderTap        chan bool
+	minimumPollDelay   time.Duration
+	messagePollTimeout time.Duration
+	assemblers         map[database.Plugin]*batchAssembler
+}
+
+type batchAssembler struct {
+	ctx               context.Context
+	database          database.Plugin
+	data              data.Manager
+	newMessages       chan int64
+	retry             *retry.Retry
+	readOffset        int64
+	rewindOffsetMux   sync.Mutex
+	rewindOffset      int64
+	inflightMux       sync.Mutex
+	inflightSequences map[int64]*batchProcessor
+	inflightFlushed   []int64
+	readPageSize      uint64
 }
 
 type DispatchHandler func(context.Context, *DispatchState) error
@@ -132,11 +144,11 @@ type dispatcher struct {
 	options    DispatcherOptions
 }
 
-func (bm *batchManager) getProcessorKey(namespace string, identity *core.SignerRef, groupID *fftypes.Bytes32) string {
+func getProcessorKey(namespace string, identity *core.SignerRef, groupID *fftypes.Bytes32) string {
 	return fmt.Sprintf("%s|%s|%v", namespace, identity.Author, groupID)
 }
 
-func (bm *batchManager) getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
+func getDispatcherKey(txType core.TransactionType, msgType core.MessageType) string {
 	return fmt.Sprintf("tx:%s/%s", txType, msgType)
 }
 
@@ -152,35 +164,43 @@ func (bm *batchManager) RegisterDispatcher(name string, txType core.TransactionT
 	}
 	bm.allDispatchers = append(bm.allDispatchers, dispatcher)
 	for _, msgType := range msgTypes {
-		bm.dispatcherMap[bm.getDispatcherKey(txType, msgType)] = dispatcher
+		bm.dispatcherMap[getDispatcherKey(txType, msgType)] = dispatcher
 	}
 }
 
 func (bm *batchManager) Start() error {
 	go bm.messageSequencer()
-	// We must be always ready to process DB events, or we block commits. So we have a dedicated worker for that
-	go bm.newMessageNotifier()
+	for _, assembler := range bm.assemblers {
+		// We must be always ready to process DB events, or we block commits. So we have a dedicated worker for that
+		go assembler.newMessageNotifier(bm.shoulderTap)
+	}
 	return nil
 }
 
-func (bm *batchManager) NewMessages() chan<- int64 {
-	return bm.newMessages
+func (bm *batchManager) NewMessage(database database.Plugin, seq int64) {
+	assembler := bm.assemblers[database]
+	assembler.newMessages <- seq
 }
 
-func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, namespace string, signer *core.SignerRef) (*batchProcessor, error) {
+func (bm *batchManager) getProcessor(assembler *batchAssembler, txType core.TransactionType, msgType core.MessageType, group *fftypes.Bytes32, namespace string, signer *core.SignerRef) (*batchProcessor, error) {
 	bm.dispatcherMux.Lock()
 	defer bm.dispatcherMux.Unlock()
 
-	dispatcherKey := bm.getDispatcherKey(txType, msgType)
+	dispatcherKey := getDispatcherKey(txType, msgType)
 	dispatcher, ok := bm.dispatcherMap[dispatcherKey]
 	if !ok {
 		return nil, i18n.NewError(bm.ctx, coremsgs.MsgUnregisteredBatchType, dispatcherKey)
 	}
-	name := bm.getProcessorKey(namespace, signer, group)
+	// The processor key must ensure that a given processor will never be grabbed by two different assemblers
+	// This is true because:
+	//   - processor key includes the namespace name
+	//   - each namespace has exactly one database plugin
+	//   - each database plugin has exactly one assembler
+	name := getProcessorKey(namespace, signer, group)
 	processor, ok := dispatcher.processors[name]
 	if !ok {
 		processor = newBatchProcessor(
-			bm,
+			assembler,
 			&batchProcessorConf{
 				DispatcherOptions: dispatcher.options,
 				name:              name,
@@ -192,6 +212,7 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 				dispatch:          dispatcher.handler,
 			},
 			bm.retry,
+			bm.ni,
 			bm.txHelper,
 		)
 		dispatcher.processors[name] = processor
@@ -200,10 +221,10 @@ func (bm *batchManager) getProcessor(txType core.TransactionType, msgType core.M
 	return processor, nil
 }
 
-func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *core.Message, retData core.DataArray, err error) {
+func (ba *batchAssembler) assembleMessageData(id *fftypes.UUID) (msg *core.Message, retData core.DataArray, err error) {
 	var foundAll = false
-	err = bm.retry.Do(bm.ctx, "retrieve message", func(attempt int) (retry bool, err error) {
-		msg, retData, foundAll, err = bm.data.GetMessageWithDataCached(bm.ctx, id)
+	err = ba.retry.Do(ba.ctx, "retrieve message", func(attempt int) (retry bool, err error) {
+		msg, retData, foundAll, err = ba.data.GetMessageWithDataCached(ba.ctx, id)
 		// continual retry for persistence error (distinct from not-found)
 		return true, err
 	})
@@ -211,40 +232,40 @@ func (bm *batchManager) assembleMessageData(id *fftypes.UUID) (msg *core.Message
 		return nil, nil, err
 	}
 	if !foundAll {
-		return nil, nil, i18n.NewError(bm.ctx, coremsgs.MsgDataNotFound, id)
+		return nil, nil, i18n.NewError(ba.ctx, coremsgs.MsgDataNotFound, id)
 	}
 	return msg, retData, nil
 }
 
 // popRewind is called just before reading a page, to pop out a rewind offset if there is one and it's behind the cursor
-func (bm *batchManager) popRewind() {
-	bm.rewindOffsetMux.Lock()
-	if bm.rewindOffset >= 0 && bm.rewindOffset < bm.readOffset {
-		bm.readOffset = bm.rewindOffset
+func (ba *batchAssembler) popRewind() {
+	ba.rewindOffsetMux.Lock()
+	if ba.rewindOffset >= 0 && ba.rewindOffset < ba.readOffset {
+		ba.readOffset = ba.rewindOffset
 	}
-	bm.rewindOffset = -1
-	bm.rewindOffsetMux.Unlock()
+	ba.rewindOffset = -1
+	ba.rewindOffsetMux.Unlock()
 }
 
 // filterFlushed is called after we read a page, to remove in-flight IDs, and clean up our flush map
-func (bm *batchManager) filterFlushed(entries []*core.IDAndSequence) []*core.IDAndSequence {
-	bm.inflightMux.Lock()
+func (ba *batchAssembler) filterFlushed(entries []*core.IDAndSequence) []*core.IDAndSequence {
+	ba.inflightMux.Lock()
 
 	// Remove inflight entries
 	unflushedEntries := make([]*core.IDAndSequence, 0, len(entries))
 	for _, entry := range entries {
-		if _, inflight := bm.inflightSequences[entry.Sequence]; !inflight {
+		if _, inflight := ba.inflightSequences[entry.Sequence]; !inflight {
 			unflushedEntries = append(unflushedEntries, entry)
 		}
 	}
 
 	// Drain the list of recently flushed entries that processors have notified us about
-	for _, seq := range bm.inflightFlushed {
-		delete(bm.inflightSequences, seq)
+	for _, seq := range ba.inflightFlushed {
+		delete(ba.inflightSequences, seq)
 	}
-	bm.inflightFlushed = bm.inflightFlushed[:0]
+	ba.inflightFlushed = ba.inflightFlushed[:0]
 
-	bm.inflightMux.Unlock()
+	ba.inflightMux.Unlock()
 
 	return unflushedEntries
 }
@@ -252,38 +273,38 @@ func (bm *batchManager) filterFlushed(entries []*core.IDAndSequence) []*core.IDA
 // notifyFlushed is called by a processor, when it's finished updating the database to record a set
 // of messages as sent. So it's safe to remove these sequences from the inflight map on the next
 // page read.
-func (bm *batchManager) notifyFlushed(sequences []int64) {
-	bm.inflightMux.Lock()
-	bm.inflightFlushed = append(bm.inflightFlushed, sequences...)
-	bm.inflightMux.Unlock()
+func (ba *batchAssembler) notifyFlushed(sequences []int64) {
+	ba.inflightMux.Lock()
+	ba.inflightFlushed = append(ba.inflightFlushed, sequences...)
+	ba.inflightMux.Unlock()
 }
 
-func (bm *batchManager) readPage(lastPageFull bool) ([]*core.IDAndSequence, bool, error) {
+func (ba *batchAssembler) readPage(lastPageFull bool) ([]*core.IDAndSequence, bool, error) {
 
 	// Pop out any rewind that has been queued, but each time we read to the front before we rewind
 	if !lastPageFull {
-		bm.popRewind()
+		ba.popRewind()
 	}
 
 	// Read a page from the DB
 	var ids []*core.IDAndSequence
-	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
-		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
-		ids, err = bm.database.GetMessageIDs(bm.ctx, fb.And(
-			fb.Gt("sequence", bm.readOffset),
+	err := ba.retry.Do(ba.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
+		fb := database.MessageQueryFactory.NewFilterLimit(ba.ctx, ba.readPageSize)
+		ids, err = ba.database.GetMessageIDs(ba.ctx, fb.And(
+			fb.Gt("sequence", ba.readOffset),
 			fb.Eq("state", core.MessageStateReady),
-		).Sort("sequence").Limit(bm.readPageSize))
+		).Sort("sequence").Limit(ba.readPageSize))
 		return true, err
 	})
 
 	// Calculate if this was a full page we read (so should immediately re-poll) before we remove flushed IDs
 	pageReadLength := len(ids)
-	fullPage := (pageReadLength == int(bm.readPageSize))
+	fullPage := (pageReadLength == int(ba.readPageSize))
 
 	// Remove any flushed IDs from the list, and then update our flushed map
-	ids = bm.filterFlushed(ids)
+	ids = ba.filterFlushed(ids)
 
-	log.L(bm.ctx).Debugf("Read %d records from offset %d. filtered=%d fullPage=%t", pageReadLength, bm.readOffset, len(ids), fullPage)
+	log.L(ba.ctx).Debugf("Read %d records from offset %d. filtered=%d fullPage=%t", pageReadLength, ba.readOffset, len(ids), fullPage)
 	return ids, fullPage, err
 }
 
@@ -292,82 +313,86 @@ func (bm *batchManager) messageSequencer() {
 	l.Debugf("Started batch assembly message sequencer")
 	defer close(bm.done)
 
-	lastPageFull := false
+	lastPageFull := make(map[*batchAssembler]bool)
 	for {
 		// Each time round the loop we check for quiescing processors
 		bm.reapQuiescing()
 
-		// Read messages from the DB - in an error condition we retry until success, or a closed context
-		entries, fullPage, err := bm.readPage(lastPageFull)
-		if err != nil {
-			l.Debugf("Exiting: %s", err)
-			return
-		}
-
-		if len(entries) > 0 {
-			for _, entry := range entries {
-				msg, data, err := bm.assembleMessageData(&entry.ID)
-				if err != nil {
-					l.Errorf("Failed to retrieve message data for %s (seq=%d): %s", entry.ID, entry.Sequence, err)
-					continue
-				}
-
-				// We likely retrieved this message from the cache, which is written by the message-writer before
-				// the database store. Meaning we cannot rely on the sequence having been set.
-				msg.Sequence = entry.Sequence
-
-				processor, err := bm.getProcessor(msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
-				if err != nil {
-					l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
-					continue
-				}
-
-				bm.dispatchMessage(processor, msg, data)
-			}
-
-			// Next time round only read after the messages we just processed (unless we get a tap to rewind)
-			bm.readOffset = entries[len(entries)-1].Sequence
-		}
-
-		// Wait to be woken again
-		if !fullPage {
-			if done := bm.waitForNewMessages(); done {
+		anyPageFull := false
+		for _, assembler := range bm.assemblers {
+			// Read messages from the DB - in an error condition we retry until success, or a closed context
+			entries, fullPage, err := assembler.readPage(lastPageFull[assembler])
+			if err != nil {
 				l.Debugf("Exiting: %s", err)
 				return
 			}
+
+			if len(entries) > 0 {
+				for _, entry := range entries {
+					msg, data, err := assembler.assembleMessageData(&entry.ID)
+					if err != nil {
+						l.Errorf("Failed to retrieve message data for %s (seq=%d): %s", entry.ID, entry.Sequence, err)
+						continue
+					}
+
+					// We likely retrieved this message from the cache, which is written by the message-writer before
+					// the database store. Meaning we cannot rely on the sequence having been set.
+					msg.Sequence = entry.Sequence
+
+					processor, err := bm.getProcessor(assembler, msg.Header.TxType, msg.Header.Type, msg.Header.Group, msg.Header.Namespace, &msg.Header.SignerRef)
+					if err != nil {
+						l.Errorf("Failed to dispatch message %s: %s", msg.Header.ID, err)
+						continue
+					}
+
+					assembler.dispatchMessage(processor, msg, data)
+				}
+
+				// Next time round only read after the messages we just processed (unless we get a tap to rewind)
+				assembler.readOffset = entries[len(entries)-1].Sequence
+			}
+			lastPageFull[assembler] = fullPage
+			anyPageFull = anyPageFull || fullPage
 		}
-		lastPageFull = fullPage
+
+		// Wait to be woken again
+		if !anyPageFull {
+			if done := bm.waitForNewMessages(); done {
+				l.Debugf("Exiting")
+				return
+			}
+		}
 	}
 }
 
-func (bm *batchManager) newMessageNotification(seq int64) {
+func (ba *batchAssembler) newMessageNotification(shoulderTap chan bool, seq int64) {
 	rewindToQueue := int64(-1)
 
 	// Determine if we need to queue a rewind
-	bm.rewindOffsetMux.Lock()
+	ba.rewindOffsetMux.Lock()
 	lastSequenceBeforeMsg := seq - 1
-	if bm.rewindOffset == -1 || lastSequenceBeforeMsg < bm.rewindOffset {
+	if ba.rewindOffset == -1 || lastSequenceBeforeMsg < ba.rewindOffset {
 		rewindToQueue = lastSequenceBeforeMsg
-		bm.rewindOffset = lastSequenceBeforeMsg
+		ba.rewindOffset = lastSequenceBeforeMsg
 	}
-	bm.rewindOffsetMux.Unlock()
+	ba.rewindOffsetMux.Unlock()
 
 	if rewindToQueue >= 0 {
-		log.L(bm.ctx).Debugf("Notifying batch manager of rewind to %d", rewindToQueue)
+		log.L(ba.ctx).Debugf("Notifying batch manager of rewind to %d", rewindToQueue)
 		select {
-		case bm.shoulderTap <- true:
+		case shoulderTap <- true:
 		default:
 		}
 	}
 }
 
-func (bm *batchManager) newMessageNotifier() {
-	l := log.L(bm.ctx)
+func (ba *batchAssembler) newMessageNotifier(shoulderTap chan bool) {
+	l := log.L(ba.ctx)
 	for {
 		select {
-		case seq := <-bm.newMessages:
-			bm.newMessageNotification(seq)
-		case <-bm.ctx.Done():
+		case seq := <-ba.newMessages:
+			ba.newMessageNotification(shoulderTap, seq)
+		case <-ba.ctx.Done():
 			l.Debugf("Exiting due to cancelled context")
 			return
 		}
@@ -394,13 +419,13 @@ func (bm *batchManager) waitForNewMessages() (done bool) {
 	}
 }
 
-func (bm *batchManager) dispatchMessage(processor *batchProcessor, msg *core.Message, data core.DataArray) {
-	l := log.L(bm.ctx)
+func (ba *batchAssembler) dispatchMessage(processor *batchProcessor, msg *core.Message, data core.DataArray) {
+	l := log.L(ba.ctx)
 	l.Debugf("Dispatching message %s (seq=%d) to %s batch processor %s", msg.Header.ID, msg.Sequence, msg.Header.Type, processor.conf.name)
 
-	bm.inflightMux.Lock()
-	bm.inflightSequences[msg.Sequence] = processor
-	bm.inflightMux.Unlock()
+	ba.inflightMux.Lock()
+	ba.inflightSequences[msg.Sequence] = processor
+	ba.inflightMux.Unlock()
 
 	work := &batchWork{
 		msg:  msg,

@@ -35,7 +35,7 @@ func TestMessageCreated(t *testing.T) {
 		batch:       mb,
 		adminEvents: mae,
 	}
-	mb.On("NewMessages").Return((chan<- int64)(make(chan int64, 1)))
+	mb.On("NewMessage", mock.Anything, int64(12345)).Return()
 	mae.On("Dispatch", mock.Anything).Return()
 	o.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", fftypes.NewUUID(), 12345)
 	mb.AssertExpectations(t)

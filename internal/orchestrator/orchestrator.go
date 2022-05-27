@@ -168,6 +168,7 @@ type orchestrator struct {
 	assets               assets.Manager
 	tokens               map[string]tokens.Plugin
 	bc                   boundCallbacks
+	pe                   persistenceEvents
 	contracts            contracts.Manager
 	node                 *fftypes.UUID
 	metrics              metrics.Manager
@@ -204,18 +205,27 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 	or.ctx = ctx
 	or.cancelCtx = cancelCtx
 	err = or.initPlugins(ctx)
+
+	// Bind plugins to callback interfaces
+	or.bc.bi = or.blockchain
+	or.bc.dx = or.dataexchange
+	or.bc.ss = or.sharedstorage
+	or.pe.database = or.database
+	or.pe.adminEvents = or.adminEvents
+
 	if err == nil {
 		err = or.initNamespaces(ctx)
 	}
 	if err == nil {
 		err = or.initComponents(ctx)
 	}
-	// Bind together the blockchain interface callbacks, with the events manager
-	or.bc.bi = or.blockchain
+
+	// Bind managers to callback interfaces
 	or.bc.ei = or.events
-	or.bc.dx = or.dataexchange
-	or.bc.ss = or.sharedstorage
 	or.bc.om = or.operations
+	or.pe.batch = or.batch
+	or.pe.events = or.events
+
 	return err
 }
 
@@ -352,15 +362,9 @@ func (or *orchestrator) getDatabasePlugins(ctx context.Context) (plugins []datab
 }
 
 func (or *orchestrator) initDatabasePlugins(ctx context.Context, plugins []database.Plugin) (err error) {
-	callbacks := &persistenceEvents{
-		database:    or.database,
-		batch:       or.batch,
-		events:      or.events,
-		adminEvents: or.adminEvents,
-	}
 	for idx, plugin := range plugins {
 		config := databaseConfig.ArrayEntry(idx)
-		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), callbacks)
+		err = plugin.Init(ctx, config.SubSection(config.GetString(coreconfig.PluginConfigType)), &or.pe)
 		if err != nil {
 			return err
 		}
@@ -687,13 +691,7 @@ func (or *orchestrator) initDeprecatedBlockchainPlugin(ctx context.Context, plug
 
 func (or *orchestrator) initDeprecatedDatabasePlugin(ctx context.Context, plugin database.Plugin) (err error) {
 	log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
-	callbacks := &persistenceEvents{
-		database:    or.database,
-		batch:       or.batch,
-		events:      or.events,
-		adminEvents: or.adminEvents,
-	}
-	err = plugin.Init(ctx, deprecatedDatabaseConfig.SubSection(plugin.Name()), callbacks)
+	err = plugin.Init(ctx, deprecatedDatabaseConfig.SubSection(plugin.Name()), &or.pe)
 	if err != nil {
 		return err
 	}
@@ -801,7 +799,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data, or.txHelper)
+		or.batch, err = batch.NewBatchManager(ctx, or, or.databases, or.data, or.txHelper)
 		if err != nil {
 			return err
 		}
