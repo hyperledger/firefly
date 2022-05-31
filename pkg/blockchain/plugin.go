@@ -67,10 +67,10 @@ type Plugin interface {
 	SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error
+	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
-	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error)
+	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
 	AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error

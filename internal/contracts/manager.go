@@ -255,7 +255,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 		err = send(ctx)
 		return op, err
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Options)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}

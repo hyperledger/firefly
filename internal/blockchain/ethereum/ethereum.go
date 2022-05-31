@@ -135,14 +135,6 @@ type ABIElementMarshaling struct {
 	Outputs         []ABIArgumentMarshaling `json:"outputs"`
 }
 
-type EthconnectMessageRequest struct {
-	Headers EthconnectMessageHeaders `json:"headers,omitempty"`
-	To      string                   `json:"to"`
-	From    string                   `json:"from,omitempty"`
-	Method  ABIElementMarshaling     `json:"method"`
-	Params  []interface{}            `json:"params"`
-}
-
 type EthconnectMessageHeaders struct {
 	Type string `json:"type,omitempty"`
 	ID   string `json:"id,omitempty"`
@@ -602,19 +594,41 @@ func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err e
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) error {
+func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}, options map[string]interface{}) (map[string]interface{}, error) {
+	headers := EthconnectMessageHeaders{
+		Type: messageType,
+	}
+	if requestID != "" {
+		headers.ID = requestID
+	}
+	body := map[string]interface{}{
+		"headers": headers,
+		"to":      address,
+		"method":  abi,
+		"params":  input,
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+	for k, v := range options {
+		// Set the new field if it's not already set. Do not allow overriding of existing fields
+		if _, ok := body[k]; !ok {
+			body[k] = v
+		} else {
+			return nil, i18n.NewError(ctx, coremsgs.MsgOverrideExistingFieldCustomOption, k)
+		}
+	}
+	return body, nil
+}
+
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}, options map[string]interface{}) error {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
-	body := EthconnectMessageRequest{
-		Headers: EthconnectMessageHeaders{
-			Type: "SendTransaction",
-			ID:   requestID,
-		},
-		From:   signingKey,
-		To:     address,
-		Method: abi,
-		Params: input,
+	messageType := "SendTransaction"
+	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, signingKey, abi, requestID, input, options)
+	if err != nil {
+		return err
 	}
 	client := e.fftmClient
 	if client == nil {
@@ -632,17 +646,14 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	return nil
 }
 
-func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}) (*resty.Response, error) {
+func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}, options map[string]interface{}) (*resty.Response, error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainQuery(address, abi.Name)
 	}
-	body := EthconnectMessageRequest{
-		Headers: EthconnectMessageHeaders{
-			Type: "Query",
-		},
-		To:     address,
-		Method: abi,
-		Params: input,
+	messageType := "Query"
+	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, "", abi, "", input, options)
+	if err != nil {
+		return nil, err
 	}
 	return e.client.R().
 		SetContext(ctx).
@@ -668,7 +679,7 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	e.fireflyMux.Lock()
 	address := e.fireflyContract
 	e.fireflyMux.Unlock()
-	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input)
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input, nil)
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
@@ -682,10 +693,10 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes
 	e.fireflyMux.Lock()
 	address := e.fireflyContract
 	e.fireflyMux.Unlock()
-	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input)
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input, nil)
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -694,10 +705,10 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	if err != nil {
 		return err
 	}
-	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
+	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput, options)
 }
 
-func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -706,7 +717,7 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput)
+	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput, options)
 	if err != nil || !res.IsSuccess() {
 		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 	}
