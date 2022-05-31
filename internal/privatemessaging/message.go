@@ -131,8 +131,12 @@ func (s *messageSender) resolveAndSend(ctx context.Context, method sendMethod) e
 }
 
 func (s *messageSender) resolve(ctx context.Context) error {
-	// Resolve the sending identity
 	msg := s.msg.Message
+	if err := s.mgr.data.VerifyNamespaceExists(ctx, msg.Header.Namespace); err != nil {
+		return err
+	}
+
+	// Resolve the sending identity
 	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 	}
