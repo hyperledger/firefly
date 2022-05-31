@@ -44,23 +44,23 @@ const (
 )
 
 type Fabric struct {
-	ctx              context.Context
-	topic            string
-	defaultChannel   string
-	fireflyChaincode string
-	fireflyFromBlock string
-	fireflyMux       sync.Mutex
-	networkVersion   int
-	signer           string
-	prefixShort      string
-	prefixLong       string
-	capabilities     *blockchain.Capabilities
-	callbacks        blockchain.Callbacks
-	client           *resty.Client
-	streams          *streamManager
-	initInfo         struct {
-		stream *eventStream
-		sub    *subscription
+	ctx             context.Context
+	topic           string
+	defaultChannel  string
+	signer          string
+	prefixShort     string
+	prefixLong      string
+	capabilities    *blockchain.Capabilities
+	callbacks       blockchain.Callbacks
+	client          *resty.Client
+	streams         *streamManager
+	streamID        string
+	fireflyContract struct {
+		mux            sync.Mutex
+		chaincode      string
+		fromBlock      string
+		networkVersion int
+		subscription   string
 	}
 	idCache          map[string]*fabIdentity
 	wsconn           wsclient.WSClient
@@ -204,10 +204,12 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks bloc
 	f.streams = &streamManager{client: f.client, signer: f.signer}
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
-	if f.initInfo.stream, err = f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout); err != nil {
+	stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
+	if err != nil {
 		return err
 	}
-	log.L(f.ctx).Infof("Event stream: %s", f.initInfo.stream.ID)
+	f.streamID = stream.ID
+	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
 
 	f.closed = make(chan struct{})
 	go f.eventLoop()
@@ -251,17 +253,18 @@ func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyC
 	}
 
 	location := &Location{Channel: f.defaultChannel, Chaincode: chaincode}
-	f.initInfo.sub, err = f.streams.ensureFireFlySubscription(ctx, location, fromBlock, f.initInfo.stream.ID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, location, fromBlock, f.streamID, batchPinEvent)
 	if err == nil {
-		f.fireflyMux.Lock()
-		f.fireflyChaincode = chaincode
-		f.fireflyFromBlock = fromBlock
-		f.networkVersion = 0
-		f.fireflyMux.Unlock()
+		f.fireflyContract.mux.Lock()
+		f.fireflyContract.chaincode = chaincode
+		f.fireflyContract.fromBlock = fromBlock
+		f.fireflyContract.networkVersion = 0
+		f.fireflyContract.subscription = sub.ID
+		f.fireflyContract.mux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"chaincode":    chaincode,
 			"fromBlock":    fromBlock,
-			"subscription": f.initInfo.sub.ID,
+			"subscription": sub.ID,
 		}
 	}
 	return err
@@ -270,13 +273,13 @@ func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyC
 func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
 
 	chaincode := termination.Info.GetString("chaincodeId")
-	f.fireflyMux.Lock()
-	if chaincode != f.fireflyChaincode {
-		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyChaincode)
-		f.fireflyMux.Unlock()
+	f.fireflyContract.mux.Lock()
+	if chaincode != f.fireflyContract.chaincode {
+		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyContract.chaincode)
+		f.fireflyContract.mux.Unlock()
 		return nil
 	}
-	f.fireflyMux.Unlock()
+	f.fireflyContract.mux.Unlock()
 
 	log.L(ctx).Infof("Processing termination request from chaincode %s", chaincode)
 	contracts.Active.FinalEvent = termination.ProtocolID
@@ -477,7 +480,11 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		l1.Infof("Received '%s' message", eventName)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		if sub == f.initInfo.sub.ID {
+		f.fireflyContract.mux.Lock()
+		fireflySub := f.fireflyContract.subscription
+		f.fireflyContract.mux.Unlock()
+
+		if sub == fireflySub {
 			// Matches the active FireFly BatchPin subscription
 			switch eventName {
 			case broadcastBatchEventName:
@@ -671,9 +678,9 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 		"contexts":   hashes,
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	f.fireflyMux.Lock()
-	chaincode := f.fireflyChaincode
-	f.fireflyMux.Unlock()
+	f.fireflyContract.mux.Lock()
+	chaincode := f.fireflyContract.chaincode
+	f.fireflyContract.mux.Unlock()
 	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
@@ -686,9 +693,9 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.U
 		"contexts":   []string{},
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	f.fireflyMux.Lock()
-	chaincode := f.fireflyChaincode
-	f.fireflyMux.Unlock()
+	f.fireflyContract.mux.Lock()
+	chaincode := f.fireflyContract.chaincode
+	f.fireflyContract.mux.Unlock()
 	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
 }
 
@@ -802,7 +809,7 @@ func (f *Fabric) AddContractListener(ctx context.Context, listener *core.Contrac
 	if err != nil {
 		return err
 	}
-	result, err := f.streams.createSubscription(ctx, location, f.initInfo.stream.ID, "", listener.Event.Name, listener.Options.FirstEvent)
+	result, err := f.streams.createSubscription(ctx, location, f.streamID, "", listener.Event.Name, listener.Options.FirstEvent)
 	if err != nil {
 		return err
 	}
@@ -835,7 +842,7 @@ func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, 
 		if strings.Contains(err.Error(), notFoundError) {
 			return 1, nil
 		}
-		return 0, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return 0, err
 	}
 	output := &fabQueryNamedOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -845,16 +852,15 @@ func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, 
 }
 
 func (f *Fabric) NetworkVersion(ctx context.Context) (int, error) {
-	f.fireflyMux.Lock()
-	if f.networkVersion > 0 {
-		f.fireflyMux.Unlock()
-		return f.networkVersion, nil
+	f.fireflyContract.mux.Lock()
+	defer f.fireflyContract.mux.Unlock()
+	if f.fireflyContract.networkVersion > 0 {
+		return f.fireflyContract.networkVersion, nil
 	}
-	chaincode := f.fireflyChaincode
-	f.fireflyMux.Unlock()
+	chaincode := f.fireflyContract.chaincode
 	version, err := f.getNetworkVersion(ctx, chaincode)
 	if err == nil {
-		f.networkVersion = version
+		f.fireflyContract.networkVersion = version
 	}
 	return version, err
 }

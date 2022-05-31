@@ -50,22 +50,22 @@ const (
 )
 
 type Ethereum struct {
-	ctx              context.Context
-	topic            string
-	fireflyContract  string
-	fireflyFromBlock string
-	fireflyMux       sync.Mutex
-	networkVersion   int
-	prefixShort      string
-	prefixLong       string
-	capabilities     *blockchain.Capabilities
-	callbacks        blockchain.Callbacks
-	client           *resty.Client
-	fftmClient       *resty.Client
-	streams          *streamManager
-	initInfo         struct {
-		stream *eventStream
-		sub    *subscription
+	ctx             context.Context
+	topic           string
+	prefixShort     string
+	prefixLong      string
+	capabilities    *blockchain.Capabilities
+	callbacks       blockchain.Callbacks
+	client          *resty.Client
+	fftmClient      *resty.Client
+	streams         *streamManager
+	streamID        string
+	fireflyContract struct {
+		mux            sync.Mutex
+		address        string
+		fromBlock      string
+		networkVersion int
+		subscription   string
 	}
 	wsconn           wsclient.WSClient
 	closed           chan struct{}
@@ -209,10 +209,12 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	e.streams = &streamManager{client: e.client}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
+	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
+	if err != nil {
 		return err
 	}
-	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.initInfo.stream.ID, e.topic)
+	e.streamID = stream.ID
+	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
 	e.closed = make(chan struct{})
 	go e.eventLoop()
@@ -277,17 +279,18 @@ func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFl
 		return err
 	}
 
-	e.initInfo.sub, err = e.streams.ensureFireFlySubscription(ctx, address, fromBlock, e.initInfo.stream.ID, batchPinEventABI)
+	sub, err := e.streams.ensureFireFlySubscription(ctx, address, fromBlock, e.streamID, batchPinEventABI)
 	if err == nil {
-		e.fireflyMux.Lock()
-		e.fireflyContract = address
-		e.fireflyFromBlock = fromBlock
-		e.networkVersion = 0
-		e.fireflyMux.Unlock()
+		e.fireflyContract.mux.Lock()
+		e.fireflyContract.address = address
+		e.fireflyContract.fromBlock = fromBlock
+		e.fireflyContract.networkVersion = 0
+		e.fireflyContract.subscription = sub.ID
+		e.fireflyContract.mux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"address":      address,
 			"fromBlock":    fromBlock,
-			"subscription": e.initInfo.sub.ID,
+			"subscription": sub.ID,
 		}
 	}
 	return err
@@ -299,13 +302,13 @@ func (e *Ethereum) TerminateContract(ctx context.Context, contracts *core.FireFl
 	if err != nil {
 		return err
 	}
-	e.fireflyMux.Lock()
-	if address != e.fireflyContract {
-		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, e.fireflyContract)
-		e.fireflyMux.Unlock()
+	e.fireflyContract.mux.Lock()
+	if address != e.fireflyContract.address {
+		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, e.fireflyContract.address)
+		e.fireflyContract.mux.Unlock()
 		return nil
 	}
-	e.fireflyMux.Unlock()
+	e.fireflyContract.mux.Unlock()
 
 	log.L(ctx).Infof("Processing termination request from address %s", address)
 	contracts.Active.FinalEvent = termination.ProtocolID
@@ -510,7 +513,11 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		if sub == e.initInfo.sub.ID {
+		e.fireflyContract.mux.Lock()
+		fireflySub := e.fireflyContract.subscription
+		e.fireflyContract.mux.Unlock()
+
+		if sub == fireflySub {
 			// Matches the active FireFly BatchPin subscription
 			switch signature {
 			case broadcastBatchEventSignature:
@@ -674,9 +681,9 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
-	e.fireflyMux.Lock()
-	address := e.fireflyContract
-	e.fireflyMux.Unlock()
+	e.fireflyContract.mux.Lock()
+	address := e.fireflyContract.address
+	e.fireflyContract.mux.Unlock()
 	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
@@ -688,9 +695,9 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes
 		"",
 		[]string{},
 	}
-	e.fireflyMux.Lock()
-	address := e.fireflyContract
-	e.fireflyMux.Unlock()
+	e.fireflyContract.mux.Lock()
+	address := e.fireflyContract.address
+	e.fireflyContract.mux.Unlock()
 	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input)
 }
 
@@ -764,7 +771,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s", listener.ID)
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subName, listener.Options.FirstEvent, abi)
+	result, err := e.streams.createSubscription(ctx, location, e.streamID, subName, listener.Options.FirstEvent, abi)
 	if err != nil {
 		return err
 	}
@@ -1066,7 +1073,7 @@ func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, 
 		if strings.Contains(err.Error(), "FFEC100148") {
 			return 1, nil
 		}
-		return 0, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return 0, err
 	}
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -1076,16 +1083,15 @@ func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, 
 }
 
 func (e *Ethereum) NetworkVersion(ctx context.Context) (int, error) {
-	e.fireflyMux.Lock()
-	if e.networkVersion > 0 {
-		e.fireflyMux.Unlock()
-		return e.networkVersion, nil
+	e.fireflyContract.mux.Lock()
+	defer e.fireflyContract.mux.Unlock()
+	if e.fireflyContract.networkVersion > 0 {
+		return e.fireflyContract.networkVersion, nil
 	}
-	address := e.fireflyContract
-	e.fireflyMux.Unlock()
+	address := e.fireflyContract.address
 	version, err := e.getNetworkVersion(ctx, address)
 	if err == nil {
-		e.networkVersion = version
+		e.fireflyContract.networkVersion = version
 	}
 	return version, err
 }
