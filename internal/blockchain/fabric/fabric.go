@@ -98,12 +98,6 @@ type PrefixItem struct {
 	Type string `json:"type"`
 }
 
-type fabTxNamedInput struct {
-	Headers *fabTxInputHeaders `json:"headers"`
-	Func    string             `json:"func"`
-	Args    map[string]string  `json:"args"`
-}
-
 type fabQueryNamedOutput struct {
 	Headers *fabTxInputHeaders `json:"headers"`
 	Result  interface{}        `json:"result"`
@@ -588,26 +582,16 @@ func wrapError(ctx context.Context, errRes *fabError, res *resty.Response, err e
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgFabconnectRESTErr)
 }
 
-func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]string) error {
-	in := &fabTxNamedInput{
-		Headers: &fabTxInputHeaders{
-			ID: requestID,
-			PayloadSchema: &PayloadSchema{
-				Type:        "array",
-				PrefixItems: prefixItems,
-			},
-			Channel:   channel,
-			Chaincode: chaincode,
-			Signer:    getUserName(signingKey),
-		},
-		Func: methodName,
-		Args: input,
+func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) error {
+	body, err := f.buildFabconnectRequestBody(ctx, channel, chaincode, methodName, signingKey, requestID, prefixItems, input, options)
+	if err != nil {
+		return err
 	}
-
 	var resErr fabError
 	res, err := f.client.R().
 		SetContext(ctx).
-		SetBody(in).
+		SetHeader("x-firefly-sync", "false").
+		SetBody(body).
 		SetError(&resErr).
 		Post("/transactions")
 	if err != nil || !res.IsSuccess() {
@@ -616,25 +600,15 @@ func (f *Fabric) invokeContractMethod(ctx context.Context, channel, chaincode, m
 	return nil
 }
 
-func (f *Fabric) queryContractMethod(ctx context.Context, channel, chaincode, methodName string, prefixItems []*PrefixItem, input map[string]string) (*resty.Response, error) {
-	in := &fabTxNamedInput{
-		Headers: &fabTxInputHeaders{
-			PayloadSchema: &PayloadSchema{
-				Type:        "array",
-				PrefixItems: prefixItems,
-			},
-			Channel:   channel,
-			Chaincode: chaincode,
-			Signer:    f.signer,
-		},
-		Func: methodName,
-		Args: input,
+func (f *Fabric) queryContractMethod(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (*resty.Response, error) {
+	body, err := f.buildFabconnectRequestBody(ctx, channel, chaincode, methodName, signingKey, requestID, prefixItems, input, options)
+	if err != nil {
+		return nil, err
 	}
-
 	var resErr fabError
 	res, err := f.client.R().
 		SetContext(ctx).
-		SetBody(in).
+		SetBody(body).
 		SetError(&resErr).
 		Post("/query")
 	if err != nil || !res.IsSuccess() {
@@ -681,7 +655,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	f.fireflyContract.mux.Lock()
 	chaincode := f.fireflyContract.chaincode
 	f.fireflyContract.mux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input, nil)
 }
 
 func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
@@ -696,16 +670,41 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.U
 	f.fireflyContract.mux.Lock()
 	chaincode := f.fireflyContract.chaincode
 	f.fireflyContract.mux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input)
+	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input, nil)
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
+func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
 	// All arguments must be JSON serialized
 	args, err := jsonEncodeInput(input)
 	if err != nil {
-		return i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
+		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
 	}
+	body := map[string]interface{}{
+		"headers": &fabTxInputHeaders{
+			ID: requestID,
+			PayloadSchema: &PayloadSchema{
+				Type:        "array",
+				PrefixItems: prefixItems,
+			},
+			Channel:   channel,
+			Chaincode: chaincode,
+			Signer:    getUserName(signingKey),
+		},
+		"func": methodName,
+		"args": args,
+	}
+	for k, v := range options {
+		// Set the new field if it's not already set. Do not allow overriding of existing fields
+		if _, ok := body[k]; !ok {
+			body[k] = v
+		} else {
+			return nil, i18n.NewError(ctx, coremsgs.MsgOverrideExistingFieldCustomOption, k)
+		}
+	}
+	return body, nil
+}
 
+func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -725,16 +724,10 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		}
 	}
 
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, args)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, input, options)
 }
 
-func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error) {
-	// All arguments must be JSON serialized
-	args, err := jsonEncodeInput(input)
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, i18n.MsgJSONObjectParseFailed, "params")
-	}
-
+func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -749,7 +742,7 @@ func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, m
 		}
 	}
 
-	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, prefixItems, args)
+	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, f.signer, "", prefixItems, input, options)
 	if err != nil {
 		return nil, err
 	}
@@ -760,8 +753,8 @@ func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, m
 	return output.Result, nil
 }
 
-func jsonEncodeInput(params map[string]interface{}) (output map[string]string, err error) {
-	output = make(map[string]string, len(params))
+func jsonEncodeInput(params map[string]interface{}) (output map[string]interface{}, err error) {
+	output = make(map[string]interface{}, len(params))
 	for field, value := range params {
 		switch v := value.(type) {
 		case string:
@@ -835,7 +828,7 @@ func (f *Fabric) GenerateEventSignature(ctx context.Context, event *core.FFIEven
 }
 
 func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, error) {
-	res, err := f.queryContractMethod(ctx, f.defaultChannel, chaincode, networkVersionMethodName, []*PrefixItem{}, map[string]string{})
+	res, err := f.queryContractMethod(ctx, f.defaultChannel, chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Function not found" is interpreted as "default to version 1"
 		notFoundError := fmt.Sprintf("Function %s not found", networkVersionMethodName)

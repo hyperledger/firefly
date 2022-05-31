@@ -51,23 +51,38 @@ You are currently in the "core" repository, which is written in Go and hosts the
 engine. Here you will find plugin interfaces to microservice connectors written in a variety of languages like
 TypeScript and Java, as well as heavy-lifting runtime components.
 
-Other repositories you might be interested in containing those microservice components, user experiences, CLIs and samples:
+Other repositories you might be interested in containing those microservice components, user experiences, CLIs and samples.
+
+> Note that only open source repositories and plugins are listed below
+
+### Blockchain connectivity
+
+- Transaction Manager - https://github.com/hyperledger/firefly-transaction-manager
+- RLP & ABI encoding, KeystoreV3 utilities and secp256k1 signer runtime -  https://github.com/hyperledger/firefly-signer
+- FFCAPI reference connector for EVM Chains - https://github.com/hyperledger/firefly-evmconnect
+  - Public EVM compatible chains: Learn more in the [documentation](https://hyperledger.github.io/firefly)
+- Permissioned Ethereum connector - https://github.com/hyperledger/firefly-ethconnect
+  - Private/permissioned: Hyperledger Besu / Quorum
+- Hyperledger Fabric connector - https://github.com/hyperledger/firefly-fabconnect
+- Corda connector starter: https://github.com/hyperledger/firefly-cordaconnect
+  - CorDapp specific customization is required
+
+### Token standards
+
+- Tokens ERC20/ERC721 - https://github.com/hyperledger/firefly-tokens-erc20-erc721
+- Tokens ERC1155 - https://github.com/hyperledger/firefly-tokens-erc1155
+
+### Private data bus connectivity
+
+- HTTPS Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
+
+### Developer ecosystem
 
 - Command Line Interface (CLI) - https://github.com/hyperledger/firefly-cli
 - Explorer UI - https://github.com/hyperledger/firefly-ui
 - Node.js SDK - https://github.com/hyperledger/firefly-sdk-nodejs
 - Sandbox / Exerciser - https://github.com/hyperledger/firefly-sandbox
 - Samples - https://github.com/hyperledger/firefly-samples
-- Transaction Manager - https://github.com/hyperledger/firefly-transaction-manager
-- Tokens ERC20/ERC721 - https://github.com/hyperledger/firefly-tokens-erc20-erc721
-- Tokens ERC1155 - https://github.com/hyperledger/firefly-tokens-erc1155
-- HTTPS Data Exchange - https://github.com/hyperledger/firefly-dataexchange-https
-- Hyperledger Fabric connector - https://github.com/hyperledger/firefly-fabconnect
-- Ethereum connector - https://github.com/hyperledger/firefly-ethconnect
-  - Private/permissioned: Hyperledger Besu / Quorum
-  - Public EVM compatible chains: Learn more in the [documentation](https://hyperledger.github.io/firefly)
-- Corda connector starter: https://github.com/hyperledger/firefly-cordaconnect
-  - CorDapp specific customization is required
 - FireFly Performance CLI: https://github.com/hyperledger/firefly-perf-cli
 - Helm Charts for Deploying to Kubernetes: https://github.com/hyperledger/firefly-helm-charts
 

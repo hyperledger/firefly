@@ -1180,5 +1180,5 @@ func TestNetworkActionTerminateBadNamespace(t *testing.T) {
 	or.mim.On("GetNodeOwnerBlockchainKey", context.Background(), "ns1").Return(verifier, nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), "ns1", &core.NetworkAction{Type: core.NetworkActionTerminate})
-	assert.Regexp(t, "FF10398", err)
+	assert.Regexp(t, "FF10399", err)
 }
