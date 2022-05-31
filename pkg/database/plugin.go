@@ -67,13 +67,13 @@ type iNamespaceCollection interface {
 	DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error)
 
 	// GetNamespace - Get an namespace by name
-	GetNamespace(ctx context.Context, name string) (offset *core.Namespace, err error)
+	GetNamespace(ctx context.Context, name string) (namespace *core.Namespace, err error)
 
 	// GetNamespaceByID - Get a namespace by ID
-	GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (offset *core.Namespace, err error)
+	GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (namespace *core.Namespace, err error)
 
 	// GetNamespaces - Get namespaces
-	GetNamespaces(ctx context.Context, filter Filter) (offset []*core.Namespace, res *FilterResult, err error)
+	GetNamespaces(ctx context.Context, filter Filter) (namespaces []*core.Namespace, res *FilterResult, err error)
 }
 
 type iMessageCollection interface {

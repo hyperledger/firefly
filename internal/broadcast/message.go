@@ -42,6 +42,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *core.MessageInOut) sysme
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	broadcast := bm.NewBroadcast(ns, in)
+	in.Header.Type = core.MessageTypeBroadcast
 	if bm.metrics.IsMetricsEnabled() {
 		bm.metrics.MessageSubmitted(&in.Message)
 	}

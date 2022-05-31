@@ -242,4 +242,6 @@ var (
 	MsgNamespaceGatewayInvalidPlugins     = ffe("FF10393", "Invalid %s gateway namespace configuration - cannot specify dataexchange or shared storage plugins")
 	MsgNamespaceGatewayMultiplePluginType = ffe("FF10394", "Invalid %s namespace configuration - multiple %s plugins provided")
 	MsgDuplicatePluginName                = ffe("FF10395", "Invalid plugin configuration - plugin with name %s already exists")
+	MsgInvalidFireFlyContractIndex        = ffe("FF10396", "No configuration found for FireFly contract at %s")
+	MsgUnrecognizedNetworkAction          = ffe("FF10397", "Unrecognized network action: %s", 400)
 )

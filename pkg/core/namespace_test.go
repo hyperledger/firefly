@@ -51,3 +51,41 @@ func TestNamespaceValidation(t *testing.T) {
 	assert.NotNil(t, ns.Message)
 
 }
+
+func TestFireFlyContractsDatabaseSerialization(t *testing.T) {
+	contracts1 := &FireFlyContracts{
+		Active: FireFlyContractInfo{
+			Index: 1,
+			Info:  fftypes.JSONObject{"address": "0x1234"},
+		},
+		Terminated: []FireFlyContractInfo{
+			{
+				Index:      0,
+				Info:       fftypes.JSONObject{"address": "0x0000"},
+				FinalEvent: "50",
+			},
+		},
+	}
+
+	// Verify it serializes as bytes to the database
+	val1, err := contracts1.Value()
+	assert.NoError(t, err)
+	assert.Equal(t, `{"active":{"index":1,"info":{"address":"0x1234"}},"terminated":[{"index":0,"finalEvent":"50","info":{"address":"0x0000"}}]}`, string(val1.([]byte)))
+
+	// Verify it restores ok
+	contracts2 := &FireFlyContracts{}
+	err = contracts2.Scan(val1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, contracts2.Active.Index)
+	assert.Equal(t, fftypes.JSONObject{"address": "0x1234"}, contracts2.Active.Info)
+	assert.Len(t, contracts2.Terminated, 1)
+
+	// Verify it ignores a blank string
+	err = contracts2.Scan("")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, contracts2.Active.Index)
+
+	// Out of luck with anything else
+	err = contracts2.Scan(false)
+	assert.Regexp(t, "FF00105", err)
+}

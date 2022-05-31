@@ -28,7 +28,12 @@ nav_order: 20
     "name": "default",
     "description": "Default predefined namespace",
     "type": "local",
-    "created": "2022-05-16T01:23:16Z"
+    "created": "2022-05-16T01:23:16Z",
+    "fireflyContract": {
+        "active": {
+            "index": 0
+        }
+    }
 }
 ```
 
@@ -42,4 +47,22 @@ nav_order: 20
 | `description` | A description of the namespace | `string` |
 | `type` | The type of the namespace | `FFEnum`:<br/>`"local"`<br/>`"broadcast"`<br/>`"system"` |
 | `created` | The time the namespace was created | [`FFTime`](simpletypes#fftime) |
+| `fireflyContract` | Info on the FireFly smart contract configured for this namespace | [`FireFlyContracts`](#fireflycontracts) |
+
+## FireFlyContracts
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `active` | The currently active FireFly smart contract | [`FireFlyContractInfo`](#fireflycontractinfo) |
+| `terminated` | Previously-terminated FireFly smart contracts | [`FireFlyContractInfo[]`](#fireflycontractinfo) |
+
+## FireFlyContractInfo
+
+| Field Name | Description | Type |
+|------------|-------------|------|
+| `index` | The index of this contract in the config file | `int` |
+| `finalEvent` | The identifier for the final blockchain event received from this contract before termination | `string` |
+| `info` | Blockchain-specific info on the contract, such as its location on chain | [`JSONObject`](simpletypes#jsonobject) |
+
+
 
