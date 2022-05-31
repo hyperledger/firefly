@@ -815,8 +815,11 @@ func TestVerifyNamespaceExistsOk(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetNamespace", mock.Anything, "ns1").Return(&core.Namespace{}, nil)
+	mdi.On("GetNamespace", mock.Anything, "ns1").Return(&core.Namespace{}, nil).Once()
 	err := dm.VerifyNamespaceExists(ctx, "ns1")
+	assert.NoError(t, err)
+	// second lookup is from cache
+	err = dm.VerifyNamespaceExists(ctx, "ns1")
 	assert.NoError(t, err)
 }
 
