@@ -66,6 +66,8 @@ var (
 	APIEndpointsAdminGetConfigRecord    = ffm("api.endpoints.adminGetConfigRecord", "Gets a configuration record from the database")
 	APIEndpointsAdminGetConfigRecords   = ffm("api.endpoints.adminGetConfigRecords", "Lists configuration records from the database")
 	APIEndpointsAdminGetConfig          = ffm("api.endpoints.adminGetConfig", "Gets the full configuration for this node")
+	APIEndpointsAdminGetNamespaceByName = ffm("api.endpoints.adminGetNamespaceByName", "Gets a namespace by name")
+	APIEndpointsAdminGetNamespaces      = ffm("api.endpoints.adminGetNamespaces", "List namespaces")
 	APIEndpointsAdminGetOpByID          = ffm("api.endpoints.adminGetOpByID", "Gets an operation by ID")
 	APIEndpointsAdminGetOps             = ffm("api.endpoints.adminGetOps", "Lists operations")
 	APIEndpointsAdminPutConfigRecord    = ffm("api.endpoints.adminPutConfigRecord", "Sets a configuration key in the database. This will override matching configuration keys set in the core config file.")
