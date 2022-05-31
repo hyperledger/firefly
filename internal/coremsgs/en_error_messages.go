@@ -244,4 +244,5 @@ var (
 	MsgDuplicatePluginName                = ffe("FF10395", "Invalid plugin configuration - plugin with name %s already exists")
 	MsgInvalidFireFlyContractIndex        = ffe("FF10396", "No configuration found for FireFly contract at %s")
 	MsgUnrecognizedNetworkAction          = ffe("FF10397", "Unrecognized network action: %s", 400)
+	MsgOverrideExistingFieldCustomOption  = ffe("FF10398", "Cannot override existing field with custom option named '%s'", 400)
 )

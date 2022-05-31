@@ -39,6 +39,7 @@ type ContractCallRequest struct {
 	Method     *FFIMethod             `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	MethodPath string                 `ffstruct:"ContractCallRequest" json:"methodPath,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Input      map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
+	Options    map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
 }
 
 type ContractURLs struct {

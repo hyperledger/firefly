@@ -597,6 +597,13 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -1152,6 +1159,13 @@ paths:
                 location:
                   description: A blockchain specific contract identifier. For example
                     an Ethereum contract address, or a Fabric chaincode name and channel
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -3094,6 +3108,13 @@ paths:
                 methodPath:
                   description: The pathname of the method on the specified FFI
                   type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -3861,6 +3882,13 @@ paths:
                 methodPath:
                   description: The pathname of the method on the specified FFI
                   type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -9292,6 +9320,13 @@ paths:
                 methodPath:
                   description: The pathname of the method on the specified FFI
                   type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -9970,6 +10005,13 @@ paths:
                 methodPath:
                   description: The pathname of the method on the specified FFI
                   type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -11996,6 +12038,13 @@ paths:
                 methodPath:
                   description: The pathname of the method on the specified FFI
                   type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
@@ -12798,6 +12847,13 @@ paths:
                 methodPath:
                   description: The pathname of the method on the specified FFI
                   type: string
+                options:
+                  additionalProperties:
+                    description: A map of named inputs that will be passed through
+                      to the blockchain connector
+                  description: A map of named inputs that will be passed through to
+                    the blockchain connector
+                  type: object
               type: object
       responses:
         "200":
