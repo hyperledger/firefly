@@ -39,7 +39,7 @@ var spiPatchListenerByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.EmptyInput{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).Contracts().UpdateContractListener(r.Ctx, r.PP["ns"], r.PP["lid"], r.Input.(*core.ContractListenerUpdateDTO))
+		err = getOr(r.Ctx).Contracts().UpdateContractListener(r.Ctx, extractNamespace(r.PP), r.PP["lid"], r.Input.(*core.ContractListenerUpdateDTO))
 		return core.EmptyInput{}, err
 	},
 }

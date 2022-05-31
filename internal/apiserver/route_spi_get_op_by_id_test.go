@@ -27,11 +27,11 @@ import (
 
 func TestSPIGetOperationByID(t *testing.T) {
 	o, r := newTestSPIServer()
-	req := httptest.NewRequest("GET", "/spi/v1/operations/abcd12345", nil)
+	req := httptest.NewRequest("GET", "/spi/v1/operations/ns1/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperationByID", mock.Anything, "abcd12345").
+	o.On("GetOperationByID", mock.Anything, "ns1", "abcd12345").
 		Return(&core.Operation{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -39,7 +39,7 @@ var spiPatchOpByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.EmptyInput{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).Operations().ResolveOperationByID(r.Ctx, r.PP["ns"], r.PP["opid"], r.Input.(*core.OperationUpdateDTO))
+		err = getOr(r.Ctx).Operations().ResolveOperationByID(r.Ctx, extractNamespace(r.PP), r.PP["opid"], r.Input.(*core.OperationUpdateDTO))
 		return &core.EmptyInput{}, err
 	},
 }

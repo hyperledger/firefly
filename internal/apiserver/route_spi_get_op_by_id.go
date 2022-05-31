@@ -26,9 +26,10 @@ import (
 
 var spiGetOpByID = &oapispec.Route{
 	Name:   "spiGetOpByID",
-	Path:   "operations/{opid}",
+	Path:   "operations/{ns}/{opid}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
+		{Name: "ns", Description: coremsgs.APIParamsNamespace},
 		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
 	},
 	QueryParams:     nil,
@@ -38,7 +39,7 @@ var spiGetOpByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetOperationByID(r.Ctx, r.PP["opid"])
+		output, err = getOr(r.Ctx).GetOperationByID(r.Ctx, extractNamespace(r.PP), r.PP["opid"])
 		return output, err
 	},
 }

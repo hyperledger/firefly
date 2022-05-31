@@ -598,33 +598,17 @@ func TestGetOperationByID(t *testing.T) {
 	or := newTestOrchestrator()
 	or.databases["database_0"] = or.mdi
 	u := fftypes.NewUUID()
-	or.mdi.On("GetOperationByID", mock.Anything, u).Return(nil, nil)
-	_, err := or.GetOperationByID(context.Background(), u.String())
-	assert.NoError(t, err)
-}
-
-func TestGetOperationByIDNamespaced(t *testing.T) {
-	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
-	u := fftypes.NewUUID()
 	or.mdi.On("GetOperationByID", mock.Anything, u).Return(&core.Operation{
 		Namespace: "ns1",
 	}, nil)
-	_, err := or.GetOperationByIDNamespaced(context.Background(), "ns1", u.String())
+	_, err := or.GetOperationByID(context.Background(), "ns1", u.String())
 	assert.NoError(t, err)
 }
 
-func TestGetOperationIDBadID(t *testing.T) {
+func TestGetOperationIDdBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	or.databases["database_0"] = or.mdi
-	_, err := or.GetOperationByID(context.Background(), "")
-	assert.Regexp(t, "FF00138", err)
-}
-
-func TestGetOperationIDNamespacedBadID(t *testing.T) {
-	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
-	_, err := or.GetOperationByIDNamespaced(context.Background(), "", "")
+	_, err := or.GetOperationByID(context.Background(), "", "")
 	assert.Regexp(t, "FF00138", err)
 }
 
