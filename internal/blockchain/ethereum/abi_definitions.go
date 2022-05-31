@@ -104,8 +104,8 @@ var networkVersionMethodABI = ABIElementMarshaling{
 	Inputs:          []ABIArgumentMarshaling{},
 	Outputs: []ABIArgumentMarshaling{
 		{
-			InternalType: "uint256",
-			Type:         "uint256",
+			InternalType: "uint8",
+			Type:         "uint8",
 		},
 	},
 }
