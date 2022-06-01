@@ -21,12 +21,9 @@ import "github.com/hyperledger/firefly/internal/oapispec"
 // The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
 // to act as augmented components to the core.
 var spiRoutes = []*oapispec.Route{
-	spiGetContractListenerByID,
-	spiGetContractListeners,
 	spiGetNamespaceByName,
 	spiGetNamespaces,
 	spiGetOpByID,
 	spiGetOps,
-	spiPatchListenerByID,
 	spiPatchOpByID,
 }
