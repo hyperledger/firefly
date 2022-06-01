@@ -61,6 +61,8 @@ type dataManager struct {
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
+	namespaceCache    *ccache.Cache
+	namespaceCacheTTL time.Duration
 	messageCache      *ccache.Cache
 	messageCacheTTL   time.Duration
 	messageWriter     *messageWriter
@@ -115,6 +117,11 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 		ccache.Configure().
 			MaxSize(config.GetByteSize(coreconfig.ValidatorCacheSize)),
 	)
+	dm.namespaceCache = ccache.New(
+		// We use a LRU cache with a size-aware max
+		ccache.Configure().
+			MaxSize(config.GetByteSize(coreconfig.NamespaceCacheSize)),
+	)
 	dm.messageCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
@@ -134,16 +141,28 @@ func (dm *dataManager) CheckDatatype(ctx context.Context, ns string, datatype *c
 	return err
 }
 
-func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) error {
-	err := core.ValidateFFNameField(ctx, ns, "namespace")
-	if err != nil {
-		return err
+func (dm *dataManager) namespaceExistsCached(ctx context.Context, ns string) (bool, error) {
+	cached := dm.namespaceCache.Get(ns)
+	if cached != nil {
+		cached.Extend(dm.namespaceCacheTTL)
+		return true, nil
 	}
+	log.L(context.Background()).Debugf("Cache miss for namespace %s", ns)
 	namespace, err := dm.database.GetNamespace(ctx, ns)
-	if err != nil {
+	if err != nil || namespace == nil {
+		return false, err
+	}
+	dm.namespaceCache.Set(ns, namespace, dm.namespaceCacheTTL)
+	return true, nil
+}
+
+func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) error {
+	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return err
 	}
-	if namespace == nil {
+	if exists, err := dm.namespaceExistsCached(ctx, ns); err != nil {
+		return err
+	} else if !exists {
 		return i18n.NewError(ctx, coremsgs.MsgNamespaceNotExist)
 	}
 	return nil
