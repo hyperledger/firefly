@@ -93,9 +93,9 @@ func TestHandleDeprecatedOrgDefinitionOK(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(nil, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.SystemNamespace, org.Name).Return(nil, nil)
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.LegacySystemNamespace, org.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, org.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, msg.Header.Key).Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, msg.Header.Key).Return(nil, nil)
 	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
 		return true

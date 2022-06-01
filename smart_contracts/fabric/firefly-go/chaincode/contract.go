@@ -58,3 +58,7 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 	ctx.GetStub().SetEvent("BatchPin", bytes)
 	return nil
 }
+
+func (s *SmartContract) NetworkVersion() int {
+	return 2
+}

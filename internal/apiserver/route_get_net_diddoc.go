@@ -24,8 +24,8 @@ import (
 	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var getDIDDocByDID = &oapispec.Route{
-	Name:   "getDIDDocByDID",
+var getNetworkDIDDocByDID = &oapispec.Route{
+	Name:   "getNetworkDIDDocByDID",
 	Path:   "network/diddocs/{did:.+}",
 	Method: http.MethodGet,
 	PathParams: []*oapispec.PathParam{
@@ -37,6 +37,6 @@ var getDIDDocByDID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, r.PP["did"])
+		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
 	},
 }

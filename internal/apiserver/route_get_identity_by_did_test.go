@@ -17,48 +17,40 @@
 package apiserver
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestPostNewNamespace(t *testing.T) {
+func TestGetIdentityByDID(t *testing.T) {
 	o, r := newTestAPIServer()
-	mbm := &broadcastmocks.Manager{}
-	o.On("Broadcast").Return(mbm)
-	input := core.Namespace{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces", &buf)
+	nmn := &networkmapmocks.Manager{}
+	o.On("NetworkMap").Return(nmn)
+	req := httptest.NewRequest("GET", "/api/v1/identities/did:firefly:org/org_1", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), false).
-		Return(&core.Message{}, nil)
+	nmn.On("GetIdentityByDID", mock.Anything, "default", "did:firefly:org/org_1").
+		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
-	assert.Equal(t, 202, res.Result().StatusCode)
+	assert.Equal(t, 200, res.Result().StatusCode)
 }
 
-func TestPostNewNamespaceSync(t *testing.T) {
+func TestGetIdentityByDIDWithVerifiers(t *testing.T) {
 	o, r := newTestAPIServer()
-	mbm := &broadcastmocks.Manager{}
-	o.On("Broadcast").Return(mbm)
-	input := core.Namespace{}
-	var buf bytes.Buffer
-	json.NewEncoder(&buf).Encode(&input)
-	req := httptest.NewRequest("POST", "/api/v1/namespaces?confirm", &buf)
+	nmn := &networkmapmocks.Manager{}
+	o.On("NetworkMap").Return(nmn)
+	req := httptest.NewRequest("GET", "/api/v1/identities/did:firefly:org/org_1?fetchverifiers", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastNamespace", mock.Anything, mock.AnythingOfType("*core.Namespace"), true).
-		Return(&core.Message{}, nil)
+	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "default", "did:firefly:org/org_1").
+		Return(&core.IdentityWithVerifiers{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

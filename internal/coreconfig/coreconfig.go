@@ -29,16 +29,24 @@ const (
 	PluginConfigName = "name"
 	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
-	// NamespaceMode is the configured mode of a namespace
-	NamespaceMode = "mode"
-	// NamespaceRemoteName is the namespace name to be sent in plugin calls
-	NamespaceRemoteName = "remoteName"
-	// NamespacePlugins is the list of namespace plugins
-	NamespacePlugins = "plugins"
 	// NamespaceName is the short name for a pre-defined namespace
 	NamespaceName = "name"
 	// NamespaceName is the long description for a pre-defined namespace
 	NamespaceDescription = "description"
+	// NamespaceRemoteName is the namespace name to be sent in plugin calls
+	NamespaceRemoteName = "remoteName"
+	// NamespacePlugins is the list of namespace plugins
+	NamespacePlugins = "plugins"
+	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
+	NamespaceDefaultKey = "defaultKey"
+	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace
+	NamespaceMultipartyEnabled = "multiparty.enabled"
+	// NamespaceMultipartyOrgName is a short name for the local root org within a namespace
+	NamespaceMultipartyOrgName = "multiparty.org.name"
+	// NamespaceMultipartyOrgDescription is a description for the local root org within a namespace
+	NamespaceMultipartyOrgDescription = "multiparty.org.description"
+	// NamespaceMultipartyOrgKey is the signing key allocated to the local root org within a namespace
+	NamespaceMultipartyOrgKey = "multiparty.org.key"
 )
 
 // The following keys can be access from the root configuration.
@@ -222,7 +230,7 @@ var (
 	NamespaceCacheSize = ffc("namespaces.cache.size")
 	// NamespaceCacheTTL cache time-to-live for namespaces
 	NamespaceCacheTTL = ffc("namespaces.cache.ttl")
-	// NodeName is a description for the node
+	// NodeName is the short name for the node
 	NodeName = ffc("node.name")
 	// NodeDescription is a description for the node
 	NodeDescription = ffc("node.description")
@@ -240,10 +248,8 @@ var (
 	OpUpdateWorkerBatchMaxInserts = ffc("opupdate.worker.batchMaxInserts")
 	// OpUpdateWorkerQueueLength
 	OpUpdateWorkerQueueLength = ffc("opupdate.worker.queueLength")
-	// OrgName is the short name o the org
+	// OrgName is the short name for the org
 	OrgName = ffc("org.name")
-	// OrgIdentityDeprecated deprecated synonym to org.key
-	OrgIdentityDeprecated = ffc("org.identity")
 	// OrgKey is the signing identity allocated to the organization (can be the same as the nodes)
 	OrgKey = ffc("org.key")
 	// OrgDescription is a description for the org

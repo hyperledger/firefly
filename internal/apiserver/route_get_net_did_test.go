@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetIdentityByDID(t *testing.T) {
+func TestGetNetIdentityByDID(t *testing.T) {
 	o, r := newTestAPIServer()
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
@@ -34,14 +34,14 @@ func TestGetIdentityByDID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDID", mock.Anything, "did:firefly:org/org_1").
+	nmn.On("GetIdentityByDID", mock.Anything, "default", "did:firefly:org/org_1").
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
 
-func TestGetIdentityByDIDWithVerifiers(t *testing.T) {
+func TestGetNetIdentityByDIDWithVerifiers(t *testing.T) {
 	o, r := newTestAPIServer()
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
@@ -49,7 +49,7 @@ func TestGetIdentityByDIDWithVerifiers(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "did:firefly:org/org_1").
+	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "default", "did:firefly:org/org_1").
 		Return(&core.IdentityWithVerifiers{}, nil)
 	r.ServeHTTP(res, req)
 

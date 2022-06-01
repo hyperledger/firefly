@@ -96,3 +96,16 @@ var batchPinEventABI = ABIElementMarshaling{
 		},
 	},
 }
+
+var networkVersionMethodABI = ABIElementMarshaling{
+	Name:            "networkVersion",
+	Type:            "function",
+	StateMutability: "pure",
+	Inputs:          []ABIArgumentMarshaling{},
+	Outputs: []ABIArgumentMarshaling{
+		{
+			InternalType: "uint8",
+			Type:         "uint8",
+		},
+	},
+}

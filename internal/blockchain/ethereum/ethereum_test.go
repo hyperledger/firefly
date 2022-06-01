@@ -82,16 +82,16 @@ func newTestEthereum() (*Ethereum, func()) {
 	mm.On("BlockchainTransaction", mock.Anything, mock.Anything).Return(nil)
 	mm.On("BlockchainQuery", mock.Anything, mock.Anything).Return(nil)
 	e := &Ethereum{
-		ctx:             ctx,
-		client:          resty.New().SetBaseURL("http://localhost:12345"),
-		fireflyContract: "/instances/0x12345",
-		topic:           "topic1",
-		prefixShort:     defaultPrefixShort,
-		prefixLong:      defaultPrefixLong,
-		callbacks:       em,
-		wsconn:          wsm,
-		metrics:         mm,
+		ctx:         ctx,
+		client:      resty.New().SetBaseURL("http://localhost:12345"),
+		topic:       "topic1",
+		prefixShort: defaultPrefixShort,
+		prefixLong:  defaultPrefixLong,
+		callbacks:   em,
+		wsconn:      wsm,
+		metrics:     mm,
 	}
+	e.fireflyContract.address = "/instances/0x12345"
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -178,8 +178,8 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 4, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 	assert.NotNil(t, e.Capabilities())
 
 	err = e.Start()
@@ -271,8 +271,8 @@ func TestInitAllExistingStreams(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 
 }
 
@@ -320,7 +320,7 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, e.fireflyContract, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
+	assert.Equal(t, e.fireflyContract.address, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
 }
 
 func TestInitOldInstancePathInstances(t *testing.T) {
@@ -357,7 +357,7 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, e.fireflyContract, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
+	assert.Equal(t, e.fireflyContract.address, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
 }
 
 func TestInitOldInstancePathError(t *testing.T) {
@@ -427,7 +427,7 @@ func TestInitNewConfig(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, e.fireflyContract, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
+	assert.Equal(t, e.fireflyContract.address, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
 }
 
 func TestInitNewConfigError(t *testing.T) {
@@ -974,9 +974,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -1061,9 +1059,7 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1105,9 +1101,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -1168,9 +1162,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1185,9 +1177,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
@@ -1206,9 +1196,7 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 func TestHandleMessageBatchMissingData(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
@@ -1228,9 +1216,7 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1262,9 +1248,7 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1296,9 +1280,7 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1330,9 +1312,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1553,9 +1533,7 @@ func TestAddSubscription(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1595,9 +1573,7 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1635,9 +1611,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1660,9 +1634,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1694,9 +1666,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1719,9 +1689,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1761,9 +1729,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
@@ -1825,9 +1791,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -2909,9 +2873,7 @@ func TestHandleNetworkAction(t *testing.T) {
 	e := &Ethereum{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -2928,4 +2890,90 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em.AssertExpectations(t)
 
+}
+
+func TestNetworkVersion(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "2"})(req)
+		})
+
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, version)
+}
+
+func TestNetworkVersionCached(t *testing.T) {
+	e, _ := newTestEthereum()
+	e.fireflyContract.networkVersion = 2
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 2, version)
+}
+
+func TestNetworkVersionNotFound(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"})(req)
+		})
+
+	version, err := e.NetworkVersion(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, version)
+}
+
+func TestNetworkVersionError(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(500, ethError{Error: "Unknown"})(req)
+		})
+
+	_, err := e.NetworkVersion(context.Background())
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestNetworkVersionBadResponse(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			method := body["method"].(map[string]interface{})
+			assert.Equal(t, "networkVersion", method["name"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	_, err := e.NetworkVersion(context.Background())
+	assert.Regexp(t, "json: cannot unmarshal", err)
 }

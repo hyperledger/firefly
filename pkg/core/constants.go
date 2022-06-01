@@ -18,8 +18,8 @@ package core
 
 const (
 
-	// SystemNamespace is the system reserved namespace name
-	SystemNamespace = "ff_system"
+	// LegacySystemNamespace is the system reserved namespace name (deprecated)
+	LegacySystemNamespace = "ff_system"
 )
 
 const (

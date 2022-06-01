@@ -18,4 +18,7 @@ contract Firefly {
         emit BatchPin(msg.sender, block.timestamp, namespace, uuids, batchHash, payloadRef, contexts);
     }
 
+    function networkVersion() public pure returns (uint8) {
+        return 2;
+    }
 }

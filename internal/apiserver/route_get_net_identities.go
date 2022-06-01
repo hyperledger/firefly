@@ -35,13 +35,14 @@ var getNetworkIdentities = &oapispec.Route{
 	},
 	FilterFactory:   database.IdentityQueryFactory,
 	Description:     coremsgs.APIEndpointsGetNetworkIdentities,
+	Deprecated:      true, // use getIdentities instead
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-			return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesWithVerifiersGlobal(r.Ctx, r.Filter))
+			return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesWithVerifiers(r.Ctx, extractNamespace(r.PP), r.Filter))
 		}
-		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesGlobal(r.Ctx, r.Filter))
+		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentities(r.Ctx, extractNamespace(r.PP), r.Filter))
 	},
 }

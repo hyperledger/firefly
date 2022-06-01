@@ -41,7 +41,7 @@ func newTestOrg(name string) *core.Identity {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			Type:      core.IdentityTypeOrg,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      name,
 			Parent:    nil,
 		},
@@ -55,7 +55,7 @@ func newTestNode(name string, owner *core.Identity) *core.Identity {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			Type:      core.IdentityTypeNode,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      name,
 			Parent:    owner.ID,
 		},
@@ -81,8 +81,8 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	intermediateOrg.Parent = rootOrg.ID
 	localNode := newTestNode("node1", intermediateOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(intermediateOrg, nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(intermediateOrg, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
@@ -232,13 +232,13 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
@@ -351,13 +351,13 @@ func TestMessagePrepare(t *testing.T) {
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
@@ -696,7 +696,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(nil)
@@ -724,8 +724,9 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
 			BatchHeader: core.BatchHeader{
-				ID:    fftypes.NewUUID(),
-				Group: groupID,
+				ID:        fftypes.NewUUID(),
+				Group:     groupID,
+				Namespace: "ns1",
 			},
 		},
 		Messages: []*core.Message{
@@ -762,7 +763,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -770,8 +771,9 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 	err := pm.sendData(pm.ctx, &core.TransportWrapper{
 		Batch: &core.Batch{
 			BatchHeader: core.BatchHeader{
-				ID:    fftypes.NewUUID(),
-				Group: groupID,
+				ID:        fftypes.NewUUID(),
+				Group:     groupID,
+				Namespace: "ns1",
 			},
 			Payload: core.BatchPayload{
 				Messages: []*core.Message{
@@ -810,7 +812,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	nodes := []*core.Identity{node2}
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
@@ -822,8 +824,9 @@ func TestSendDataTransferFail(t *testing.T) {
 	err := pm.sendData(pm.ctx, &core.TransportWrapper{
 		Batch: &core.Batch{
 			BatchHeader: core.BatchHeader{
-				ID:    fftypes.NewUUID(),
-				Group: groupID,
+				ID:        fftypes.NewUUID(),
+				Group:     groupID,
+				Namespace: "ns1",
 			},
 			Payload: core.BatchPayload{
 				Messages: []*core.Message{
@@ -862,7 +865,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
@@ -870,8 +873,9 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 	err := pm.sendData(pm.ctx, &core.TransportWrapper{
 		Batch: &core.Batch{
 			BatchHeader: core.BatchHeader{
-				ID:    fftypes.NewUUID(),
-				Group: groupID,
+				ID:        fftypes.NewUUID(),
+				Group:     groupID,
+				Namespace: "ns1",
 			},
 			Payload: core.BatchPayload{
 				Messages: []*core.Message{

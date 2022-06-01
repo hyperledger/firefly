@@ -25,22 +25,25 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewNamespace = &oapispec.Route{
-	Name:   "postNewNamespace",
-	Path:   "namespaces",
-	Method: http.MethodPost,
+var getIdentityByDID = &oapispec.Route{
+	Name:   "getIdentityByDID",
+	Path:   "identities/{did:did:.+}",
+	Method: http.MethodGet,
 	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
+		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
+	},
+	PathParams: []*oapispec.PathParam{
+		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewNamespace,
-	JSONInputValue:  func() interface{} { return &core.Namespace{} },
-	JSONOutputValue: func() interface{} { return &core.Namespace{} },
-	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
+	Description:     coremsgs.APIEndpointsGetIdentityByDID,
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return &core.IdentityWithVerifiers{} },
+	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = getOr(r.Ctx).Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*core.Namespace), waitConfirm)
-		return r.Input, err
+		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+			return getOr(r.Ctx).NetworkMap().GetIdentityByDIDWithVerifiers(r.Ctx, extractNamespace(r.PP), r.PP["did"])
+		}
+		return getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
 	},
 }

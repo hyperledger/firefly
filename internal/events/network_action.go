@@ -26,7 +26,7 @@ import (
 
 func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.Event) error {
 	return em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-		ns, err := em.database.GetNamespace(ctx, core.SystemNamespace)
+		ns, err := em.database.GetNamespace(ctx, core.LegacySystemNamespace)
 		if err != nil {
 			return err
 		}
@@ -40,7 +40,7 @@ func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.
 func (em *eventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
 	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
 		// Verify that the action came from a registered root org
-		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, core.SystemNamespace, signingKey)
+		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, signingKey)
 		if err != nil {
 			return true, err
 		}
@@ -61,7 +61,7 @@ func (em *eventManager) BlockchainNetworkAction(bi blockchain.Plugin, action str
 		}
 
 		if err == nil {
-			chainEvent := buildBlockchainEvent(core.SystemNamespace, nil, event, &core.BlockchainTransactionRef{
+			chainEvent := buildBlockchainEvent(core.LegacySystemNamespace, nil, event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,
 			})
 			err = em.maybePersistBlockchainEvent(em.ctx, chainEvent)

@@ -233,7 +233,8 @@ var (
 	ConfigPluginIdentityType = ffc("config.plugins.identity[].type", "The type of a configured Identity plugin", i18n.StringType)
 	ConfigPluginIdentityName = ffc("config.plugins.identity[].name", "The name of a configured Identity plugin", i18n.StringType)
 
-	ConfigIdentityManagerCacheLimit = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
+	ConfigIdentityManagerCacheLimit              = ffc("config.identity.manager.cache.limit", "The identity manager cache limit in count of items", i18n.IntType)
+	ConfigIdentityManagerLegacySystemIdentitites = ffc("config.identity.manager.legacySystemIdentities", "Whether the identity manager should resolve legacy identities registered on the ff_system namespace", i18n.BooleanType)
 
 	ConfigLogCompress   = ffc("config.log.compress", "Determines if the rotated log files should be compressed using gzip", i18n.BooleanType)
 	ConfigLogFilename   = ffc("config.log.filename", "Filename is the file to write logs to.  Backup log files will be retained in the same directory", i18n.StringType)
@@ -261,10 +262,14 @@ var (
 	ConfigNamespacesDefault               = ffc("config.namespaces.default", "The default namespace - must be in the predefined list", i18n.StringType)
 	ConfigNamespacesPredefined            = ffc("config.namespaces.predefined", "A list of namespaces to ensure exists, without requiring a broadcast from the network", "List "+i18n.StringType)
 	ConfigNamespacesPredefinedName        = ffc("config.namespaces.predefined[].name", "The name of the namespace (must be unique)", i18n.StringType)
-	ConfigNamespacesPredefinedPlugins     = ffc("config.namespaces.predefined[].plugins", "The list of plugins for this namespace", i18n.StringType)
-	ConfigNamespacesPredefinedMode        = ffc("config.namespaces.predefined[].mode", "The namespace mode. Valid values: gateway, multiparty", i18n.StringType)
-	ConfigNamespacesPredefinedRemoteName  = ffc("config.namespaces.predefined[].remoteName", "The namespace name to be sent in plugin calls, if it differs from namespace name", i18n.StringType)
 	ConfigNamespacesPredefinedDescription = ffc("config.namespaces.predefined[].description", "A description for the namespace", i18n.StringType)
+	ConfigNamespacesPredefinedPlugins     = ffc("config.namespaces.predefined[].plugins", "The list of plugins for this namespace", i18n.StringType)
+	ConfigNamespacesPredefinedRemoteName  = ffc("config.namespaces.predefined[].remoteName", "The namespace name to be sent in plugin calls, if it differs from namespace name", i18n.StringType)
+	ConfigNamespacesPredefinedDefaultKey  = ffc("config.namespaces.predefined[].defaultKey", "A default signing key for blockchain transactions within this namespace", i18n.StringType)
+	ConfigNamespacesMultipartyEnabled     = ffc("config.namespaces.predefined[].multiparty.enabled", "Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)", i18n.BooleanType)
+	ConfigNamespacesMultipartyOrgName     = ffc("config.namespaces.predefined[].multiparty.org.name", "A short name for the local root organization within this namespace", i18n.StringType)
+	ConfigNamespacesMultipartyOrgDesc     = ffc("config.namespaces.predefined[].multiparty.org.description", "A description for the local root organization within this namespace", i18n.StringType)
+	ConfigNamespacesMultipartyOrgKey      = ffc("config.namespaces.predefined[].multiparty.org.key", "The signing key allocated to the root organization within this namespace", i18n.StringType)
 
 	ConfigNodeDescription = ffc("config.node.description", "The description of this FireFly node", i18n.StringType)
 	ConfigNodeName        = ffc("config.node.name", "The name of this FireFly node", i18n.StringType)
@@ -276,10 +281,9 @@ var (
 
 	ConfigOrchestratorStartupAttempts = ffc("config.orchestrator.startupAttempts", "The number of times to attempt to connect to core infrastructure on startup", i18n.StringType)
 
-	ConfigOrgDescription = ffc("config.org.description", "A description of the organization to which this FireFly node belongs", i18n.StringType)
-	ConfigOrgIdentity    = ffc("config.org.identity", "`DEPRECATED` Please use `org.key` instead", i18n.StringType)
-	ConfigOrgKey         = ffc("config.org.key", "The signing identity allocated to the organization (can be the same as the nodes)", i18n.StringType)
-	ConfigOrgName        = ffc("config.org.name", "The name of the organization to which this FireFly node belongs", i18n.StringType)
+	ConfigOrgDescription = ffc("config.org.description", "A description of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)", i18n.StringType)
+	ConfigOrgKey         = ffc("config.org.key", "The signing key allocated to the organization (deprecated - should be set on each multi-party namespace instead)", i18n.StringType)
+	ConfigOrgName        = ffc("config.org.name", "The name of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)", i18n.StringType)
 
 	ConfigPrivatemessagingBatchAgentTimeout = ffc("config.privatemessaging.batch.agentTimeout", "How long to keep around a batching agent for a sending identity before disposal", i18n.TimeDurationType)
 	ConfigPrivatemessagingBatchPayloadLimit = ffc("config.privatemessaging.batch.payloadLimit", "The maximum payload size of a private message Data Exchange payload", i18n.ByteSizeType)
