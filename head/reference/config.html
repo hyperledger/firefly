@@ -3332,14 +3332,14 @@
   </thead>
   <tbody>
     <tr>
-      <td>description</td>
-      <td>A description for the namespace</td>
+      <td>defaultKey</td>
+      <td>A default signing key for blockchain transactions within this namespace</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
-      <td>mode</td>
-      <td>The namespace mode. Valid values: gateway, multiparty</td>
+      <td>description</td>
+      <td>A description for the namespace</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -3358,6 +3358,72 @@
     <tr>
       <td>remoteName</td>
       <td>The namespace name to be sent in plugin calls, if it differs from namespace name</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="namespacespredefinedmultiparty">
+        
+        
+          <a href="#namespacespredefinedmultiparty" class="anchor-heading" aria-labelledby="namespacespredefinedmultiparty"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> namespaces.predefined[].multiparty
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>enabled</td>
+      <td>Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)</td>
+      <td><code class="language-plaintext highlighter-rouge">boolean</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+  </tbody>
+</table>
+      <h2 id="namespacespredefinedmultipartyorg">
+        
+        
+          <a href="#namespacespredefinedmultipartyorg" class="anchor-heading" aria-labelledby="namespacespredefinedmultipartyorg"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> namespaces.predefined[].multiparty.org
+        
+        
+      </h2>
+    
+
+<table>
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>description</td>
+      <td>A description for the local root organization within this namespace</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>key</td>
+      <td>The signing key allocated to the root organization within this namespace</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
+    </tr>
+    <tr>
+      <td>name</td>
+      <td>A short name for the local root organization within this namespace</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
@@ -3528,25 +3594,19 @@
   <tbody>
     <tr>
       <td>description</td>
-      <td>A description of the organization to which this FireFly node belongs</td>
-      <td><code class="language-plaintext highlighter-rouge">string</code></td>
-      <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
-    </tr>
-    <tr>
-      <td>identity</td>
-      <td><code class="language-plaintext highlighter-rouge">DEPRECATED</code> Please use <code class="language-plaintext highlighter-rouge">org.key</code> instead</td>
+      <td>A description of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>key</td>
-      <td>The signing identity allocated to the organization (can be the same as the nodes)</td>
+      <td>The signing key allocated to the organization (deprecated - should be set on each multi-party namespace instead)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
     <tr>
       <td>name</td>
-      <td>The name of the organization to which this FireFly node belongs</td>
+      <td>The name of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)</td>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td><code class="language-plaintext highlighter-rouge">&lt;nil&gt;</code></td>
     </tr>
