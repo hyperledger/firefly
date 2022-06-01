@@ -86,6 +86,7 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
@@ -139,6 +140,7 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
@@ -175,6 +177,9 @@ func TestSendMessageBadGroup(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
 
@@ -195,6 +200,9 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -210,6 +218,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10206.*pop", err)
 
+	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
 }
@@ -236,6 +245,7 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	message := &messageSender{
@@ -278,6 +288,7 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		newMsg := args[1].(*data.NewMessage)
 		newMsg.Message.Data = core.DataRefs{
@@ -353,6 +364,7 @@ func TestMessagePrepare(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 
 	message := pm.NewMessage("ns1", &core.MessageInOut{
@@ -373,6 +385,34 @@ func TestMessagePrepare(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+
+}
+
+func TestMessagePrepareBadNamespace(t *testing.T) {
+
+	pm, cancel := newTestPrivateMessaging(t)
+	defer cancel()
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(fmt.Errorf("pop"))
+
+	message := pm.NewMessage("ns1", &core.MessageInOut{
+		Message: core.Message{
+			Data: core.DataRefs{
+				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
+			},
+		},
+		Group: &core.InputGroup{
+			Members: []core.MemberInput{
+				{Identity: "localorg"},
+			},
+		},
+	})
+
+	err := message.Prepare(pm.ctx)
+	assert.EqualError(t, err, "pop")
+
 	mdm.AssertExpectations(t)
 
 }
@@ -424,6 +464,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
@@ -459,6 +500,9 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
+
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -477,6 +521,7 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	}, true)
 	assert.Regexp(t, "pop", err)
 
+	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
 }
@@ -485,6 +530,9 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
@@ -515,6 +563,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	}, false)
 	assert.EqualError(t, err, "pop")
 
+	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
@@ -524,6 +573,9 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
+
+	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
@@ -554,6 +606,7 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10226", err)
 
+	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
@@ -605,6 +658,7 @@ func TestRequestReplySuccess(t *testing.T) {
 		Return(nil, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 

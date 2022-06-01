@@ -226,6 +226,10 @@ var (
 	NamespacesDefault = ffc("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = ffc("namespaces.predefined")
+	// NamespaceCacheSize cache size for namespaces
+	NamespaceCacheSize = ffc("namespaces.cache.size")
+	// NamespaceCacheTTL cache time-to-live for namespaces
+	NamespaceCacheTTL = ffc("namespaces.cache.ttl")
 	// NodeName is the short name for the node
 	NodeName = ffc("node.name")
 	// NodeDescription is a description for the node

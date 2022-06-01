@@ -39,6 +39,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
@@ -71,6 +72,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
@@ -117,6 +119,7 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Run(
 		func(args mock.Arguments) {
 			newMsg := args[1].(*data.NewMessage)
@@ -152,6 +155,7 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
@@ -171,6 +175,8 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 
 	ctx := context.Background()
 	mim := bm.identity.(*identitymanagermocks.Manager)
+	mdm := bm.data.(*datamocks.Manager)
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
@@ -180,6 +186,7 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10206", err)
 
+	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
@@ -190,6 +197,7 @@ func TestBroadcastPrepare(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	ctx := context.Background()
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
 
@@ -211,6 +219,35 @@ func TestBroadcastPrepare(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "ns1", msg.Header.Namespace)
+
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastPrepareBadNamespace(t *testing.T) {
+	bm, cancel := newTestBroadcast(t)
+	defer cancel()
+	mdm := bm.data.(*datamocks.Manager)
+
+	ctx := context.Background()
+	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(fmt.Errorf("pop"))
+
+	msg := &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
+			},
+		},
+		InlineData: core.InlineData{
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
+		},
+	}
+	sender := bm.NewBroadcast("ns1", msg)
+	err := sender.Prepare(ctx)
+
+	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
 }
