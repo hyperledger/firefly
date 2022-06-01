@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -63,10 +64,11 @@ type networkMap struct {
 	exchange  dataexchange.Plugin
 	identity  identity.Manager
 	syncasync syncasync.Bridge
+	namespace namespace.Manager
 }
 
-func NewNetworkMap(ctx context.Context, di database.Plugin, dm data.Manager, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
-	if di == nil || dm == nil || bm == nil || dx == nil || im == nil {
+func NewNetworkMap(ctx context.Context, di database.Plugin, dm data.Manager, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge, ns namespace.Manager) (Manager, error) {
+	if di == nil || dm == nil || bm == nil || dx == nil || im == nil || ns == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "NetworkMap")
 	}
 
@@ -78,6 +80,7 @@ func NewNetworkMap(ctx context.Context, di database.Plugin, dm data.Manager, bm 
 		exchange:  dx,
 		identity:  im,
 		syncasync: sa,
+		namespace: ns,
 	}
 	return nm, nil
 }

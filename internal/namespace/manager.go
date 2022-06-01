@@ -37,8 +37,10 @@ import (
 type Manager interface {
 	// Init initializes the manager
 	Init(ctx context.Context, di database.Plugin) error
-	// GetConfigWithFallback retrieve a config string from the namespace or the root config
-	GetConfigWithFallback(ns string, key config.RootKey) string
+	// GetDefaultKey retrieves the default blockchain key for this namespace
+	GetDefaultKey(ns string) string
+	// GetMultipartyConfig retrieves a config string from the namespace's multiparty config or the (deprecated) root config
+	GetMultipartyConfig(ns string, key config.RootKey) string
 }
 
 type namespaceManager struct {
@@ -67,7 +69,8 @@ func NewNamespaceManager(ctx context.Context, bc map[string]blockchain.Plugin, d
 func buildNamespaceMap(ctx context.Context) map[string]config.Section {
 	conf := namespacePredefined
 	namespaces := make(map[string]config.Section, conf.ArraySize())
-	for i := 0; i < conf.ArraySize(); i++ {
+	size := conf.ArraySize()
+	for i := 0; i < size; i++ {
 		nsConfig := conf.ArrayEntry(i)
 		name := nsConfig.GetString(coreconfig.NamespaceName)
 		if name != "" {
@@ -141,9 +144,16 @@ func (nm *namespaceManager) initNamespaces(ctx context.Context, di database.Plug
 	return nil
 }
 
-func (nm *namespaceManager) GetConfigWithFallback(ns string, key config.RootKey) string {
+func (nm *namespaceManager) GetDefaultKey(ns string) string {
 	if nsConfig, ok := nm.nsConfig[ns]; ok {
-		val := nsConfig.GetString(string(key))
+		return nsConfig.GetString(coreconfig.NamespaceDefaultKey)
+	}
+	return ""
+}
+
+func (nm *namespaceManager) GetMultipartyConfig(ns string, key config.RootKey) string {
+	if nsConfig, ok := nm.nsConfig[ns]; ok {
+		val := nsConfig.SubSection("multiparty").GetString(string(key))
 		if val != "" {
 			return val
 		}
@@ -160,10 +170,14 @@ func (nm *namespaceManager) validateNamespaceConfig(ctx context.Context, name st
 		return i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
 	}
 
-	mode := conf.GetString(coreconfig.NamespaceMode)
-	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
+	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
+	multiparty := conf.Get(coreconfig.NamespaceMultipartyEnabled)
+	if multiparty == nil {
+		multiparty = nm.GetMultipartyConfig(name, coreconfig.OrgName) != "" || nm.GetMultipartyConfig(name, coreconfig.OrgKey) != ""
+	}
 
-	// If no plugins are found when querying the config, assume older config file
+	// If no plugins are listed under this namespace, use all defined plugins by default
+	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
 	if len(plugins) == 0 {
 		for plugin := range nm.bcPlugins {
 			plugins = append(plugins, plugin)
@@ -182,20 +196,10 @@ func (nm *namespaceManager) validateNamespaceConfig(ctx context.Context, name st
 		}
 	}
 
-	switch mode {
-	// Multiparty is the default mode when none is provided
-	case "multiparty":
-		if err := nm.validateMultiPartyConfig(ctx, name, plugins); err != nil {
-			return err
-		}
-	case "gateway":
-		if err := nm.validateGatewayConfig(ctx, name, plugins); err != nil {
-			return err
-		}
-	default:
-		return i18n.NewError(ctx, coremsgs.MsgInvalidNamespaceMode, name)
+	if multiparty.(bool) {
+		return nm.validateMultiPartyConfig(ctx, name, plugins)
 	}
-	return nil
+	return nm.validateGatewayConfig(ctx, name, plugins)
 }
 
 func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) error {

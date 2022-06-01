@@ -630,17 +630,25 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|defaultKey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
 |description|A description for the namespace|`string`|`<nil>`
-|mode|The namespace mode. Valid values: gateway, multiparty|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
 |remoteName|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
 
-## namespaces.predefined[].org
+## namespaces.predefined[].multiparty
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|key|A default signing key for blockchain transactions within the namespace (overrides top-level org.key)|`string`|`<nil>`
+|enabled|Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)|`boolean`|`<nil>`
+
+## namespaces.predefined[].multiparty.org
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|description|A description for the local root organization within this namespace|`string`|`<nil>`
+|key|The signing key allocated to the root organization within this namespace|`string`|`<nil>`
+|name|A short name for the local root organization within this namespace|`string`|`<nil>`
 
 ## node
 
@@ -676,10 +684,9 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|description|A description of the organization to which this FireFly node belongs|`string`|`<nil>`
-|identity|`DEPRECATED` Please use `org.key` instead|`string`|`<nil>`
-|key|The signing identity allocated to the organization (can be the same as the nodes)|`string`|`<nil>`
-|name|The name of the organization to which this FireFly node belongs|`string`|`<nil>`
+|description|A description of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+|key|The signing key allocated to the organization (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+|name|The name of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
 
 ## plugins
 

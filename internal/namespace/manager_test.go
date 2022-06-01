@@ -102,7 +102,7 @@ func TestInitNamespacesBadName(t *testing.T) {
 
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "!Badness")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "test")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
 	nm.nsConfig = map[string]config.Section{"!Badness": utTestConfig}
@@ -120,7 +120,7 @@ func TestInitNamespacesReservedName(t *testing.T) {
 
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "ff_system")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "test")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
 	nm.nsConfig = map[string]config.Section{"ff_system": utTestConfig}
@@ -136,7 +136,7 @@ func TestInitNamespacesGetFail(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
@@ -153,7 +153,7 @@ func TestInitNamespacesUpsertFail(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -170,7 +170,7 @@ func TestInitNamespacesMultipartyUnknownPlugin(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "bad_unknown_plugin"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -185,7 +185,7 @@ func TestInitNamespacesMultipartyMultipleBlockchains(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "fabric"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -200,7 +200,7 @@ func TestInitNamespacesMultipartyMultipleDX(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "ffdx2"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -215,7 +215,7 @@ func TestInitNamespacesMultipartyMultipleSS(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "ipfs2"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -230,7 +230,7 @@ func TestInitNamespacesMultipartyMultipleDB(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "sqlite3"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -245,7 +245,7 @@ func TestInitNamespacesDeprecatedConfigMultipleBlockchains(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
@@ -264,7 +264,7 @@ func TestInitNamespacesGatewayMultipleDB(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "gateway")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "sqlite3"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -279,7 +279,7 @@ func TestInitNamespacesGatewayMultipleBlockchains(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "gateway")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "fabric"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -294,7 +294,7 @@ func TestInitNamespacesMultipartyMissingPlugins(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -309,7 +309,7 @@ func TestInitNamespacesGatewayWithDX(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "gateway")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "ffdx"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -324,7 +324,7 @@ func TestInitNamespacesGatewayWithSharedStorage(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "gateway")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "ipfs"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -339,7 +339,7 @@ func TestInitNamespacesGatewayUnknownPlugin(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "gateway")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "bad_unknown_plugin"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
@@ -354,27 +354,12 @@ func TestInitNamespacesGatewayNoDB(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "gateway")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
 
 	err := nm.initNamespaces(context.Background(), nm.mdi)
 	assert.Regexp(t, "FF10392", err)
-}
-
-func TestInitNamespacesUnknownMode(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "not a real mode")
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10389", err)
 }
 
 func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
@@ -384,7 +369,7 @@ func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
 	utTestConfig := config.RootSection("default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
 	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
 	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
 	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
 	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
@@ -418,27 +403,15 @@ func TestInitNamespacesDupName(t *testing.T) {
     predefined:
     - name: ns1
       remoteName: ns1
-      mode: gateway
-      org:
-        key: 0x123456
+      plugins: [sqlite3, ethereum, erc721]
+    - name: ns2
+      remoteName: ns2
       plugins:
       - sqlite3
       - ethereum
       - erc721
     - name: ns2
       remoteName: ns2
-      mode: gateway
-      org:
-        key: 0x223456
-      plugins:
-      - sqlite3
-      - ethereum
-      - erc721
-    - name: ns2
-      remoteName: ns2
-      mode: gateway
-      org:
-        key: 0x223456
       plugins:
       - sqlite3
       - ethereum
@@ -464,12 +437,12 @@ func TestInitNamespacesDupName(t *testing.T) {
 func TestGetConfig(t *testing.T) {
 	coreconfig.Reset()
 	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceOrgKey, "0x12345")
+	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceMultipartyOrgKey, "0x12345")
 
 	nm := newTestNamespaceManager(false)
 	defer nm.cleanup(t)
 
-	key := nm.GetConfigWithFallback("ns1", coreconfig.OrgKey)
+	key := nm.GetMultipartyConfig("ns1", coreconfig.OrgKey)
 	assert.Equal(t, "0x12345", key)
 }
 
@@ -481,6 +454,28 @@ func TestGetConfigFallback(t *testing.T) {
 	nm := newTestNamespaceManager(false)
 	defer nm.cleanup(t)
 
-	key := nm.GetConfigWithFallback("ns1", coreconfig.OrgKey)
+	key := nm.GetMultipartyConfig("ns1", coreconfig.OrgKey)
 	assert.Equal(t, "0x123", key)
+}
+
+func TestGetDefaultKey(t *testing.T) {
+	coreconfig.Reset()
+	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
+	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceDefaultKey, "0x12345")
+
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
+
+	key := nm.GetDefaultKey("ns1")
+	assert.Equal(t, "0x12345", key)
+}
+
+func TestGetDefaultKeyNotFound(t *testing.T) {
+	coreconfig.Reset()
+
+	nm := newTestNamespaceManager(false)
+	defer nm.cleanup(t)
+
+	key := nm.GetDefaultKey("ns1")
+	assert.Equal(t, "", key)
 }

@@ -19,7 +19,6 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -35,9 +34,9 @@ func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, ns string, w
 	}
 
 	orgRequest := &core.IdentityCreateDTO{
-		Name: config.GetString(coreconfig.OrgName),
+		Name: nm.namespace.GetMultipartyConfig(ns, coreconfig.OrgName),
 		IdentityProfile: core.IdentityProfile{
-			Description: config.GetString(coreconfig.OrgDescription),
+			Description: nm.namespace.GetMultipartyConfig(ns, coreconfig.OrgDescription),
 		},
 		Key: key.Value,
 	}

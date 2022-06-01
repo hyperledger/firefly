@@ -33,14 +33,20 @@ const (
 	NamespaceName = "name"
 	// NamespaceName is the long description for a pre-defined namespace
 	NamespaceDescription = "description"
-	// NamespaceMode is the configured mode of a namespace
-	NamespaceMode = "mode"
 	// NamespaceRemoteName is the namespace name to be sent in plugin calls
 	NamespaceRemoteName = "remoteName"
 	// NamespacePlugins is the list of namespace plugins
 	NamespacePlugins = "plugins"
-	// NamespaceOrgKey is a default signing key for blockchain transactions within a namespace (overrides top-level org.key)
-	NamespaceOrgKey = "org.key"
+	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
+	NamespaceDefaultKey = "defaultKey"
+	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace
+	NamespaceMultipartyEnabled = "multiparty.enabled"
+	// NamespaceMultipartyOrgName is a short name for the local root org within a namespace
+	NamespaceMultipartyOrgName = "multiparty.org.name"
+	// NamespaceMultipartyOrgDescription is a description for the local root org within a namespace
+	NamespaceMultipartyOrgDescription = "multiparty.org.description"
+	// NamespaceMultipartyOrgKey is a default signing key for blockchain transactions within a namespace
+	NamespaceMultipartyOrgKey = "multiparty.org.key"
 )
 
 // The following keys can be access from the root configuration.
@@ -220,7 +226,7 @@ var (
 	NamespacesDefault = ffc("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = ffc("namespaces.predefined")
-	// NodeName is a description for the node
+	// NodeName is the short name for the node
 	NodeName = ffc("node.name")
 	// NodeDescription is a description for the node
 	NodeDescription = ffc("node.description")
@@ -238,10 +244,8 @@ var (
 	OpUpdateWorkerBatchMaxInserts = ffc("opupdate.worker.batchMaxInserts")
 	// OpUpdateWorkerQueueLength
 	OpUpdateWorkerQueueLength = ffc("opupdate.worker.queueLength")
-	// OrgName is the short name o the org
+	// OrgName is the short name for the org
 	OrgName = ffc("org.name")
-	// OrgIdentityDeprecated deprecated synonym to org.key
-	OrgIdentityDeprecated = ffc("org.identity")
 	// OrgKey is the signing identity allocated to the organization (can be the same as the nodes)
 	OrgKey = ffc("org.key")
 	// OrgDescription is a description for the org

@@ -237,18 +237,15 @@ func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context, namesp
 		return key, nil
 	}
 
-	orgKey := im.namespace.GetConfigWithFallback(namespace, coreconfig.OrgKey)
-	if orgKey == "" {
-		orgKey = config.GetString(coreconfig.OrgIdentityDeprecated)
-		if orgKey != "" {
-			log.L(ctx).Warnf("The %s config key has been deprecated. Please use %s instead", coreconfig.OrgIdentityDeprecated, coreconfig.OrgKey)
+	defaultKey := im.namespace.GetDefaultKey(namespace)
+	if defaultKey == "" {
+		defaultKey = im.namespace.GetMultipartyConfig(namespace, coreconfig.OrgKey)
+		if defaultKey == "" {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 		}
 	}
-	if orgKey == "" {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
-	}
 
-	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, orgKey)
+	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, defaultKey)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +292,8 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context, namespace string
 	if err != nil {
 		return nil, err
 	}
-	orgName := config.GetString(coreconfig.OrgName)
+
+	orgName := im.namespace.GetMultipartyConfig(namespace, coreconfig.OrgName)
 	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, namespace, verifierRef)
 	if err != nil || identity == nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)

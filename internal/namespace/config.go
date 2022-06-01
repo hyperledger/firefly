@@ -34,10 +34,13 @@ var (
 func InitConfig(withDefaults bool) {
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDescription)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceOrgKey)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceRemoteName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespacePlugins)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceMode, "multiparty")
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceDefaultKey)
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyEnabled)
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyOrgName)
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyOrgDescription)
+	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyOrgKey)
 	if withDefaults {
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceName, "default")
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceDescription, "Default predefined namespace")

@@ -17,8 +17,22 @@ type Manager struct {
 	mock.Mock
 }
 
-// GetConfigWithFallback provides a mock function with given fields: ns, key
-func (_m *Manager) GetConfigWithFallback(ns string, key config.RootKey) string {
+// GetDefaultKey provides a mock function with given fields: ns
+func (_m *Manager) GetDefaultKey(ns string) string {
+	ret := _m.Called(ns)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string) string); ok {
+		r0 = rf(ns)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// GetMultipartyConfig provides a mock function with given fields: ns, key
+func (_m *Manager) GetMultipartyConfig(ns string, key config.RootKey) string {
 	ret := _m.Called(ns, key)
 
 	var r0 string
