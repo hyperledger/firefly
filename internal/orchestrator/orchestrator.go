@@ -888,7 +888,7 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 }
 
 func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
-	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx, ns)
+	key, err := or.identity.NormalizeSigningKey(ctx, ns, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return err
 	}
@@ -900,5 +900,5 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, acti
 	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
+	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
 }

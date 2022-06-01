@@ -443,47 +443,41 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 
 }
 
-func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
+func TestNormalizeSigningKeyDefault(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
 	mns := im.namespace.(*namespacemocks.Manager)
-	mns.On("GetDefaultKey", "ns1").Return("")
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("key123")
+	mns.On("GetDefaultKey", "ns1").Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
-
-	orgID := fftypes.NewUUID()
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
-		Return((&core.Verifier{
-			Identity:  orgID,
-			Namespace: "ns1",
-			VerifierRef: core.VerifierRef{
-				Type:  core.VerifierTypeEthAddress,
-				Value: "fullkey123",
-			},
-		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, orgID).
-		Return(&core.Identity{
-			IdentityBase: core.IdentityBase{
-				ID:        orgID,
-				DID:       "did:firefly:org/org1",
-				Namespace: "ns1",
-				Name:      "org1",
-				Type:      core.IdentityTypeOrg,
-			},
-		}, nil)
 
 	resolvedKey, err := im.NormalizeSigningKey(ctx, "ns1", "", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
 	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+	mns.AssertExpectations(t)
+
+}
+
+func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("key123")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
+
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "ns1", "", KeyNormalizationBlockchainPlugin)
+	assert.NoError(t, err)
+	assert.Equal(t, "fullkey123", resolvedKey)
+
+	mbi.AssertExpectations(t)
 	mns.AssertExpectations(t)
 
 }
@@ -494,21 +488,15 @@ func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 	mns := im.namespace.(*namespacemocks.Manager)
 	mns.On("GetDefaultKey", "ns1").Return("")
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
-		Return(nil, fmt.Errorf("pop"))
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", fmt.Errorf("pop"))
 
 	_, err := im.NormalizeSigningKey(ctx, "ns1", "", KeyNormalizationBlockchainPlugin)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
 	mns.AssertExpectations(t)
 
 }
@@ -574,10 +562,10 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 
 }
 
-func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
+func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwnerBlockchainKey["ns1"] = &core.VerifierRef{
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "key12345",
 	}
@@ -590,9 +578,10 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(nil, nil)
 
 	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
 
-	err := im.ResolveNodeOwnerSigningIdentity(ctx, "ns1", &core.SignerRef{})
+	err := im.resolveDefaultSigningIdentity(ctx, "ns1", &core.SignerRef{})
 	assert.Regexp(t, "FF10281", err)
 
 	mbi.AssertExpectations(t)
@@ -601,10 +590,10 @@ func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
 
 }
 
-func TestResolveNodeOwnerSigningIdentityVersionError(t *testing.T) {
+func TestResolveDefaultSigningIdentityVersionError(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwnerBlockchainKey["ns1"] = &core.VerifierRef{
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "key12345",
 	}
@@ -616,9 +605,10 @@ func TestResolveNodeOwnerSigningIdentityVersionError(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
 
 	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
 
-	err := im.ResolveNodeOwnerSigningIdentity(ctx, "ns1", &core.SignerRef{})
+	err := im.resolveDefaultSigningIdentity(ctx, "ns1", &core.SignerRef{})
 	assert.Regexp(t, "FF10281", err)
 
 	mbi.AssertExpectations(t)
@@ -627,10 +617,10 @@ func TestResolveNodeOwnerSigningIdentityVersionError(t *testing.T) {
 
 }
 
-func TestResolveNodeOwnerSigningIdentitySystemFallback(t *testing.T) {
+func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwnerBlockchainKey["ns1"] = &core.VerifierRef{
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "key12345",
 	}
@@ -660,10 +650,11 @@ func TestResolveNodeOwnerSigningIdentitySystemFallback(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(id, nil)
 
 	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
 
 	ref := &core.SignerRef{}
-	err := im.ResolveNodeOwnerSigningIdentity(ctx, "ns1", ref)
+	err := im.resolveDefaultSigningIdentity(ctx, "ns1", ref)
 	assert.NoError(t, err)
 	assert.Equal(t, "did:firefly:org/org1", ref.Author)
 	assert.Equal(t, "key12345", ref.Key)
@@ -674,7 +665,7 @@ func TestResolveNodeOwnerSigningIdentitySystemFallback(t *testing.T) {
 
 }
 
-func TestGetNodeOwnerBlockchainKeyResolveFailed(t *testing.T) {
+func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -688,7 +679,7 @@ func TestGetNodeOwnerBlockchainKeyResolveFailed(t *testing.T) {
 	mns.On("GetDefaultKey", "ns1").Return("")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("0x12345")
 
-	_, err := im.GetNodeOwnerBlockchainKey(ctx, "ns1")
+	_, err := im.GetMultipartyRootVerifier(ctx, "ns1")
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -724,20 +715,20 @@ func TestNormalizeKeyViaBlockchainPluginCached(t *testing.T) {
 
 }
 
-func TestGetNodeOwnerOrgCached(t *testing.T) {
+func TestGetMultipartyRootOrgCached(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwningOrgIdentity = map[string]*core.Identity{
+	im.multipartyRootOrg = map[string]*core.Identity{
 		"ns1": {},
 	}
 
-	id, err := im.GetNodeOwnerOrg(ctx, "ns1")
+	id, err := im.GetMultipartyRootOrg(ctx, "ns1")
 	assert.NoError(t, err)
 	assert.NotNil(t, id)
 
 }
 
-func TestGetNodeOwnerOrgKeyNotSet(t *testing.T) {
+func TestGetMultipartyRootVerifierNotSet(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
@@ -745,15 +736,15 @@ func TestGetNodeOwnerOrgKeyNotSet(t *testing.T) {
 	mns.On("GetDefaultKey", "ns1").Return("")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("")
 
-	_, err := im.GetNodeOwnerOrg(ctx, "ns1")
+	_, err := im.GetMultipartyRootOrg(ctx, "ns1")
 	assert.Regexp(t, "FF10354", err)
 
 }
 
-func TestGetNodeOwnerOrgMismatch(t *testing.T) {
+func TestGetMultipartyRootOrgMismatch(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwnerBlockchainKey["ns1"] = &core.VerifierRef{
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "fullkey123",
 	}
@@ -784,7 +775,7 @@ func TestGetNodeOwnerOrgMismatch(t *testing.T) {
 	mns.On("GetDefaultKey", "ns1").Return("")
 	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
 
-	_, err := im.GetNodeOwnerOrg(ctx, "ns1")
+	_, err := im.GetMultipartyRootOrg(ctx, "ns1")
 	assert.Regexp(t, "FF10281", err)
 
 }

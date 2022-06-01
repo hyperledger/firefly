@@ -44,7 +44,6 @@ const (
 
 type Manager interface {
 	ResolveInputSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error)
-	ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error)
 	NormalizeSigningKey(ctx context.Context, namespace, inputKey string, keyNormalizationMode int) (signingKey string, err error)
 	FindIdentityForVerifier(ctx context.Context, iTypes []core.IdentityType, namespace string, verifier *core.VerifierRef) (identity *core.Identity, err error)
 	ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error)
@@ -52,8 +51,8 @@ type Manager interface {
 	CachedIdentityLookupMustExist(ctx context.Context, namespace, did string) (identity *core.Identity, retryable bool, err error)
 	CachedIdentityLookupNilOK(ctx context.Context, namespace, did string) (identity *core.Identity, retryable bool, err error)
 	CachedVerifierLookup(ctx context.Context, vType core.VerifierType, namespace, value string) (verifier *core.Verifier, err error)
-	GetNodeOwnerBlockchainKey(ctx context.Context, namespace string) (*core.VerifierRef, error)
-	GetNodeOwnerOrg(ctx context.Context, namespace string) (*core.Identity, error)
+	GetMultipartyRootVerifier(ctx context.Context, namespace string) (*core.VerifierRef, error)
+	GetMultipartyRootOrg(ctx context.Context, namespace string) (*core.Identity, error)
 	VerifyIdentityChain(ctx context.Context, identity *core.Identity) (immediateParent *core.Identity, retryable bool, err error)
 }
 
@@ -64,8 +63,8 @@ type identityManager struct {
 	data       data.Manager
 	namespace  namespace.Manager
 
-	nodeOwnerBlockchainKey map[string]*core.VerifierRef
-	nodeOwningOrgIdentity  map[string]*core.Identity
+	multipartyRootVerifier map[string]*core.VerifierRef
+	multipartyRootOrg      map[string]*core.Identity
 	identityCacheTTL       time.Duration
 	identityCache          *ccache.Cache
 	signingKeyCacheTTL     time.Duration
@@ -82,8 +81,8 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii map[string]i
 		blockchain:             bi,
 		data:                   dm,
 		namespace:              nm,
-		nodeOwnerBlockchainKey: make(map[string]*core.VerifierRef),
-		nodeOwningOrgIdentity:  make(map[string]*core.Identity),
+		multipartyRootVerifier: make(map[string]*core.VerifierRef),
+		multipartyRootOrg:      make(map[string]*core.Identity),
 		identityCacheTTL:       config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 		signingKeyCacheTTL:     config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 	}
@@ -112,12 +111,11 @@ func ParseKeyNormalizationConfig(strConfigVal string) int {
 // or when the author is known by the caller and should not / cannot be confirmed prior to sending (identity claims)
 func (im *identityManager) NormalizeSigningKey(ctx context.Context, namespace, inputKey string, keyNormalizationMode int) (signingKey string, err error) {
 	if inputKey == "" {
-		signerRef := &core.SignerRef{}
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, signerRef)
+		verifierRef, err := im.getDefaultVerifier(ctx, namespace)
 		if err != nil {
 			return "", err
 		}
-		return signerRef.Key, nil
+		return verifierRef.Value, nil
 	}
 	// If the caller is not confident that the blockchain plugin/connector should be used to resolve,
 	// for example it might be a different blockchain (Eth vs Fabric etc.), or it has its own
@@ -141,7 +139,7 @@ func (im *identityManager) ResolveInputSigningIdentity(ctx context.Context, name
 	switch {
 	case signerRef.Author == "" && signerRef.Key == "":
 		// Nothing specified: use the default node identity
-		err = im.ResolveNodeOwnerSigningIdentity(ctx, namespace, signerRef)
+		err = im.resolveDefaultSigningIdentity(ctx, namespace, signerRef)
 		if err != nil {
 			return err
 		}
@@ -216,13 +214,13 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 	return &verifiers[0].VerifierRef, false, nil
 }
 
-// ResolveNodeOwnerSigningIdentity adds the node owner identity into a message
-func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error) {
-	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx, namespace)
+// resolveDefaultSigningIdentity adds the default signing identity into a message
+func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, namespace string, signerRef *core.SignerRef) (err error) {
+	verifierRef, err := im.getDefaultVerifier(ctx, namespace)
 	if err != nil {
 		return err
 	}
-	identity, err := im.GetNodeOwnerOrg(ctx, namespace)
+	identity, err := im.GetMultipartyRootOrg(ctx, namespace)
 	if err != nil {
 		return err
 	}
@@ -231,25 +229,31 @@ func (im *identityManager) ResolveNodeOwnerSigningIdentity(ctx context.Context, 
 	return nil
 }
 
-// GetNodeOwnerBlockchainKey gets the blockchain key of the node owner, from the configuration
-func (im *identityManager) GetNodeOwnerBlockchainKey(ctx context.Context, namespace string) (*core.VerifierRef, error) {
-	if key, ok := im.nodeOwnerBlockchainKey[namespace]; ok {
+// getDefaultVerifier gets the default blockchain verifier via the configuration
+func (im *identityManager) getDefaultVerifier(ctx context.Context, namespace string) (verifier *core.VerifierRef, err error) {
+	defaultKey := im.namespace.GetDefaultKey(namespace)
+	if defaultKey != "" {
+		return im.normalizeKeyViaBlockchainPlugin(ctx, defaultKey)
+	}
+	return im.GetMultipartyRootVerifier(ctx, namespace)
+}
+
+// GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration
+func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context, namespace string) (*core.VerifierRef, error) {
+	if key, ok := im.multipartyRootVerifier[namespace]; ok {
 		return key, nil
 	}
 
-	defaultKey := im.namespace.GetDefaultKey(namespace)
-	if defaultKey == "" {
-		defaultKey = im.namespace.GetMultipartyConfig(namespace, coreconfig.OrgKey)
-		if defaultKey == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
-		}
+	orgKey := im.namespace.GetMultipartyConfig(namespace, coreconfig.OrgKey)
+	if orgKey == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, defaultKey)
+	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, orgKey)
 	if err != nil {
 		return nil, err
 	}
-	im.nodeOwnerBlockchainKey[namespace] = verifier
+	im.multipartyRootVerifier[namespace] = verifier
 	return verifier, nil
 }
 
@@ -283,12 +287,12 @@ func (im *identityManager) FindIdentityForVerifier(ctx context.Context, iTypes [
 	return nil, nil
 }
 
-// GetNodeOwnerOrg returns the identity of the organization that owns the node, if fully registered within the given namespace
-func (im *identityManager) GetNodeOwnerOrg(ctx context.Context, namespace string) (*core.Identity, error) {
-	if id, ok := im.nodeOwningOrgIdentity[namespace]; ok {
+// GetMultipartyRootOrg returns the identity of the organization that owns the node, if fully registered within the given namespace
+func (im *identityManager) GetMultipartyRootOrg(ctx context.Context, namespace string) (*core.Identity, error) {
+	if id, ok := im.multipartyRootOrg[namespace]; ok {
 		return id, nil
 	}
-	verifierRef, err := im.GetNodeOwnerBlockchainKey(ctx, namespace)
+	verifierRef, err := im.GetMultipartyRootVerifier(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -302,7 +306,7 @@ func (im *identityManager) GetNodeOwnerOrg(ctx context.Context, namespace string
 	if identity.Type != core.IdentityTypeOrg || identity.Name != orgName {
 		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
-	im.nodeOwningOrgIdentity[namespace] = identity
+	im.multipartyRootOrg[namespace] = identity
 	return identity, nil
 }
 

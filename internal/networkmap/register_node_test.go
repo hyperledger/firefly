@@ -44,7 +44,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", nm.ctx, "ns1").Return(parentOrg, nil)
+	mim.On("GetMultipartyRootOrg", nm.ctx, "ns1").Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
 	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
@@ -88,7 +88,7 @@ func TestRegisterNodePeerInfoFail(t *testing.T) {
 	parentOrg := testOrg("org1")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", nm.ctx, "ns1").Return(parentOrg, nil)
+	mim.On("GetMultipartyRootOrg", nm.ctx, "ns1").Return(parentOrg, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentOrg, false, nil)
 	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
@@ -107,7 +107,7 @@ func TestRegisterNodeGetOwnerFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", nm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", nm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
 
 	_, err := nm.RegisterNode(nm.ctx, "ns1", false)
 	assert.Regexp(t, "pop", err)

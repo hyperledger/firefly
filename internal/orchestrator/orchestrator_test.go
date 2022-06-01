@@ -28,6 +28,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	identitymanager "github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
@@ -1151,8 +1152,7 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchain = or.mbi
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background(), "ff_system").Return(verifier, nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.NoError(t, err)
@@ -1160,15 +1160,14 @@ func TestNetworkAction(t *testing.T) {
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background(), "ff_system").Return(nil, fmt.Errorf("pop"))
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
 }
 
 func TestNetworkActionBadType(t *testing.T) {
 	or := newTestOrchestrator()
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background(), "ff_system").Return(verifier, nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10397", err)
 }
@@ -1176,8 +1175,7 @@ func TestNetworkActionBadType(t *testing.T) {
 func TestNetworkActionTerminateBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchain = or.mbi
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background(), "ns1").Return(verifier, nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ns1", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), "ns1", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Regexp(t, "FF10399", err)

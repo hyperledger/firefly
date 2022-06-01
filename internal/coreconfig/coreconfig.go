@@ -45,7 +45,7 @@ const (
 	NamespaceMultipartyOrgName = "multiparty.org.name"
 	// NamespaceMultipartyOrgDescription is a description for the local root org within a namespace
 	NamespaceMultipartyOrgDescription = "multiparty.org.description"
-	// NamespaceMultipartyOrgKey is a default signing key for blockchain transactions within a namespace
+	// NamespaceMultipartyOrgKey is the signing key allocated to the local root org within a namespace
 	NamespaceMultipartyOrgKey = "multiparty.org.key"
 )
 

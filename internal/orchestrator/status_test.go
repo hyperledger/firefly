@@ -95,7 +95,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -164,7 +164,7 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -204,7 +204,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -257,7 +257,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	config.Set(coreconfig.NodeName, "node1")
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
 
 	mns := or.namespace.(*namespacemocks.Manager)
 	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
@@ -290,7 +290,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -348,7 +348,7 @@ func TestGetStatusNodeError(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",

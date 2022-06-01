@@ -49,7 +49,7 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "remoteorg").Return(remoteOrg, false, nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
 	ud := mdi.On("UpsertData", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	ud.RunFn = func(a mock.Arguments) {
 		data := a[1].(*core.Data)
@@ -116,7 +116,7 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(localOrg, false, nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localNode, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -149,7 +149,7 @@ func TestResolveMemberListLookupFail(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(nil, true, fmt.Errorf("pop"))
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localNode, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -184,7 +184,7 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(localOrg, false, nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localNode, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -213,7 +213,7 @@ func TestResolveMemberListLocalOrgUnregistered(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -252,7 +252,7 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(localOrg, false, nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localNode, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -288,7 +288,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(localOrg, false, nil)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(localNode, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localNode, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -326,7 +326,7 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
 	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", pm.ctx, "ns1").Return(parentOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(parentOrg, nil)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(childOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, parentOrg.ID).Return(parentOrg, nil)
 

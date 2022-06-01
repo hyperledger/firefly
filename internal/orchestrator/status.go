@@ -108,7 +108,7 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context, ns string) (node *fftyp
 
 func (or *orchestrator) GetStatus(ctx context.Context, ns string) (status *core.NodeStatus, err error) {
 
-	org, err := or.identity.GetNodeOwnerOrg(ctx, ns)
+	org, err := or.identity.GetMultipartyRootOrg(ctx, ns)
 	if err != nil {
 		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}

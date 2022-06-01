@@ -107,7 +107,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Iden
 
 func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageInOut) (gi *core.GroupIdentity, err error) {
 
-	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx, in.Header.Namespace)
+	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx, in.Header.Namespace)
 	if err != nil {
 		return nil, err
 	}
