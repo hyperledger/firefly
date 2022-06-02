@@ -106,7 +106,7 @@ type definitionHandlers struct {
 
 func NewDefinitionHandler(ctx context.Context, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
 	if di == nil || bi == nil || dx == nil || dm == nil || im == nil || am == nil || cm == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionHandler")
 	}
 	return &definitionHandlers{
 		database:   di,

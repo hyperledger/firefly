@@ -37,7 +37,7 @@ func testOrgIdentity(t *testing.T, name string) *core.Identity {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			Type:      core.IdentityTypeOrg,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      name,
 		},
 		IdentityProfile: core.IdentityProfile{

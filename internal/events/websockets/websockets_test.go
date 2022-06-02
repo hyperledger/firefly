@@ -49,7 +49,6 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	ws.Init(ctx, svrConfig, cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
-	assert.NotNil(t, ws.GetOptionsSchema(context.Background()))
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil).Maybe()
 
 	svr := httptest.NewServer(ws)
@@ -111,7 +110,7 @@ func TestSendBadData(t *testing.T) {
 	err := wsc.Send(context.Background(), []byte(`!json`))
 	assert.NoError(t, err)
 	b := <-wsc.Receive()
-	var res core.WSProtocolErrorPayload
+	var res core.WSError
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
@@ -127,7 +126,7 @@ func TestSendBadAction(t *testing.T) {
 	err := wsc.Send(context.Background(), []byte(`{"type":"lobster"}`))
 	assert.NoError(t, err)
 	b := <-wsc.Receive()
-	var res core.WSProtocolErrorPayload
+	var res core.WSError
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
@@ -143,7 +142,7 @@ func TestSendEmptyStartAction(t *testing.T) {
 	err := wsc.Send(context.Background(), []byte(`{"type":"start"}`))
 	assert.NoError(t, err)
 	b := <-wsc.Receive()
-	var res core.WSProtocolErrorPayload
+	var res core.WSError
 	err = json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 	assert.Equal(t, core.WSProtocolErrorEventType, res.Type)
@@ -326,7 +325,7 @@ func TestAutoStartBadOptions(t *testing.T) {
 	defer cancel()
 
 	b := <-wsc.Receive()
-	var res core.WSProtocolErrorPayload
+	var res core.WSError
 	err := json.Unmarshal(b, &res)
 	assert.NoError(t, err)
 	assert.Regexp(t, "FF10178", res.Error)
@@ -344,7 +343,7 @@ func TestHandleAckWithAutoAck(t *testing.T) {
 		},
 		autoAck: true,
 	}
-	err := wsc.handleAck(&core.WSClientActionAckPayload{
+	err := wsc.handleAck(&core.WSAck{
 		ID: eventUUID,
 	})
 	assert.Regexp(t, "FF10180", err)
@@ -362,7 +361,7 @@ func TestHandleStartFlippingAutoAck(t *testing.T) {
 		autoAck: true,
 	}
 	no := false
-	err := wsc.handleStart(&core.WSClientActionStartPayload{
+	err := wsc.handleStart(&core.WSStart{
 		AutoAck: &no,
 	})
 	assert.Regexp(t, "FF10179", err)
@@ -382,7 +381,7 @@ func TestHandleAckMultipleStartedMissingSub(t *testing.T) {
 			{ID: eventUUID},
 		},
 	}
-	err := wsc.handleAck(&core.WSClientActionAckPayload{
+	err := wsc.handleAck(&core.WSAck{
 		ID: eventUUID,
 	})
 	assert.Regexp(t, "FF10175", err)
@@ -405,7 +404,7 @@ func TestHandleAckMultipleStartedNoSubSingleMatch(t *testing.T) {
 			{ID: eventUUID},
 		},
 	}
-	err := wsc.handleAck(&core.WSClientActionAckPayload{
+	err := wsc.handleAck(&core.WSAck{
 		ID: eventUUID,
 	})
 	assert.NoError(t, err)
@@ -418,7 +417,7 @@ func TestHandleAckNoneInflight(t *testing.T) {
 		sendMessages: make(chan interface{}, 1),
 		inflight:     []*core.EventDeliveryResponse{},
 	}
-	err := wsc.handleAck(&core.WSClientActionAckPayload{})
+	err := wsc.handleAck(&core.WSAck{})
 	assert.Regexp(t, "FF10175", err)
 }
 

@@ -97,14 +97,15 @@ type SubscriptionCoreOptions struct {
 // SubscriptionOptions customize the behavior of subscriptions
 type SubscriptionOptions struct {
 	SubscriptionCoreOptions
+	WebhookSubOptions
 
-	// Extensible by the specific transport - so we serialize/de-serialize via map
+	// Extensible by the specific transport - so we serialize/de-serialize via map.
 	additionalOptions fftypes.JSONObject
 }
 
 // SubscriptionRef are the fields that can be used to refer to a subscription
 type SubscriptionRef struct {
-	ID        *fftypes.UUID `ffstruct:"Subscription" json:"id" ffexcludeinput:"true"`
+	ID        *fftypes.UUID `ffstruct:"Subscription" json:"id,omitempty" ffexcludeinput:"true"`
 	Namespace string        `ffstruct:"Subscription" json:"namespace"`
 	Name      string        `ffstruct:"Subscription" json:"name"`
 }

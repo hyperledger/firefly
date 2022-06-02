@@ -42,6 +42,7 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *core.MessageInOut) sysme
 
 func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
 	broadcast := bm.NewBroadcast(ns, in)
+	in.Header.Type = core.MessageTypeBroadcast
 	if bm.metrics.IsMetricsEnabled() {
 		bm.metrics.MessageSubmitted(&in.Message)
 	}
@@ -114,6 +115,10 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 
 func (s *broadcastSender) resolve(ctx context.Context) error {
 	msg := s.msg.Message
+
+	if err := s.mgr.data.VerifyNamespaceExists(ctx, msg.Header.Namespace); err != nil {
+		return err
+	}
 
 	// Resolve the sending identity
 	if msg.Header.Type != core.MessageTypeDefinition || msg.Header.Tag != core.SystemTagIdentityClaim {

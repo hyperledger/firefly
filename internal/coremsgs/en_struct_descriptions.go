@@ -16,6 +16,11 @@
 
 package coremsgs
 
+import (
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"golang.org/x/text/language"
+)
+
 //revive:disable
 
 /*
@@ -36,6 +41,11 @@ type Message struct {
 MessageHeader    = ffm("Message.header", "The message header")
 
 */
+
+var ffm = func(key, translation string) i18n.MessageKey {
+	return i18n.FFM(language.AmericanEnglish, key, translation)
+}
+
 var (
 	// MessageHeader field descriptions
 	MessageHeaderID        = ffm("MessageHeader.id", "The UUID of the message. Unique to each message")
@@ -150,11 +160,11 @@ var (
 	BatchManifestData     = ffm("BatchManifest.data", "Array of manifest entries, succinctly summarizing the data in the batch")
 
 	// BatchPersisted field descriptions
-	BatchPersistedHash       = ffm("BatchPersisted.hash", "The hash of the manifest of the batch")
-	BatchPersistedManifest   = ffm("BatchPersisted.manifest", "The manifest of the batch")
-	BatchPersistedTX         = ffm("BatchPersisted.tx", "The FireFly transaction associated with this batch")
-	BatchPersistedPayloadRef = ffm("BatchPersisted.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
-	BatchPersistedConfirmed  = ffm("BatchPersisted.confirmed", "The time when the batch was confirmed")
+	BatchPersistedHash       = ffm("Batch.hash", "The hash of the manifest of the batch")
+	BatchPersistedManifest   = ffm("Batch.manifest", "The manifest of the batch")
+	BatchPersistedTX         = ffm("Batch.tx", "The FireFly transaction associated with this batch")
+	BatchPersistedPayloadRef = ffm("Batch.payloadRef", "For broadcast batches, this is the reference to the binary batch in shared storage")
+	BatchPersistedConfirmed  = ffm("Batch.confirmed", "The time when the batch was confirmed")
 
 	// Transaction field descriptions
 	TransactionID            = ffm("Transaction.id", "The UUID of the FireFly transaction")
@@ -361,17 +371,24 @@ var (
 	VerifierCreated   = ffm("Verifier.created", "The time this verifier was created on this node")
 
 	// Namespace field descriptions
-	NamespaceID          = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
-	NamespaceMessage     = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
-	NamespaceName        = ffm("Namespace.name", "The namespace name")
-	NamespaceDescription = ffm("Namespace.description", "A description of the namespace")
-	NamespaceType        = ffm("Namespace.type", "The type of the namespace")
-	NamespaceCreated     = ffm("Namespace.created", "The time the namespace was created")
+	NamespaceID                = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
+	NamespaceMessage           = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
+	NamespaceName              = ffm("Namespace.name", "The namespace name")
+	NamespaceDescription       = ffm("Namespace.description", "A description of the namespace")
+	NamespaceType              = ffm("Namespace.type", "The type of the namespace")
+	NamespaceCreated           = ffm("Namespace.created", "The time the namespace was created")
+	NamespaceContract          = ffm("Namespace.fireflyContract", "Info on the FireFly smart contract configured for this namespace")
+	FireFlyContractsActive     = ffm("FireFlyContracts.active", "The currently active FireFly smart contract")
+	FireFlyContractsTerminated = ffm("FireFlyContracts.terminated", "Previously-terminated FireFly smart contracts")
+	FireFlyContractIndex       = ffm("FireFlyContractInfo.index", "The index of this contract in the config file")
+	FireFlyContractFinalEvent  = ffm("FireFlyContractInfo.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
+	FireFlyContractInfo        = ffm("FireFlyContractInfo.info", "Blockchain-specific info on the contract, such as its location on chain")
+	NetworkActionType          = ffm("NetworkAction.type", "The action to be performed")
 
 	// NodeStatus field descriptions
+	NodeNamespace  = ffm("NodeStatus.namespace", "The namespace that this status applies to")
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
 	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
-	NodeDefaults   = ffm("NodeStatus.defaults", "Information about defaults configured on this node that appplications might need to query on startup")
 	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
 
 	// NodeStatusNode field descriptions
@@ -568,6 +585,7 @@ var (
 	ContractCallRequestMethod     = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
+	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 
 	// WebSocketStatus field descriptions
 	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")
@@ -583,4 +601,20 @@ var (
 	WSSubscriptionStatusEphemeral = ffm("WSSubscriptionStatus.ephemeral", "Indicates whether the subscription is ephemeral (vs durable)")
 	WSSubscriptionStatusNamespace = ffm("WSSubscriptionStatus.namespace", "The subscription namespace")
 	WSSubscriptionStatusName      = ffm("WSSubscriptionStatus.name", "The subscription name (for durable subscriptions only)")
+
+	WebhooksOptJSON         = ffm("WebhookSubOptions.json", "Webhooks only: Whether to assume the response body is JSON, regardless of the returned Content-Type")
+	WebhooksOptReply        = ffm("WebhookSubOptions.reply", "Webhooks only: Whether to automatically send a reply event, using the body returned by the webhook")
+	WebhooksOptHeaders      = ffm("WebhookSubOptions.headers", "Webhooks only: Static headers to set on the webhook request")
+	WebhooksOptQuery        = ffm("WebhookSubOptions.query", "Webhooks only: Static query params to set on the webhook request")
+	WebhooksOptInput        = ffm("WebhookSubOptions.input", "Webhooks only: A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true")
+	WebhooksOptFastAck      = ffm("WebhookSubOptions.fastack", "Webhooks only: When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations")
+	WebhooksOptURL          = ffm("WebhookSubOptions.url", "Webhooks only: HTTP url to invoke. Can be relative if a base URL is set in the webhook plugin config")
+	WebhooksOptMethod       = ffm("WebhookSubOptions.method", "Webhooks only: HTTP method to invoke. Default=POST")
+	WebhooksOptReplyTag     = ffm("WebhookSubOptions.replytag", "Webhooks only: The tag to set on the reply message")
+	WebhooksOptReplyTx      = ffm("WebhookSubOptions.replytx", "Webhooks only: The transaction type to set on the reply message")
+	WebhooksOptInputQuery   = ffm("WebhookInputOptions.query", "A top-level property of the first data input, to use for query parameters")
+	WebhooksOptInputHeaders = ffm("WebhookInputOptions.headers", "A top-level property of the first data input, to use for headers")
+	WebhooksOptInputBody    = ffm("WebhookInputOptions.body", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
+	WebhooksOptInputPath    = ffm("WebhookInputOptions.path", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
+	WebhooksOptInputReplyTx = ffm("WebhookInputOptions.replytx", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
 )

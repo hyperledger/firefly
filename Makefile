@@ -65,6 +65,7 @@ $(eval $(call makemock, internal/shareddownload,   Manager,            shareddow
 $(eval $(call makemock, internal/shareddownload,   Callbacks,          shareddownloadmocks))
 $(eval $(call makemock, internal/definitions,      DefinitionHandler,  definitionsmocks))
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
+$(eval $(call makemock, internal/namespace,        Manager,            namespacemocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
 $(eval $(call makemock, internal/assets,           Manager,            assetmocks))
 $(eval $(call makemock, internal/contracts,        Manager,            contractmocks))
@@ -93,8 +94,10 @@ clean:
 deps:
 		$(VGO) get
 reference:
-		$(VGO) test ./internal/apiserver ./docs -timeout=10s -tags reference
+		$(VGO) test ./internal/apiserver ./internal/reference ./docs -timeout=10s -tags reference
 manifest:
 		./manifestgen.sh
 docker:
 		./docker_build.sh $(DOCKER_ARGS)
+docs: .ALWAYS
+		cd docs && bundle install && bundle exec jekyll build && bundle exec htmlproofer --disable-external --allow-hash-href --assume-extension ./_site --url-swap '^/firefly/:/' --url-ignore /127.0.0.1/,/localhost/

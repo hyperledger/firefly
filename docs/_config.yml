@@ -1,5 +1,4 @@
 repository: hyperledger/firefly
-remote_theme: pmarsceill/just-the-docs
 logo: "images/hyperledger-firefly_color.svg"
 title: Hyperledger FireFly Docs
 baseurl: /firefly
@@ -10,11 +9,7 @@ aux_links:
     - "https://wiki.hyperledger.org/display/FIR"
   "Discord":
     - "https://discord.gg/hyperledger"
-  "Mailing List":
-    - "https://lists.hyperledger.org/g/firefly"
-  "Calendar":
-    - "https://lists.hyperledger.org/g/firefly/calendar"
-
-remote_theme: pmarsceill/just-the-docs
+color_scheme: firefly
 plugins:
-- jekyll-remote-theme # add this line to the plugins list if you already have one
+  - jekyll-multiple-languages-plugin
+languages: ["en"]

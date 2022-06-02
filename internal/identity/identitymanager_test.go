@@ -21,55 +21,67 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
+	coreconfig.Reset()
 
 	mdi := &databasemocks.Plugin{}
 	mii := &identitymocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdm := &datamocks.Manager{}
-
-	coreconfig.Reset()
+	mns := &namespacemocks.Manager{}
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
+	plugins := map[string]identity.Plugin{"tbd": mii}
+
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, mdi, mii, mbi, mdm)
+	im, err := NewIdentityManager(ctx, mdi, plugins, mbi, mdm, mns)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), nil, nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestResolveInputSigningIdentityNoOrgKey(t *testing.T) {
+func TestResolveInputSigningIdentityNoKey(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("")
 
 	msgIdentity := &core.SignerRef{}
 	err := im.ResolveInputSigningIdentity(ctx, "ns1", msgIdentity)
 	assert.Regexp(t, "FF10354", err)
+
+	mns.AssertExpectations(t)
 
 }
 
 func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
-	config.Set(coreconfig.OrgName, "org1")
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
@@ -77,10 +89,10 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return((&core.Verifier{
 			Identity:  orgID,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			VerifierRef: core.VerifierRef{
 				Type:  core.VerifierTypeEthAddress,
 				Value: "fullkey123",
@@ -91,7 +103,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 			IdentityBase: core.IdentityBase{
 				ID:        orgID,
 				DID:       "did:firefly:org/org1",
-				Namespace: core.SystemNamespace,
+				Namespace: "ns1",
 				Name:      "org1",
 				Type:      core.IdentityTypeOrg,
 			},
@@ -105,6 +117,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mns.AssertExpectations(t)
 
 }
 
@@ -118,7 +131,7 @@ func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 	idID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return((&core.Verifier{
 			Identity:  idID,
 			Namespace: "ns1",
@@ -132,7 +145,7 @@ func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
 				DID:       "did:firefly:ns/ns1/myid",
-				Namespace: core.SystemNamespace,
+				Namespace: "ns1",
 				Name:      "myid",
 				Type:      core.IdentityTypeCustom,
 			},
@@ -157,18 +170,20 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	idID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "fullkey123").Return(nil, nil)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:ns/ns1/myid").
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
 				DID:       "did:firefly:ns/ns1/myid",
-				Namespace: core.SystemNamespace,
+				Namespace: "ns1",
 				Name:      "myid",
 				Type:      core.IdentityTypeCustom,
 			},
@@ -194,10 +209,12 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "fullkey123").Return(nil, nil)
 
 	msgIdentity := &core.SignerRef{
 		Key: "mykey123",
@@ -220,7 +237,7 @@ func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
 	idID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return((&core.Verifier{
 			Identity:  idID,
 			Namespace: "ns1",
@@ -258,11 +275,14 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
+		Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "fullkey123").
 		Return(nil, nil)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:ns/ns1/unknown").
 		Return(nil, nil)
@@ -287,7 +307,7 @@ func TestResolveInputSigningIdentityByKeyFail(t *testing.T) {
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return(nil, fmt.Errorf("pop"))
 
 	msgIdentity := &core.SignerRef{
@@ -324,12 +344,12 @@ func TestResolveInputSigningIdentityByOrgNameOk(t *testing.T) {
 	idID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.SystemNamespace, "org1").
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", "org1").
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
 				DID:       "did:firefly:org/org1",
-				Namespace: core.SystemNamespace,
+				Namespace: "ns1",
 				Name:      "myid",
 				Type:      core.IdentityTypeOrg,
 			},
@@ -363,7 +383,7 @@ func TestResolveInputSigningIdentityByOrgLookkupNotFound(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.SystemNamespace, "org1").
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", "org1").
 		Return(nil, nil)
 
 	msgIdentity := &core.SignerRef{
@@ -381,7 +401,7 @@ func TestResolveInputSigningIdentityByOrgLookkupFail(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.SystemNamespace, "org1").
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", "org1").
 		Return(nil, fmt.Errorf("pop"))
 
 	msgIdentity := &core.SignerRef{
@@ -401,12 +421,12 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 	idID := fftypes.NewUUID()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, core.SystemNamespace, "org1").
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeOrg, "ns1", "org1").
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
 				DID:       "did:firefly:org/org1",
-				Namespace: core.SystemNamespace,
+				Namespace: "ns1",
 				Name:      "myid",
 				Type:      core.IdentityTypeOrg,
 			},
@@ -423,78 +443,72 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 
 }
 
-func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
+func TestNormalizeSigningKeyDefault(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
-	config.Set(coreconfig.OrgName, "org1")
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
 
-	orgID := fftypes.NewUUID()
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
-		Return((&core.Verifier{
-			Identity:  orgID,
-			Namespace: core.SystemNamespace,
-			VerifierRef: core.VerifierRef{
-				Type:  core.VerifierTypeEthAddress,
-				Value: "fullkey123",
-			},
-		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, orgID).
-		Return(&core.Identity{
-			IdentityBase: core.IdentityBase{
-				ID:        orgID,
-				DID:       "did:firefly:org/org1",
-				Namespace: core.SystemNamespace,
-				Name:      "org1",
-				Type:      core.IdentityTypeOrg,
-			},
-		}, nil)
-
-	resolvedKey, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "ns1", "", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
 	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+	mns.AssertExpectations(t)
+
+}
+
+func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("key123")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
+
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "ns1", "", KeyNormalizationBlockchainPlugin)
+	assert.NoError(t, err)
+	assert.Equal(t, "fullkey123", resolvedKey)
+
+	mbi.AssertExpectations(t)
+	mns.AssertExpectations(t)
 
 }
 
 func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
-	config.Set(coreconfig.OrgName, "org1")
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("key123")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
+	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", fmt.Errorf("pop"))
 
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
-		Return(nil, fmt.Errorf("pop"))
-
-	_, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	_, err := im.NormalizeSigningKey(ctx, "ns1", "", KeyNormalizationBlockchainPlugin)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
+	mns.AssertExpectations(t)
 
 }
 
 func TestResolveInputSigningKeyOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
-	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("fullkey123", nil)
 
-	resolvedKey, err := im.NormalizeSigningKey(ctx, "key123", KeyNormalizationBlockchainPlugin)
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "ns1", "key123", KeyNormalizationBlockchainPlugin)
 	assert.NoError(t, err)
 	assert.Equal(t, "fullkey123", resolvedKey)
 
@@ -504,13 +518,11 @@ func TestResolveInputSigningKeyOk(t *testing.T) {
 func TestResolveInputSigningKeyFail(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
-	config.Set(coreconfig.OrgName, "org1")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "key123").Return("", fmt.Errorf("pop"))
 
-	_, err := im.NormalizeSigningKey(ctx, "key123", KeyNormalizationBlockchainPlugin)
+	_, err := im.NormalizeSigningKey(ctx, "ns1", "key123", KeyNormalizationBlockchainPlugin)
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -519,10 +531,8 @@ func TestResolveInputSigningKeyFail(t *testing.T) {
 func TestResolveInputSigningKeyBypass(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgKey, "key123")
-	config.Set(coreconfig.OrgName, "org1")
 
-	key, err := im.NormalizeSigningKey(ctx, "different-type-of-key", KeyNormalizationNone)
+	key, err := im.NormalizeSigningKey(ctx, "ns1", "different-type-of-key", KeyNormalizationNone)
 	assert.NoError(t, err)
 	assert.Equal(t, "different-type-of-key", key)
 }
@@ -535,7 +545,7 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "myid",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -552,34 +562,97 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 
 }
 
-func TestResolveNodeOwnerSigningIdentityNotFound(t *testing.T) {
+func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwnerBlockchainKey = &core.VerifierRef{
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "key12345",
 	}
-	config.Set(coreconfig.OrgName, "org1")
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "key12345").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(nil, nil)
 
-	err := im.ResolveNodeOwnerSigningIdentity(ctx, &core.SignerRef{})
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
+
+	err := im.resolveDefaultSigningIdentity(ctx, "ns1", &core.SignerRef{})
 	assert.Regexp(t, "FF10281", err)
 
+	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+	mns.AssertExpectations(t)
 
 }
 
-func TestGetNodeOwnerBlockchainKeyDeprecatedKeyResolveFailed(t *testing.T) {
+func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	config.Set(coreconfig.OrgIdentityDeprecated, "0x12345")
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "key12345",
+	}
+
+	id := &core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:        fftypes.NewUUID(),
+			DID:       "did:firefly:org/org1",
+			Namespace: "ns1",
+			Name:      "org1",
+			Type:      core.IdentityTypeOrg,
+		},
+	}
+	verifier := &core.Verifier{
+		Identity: id.ID,
+		VerifierRef: core.VerifierRef{
+			Value: "key12345",
+		},
+	}
+
+	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion", ctx).Return(1)
+
+	mdi := im.database.(*databasemocks.Plugin)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(verifier, nil)
+	mdi.On("GetIdentityByID", ctx, id.ID).Return(id, nil)
+
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
+
+	ref := &core.SignerRef{}
+	err := im.resolveDefaultSigningIdentity(ctx, "ns1", ref)
+	assert.NoError(t, err)
+	assert.Equal(t, "did:firefly:org/org1", ref.Author)
+	assert.Equal(t, "key12345", ref.Key)
+
+	mbi.AssertExpectations(t)
+	mdi.AssertExpectations(t)
+	mns.AssertExpectations(t)
+
+}
+
+func TestGetMultipartyRootVerifierResolveFailed(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+
+	mnm := im.namespace.(*namespacemocks.Manager)
+	mnm.On("GetConfigWithFallback", "ns1", coreconfig.OrgKey).Return("")
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "0x12345").Return("", fmt.Errorf("pop"))
 
-	_, err := im.GetNodeOwnerBlockchainKey(ctx)
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("0x12345")
+
+	_, err := im.GetMultipartyRootVerifier(ctx, "ns1")
 	assert.Regexp(t, "pop", err)
 
 	mbi.AssertExpectations(t)
@@ -615,41 +688,46 @@ func TestNormalizeKeyViaBlockchainPluginCached(t *testing.T) {
 
 }
 
-func TestGetNodeOwnerOrgCached(t *testing.T) {
+func TestGetMultipartyRootOrgCached(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwningOrgIdentity = &core.Identity{}
+	im.multipartyRootOrg = map[string]*core.Identity{
+		"ns1": {},
+	}
 
-	id, err := im.GetNodeOwnerOrg(ctx)
+	id, err := im.GetMultipartyRootOrg(ctx, "ns1")
 	assert.NoError(t, err)
 	assert.NotNil(t, id)
 
 }
 
-func TestGetNodeOwnerOrgKeyNotSet(t *testing.T) {
+func TestGetMultipartyRootVerifierNotSet(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	_, err := im.GetNodeOwnerOrg(ctx)
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgKey).Return("")
+
+	_, err := im.GetMultipartyRootOrg(ctx, "ns1")
 	assert.Regexp(t, "FF10354", err)
 
 }
 
-func TestGetNodeOwnerOrgMismatch(t *testing.T) {
+func TestGetMultipartyRootOrgMismatch(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
-	im.nodeOwnerBlockchainKey = &core.VerifierRef{
+	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "fullkey123",
 	}
-	config.Set(coreconfig.OrgName, "org1")
 
 	orgID := fftypes.NewUUID()
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "fullkey123").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
 		Return((&core.Verifier{
 			Identity:  orgID,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			VerifierRef: core.VerifierRef{
 				Type:  core.VerifierTypeEthAddress,
 				Value: "fullkey123",
@@ -660,13 +738,17 @@ func TestGetNodeOwnerOrgMismatch(t *testing.T) {
 			IdentityBase: core.IdentityBase{
 				ID:        orgID,
 				DID:       "did:firefly:org/org2",
-				Namespace: core.SystemNamespace,
+				Namespace: "ns1",
 				Name:      "org2",
 				Type:      core.IdentityTypeOrg,
 			},
 		}, nil)
 
-	_, err := im.GetNodeOwnerOrg(ctx)
+	mns := im.namespace.(*namespacemocks.Manager)
+	mns.On("GetDefaultKey", "ns1").Return("")
+	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
+
+	_, err := im.GetMultipartyRootOrg(ctx, "ns1")
 	assert.Regexp(t, "FF10281", err)
 
 }
@@ -679,16 +761,16 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:node/peer1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "peer1",
 			Type:      core.IdentityTypeOrg,
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, core.SystemNamespace, "peer1").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1").
 		Return((&core.Verifier{
 			Identity:  id.ID,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			VerifierRef: core.VerifierRef{
 				Type:  core.VerifierTypeFFDXPeerID,
 				Value: "peer1",
@@ -697,14 +779,14 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, id.ID).
 		Return(id, nil)
 
-	v1, err := im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, &core.VerifierRef{
+	v1, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
-	v2, err := im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, &core.VerifierRef{
+	v2, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
 		Value: "peer1",
 	})
@@ -721,16 +803,16 @@ func TestCachedIdentityLookupByVerifierRefError(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:node/peer1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "peer1",
 			Type:      core.IdentityTypeOrg,
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "peer1").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "peer1").
 		Return((&core.Verifier{
 			Identity:  id.ID,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			VerifierRef: core.VerifierRef{
 				Type:  core.VerifierTypeEthAddress,
 				Value: "peer1",
@@ -738,7 +820,7 @@ func TestCachedIdentityLookupByVerifierRefError(t *testing.T) {
 		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, &core.VerifierRef{
+	_, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "peer1",
 	})
@@ -754,16 +836,16 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:node/peer1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "peer1",
 			Type:      core.IdentityTypeOrg,
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.SystemNamespace, "0x12345").
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").
 		Return((&core.Verifier{
 			Identity:  id.ID,
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			VerifierRef: core.VerifierRef{
 				Type:  core.VerifierTypeEthAddress,
 				Value: "peer1",
@@ -771,7 +853,7 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 		}).Seal(), nil)
 	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, nil)
 
-	_, err := im.cachedIdentityLookupByVerifierRef(ctx, core.SystemNamespace, &core.VerifierRef{
+	_, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -787,7 +869,7 @@ func TestCachedIdentityLookupMustExistCaching(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:node/peer1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "peer1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -795,11 +877,11 @@ func TestCachedIdentityLookupMustExistCaching(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(id, nil).Once()
 
-	v1, _, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
+	v1, _, err := im.CachedIdentityLookupMustExist(ctx, "ns1", "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v1)
 
-	v2, _, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
+	v2, _, err := im.CachedIdentityLookupMustExist(ctx, "ns1", "did:firefly:node/peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, id, v2)
 }
@@ -808,7 +890,7 @@ func TestCachedIdentityLookupMustExistUnknownResolver(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
 
-	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "did:random:anything")
+	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "ns1", "did:random:anything")
 	assert.Regexp(t, "FF10349", err)
 	assert.False(t, retryable)
 
@@ -821,7 +903,7 @@ func TestCachedIdentityLookupMustExistGetIDFail(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(nil, fmt.Errorf("pop"))
 
-	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
+	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "ns1", "did:firefly:node/peer1")
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retryable)
 
@@ -840,7 +922,7 @@ func TestCachedIdentityLookupByVerifierByOldDIDFail(t *testing.T) {
 		return uuid.Equals(orgUUID)
 	})).Return(nil, fmt.Errorf("pop"))
 
-	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, did)
+	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "ns1", did)
 	assert.Regexp(t, "pop", err)
 	assert.True(t, retryable)
 
@@ -854,7 +936,7 @@ func TestCachedIdentityLookupByIDCaching(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:node/peer1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "peer1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -881,7 +963,7 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -894,7 +976,7 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Parent:    idRoot.ID,
 			DID:       "did:firefly:org/org2",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org2",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -962,7 +1044,7 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 			ID:        idID1,
 			Parent:    idID2,
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -975,7 +1057,7 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 			ID:        idID2,
 			Parent:    idID1,
 			DID:       "did:firefly:org/org2",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org2",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1005,7 +1087,7 @@ func TestVerifyIdentityChainBadParent(t *testing.T) {
 			ID:        idID1,
 			Parent:    idID2,
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1014,7 +1096,7 @@ func TestVerifyIdentityChainBadParent(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        idID2,
 			DID:       "did:firefly:org/org2",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org2",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1040,7 +1122,7 @@ func TestVerifyIdentityChainErr(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Parent:    idID2,
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1066,7 +1148,7 @@ func TestVerifyIdentityChainNotFound(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Parent:    idID2,
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1101,7 +1183,7 @@ func TestVerifyIdentityChainInvalidParent(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 			Parent:    id1.ID,
 			DID:       "did:firefly:org/org2",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org2",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1162,7 +1244,7 @@ func TestCachedVerifierLookupCaching(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	verifier := (&core.Verifier{
-		Namespace: core.SystemNamespace,
+		Namespace: "ns1",
 		VerifierRef: core.VerifierRef{
 			Value: "peer1",
 			Type:  core.VerifierTypeFFDXPeerID,
@@ -1171,11 +1253,11 @@ func TestCachedVerifierLookupCaching(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, verifier.Type, verifier.Namespace, verifier.Value).Return(verifier, nil).Once()
 
-	v1, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, core.SystemNamespace, "peer1")
+	v1, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, verifier, v1)
 
-	v2, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, core.SystemNamespace, "peer1")
+	v2, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1")
 	assert.NoError(t, err)
 	assert.Equal(t, verifier, v2)
 
@@ -1187,9 +1269,9 @@ func TestCachedVerifierLookupError(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, core.SystemNamespace, "peer1").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, core.SystemNamespace, "peer1")
+	_, err := im.CachedVerifierLookup(ctx, core.VerifierTypeFFDXPeerID, "ns1", "peer1")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -1212,7 +1294,7 @@ func TestResolveIdentitySignerOk(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1237,7 +1319,7 @@ func TestResolveIdentitySignerFail(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},
@@ -1261,7 +1343,7 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 			Type:      core.IdentityTypeOrg,
 		},

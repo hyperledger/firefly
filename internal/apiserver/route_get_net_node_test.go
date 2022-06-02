@@ -34,7 +34,7 @@ func TestGetNode(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetNodeByNameOrID", mock.Anything, "node12345").
+	nmn.On("GetNodeByNameOrID", mock.Anything, "default", "node12345").
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -43,7 +43,7 @@ func TestNodeigration(t *testing.T) {
 				ID:        node.ID,
 				Type:      IdentityTypeNode,
 				DID:       "did:firefly:node/node1",
-				Namespace: SystemNamespace,
+				Namespace: LegacySystemNamespace,
 				Name:      "node1",
 				Parent:    parentID,
 			},

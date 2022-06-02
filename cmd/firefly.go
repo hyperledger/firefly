@@ -83,7 +83,7 @@ func getOrchestrator() orchestrator.Orchestrator {
 	if _utOrchestrator != nil {
 		return _utOrchestrator
 	}
-	return orchestrator.NewOrchestrator()
+	return orchestrator.NewOrchestrator(true)
 }
 
 // Execute is called by the main method of the package

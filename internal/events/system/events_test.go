@@ -45,7 +45,6 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	se.Init(ctx, config, cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
-	assert.NotNil(t, se.GetOptionsSchema(se.ctx))
 	assert.Nil(t, se.ValidateOptions(&core.SubscriptionOptions{}))
 	return se, cancelCtx
 }

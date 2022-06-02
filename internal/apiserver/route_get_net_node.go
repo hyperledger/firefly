@@ -38,7 +38,7 @@ var getNetworkNode = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).NetworkMap().GetNodeByNameOrID(r.Ctx, r.PP["nameOrId"])
+		output, err = getOr(r.Ctx).NetworkMap().GetNodeByNameOrID(r.Ctx, extractNamespace(r.PP), r.PP["nameOrId"])
 		return output, err
 	},
 }

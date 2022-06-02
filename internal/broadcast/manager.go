@@ -47,7 +47,6 @@ type Manager interface {
 
 	NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender
 	BroadcastDatatype(ctx context.Context, ns string, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastNamespace(ctx context.Context, ns *core.Namespace, waitConfirm bool) (msg *core.Message, err error)
 	BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
 	BroadcastDefinitionAsNode(ctx context.Context, ns string, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
 	BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
@@ -79,7 +78,7 @@ type broadcastManager struct {
 
 func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
 	bm := &broadcastManager{
 		ctx:                   ctx,

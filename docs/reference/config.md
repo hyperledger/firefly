@@ -1,8 +1,8 @@
 ---
 layout: default
-title: Configuration Reference
+title: pages.reference
 parent: Reference
-nav_order: 3
+nav_order: 2
 ---
 
 # Configuration Reference
@@ -24,8 +24,7 @@ nav_order: 3
 |address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
 |enabled|Enables the admin HTTP API|`boolean`|`<nil>`
 |port|The port on which the admin HTTP API should listen|`int`|`5001`
-|preinit|Enables the pre-init mode. This mode will let the FireFly Core process start, but not initialize any plugins, besides the database to read any configuration overrides. This allows the admin HTTP API to be used to define custom configuration before starting the rest of FireFly Core.|`boolean`|`<nil>`
-|publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.|URL `string`|`<nil>`
+|publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
@@ -107,7 +106,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|type|A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section.|`string`|`<nil>`
+|type|A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the `blockchain` section|`string`|`<nil>`
 
 ## blockchain.ethereum.addressResolver
 
@@ -160,14 +159,14 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.|`int`|`50`
-|batchTimeout|How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream.|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|batchSize|The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
+|batchTimeout|How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`0`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use fireflyContract[].fromBlock)|Address `string`|`0`
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
-|instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
+|instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use fireflyContract[].address)|Address `string`|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |prefixLong|The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect|`string`|`fly`
@@ -243,13 +242,20 @@ nav_order: 3
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
+## blockchain.ethereum.fireflyContract[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|address|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`<nil>`
+
 ## blockchain.fabric.fabconnect
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|batchSize|The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream.|`int`|`50`
+|batchSize|The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
 |batchTimeout|The maximum amount of time to wait for a batch to complete|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
-|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions|`string`|`<nil>`
+|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)|`string`|`<nil>`
 |channel|The Fabric channel that FireFly will use for BatchPin transactions|`string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
@@ -295,6 +301,13 @@ nav_order: 3
 |path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
 |readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 |writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## blockchain.fabric.fireflyContract[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions|`string`|`<nil>`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream|Address `string`|`<nil>`
 
 ## blockchainevent.cache
 
@@ -368,7 +381,7 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|type|The Data Exchange plugin to use|`string`|`<nil>`
+|type|The Data Exchange plugin to use|`string`|`ffdx`
 
 ## dataexchange.ffdx
 
@@ -514,7 +527,7 @@ nav_order: 3
 |---|-----------|----|-------------|
 |address|The IP address on which the HTTP API should listen|IP Address `string`|`127.0.0.1`
 |port|The port on which the HTTP API should listen|`int`|`5000`
-|publicURL|The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.|URL `string`|`<nil>`
+|publicURL|The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
@@ -528,12 +541,6 @@ nav_order: 3
 |clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
 |enabled|Enables or disables TLS on this API|`boolean`|`false`
 |keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
-
-## identity
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|type|The Identity plugin to use|`string`|`<nil>`
 
 ## identity.manager.cache
 
@@ -552,7 +559,7 @@ nav_order: 3
 |forceColor|Force color to be enabled, even when a non-TTY output is detected|`boolean`|`<nil>`
 |includeCodeInfo|Enables the report caller for including the calling file and line number, and the calling function. If using text logs, it uses the logrus text format rather than the default prefix format.|`boolean`|`<nil>`
 |level|The log level - error, warn, info, debug, trace|`string`|`<nil>`
-|maxAge|The maximum time to retain old log files based on the timestamp encoded in their filename.|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxAge|The maximum time to retain old log files based on the timestamp encoded in their filename|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxBackups|Maximum number of old log files to retain|`int`|`<nil>`
 |noColor|Force color to be disabled, event when TTY output is detected|`boolean`|`<nil>`
 |timeFormat|Custom time format for logs|[Time format](https://pkg.go.dev/time#pkg-constants) `string`|`<nil>`
@@ -597,7 +604,7 @@ nav_order: 3
 |enabled|Enables the metrics API|`boolean`|`true`
 |path|The path from which to serve the Prometheus metrics|`string`|`/metrics`
 |port|The port on which the metrics HTTP API should listen|`int`|`6000`
-|publicURL|The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation.|URL `string`|`<nil>`
+|publicURL|The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
 |readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
 |shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
 |writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
@@ -618,6 +625,37 @@ nav_order: 3
 |---|-----------|----|-------------|
 |default|The default namespace - must be in the predefined list|`string`|`<nil>`
 |predefined|A list of namespaces to ensure exists, without requiring a broadcast from the network|List `string`|`<nil>`
+
+## namespaces.cache
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+
+## namespaces.predefined[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|defaultKey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
+|description|A description for the namespace|`string`|`<nil>`
+|name|The name of the namespace (must be unique)|`string`|`<nil>`
+|plugins|The list of plugins for this namespace|`string`|`<nil>`
+|remoteName|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
+
+## namespaces.predefined[].multiparty
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)|`boolean`|`<nil>`
+
+## namespaces.predefined[].multiparty.org
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|description|A description for the local root organization within this namespace|`string`|`<nil>`
+|key|The signing key allocated to the root organization within this namespace|`string`|`<nil>`
+|name|A short name for the local root organization within this namespace|`string`|`<nil>`
 
 ## node
 
@@ -653,10 +691,459 @@ nav_order: 3
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|description|A description of the organization to which this FireFly node belongs|`string`|`<nil>`
-|identity|`DEPRECATED` Please use `org.key` instead|`string`|`<nil>`
-|key|The signing identity allocated to the organization (can be the same as the nodes)|`string`|`<nil>`
-|name|The name of the organization to which this FireFly node belongs|`string`|`<nil>`
+|description|A description of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+|key|The signing key allocated to the organization (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+|name|The name of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+
+## plugins
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|blockchain|The list of configured Blockchain plugins|`string`|`<nil>`
+|database|The list of configured Database plugins|`string`|`<nil>`
+|dataexchange|The array of configured Data Exchange plugins |`string`|`<nil>`
+|identity|The list of available Identity plugins|`string`|`<nil>`
+|sharedstorage|The list of configured Shared Storage plugins|`string`|`<nil>`
+|tokens|The tokens plugin configurations. This will be used to configure tokens connectors|`string`|`<nil>`
+
+## plugins.blockchain[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the configured Blockchain plugin|`string`|`<nil>`
+|type|The type of the configured Blockchain Connector plugin|`string`|`<nil>`
+
+## plugins.blockchain[].ethereum.addressResolver
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|bodyTemplate|The body go template string to use when making HTTP requests|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|method|The HTTP method to use when making requests to the Address Resolver|`string`|`GET`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|responseField|The name of a JSON field that is provided in the response, that contains the ethereum address (default `address`)|`string`|`address`
+|retainOriginal|When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address|`boolean`|`<nil>`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the Address Resolver|`string`|`<nil>`
+|urlTemplate|The URL Go template string to use when calling the Address Resolver|[Go Template](https://pkg.go.dev/text/template) `string`|`<nil>`
+
+## plugins.blockchain[].ethereum.addressResolver.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].ethereum.addressResolver.cache
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`1000`
+|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`24h`
+
+## plugins.blockchain[].ethereum.addressResolver.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Address Resolver|URL `string`|`<nil>`
+
+## plugins.blockchain[].ethereum.addressResolver.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].ethereum.ethconnect
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|batchSize|The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
+|batchTimeout|How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`0`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|prefixLong|The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect|`string`|`firefly`
+|prefixShort|The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect|`string`|`fly`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|topic|The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect|`string`|`<nil>`
+|url|The URL of the Ethconnect instance|URL `string`|`<nil>`
+
+## plugins.blockchain[].ethereum.ethconnect.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].ethereum.ethconnect.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to Ethconnect|URL `string`|`<nil>`
+
+## plugins.blockchain[].ethereum.ethconnect.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].ethereum.ethconnect.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## plugins.blockchain[].ethereum.fftm
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the FireFly Transaction Manager runtime, if enabled|`string`|`<nil>`
+
+## plugins.blockchain[].ethereum.fftm.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].ethereum.fftm.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Transaction Manager|`string`|`<nil>`
+
+## plugins.blockchain[].ethereum.fftm.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].ethereum.fireflyContract[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|address|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`<nil>`
+
+## plugins.blockchain[].fabric.fabconnect
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|batchSize|The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
+|batchTimeout|The maximum amount of time to wait for a batch to complete|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)|`string`|`<nil>`
+|channel|The Fabric channel that FireFly will use for BatchPin transactions|`string`|`<nil>`
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|prefixLong|The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect|`string`|`firefly`
+|prefixShort|The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect|`string`|`fly`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|signer|The Fabric signing key to use when submitting transactions to Fabconnect|`string`|`<nil>`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|topic|The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect|`string`|`<nil>`
+|url|The URL of the Fabconnect instance|URL `string`|`<nil>`
+
+## plugins.blockchain[].fabric.fabconnect.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.blockchain[].fabric.fabconnect.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to Fabconnect|URL `string`|`<nil>`
+
+## plugins.blockchain[].fabric.fabconnect.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.blockchain[].fabric.fabconnect.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## plugins.blockchain[].fabric.fireflyContract[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions|`string`|`<nil>`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream|Address `string`|`<nil>`
+
+## plugins.database[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the Database plugin|`string`|`<nil>`
+|type|The type of the configured Database plugin|`string`|`<nil>`
+
+## plugins.database[].postgres
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|maxConnIdleTime|The maximum amount of time a database connection can be idle|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+|maxConnLifetime|The maximum amount of time to keep a database connection open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxConns|Maximum connections to the database|`int`|`50`
+|maxIdleConns|The maximum number of idle connections to the database|`int`|`<nil>`
+|url|The PostgreSQL connection string for the database|`string`|`<nil>`
+
+## plugins.database[].postgres.migrations
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|auto|Enables automatic database migrations|`boolean`|`false`
+|directory|The directory containing the numerically ordered migration DDL files to apply to the database|`string`|`./db/migrations/postgres`
+
+## plugins.database[].sqlite3
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|maxConnIdleTime|The maximum amount of time a database connection can be idle|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1m`
+|maxConnLifetime|The maximum amount of time to keep a database connection open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|maxConns|Maximum connections to the database|`int`|`1`
+|maxIdleConns|The maximum number of idle connections to the database|`int`|`<nil>`
+|url|The SQLite connection string for the database|`string`|`<nil>`
+
+## plugins.database[].sqlite3.migrations
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|auto|Enables automatic database migrations|`boolean`|`false`
+|directory|The directory containing the numerically ordered migration DDL files to apply to the database|`string`|`./db/migrations/sqlite`
+
+## plugins.dataexchange[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the configured Data Exchange plugin|`string`|`<nil>`
+|type|The Data Exchange plugin to use|`string`|`<nil>`
+
+## plugins.dataexchange[].ffdx
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|initEnabled|Instructs FireFly to always post all current nodes to the `/init` API before connecting or reconnecting to the connector|`boolean`|`false`
+|manifestEnabled|Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector|`string`|`false`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the Data Exchange instance|URL `string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Data Exchange|URL `string`|`<nil>`
+
+## plugins.dataexchange[].ffdx.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.dataexchange[].ffdx.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+
+## plugins.identity[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of a configured Identity plugin|`string`|`<nil>`
+|type|The type of a configured Identity plugin|`string`|`<nil>`
+
+## plugins.sharedstorage[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the Shared Storage plugin to use|`string`|`<nil>`
+|type|The Shared Storage plugin to use|`string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.api
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL for the IPFS API|URL `string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.api.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.api.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the IPFS API|URL `string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.api.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.sharedstorage[].ipfs.gateway
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL for the IPFS Gateway|URL `string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.gateway.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.gateway.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the IPFS Gateway|URL `string`|`<nil>`
+
+## plugins.sharedstorage[].ipfs.gateway.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.tokens[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|name|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
+|type|The type of the Tokens Connector plugin to use|`string`|`<nil>`
+
+## plugins.tokens[].fftokens
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
+|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
+|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
+|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
+|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|url|The URL of the Token Connector|URL `string`|`<nil>`
+
+## plugins.tokens[].fftokens.auth
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|password|Password|`string`|`<nil>`
+|username|Username|`string`|`<nil>`
+
+## plugins.tokens[].fftokens.proxy
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|url|Optional HTTP proxy server to use when connecting to the Token Connector|URL `string`|`<nil>`
+
+## plugins.tokens[].fftokens.retry
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|count|The maximum number of times to retry|`int`|`5`
+|enabled|Enables retries|`boolean`|`false`
+|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
+|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## plugins.tokens[].fftokens.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|heartbeatInterval|The amount of time to wait between heartbeat signals on the WebSocket connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+|initialConnectAttempts|The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing|`int`|`5`
+|path|The WebSocket sever URL to which FireFly should connect|WebSocket URL `string`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`16Kb`
 
 ## privatemessaging.batch
 
@@ -674,82 +1161,6 @@ nav_order: 3
 |factor|The retry backoff factor|`boolean`|`<nil>`
 |initDelay|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |maxDelay|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
-## publicstorage
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|type|`DEPRECATED` Please use `config.sharedstorage.type` instead|`string`|`<nil>`
-
-## publicstorage.ipfs.api
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
-|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
-|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
-|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|url|The URL for the IPFS API|URL `string`|`<nil>`
-
-## publicstorage.ipfs.api.auth
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|password|Password|`string`|`<nil>`
-|username|Username|`string`|`<nil>`
-
-## publicstorage.ipfs.api.proxy
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|url|Optional HTTP proxy server to use when connecting to the IPFS API|URL `string`|`<nil>`
-
-## publicstorage.ipfs.api.retry
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|count|The maximum number of times to retry|`int`|`5`
-|enabled|Enables retries|`boolean`|`false`
-|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
-|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-
-## publicstorage.ipfs.gateway
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-|expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
-|idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
-|maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
-|requestTimeout|The maximum amount of time that a request is allowed to remain open|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-|tlsHandshakeTimeout|The maximum amount of time to wait for a successful TLS handshake|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|url|The URL for the IPFS Gateway|URL `string`|`<nil>`
-
-## publicstorage.ipfs.gateway.auth
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|password|Password|`string`|`<nil>`
-|username|Username|`string`|`<nil>`
-
-## publicstorage.ipfs.gateway.proxy
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|url|Optional HTTP proxy server to use when connecting to the IPFS Gateway|URL `string`|`<nil>`
-
-## publicstorage.ipfs.gateway.retry
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|count|The maximum number of times to retry|`int`|`5`
-|enabled|Enables retries|`boolean`|`false`
-|initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
-|maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
 ## sharedstorage
 
@@ -852,7 +1263,6 @@ nav_order: 3
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|connector|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`

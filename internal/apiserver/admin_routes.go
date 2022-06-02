@@ -19,13 +19,7 @@ package apiserver
 import "github.com/hyperledger/firefly/internal/oapispec"
 
 var adminRoutes = []*oapispec.Route{
-	adminDeleteConfigRecord,
-	adminGetConfig,
-	adminGetConfigRecord,
-	adminGetConfigRecords,
 	adminGetOpByID,
 	adminGetOps,
-	adminPostResetConfig,
 	adminPatchOpByID,
-	adminPutConfigRecord,
 }

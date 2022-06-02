@@ -1,6 +1,6 @@
 ---
-layout: default
-title: Architecture
+layout: i18n_page
+title: pages.architecture
 nav_order: 6
 has_children: true
 ---

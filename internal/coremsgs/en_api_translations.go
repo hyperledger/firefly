@@ -16,13 +16,9 @@
 
 package coremsgs
 
-import "github.com/hyperledger/firefly-common/pkg/i18n"
-
-var ffm = i18n.FFM
-
 //revive:disable
 var (
-	CoreSystemNSDescription = ffm("core.systemNSDescription", "FireFly system namespace")
+	CoreSystemNSDescription = ffm("core.systemNSDescription", "FireFly system namespace (legacy - no longer used by newer versions)")
 
 	APIParamsConfigRecordKeyUpdate          = ffm("api.params.configRecordKey.update", "The configuration key to update. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
 	APIParamsConfigRecordKeyGet             = ffm("api.params.configRecordKey.get", "The configuration key to get. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
@@ -99,7 +95,7 @@ var (
 	APIEndpointsGetEvents                       = ffm("api.endpoints.getEvents", "Gets a list of events")
 	APIEndpointsGetGroupByHash                  = ffm("api.endpoints.getGroupByHash", "Gets a group by its ID (hash)")
 	APIEndpointsGetGroups                       = ffm("api.endpoints.getGroups", "Gets a list of groups")
-	APIEndpointsGetIdentities                   = ffm("api.endpoints.getIdentities", "Gets a list of identities that have been registered in the network")
+	APIEndpointsGetIdentities                   = ffm("api.endpoints.getIdentities", "Gets a list of all identities that have been registered in the namespace")
 	APIEndpointsGetIdentityByID                 = ffm("api.endpoints.getIdentityByID", "Gets an identity by its ID")
 	APIEndpointsGetIdentityDID                  = ffm("api.endpoints.getIdentityDID", "Gets the DID for an identity based on its ID")
 	APIEndpointsGetIdentityVerifiers            = ffm("api.endpoints.getIdentityVerifiers", "Gets the verifiers for an identity")
@@ -110,9 +106,10 @@ var (
 	APIEndpointsGetMsgs                         = ffm("api.endpoints.getMsgs", "Gets a list of messages")
 	APIEndpointsGetNamespace                    = ffm("api.endpoints.getNamespace", "Gets a namespace")
 	APIEndpointsGetNamespaces                   = ffm("api.endpoints.getNamespaces", "Gets a list of namespaces")
+	APIEndpointsGetNetworkIdentityByDID         = ffm("api.endpoints.getNetworkIdentityByDID", "Gets an identity by its DID (deprecated - use /identities/{did} instead of /network/identities/{did})")
 	APIEndpointsGetIdentityByDID                = ffm("api.endpoints.getIdentityByDID", "Gets an identity by its DID")
 	APIEndpointsGetDIDDocByDID                  = ffm("api.endpoints.getDIDDocByDID", "Gets a DID document by its DID")
-	APIEndpointsGetNetworkIdentities            = ffm("api.endpoints.getNetworkIdentities", "Gets the list of identities in the network")
+	APIEndpointsGetNetworkIdentities            = ffm("api.endpoints.getNetworkIdentities", "Gets the list of identities in the network (deprecated - use /identities instead of /network/identities")
 	APIEndpointsGetNetworkNode                  = ffm("api.endpoints.getNetworkNode", "Gets information about a specific node in the network")
 	APIEndpointsGetNetworkNodes                 = ffm("api.endpoints.getNetworkNodes", "Gets a list of nodes in the network")
 	APIEndpointsGetNetworkOrg                   = ffm("api.endpoints.getNetworkOrg", "Gets information about a specifc org in the network")
@@ -172,6 +169,7 @@ var (
 	APIEndpointsPutContractAPI                  = ffm("api.endpoints.putContractAPI", "Updates an existing contract API")
 	APIEndpointsPutSubscription                 = ffm("api.endpoints.putSubscription", "Update an existing subscription")
 	APIEndpointsGetContractAPIInterface         = ffm("api.endpoints.getContractAPIInterface", "Gets a contract interface for a contract API")
+	APIEndpointsPostNetworkAction               = ffm("api.endpoints.postNetworkAction", "Notify all nodes in the network of a new governance action")
 
 	APISuccessResponse         = ffm("api.success", "Success")
 	APIRequestTimeoutDesc      = ffm("api.requestTimeout", "Server-side request timeout (millseconds, or set a custom suffix like 10s)")
@@ -187,19 +185,4 @@ var (
 	APIHistogramStartTimeParam = ffm("api.histogramStartTime", "Start time of the data to be fetched")
 	APIHistogramEndTimeParam   = ffm("api.histogramEndTime", "End time of the data to be fetched")
 	APIHistogramBucketsParam   = ffm("api.histogramBuckets", "Number of buckets between start time and end time")
-	WebhooksOptJSON            = ffm("ws.options.json", "Whether to assume the response body is JSON, regardless of the returned Content-Type")
-	WebhooksOptReply           = ffm("ws.options.reply", "Whether to automatically send a reply event, using the body returned by the webhook")
-	WebhooksOptHeaders         = ffm("ws.options.headers", "Static headers to set on the webhook request")
-	WebhooksOptQuery           = ffm("ws.options.query", "Static query params to set on the webhook request")
-	WebhooksOptInput           = ffm("ws.options.input", "A set of options to extract data from the first JSON input data in the incoming message. Only applies if withData=true")
-	WebhooksOptInputQuery      = ffm("ws.options.inputQuery", "A top-level property of the first data input, to use for query parameters")
-	WebhooksOptInputHeaders    = ffm("ws.options.inputHeaders", "A top-level property of the first data input, to use for headers")
-	WebhooksOptInputBody       = ffm("ws.options.inputBody", "A top-level property of the first data input, to use for the request body. Default is the whole first body")
-	WebhooksOptFastAck         = ffm("ws.options.fastAck", "When true the event will be acknowledged before the webhook is invoked, allowing parallel invocations")
-	WebhooksOptURL             = ffm("ws.options.url", "Webhook url to invoke. Can be relative if a base URL is set in the webhook plugin config")
-	WebhooksOptMethod          = ffm("ws.options.method", "Webhook method to invoke. Default=POST")
-	WebhooksOptReplyTag        = ffm("ws.options.replytype", "The tag to set on the reply message")
-	WebhooksOptReplyTx         = ffm("ws.options.replyTX", "The transaction type to set on the reply message")
-	WebhooksOptInputPath       = ffm("ws.options.inputPath", "A top-level property of the first data input, to use for a path to append with escaping to the webhook path")
-	WebhooksOptInputReplyTx    = ffm("ws.options.inputReplyTX", "A top-level property of the first data input, to use to dynamically set whether to pin the response (so the requester can choose)")
 )

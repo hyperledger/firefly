@@ -212,7 +212,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
 		Header: core.MessageHeader{
-			Namespace: core.SystemNamespace,
+			Namespace: "ns1",
 			Tag:       core.SystemTagDefineDatatype,
 		},
 	}, core.DataArray{data}, fftypes.NewUUID())

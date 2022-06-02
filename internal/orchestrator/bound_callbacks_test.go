@@ -50,11 +50,16 @@ func TestBoundCallbacks(t *testing.T) {
 	pool := &tokens.TokenPool{}
 	transfer := &tokens.TokenTransfer{}
 	approval := &tokens.TokenApproval{}
+	event := &blockchain.Event{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
 	mei.On("BatchPinComplete", mbi, batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
 	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
+	assert.EqualError(t, err, "pop")
+
+	mei.On("BlockchainNetworkAction", mbi, "terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainNetworkAction("terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{

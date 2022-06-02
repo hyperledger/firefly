@@ -31,7 +31,7 @@ func testOrg() *Identity {
 			ID:        fftypes.NewUUID(),
 			DID:       "did:firefly:org/org1",
 			Type:      IdentityTypeOrg,
-			Namespace: SystemNamespace,
+			Namespace: "ns1",
 			Name:      "org1",
 		},
 		IdentityProfile: IdentityProfile{
@@ -50,7 +50,7 @@ func testNode() *Identity {
 			DID:       "did:firefly:node/node1",
 			Parent:    fftypes.NewUUID(),
 			Type:      IdentityTypeNode,
-			Namespace: SystemNamespace,
+			Namespace: "ns1",
 			Name:      "node1",
 		},
 		IdentityProfile: IdentityProfile{
@@ -66,7 +66,7 @@ func testCustom(ns, name string) *Identity {
 	return &Identity{
 		IdentityBase: IdentityBase{
 			ID:        fftypes.NewUUID(),
-			DID:       fmt.Sprintf("did:firefly:ns/%s/%s", ns, name),
+			DID:       fmt.Sprintf("did:firefly:%s", name),
 			Parent:    fftypes.NewUUID(),
 			Type:      IdentityTypeCustom,
 			Namespace: ns,
@@ -113,10 +113,6 @@ func TestIdentityValidationOrgs(t *testing.T) {
 	o.DID = "did:firefly:node/node1"
 	assert.Regexp(t, "FF00120", o.Validate(ctx))
 
-	o = testOrg()
-	o.Namespace = "nonsystem"
-	assert.Regexp(t, "FF00122", o.Validate(ctx))
-
 }
 
 func TestIdentityValidationNodes(t *testing.T) {
@@ -133,16 +129,14 @@ func TestIdentityValidationNodes(t *testing.T) {
 	n.DID = "did:firefly:org/org1"
 	assert.Regexp(t, "FF00120", n.Validate(ctx))
 
-	n = testNode()
-	n.Namespace = "nonsystem"
-	assert.Regexp(t, "FF00122", n.Validate(ctx))
-
 }
 
 func TestIdentityValidationCustom(t *testing.T) {
 
 	ctx := context.Background()
 	c := testCustom("ns1", "custom1")
+	assert.NoError(t, c.Validate(ctx))
+	c.DID = fmt.Sprintf("did:firefly:ns/%s/%s", c.Namespace, c.Name)
 	assert.NoError(t, c.Validate(ctx))
 
 	c = testCustom("ns1", "custom1")
@@ -154,7 +148,7 @@ func TestIdentityValidationCustom(t *testing.T) {
 	assert.Regexp(t, "FF00120", c.Validate(ctx))
 
 	c = testCustom("ns1", "custom1")
-	c.Namespace = SystemNamespace
+	c.Namespace = LegacySystemNamespace
 	assert.Regexp(t, "FF00121", c.Validate(ctx))
 
 }

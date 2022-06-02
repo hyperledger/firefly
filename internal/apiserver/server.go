@@ -109,13 +109,11 @@ func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (er
 	adminErrChan := make(chan error)
 	metricsErrChan := make(chan error)
 
-	if !o.IsPreInit() {
-		apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfig, corsConfig)
-		if err != nil {
-			return err
-		}
-		go apiHTTPServer.ServeHTTP(ctx)
+	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfig, corsConfig)
+	if err != nil {
+		return err
 	}
+	go apiHTTPServer.ServeHTTP(ctx)
 
 	if config.GetBool(coreconfig.AdminEnabled) {
 		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfig, corsConfig)

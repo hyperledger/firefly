@@ -1,7 +1,7 @@
 ---
 layout: default
 title: The FireFly node
-parent: Understanding FireFly
+parent: pages.understanding_firefly
 nav_order: 3
 ---
 

@@ -33,7 +33,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		parent, err = fftypes.ParseUUID(ctx, dto.Parent)
 		if err != nil {
 			// Or a DID
-			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, dto.Parent)
+			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, dto.Parent)
 			if err != nil {
 				return nil, err
 			}
@@ -56,13 +56,12 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		},
 	}
 
+	if err := nm.data.VerifyNamespaceExists(ctx, ns); err != nil {
+		return nil, err
+	}
+
 	// Set defaults
-	if identity.Namespace == core.SystemNamespace || identity.Namespace == "" {
-		identity.Namespace = core.SystemNamespace
-		if identity.Type == "" {
-			identity.Type = core.IdentityTypeOrg
-		}
-	} else if identity.Type == "" {
+	if identity.Type == "" {
 		identity.Type = core.IdentityTypeCustom
 	}
 

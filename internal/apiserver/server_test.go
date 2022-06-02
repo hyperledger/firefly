@@ -85,7 +85,6 @@ func TestStartStopServer(t *testing.T) {
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(false)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
@@ -101,7 +100,6 @@ func TestStartAPIFail(t *testing.T) {
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(false)
 	err := as.Serve(ctx, mor)
 	assert.Regexp(t, "FF00151", err)
 }
@@ -116,7 +114,6 @@ func TestStartAdminFail(t *testing.T) {
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(true)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)
@@ -131,7 +128,6 @@ func TestStartAdminWSHandler(t *testing.T) {
 	config.Set(coreconfig.AdminEnabled, true)
 	as := NewAPIServer().(*apiServer)
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(true)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	mae.On("ServeHTTPWebSocketListener", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
@@ -153,7 +149,6 @@ func TestStartMetricsFail(t *testing.T) {
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
 	mor := &orchestratormocks.Orchestrator{}
-	mor.On("IsPreInit").Return(true)
 	mae := &admineventsmocks.Manager{}
 	mor.On("AdminEvents").Return(mae)
 	err := as.Serve(ctx, mor)

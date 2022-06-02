@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Define a datatype
-parent: Tutorials
+parent: pages.tutorials
 nav_order: 7
 ---
 
@@ -31,8 +31,8 @@ of datatypes, as is used to broadcast the data itself.
 
 ## Additional info
 
-- Key Concepts: [Broadcast / shared data](/firefly/keyconcepts/broadcast.html)
-- Swagger: [POST /api/v1/namespaces/{ns}/broadcast/datatype](/firefly/swagger/swagger.html#/default/postBroadcastDatatype)
+- Key Concepts: [Broadcast / shared data](../overview//broadcast.md)
+- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewDatatype" data-proofer-ignore>POST /api/v1/namespaces/{ns}/datatypes</a>
 
 ### Example 1: Broadcast new datatype
 

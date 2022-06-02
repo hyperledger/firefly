@@ -25,15 +25,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/apiserver"
 	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateConfigDocs(t *testing.T) {
 	// Initialize config of all plugins
-	orchestrator.NewOrchestrator()
+	orchestrator.NewOrchestrator(false)
 	apiserver.InitConfig()
 	f, err := os.Create(filepath.Join("reference", "config.md"))
 	assert.NoError(t, err)

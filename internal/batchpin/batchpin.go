@@ -50,7 +50,7 @@ type batchPinSubmitter struct {
 
 func NewBatchPinSubmitter(ctx context.Context, di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
 	if di == nil || im == nil || bi == nil || mm == nil || om == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchPinSubmitter")
 	}
 	bp := &batchPinSubmitter{
 		database:   di,

@@ -65,7 +65,7 @@ type operationsManager struct {
 
 func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || txHelper == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "OperationsManager")
 	}
 	om := &operationsManager{
 		ctx:      ctx,

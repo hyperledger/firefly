@@ -80,7 +80,7 @@ type contractManager struct {
 
 func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
 	if err != nil {
@@ -218,7 +218,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	req.Key, err = cm.identity.NormalizeSigningKey(ctx, ns, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 		err = send(ctx)
 		return op, err
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Options)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}

@@ -22,7 +22,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -48,24 +50,30 @@ const (
 )
 
 type Ethereum struct {
-	ctx          context.Context
-	topic        string
-	instancePath string
-	prefixShort  string
-	prefixLong   string
-	capabilities *blockchain.Capabilities
-	callbacks    blockchain.Callbacks
-	client       *resty.Client
-	fftmClient   *resty.Client
-	streams      *streamManager
-	initInfo     struct {
-		stream *eventStream
-		sub    *subscription
+	ctx             context.Context
+	topic           string
+	prefixShort     string
+	prefixLong      string
+	capabilities    *blockchain.Capabilities
+	callbacks       blockchain.Callbacks
+	client          *resty.Client
+	fftmClient      *resty.Client
+	streams         *streamManager
+	streamID        string
+	fireflyContract struct {
+		mux            sync.Mutex
+		address        string
+		fromBlock      string
+		networkVersion int
+		subscription   string
 	}
-	wsconn          wsclient.WSClient
-	closed          chan struct{}
-	addressResolver *addressResolver
-	metrics         metrics.Manager
+	wsconn           wsclient.WSClient
+	closed           chan struct{}
+	addressResolver  *addressResolver
+	metrics          metrics.Manager
+	ethconnectConf   config.Section
+	contractConf     config.ArraySection
+	contractConfSize int
 }
 
 type eventStreamWebsocket struct {
@@ -129,14 +137,6 @@ type ABIElementMarshaling struct {
 	Outputs         []ABIArgumentMarshaling `json:"outputs"`
 }
 
-type EthconnectMessageRequest struct {
-	Headers EthconnectMessageHeaders `json:"headers,omitempty"`
-	To      string                   `json:"to"`
-	From    string                   `json:"from,omitempty"`
-	Method  ABIElementMarshaling     `json:"method"`
-	Params  []interface{}            `json:"params"`
-}
-
 type EthconnectMessageHeaders struct {
 	Type string `json:"type,omitempty"`
 	ID   string `json:"id,omitempty"`
@@ -157,13 +157,15 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 }
 
 func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
-	ethconnectConf := config.SubSection(EthconnectConfigKey)
+	e.InitConfig(config)
+	ethconnectConf := e.ethconnectConf
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	fftmConf := config.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.callbacks = callbacks
 	e.metrics = metrics
+	e.capabilities = &blockchain.Capabilities{}
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -172,72 +174,39 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	}
 
 	if ethconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.ethereum.ethconnect")
 	}
-
 	e.client = ffresty.New(e.ctx, ethconnectConf)
 
 	if fftmConf.GetString(ffresty.HTTPConfigURL) != "" {
 		e.fftmClient = ffresty.New(e.ctx, fftmConf)
 	}
 
-	e.capabilities = &blockchain.Capabilities{
-		GlobalSequencer: true,
-	}
-
-	e.instancePath = ethconnectConf.GetString(EthconnectConfigInstancePath)
-	if e.instancePath == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethconnect")
-	}
-
-	// Backwards compatibility from when instance path was not a contract address
-	if strings.HasPrefix(strings.ToLower(e.instancePath), "/contracts/") {
-		address, err := e.getContractAddress(ctx, e.instancePath)
-		if err != nil {
-			return err
-		}
-		e.instancePath = address
-	} else if strings.HasPrefix(e.instancePath, "/instances/") {
-		e.instancePath = strings.Replace(e.instancePath, "/instances/", "", 1)
-	}
-
-	// Ethconnect needs the "0x" prefix in some cases
-	if !strings.HasPrefix(e.instancePath, "0x") {
-		e.instancePath = fmt.Sprintf("0x%s", e.instancePath)
-	}
-
 	e.topic = ethconnectConf.GetString(EthconnectConfigTopic)
 	if e.topic == "" {
-		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethconnect")
+		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "topic", "blockchain.ethereum.ethconnect")
 	}
-
 	e.prefixShort = ethconnectConf.GetString(EthconnectPrefixShort)
 	e.prefixLong = ethconnectConf.GetString(EthconnectPrefixLong)
 
 	wsConfig := wsclient.GenerateConfig(ethconnectConf)
-
 	if wsConfig.WSKeyPath == "" {
 		wsConfig.WSKeyPath = "/ws"
 	}
-
 	e.wsconn, err = wsclient.New(ctx, wsConfig, nil, e.afterConnect)
 	if err != nil {
 		return err
 	}
 
-	e.streams = &streamManager{
-		client:                       e.client,
-		fireFlySubscriptionFromBlock: ethconnectConf.GetString(EthconnectConfigFromBlock),
-	}
+	e.streams = &streamManager{client: e.client}
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
-	if e.initInfo.stream, err = e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout); err != nil {
+	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
+	if err != nil {
 		return err
 	}
-	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.initInfo.stream.ID, e.topic)
-	if e.initInfo.sub, err = e.streams.ensureFireFlySubscription(e.ctx, e.instancePath, e.initInfo.stream.ID, batchPinEventABI); err != nil {
-		return err
-	}
+	e.streamID = stream.ID
+	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
 	e.closed = make(chan struct{})
 	go e.eventLoop()
@@ -245,8 +214,103 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	return nil
 }
 
-func (e *Ethereum) Start() error {
+func (e *Ethereum) Start() (err error) {
 	return e.wsconn.Connect()
+}
+
+func (e *Ethereum) resolveFireFlyContract(ctx context.Context, contractIndex int) (address, fromBlock string, err error) {
+
+	if e.contractConfSize > 0 || contractIndex > 0 {
+		// New config (array of objects under "fireflyContract")
+		if contractIndex >= e.contractConfSize {
+			return "", "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.ethereum.fireflyContract[%d]", contractIndex))
+		}
+		entry := e.contractConf.ArrayEntry(contractIndex)
+		address = entry.GetString(FireFlyContractAddress)
+		if address == "" {
+			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.ethereum.fireflyContract")
+		}
+		fromBlock = entry.GetString(FireFlyContractFromBlock)
+	} else {
+		// Old config (attributes under "ethconnect")
+		address = e.ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
+		if address != "" {
+			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
+				EthconnectConfigKey, EthconnectConfigInstanceDeprecated,
+				FireFlyContractConfigKey, FireFlyContractAddress)
+		} else {
+			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethereum.ethconnect")
+		}
+		fromBlock = e.ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
+		if fromBlock != "" {
+			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
+				EthconnectConfigKey, EthconnectConfigFromBlockDeprecated,
+				FireFlyContractConfigKey, FireFlyContractFromBlock)
+		}
+	}
+
+	// Backwards compatibility from when instance path was not a contract address
+	if strings.HasPrefix(strings.ToLower(address), "/contracts/") {
+		address, err = e.getContractAddress(ctx, address)
+		if err != nil {
+			return "", "", err
+		}
+	} else if strings.HasPrefix(address, "/instances/") {
+		address = strings.Replace(address, "/instances/", "", 1)
+	}
+
+	address, err = validateEthAddress(ctx, address)
+	return address, fromBlock, err
+}
+
+func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
+
+	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
+	address, fromBlock, err := e.resolveFireFlyContract(ctx, contracts.Active.Index)
+	if err != nil {
+		return err
+	}
+
+	sub, err := e.streams.ensureFireFlySubscription(ctx, address, fromBlock, e.streamID, batchPinEventABI)
+	if err == nil {
+		var version int
+		version, err = e.getNetworkVersion(ctx, address)
+		if err == nil {
+			e.fireflyContract.mux.Lock()
+			e.fireflyContract.address = address
+			e.fireflyContract.fromBlock = fromBlock
+			e.fireflyContract.networkVersion = version
+			e.fireflyContract.subscription = sub.ID
+			e.fireflyContract.mux.Unlock()
+			contracts.Active.Info = fftypes.JSONObject{
+				"address":      address,
+				"fromBlock":    fromBlock,
+				"subscription": sub.ID,
+			}
+		}
+	}
+	return err
+}
+
+func (e *Ethereum) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
+
+	address, err := validateEthAddress(ctx, termination.Info.GetString("address"))
+	if err != nil {
+		return err
+	}
+	e.fireflyContract.mux.Lock()
+	fireflyAddress := e.fireflyContract.address
+	e.fireflyContract.mux.Unlock()
+	if address != fireflyAddress {
+		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, fireflyAddress)
+		return nil
+	}
+
+	log.L(ctx).Infof("Processing termination request from address %s", address)
+	contracts.Active.FinalEvent = termination.ProtocolID
+	contracts.Terminated = append(contracts.Terminated, contracts.Active)
+	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
+	return e.ConfigureContract(ctx, contracts)
 }
 
 func (e *Ethereum) Capabilities() *blockchain.Capabilities {
@@ -276,31 +340,55 @@ func ethHexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+func (e *Ethereum) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONObject) *blockchain.Event {
 	sBlockNumber := msgJSON.GetString("blockNumber")
 	sTransactionHash := msgJSON.GetString("transactionHash")
 	blockNumber := msgJSON.GetInt64("blockNumber")
 	txIndex := msgJSON.GetInt64("transactionIndex")
 	logIndex := msgJSON.GetInt64("logIndex")
 	dataJSON := msgJSON.GetObject("data")
-	authorAddress := dataJSON.GetString("author")
-	ns := dataJSON.GetString("namespace")
-	sUUIDs := dataJSON.GetString("uuids")
-	sBatchHash := dataJSON.GetString("batchHash")
-	sPayloadRef := dataJSON.GetString("payloadRef")
-	sContexts := dataJSON.GetStringArray("contexts")
+	signature := msgJSON.GetString("signature")
+	name := strings.SplitN(signature, "(", 2)[0]
 	timestampStr := msgJSON.GetString("timestamp")
 	timestamp, err := fftypes.ParseTimeString(timestampStr)
 	if err != nil {
-		log.L(ctx).Errorf("BatchPin event is not valid - missing timestamp: %+v", msgJSON)
+		log.L(ctx).Errorf("Blockchain event is not valid - missing timestamp: %+v", msgJSON)
 		return nil // move on
 	}
 
-	if sBlockNumber == "" ||
-		sTransactionHash == "" ||
-		authorAddress == "" ||
-		sUUIDs == "" ||
-		sBatchHash == "" {
+	if sBlockNumber == "" || sTransactionHash == "" {
+		log.L(ctx).Errorf("Blockchain event is not valid - missing data: %+v", msgJSON)
+		return nil // move on
+	}
+
+	delete(msgJSON, "data")
+	return &blockchain.Event{
+		BlockchainTXID: sTransactionHash,
+		Source:         e.Name(),
+		Name:           name,
+		ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
+		Output:         dataJSON,
+		Info:           msgJSON,
+		Timestamp:      timestamp,
+		Location:       e.buildEventLocationString(msgJSON),
+		Signature:      signature,
+	}
+}
+
+func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	event := e.parseBlockchainEvent(ctx, msgJSON)
+	if event == nil {
+		return nil // move on
+	}
+
+	authorAddress := event.Output.GetString("author")
+	nsOrAction := event.Output.GetString("namespace")
+	sUUIDs := event.Output.GetString("uuids")
+	sBatchHash := event.Output.GetString("batchHash")
+	sPayloadRef := event.Output.GetString("payloadRef")
+	sContexts := event.Output.GetStringArray("contexts")
+
+	if authorAddress == "" || sUUIDs == "" || sBatchHash == "" {
 		log.L(ctx).Errorf("BatchPin event is not valid - missing data: %+v", msgJSON)
 		return nil // move on
 	}
@@ -309,6 +397,16 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 	if err != nil {
 		log.L(ctx).Errorf("BatchPin event is not valid - bad from address (%s): %+v", err, msgJSON)
 		return nil // move on
+	}
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: authorAddress,
+	}
+
+	// Check if this is actually an operator action
+	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
+		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
+		return e.callbacks.BlockchainNetworkAction(action, event, verifier)
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -339,67 +437,29 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSON
 		contexts[i] = &hash
 	}
 
-	delete(msgJSON, "data")
 	batch := &blockchain.BatchPin{
-		Namespace:       ns,
+		Namespace:       nsOrAction,
 		TransactionID:   &txnID,
 		BatchID:         &batchID,
 		BatchHash:       &batchHash,
 		BatchPayloadRef: sPayloadRef,
 		Contexts:        contexts,
-		Event: blockchain.Event{
-			BlockchainTXID: sTransactionHash,
-			Source:         e.Name(),
-			Name:           "BatchPin",
-			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
-			Output:         dataJSON,
-			Info:           msgJSON,
-			Timestamp:      timestamp,
-			Location:       e.buildEventLocationString(msgJSON),
-			Signature:      msgJSON.GetString("signature"),
-		},
+		Event:           *event,
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return e.callbacks.BatchPinComplete(batch, &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: authorAddress,
-	})
+	return e.callbacks.BatchPinComplete(batch, verifier)
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
-	sTransactionHash := msgJSON.GetString("transactionHash")
-	blockNumber := msgJSON.GetInt64("blockNumber")
-	txIndex := msgJSON.GetInt64("transactionIndex")
-	logIndex := msgJSON.GetInt64("logIndex")
-	sub := msgJSON.GetString("subId")
-	signature := msgJSON.GetString("signature")
-	dataJSON := msgJSON.GetObject("data")
-	name := strings.SplitN(signature, "(", 2)[0]
-	timestampStr := msgJSON.GetString("timestamp")
-	timestamp, err := fftypes.ParseTimeString(timestampStr)
-	if err != nil {
-		log.L(ctx).Errorf("Contract event is not valid - missing timestamp: %+v", msgJSON)
-		return err // move on
+	event := e.parseBlockchainEvent(ctx, msgJSON)
+	if event != nil {
+		err = e.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+			Event:        *event,
+			Subscription: msgJSON.GetString("subId"),
+		})
 	}
-	delete(msgJSON, "data")
-
-	event := &blockchain.EventWithSubscription{
-		Subscription: sub,
-		Event: blockchain.Event{
-			BlockchainTXID: sTransactionHash,
-			Source:         e.Name(),
-			Name:           name,
-			ProtocolID:     fmt.Sprintf("%.12d/%.6d/%.6d", blockNumber, txIndex, logIndex),
-			Output:         dataJSON,
-			Info:           msgJSON,
-			Timestamp:      timestamp,
-			Location:       e.buildEventLocationString(msgJSON),
-			Signature:      msgJSON.GetString("signature"),
-		},
-	}
-
-	return e.callbacks.BlockchainEvent(event)
+	return err
 }
 
 func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
@@ -449,7 +509,12 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		if sub == e.initInfo.sub.ID {
+		e.fireflyContract.mux.Lock()
+		fireflySub := e.fireflyContract.subscription
+		e.fireflyContract.mux.Unlock()
+
+		if sub == fireflySub {
+			// Matches the active FireFly BatchPin subscription
 			switch signature {
 			case broadcastBatchEventSignature:
 				if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
@@ -458,8 +523,12 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 			default:
 				l.Infof("Ignoring event with unknown signature: %s", signature)
 			}
-		} else if err := e.handleContractEvent(ctx1, msgJSON); err != nil {
-			return err
+		} else {
+			// Subscription not recognized - assume it's from a custom contract listener
+			// (event manager will reject it if it's not)
+			if err := e.handleContractEvent(ctx1, msgJSON); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -539,19 +608,41 @@ func wrapError(ctx context.Context, errRes *ethError, res *resty.Response, err e
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
 }
 
-func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}) error {
+func (e *Ethereum) buildEthconnectRequestBody(ctx context.Context, messageType, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}, options map[string]interface{}) (map[string]interface{}, error) {
+	headers := EthconnectMessageHeaders{
+		Type: messageType,
+	}
+	if requestID != "" {
+		headers.ID = requestID
+	}
+	body := map[string]interface{}{
+		"headers": headers,
+		"to":      address,
+		"method":  abi,
+		"params":  input,
+	}
+	if signingKey != "" {
+		body["from"] = signingKey
+	}
+	for k, v := range options {
+		// Set the new field if it's not already set. Do not allow overriding of existing fields
+		if _, ok := body[k]; !ok {
+			body[k] = v
+		} else {
+			return nil, i18n.NewError(ctx, coremsgs.MsgOverrideExistingFieldCustomOption, k)
+		}
+	}
+	return body, nil
+}
+
+func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey string, abi ABIElementMarshaling, requestID string, input []interface{}, options map[string]interface{}) error {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainTransaction(address, abi.Name)
 	}
-	body := EthconnectMessageRequest{
-		Headers: EthconnectMessageHeaders{
-			Type: "SendTransaction",
-			ID:   requestID,
-		},
-		From:   signingKey,
-		To:     address,
-		Method: abi,
-		Params: input,
+	messageType := "SendTransaction"
+	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, signingKey, abi, requestID, input, options)
+	if err != nil {
+		return err
 	}
 	client := e.fftmClient
 	if client == nil {
@@ -569,25 +660,28 @@ func (e *Ethereum) invokeContractMethod(ctx context.Context, address, signingKey
 	return nil
 }
 
-func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}) (*resty.Response, error) {
+func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi ABIElementMarshaling, input []interface{}, options map[string]interface{}) (*resty.Response, error) {
 	if e.metrics.IsMetricsEnabled() {
 		e.metrics.BlockchainQuery(address, abi.Name)
 	}
-	body := EthconnectMessageRequest{
-		Headers: EthconnectMessageHeaders{
-			Type: "Query",
-		},
-		To:     address,
-		Method: abi,
-		Params: input,
+	messageType := "Query"
+	body, err := e.buildEthconnectRequestBody(ctx, messageType, address, "", abi, "", input, options)
+	if err != nil {
+		return nil, err
 	}
-	return e.client.R().
+	var resErr ethError
+	res, err := e.client.R().
 		SetContext(ctx).
 		SetBody(body).
+		SetError(&resErr).
 		Post("/")
+	if err != nil || !res.IsSuccess() {
+		return res, wrapError(ctx, &resErr, res, err)
+	}
+	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, ledgerID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -602,10 +696,27 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
-	return e.invokeContractMethod(ctx, e.instancePath, signingKey, batchPinMethodABI, operationID.String(), input)
+	e.fireflyContract.mux.Lock()
+	address := e.fireflyContract.address
+	e.fireflyContract.mux.Unlock()
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input, nil)
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) error {
+func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
+	input := []interface{}{
+		blockchain.FireFlyActionPrefix + action,
+		ethHexFormatB32(nil),
+		ethHexFormatB32(nil),
+		"",
+		[]string{},
+	}
+	e.fireflyContract.mux.Lock()
+	address := e.fireflyContract.address
+	e.fireflyContract.mux.Unlock()
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input, nil)
+}
+
+func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -614,10 +725,10 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	if err != nil {
 		return err
 	}
-	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput)
+	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput, options)
 }
 
-func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}) (interface{}, error) {
+func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -626,9 +737,9 @@ func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny,
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput)
+	res, err := e.queryContractMethod(ctx, ethereumLocation.Address, abi, orderedInput, options)
 	if err != nil || !res.IsSuccess() {
-		return nil, ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgEthconnectRESTErr)
+		return nil, err
 	}
 	output := &queryOutput{}
 	if err = json.Unmarshal(res.Body(), output); err != nil {
@@ -675,7 +786,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	}
 
 	subName := fmt.Sprintf("ff-sub-%s", listener.ID)
-	result, err := e.streams.createSubscription(ctx, location, e.initInfo.stream.ID, subName, listener.Options.FirstEvent, abi)
+	result, err := e.streams.createSubscription(ctx, location, e.streamID, subName, listener.Options.FirstEvent, abi)
 	if err != nil {
 		return err
 	}
@@ -968,4 +1079,26 @@ func (e *Ethereum) getFFIType(solitidyType string) string {
 		}
 	}
 	return ""
+}
+
+func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, error) {
+	res, err := e.queryContractMethod(ctx, address, networkVersionMethodABI, []interface{}{}, nil)
+	if err != nil || !res.IsSuccess() {
+		// "Call failed" is interpreted as "method does not exist, default to version 1"
+		if strings.Contains(err.Error(), "FFEC100148") {
+			return 1, nil
+		}
+		return 0, err
+	}
+	output := &queryOutput{}
+	if err = json.Unmarshal(res.Body(), output); err != nil {
+		return 0, err
+	}
+	return strconv.Atoi(output.Output.(string))
+}
+
+func (e *Ethereum) NetworkVersion(ctx context.Context) int {
+	e.fireflyContract.mux.Lock()
+	defer e.fireflyContract.mux.Unlock()
+	return e.fireflyContract.networkVersion
 }

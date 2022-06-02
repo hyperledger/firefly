@@ -1,7 +1,7 @@
 ---
 layout: default
 title: ③ Use the Sandbox
-parent: Getting Started
+parent: pages.getting_started
 nav_order: 3
 ---
 
@@ -99,7 +99,7 @@ The Messages tab is where we can send broadcast and private messages to other me
 
 ## Tokens
 
-The Tokens tab is where you can create token pools, and mint, burn, or transfer tokens. This works with both fungible and non-fungible tokens (NFTs). For more details, please see the tutorial on [Minting some tokens](../tutorials/mint_tokens.md).
+The Tokens tab is where you can create token pools, and mint, burn, or transfer tokens. This works with both fungible and non-fungible tokens (NFTs). For more details, please see the [Tokens tutorials](../tutorials/tokens).
 
 ### Things to try out
 
@@ -113,7 +113,7 @@ The Tokens tab is where you can create token pools, and mint, burn, or transfer 
 
 ## Contracts
 
-The Contracts section of the Sandbox lets you interact with custom smart contracts, right from your web browser! The Sandbox also provides some helpful tips on deploying your smart contract to the blockchain. For more details, please see the tutorial on [Working with custom smart contracts](../tutorials/custom_contracts.md).
+The Contracts section of the Sandbox lets you interact with custom smart contracts, right from your web browser! The Sandbox also provides some helpful tips on deploying your smart contract to the blockchain. For more details, please see the tutorial on [Working with custom smart contracts](../tutorials/custom_contracts/index.md).
 
 ![Sandbox Tokens](../images/sandbox/sandbox_contracts_api.png)
 
