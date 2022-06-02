@@ -17,20 +17,34 @@
 package events
 
 import (
+	"context"
+
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.Event) error {
-	ns, err := em.database.GetNamespace(em.ctx, core.LegacySystemNamespace)
+	f := database.NamespaceQueryFactory.NewFilter(em.ctx)
+	namespaces, _, err := em.database.GetNamespaces(em.ctx, f.And())
 	if err != nil {
 		return err
 	}
-	if err := bi.TerminateContract(em.ctx, &ns.Contracts, event); err != nil {
+	contracts := &namespaces[0].Contracts
+	if err := bi.TerminateContract(em.ctx, contracts, event); err != nil {
 		return err
 	}
-	return em.database.UpsertNamespace(em.ctx, ns, true)
+	// Currently, a termination event is implied to apply to ALL namespaces
+	return em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
+		for _, ns := range namespaces {
+			ns.Contracts = *contracts
+			if err := em.database.UpsertNamespace(em.ctx, ns, true); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (em *eventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
