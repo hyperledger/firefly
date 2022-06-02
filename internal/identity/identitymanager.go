@@ -391,13 +391,9 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.LegacySystemNamespace {
-			if version, err := im.blockchain.NetworkVersion(ctx); err != nil {
-				return nil, err
-			} else if version == 1 {
-				// For V1 networks, fall back to SystemNamespace for looking up identities
-				return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)
-			}
+		if namespace != core.LegacySystemNamespace && im.blockchain.NetworkVersion(ctx) == 1 {
+			// For V1 networks, fall back to SystemNamespace for looking up identities
+			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)
 		}
 		return nil, err
 	}

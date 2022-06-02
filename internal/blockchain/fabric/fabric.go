@@ -249,16 +249,20 @@ func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyC
 	location := &Location{Channel: f.defaultChannel, Chaincode: chaincode}
 	sub, err := f.streams.ensureFireFlySubscription(ctx, location, fromBlock, f.streamID, batchPinEvent)
 	if err == nil {
-		f.fireflyContract.mux.Lock()
-		f.fireflyContract.chaincode = chaincode
-		f.fireflyContract.fromBlock = fromBlock
-		f.fireflyContract.networkVersion = 0
-		f.fireflyContract.subscription = sub.ID
-		f.fireflyContract.mux.Unlock()
-		contracts.Active.Info = fftypes.JSONObject{
-			"chaincode":    chaincode,
-			"fromBlock":    fromBlock,
-			"subscription": sub.ID,
+		var version int
+		version, err = f.getNetworkVersion(ctx, chaincode)
+		if err == nil {
+			f.fireflyContract.mux.Lock()
+			f.fireflyContract.chaincode = chaincode
+			f.fireflyContract.fromBlock = fromBlock
+			f.fireflyContract.networkVersion = version
+			f.fireflyContract.subscription = sub.ID
+			f.fireflyContract.mux.Unlock()
+			contracts.Active.Info = fftypes.JSONObject{
+				"chaincode":    chaincode,
+				"fromBlock":    fromBlock,
+				"subscription": sub.ID,
+			}
 		}
 	}
 	return err
@@ -268,12 +272,12 @@ func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyC
 
 	chaincode := termination.Info.GetString("chaincodeId")
 	f.fireflyContract.mux.Lock()
-	if chaincode != f.fireflyContract.chaincode {
-		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, f.fireflyContract.chaincode)
-		f.fireflyContract.mux.Unlock()
+	fireflyChaincode := f.fireflyContract.chaincode
+	f.fireflyContract.mux.Unlock()
+	if chaincode != fireflyChaincode {
+		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, fireflyChaincode)
 		return nil
 	}
-	f.fireflyContract.mux.Unlock()
 
 	log.L(ctx).Infof("Processing termination request from chaincode %s", chaincode)
 	contracts.Active.FinalEvent = termination.ProtocolID
@@ -844,16 +848,8 @@ func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, 
 	return int(output.Result.(float64)), nil
 }
 
-func (f *Fabric) NetworkVersion(ctx context.Context) (int, error) {
+func (f *Fabric) NetworkVersion(ctx context.Context) int {
 	f.fireflyContract.mux.Lock()
 	defer f.fireflyContract.mux.Unlock()
-	if f.fireflyContract.networkVersion > 0 {
-		return f.fireflyContract.networkVersion, nil
-	}
-	chaincode := f.fireflyContract.chaincode
-	version, err := f.getNetworkVersion(ctx, chaincode)
-	if err == nil {
-		f.fireflyContract.networkVersion = version
-	}
-	return version, err
+	return f.fireflyContract.networkVersion
 }

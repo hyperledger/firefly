@@ -224,6 +224,9 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 
 func (or *orchestrator) Start() (err error) {
 	if err == nil {
+		err = or.metrics.Start()
+	}
+	if err == nil {
 		err = or.batch.Start()
 	}
 	var ns *core.Namespace
@@ -264,9 +267,6 @@ func (or *orchestrator) Start() (err error) {
 				break
 			}
 		}
-	}
-	if err == nil {
-		err = or.metrics.Start()
 	}
 	or.started = true
 	return err

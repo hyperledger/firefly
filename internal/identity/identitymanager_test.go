@@ -170,7 +170,7 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion", ctx).Return(1, nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	idID := fftypes.NewUUID()
 
@@ -209,7 +209,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion", ctx).Return(1, nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
@@ -275,7 +275,7 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion", ctx).Return(1, nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
@@ -571,38 +571,11 @@ func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion", ctx).Return(1, nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(nil, nil)
-
-	mns := im.namespace.(*namespacemocks.Manager)
-	mns.On("GetDefaultKey", "ns1").Return("")
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
-
-	err := im.resolveDefaultSigningIdentity(ctx, "ns1", &core.SignerRef{})
-	assert.Regexp(t, "FF10281", err)
-
-	mbi.AssertExpectations(t)
-	mdi.AssertExpectations(t)
-	mns.AssertExpectations(t)
-
-}
-
-func TestResolveDefaultSigningIdentityVersionError(t *testing.T) {
-
-	ctx, im := newTestIdentityManager(t)
-	im.multipartyRootVerifier["ns1"] = &core.VerifierRef{
-		Type:  core.VerifierTypeEthAddress,
-		Value: "key12345",
-	}
-
-	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion", ctx).Return(1, fmt.Errorf("pop"))
-
-	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
 
 	mns := im.namespace.(*namespacemocks.Manager)
 	mns.On("GetDefaultKey", "ns1").Return("")
@@ -642,7 +615,7 @@ func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion", ctx).Return(1, nil)
+	mbi.On("NetworkVersion", ctx).Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
