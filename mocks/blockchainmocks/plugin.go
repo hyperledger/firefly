@@ -188,7 +188,7 @@ func (_m *Plugin) Name() string {
 }
 
 // NetworkVersion provides a mock function with given fields: ctx
-func (_m *Plugin) NetworkVersion(ctx context.Context) (int, error) {
+func (_m *Plugin) NetworkVersion(ctx context.Context) int {
 	ret := _m.Called(ctx)
 
 	var r0 int
@@ -198,14 +198,7 @@ func (_m *Plugin) NetworkVersion(ctx context.Context) (int, error) {
 		r0 = ret.Get(0).(int)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NormalizeContractLocation provides a mock function with given fields: ctx, location

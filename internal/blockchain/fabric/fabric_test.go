@@ -101,6 +101,19 @@ func testFFIMethod() *core.FFIMethod {
 	}
 }
 
+func mockNetworkVersion(t *testing.T, version float64) func(req *http.Request) (*http.Response, error) {
+	return func(req *http.Request) (*http.Response, error) {
+		var body map[string]interface{}
+		json.NewDecoder(req.Body).Decode(&body)
+		if body["func"] == "NetworkVersion" {
+			return httpmock.NewJsonResponderOrPanic(200, fabQueryNamedOutput{
+				Result: version,
+			})(req)
+		}
+		return nil, nil
+	}
+}
+
 func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
@@ -152,6 +165,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			assert.Equal(t, "0", body["fromBlock"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/query", httpURL), mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
@@ -171,7 +185,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	err = e.Start()
 	assert.NoError(t, err)
 
-	assert.Equal(t, 4, httpmock.GetTotalCallCount())
+	assert.Equal(t, 5, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
 	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 	assert.NotNil(t, e.Capabilities())
@@ -248,6 +262,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"), mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -261,7 +276,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
 	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 
@@ -282,6 +297,8 @@ func TestInitNewConfig(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -295,7 +312,7 @@ func TestInitNewConfig(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
 	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 
@@ -355,6 +372,108 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 
 }
 
+func TestInitNetworkVersionNotFound(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
+		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Function NetworkVersion not found"}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	assert.NoError(t, err)
+	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "firefly", e.fireflyContract.chaincode)
+	assert.Equal(t, 1, e.fireflyContract.networkVersion)
+}
+
+func TestInitNetworkVersionError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
+		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Unknown"}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	assert.NoError(t, err)
+	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
+	assert.Regexp(t, "FF10284", err)
+}
+
+func TestInitNetworkVersionBadResponse(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
+		httpmock.NewJsonResponderOrPanic(200, ""))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	assert.NoError(t, err)
+	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
+	assert.Regexp(t, "json: cannot unmarshal", err)
+}
+
 func TestInitTerminateContract(t *testing.T) {
 	e, _ := newTestFabric()
 
@@ -378,6 +497,8 @@ func TestInitTerminateContract(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sb-1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -436,6 +557,8 @@ func TestInitTerminateContractIgnore(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sb-1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -1946,74 +2069,6 @@ func TestHandleNetworkAction(t *testing.T) {
 
 func TestNetworkVersion(t *testing.T) {
 	e, _ := newTestFabric()
-	httpmock.ActivateNonDefault(e.client.GetClient())
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "NetworkVersion", body["func"])
-			return httpmock.NewJsonResponderOrPanic(200, fabQueryNamedOutput{Result: 2})(req)
-		})
-
-	version, err := e.NetworkVersion(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, 2, version)
-}
-
-func TestNetworkVersionCached(t *testing.T) {
-	e, _ := newTestFabric()
 	e.fireflyContract.networkVersion = 2
-	version, err := e.NetworkVersion(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, 2, version)
-}
-
-func TestNetworkVersionNotFound(t *testing.T) {
-	e, _ := newTestFabric()
-	httpmock.ActivateNonDefault(e.client.GetClient())
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "NetworkVersion", body["func"])
-			return httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Function NetworkVersion not found"})(req)
-		})
-
-	version, err := e.NetworkVersion(context.Background())
-	assert.NoError(t, err)
-	assert.Equal(t, 1, version)
-}
-
-func TestNetworkVersionError(t *testing.T) {
-	e, _ := newTestFabric()
-	httpmock.ActivateNonDefault(e.client.GetClient())
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "NetworkVersion", body["func"])
-			return httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Unknown"})(req)
-		})
-
-	_, err := e.NetworkVersion(context.Background())
-	assert.Regexp(t, "FF10284", err)
-}
-
-func TestNetworkVersionBadResponse(t *testing.T) {
-	e, _ := newTestFabric()
-	httpmock.ActivateNonDefault(e.client.GetClient())
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "NetworkVersion", body["func"])
-			return httpmock.NewJsonResponderOrPanic(200, "")(req)
-		})
-
-	_, err := e.NetworkVersion(context.Background())
-	assert.Regexp(t, "json: cannot unmarshal", err)
+	assert.Equal(t, 2, e.NetworkVersion(context.Background()))
 }

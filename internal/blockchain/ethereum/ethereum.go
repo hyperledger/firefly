@@ -273,16 +273,20 @@ func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFl
 
 	sub, err := e.streams.ensureFireFlySubscription(ctx, address, fromBlock, e.streamID, batchPinEventABI)
 	if err == nil {
-		e.fireflyContract.mux.Lock()
-		e.fireflyContract.address = address
-		e.fireflyContract.fromBlock = fromBlock
-		e.fireflyContract.networkVersion = 0
-		e.fireflyContract.subscription = sub.ID
-		e.fireflyContract.mux.Unlock()
-		contracts.Active.Info = fftypes.JSONObject{
-			"address":      address,
-			"fromBlock":    fromBlock,
-			"subscription": sub.ID,
+		var version int
+		version, err = e.getNetworkVersion(ctx, address)
+		if err == nil {
+			e.fireflyContract.mux.Lock()
+			e.fireflyContract.address = address
+			e.fireflyContract.fromBlock = fromBlock
+			e.fireflyContract.networkVersion = version
+			e.fireflyContract.subscription = sub.ID
+			e.fireflyContract.mux.Unlock()
+			contracts.Active.Info = fftypes.JSONObject{
+				"address":      address,
+				"fromBlock":    fromBlock,
+				"subscription": sub.ID,
+			}
 		}
 	}
 	return err
@@ -295,12 +299,12 @@ func (e *Ethereum) TerminateContract(ctx context.Context, contracts *core.FireFl
 		return err
 	}
 	e.fireflyContract.mux.Lock()
-	if address != e.fireflyContract.address {
-		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, e.fireflyContract.address)
-		e.fireflyContract.mux.Unlock()
+	fireflyAddress := e.fireflyContract.address
+	e.fireflyContract.mux.Unlock()
+	if address != fireflyAddress {
+		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, fireflyAddress)
 		return nil
 	}
-	e.fireflyContract.mux.Unlock()
 
 	log.L(ctx).Infof("Processing termination request from address %s", address)
 	contracts.Active.FinalEvent = termination.ProtocolID
@@ -1093,16 +1097,8 @@ func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, 
 	return strconv.Atoi(output.Output.(string))
 }
 
-func (e *Ethereum) NetworkVersion(ctx context.Context) (int, error) {
+func (e *Ethereum) NetworkVersion(ctx context.Context) int {
 	e.fireflyContract.mux.Lock()
 	defer e.fireflyContract.mux.Unlock()
-	if e.fireflyContract.networkVersion > 0 {
-		return e.fireflyContract.networkVersion, nil
-	}
-	address := e.fireflyContract.address
-	version, err := e.getNetworkVersion(ctx, address)
-	if err == nil {
-		e.fireflyContract.networkVersion = version
-	}
-	return version, err
+	return e.fireflyContract.networkVersion
 }

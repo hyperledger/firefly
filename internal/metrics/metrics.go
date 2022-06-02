@@ -51,6 +51,7 @@ type metricsManager struct {
 }
 
 func (mm *metricsManager) Start() error {
+	Registry() // ensure registry is initialized
 	return nil
 }
 
