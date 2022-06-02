@@ -19,34 +19,36 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getTokenTransfers = &oapispec.Route{
+var getTokenTransfers = &ffapi.Route{
 	Name:       "getTokenTransfers",
 	Path:       "tokens/transfers",
 	Method:     http.MethodGet,
 	PathParams: nil,
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "fromOrTo", Description: coremsgs.APIParamsTokenTransferFromOrTo},
 	},
-	FilterFactory:   database.TokenTransferQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenTransfers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		filter := r.Filter
-		if fromOrTo, ok := r.QP["fromOrTo"]; ok {
-			fb := database.TokenTransferQueryFactory.NewFilter(r.Ctx)
-			filter.Condition(
-				fb.Or().
-					Condition(fb.Eq("from", fromOrTo)).
-					Condition(fb.Eq("to", fromOrTo)))
-		}
-		return filterResult(getOr(r.Ctx).Assets().GetTokenTransfers(r.Ctx, extractNamespace(r.PP), filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.TokenTransferQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			filter := cr.filter
+			if fromOrTo, ok := r.QP["fromOrTo"]; ok {
+				fb := database.TokenTransferQueryFactory.NewFilter(cr.ctx)
+				filter.Condition(
+					fb.Or().
+						Condition(fb.Eq("from", fromOrTo)).
+						Condition(fb.Eq("to", fromOrTo)))
+			}
+			return filterResult(cr.or.Assets().GetTokenTransfers(cr.ctx, extractNamespace(r.PP), filter))
+		},
 	},
 }

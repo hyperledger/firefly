@@ -19,26 +19,28 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getTokenAccountPools = &oapispec.Route{
+var getTokenAccountPools = &ffapi.Route{
 	Name:   "getTokenAccountPools",
 	Path:   "tokens/accounts/{key}/pools",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "key", Description: coremsgs.APIParamsTokenAccountKey},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TokenAccountPoolQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTokenAccountPools,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenAccountPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Assets().GetTokenAccountPools(r.Ctx, extractNamespace(r.PP), r.PP["key"], r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.TokenAccountPoolQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.Assets().GetTokenAccountPools(cr.ctx, extractNamespace(r.PP), r.PP["key"], cr.filter))
+		},
 	},
 }

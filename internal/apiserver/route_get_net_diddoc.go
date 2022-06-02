@@ -19,24 +19,25 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/networkmap"
-	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var getNetworkDIDDocByDID = &oapispec.Route{
+var getNetworkDIDDocByDID = &ffapi.Route{
 	Name:   "getNetworkDIDDocByDID",
 	Path:   "network/diddocs/{did:.+}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetDIDDocByDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByDID(r.Ctx, extractNamespace(r.PP), r.PP["did"])
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.NetworkMap().GetDIDDocForIndentityByDID(cr.ctx, extractNamespace(r.PP), r.PP["did"])
+		},
 	},
 }

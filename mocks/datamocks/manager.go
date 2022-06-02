@@ -8,6 +8,8 @@ import (
 	data "github.com/hyperledger/firefly/internal/data"
 	core "github.com/hyperledger/firefly/pkg/core"
 
+	ffapi "github.com/hyperledger/firefly-common/pkg/ffapi"
+
 	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 	io "io"
@@ -229,16 +231,16 @@ func (_m *Manager) UpdateMessageIfCached(ctx context.Context, msg *core.Message)
 }
 
 // UpdateMessageStateIfCached provides a mock function with given fields: ctx, id, state, confirmed
-func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.FFEnum, confirmed *fftypes.FFTime) {
+func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state fftypes.FFEnum, confirmed *fftypes.FFTime) {
 	_m.Called(ctx, id, state, confirmed)
 }
 
 // UploadBlob provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
-func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *core.Multipart, autoMeta bool) (*core.Data, error) {
+func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error) {
 	ret := _m.Called(ctx, ns, inData, blob, autoMeta)
 
 	var r0 *core.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.DataRefOrValue, *core.Multipart, bool) *core.Data); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.DataRefOrValue, *ffapi.Multipart, bool) *core.Data); ok {
 		r0 = rf(ctx, ns, inData, blob, autoMeta)
 	} else {
 		if ret.Get(0) != nil {
@@ -247,7 +249,7 @@ func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataR
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.DataRefOrValue, *core.Multipart, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.DataRefOrValue, *ffapi.Multipart, bool) error); ok {
 		r1 = rf(ctx, ns, inData, blob, autoMeta)
 	} else {
 		r1 = ret.Error(1)

@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getStatusPins = &oapispec.Route{
+var getStatusPins = &ffapi.Route{
 	Name:            "getStatusPins",
 	Path:            "status/pins",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.PinQueryFactory,
 	Description:     coremsgs.APIEndpointsGetStatusPins,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []core.Pin{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetPins(r.Ctx, r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.PinQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetPins(cr.ctx, cr.filter))
+		},
 	},
 }

@@ -28,11 +28,11 @@ const (
 	ChangeEventTypeDropped ChangeEventType = "dropped" // See ChangeEventDropped structure, sent to client instead of ChangeEvent when dropping notifications
 )
 
-type WSChangeEventCommandType = FFEnum
+type WSChangeEventCommandType = fftypes.FFEnum
 
 var (
 	// WSChangeEventCommandTypeStart is the command to start listening
-	WSChangeEventCommandTypeStart = ffEnum("changeevent_cmd_type", "start")
+	WSChangeEventCommandTypeStart = fftypes.FFEnumValue("changeevent_cmd_type", "start")
 )
 
 // WSChangeEventCommand is the WebSocket command to send to start listening for change events.

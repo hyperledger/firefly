@@ -22,24 +22,24 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 )
 
-type TokenType = FFEnum
+type TokenType = fftypes.FFEnum
 
 var (
-	TokenTypeFungible    = ffEnum("tokentype", "fungible")
-	TokenTypeNonFungible = ffEnum("tokentype", "nonfungible")
+	TokenTypeFungible    = fftypes.FFEnumValue("tokentype", "fungible")
+	TokenTypeNonFungible = fftypes.FFEnumValue("tokentype", "nonfungible")
 )
 
 // TokenPoolState is the current confirmation state of a token pool
-type TokenPoolState = FFEnum
+type TokenPoolState = fftypes.FFEnum
 
 var (
 	// TokenPoolStateUnknown is a token pool that may not yet be activated
 	// (should not be used in the code - only set via database migration for previously-created pools)
-	TokenPoolStateUnknown = ffEnum("tokenpoolstate", "unknown")
+	TokenPoolStateUnknown = fftypes.FFEnumValue("tokenpoolstate", "unknown")
 	// TokenPoolStatePending is a token pool that has been announced but not yet confirmed
-	TokenPoolStatePending = ffEnum("tokenpoolstate", "pending")
+	TokenPoolStatePending = fftypes.FFEnumValue("tokenpoolstate", "pending")
 	// TokenPoolStateConfirmed is a token pool that has been confirmed on chain
-	TokenPoolStateConfirmed = ffEnum("tokenpoolstate", "confirmed")
+	TokenPoolStateConfirmed = fftypes.FFEnumValue("tokenpoolstate", "confirmed")
 )
 
 type TokenPool struct {

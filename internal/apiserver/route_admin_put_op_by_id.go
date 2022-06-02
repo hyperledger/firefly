@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var adminPatchOpByID = &oapispec.Route{
+var adminPatchOpByID = &ffapi.Route{
 	Name:   "adminPatchOpByID",
 	Path:   "operations/{opid}",
 	Method: http.MethodPut,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "opid", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
 	JSONInputValue:  func() interface{} { return &core.Operation{} },
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Operations().ResolveOperationByID(r.Ctx, r.PP["opid"], r.Input.(*core.Operation))
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.Operations().ResolveOperationByID(cr.ctx, r.PP["opid"], r.Input.(*core.Operation))
+			return output, err
+		},
 	},
 }

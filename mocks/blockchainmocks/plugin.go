@@ -304,11 +304,11 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 }
 
 // SubmitNetworkAction provides a mock function with given fields: ctx, operationID, signingKey, action
-func (_m *Plugin) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.FFEnum) error {
+func (_m *Plugin) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action fftypes.FFEnum) error {
 	ret := _m.Called(ctx, operationID, signingKey, action)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, core.FFEnum) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, fftypes.FFEnum) error); ok {
 		r0 = rf(ctx, operationID, signingKey, action)
 	} else {
 		r0 = ret.Error(0)
@@ -332,14 +332,14 @@ func (_m *Plugin) TerminateContract(ctx context.Context, contracts *core.FireFly
 }
 
 // VerifierType provides a mock function with given fields:
-func (_m *Plugin) VerifierType() core.FFEnum {
+func (_m *Plugin) VerifierType() fftypes.FFEnum {
 	ret := _m.Called()
 
-	var r0 core.FFEnum
-	if rf, ok := ret.Get(0).(func() core.FFEnum); ok {
+	var r0 fftypes.FFEnum
+	if rf, ok := ret.Get(0).(func() fftypes.FFEnum); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(core.FFEnum)
+		r0 = ret.Get(0).(fftypes.FFEnum)
 	}
 
 	return r0

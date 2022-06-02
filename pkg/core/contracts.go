@@ -22,13 +22,13 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 )
 
-type ContractCallType = FFEnum
+type ContractCallType = fftypes.FFEnum
 
 var (
 	// CallTypeInvoke is an invocation that submits a transaction for inclusion in the chain
-	CallTypeInvoke = ffEnum("contractcalltype", "invoke")
+	CallTypeInvoke = fftypes.FFEnumValue("contractcalltype", "invoke")
 	// CallTypeQuery is a query that returns data from the chain
-	CallTypeQuery = ffEnum("contractcalltype", "query")
+	CallTypeQuery = fftypes.FFEnumValue("contractcalltype", "query")
 )
 
 type ContractCallRequest struct {

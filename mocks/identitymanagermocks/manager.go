@@ -100,11 +100,11 @@ func (_m *Manager) CachedIdentityLookupNilOK(ctx context.Context, namespace stri
 }
 
 // CachedVerifierLookup provides a mock function with given fields: ctx, vType, namespace, value
-func (_m *Manager) CachedVerifierLookup(ctx context.Context, vType core.FFEnum, namespace string, value string) (*core.Verifier, error) {
+func (_m *Manager) CachedVerifierLookup(ctx context.Context, vType fftypes.FFEnum, namespace string, value string) (*core.Verifier, error) {
 	ret := _m.Called(ctx, vType, namespace, value)
 
 	var r0 *core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string, string) *core.Verifier); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *core.Verifier); ok {
 		r0 = rf(ctx, vType, namespace, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -113,7 +113,7 @@ func (_m *Manager) CachedVerifierLookup(ctx context.Context, vType core.FFEnum, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
 		r1 = rf(ctx, vType, namespace, value)
 	} else {
 		r1 = ret.Error(1)
@@ -123,11 +123,11 @@ func (_m *Manager) CachedVerifierLookup(ctx context.Context, vType core.FFEnum, 
 }
 
 // FindIdentityForVerifier provides a mock function with given fields: ctx, iTypes, namespace, verifier
-func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []core.FFEnum, namespace string, verifier *core.VerifierRef) (*core.Identity, error) {
+func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []fftypes.FFEnum, namespace string, verifier *core.VerifierRef) (*core.Identity, error) {
 	ret := _m.Called(ctx, iTypes, namespace, verifier)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, []core.FFEnum, string, *core.VerifierRef) *core.Identity); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []fftypes.FFEnum, string, *core.VerifierRef) *core.Identity); ok {
 		r0 = rf(ctx, iTypes, namespace, verifier)
 	} else {
 		if ret.Get(0) != nil {
@@ -136,7 +136,7 @@ func (_m *Manager) FindIdentityForVerifier(ctx context.Context, iTypes []core.FF
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []core.FFEnum, string, *core.VerifierRef) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []fftypes.FFEnum, string, *core.VerifierRef) error); ok {
 		r1 = rf(ctx, iTypes, namespace, verifier)
 	} else {
 		r1 = ret.Error(1)

@@ -9,12 +9,12 @@ paths:
       description: Gets a list of contract APIs that have been published
       operationId: getContractAPIs
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -142,12 +142,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -303,12 +303,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -380,12 +380,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -566,12 +566,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -770,12 +770,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -972,12 +972,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -1128,12 +1128,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -1197,12 +1197,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -1351,12 +1351,12 @@ paths:
       description: Gets a list of message batches
       operationId: getBatches
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -1539,12 +1539,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -1620,12 +1620,12 @@ paths:
       description: Gets a list of blockchain events
       operationId: getBlockchainEvents
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -1798,12 +1798,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -1907,12 +1907,12 @@ paths:
         name: buckets
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -1961,12 +1961,12 @@ paths:
       description: Gets a list of contract interfaces that have been published
       operationId: getContractInterfaces
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -2194,12 +2194,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -2470,12 +2470,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -2655,12 +2655,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -2823,12 +2823,12 @@ paths:
         use must support this functionality.
       operationId: postGenerateContractInterface
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3019,12 +3019,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3268,12 +3268,12 @@ paths:
       description: Gets a list of contract listeners
       operationId: getContractListeners
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -3457,12 +3457,12 @@ paths:
         smart contracts
       operationId: postNewContractListener
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3654,12 +3654,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -3680,12 +3680,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -3793,12 +3793,12 @@ paths:
       description: Queries a method on a smart contract. Performs a read-only query.
       operationId: postContractQuery
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3907,12 +3907,12 @@ paths:
       description: Gets a list of data items
       operationId: getData
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4083,12 +4083,12 @@ paths:
       description: Creates a new data item in this FireFly node
       operationId: postData
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -4220,12 +4220,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -4307,12 +4307,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4456,12 +4456,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4720,12 +4720,12 @@ paths:
       description: Gets a list of datatypes that have been published
       operationId: getDatatypes
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4862,12 +4862,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -5013,12 +5013,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -5086,12 +5086,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -5270,12 +5270,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -5367,12 +5367,12 @@ paths:
       description: Gets a list of groups
       operationId: getGroups
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -5500,12 +5500,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -5568,12 +5568,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -5786,12 +5786,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -5999,12 +5999,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6125,12 +6125,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6223,12 +6223,12 @@ paths:
         schema:
           example: id
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6300,12 +6300,12 @@ paths:
         schema:
           example: id
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -6424,12 +6424,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -6702,12 +6702,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6885,12 +6885,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6974,12 +6974,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -7158,12 +7158,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -7223,12 +7223,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -7582,12 +7582,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -7987,12 +7987,12 @@ paths:
         to that message, then sends the reply as the HTTP response.
       operationId: postNewMessageRequestReply
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -8295,12 +8295,12 @@ paths:
       description: Gets a list of namespaces
       operationId: getNamespaces
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -8471,12 +8471,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -8576,12 +8576,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -8716,12 +8716,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -8884,12 +8884,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -8968,12 +8968,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -9161,12 +9161,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -9430,12 +9430,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -9639,12 +9639,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -9846,12 +9846,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -9980,12 +9980,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -10141,12 +10141,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -10336,12 +10336,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -10424,12 +10424,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -10609,12 +10609,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -10725,12 +10725,12 @@ paths:
         name: buckets
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -10786,12 +10786,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -11026,12 +11026,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -11309,12 +11309,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -11501,12 +11501,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -11676,12 +11676,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -11879,12 +11879,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -12135,12 +12135,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -12331,12 +12331,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -12535,12 +12535,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -12568,12 +12568,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -12688,12 +12688,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -12809,12 +12809,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -12992,12 +12992,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -13136,12 +13136,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -13230,12 +13230,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13386,12 +13386,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13657,12 +13657,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13806,12 +13806,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -13964,12 +13964,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -14044,12 +14044,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -14235,12 +14235,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -14339,12 +14339,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -14479,12 +14479,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -14554,12 +14554,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -14779,12 +14779,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -14999,12 +14999,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15132,12 +15132,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15237,12 +15237,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15321,12 +15321,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -15452,12 +15452,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -15737,12 +15737,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15927,12 +15927,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -16023,12 +16023,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -16214,12 +16214,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -16286,12 +16286,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -16702,12 +16702,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -17114,12 +17114,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -17429,12 +17429,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -17482,12 +17482,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -17567,12 +17567,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -17802,12 +17802,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -17922,12 +17922,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -18127,12 +18127,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -18231,12 +18231,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -18407,12 +18407,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -18611,12 +18611,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -18825,12 +18825,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -18929,12 +18929,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -19105,12 +19105,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -19302,12 +19302,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -19403,12 +19403,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -19502,12 +19502,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -19686,12 +19686,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -20001,12 +20001,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -20425,12 +20425,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -20856,12 +20856,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -20889,12 +20889,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -21124,12 +21124,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -21217,12 +21217,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -21304,12 +21304,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -21520,12 +21520,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -21740,12 +21740,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -21889,12 +21889,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -22272,12 +22272,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22314,12 +22314,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -22697,12 +22697,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -22918,12 +22918,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -23162,12 +23162,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -23277,12 +23277,12 @@ paths:
         name: fromOrTo
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -23527,12 +23527,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -23916,12 +23916,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24036,12 +24036,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -24171,12 +24171,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -24303,12 +24303,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24404,12 +24404,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24507,12 +24507,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24584,12 +24584,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -24717,12 +24717,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24770,12 +24770,12 @@ paths:
       description: Notify all nodes in the network of a new governance action
       operationId: postNetworkAction
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -24816,12 +24816,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24894,12 +24894,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -25122,12 +25122,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -25235,12 +25235,12 @@ paths:
       description: Gets a list of nodes in the network
       operationId: getNetworkNodes
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -25433,12 +25433,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -25530,12 +25530,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -25699,12 +25699,12 @@ paths:
       description: Gets a list of orgs in the network
       operationId: getNetworkOrgs
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -25896,12 +25896,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -26103,12 +26103,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -26200,12 +26200,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -26369,12 +26369,12 @@ paths:
       description: Gets a a list of operations
       operationId: getOps
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -26559,12 +26559,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -26653,12 +26653,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -26745,12 +26745,12 @@ paths:
       description: Gets the status of this node
       operationId: getStatus
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -26922,12 +26922,12 @@ paths:
       description: Gets the status of the batch manager
       operationId: getStatusBatchManager
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -27014,12 +27014,12 @@ paths:
       description: Queries the pins table that is the status of the event aggregator
       operationId: getStatusPins
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -27156,12 +27156,12 @@ paths:
       description: Gets the status of the current WebSocket connections to this node
       operationId: getStatusWebSockets
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -27221,12 +27221,12 @@ paths:
       description: Gets a list of subscriptions
       operationId: getSubscriptions
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -27529,12 +27529,12 @@ paths:
         from FireFly
       operationId: postNewSubscription
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -27946,12 +27946,12 @@ paths:
       description: Update an existing subscription
       operationId: putSubscription
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -28370,12 +28370,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -28396,12 +28396,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -28624,12 +28624,12 @@ paths:
       description: Gets a list of token accounts
       operationId: getTokenAccounts
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -28710,12 +28710,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -28790,12 +28790,12 @@ paths:
       description: Gets a list of token approvals
       operationId: getTokenApprovals
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -28999,12 +28999,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -29212,12 +29212,12 @@ paths:
       description: Gets a list of token balances
       operationId: getTokenBalances
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -29354,12 +29354,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -29726,12 +29726,12 @@ paths:
       description: Gets the list of token connectors currently in use
       operationId: getTokenConnectors
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -29761,12 +29761,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -30133,12 +30133,12 @@ paths:
       description: Gets a list of token pools
       operationId: getTokenPools
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -30347,12 +30347,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -30584,12 +30584,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -30692,12 +30692,12 @@ paths:
         name: fromOrTo
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -30935,12 +30935,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -31317,12 +31317,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -31430,12 +31430,12 @@ paths:
       description: Gets a list of transactions
       operationId: getTxns
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -31558,12 +31558,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -31683,12 +31683,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -31777,12 +31777,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -31873,12 +31873,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -31943,12 +31943,12 @@ paths:
       description: Gets a list of verifiers
       operationId: getVerifiers
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -32069,12 +32069,12 @@ paths:
         schema:
           example: hash
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":

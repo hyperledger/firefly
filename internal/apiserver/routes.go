@@ -17,21 +17,38 @@
 package apiserver
 
 import (
+	"context"
+
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
+	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
+type coreRequest struct {
+	or         orchestrator.Orchestrator
+	ctx        context.Context
+	filter     database.AndFilter
+	apiBaseURL string
+}
+
+type coreExtensions struct {
+	FilterFactory         database.QueryFactory
+	CoreJSONHandler       func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
+	CoreFormUploadHandler func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
+}
+
 var routes = append(
-	globalRoutes([]*oapispec.Route{
+	globalRoutes([]*ffapi.Route{
 		getNamespace,
 		getNamespaces,
 		getStatusBatchManager,
 		getStatusPins,
 		getStatusWebSockets,
 	}),
-	namespacedRoutes([]*oapispec.Route{
+	namespacedRoutes([]*ffapi.Route{
 		deleteContractListener,
 		deleteSubscription,
 		getBatchByID,
@@ -128,22 +145,22 @@ var routes = append(
 	})...,
 )
 
-func globalRoutes(routes []*oapispec.Route) []*oapispec.Route {
+func globalRoutes(routes []*ffapi.Route) []*ffapi.Route {
 	for _, route := range routes {
 		route.Tag = "Global"
 	}
 	return routes
 }
 
-func namespacedRoutes(routes []*oapispec.Route) []*oapispec.Route {
-	newRoutes := make([]*oapispec.Route, len(routes))
+func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
+	newRoutes := make([]*ffapi.Route, len(routes))
 	for i, route := range routes {
 		route.Tag = "Default Namespace"
 
 		routeCopy := *route
 		routeCopy.Name += "Namespace"
 		routeCopy.Path = "namespaces/{ns}/" + route.Path
-		routeCopy.PathParams = append(routeCopy.PathParams, &oapispec.PathParam{
+		routeCopy.PathParams = append(routeCopy.PathParams, &ffapi.PathParam{
 			Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace,
 		})
 		routeCopy.Tag = "Non-Default Namespace"
