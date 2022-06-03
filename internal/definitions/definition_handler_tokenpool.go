@@ -18,9 +18,10 @@ package definitions
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -28,7 +29,7 @@ import (
 func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var announce core.TokenPoolAnnouncement
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &announce); !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process token pool definition %s - invalid payload", msg.Header.ID)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "token pool", msg.Header.ID)
 	}
 
 	pool := announce.Pool
@@ -39,7 +40,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	correlator := pool.ID
 
 	if err := pool.Validate(ctx); err != nil {
-		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, fmt.Errorf("token pool '%s' rejected - validate failed: %s", pool.ID, err)
+		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID, err)
 	}
 
 	// Check if pool has already been confirmed on chain (and confirm the message if so)
@@ -53,7 +54,7 @@ func (dh *definitionHandlers) handleTokenPoolBroadcast(ctx context.Context, stat
 	pool.State = core.TokenPoolStatePending
 	if err := dh.database.UpsertTokenPool(ctx, pool); err != nil {
 		if err == database.IDMismatch {
-			return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, fmt.Errorf("invalid token pool '%s'. ID mismatch with existing record", pool.ID)
+			return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "token pool", pool.ID)
 		}
 		return HandlerResult{Action: ActionRetry}, err
 	}

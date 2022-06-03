@@ -18,8 +18,9 @@ package definitions
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -27,13 +28,11 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 	var verification core.IdentityVerification
 	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid verification message %s - invalid payload", verifyMsg.Header.ID)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity verification", verifyMsg.Header.ID)
 	}
-
-	// See if we find the message to which it refers
 	err := verification.Identity.Validate(ctx)
 	if err != nil || verification.Identity.Parent == nil || verification.Claim.ID == nil || verification.Claim.Hash == nil {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid verification message %s: %v", verifyMsg.Header.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity verification", verifyMsg.Header.ID, err)
 	}
 
 	// Check the verification is signed by the correct org
@@ -42,10 +41,10 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 		return HandlerResult{Action: ActionRetry}, err
 	}
 	if parent == nil {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid verification message %s - parent not found: %s", verifyMsg.Header.ID, verification.Identity.Parent)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity verification", verifyMsg.Header.ID, verification.Identity.Parent)
 	}
 	if parent.DID != verifyMsg.Header.Author {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid verification message %s - parent '%s' does not match signer '%s'", verifyMsg.Header.ID, parent.DID, verifyMsg.Header.Author)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity verification", verifyMsg.Header.ID, verifyMsg.Header.Author)
 	}
 
 	// At this point, this is a valid verification, but we don't know if the claim has arrived.
@@ -62,7 +61,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 
 	if claimMsg != nil {
 		if !claimMsg.Hash.Equals(verification.Claim.Hash) {
-			return HandlerResult{Action: ActionReject}, fmt.Errorf("invalid verification message %s - hash mismatch claim=%s verification=%s", verifyMsg.Header.ID, claimMsg.Hash, verification.Claim.Hash)
+			return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedHashMismatch, "identity verification", verifyMsg.Header.ID, claimMsg.Hash, verification.Claim.Hash)
 		}
 		data, foundAll, err := dh.data.GetMessageDataCached(ctx, claimMsg)
 		if err != nil {

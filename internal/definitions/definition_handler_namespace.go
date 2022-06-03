@@ -18,29 +18,29 @@ package definitions
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (dh *definitionHandlers) handleNamespaceBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	var ns core.Namespace
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns)
-	if !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace definition %s - invalid payload", msg.Header.ID)
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ns); !valid {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "namespace", msg.Header.ID)
 	}
 	if err := ns.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace definition %s - validate failed: %s", msg.Header.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "namespace", ns.ID, err)
 	}
 
 	existing, err := dh.database.GetNamespace(ctx, ns.Name)
 	if err != nil {
-		return HandlerResult{Action: ActionRetry}, err // We only return database errors
+		return HandlerResult{Action: ActionRetry}, err
 	}
 	if existing != nil {
 		if existing.Type != core.NamespaceTypeLocal {
-			return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process namespace definition %s (name=%s) - duplicate of %v", msg.Header.ID, existing.Name, existing.ID)
+			return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "namespace", ns.ID, existing.ID)
 		}
 		// Remove the local definition
 		if err = dh.database.DeleteNamespace(ctx, existing.ID); err != nil {

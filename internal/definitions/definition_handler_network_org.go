@@ -18,8 +18,9 @@ package definitions
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -28,7 +29,7 @@ func (dh *definitionHandlers) handleDeprecatedOrganizationBroadcast(ctx context.
 	var orgOld core.DeprecatedOrganization
 	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &orgOld)
 	if !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process org definition %s - invalid payload", msg.Header.ID)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "org", msg.Header.ID)
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, orgOld.Migrated(), nil)

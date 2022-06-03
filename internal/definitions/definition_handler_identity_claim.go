@@ -21,27 +21,25 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
 	var claim core.IdentityClaim
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim)
-	if !valid {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process identity claim %s - invalid payload", msg.Header.ID)
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim); !valid {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity claim", msg.Header.ID)
 	}
-
 	return dh.handleIdentityClaim(ctx, state, msg, &claim, verificationID)
-
 }
 
-func (dh *definitionHandlers) verifyClaimSignature(msg *core.Message, identity *core.Identity, parent *core.Identity) error {
-
+func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *core.Message, identity *core.Identity, parent *core.Identity) error {
 	author := msg.Header.Author
 	if author == "" {
-		return fmt.Errorf("unable to process identity claim %s - author is blank", msg.Header.ID)
+		return i18n.NewError(ctx, coremsgs.MsgDefRejectedAuthorBlank, "identity claim", msg.Header.ID)
 	}
 
 	var expectedSigner *core.Identity
@@ -56,7 +54,8 @@ func (dh *definitionHandlers) verifyClaimSignature(msg *core.Message, identity *
 	valid := author == expectedSigner.DID ||
 		(expectedSigner.Type == core.IdentityTypeOrg && author == fmt.Sprintf("%s%s", core.FireFlyOrgDIDPrefix, expectedSigner.ID))
 	if !valid {
-		return fmt.Errorf("unable to process identity claim %s - signature mismatch type=%s author=%s expected=%s", msg.Header.ID, identity.Type, author, expectedSigner.DID)
+		log.L(ctx).Errorf("unable to process identity claim %s - signature mismatch type=%s author=%s expected=%s", msg.Header.ID, identity.Type, author, expectedSigner.DID)
+		return i18n.NewError(ctx, coremsgs.MsgDefRejectedSignatureMismatch, "identity claim", msg.Header.ID)
 	}
 	return nil
 }
@@ -144,7 +143,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 
 	// Check signature verification
-	if err := dh.verifyClaimSignature(msg, identity, parent); err != nil {
+	if err := dh.verifyClaimSignature(ctx, msg, identity, parent); err != nil {
 		return HandlerResult{Action: ActionReject}, err
 	}
 
@@ -157,7 +156,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 	}
 	if existingIdentity != nil && !existingIdentity.IdentityBase.Equals(ctx, &identity.IdentityBase) {
 		// If the existing one matches - this is just idempotent replay. No action needed, just confirm
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process identity claim %s - conflict with existing: %v", msg.Header.ID, existingIdentity.ID)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity claim", identity.ID, existingIdentity.ID)
 	}
 
 	// Check uniqueness of verifier
@@ -167,7 +166,9 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 		return HandlerResult{Action: ActionRetry}, err // retry database errors
 	}
 	if existingVerifier != nil && !existingVerifier.Identity.Equals(identity.ID) {
-		return HandlerResult{Action: ActionReject}, fmt.Errorf("unable to process identity claim %s - verifier type=%s value=%s already registered: %v", msg.Header.ID, verifier.Type, verifier.Value, existingVerifier.Hash)
+		verifierLabel := fmt.Sprintf("%s:%s", verifier.Type, verifier.Value)
+		existingVerifierLabel := fmt.Sprintf("%s:%s", verifier.Type, verifier.Value)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedConflict, "identity verifier", verifierLabel, existingVerifierLabel)
 	}
 
 	if parent != nil && identity.Type != core.IdentityTypeNode {
