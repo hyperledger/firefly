@@ -19823,6 +19823,105 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/status/batchmanager:
+    get:
+      description: Gets the status of the batch manager
+      operationId: getStatusBatchManagerNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  processors:
+                    description: An array of currently active batch processors
+                    items:
+                      description: An array of currently active batch processors
+                      properties:
+                        dispatcher:
+                          description: The type of dispatcher for this processor
+                          type: string
+                        name:
+                          description: The name of the processor, which includes details
+                            of the attributes of message are allocated to this processor
+                          type: string
+                        status:
+                          description: The flush status for this batch processor
+                          properties:
+                            averageBatchBytes:
+                              description: The average byte size of each batch
+                              format: int64
+                              type: integer
+                            averageBatchData:
+                              description: The average number of data attachments
+                                included in each batch
+                              format: double
+                              type: number
+                            averageBatchMessages:
+                              description: The average number of messages included
+                                in each batch
+                              format: double
+                              type: number
+                            averageFlushTimeMS:
+                              description: The average amount of time spent flushing
+                                each batch
+                              format: int64
+                              type: integer
+                            blocked:
+                              description: True if the batch flush is in a retry loop,
+                                due to errors being returned by the plugins
+                              type: boolean
+                            flushing:
+                              description: If a flush is in progress, this is the
+                                UUID of the batch being flushed
+                              format: uuid
+                              type: string
+                            lastFlushError:
+                              description: The last error received by this batch processor
+                                while flushing
+                              type: string
+                            lastFlushErrorTime:
+                              description: The time of the last flush
+                              format: date-time
+                              type: string
+                            lastFlushStartTime:
+                              description: The last time a flush was performed
+                              format: date-time
+                              type: string
+                            totalBatches:
+                              description: The total count of batches flushed by this
+                                processor since it started
+                              format: int64
+                              type: integer
+                            totalErrors:
+                              description: The total count of error flushed encountered
+                                by this processor since it started
+                              format: int64
+                              type: integer
+                          type: object
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/subscriptions:
     get:
       description: Gets a list of subscriptions
@@ -27202,6 +27301,98 @@ paths:
                           type: object
                         type: array
                     type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /status/batchmanager:
+    get:
+      description: Gets the status of the batch manager
+      operationId: getStatusBatchManager
+      parameters:
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  processors:
+                    description: An array of currently active batch processors
+                    items:
+                      description: An array of currently active batch processors
+                      properties:
+                        dispatcher:
+                          description: The type of dispatcher for this processor
+                          type: string
+                        name:
+                          description: The name of the processor, which includes details
+                            of the attributes of message are allocated to this processor
+                          type: string
+                        status:
+                          description: The flush status for this batch processor
+                          properties:
+                            averageBatchBytes:
+                              description: The average byte size of each batch
+                              format: int64
+                              type: integer
+                            averageBatchData:
+                              description: The average number of data attachments
+                                included in each batch
+                              format: double
+                              type: number
+                            averageBatchMessages:
+                              description: The average number of messages included
+                                in each batch
+                              format: double
+                              type: number
+                            averageFlushTimeMS:
+                              description: The average amount of time spent flushing
+                                each batch
+                              format: int64
+                              type: integer
+                            blocked:
+                              description: True if the batch flush is in a retry loop,
+                                due to errors being returned by the plugins
+                              type: boolean
+                            flushing:
+                              description: If a flush is in progress, this is the
+                                UUID of the batch being flushed
+                              format: uuid
+                              type: string
+                            lastFlushError:
+                              description: The last error received by this batch processor
+                                while flushing
+                              type: string
+                            lastFlushErrorTime:
+                              description: The time of the last flush
+                              format: date-time
+                              type: string
+                            lastFlushStartTime:
+                              description: The last time a flush was performed
+                              format: date-time
+                              type: string
+                            totalBatches:
+                              description: The total count of batches flushed by this
+                                processor since it started
+                              format: int64
+                              type: integer
+                            totalErrors:
+                              description: The total count of error flushed encountered
+                                by this processor since it started
+                              format: int64
+                              type: integer
+                          type: object
+                      type: object
+                    type: array
                 type: object
           description: Success
         default:

@@ -93,6 +93,7 @@ var routes = append(
 		getOps,
 		getPins,
 		getStatus,
+		getStatusBatchManager,
 		getSubscriptionByID,
 		getSubscriptions,
 		getTokenAccountPools,
