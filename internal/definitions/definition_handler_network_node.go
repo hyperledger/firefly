@@ -19,17 +19,15 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
-	l := log.L(ctx)
-
 	var nodeOld core.DeprecatedNode
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld)
-	if !valid {
-		return HandlerResult{Action: ActionReject}, nil
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld); !valid {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "node", msg.Header.ID)
 	}
 
 	owner, err := dh.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
@@ -40,8 +38,7 @@ func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context,
 		return HandlerResult{Action: ActionRetry}, err // We only return database errors
 	}
 	if owner == nil {
-		l.Warnf("Unable to process node broadcast %s - parent identity not found: %s", msg.Header.ID, nodeOld.Owner)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "node", nodeOld.ID, nodeOld.Owner)
 	}
 
 	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.AddMigratedParent(owner.ID), nil)
