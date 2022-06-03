@@ -39,7 +39,7 @@ func TestPostNewNodeSelf(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterNode", mock.Anything, false).
+	mnm.On("RegisterNode", mock.Anything, "default", false).
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

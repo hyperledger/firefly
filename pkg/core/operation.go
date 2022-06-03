@@ -21,33 +21,33 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
 // to be correlated with messages by operators.
-type OpType = FFEnum
+type OpType = fftypes.FFEnum
 
 var (
 	// OpTypeBlockchainPinBatch is a blockchain transaction to pin a batch
-	OpTypeBlockchainPinBatch = ffEnum("optype", "blockchain_pin_batch")
+	OpTypeBlockchainPinBatch = fftypes.FFEnumValue("optype", "blockchain_pin_batch")
 	// OpTypeBlockchainInvoke is a smart contract invoke
-	OpTypeBlockchainInvoke = ffEnum("optype", "blockchain_invoke")
+	OpTypeBlockchainInvoke = fftypes.FFEnumValue("optype", "blockchain_invoke")
 	// OpTypeSharedStorageUploadBatch is a shared storage operation to upload broadcast data
-	OpTypeSharedStorageUploadBatch = ffEnum("optype", "sharedstorage_upload_batch")
+	OpTypeSharedStorageUploadBatch = fftypes.FFEnumValue("optype", "sharedstorage_upload_batch")
 	// OpTypeSharedStorageUploadBlob is a shared storage operation to upload blob data
-	OpTypeSharedStorageUploadBlob = ffEnum("optype", "sharedstorage_upload_blob")
+	OpTypeSharedStorageUploadBlob = fftypes.FFEnumValue("optype", "sharedstorage_upload_blob")
 	// OpTypeSharedStorageDownloadBatch is a shared storage operation to download broadcast data
-	OpTypeSharedStorageDownloadBatch = ffEnum("optype", "sharedstorage_download_batch")
+	OpTypeSharedStorageDownloadBatch = fftypes.FFEnumValue("optype", "sharedstorage_download_batch")
 	// OpTypeSharedStorageDownloadBlob is a shared storage operation to download broadcast data
-	OpTypeSharedStorageDownloadBlob = ffEnum("optype", "sharedstorage_download_blob")
+	OpTypeSharedStorageDownloadBlob = fftypes.FFEnumValue("optype", "sharedstorage_download_blob")
 	// OpTypeDataExchangeSendBatch is a private send of a batch
-	OpTypeDataExchangeSendBatch = ffEnum("optype", "dataexchange_send_batch")
+	OpTypeDataExchangeSendBatch = fftypes.FFEnumValue("optype", "dataexchange_send_batch")
 	// OpTypeDataExchangeSendBlob is a private send of a blob
-	OpTypeDataExchangeSendBlob = ffEnum("optype", "dataexchange_send_blob")
+	OpTypeDataExchangeSendBlob = fftypes.FFEnumValue("optype", "dataexchange_send_blob")
 	// OpTypeTokenCreatePool is a token pool creation
-	OpTypeTokenCreatePool = ffEnum("optype", "token_create_pool")
+	OpTypeTokenCreatePool = fftypes.FFEnumValue("optype", "token_create_pool")
 	// OpTypeTokenActivatePool is a token pool activation
-	OpTypeTokenActivatePool = ffEnum("optype", "token_activate_pool")
+	OpTypeTokenActivatePool = fftypes.FFEnumValue("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
-	OpTypeTokenTransfer = ffEnum("optype", "token_transfer")
+	OpTypeTokenTransfer = fftypes.FFEnumValue("optype", "token_transfer")
 	// OpTypeTokenApproval is a token approval
-	OpTypeTokenApproval = ffEnum("optype", "token_approval")
+	OpTypeTokenApproval = fftypes.FFEnumValue("optype", "token_approval")
 )
 
 // OpStatus is the current status of an operation

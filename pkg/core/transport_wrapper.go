@@ -18,11 +18,11 @@ package core
 
 import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
-type TransportPayloadType = FFEnum
+type TransportPayloadType = fftypes.FFEnum
 
 var (
-	TransportPayloadTypeMessage = ffEnum("transportpayload", "message")
-	TransportPayloadTypeBatch   = ffEnum("transportpayload", "batch")
+	TransportPayloadTypeMessage = fftypes.FFEnumValue("transportpayload", "message")
+	TransportPayloadTypeBatch   = fftypes.FFEnumValue("transportpayload", "batch")
 )
 
 // TransportWrapper wraps paylaods over data exchange transfers, for easy deserialization at target

@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getNetworkNode = &oapispec.Route{
+var getNetworkNode = &ffapi.Route{
 	Name:   "getNetworkNode",
 	Path:   "network/nodes/{nameOrId}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "nameOrId", Description: coremsgs.APIParamsNodeNameOrID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetNetworkNode,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).NetworkMap().GetNodeByNameOrID(r.Ctx, r.PP["nameOrId"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.NetworkMap().GetNodeByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			return output, err
+		},
 	},
 }

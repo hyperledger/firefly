@@ -30,11 +30,11 @@ import (
 
 // Check data exchange peer the data came from, has been registered to the org listed in the batch.
 // Note the on-chain identity check is performed separately by the aggregator (across broadcast and private consistently).
-func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *core.Identity, err error) {
+func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, ns, peerID, author string) (node *core.Identity, err error) {
 	l := log.L(em.ctx)
 
 	// Resolve the node for the peer ID
-	node, err = em.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeNode}, core.SystemNamespace, &core.VerifierRef{
+	node, err = em.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeNode}, ns, &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
 		Value: peerID,
 	})
@@ -43,7 +43,7 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 	}
 
 	// Find the identity in the mesage
-	org, retryable, err := em.identity.CachedIdentityLookupMustExist(ctx, author)
+	org, retryable, err := em.identity.CachedIdentityLookupMustExist(ctx, ns, author)
 	if err != nil && retryable {
 		l.Errorf("Failed to retrieve org: %v", err)
 		return nil, err // retryable error
@@ -95,7 +95,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 				}
 			}
 
-			node, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author)
+			node, err := em.checkReceivedOffchainIdentity(ctx, batch.Namespace, peerID, batch.Author)
 			if err != nil {
 				return err
 			}

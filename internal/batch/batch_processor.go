@@ -383,7 +383,7 @@ func (bp *batchProcessor) initFlushState(id *fftypes.UUID, flushWork []*batchWor
 				SignerRef: bp.conf.signer,
 				Group:     bp.conf.group,
 				Created:   fftypes.Now(),
-				Node:      bp.ni.GetNodeUUID(bp.ctx),
+				Node:      bp.ni.GetNodeUUID(bp.ctx, bp.conf.namespace),
 			},
 		},
 	}

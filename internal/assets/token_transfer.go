@@ -106,7 +106,7 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
+	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, ns, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err
 	}
 	if transfer.From == "" {
@@ -264,7 +264,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *core.MessageInOut) (sysmessaging.MessageSender, error) {
-	allowedTypes := []core.FFEnum{
+	allowedTypes := []fftypes.FFEnum{
 		core.MessageTypeTransferBroadcast,
 		core.MessageTypeTransferPrivate,
 	}

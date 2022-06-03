@@ -1278,7 +1278,7 @@ func TestInvokeContract(t *testing.T) {
 	}
 
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
@@ -1318,7 +1318,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 	}
 
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
@@ -1364,7 +1364,7 @@ func TestInvokeContractFail(t *testing.T) {
 	}
 
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
@@ -1393,7 +1393,7 @@ func TestInvokeContractFailNormalizeSigningKey(t *testing.T) {
 		Location:  fftypes.JSONAnyPtr(""),
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
 
@@ -1411,7 +1411,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 		Location:  fftypes.JSONAnyPtr(""),
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
@@ -1436,7 +1436,7 @@ func TestInvokeContractTXFail(t *testing.T) {
 		},
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
@@ -1456,7 +1456,7 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 		MethodPath: "set",
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
@@ -1493,7 +1493,7 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 			},
 		},
 	}
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
 	assert.Regexp(t, "FF10304", err)
@@ -1518,12 +1518,12 @@ func TestQueryContract(t *testing.T) {
 		},
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
 	})).Return(nil)
-	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input).Return(struct{}{}, nil)
+	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Options).Return(struct{}{}, nil)
 
 	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
 
@@ -1547,7 +1547,7 @@ func TestCallContractInvalidType(t *testing.T) {
 		},
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
 		return op.Namespace == "ns1" && op.Type == core.OpTypeBlockchainInvoke && op.Plugin == "mockblockchain"
@@ -1742,26 +1742,6 @@ func TestGetContractAPIListenersEventNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestUpdateContractListener(t *testing.T) {
-	cm := newTestContractManager()
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	id := fftypes.NewUUID()
-
-	dto := &core.ContractListenerUpdateDTO{State: fftypes.JSONAnyPtr(`{"some":"state"}`)}
-	mdi.On("UpdateContractListener", context.Background(), "ns", id, dto).Return(nil)
-
-	err := cm.UpdateContractListener(context.Background(), "ns", id.String(), dto)
-	assert.NoError(t, err)
-}
-
-func TestUpdateContractListenerBadUUID(t *testing.T) {
-	cm := newTestContractManager()
-
-	err := cm.UpdateContractListener(context.Background(), "ns", "wrong", nil)
-	assert.Regexp(t, "FF00138", err)
-}
-
 func TestDeleteContractListener(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
@@ -1831,7 +1811,7 @@ func TestInvokeContractAPI(t *testing.T) {
 		Location: fftypes.JSONAnyPtr(""),
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 	mth.On("SubmitNewTransaction", mock.Anything, "ns1", core.TransactionTypeContractInvoke).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", mock.Anything, mock.MatchedBy(func(op *core.Operation) bool {
@@ -1866,7 +1846,7 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 		},
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req, false)
@@ -1887,7 +1867,7 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 		},
 	}
 
-	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
+	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
 
 	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req, false)

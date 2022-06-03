@@ -498,9 +498,6 @@ type iContractListenerCollection interface {
 	// GetContractListeners - get smart contract subscriptions
 	GetContractListeners(ctx context.Context, filter Filter) ([]*core.ContractListener, *FilterResult, error)
 
-	// UpdateContractListener - update the state of the contract listener
-	UpdateContractListener(ctx context.Context, ns string, id *fftypes.UUID, dto *core.ContractListenerUpdateDTO) error
-
 	// DeleteContractListener - delete a subscription to an external smart contract
 	DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error)
 }

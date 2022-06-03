@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -31,7 +32,7 @@ var mutex = &sync.Mutex{}
 type Manager interface {
 	CountBatchPin()
 	MessageSubmitted(msg *core.Message)
-	MessageConfirmed(msg *core.Message, eventType core.FFEnum)
+	MessageConfirmed(msg *core.Message, eventType fftypes.FFEnum)
 	TransferSubmitted(transfer *core.TokenTransfer)
 	TransferConfirmed(transfer *core.TokenTransfer)
 	BlockchainTransaction(location, methodName string)
@@ -51,6 +52,7 @@ type metricsManager struct {
 }
 
 func (mm *metricsManager) Start() error {
+	Registry() // ensure registry is initialized
 	return nil
 }
 
@@ -80,7 +82,7 @@ func (mm *metricsManager) MessageSubmitted(msg *core.Message) {
 	}
 }
 
-func (mm *metricsManager) MessageConfirmed(msg *core.Message, eventType core.FFEnum) {
+func (mm *metricsManager) MessageConfirmed(msg *core.Message, eventType fftypes.FFEnum) {
 	timeElapsed := time.Since(mm.GetTime(msg.Header.ID.String())).Seconds()
 	mm.DeleteTime(msg.Header.ID.String())
 

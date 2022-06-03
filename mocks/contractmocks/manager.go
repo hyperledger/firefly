@@ -605,20 +605,6 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 	return r0, r1, r2
 }
 
-// UpdateContractListener provides a mock function with given fields: ctx, ns, id, dto
-func (_m *Manager) UpdateContractListener(ctx context.Context, ns string, id string, dto *core.ContractListenerUpdateDTO) error {
-	ret := _m.Called(ctx, ns, id, dto)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.ContractListenerUpdateDTO) error); ok {
-		r0 = rf(ctx, ns, id, dto)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // ValidateFFIAndSetPathnames provides a mock function with given fields: ctx, ffi
 func (_m *Manager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *core.FFI) error {
 	ret := _m.Called(ctx, ffi)

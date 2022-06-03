@@ -58,7 +58,7 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*c
 }
 
 // RegisterHandler provides a mock function with given fields: ctx, handler, ops
-func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.OperationHandler, ops []core.FFEnum) {
+func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.OperationHandler, ops []fftypes.FFEnum) {
 	_m.Called(ctx, handler, ops)
 }
 

@@ -19,7 +19,6 @@ package networkmap
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -27,27 +26,27 @@ import (
 )
 
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
-func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
 
-	key, err := nm.identity.GetNodeOwnerBlockchainKey(ctx)
+	key, err := nm.identity.GetMultipartyRootVerifier(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
 
 	orgRequest := &core.IdentityCreateDTO{
-		Name: config.GetString(coreconfig.OrgName),
+		Name: nm.namespace.GetMultipartyConfig(ns, coreconfig.OrgName),
 		IdentityProfile: core.IdentityProfile{
-			Description: config.GetString(coreconfig.OrgDescription),
+			Description: nm.namespace.GetMultipartyConfig(ns, coreconfig.OrgDescription),
 		},
 		Key: key.Value,
 	}
 	if orgRequest.Name == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeAndOrgIDMustBeSet)
 	}
-	return nm.RegisterOrganization(ctx, orgRequest, waitConfirm)
+	return nm.RegisterOrganization(ctx, ns, orgRequest, waitConfirm)
 }
 
-func (nm *networkMap) RegisterOrganization(ctx context.Context, orgRequest *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+func (nm *networkMap) RegisterOrganization(ctx context.Context, ns string, orgRequest *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
 	orgRequest.Type = core.IdentityTypeOrg
-	return nm.RegisterIdentity(ctx, core.SystemNamespace, orgRequest, waitConfirm)
+	return nm.RegisterIdentity(ctx, ns, orgRequest, waitConfirm)
 }

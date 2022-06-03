@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var spiGetNamespaceByName = &oapispec.Route{
+var spiGetNamespaceByName = &ffapi.Route{
 	Name:   "spiGetNamespaceByName",
 	Path:   "namespaces/{ns}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "ns", Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsAdminGetNamespaceByName,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetNamespace(r.Ctx, extractNamespace(r.PP))
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetNamespace(cr.ctx, extractNamespace(r.PP))
+			return output, err
+		},
 	},
 }

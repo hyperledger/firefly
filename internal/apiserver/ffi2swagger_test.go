@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapiffi
+package apiserver
 
 import (
 	"context"
@@ -119,25 +119,25 @@ func TestGenerate(t *testing.T) {
 
 	invokeMethod1 := doc.Paths["/invoke/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod1.Type)
-	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(invokeMethod1.Properties))
+	assert.ElementsMatch(t, []string{"input", "location", "options"}, paramNames(invokeMethod1.Properties))
 	assert.Equal(t, "object", invokeMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(invokeMethod1.Properties["input"].Value.Properties))
 
 	invokeMethod2 := doc.Paths["/invoke/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod2.Type)
-	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(invokeMethod2.Properties))
+	assert.ElementsMatch(t, []string{"input", "location", "options"}, paramNames(invokeMethod2.Properties))
 	assert.Equal(t, "object", invokeMethod2.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{}, paramNames(invokeMethod2.Properties["input"].Value.Properties))
 
 	queryMethod1 := doc.Paths["/query/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod1.Type)
-	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(queryMethod1.Properties))
+	assert.ElementsMatch(t, []string{"input", "location", "options"}, paramNames(queryMethod1.Properties))
 	assert.Equal(t, "object", queryMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(queryMethod1.Properties["input"].Value.Properties))
 
 	queryMethod2 := doc.Paths["/query/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod2.Type)
-	assert.ElementsMatch(t, []string{"input", "location"}, paramNames(queryMethod2.Properties))
+	assert.ElementsMatch(t, []string{"input", "location", "options"}, paramNames(queryMethod2.Properties))
 	assert.Equal(t, "object", queryMethod2.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{}, paramNames(queryMethod2.Properties["input"].Value.Properties))
 }
@@ -155,25 +155,25 @@ func TestGenerateWithLocation(t *testing.T) {
 
 	invokeMethod1 := doc.Paths["/invoke/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod1.Type)
-	assert.ElementsMatch(t, []string{"input"}, paramNames(invokeMethod1.Properties))
+	assert.ElementsMatch(t, []string{"input", "options"}, paramNames(invokeMethod1.Properties))
 	assert.Equal(t, "object", invokeMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(invokeMethod1.Properties["input"].Value.Properties))
 
 	invokeMethod2 := doc.Paths["/invoke/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", invokeMethod2.Type)
-	assert.ElementsMatch(t, []string{"input"}, paramNames(invokeMethod2.Properties))
+	assert.ElementsMatch(t, []string{"input", "options"}, paramNames(invokeMethod2.Properties))
 	assert.Equal(t, "object", invokeMethod2.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{}, paramNames(invokeMethod2.Properties["input"].Value.Properties))
 
 	queryMethod1 := doc.Paths["/query/method1"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod1.Type)
-	assert.ElementsMatch(t, []string{"input"}, paramNames(queryMethod1.Properties))
+	assert.ElementsMatch(t, []string{"input", "options"}, paramNames(queryMethod1.Properties))
 	assert.Equal(t, "object", queryMethod1.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{"x", "y", "z"}, paramNames(queryMethod1.Properties["input"].Value.Properties))
 
 	queryMethod2 := doc.Paths["/query/method2"].Post.RequestBody.Value.Content.Get("application/json").Schema.Value
 	assert.Equal(t, "object", queryMethod2.Type)
-	assert.ElementsMatch(t, []string{"input"}, paramNames(queryMethod2.Properties))
+	assert.ElementsMatch(t, []string{"input", "options"}, paramNames(queryMethod2.Properties))
 	assert.Equal(t, "object", queryMethod2.Properties["input"].Value.Type)
 	assert.ElementsMatch(t, []string{}, paramNames(queryMethod2.Properties["input"].Value.Properties))
 }

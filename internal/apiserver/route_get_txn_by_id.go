@@ -19,27 +19,29 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getTxnByID = &oapispec.Route{
+var getTxnByID = &ffapi.Route{
 	Name:   "getTxnByID",
 	Path:   "transactions/{txnid}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "txnid", Description: coremsgs.APIParamsTransactionID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.TransactionQueryFactory,
 	Description:     coremsgs.APIEndpointsGetTxnByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetTransactionByID(r.Ctx, extractNamespace(r.PP), r.PP["txnid"])
-		return output, err
+	Extensions: &coreExtensions{
+		FilterFactory: database.TransactionQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetTransactionByID(cr.ctx, extractNamespace(r.PP), r.PP["txnid"])
+			return output, err
+		},
 	},
 }

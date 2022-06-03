@@ -91,7 +91,7 @@ type Orchestrator interface {
 	PrivateMessaging() privatemessaging.Manager
 
 	// Status
-	GetStatus(ctx context.Context) (*core.NodeStatus, error)
+	GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
@@ -141,7 +141,7 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
-	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
+	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
 }
 
 type orchestrator struct {
@@ -223,11 +223,14 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 
 func (or *orchestrator) Start() (err error) {
 	if err == nil {
+		err = or.metrics.Start()
+	}
+	if err == nil {
 		err = or.batch.Start()
 	}
 	var ns *core.Namespace
 	if err == nil {
-		ns, err = or.database.GetNamespace(or.ctx, core.SystemNamespace)
+		ns, err = or.database.GetNamespace(or.ctx, core.LegacySystemNamespace)
 	}
 	if err == nil {
 		for _, el := range or.blockchains {
@@ -263,9 +266,6 @@ func (or *orchestrator) Start() (err error) {
 				break
 			}
 		}
-	}
-	if err == nil {
-		err = or.metrics.Start()
 	}
 	or.started = true
 	return err
@@ -419,7 +419,6 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
-		fb.Eq("namespace", core.SystemNamespace),
 	))
 	if err != nil {
 		return err
@@ -794,7 +793,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugins, or.blockchain, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugins, or.blockchain, or.data, or.namespace)
 		if err != nil {
 			return err
 		}
@@ -869,7 +868,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.data, or.broadcast, or.dataexchange, or.identity, or.syncasync, or.namespace)
 		if err != nil {
 			return err
 		}
@@ -887,13 +886,18 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 	return or.namespace.Init(ctx, or.database)
 }
 
-func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
-	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx)
+func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
+	key, err := or.identity.NormalizeSigningKey(ctx, ns, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return err
 	}
-	if action.Type != core.NetworkActionTerminate {
+	if action.Type == core.NetworkActionTerminate {
+		if ns != core.LegacySystemNamespace {
+			// For now, "terminate" only works on ff_system
+			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, ns)
+		}
+	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
+	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
 }

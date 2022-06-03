@@ -49,7 +49,7 @@ func (org *DeprecatedOrganization) Migrated() *IdentityClaim {
 			IdentityBase: IdentityBase{
 				ID:        org.ID,
 				Type:      IdentityTypeOrg,
-				Namespace: SystemNamespace,
+				Namespace: LegacySystemNamespace,
 				Name:      org.Name,
 				Parent:    nil, // No support for child identity migration (see FIR-9 for details)
 			},

@@ -61,7 +61,6 @@ type Manager interface {
 	GetContractListenerByIDGlobal(ctx context.Context, nameOrID string) (*core.ContractListener, error)
 	GetContractListenersGlobal(ctx context.Context, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
 	GetContractAPIListeners(ctx context.Context, ns string, apiName, eventPath string, filter database.AndFilter) ([]*core.ContractListener, *database.FilterResult, error)
-	UpdateContractListener(ctx context.Context, ns, id string, dto *core.ContractListenerUpdateDTO) error
 	DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error
 	GenerateFFI(ctx context.Context, ns string, generationRequest *core.FFIGenerationRequest) (*core.FFI, error)
 
@@ -221,7 +220,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	req.Key, err = cm.identity.NormalizeSigningKey(ctx, ns, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +257,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 		err = send(ctx)
 		return op, err
 	case core.CallTypeQuery:
-		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input)
+		return cm.blockchain.QueryContract(ctx, req.Location, req.Method, req.Input, req.Options)
 	default:
 		panic(fmt.Sprintf("unknown call type: %s", req.Type))
 	}
@@ -656,14 +655,6 @@ func (cm *contractManager) GetContractAPIListeners(ctx context.Context, ns strin
 		f = fb.And(f, fb.Eq("location", api.Location.Bytes()))
 	}
 	return cm.database.GetContractListeners(ctx, cm.scopeNS(ns, f))
-}
-
-func (cm *contractManager) UpdateContractListener(ctx context.Context, ns, id string, dto *core.ContractListenerUpdateDTO) error {
-	uuid, err := fftypes.ParseUUID(ctx, id)
-	if err != nil {
-		return err
-	}
-	return cm.database.UpdateContractListener(ctx, ns, uuid, dto)
 }
 
 func (cm *contractManager) DeleteContractListenerByNameOrID(ctx context.Context, ns, nameOrID string) error {

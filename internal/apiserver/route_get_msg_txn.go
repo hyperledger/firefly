@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getMsgTxn = &oapispec.Route{
+var getMsgTxn = &ffapi.Route{
 	Name:   "getMsgTxn",
 	Path:   "messages/{msgid}/transaction",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "msgid", Description: coremsgs.APIParamsMessageID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetMsgTxn,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetMessageTransaction(r.Ctx, extractNamespace(r.PP), r.PP["msgid"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetMessageTransaction(cr.ctx, extractNamespace(r.PP), r.PP["msgid"])
+			return output, err
+		},
 	},
 }

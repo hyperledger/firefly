@@ -973,13 +973,13 @@ func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) 
 	return r0, r1, r2
 }
 
-// GetStatus provides a mock function with given fields: ctx
-func (_m *Orchestrator) GetStatus(ctx context.Context) (*core.NodeStatus, error) {
-	ret := _m.Called(ctx)
+// GetStatus provides a mock function with given fields: ctx, ns
+func (_m *Orchestrator) GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error) {
+	ret := _m.Called(ctx, ns)
 
 	var r0 *core.NodeStatus
-	if rf, ok := ret.Get(0).(func(context.Context) *core.NodeStatus); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.NodeStatus); ok {
+		r0 = rf(ctx, ns)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.NodeStatus)
@@ -987,8 +987,8 @@ func (_m *Orchestrator) GetStatus(ctx context.Context) (*core.NodeStatus, error)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ns)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1324,13 +1324,13 @@ func (_m *Orchestrator) Start() error {
 	return r0
 }
 
-// SubmitNetworkAction provides a mock function with given fields: ctx, action
-func (_m *Orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
-	ret := _m.Called(ctx, action)
+// SubmitNetworkAction provides a mock function with given fields: ctx, ns, action
+func (_m *Orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
+	ret := _m.Called(ctx, ns, action)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.NetworkAction) error); ok {
-		r0 = rf(ctx, action)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.NetworkAction) error); ok {
+		r0 = rf(ctx, ns, action)
 	} else {
 		r0 = ret.Error(0)
 	}

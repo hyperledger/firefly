@@ -148,7 +148,7 @@ func TestHandleDefinitionIdentityVerificationClaimHashMismatchl(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -209,7 +209,7 @@ func TestHandleDefinitionIdentityVerificationWrongSigner(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -226,7 +226,7 @@ func TestHandleDefinitionIdentityVerificationCheckParentNotFound(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -271,7 +271,7 @@ func TestHandleDefinitionIdentityVerificationInvalidPayload(t *testing.T) {
 		},
 	}, core.DataArray{emptyObjectData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }
@@ -288,7 +288,7 @@ func TestHandleDefinitionIdentityVerificationInvalidData(t *testing.T) {
 		},
 	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }

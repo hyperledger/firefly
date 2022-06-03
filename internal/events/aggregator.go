@@ -94,7 +94,7 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		firstEvent:       &firstEvent,
-		namespace:        core.SystemNamespace,
+		namespace:        "pins", // not a real namespace (used only for logging)
 		offsetType:       core.OffsetTypeAggregator,
 		offsetName:       aggregatorOffsetName,
 		newEventsHandler: ag.processPinsEventsHandler,
@@ -538,6 +538,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		}
 		if handlerResult.Action == definitions.ActionWait {
 			return "", false, nil
+		}
+		if handlerResult.Action == definitions.ActionReject {
+			log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
 		}
 		customCorrelator = handlerResult.CustomCorrelator
 		valid = handlerResult.Action == definitions.ActionConfirm

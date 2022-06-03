@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postContractAPIListeners = &oapispec.Route{
+var postContractAPIListeners = &ffapi.Route{
 	Name:   "postContractAPIListeners",
 	Path:   "apis/{apiName}/listeners/{eventPath}",
 	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "apiName", Description: coremsgs.APIParamsContractAPIName},
 		{Name: "eventPath", Description: coremsgs.APIParamsEventPath},
 	},
-	QueryParams:     []*oapispec.QueryParam{},
-	FilterFactory:   nil,
+	QueryParams:     []*ffapi.QueryParam{},
 	Description:     coremsgs.APIEndpointsPostNewContractListener,
 	JSONInputValue:  func() interface{} { return &core.ContractListener{} },
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().AddContractAPIListener(r.Ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["eventPath"], r.Input.(*core.ContractListener))
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.Contracts().AddContractAPIListener(cr.ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["eventPath"], r.Input.(*core.ContractListener))
+		},
 	},
 }

@@ -387,9 +387,9 @@ var (
 	NetworkActionType          = ffm("NetworkAction.type", "The action to be performed")
 
 	// NodeStatus field descriptions
+	NodeNamespace  = ffm("NodeStatus.namespace", "The namespace that this status applies to")
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
 	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
-	NodeDefaults   = ffm("NodeStatus.defaults", "Information about defaults configured on this node that appplications might need to query on startup")
 	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
 
 	// NodeStatusNode field descriptions
@@ -586,6 +586,7 @@ var (
 	ContractCallRequestMethod     = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
+	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 
 	// WebSocketStatus field descriptions
 	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")

@@ -19,30 +19,31 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postOpRetry = &oapispec.Route{
+var postOpRetry = &ffapi.Route{
 	Name:   "postOpRetry",
 	Path:   "operations/{opid}/retry",
 	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "opid", Description: coremsgs.OperationID},
 	},
-	QueryParams:     []*oapispec.QueryParam{},
-	FilterFactory:   nil,
+	QueryParams:     []*ffapi.QueryParam{},
 	Description:     coremsgs.APIEndpointsPostOpRetry,
 	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		opid, err := fftypes.ParseUUID(r.Ctx, r.PP["opid"])
-		if err != nil {
-			return nil, err
-		}
-		return getOr(r.Ctx).Operations().RetryOperation(r.Ctx, extractNamespace(r.PP), opid)
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			opid, err := fftypes.ParseUUID(cr.ctx, r.PP["opid"])
+			if err != nil {
+				return nil, err
+			}
+			return cr.or.Operations().RetryOperation(cr.ctx, extractNamespace(r.PP), opid)
+		},
 	},
 }

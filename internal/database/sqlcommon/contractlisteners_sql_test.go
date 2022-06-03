@@ -55,7 +55,6 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 		Options: &core.ContractListenerOptions{
 			FirstEvent: "0",
 		},
-		State: fftypes.JSONAnyPtr(`{"some":"state"}`),
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionContractListeners, core.ChangeEventTypeCreated, "ns", sub.ID).Return()
@@ -97,29 +96,16 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
-	// Update the listener state
-	subUpdated := *sub
-	subUpdated.State = fftypes.JSONAnyPtr(`"shiny"`)
-	err = s.UpdateContractListener(ctx, sub.Namespace, sub.ID, &core.ContractListenerUpdateDTO{
-		State: subUpdated.State,
-	})
-	assert.NoError(t, err)
-	subUpdatedJson, _ := json.Marshal(subUpdated)
-
-	// Must be found
-	err = s.UpdateContractListener(ctx, sub.Namespace, fftypes.NewUUID(), &core.ContractListenerUpdateDTO{})
-	assert.Regexp(t, "FF10143", err)
-
 	// Query back the listener (by query filter)
 	filter = fb.And(
-		fb.Eq("state", fftypes.JSONAnyPtr(`"shiny"`)),
+		fb.Eq("backendid", sub.BackendID),
 	)
 	subs, res, err = s.GetContractListeners(ctx, filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	subReadJson, _ = json.Marshal(subs[0])
-	assert.Equal(t, string(subUpdatedJson), string(subReadJson))
+	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Test delete, and refind no return
 	err = s.DeleteContractListenerByID(ctx, sub.ID)
@@ -153,45 +139,6 @@ func TestUpsertContractListenerFailCommit(t *testing.T) {
 	mock.ExpectExec("INSERT .*").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
 	err := s.InsertContractListener(context.Background(), &core.ContractListener{})
-	assert.Regexp(t, "FF10119", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpdateContractListenerFailBegin(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(), &core.ContractListenerUpdateDTO{})
-	assert.Regexp(t, "FF10114", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpdateContractListenerFailBuildUpdate(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectRollback()
-	ctx := context.Background()
-	err := s.updateContractListener(context.Background(), "ns1", fftypes.NewUUID(),
-		database.ContractListenerQueryFactory.NewUpdate(ctx).Set("wrong", false))
-	assert.Regexp(t, "FF00142", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpdateContractListenerFailUpdate(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(), &core.ContractListenerUpdateDTO{})
-	assert.Regexp(t, "pop", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestUpdateContractListenerFailCommit(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpdateContractListener(context.Background(), "ns1", fftypes.NewUUID(), &core.ContractListenerUpdateDTO{})
 	assert.Regexp(t, "FF10119", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -257,7 +204,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(contractListenerColumns).AddRow(
-		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, nil, fftypes.Now()),
+		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
 	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())

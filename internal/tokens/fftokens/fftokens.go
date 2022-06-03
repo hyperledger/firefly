@@ -232,7 +232,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	pool := &tokens.TokenPool{
-		Type:        core.FFEnum(tokenType),
+		Type:        fftypes.FFEnum(tokenType),
 		PoolLocator: poolLocator,
 		TX: core.TransactionRef{
 			ID:   poolData.TX,
