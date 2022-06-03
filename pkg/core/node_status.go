@@ -20,10 +20,10 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 // NodeStatus is a set of information that represents the health, and identity of a node
 type NodeStatus struct {
-	Node     NodeStatusNode     `ffstruct:"NodeStatus" json:"node"`
-	Org      NodeStatusOrg      `ffstruct:"NodeStatus" json:"org"`
-	Defaults NodeStatusDefaults `ffstruct:"NodeStatus" json:"defaults"`
-	Plugins  NodeStatusPlugins  `ffstruct:"NodeStatus" json:"plugins"`
+	Namespace string            `ffstruct:"NodeStatus" json:"namespace"`
+	Node      NodeStatusNode    `ffstruct:"NodeStatus" json:"node"`
+	Org       NodeStatusOrg     `ffstruct:"NodeStatus" json:"org"`
+	Plugins   NodeStatusPlugins `ffstruct:"NodeStatus" json:"plugins"`
 }
 
 // NodeStatusNode is the information about the local node, returned in the node status
@@ -40,11 +40,6 @@ type NodeStatusOrg struct {
 	DID        string         `ffstruct:"NodeStatusOrg" json:"did,omitempty"`
 	ID         *fftypes.UUID  `ffstruct:"NodeStatusOrg" json:"id,omitempty"`
 	Verifiers  []*VerifierRef `ffstruct:"NodeStatusOrg" json:"verifiers,omitempty"`
-}
-
-// NodeStatusDefaults is information about core configuration th
-type NodeStatusDefaults struct {
-	Namespace string `ffstruct:"NodeStatusDefaults" json:"namespace"`
 }
 
 // NodeStatusPlugins is a map of plugins configured on the node

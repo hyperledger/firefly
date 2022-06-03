@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -83,42 +84,45 @@ func TestGetStatusRegistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.OrgName, "org1")
 	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx).Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
 			Parent: orgID,
 		},
 	}, false, nil)
-	nmn := or.networkmap.(*networkmapmocks.Manager)
-	nmn.On("GetIdentityVerifiers", or.ctx, core.SystemNamespace, orgID.String(), mock.Anything).Return([]*core.Verifier{
+	mnm := or.networkmap.(*networkmapmocks.Manager)
+	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}},
 	}, nil, nil)
 
+	mns := or.namespace.(*namespacemocks.Manager)
+	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx)
+	status, err := or.GetStatus(or.ctx, "ns")
 	assert.NoError(t, err)
 
-	assert.Equal(t, "default", status.Defaults.Namespace)
+	assert.Equal(t, "ns", status.Namespace)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -139,8 +143,8 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
-	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID))
-	assert.True(t, or.GetNodeUUID(or.ctx).Equals(nodeID)) // cached
+	assert.True(t, or.GetNodeUUID(or.ctx, "ns").Equals(nodeID))
+	assert.True(t, or.GetNodeUUID(or.ctx, "ns").Equals(nodeID)) // cached
 
 }
 
@@ -149,34 +153,37 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.OrgName, "org1")
 	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx).Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
 			Parent: fftypes.NewUUID(),
 		},
 	}, false, nil)
-	nmn := or.networkmap.(*networkmapmocks.Manager)
-	nmn.On("GetIdentityVerifiers", or.ctx, core.SystemNamespace, orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mnm := or.networkmap.(*networkmapmocks.Manager)
+	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+
+	mns := or.namespace.(*namespacemocks.Manager)
+	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	_, err := or.GetStatus(or.ctx)
+	_, err := or.GetStatus(or.ctx, "ns")
 	assert.Regexp(t, "pop", err)
 
 }
@@ -186,42 +193,45 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.OrgName, "org1")
 	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx).Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
 			Parent: fftypes.NewUUID(),
 		},
 	}, false, nil)
-	nmn := or.networkmap.(*networkmapmocks.Manager)
-	nmn.On("GetIdentityVerifiers", or.ctx, core.SystemNamespace, orgID.String(), mock.Anything).Return([]*core.Verifier{
+	mnm := or.networkmap.(*networkmapmocks.Manager)
+	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}},
 	}, nil, nil)
 
+	mns := or.namespace.(*namespacemocks.Manager)
+	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx)
+	status, err := or.GetStatus(or.ctx, "ns")
 	assert.NoError(t, err)
 
-	assert.Equal(t, "default", status.Defaults.Namespace)
+	assert.Equal(t, "ns", status.Namespace)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -239,19 +249,21 @@ func TestGetStatusUnregistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.OrgName, "org1")
 	config.Set(coreconfig.NodeName, "node1")
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
+
+	mns := or.namespace.(*namespacemocks.Manager)
+	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx)
+	status, err := or.GetStatus(or.ctx, "ns")
 	assert.NoError(t, err)
 
-	assert.Equal(t, "default", status.Defaults.Namespace)
+	assert.Equal(t, "ns", status.Namespace)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.False(t, status.Org.Registered)
@@ -259,7 +271,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	assert.Equal(t, "node1", status.Node.Name)
 	assert.False(t, status.Node.Registered)
 
-	assert.Nil(t, or.GetNodeUUID(or.ctx))
+	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))
 
 }
 
@@ -268,35 +280,38 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.OrgName, "org1")
 	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx).Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
-	nmn := or.networkmap.(*networkmapmocks.Manager)
-	nmn.On("GetIdentityVerifiers", or.ctx, core.SystemNamespace, orgID.String(), mock.Anything).Return([]*core.Verifier{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(nil, false, nil)
+	mnm := or.networkmap.(*networkmapmocks.Manager)
+	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}},
 	}, nil, nil)
 
+	mns := or.namespace.(*namespacemocks.Manager)
+	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx)
+	status, err := or.GetStatus(or.ctx, "ns")
 	assert.NoError(t, err)
 
-	assert.Equal(t, "default", status.Defaults.Namespace)
+	assert.Equal(t, "ns", status.Namespace)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -315,7 +330,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
-	assert.Nil(t, or.GetNodeUUID(or.ctx))
+	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))
 }
 
 func TestGetStatusNodeError(t *testing.T) {
@@ -323,34 +338,37 @@ func TestGetStatusNodeError(t *testing.T) {
 
 	coreconfig.Reset()
 	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.OrgName, "org1")
 	config.Set(coreconfig.NodeName, "node1")
 
 	orgID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetNodeOwnerOrg", or.ctx).Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
-			ID:   orgID,
-			Name: "org1",
-			DID:  "did:firefly:org/org1",
+			ID:        orgID,
+			Name:      "org1",
+			Namespace: "ns",
+			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
-	nmn := or.networkmap.(*networkmapmocks.Manager)
-	nmn.On("GetIdentityVerifiers", or.ctx, core.SystemNamespace, orgID.String(), mock.Anything).Return([]*core.Verifier{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
+	mnm := or.networkmap.(*networkmapmocks.Manager)
+	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
 		}},
 	}, nil, nil)
 
+	mns := or.namespace.(*namespacemocks.Manager)
+	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	_, err := or.GetStatus(or.ctx)
+	_, err := or.GetStatus(or.ctx, "ns")
 	assert.EqualError(t, err, "pop")
 
-	assert.Nil(t, or.GetNodeUUID(or.ctx))
+	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))
 
 }

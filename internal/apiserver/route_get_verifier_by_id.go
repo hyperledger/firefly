@@ -19,16 +19,16 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getVerifierByID = &oapispec.Route{
+var getVerifierByID = &ffapi.Route{
 	Name:   "getVerifierByID",
 	Path:   "verifiers/{hash}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "hash", Example: "hash", Description: coremsgs.APIParamsVerifierHash},
 	},
 	QueryParams:     nil,
@@ -36,8 +36,9 @@ var getVerifierByID = &oapispec.Route{
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		return getOr(r.Ctx, ns).NetworkMap().GetVerifierByHash(r.Ctx, ns, r.PP["hash"])
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.NetworkMap().GetVerifierByHash(cr.ctx, extractNamespace(r.PP), r.PP["hash"])
+		},
 	},
 }

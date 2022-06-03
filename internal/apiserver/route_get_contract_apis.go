@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getContractAPIs = &oapispec.Route{
+var getContractAPIs = &ffapi.Route{
 	Name:            "getContractAPIs",
 	Path:            "apis",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.ContractAPIQueryFactory,
 	Description:     coremsgs.APIEndpointsGetContractAPIs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		return filterResult(getOr(r.Ctx, ns).Contracts().GetContractAPIs(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.ContractAPIQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.Contracts().GetContractAPIs(cr.ctx, cr.apiBaseURL, extractNamespace(r.PP), cr.filter))
+		},
 	},
 }

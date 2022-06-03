@@ -16,6 +16,6 @@
 
 package apiserver
 
-import "github.com/hyperledger/firefly/internal/oapispec"
+import "github.com/hyperledger/firefly-common/pkg/ffapi"
 
-var adminRoutes = []*oapispec.Route{}
+var adminRoutes = []*ffapi.Route{}

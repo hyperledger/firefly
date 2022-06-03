@@ -20,33 +20,33 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postContractAPIInvoke = &oapispec.Route{
+var postContractAPIInvoke = &ffapi.Route{
 	Name:   "postContractAPIInvoke",
 	Path:   "apis/{apiName}/invoke/{methodPath}",
 	Method: http.MethodPost,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "apiName", Description: coremsgs.APIParamsContractAPIName},
 		{Name: "methodPath", Description: coremsgs.APIParamsMethodPath},
 	},
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostContractAPIInvoke,
 	JSONInputValue:  func() interface{} { return &core.ContractCallRequest{} },
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		req := r.Input.(*core.ContractCallRequest)
-		req.Type = core.CallTypeInvoke
-		ns := extractNamespace(r.PP)
-		return getOr(r.Ctx, ns).Contracts().InvokeContractAPI(r.Ctx, ns, r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+			r.SuccessStatus = syncRetcode(waitConfirm)
+			req := r.Input.(*core.ContractCallRequest)
+			req.Type = core.CallTypeInvoke
+			return cr.or.Contracts().InvokeContractAPI(cr.ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
+		},
 	},
 }

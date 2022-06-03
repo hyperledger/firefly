@@ -122,11 +122,11 @@ func (_m *Plugin) DeleteNonce(ctx context.Context, hash *fftypes.Bytes32) error 
 }
 
 // DeleteOffset provides a mock function with given fields: ctx, t, name
-func (_m *Plugin) DeleteOffset(ctx context.Context, t core.FFEnum, name string) error {
+func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.FFEnum, name string) error {
 	ret := _m.Called(ctx, t, name)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) error); ok {
 		r0 = rf(ctx, t, name)
 	} else {
 		r0 = ret.Error(0)
@@ -1219,11 +1219,11 @@ func (_m *Plugin) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (*core.
 }
 
 // GetIdentityByName provides a mock function with given fields: ctx, iType, namespace, name
-func (_m *Plugin) GetIdentityByName(ctx context.Context, iType core.FFEnum, namespace string, name string) (*core.Identity, error) {
+func (_m *Plugin) GetIdentityByName(ctx context.Context, iType fftypes.FFEnum, namespace string, name string) (*core.Identity, error) {
 	ret := _m.Called(ctx, iType, namespace, name)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string, string) *core.Identity); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *core.Identity); ok {
 		r0 = rf(ctx, iType, namespace, name)
 	} else {
 		if ret.Get(0) != nil {
@@ -1232,7 +1232,7 @@ func (_m *Plugin) GetIdentityByName(ctx context.Context, iType core.FFEnum, name
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
 		r1 = rf(ctx, iType, namespace, name)
 	} else {
 		r1 = ret.Error(1)
@@ -1563,11 +1563,11 @@ func (_m *Plugin) GetNonces(ctx context.Context, filter database.Filter) ([]*cor
 }
 
 // GetOffset provides a mock function with given fields: ctx, t, name
-func (_m *Plugin) GetOffset(ctx context.Context, t core.FFEnum, name string) (*core.Offset, error) {
+func (_m *Plugin) GetOffset(ctx context.Context, t fftypes.FFEnum, name string) (*core.Offset, error) {
 	ret := _m.Called(ctx, t, name)
 
 	var r0 *core.Offset
-	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string) *core.Offset); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string) *core.Offset); ok {
 		r0 = rf(ctx, t, name)
 	} else {
 		if ret.Get(0) != nil {
@@ -1576,7 +1576,7 @@ func (_m *Plugin) GetOffset(ctx context.Context, t core.FFEnum, name string) (*c
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string) error); ok {
 		r1 = rf(ctx, t, name)
 	} else {
 		r1 = ret.Error(1)
@@ -2237,11 +2237,11 @@ func (_m *Plugin) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) 
 }
 
 // GetVerifierByValue provides a mock function with given fields: ctx, vType, namespace, value
-func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType core.FFEnum, namespace string, value string) (*core.Verifier, error) {
+func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType fftypes.FFEnum, namespace string, value string) (*core.Verifier, error) {
 	ret := _m.Called(ctx, vType, namespace, value)
 
 	var r0 *core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, core.FFEnum, string, string) *core.Verifier); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, fftypes.FFEnum, string, string) *core.Verifier); ok {
 		r0 = rf(ctx, vType, namespace, value)
 	} else {
 		if ret.Get(0) != nil {
@@ -2250,7 +2250,7 @@ func (_m *Plugin) GetVerifierByValue(ctx context.Context, vType core.FFEnum, nam
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.FFEnum, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, fftypes.FFEnum, string, string) error); ok {
 		r1 = rf(ctx, vType, namespace, value)
 	} else {
 		r1 = ret.Error(1)

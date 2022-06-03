@@ -968,6 +968,7 @@ func TestStartBatchFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.mmi.On("Start").Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -987,6 +988,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mpm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
@@ -1002,6 +1004,7 @@ func TestStartBlockchainsFail(t *testing.T) {
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1014,6 +1017,7 @@ func TestStartBlockchainsConfigureFail(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1137,25 +1141,23 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchain = or.mbi
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.NoError(t, err)
 }
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
 }
 
 func TestNetworkActionBadType(t *testing.T) {
 	or := newTestOrchestrator()
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10397", err)
 }
 */

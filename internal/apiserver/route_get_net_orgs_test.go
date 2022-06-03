@@ -34,7 +34,7 @@ func TestGetOrganizations(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("GetOrganizations", mock.Anything, mock.Anything).
+	mnm.On("GetOrganizations", mock.Anything, "default", mock.Anything).
 		Return([]*core.Identity{}, nil, nil)
 	r.ServeHTTP(res, req)
 

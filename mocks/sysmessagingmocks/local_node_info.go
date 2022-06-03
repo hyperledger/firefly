@@ -14,13 +14,13 @@ type LocalNodeInfo struct {
 	mock.Mock
 }
 
-// GetNodeUUID provides a mock function with given fields: ctx
-func (_m *LocalNodeInfo) GetNodeUUID(ctx context.Context) *fftypes.UUID {
-	ret := _m.Called(ctx)
+// GetNodeUUID provides a mock function with given fields: ctx, ns
+func (_m *LocalNodeInfo) GetNodeUUID(ctx context.Context, ns string) *fftypes.UUID {
+	ret := _m.Called(ctx, ns)
 
 	var r0 *fftypes.UUID
-	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.UUID); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *fftypes.UUID); ok {
+		r0 = rf(ctx, ns)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.UUID)

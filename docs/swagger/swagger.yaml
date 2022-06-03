@@ -9,12 +9,12 @@ paths:
       description: Gets a list of contract APIs that have been published
       operationId: getContractAPIs
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -142,12 +142,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -303,12 +303,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -380,12 +380,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -566,12 +566,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -770,12 +770,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -972,12 +972,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -1128,12 +1128,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -1197,12 +1197,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -1351,12 +1351,12 @@ paths:
       description: Gets a list of message batches
       operationId: getBatches
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -1539,12 +1539,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -1620,12 +1620,12 @@ paths:
       description: Gets a list of blockchain events
       operationId: getBlockchainEvents
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -1798,12 +1798,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -1907,12 +1907,12 @@ paths:
         name: buckets
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -1961,12 +1961,12 @@ paths:
       description: Gets a list of contract interfaces that have been published
       operationId: getContractInterfaces
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -2194,12 +2194,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -2470,12 +2470,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -2655,12 +2655,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -2823,12 +2823,12 @@ paths:
         use must support this functionality.
       operationId: postGenerateContractInterface
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3019,12 +3019,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3268,12 +3268,12 @@ paths:
       description: Gets a list of contract listeners
       operationId: getContractListeners
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -3457,12 +3457,12 @@ paths:
         smart contracts
       operationId: postNewContractListener
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3654,12 +3654,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -3680,12 +3680,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -3793,12 +3793,12 @@ paths:
       description: Queries a method on a smart contract. Performs a read-only query.
       operationId: postContractQuery
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -3907,12 +3907,12 @@ paths:
       description: Gets a list of data items
       operationId: getData
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4083,12 +4083,12 @@ paths:
       description: Creates a new data item in this FireFly node
       operationId: postData
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -4220,12 +4220,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -4307,12 +4307,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4456,12 +4456,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4720,12 +4720,12 @@ paths:
       description: Gets a list of datatypes that have been published
       operationId: getDatatypes
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -4862,12 +4862,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -5013,12 +5013,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -5086,12 +5086,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -5270,12 +5270,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -5367,12 +5367,12 @@ paths:
       description: Gets a list of groups
       operationId: getGroups
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -5500,12 +5500,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -5558,7 +5558,8 @@ paths:
       - Default Namespace
   /identities:
     get:
-      description: Gets a list of identities that have been registered in the network
+      description: Gets a list of all identities that have been registered in the
+        namespace
       operationId: getIdentities
       parameters:
       - description: When set, the API will return the verifier for this identity
@@ -5567,12 +5568,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -5785,12 +5786,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -5981,6 +5982,131 @@ paths:
           description: ""
       tags:
       - Default Namespace
+  /identities/{did}:
+    get:
+      description: Gets an identity by its DID
+      operationId: getIdentityByDID
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: When set, the API will return the verifier for this identity
+        in: query
+        name: fetchverifiers
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                  verifiers:
+                    description: The verifiers, such as blockchain signing keys, that
+                      have been bound to this identity and can be used to prove data
+                      orignates from that identity
+                    items:
+                      description: The verifiers, such as blockchain signing keys,
+                        that have been bound to this identity and can be used to prove
+                        data orignates from that identity
+                      properties:
+                        type:
+                          description: The type of the verifier
+                          enum:
+                          - ethereum_address
+                          - fabric_msp_id
+                          - dx_peer_id
+                          type: string
+                        value:
+                          description: The verifier string, such as an Ethereum address,
+                            or Fabric MSP identifier
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
   /identities/{iid}:
     get:
       description: Gets an identity by its ID
@@ -5999,12 +6125,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6097,12 +6223,12 @@ paths:
         schema:
           example: id
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6174,12 +6300,12 @@ paths:
         schema:
           example: id
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -6298,12 +6424,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -6576,12 +6702,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6759,12 +6885,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -6848,12 +6974,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -7032,12 +7158,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -7097,12 +7223,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -7456,12 +7582,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -7861,12 +7987,12 @@ paths:
         to that message, then sends the reply as the HTTP response.
       operationId: postNewMessageRequestReply
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -8169,12 +8295,12 @@ paths:
       description: Gets a list of namespaces
       operationId: getNamespaces
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -8333,202 +8459,6 @@ paths:
           description: ""
       tags:
       - Global
-    post:
-      description: Creates and broadcasts a new namespace
-      operationId: postNewNamespace
-      parameters:
-      - description: When true the HTTP request blocks until the message is confirmed
-        in: query
-        name: confirm
-        schema:
-          example: "true"
-          type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
-          like 10s)
-        in: header
-        name: Request-Timeout
-        schema:
-          default: 120s
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                description:
-                  description: A description of the namespace
-                  type: string
-                name:
-                  description: The namespace name
-                  type: string
-              type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created:
-                    description: The time the namespace was created
-                    format: date-time
-                    type: string
-                  description:
-                    description: A description of the namespace
-                    type: string
-                  fireflyContract:
-                    description: Info on the FireFly smart contract configured for
-                      this namespace
-                    properties:
-                      active:
-                        description: The currently active FireFly smart contract
-                        properties:
-                          finalEvent:
-                            description: The identifier for the final blockchain event
-                              received from this contract before termination
-                            type: string
-                          index:
-                            description: The index of this contract in the config
-                              file
-                            type: integer
-                          info:
-                            additionalProperties:
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                            description: Blockchain-specific info on the contract,
-                              such as its location on chain
-                            type: object
-                        type: object
-                      terminated:
-                        description: Previously-terminated FireFly smart contracts
-                        items:
-                          description: Previously-terminated FireFly smart contracts
-                          properties:
-                            finalEvent:
-                              description: The identifier for the final blockchain
-                                event received from this contract before termination
-                              type: string
-                            index:
-                              description: The index of this contract in the config
-                                file
-                              type: integer
-                            info:
-                              additionalProperties:
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                              type: object
-                          type: object
-                        type: array
-                    type: object
-                  id:
-                    description: The UUID of the namespace. For locally established
-                      namespaces will be different on each node in the network. For
-                      broadcast namespaces, will be the same on every node
-                    format: uuid
-                    type: string
-                  message:
-                    description: The UUID of broadcast message used to establish the
-                      namespace. Unset for local namespaces
-                    format: uuid
-                    type: string
-                  name:
-                    description: The namespace name
-                    type: string
-                  type:
-                    description: The type of the namespace
-                    enum:
-                    - local
-                    - broadcast
-                    - system
-                    type: string
-                type: object
-          description: Success
-        "202":
-          content:
-            application/json:
-              schema:
-                properties:
-                  created:
-                    description: The time the namespace was created
-                    format: date-time
-                    type: string
-                  description:
-                    description: A description of the namespace
-                    type: string
-                  fireflyContract:
-                    description: Info on the FireFly smart contract configured for
-                      this namespace
-                    properties:
-                      active:
-                        description: The currently active FireFly smart contract
-                        properties:
-                          finalEvent:
-                            description: The identifier for the final blockchain event
-                              received from this contract before termination
-                            type: string
-                          index:
-                            description: The index of this contract in the config
-                              file
-                            type: integer
-                          info:
-                            additionalProperties:
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                            description: Blockchain-specific info on the contract,
-                              such as its location on chain
-                            type: object
-                        type: object
-                      terminated:
-                        description: Previously-terminated FireFly smart contracts
-                        items:
-                          description: Previously-terminated FireFly smart contracts
-                          properties:
-                            finalEvent:
-                              description: The identifier for the final blockchain
-                                event received from this contract before termination
-                              type: string
-                            index:
-                              description: The index of this contract in the config
-                                file
-                              type: integer
-                            info:
-                              additionalProperties:
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                              type: object
-                          type: object
-                        type: array
-                    type: object
-                  id:
-                    description: The UUID of the namespace. For locally established
-                      namespaces will be different on each node in the network. For
-                      broadcast namespaces, will be the same on every node
-                    format: uuid
-                    type: string
-                  message:
-                    description: The UUID of broadcast message used to establish the
-                      namespace. Unset for local namespaces
-                    format: uuid
-                    type: string
-                  name:
-                    description: The namespace name
-                    type: string
-                  type:
-                    description: The type of the namespace
-                    enum:
-                    - local
-                    - broadcast
-                    - system
-                    type: string
-                type: object
-          description: Success
-        default:
-          description: ""
-      tags:
-      - Global
   /namespaces/{ns}:
     get:
       description: Gets a namespace
@@ -8541,12 +8471,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -8646,12 +8576,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -8786,12 +8716,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -8954,12 +8884,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -9038,12 +8968,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -9231,12 +9161,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -9500,12 +9430,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -9709,12 +9639,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -9916,12 +9846,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -10050,12 +9980,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -10211,12 +10141,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -10406,12 +10336,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -10494,12 +10424,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -10679,12 +10609,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -10795,12 +10725,12 @@ paths:
         name: buckets
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -10856,12 +10786,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -11096,12 +11026,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -11379,12 +11309,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -11571,12 +11501,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -11746,12 +11676,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -11949,12 +11879,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -12205,12 +12135,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -12401,12 +12331,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -12605,12 +12535,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -12638,12 +12568,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -12758,12 +12688,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -12879,12 +12809,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13062,12 +12992,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -13206,12 +13136,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -13300,12 +13230,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13456,12 +13386,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13727,12 +13657,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -13876,12 +13806,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -14034,12 +13964,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -14114,12 +14044,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -14305,12 +14235,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -14409,12 +14339,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -14549,12 +14479,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -14607,7 +14537,8 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/identities:
     get:
-      description: Gets a list of identities that have been registered in the network
+      description: Gets a list of all identities that have been registered in the
+        namespace
       operationId: getIdentitiesNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -14623,12 +14554,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -14848,12 +14779,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -15044,6 +14975,138 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/identities/{did}:
+    get:
+      description: Gets an identity by its DID
+      operationId: getIdentityByDIDNamespace
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When set, the API will return the verifier for this identity
+        in: query
+        name: fetchverifiers
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                  verifiers:
+                    description: The verifiers, such as blockchain signing keys, that
+                      have been bound to this identity and can be used to prove data
+                      orignates from that identity
+                    items:
+                      description: The verifiers, such as blockchain signing keys,
+                        that have been bound to this identity and can be used to prove
+                        data orignates from that identity
+                      properties:
+                        type:
+                          description: The type of the verifier
+                          enum:
+                          - ethereum_address
+                          - fabric_msp_id
+                          - dx_peer_id
+                          type: string
+                        value:
+                          description: The verifier string, such as an Ethereum address,
+                            or Fabric MSP identifier
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/identities/{iid}:
     get:
       description: Gets an identity by its ID
@@ -15069,12 +15132,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15174,12 +15237,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15258,12 +15321,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -15389,12 +15452,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -15674,12 +15737,12 @@ paths:
         name: fetchdata
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15864,12 +15927,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -15960,12 +16023,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -16151,12 +16214,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -16223,12 +16286,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -16639,12 +16702,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -17051,12 +17114,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -17354,6 +17417,1682 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/network/action:
+    post:
+      description: Notify all nodes in the network of a new governance action
+      operationId: postNetworkActionNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                type:
+                  description: The action to be performed
+                  enum:
+                  - terminate
+                  type: string
+              type: object
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  type:
+                    description: The action to be performed
+                    enum:
+                    - terminate
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/diddocs/{did}:
+    get:
+      description: Gets a DID document by its DID
+      operationId: getNetworkDIDDocByDIDNamespace
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  '@context':
+                    description: See https://www.w3.org/TR/did-core/#json-ld
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#json-ld
+                      type: string
+                    type: array
+                  authentication:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#did-document-properties
+                      type: string
+                    type: array
+                  id:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    type: string
+                  verificationMethod:
+                    description: See https://www.w3.org/TR/did-core/#did-document-properties
+                    items:
+                      description: See https://www.w3.org/TR/did-core/#did-document-properties
+                      properties:
+                        blockchainAcountId:
+                          description: For blockchains like Ethereum that represent
+                            signing identities directly by their public key summarized
+                            in an account string
+                          type: string
+                        controller:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                        dataExchangePeerID:
+                          description: A string provided by your Data Exchange plugin,
+                            that it uses a technology specific mechanism to validate
+                            against when messages arrive from this identity
+                          type: string
+                        id:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                        mspIdentityString:
+                          description: For Hyperledger Fabric where the signing identity
+                            is represented by an MSP identifier (containing X509 certificate
+                            DN strings) that were validated by your local MSP
+                          type: string
+                        type:
+                          description: See https://www.w3.org/TR/did-core/#service-properties
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/identities:
+    get:
+      deprecated: true
+      description: Gets the list of identities in the network (deprecated - use /identities
+        instead of /network/identities
+      operationId: getNetworkIdentitiesNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When set, the API will return the verifier for this identity
+        in: query
+        name: fetchverifiers
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: description
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created:
+                      description: The creation time of the identity
+                      format: date-time
+                      type: string
+                    description:
+                      description: A description of the identity. Part of the updatable
+                        profile information of an identity
+                      type: string
+                    did:
+                      description: The DID of the identity. Unique across namespaces
+                        within a FireFly network
+                      type: string
+                    id:
+                      description: The UUID of the identity
+                      format: uuid
+                      type: string
+                    messages:
+                      description: References to the broadcast messages that established
+                        this identity and proved ownership of the associated verifiers
+                        (keys)
+                      properties:
+                        claim:
+                          description: The UUID of claim message
+                          format: uuid
+                          type: string
+                        update:
+                          description: The UUID of the most recently applied update
+                            message. Unset if no updates have been confirmed
+                          format: uuid
+                          type: string
+                        verification:
+                          description: The UUID of claim message. Unset for root organization
+                            identities
+                          format: uuid
+                          type: string
+                      type: object
+                    name:
+                      description: The name of the identity. The name must be unique
+                        within the type and namespace
+                      type: string
+                    namespace:
+                      description: The namespace of the identity. Organization and
+                        node identities are always defined in the ff_system namespace
+                      type: string
+                    parent:
+                      description: The UUID of the parent identity. Unset for root
+                        organization identities
+                      format: uuid
+                      type: string
+                    profile:
+                      additionalProperties:
+                        description: A set of metadata for the identity. Part of the
+                          updatable profile information of an identity
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                      type: object
+                    type:
+                      description: The type of the identity
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated:
+                      description: The last update time of the identity profile
+                      format: date-time
+                      type: string
+                    verifiers:
+                      description: The verifiers, such as blockchain signing keys,
+                        that have been bound to this identity and can be used to prove
+                        data orignates from that identity
+                      items:
+                        description: The verifiers, such as blockchain signing keys,
+                          that have been bound to this identity and can be used to
+                          prove data orignates from that identity
+                        properties:
+                          type:
+                            description: The type of the verifier
+                            enum:
+                            - ethereum_address
+                            - fabric_msp_id
+                            - dx_peer_id
+                            type: string
+                          value:
+                            description: The verifier string, such as an Ethereum
+                              address, or Fabric MSP identifier
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/identities/{did}:
+    get:
+      deprecated: true
+      description: Gets an identity by its DID (deprecated - use /identities/{did}
+        instead of /network/identities/{did})
+      operationId: getNetworkIdentityByDIDNamespace
+      parameters:
+      - description: The identity DID
+        in: path
+        name: did
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When set, the API will return the verifier for this identity
+        in: query
+        name: fetchverifiers
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                  verifiers:
+                    description: The verifiers, such as blockchain signing keys, that
+                      have been bound to this identity and can be used to prove data
+                      orignates from that identity
+                    items:
+                      description: The verifiers, such as blockchain signing keys,
+                        that have been bound to this identity and can be used to prove
+                        data orignates from that identity
+                      properties:
+                        type:
+                          description: The type of the verifier
+                          enum:
+                          - ethereum_address
+                          - fabric_msp_id
+                          - dx_peer_id
+                          type: string
+                        value:
+                          description: The verifier string, such as an Ethereum address,
+                            or Fabric MSP identifier
+                          type: string
+                      type: object
+                    type: array
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/nodes:
+    get:
+      description: Gets a list of nodes in the network
+      operationId: getNetworkNodesNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: description
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created:
+                      description: The creation time of the identity
+                      format: date-time
+                      type: string
+                    description:
+                      description: A description of the identity. Part of the updatable
+                        profile information of an identity
+                      type: string
+                    did:
+                      description: The DID of the identity. Unique across namespaces
+                        within a FireFly network
+                      type: string
+                    id:
+                      description: The UUID of the identity
+                      format: uuid
+                      type: string
+                    messages:
+                      description: References to the broadcast messages that established
+                        this identity and proved ownership of the associated verifiers
+                        (keys)
+                      properties:
+                        claim:
+                          description: The UUID of claim message
+                          format: uuid
+                          type: string
+                        update:
+                          description: The UUID of the most recently applied update
+                            message. Unset if no updates have been confirmed
+                          format: uuid
+                          type: string
+                        verification:
+                          description: The UUID of claim message. Unset for root organization
+                            identities
+                          format: uuid
+                          type: string
+                      type: object
+                    name:
+                      description: The name of the identity. The name must be unique
+                        within the type and namespace
+                      type: string
+                    namespace:
+                      description: The namespace of the identity. Organization and
+                        node identities are always defined in the ff_system namespace
+                      type: string
+                    parent:
+                      description: The UUID of the parent identity. Unset for root
+                        organization identities
+                      format: uuid
+                      type: string
+                    profile:
+                      additionalProperties:
+                        description: A set of metadata for the identity. Part of the
+                          updatable profile information of an identity
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                      type: object
+                    type:
+                      description: The type of the identity
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated:
+                      description: The last update time of the identity profile
+                      format: date-time
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/nodes/{nameOrId}:
+    get:
+      description: Gets information about a specific node in the network
+      operationId: getNetworkNodeNamespace
+      parameters:
+      - description: The name or ID of the node
+        in: path
+        name: nameOrId
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/nodes/self:
+    post:
+      description: Instructs this FireFly node to register itself on the network
+      operationId: postNodesSelfNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/organizations:
+    get:
+      description: Gets a list of orgs in the network
+      operationId: getNetworkOrgsNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: description
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: did
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: id
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.claim
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.update
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: messages.verification
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: name
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: namespace
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: parent
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: profile
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: type
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: updated
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    created:
+                      description: The creation time of the identity
+                      format: date-time
+                      type: string
+                    description:
+                      description: A description of the identity. Part of the updatable
+                        profile information of an identity
+                      type: string
+                    did:
+                      description: The DID of the identity. Unique across namespaces
+                        within a FireFly network
+                      type: string
+                    id:
+                      description: The UUID of the identity
+                      format: uuid
+                      type: string
+                    messages:
+                      description: References to the broadcast messages that established
+                        this identity and proved ownership of the associated verifiers
+                        (keys)
+                      properties:
+                        claim:
+                          description: The UUID of claim message
+                          format: uuid
+                          type: string
+                        update:
+                          description: The UUID of the most recently applied update
+                            message. Unset if no updates have been confirmed
+                          format: uuid
+                          type: string
+                        verification:
+                          description: The UUID of claim message. Unset for root organization
+                            identities
+                          format: uuid
+                          type: string
+                      type: object
+                    name:
+                      description: The name of the identity. The name must be unique
+                        within the type and namespace
+                      type: string
+                    namespace:
+                      description: The namespace of the identity. Organization and
+                        node identities are always defined in the ff_system namespace
+                      type: string
+                    parent:
+                      description: The UUID of the parent identity. Unset for root
+                        organization identities
+                      format: uuid
+                      type: string
+                    profile:
+                      additionalProperties:
+                        description: A set of metadata for the identity. Part of the
+                          updatable profile information of an identity
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                      type: object
+                    type:
+                      description: The type of the identity
+                      enum:
+                      - org
+                      - node
+                      - custom
+                      type: string
+                    updated:
+                      description: The last update time of the identity profile
+                      format: date-time
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+    post:
+      description: Registers a new org in the network
+      operationId: postNewOrganizationNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                description:
+                  description: A description of the identity. Part of the updatable
+                    profile information of an identity
+                  type: string
+                key:
+                  description: The blockchain signing key to use to make the claim
+                    to the identity. Must be available to the local node to sign the
+                    identity claim. Will become a verifier on the established identity
+                  type: string
+                name:
+                  description: The name of the identity. The name must be unique within
+                    the type and namespace
+                  type: string
+                parent:
+                  description: On input the parent can be specified directly as the
+                    UUID of and existing identity, or as a DID to resolve to that
+                    identity, or an organization name. The parent must already have
+                    been registered, and its blockchain signing key must be available
+                    to the local node to sign the verification
+                  type: string
+                profile:
+                  additionalProperties:
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                  description: A set of metadata for the identity. Part of the updatable
+                    profile information of an identity
+                  type: object
+                type:
+                  description: The type of the identity
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/organizations/{nameOrId}:
+    get:
+      description: Gets information about a specifc org in the network
+      operationId: getNetworkOrgNamespace
+      parameters:
+      - description: The name or ID of the org
+        in: path
+        name: nameOrId
+        required: true
+        schema:
+          type: string
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
+  /namespaces/{ns}/network/organizations/self:
+    post:
+      description: Instructs this FireFly node to register its org on the network
+      operationId: postNewOrganizationSelfNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: When true the HTTP request blocks until the message is confirmed
+        in: query
+        name: confirm
+        schema:
+          example: "true"
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  created:
+                    description: The creation time of the identity
+                    format: date-time
+                    type: string
+                  description:
+                    description: A description of the identity. Part of the updatable
+                      profile information of an identity
+                    type: string
+                  did:
+                    description: The DID of the identity. Unique across namespaces
+                      within a FireFly network
+                    type: string
+                  id:
+                    description: The UUID of the identity
+                    format: uuid
+                    type: string
+                  messages:
+                    description: References to the broadcast messages that established
+                      this identity and proved ownership of the associated verifiers
+                      (keys)
+                    properties:
+                      claim:
+                        description: The UUID of claim message
+                        format: uuid
+                        type: string
+                      update:
+                        description: The UUID of the most recently applied update
+                          message. Unset if no updates have been confirmed
+                        format: uuid
+                        type: string
+                      verification:
+                        description: The UUID of claim message. Unset for root organization
+                          identities
+                        format: uuid
+                        type: string
+                    type: object
+                  name:
+                    description: The name of the identity. The name must be unique
+                      within the type and namespace
+                    type: string
+                  namespace:
+                    description: The namespace of the identity. Organization and node
+                      identities are always defined in the ff_system namespace
+                    type: string
+                  parent:
+                    description: The UUID of the parent identity. Unset for root organization
+                      identities
+                    format: uuid
+                    type: string
+                  profile:
+                    additionalProperties:
+                      description: A set of metadata for the identity. Part of the
+                        updatable profile information of an identity
+                    description: A set of metadata for the identity. Part of the updatable
+                      profile information of an identity
+                    type: object
+                  type:
+                    description: The type of the identity
+                    enum:
+                    - org
+                    - node
+                    - custom
+                    type: string
+                  updated:
+                    description: The last update time of the identity profile
+                    format: date-time
+                    type: string
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/operations:
     get:
       description: Gets a a list of operations
@@ -17366,12 +19105,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -17563,12 +19302,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -17664,12 +19403,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -17751,6 +19490,190 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/status:
+    get:
+      description: Gets the status of this node
+      operationId: getStatusNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  namespace:
+                    description: The namespace that this status applies to
+                    type: string
+                  node:
+                    description: Details of the local node
+                    properties:
+                      id:
+                        description: The UUID of the node, if registered
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of this node, as specified in the local
+                          configuration
+                        type: string
+                      registered:
+                        description: Whether the node has been successfully registered
+                        type: boolean
+                    type: object
+                  org:
+                    description: Details of the organization identity that operates
+                      this node
+                    properties:
+                      did:
+                        description: The DID of the organization identity, if registered
+                        type: string
+                      id:
+                        description: The UUID of the organization, if registered
+                        format: uuid
+                        type: string
+                      name:
+                        description: The name of the node operator organization, as
+                          specified in the local configuration
+                        type: string
+                      registered:
+                        description: Whether the organization has been successfully
+                          registered
+                        type: boolean
+                      verifiers:
+                        description: Array of verifiers (blockchain keys) owned by
+                          this identity
+                        items:
+                          description: Array of verifiers (blockchain keys) owned
+                            by this identity
+                          properties:
+                            type:
+                              description: The type of the verifier
+                              enum:
+                              - ethereum_address
+                              - fabric_msp_id
+                              - dx_peer_id
+                              type: string
+                            value:
+                              description: The verifier string, such as an Ethereum
+                                address, or Fabric MSP identifier
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                  plugins:
+                    description: Information about plugins configured on this node
+                    properties:
+                      blockchain:
+                        description: The blockchain plugins on this node
+                        items:
+                          description: The blockchain plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      dataExchange:
+                        description: The data exchange plugins on this node
+                        items:
+                          description: The data exchange plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      database:
+                        description: The database plugins on this node
+                        items:
+                          description: The database plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      events:
+                        description: The event plugins on this node
+                        items:
+                          description: The event plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      identity:
+                        description: The identity plugins on this node
+                        items:
+                          description: The identity plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      sharedStorage:
+                        description: The shared storage plugins on this node
+                        items:
+                          description: The shared storage plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                      tokens:
+                        description: The token plugins on this node
+                        items:
+                          description: The token plugins on this node
+                          properties:
+                            name:
+                              description: The name of the plugin
+                              type: string
+                            pluginType:
+                              description: The type of the plugin
+                              type: string
+                          type: object
+                        type: array
+                    type: object
+                type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/subscriptions:
     get:
       description: Gets a list of subscriptions
@@ -17763,12 +19686,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -18078,12 +20001,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -18502,12 +20425,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -18933,12 +20856,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -18966,12 +20889,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -19201,12 +21124,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -19294,12 +21217,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -19381,12 +21304,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -19597,12 +21520,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -19817,12 +21740,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -19966,12 +21889,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -20349,12 +22272,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -20391,12 +22314,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -20774,12 +22697,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -20995,12 +22918,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -21239,12 +23162,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -21354,12 +23277,12 @@ paths:
         name: fromOrTo
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -21604,12 +23527,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -21993,12 +23916,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22113,12 +24036,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -22248,12 +24171,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -22380,12 +24303,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22481,12 +24404,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22584,12 +24507,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22661,12 +24584,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -22794,12 +24717,12 @@ paths:
         schema:
           example: default
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22847,12 +24770,12 @@ paths:
       description: Notify all nodes in the network of a new governance action
       operationId: postNetworkAction
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -22881,11 +24804,11 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/diddocs/{did}:
     get:
       description: Gets a DID document by its DID
-      operationId: getDIDDocByDID
+      operationId: getNetworkDIDDocByDID
       parameters:
       - description: The identity DID
         in: path
@@ -22893,12 +24816,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -22957,10 +24880,12 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/identities:
     get:
-      description: Gets the list of identities in the network
+      deprecated: true
+      description: Gets the list of identities in the network (deprecated - use /identities
+        instead of /network/identities
       operationId: getNetworkIdentities
       parameters:
       - description: When set, the API will return the verifier for this identity
@@ -22969,12 +24894,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -23177,11 +25102,13 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/identities/{did}:
     get:
-      description: Gets an identity by its DID
-      operationId: getIdentityByDID
+      deprecated: true
+      description: Gets an identity by its DID (deprecated - use /identities/{did}
+        instead of /network/identities/{did})
+      operationId: getNetworkIdentityByDID
       parameters:
       - description: The identity DID
         in: path
@@ -23195,12 +25122,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -23302,18 +25229,18 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/nodes:
     get:
       description: Gets a list of nodes in the network
       operationId: getNetworkNodes
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -23494,7 +25421,7 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/nodes/{nameOrId}:
     get:
       description: Gets information about a specific node in the network
@@ -23506,12 +25433,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -23591,7 +25518,7 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/nodes/self:
     post:
       description: Instructs this FireFly node to register itself on the network
@@ -23603,12 +25530,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -23766,18 +25693,18 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/organizations:
     get:
       description: Gets a list of orgs in the network
       operationId: getNetworkOrgs
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -23958,7 +25885,7 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
     post:
       description: Registers a new org in the network
       operationId: postNewOrganization
@@ -23969,12 +25896,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -24164,7 +26091,7 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/organizations/{nameOrId}:
     get:
       description: Gets information about a specifc org in the network
@@ -24176,12 +26103,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24261,7 +26188,7 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /network/organizations/self:
     post:
       description: Instructs this FireFly node to register its org on the network
@@ -24273,12 +26200,12 @@ paths:
         schema:
           example: "true"
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -24436,18 +26363,18 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /operations:
     get:
       description: Gets a a list of operations
       operationId: getOps
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -24632,12 +26559,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24726,12 +26653,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -24818,12 +26745,12 @@ paths:
       description: Gets the status of this node
       operationId: getStatus
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -24831,14 +26758,9 @@ paths:
             application/json:
               schema:
                 properties:
-                  defaults:
-                    description: Information about defaults configured on this node
-                      that appplications might need to query on startup
-                    properties:
-                      namespace:
-                        description: The default namespace on this node
-                        type: string
-                    type: object
+                  namespace:
+                    description: The namespace that this status applies to
+                    type: string
                   node:
                     description: Details of the local node
                     properties:
@@ -24994,18 +26916,18 @@ paths:
         default:
           description: ""
       tags:
-      - Global
+      - Default Namespace
   /status/batchmanager:
     get:
       description: Gets the status of the batch manager
       operationId: getStatusBatchManager
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -25092,12 +27014,12 @@ paths:
       description: Queries the pins table that is the status of the event aggregator
       operationId: getStatusPins
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -25234,12 +27156,12 @@ paths:
       description: Gets the status of the current WebSocket connections to this node
       operationId: getStatusWebSockets
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -25299,12 +27221,12 @@ paths:
       description: Gets a list of subscriptions
       operationId: getSubscriptions
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -25607,12 +27529,12 @@ paths:
         from FireFly
       operationId: postNewSubscription
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -26024,12 +27946,12 @@ paths:
       description: Update an existing subscription
       operationId: putSubscription
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -26448,12 +28370,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "204":
@@ -26474,12 +28396,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -26702,12 +28624,12 @@ paths:
       description: Gets a list of token accounts
       operationId: getTokenAccounts
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -26788,12 +28710,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -26868,12 +28790,12 @@ paths:
       description: Gets a list of token approvals
       operationId: getTokenApprovals
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -27077,12 +28999,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -27290,12 +29212,12 @@ paths:
       description: Gets a list of token balances
       operationId: getTokenBalances
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -27432,12 +29354,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -27804,12 +29726,12 @@ paths:
       description: Gets the list of token connectors currently in use
       operationId: getTokenConnectors
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -27839,12 +29761,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -28211,12 +30133,12 @@ paths:
       description: Gets a list of token pools
       operationId: getTokenPools
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -28425,12 +30347,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -28662,12 +30584,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -28770,12 +30692,12 @@ paths:
         name: fromOrTo
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -29013,12 +30935,12 @@ paths:
         name: confirm
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       requestBody:
         content:
@@ -29395,12 +31317,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -29508,12 +31430,12 @@ paths:
       description: Gets a list of transactions
       operationId: getTxns
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -29636,12 +31558,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -29761,12 +31683,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -29855,12 +31777,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -29951,12 +31873,12 @@ paths:
         required: true
         schema:
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":
@@ -30021,12 +31943,12 @@ paths:
       description: Gets a list of verifiers
       operationId: getVerifiers
       parameters:
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -30147,12 +32069,12 @@ paths:
         schema:
           example: hash
           type: string
-      - description: Server-side request timeout (millseconds, or set a custom suffix
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
           like 10s)
         in: header
         name: Request-Timeout
         schema:
-          default: 120s
+          default: 2m0s
           type: string
       responses:
         "200":

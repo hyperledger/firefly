@@ -23,6 +23,7 @@ import (
 	"io"
 
 	"github.com/docker/go-units"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -78,7 +79,7 @@ func (bs *blobStore) uploadVerifyBlob(ctx context.Context, ns string, id *fftype
 
 }
 
-func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, mpart *core.Multipart, autoMeta bool) (*core.Data, error) {
+func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, mpart *ffapi.Multipart, autoMeta bool) (*core.Data, error) {
 
 	data := &core.Data{
 		ID:        fftypes.NewUUID(),

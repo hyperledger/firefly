@@ -19,25 +19,25 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewSubscription = &oapispec.Route{
+var postNewSubscription = &ffapi.Route{
 	Name:            "postNewSubscription",
 	Path:            "subscriptions",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewSubscription,
 	JSONInputValue:  func() interface{} { return &core.Subscription{} },
 	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusCreated}, // Sync operation
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).CreateSubscription(r.Ctx, ns, r.Input.(*core.Subscription))
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.CreateSubscription(cr.ctx, extractNamespace(r.PP), r.Input.(*core.Subscription))
+			return output, err
+		},
 	},
 }

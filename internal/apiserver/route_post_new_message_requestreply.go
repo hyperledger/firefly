@@ -19,25 +19,25 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewMessageRequestReply = &oapispec.Route{
+var postNewMessageRequestReply = &ffapi.Route{
 	Name:            "postNewMessageRequestReply",
 	Path:            "messages/requestreply",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostNewMessageRequestReply,
 	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
 	JSONOutputValue: func() interface{} { return &core.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).RequestReply(r.Ctx, ns, r.Input.(*core.MessageInOut))
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.RequestReply(cr.ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut))
+			return output, err
+		},
 	},
 }

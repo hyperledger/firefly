@@ -20,28 +20,28 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postTokenMint = &oapispec.Route{
+var postTokenMint = &ffapi.Route{
 	Name:       "postTokenMint",
 	Path:       "tokens/mint",
 	Method:     http.MethodPost,
 	PathParams: nil,
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsPostTokenMint,
 	JSONInputValue:  func() interface{} { return &core.TokenTransferInput{} },
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		ns := extractNamespace(r.PP)
-		return getOr(r.Ctx, ns).Assets().MintTokens(r.Ctx, ns, r.Input.(*core.TokenTransferInput), waitConfirm)
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+			r.SuccessStatus = syncRetcode(waitConfirm)
+			return cr.or.Assets().MintTokens(cr.ctx, extractNamespace(r.PP), r.Input.(*core.TokenTransferInput), waitConfirm)
+		},
 	},
 }

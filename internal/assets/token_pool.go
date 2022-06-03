@@ -52,7 +52,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *co
 	}
 
 	var err error
-	pool.Key, err = am.identity.NormalizeSigningKey(ctx, pool.Key, am.keyNormalization)
+	pool.Key, err = am.identity.NormalizeSigningKey(ctx, ns, pool.Key, am.keyNormalization)
 	if err != nil {
 		return nil, err
 	}

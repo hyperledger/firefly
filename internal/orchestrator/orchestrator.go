@@ -67,7 +67,7 @@ type Orchestrator interface {
 	PrivateMessaging() privatemessaging.Manager
 
 	// Status
-	GetStatus(ctx context.Context) (*core.NodeStatus, error)
+	GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
@@ -118,7 +118,7 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
-	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
+	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
 }
 
 // this is definitely not the right place for these structs
@@ -219,6 +219,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 
 func (or *orchestrator) Start() (err error) {
 	var ns *core.Namespace
+	err = or.metrics.Start()
 	if err == nil {
 		ns, err = or.database.Plugin.GetNamespace(or.ctx, or.namespace)
 	}
@@ -255,9 +256,6 @@ func (or *orchestrator) Start() (err error) {
 				break
 			}
 		}
-	}
-	if err == nil {
-		err = or.metrics.Start()
 	}
 	or.started = true
 	return err
@@ -352,7 +350,6 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database.Plugin.GetIdentities(ctx, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
-		fb.Eq("namespace", core.SystemNamespace),
 	))
 	if err != nil {
 		return err
@@ -479,13 +476,18 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	return nil
 }
 
-func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
-	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx)
+func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
+	key, err := or.identity.NormalizeSigningKey(ctx, ns, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return err
 	}
-	if action.Type != core.NetworkActionTerminate {
+	if action.Type == core.NetworkActionTerminate {
+		if ns != core.LegacySystemNamespace {
+			// For now, "terminate" only works on ff_system
+			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, ns)
+		}
+	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain.Plugin.SubmitNetworkAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
+	return or.blockchain.Plugin.SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
 }

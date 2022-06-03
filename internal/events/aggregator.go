@@ -94,7 +94,7 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		firstEvent:       &firstEvent,
-		namespace:        core.SystemNamespace,
+		namespace:        "pins", // not a real namespace (used only for logging)
 		offsetType:       core.OffsetTypeAggregator,
 		offsetName:       aggregatorOffsetName,
 		newEventsHandler: ag.processPinsEventsHandler,

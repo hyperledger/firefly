@@ -19,27 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getTokenTransferByID = &oapispec.Route{
+var getTokenTransferByID = &ffapi.Route{
 	Name:   "getTokenTransferByID",
 	Path:   "tokens/transfers/{transferId}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "transferId", Description: coremsgs.APIParamsTokenTransferID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetTokenTransferByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).Assets().GetTokenTransferByID(r.Ctx, ns, r.PP["transferId"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.Assets().GetTokenTransferByID(cr.ctx, extractNamespace(r.PP), r.PP["transferId"])
+			return output, err
+		},
 	},
 }

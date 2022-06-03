@@ -20,42 +20,28 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
 	"net/http"
-	"reflect"
-	"regexp"
-	"strings"
+	"sort"
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/namespace"
-	"github.com/hyperledger/firefly/internal/oapiffi"
+	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/httpserver"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/websockets"
-	"github.com/hyperledger/firefly/internal/oapispec"
-	"github.com/hyperledger/firefly/internal/orchestrator"
-	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
-
-type rootManagerContextKey struct{}
-
-var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
 var (
 	adminConfig   = config.RootSection("admin")
@@ -77,7 +63,7 @@ type apiServer struct {
 	apiTimeout         time.Duration
 	apiMaxTimeout      time.Duration
 	metricsEnabled     bool
-	ffiSwaggerGen      oapiffi.FFISwaggerGen
+	ffiSwaggerGen      FFISwaggerGen
 }
 
 func InitConfig() {
@@ -96,16 +82,8 @@ func NewAPIServer() Server {
 		apiTimeout:         config.GetDuration(coreconfig.APIRequestTimeout),
 		apiMaxTimeout:      config.GetDuration(coreconfig.APIRequestMaxTimeout),
 		metricsEnabled:     config.GetBool(coreconfig.MetricsEnabled),
-		ffiSwaggerGen:      oapiffi.NewFFISwaggerGen(),
+		ffiSwaggerGen:      NewFFISwaggerGen(),
 	}
-}
-
-func getRootMgr(ctx context.Context) namespace.Manager {
-	return ctx.Value(rootManagerContextKey{}).(namespace.Manager)
-}
-
-func getOr(ctx context.Context, ns string) orchestrator.Orchestrator {
-	return getRootMgr(ctx).Orchestrator(ns)
 }
 
 // Serve is the main entry point for the API Server
@@ -150,278 +128,6 @@ func (as *apiServer) waitForServerStop(httpErrChan, adminErrChan, metricsErrChan
 	}
 }
 
-type multipartState struct {
-	mpr        *multipart.Reader
-	formParams map[string]string
-	part       *core.Multipart
-	close      func()
-}
-
-func (as *apiServer) getFilePart(req *http.Request) (*multipartState, error) {
-
-	formParams := make(map[string]string)
-	ctx := req.Context()
-	l := log.L(ctx)
-	mpr, err := req.MultipartReader()
-	if err != nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgMultiPartFormReadError)
-	}
-	for {
-		part, err := mpr.NextPart()
-		if err != nil {
-			return nil, i18n.WrapError(ctx, err, coremsgs.MsgMultiPartFormReadError)
-		}
-		if part.FileName() == "" {
-			value, _ := ioutil.ReadAll(part)
-			formParams[part.FormName()] = string(value)
-		} else {
-			l.Debugf("Processing multi-part upload. Field='%s' Filename='%s'", part.FormName(), part.FileName())
-			mp := &core.Multipart{
-				Data:     part,
-				Filename: part.FileName(),
-				Mimetype: part.Header.Get("Content-Disposition"),
-			}
-			return &multipartState{
-				mpr:        mpr,
-				formParams: formParams,
-				part:       mp,
-				close:      func() { _ = part.Close() },
-			}, nil
-		}
-	}
-}
-
-func (as *apiServer) getParams(req *http.Request, route *oapispec.Route) (queryParams, pathParams map[string]string) {
-	queryParams = make(map[string]string)
-	pathParams = make(map[string]string)
-	if len(route.PathParams) > 0 {
-		v := mux.Vars(req)
-		for _, pp := range route.PathParams {
-			pathParams[pp.Name] = v[pp.Name]
-		}
-	}
-	for _, qp := range route.QueryParams {
-		val, exists := req.URL.Query()[qp.Name]
-		if qp.IsBool {
-			if exists && (len(val) == 0 || val[0] == "" || strings.EqualFold(val[0], "true")) {
-				val = []string{"true"}
-			} else {
-				val = []string{"false"}
-			}
-		}
-		if exists && len(val) > 0 {
-			queryParams[qp.Name] = val[0]
-		}
-	}
-	return queryParams, pathParams
-}
-
-func (as *apiServer) routeHandler(mgr namespace.Manager, apiBaseURL string, route *oapispec.Route) http.HandlerFunc {
-	// Check the mandatory parts are ok at startup time
-	return as.apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
-
-		var jsonInput interface{}
-		if route.JSONInputValue != nil {
-			jsonInput = route.JSONInputValue()
-		}
-		var queryParams, pathParams map[string]string
-		var multipart *multipartState
-		contentType := req.Header.Get("Content-Type")
-		var err error
-		if req.Method != http.MethodGet && req.Method != http.MethodDelete {
-			switch {
-			case strings.HasPrefix(strings.ToLower(contentType), "multipart/form-data") && route.FormUploadHandler != nil:
-				multipart, err = as.getFilePart(req)
-				if err != nil {
-					return 400, err
-				}
-				defer multipart.close()
-			case strings.HasPrefix(strings.ToLower(contentType), "application/json"):
-				if jsonInput != nil {
-					err = json.NewDecoder(req.Body).Decode(&jsonInput)
-				}
-			default:
-				return 415, i18n.NewError(req.Context(), coremsgs.MsgInvalidContentType)
-			}
-		}
-
-		var filter database.AndFilter
-		var status = 400 // if fail parsing input
-		var output interface{}
-		if err == nil {
-			queryParams, pathParams = as.getParams(req, route)
-			if route.FilterFactory != nil {
-				filter, err = as.buildFilter(req, route.FilterFactory)
-			}
-		}
-
-		if err == nil {
-			rCtx := context.WithValue(req.Context(), rootManagerContextKey{}, mgr)
-			r := &oapispec.APIRequest{
-				Ctx:             rCtx,
-				RootMgr:         mgr,
-				Req:             req,
-				PP:              pathParams,
-				QP:              queryParams,
-				Filter:          filter,
-				Input:           jsonInput,
-				SuccessStatus:   http.StatusOK,
-				APIBaseURL:      apiBaseURL,
-				ResponseHeaders: res.Header(),
-			}
-			if len(route.JSONOutputCodes) > 0 {
-				r.SuccessStatus = route.JSONOutputCodes[0]
-			}
-			if multipart != nil {
-				r.FP = multipart.formParams
-				r.Part = multipart.part
-				output, err = route.FormUploadHandler(r)
-			} else {
-				output, err = route.JSONHandler(r)
-			}
-			status = r.SuccessStatus // Can be updated by the route
-		}
-		if err == nil && multipart != nil {
-			// Catch the case that someone puts form fields after the file in a multi-part body.
-			// We don't support that, so that we can stream through the core rather than having
-			// to hold everything in memory.
-			trailing, expectEOF := multipart.mpr.NextPart()
-			if expectEOF == nil {
-				err = i18n.NewError(req.Context(), coremsgs.MsgFieldsAfterFile, trailing.FormName())
-			}
-		}
-		if err == nil {
-			status, err = as.handleOutput(req.Context(), res, status, output)
-		}
-		return status, err
-	})
-}
-
-func (as *apiServer) handleOutput(ctx context.Context, res http.ResponseWriter, status int, output interface{}) (int, error) {
-	vOutput := reflect.ValueOf(output)
-	outputKind := vOutput.Kind()
-	isPointer := outputKind == reflect.Ptr
-	invalid := outputKind == reflect.Invalid
-	isNil := output == nil || invalid || (isPointer && vOutput.IsNil())
-	var reader io.ReadCloser
-	var marshalErr error
-	if !isNil && vOutput.CanInterface() {
-		reader, _ = vOutput.Interface().(io.ReadCloser)
-	}
-	switch {
-	case isNil:
-		if status != 204 {
-			return 404, i18n.NewError(ctx, coremsgs.Msg404NoResult)
-		}
-		res.WriteHeader(204)
-	case reader != nil:
-		defer reader.Close()
-		res.Header().Add("Content-Type", "application/octet-stream")
-		res.WriteHeader(status)
-		_, marshalErr = io.Copy(res, reader)
-	default:
-		res.Header().Add("Content-Type", "application/json")
-		res.WriteHeader(status)
-		marshalErr = json.NewEncoder(res).Encode(output)
-	}
-	if marshalErr != nil {
-		err := i18n.WrapError(ctx, marshalErr, coremsgs.MsgResponseMarshalError)
-		log.L(ctx).Errorf(err.Error())
-		return 500, err
-	}
-	return status, nil
-}
-
-func (as *apiServer) getTimeout(req *http.Request) time.Duration {
-	// Configure a server-side timeout on each request, to try and avoid cases where the API requester
-	// times out, and we continue to churn indefinitely processing the request.
-	// Long-running processes should be dispatched asynchronously (API returns 202 Accepted asap),
-	// and the caller can either listen on the websocket for updates, or poll the status of the affected object.
-	// This is dependent on the context being passed down through to all blocking operations down the stack
-	// (while avoiding passing the context to asynchronous tasks that are dispatched as a result of the request)
-	reqTimeout := as.apiTimeout
-	reqTimeoutHeader := req.Header.Get("Request-Timeout")
-	if reqTimeoutHeader != "" {
-		customTimeout, err := fftypes.ParseDurationString(reqTimeoutHeader, time.Second /* default is seconds */)
-		if err != nil {
-			log.L(req.Context()).Warnf("Invalid Request-Timeout header '%s': %s", reqTimeoutHeader, err)
-		} else {
-			reqTimeout = time.Duration(customTimeout)
-			if reqTimeout > as.apiMaxTimeout {
-				reqTimeout = as.apiMaxTimeout
-			}
-		}
-	}
-	return reqTimeout
-}
-
-func (as *apiServer) apiWrapper(handler func(res http.ResponseWriter, req *http.Request) (status int, err error)) http.HandlerFunc {
-	return func(res http.ResponseWriter, req *http.Request) {
-
-		reqTimeout := as.getTimeout(req)
-		ctx, cancel := context.WithTimeout(req.Context(), reqTimeout)
-		httpReqID := fftypes.ShortID()
-		ctx = log.WithLogField(ctx, "httpreq", httpReqID)
-		req = req.WithContext(ctx)
-		defer cancel()
-
-		// Wrap the request itself in a log wrapper, that gives minimal request/response and timing info
-		l := log.L(ctx)
-		l.Infof("--> %s %s", req.Method, req.URL.Path)
-		startTime := time.Now()
-		status, err := handler(res, req)
-		durationMS := float64(time.Since(startTime)) / float64(time.Millisecond)
-		if err != nil {
-
-			// Routers don't need to tweak the status code when sending errors.
-			// .. either the FF12345 error they raise is mapped to a status hint
-			ffcodeExtract := ffcodeExtractor.FindStringSubmatch(err.Error())
-			if len(ffcodeExtract) >= 2 {
-				if statusHint, ok := i18n.GetStatusHint(ffcodeExtract[1]); ok {
-					status = statusHint
-				}
-			}
-
-			// If the context is done, we wrap in 408
-			if status != http.StatusRequestTimeout {
-				select {
-				case <-ctx.Done():
-					l.Errorf("Request failed and context is closed. Returning %d (overriding %d): %s", http.StatusRequestTimeout, status, err)
-					status = http.StatusRequestTimeout
-					err = i18n.WrapError(ctx, err, coremsgs.MsgRequestTimeout, httpReqID, durationMS)
-				default:
-				}
-			}
-
-			// ... or we default to 500
-			if status < 300 {
-				status = 500
-			}
-			l.Infof("<-- %s %s [%d] (%.2fms): %s", req.Method, req.URL.Path, status, durationMS, err)
-			res.Header().Add("Content-Type", "application/json")
-			res.WriteHeader(status)
-			_ = json.NewEncoder(res).Encode(&fftypes.RESTError{
-				Error: err.Error(),
-			})
-		} else {
-			l.Infof("<-- %s %s [%d] (%.2fms)", req.Method, req.URL.Path, status, durationMS)
-		}
-	}
-}
-
-func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	res.Header().Add("Content-Type", "application/json")
-	return 404, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
-}
-
-func (as *apiServer) swaggerUIHandler(url string) func(res http.ResponseWriter, req *http.Request) (status int, err error) {
-	return func(res http.ResponseWriter, req *http.Request) (status int, err error) {
-		res.Header().Add("Content-Type", "text/html")
-		_, _ = res.Write(oapispec.SwaggerUIHTML(req.Context(), url))
-		return 200, nil
-	}
-}
-
 func (as *apiServer) getPublicURL(conf config.Section, pathPrefix string) string {
 	publicURL := conf.GetString(httpserver.HTTPConfPublicURL)
 	if publicURL == "" {
@@ -437,12 +143,30 @@ func (as *apiServer) getPublicURL(conf config.Section, pathPrefix string) string
 	return publicURL
 }
 
-func (as *apiServer) swaggerGenConf(apiBaseURL string) *oapispec.SwaggerGenConfig {
-	return &oapispec.SwaggerGenConfig{
+func (as *apiServer) swaggerGenConf(apiBaseURL string) *ffapi.Options {
+	return &ffapi.Options{
 		BaseURL:                   apiBaseURL,
 		Title:                     "FireFly",
 		Version:                   "1.0",
 		PanicOnMissingDescription: config.GetBool(coreconfig.APIOASPanicOnMissingDescription),
+		DefaultRequestTimeout:     config.GetDuration(coreconfig.APIRequestTimeout),
+		RouteCustomizations: func(ctx context.Context, sg *ffapi.SwaggerGen, route *ffapi.Route, op *openapi3.Operation) {
+			if ce, ok := route.Extensions.(*coreExtensions); ok {
+				if ce.FilterFactory != nil {
+					fields := ce.FilterFactory.NewFilter(ctx).Fields()
+					sort.Strings(fields)
+					for _, field := range fields {
+						sg.AddParam(ctx, op, "query", field, "", "", coremsgs.APIFilterParamDesc, false)
+					}
+					sg.AddParam(ctx, op, "query", "sort", "", "", coremsgs.APIFilterSortDesc, false)
+					sg.AddParam(ctx, op, "query", "ascending", "", "", coremsgs.APIFilterAscendingDesc, false)
+					sg.AddParam(ctx, op, "query", "descending", "", "", coremsgs.APIFilterDescendingDesc, false)
+					sg.AddParam(ctx, op, "query", "skip", "", "", coremsgs.APIFilterSkipDesc, false, config.GetUint(coreconfig.APIMaxFilterSkip))
+					sg.AddParam(ctx, op, "query", "limit", "", config.GetString(coreconfig.APIDefaultFilterLimit), coremsgs.APIFilterLimitDesc, false, config.GetUint(coreconfig.APIMaxFilterLimit))
+					sg.AddParam(ctx, op, "query", "count", "", "", coremsgs.APIFilterCountDesc, false)
+				}
+			}
+		},
 	}
 }
 
@@ -466,16 +190,17 @@ func (as *apiServer) swaggerHandler(generator func(req *http.Request) (*openapi3
 	}
 }
 
-func (as *apiServer) swaggerGenerator(routes []*oapispec.Route, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+func (as *apiServer) swaggerGenerator(routes []*ffapi.Route, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+	swg := ffapi.NewSwaggerGen(as.swaggerGenConf(apiBaseURL))
 	return func(req *http.Request) (*openapi3.T, error) {
-		return oapispec.SwaggerGen(req.Context(), routes, as.swaggerGenConf(apiBaseURL)), nil
+		return swg.Generate(req.Context(), routes), nil
 	}
 }
 
-func (as *apiServer) contractSwaggerGenerator(apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
 		vars := mux.Vars(req)
-		cm := getOr(req.Context(), vars["ns"]).Contracts()
+		cm := mgr.Orchestrator(vars["ns"]).Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
 		if err != nil {
 			return nil, err
@@ -493,8 +218,53 @@ func (as *apiServer) contractSwaggerGenerator(apiBaseURL string) func(req *http.
 	}
 }
 
+func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
+	// We extend the base ffapi functionality, with standardized DB filter support for all core resources.
+	// We also pass the Orchestrator context through
+	ce := route.Extensions.(*coreExtensions)
+	route.JSONHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
+		var filter database.AndFilter
+		if ce.FilterFactory != nil {
+			filter, err = as.buildFilter(r.Req, ce.FilterFactory)
+			if err != nil {
+				return nil, err
+			}
+		}
+		vars := mux.Vars(r.Req)
+		or := mgr.Orchestrator(vars["ns"])
+		cr := &coreRequest{
+			or:         or,
+			ctx:        r.Req.Context(),
+			filter:     filter,
+			apiBaseURL: apiBaseURL,
+		}
+		return ce.CoreJSONHandler(r, cr)
+	}
+	if ce.CoreFormUploadHandler != nil {
+		route.FormUploadHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
+			vars := mux.Vars(r.Req)
+			or := mgr.Orchestrator(vars["ns"])
+			cr := &coreRequest{
+				or:         or,
+				ctx:        r.Req.Context(),
+				apiBaseURL: apiBaseURL,
+			}
+			return ce.CoreFormUploadHandler(r, cr)
+		}
+	}
+	return hf.RouteHandler(route)
+}
+
+func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
+	return &ffapi.HandlerFactory{
+		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
+		MaxTimeout:            config.GetDuration(coreconfig.APIRequestMaxTimeout),
+	}
+}
+
 func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
+	hf := as.handlerFactory()
 
 	if as.metricsEnabled {
 		r.Use(metrics.GetRestServerInstrumentation().Middleware)
@@ -503,21 +273,23 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 	publicURL := as.getPublicURL(apiConfig, "")
 	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
 	for _, route := range routes {
-		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(mgr, apiBaseURL, route)).
-				Methods(route.Method)
+		if ce, ok := route.Extensions.(*coreExtensions); ok {
+			if ce.CoreJSONHandler != nil {
+				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(hf, mgr, apiBaseURL, route)).
+					Methods(route.Method)
+			}
 		}
 	}
 
-	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.contractSwaggerGenerator(apiBaseURL))))
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.contractSwaggerGenerator(mgr, apiBaseURL))))
 	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api`, func(rw http.ResponseWriter, req *http.Request) {
 		url := req.URL.String() + "/swagger.yaml"
-		handler := as.apiWrapper(as.swaggerUIHandler(url))
+		handler := hf.APIWrapper(hf.SwaggerUIHandler(url))
 		handler(rw, req)
 	})
 
-	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(routes, apiBaseURL))))
-	r.HandleFunc(`/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
+	r.HandleFunc(`/api/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.swaggerGenerator(routes, apiBaseURL))))
+	r.HandleFunc(`/api`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	ws, _ := eifactory.GetPlugin(ctx, "websockets")
@@ -528,8 +300,13 @@ func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager)
 		r.PathPrefix(`/ui`).Handler(newStaticHandler(uiPath, "index.html", `/ui`))
 	}
 
-	r.NotFoundHandler = as.apiWrapper(as.notFoundHandler)
+	r.NotFoundHandler = hf.APIWrapper(as.notFoundHandler)
 	return r
+}
+
+func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request) (status int, err error) {
+	res.Header().Add("Content-Type", "application/json")
+	return 404, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
 }
 
 func (as *apiServer) adminWSHandler(mgr namespace.Manager) http.HandlerFunc {
@@ -544,17 +321,20 @@ func (as *apiServer) createAdminMuxRouter(mgr namespace.Manager) *mux.Router {
 	if as.metricsEnabled {
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
 	}
+	hf := as.handlerFactory()
 
 	publicURL := as.getPublicURL(adminConfig, "admin")
 	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)
 	for _, route := range adminRoutes {
-		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(mgr, apiBaseURL, route)).
-				Methods(route.Method)
+		if ce, ok := route.Extensions.(*coreExtensions); ok {
+			if ce.CoreJSONHandler != nil {
+				r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(hf, mgr, apiBaseURL, route)).
+					Methods(route.Method)
+			}
 		}
 	}
-	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.swaggerGenerator(adminRoutes, apiBaseURL))))
-	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
+	r.HandleFunc(`/admin/api/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.swaggerGenerator(adminRoutes, apiBaseURL))))
+	r.HandleFunc(`/admin/api`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	r.HandleFunc(`/admin/ws`, as.adminWSHandler(mgr))

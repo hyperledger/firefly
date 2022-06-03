@@ -19,27 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getBatchByID = &oapispec.Route{
+var getBatchByID = &ffapi.Route{
 	Name:   "getBatchByID",
 	Path:   "batches/{batchid}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "batchid", Description: coremsgs.APIParamsBatchID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetBatchBbyID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).GetBatchByID(r.Ctx, ns, r.PP["batchid"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetBatchByID(cr.ctx, extractNamespace(r.PP), r.PP["batchid"])
+			return output, err
+		},
 	},
 }

@@ -19,27 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getGroupByHash = &oapispec.Route{
+var getGroupByHash = &ffapi.Route{
 	Name:   "getGroupByHash",
 	Path:   "groups/{hash}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "hash", Description: coremsgs.APIParamsGroupHash},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetGroupByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).PrivateMessaging().GetGroupByID(r.Ctx, r.PP["hash"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.PrivateMessaging().GetGroupByID(cr.ctx, r.PP["hash"])
+			return output, err
+		},
 	},
 }

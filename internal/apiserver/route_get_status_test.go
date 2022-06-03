@@ -31,7 +31,7 @@ func TestGetStatus(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetStatus", mock.Anything, mock.Anything).
+	o.On("GetStatus", mock.Anything, "default").
 		Return(&core.NodeStatus{}, nil)
 	r.ServeHTTP(res, req)
 

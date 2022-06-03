@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getVerifiers = &oapispec.Route{
+var getVerifiers = &ffapi.Route{
 	Name:            "getVerifiers",
 	Path:            "verifiers",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.VerifierQueryFactory,
 	Description:     coremsgs.APIEndpointsGetVerifiers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		return filterResult(getOr(r.Ctx, ns).NetworkMap().GetVerifiers(r.Ctx, ns, r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.VerifierQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.NetworkMap().GetVerifiers(cr.ctx, extractNamespace(r.PP), cr.filter))
+		},
 	},
 }

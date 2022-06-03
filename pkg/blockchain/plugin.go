@@ -89,6 +89,9 @@ type Plugin interface {
 
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
+
+	// NetworkVersion returns the version of the network rules being used by this plugin
+	NetworkVersion(ctx context.Context) int
 }
 
 const FireFlyActionPrefix = "firefly:"

@@ -152,9 +152,9 @@ func TestDIDGenerationGetIdentityByDIDFail(t *testing.T) {
 	org1 := testOrg("org1")
 
 	mii := nm.identity.(*identitymanagermocks.Manager)
-	mii.On("CachedIdentityLookupMustExist", nm.ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
+	mii.On("CachedIdentityLookupMustExist", nm.ctx, "ns", mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
-	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, org1.DID)
+	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, "ns", org1.DID)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -165,7 +165,7 @@ func TestDIDGenerationGetIdentityByDIDFailVerifiers(t *testing.T) {
 	org1 := testOrg("org1")
 
 	mii := nm.identity.(*identitymanagermocks.Manager)
-	mii.On("CachedIdentityLookupMustExist", nm.ctx, mock.Anything).Return(&core.Identity{
+	mii.On("CachedIdentityLookupMustExist", nm.ctx, "ns", mock.Anything).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID: fftypes.NewUUID(),
 		},
@@ -173,6 +173,6 @@ func TestDIDGenerationGetIdentityByDIDFailVerifiers(t *testing.T) {
 	mdi := nm.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifiers", nm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, org1.DID)
+	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, "ns", org1.DID)
 	assert.Regexp(t, "pop", err)
 }

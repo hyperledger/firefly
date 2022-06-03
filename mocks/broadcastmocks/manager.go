@@ -133,29 +133,6 @@ func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *core.Mes
 	return r0, r1
 }
 
-// BroadcastNamespace provides a mock function with given fields: ctx, ns, waitConfirm
-func (_m *Manager) BroadcastNamespace(ctx context.Context, ns *core.Namespace, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Namespace, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Namespace, bool) error); ok {
-		r1 = rf(ctx, ns, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // BroadcastTokenPool provides a mock function with given fields: ctx, ns, pool, waitConfirm
 func (_m *Manager) BroadcastTokenPool(ctx context.Context, ns string, pool *core.TokenPoolAnnouncement, waitConfirm bool) (*core.Message, error) {
 	ret := _m.Called(ctx, ns, pool, waitConfirm)

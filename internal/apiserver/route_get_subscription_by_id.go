@@ -19,27 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getSubscriptionByID = &oapispec.Route{
+var getSubscriptionByID = &ffapi.Route{
 	Name:   "getSubscriptionByID",
 	Path:   "subscriptions/{subid}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetSubscriptionByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).GetSubscriptionByID(r.Ctx, ns, r.PP["subid"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetSubscriptionByID(cr.ctx, extractNamespace(r.PP), r.PP["subid"])
+			return output, err
+		},
 	},
 }

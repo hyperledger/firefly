@@ -3,6 +3,7 @@
 package metricsmocks
 
 import (
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 	core "github.com/hyperledger/firefly/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
@@ -74,7 +75,7 @@ func (_m *Manager) IsMetricsEnabled() bool {
 }
 
 // MessageConfirmed provides a mock function with given fields: msg, eventType
-func (_m *Manager) MessageConfirmed(msg *core.Message, eventType core.FFEnum) {
+func (_m *Manager) MessageConfirmed(msg *core.Message, eventType fftypes.FFEnum) {
 	_m.Called(msg, eventType)
 }
 

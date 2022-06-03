@@ -24,13 +24,13 @@ import (
 )
 
 // BatchType is the type of a batch
-type BatchType = FFEnum
+type BatchType = fftypes.FFEnum
 
 var (
 	// BatchTypeBroadcast is a batch that is broadcast via the shared data interface
-	BatchTypeBroadcast = ffEnum("batchtype", "broadcast")
+	BatchTypeBroadcast = fftypes.FFEnumValue("batchtype", "broadcast")
 	// BatchTypePrivate is a batch that is sent privately to a group
-	BatchTypePrivate = ffEnum("batchtype", "private")
+	BatchTypePrivate = fftypes.FFEnumValue("batchtype", "private")
 )
 
 const (

@@ -19,27 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getEventByID = &oapispec.Route{
+var getEventByID = &ffapi.Route{
 	Name:   "getEventByID",
 	Path:   "events/{eid}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "eid", Description: coremsgs.APIParamsEventID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetEventByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).GetEventByID(r.Ctx, ns, r.PP["eid"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetEventByID(cr.ctx, extractNamespace(r.PP), r.PP["eid"])
+			return output, err
+		},
 	},
 }

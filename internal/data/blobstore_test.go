@@ -27,6 +27,7 @@ import (
 	"testing"
 	"testing/iotest"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -69,7 +70,7 @@ func TestUploadBlobOk(t *testing.T) {
 		dxUpload.ReturnArguments = mock.Arguments{fmt.Sprintf("ns1/%s", uuid), &hash, int64(len(b)), err}
 	}
 
-	data, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &core.Multipart{Data: bytes.NewReader(b)}, false)
+	data, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &ffapi.Multipart{Data: bytes.NewReader(b)}, false)
 	assert.NoError(t, err)
 
 	// Check the hashes and other details of the data
@@ -112,7 +113,7 @@ func TestUploadBlobAutoMetaOk(t *testing.T) {
 
 	data, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{"custom": "value1"}`),
-	}, &core.Multipart{
+	}, &ffapi.Multipart{
 		Data:     bytes.NewReader([]byte(`hello`)),
 		Filename: "myfile.csv",
 		Mimetype: "text/csv",
@@ -148,7 +149,7 @@ func TestUploadBlobBadValidator(t *testing.T) {
 	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{
 		Value:     fftypes.JSONAnyPtr(`{"custom": "value1"}`),
 		Validator: "wrong",
-	}, &core.Multipart{
+	}, &ffapi.Multipart{
 		Data:     bytes.NewReader([]byte(`hello`)),
 		Filename: "myfile.csv",
 		Mimetype: "text/csv",
@@ -171,7 +172,7 @@ func TestUploadBlobReadFail(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &core.Multipart{Data: iotest.ErrReader(fmt.Errorf("pop"))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &ffapi.Multipart{Data: iotest.ErrReader(fmt.Errorf("pop"))}, false)
 	assert.Regexp(t, "FF10217.*pop", err)
 
 }
@@ -184,7 +185,7 @@ func TestUploadBlobWriteFailDoesNotRead(t *testing.T) {
 	mdx := dm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("UploadBlob", ctx, "ns1", mock.Anything, mock.Anything).Return("", nil, int64(0), fmt.Errorf("pop"))
 
-	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &core.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &ffapi.Multipart{Data: bytes.NewReader([]byte(`any old data`))}, false)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -202,7 +203,7 @@ func TestUploadBlobHashMismatchCalculated(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &core.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &ffapi.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "FF10238", err)
 
 }
@@ -221,7 +222,7 @@ func TestUploadBlobSizeMismatch(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &core.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &ffapi.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "FF10323", err)
 
 }
@@ -242,7 +243,7 @@ func TestUploadBlobUpsertFail(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &core.Multipart{Data: bytes.NewReader([]byte(b))}, false)
+	_, err := dm.UploadBlob(ctx, "ns1", &core.DataRefOrValue{}, &ffapi.Multipart{Data: bytes.NewReader([]byte(b))}, false)
 	assert.Regexp(t, "pop", err)
 
 }

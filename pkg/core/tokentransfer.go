@@ -18,12 +18,12 @@ package core
 
 import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
-type TokenTransferType = FFEnum
+type TokenTransferType = fftypes.FFEnum
 
 var (
-	TokenTransferTypeMint     = ffEnum("tokentransfertype", "mint")
-	TokenTransferTypeBurn     = ffEnum("tokentransfertype", "burn")
-	TokenTransferTypeTransfer = ffEnum("tokentransfertype", "transfer")
+	TokenTransferTypeMint     = fftypes.FFEnumValue("tokentransfertype", "mint")
+	TokenTransferTypeBurn     = fftypes.FFEnumValue("tokentransfertype", "burn")
+	TokenTransferTypeTransfer = fftypes.FFEnumValue("tokentransfertype", "transfer")
 )
 
 type TokenTransfer struct {

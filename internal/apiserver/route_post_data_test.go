@@ -85,7 +85,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*core.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -131,7 +131,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 		assert.Equal(t, "fileinfo", d.Datatype.Name)
 		assert.Equal(t, "0.0.1", d.Datatype.Version)
 		return true
-	}), mock.AnythingOfType("*core.Multipart"), true).
+	}), mock.AnythingOfType("*ffapi.Multipart"), true).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -164,7 +164,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 		assert.Equal(t, "", string(d.Validator))
 		assert.Nil(t, d.Datatype)
 		return true
-	}), mock.AnythingOfType("*core.Multipart"), false).
+	}), mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -192,14 +192,14 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.Anything, mock.AnythingOfType("*core.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.Anything, mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 400, res.Result().StatusCode)
 	d, err := ioutil.ReadAll(res.Body)
 	assert.NoError(t, err)
-	assert.Regexp(t, "FF10236.*metadata", string(d))
+	assert.Regexp(t, "FF00163.*metadata", string(d))
 }
 
 func TestPostDataBinaryMissing(t *testing.T) {
@@ -219,7 +219,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*core.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -239,7 +239,7 @@ func TestPostDataBadForm(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*core.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -24,6 +24,6 @@ import (
 
 // LocalNodeInfo provides an interface to query the local node info
 type LocalNodeInfo interface {
-	// GetNodeUUID returns the local node UUID, or nil if the node is not yet registered. It is cached for fast access
-	GetNodeUUID(ctx context.Context) *fftypes.UUID
+	// GetNodeUUID returns the local node UUID in a namespace, or nil if the node is not yet registered. It is cached for fast access
+	GetNodeUUID(ctx context.Context, ns string) *fftypes.UUID
 }

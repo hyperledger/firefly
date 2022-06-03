@@ -18,25 +18,25 @@ package core
 
 import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
-type TransactionType = FFEnum
+type TransactionType = fftypes.FFEnum
 
 const transactionBaseSizeEstimate = int64(256)
 
 var (
 	// TransactionTypeNone deprecated - replaced by TransactionTypeUnpinned
-	TransactionTypeNone = ffEnum("txtype", "none")
+	TransactionTypeNone = fftypes.FFEnumValue("txtype", "none")
 	// TransactionTypeUnpinned indicates the message will be sent without pinning any evidence to the blockchain. Not supported for broadcast. The FireFly transaction will be used to track the sends to all group members.
-	TransactionTypeUnpinned = ffEnum("txtype", "unpinned")
+	TransactionTypeUnpinned = fftypes.FFEnumValue("txtype", "unpinned")
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
-	TransactionTypeBatchPin = ffEnum("txtype", "batch_pin")
+	TransactionTypeBatchPin = fftypes.FFEnumValue("txtype", "batch_pin")
 	// TransactionTypeTokenPool represents a token pool creation
-	TransactionTypeTokenPool = ffEnum("txtype", "token_pool")
+	TransactionTypeTokenPool = fftypes.FFEnumValue("txtype", "token_pool")
 	// TransactionTypeTokenTransfer represents a token transfer
-	TransactionTypeTokenTransfer = ffEnum("txtype", "token_transfer")
+	TransactionTypeTokenTransfer = fftypes.FFEnumValue("txtype", "token_transfer")
 	// TransactionTypeContractInvoke is a smart contract invoke
-	TransactionTypeContractInvoke = ffEnum("txtype", "contract_invoke")
+	TransactionTypeContractInvoke = fftypes.FFEnumValue("txtype", "contract_invoke")
 	// TransactionTypeTokenTransfer represents a token approval
-	TransactionTypeTokenApproval = ffEnum("txtype", "token_approval")
+	TransactionTypeTokenApproval = fftypes.FFEnumValue("txtype", "token_approval")
 )
 
 // TransactionRef refers to a transaction, in other types

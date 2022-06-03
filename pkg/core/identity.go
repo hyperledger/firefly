@@ -27,15 +27,15 @@ import (
 )
 
 // IdentityType is the type of an identity
-type IdentityType = FFEnum
+type IdentityType = fftypes.FFEnum
 
 var (
 	// IdentityTypeOrg is an organization
-	IdentityTypeOrg = ffEnum("identitytype", "org")
+	IdentityTypeOrg = fftypes.FFEnumValue("identitytype", "org")
 	// IdentityTypeNode is a node
-	IdentityTypeNode = ffEnum("identitytype", "node")
+	IdentityTypeNode = fftypes.FFEnumValue("identitytype", "node")
 	// IdentityTypeCustom is a user defined identity within a namespace
-	IdentityTypeCustom = ffEnum("identitytype", "custom")
+	IdentityTypeCustom = fftypes.FFEnumValue("identitytype", "custom")
 )
 
 const (
@@ -43,7 +43,7 @@ const (
 	FireFlyDIDPrefix       = "did:firefly:"
 	FireFlyOrgDIDPrefix    = "did:firefly:org/"
 	FireFlyNodeDIDPrefix   = "did:firefly:node/"
-	FireFlyCustomDIDPrefix = "did:firefly:ns/"
+	FireFlyCustomDIDPrefix = "did:firefly:"
 )
 
 type IdentityMessages struct {
@@ -172,9 +172,14 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 	if err = ValidateFFNameFieldNoUUID(ctx, i.Name, "name"); err != nil {
 		return err
 	}
+
+	var legacyDID string
+	if i.Type == IdentityTypeCustom {
+		legacyDID = fmt.Sprintf("%sns/%s/%s", FireFlyCustomDIDPrefix, i.Namespace, i.Name)
+	}
 	if requiredDID, err := i.GenerateDID(ctx); err != nil {
 		return err
-	} else if i.DID != requiredDID {
+	} else if i.DID == "" || (i.DID != requiredDID && i.DID != legacyDID) {
 		return i18n.NewError(ctx, i18n.MsgInvalidDIDForType, i.DID, i.Type, i.Namespace, i.Name)
 	}
 	return nil
@@ -183,25 +188,19 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 func (i *IdentityBase) GenerateDID(ctx context.Context) (string, error) {
 	switch i.Type {
 	case IdentityTypeCustom:
-		if i.Namespace == SystemNamespace {
-			return "", i18n.NewError(ctx, i18n.MsgCustomIdentitySystemNS, SystemNamespace)
+		if i.Namespace == LegacySystemNamespace {
+			return "", i18n.NewError(ctx, i18n.MsgCustomIdentitySystemNS, LegacySystemNamespace)
 		}
 		if i.Parent == nil {
 			return "", i18n.NewError(ctx, i18n.MsgNilParentIdentity, i.Type)
 		}
-		return fmt.Sprintf("%s%s/%s", FireFlyCustomDIDPrefix, i.Namespace, i.Name), nil
+		return fmt.Sprintf("%s%s", FireFlyCustomDIDPrefix, i.Name), nil
 	case IdentityTypeNode:
-		if i.Namespace != SystemNamespace {
-			return "", i18n.NewError(ctx, i18n.MsgSystemIdentityCustomNS, SystemNamespace)
-		}
 		if i.Parent == nil {
 			return "", i18n.NewError(ctx, i18n.MsgNilParentIdentity, i.Type)
 		}
 		return fmt.Sprintf("%s%s", FireFlyNodeDIDPrefix, i.Name), nil
 	case IdentityTypeOrg:
-		if i.Namespace != SystemNamespace {
-			return "", i18n.NewError(ctx, i18n.MsgSystemIdentityCustomNS, SystemNamespace)
-		}
 		return fmt.Sprintf("%s%s", FireFlyOrgDIDPrefix, i.Name), nil
 	default:
 		return "", i18n.NewError(ctx, i18n.MsgUnknownIdentityType, i.Type)

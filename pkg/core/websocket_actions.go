@@ -19,16 +19,16 @@ package core
 import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 // WSClientPayloadType actions go from client->server
-type WSClientPayloadType = FFEnum
+type WSClientPayloadType = fftypes.FFEnum
 
 var (
 	// WSClientActionStart is a request to the server to start delivering messages to the client
-	WSClientActionStart = ffEnum("wstype", "start")
+	WSClientActionStart = fftypes.FFEnumValue("wstype", "start")
 	// WSClientActionAck acknowledges an event that was delivered, allowing further messages to be sent
-	WSClientActionAck = ffEnum("wstype", "ack")
+	WSClientActionAck = fftypes.FFEnumValue("wstype", "ack")
 
 	// WSProtocolErrorEventType is a special event "type" field for server to send the client, if it performs a ProtocolError
-	WSProtocolErrorEventType = ffEnum("wstype", "protocol_error")
+	WSProtocolErrorEventType = fftypes.FFEnumValue("wstype", "protocol_error")
 )
 
 // WSActionBase is the base fields of all client actions sent on the websocket

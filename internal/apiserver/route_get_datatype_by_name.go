@@ -19,28 +19,28 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getDatatypeByName = &oapispec.Route{
+var getDatatypeByName = &ffapi.Route{
 	Name:   "getDatatypeByName",
 	Path:   "datatypes/{name}/{version}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "name", Description: coremsgs.APIParamsDatatypeName},
 		{Name: "version", Description: coremsgs.APIParamsDatatypeVersion},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetDatatypeByName,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		output, err = getOr(r.Ctx, ns).GetDatatypeByName(r.Ctx, ns, r.PP["name"], r.PP["version"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetDatatypeByName(cr.ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+			return output, err
+		},
 	},
 }

@@ -19,27 +19,28 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getMsgEvents = &oapispec.Route{
+var getMsgEvents = &ffapi.Route{
 	Name:   "getMsgEvents",
 	Path:   "messages/{msgid}/events",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "msgid", Description: coremsgs.APIParamsMessageID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.EventQueryFactory,
 	Description:     coremsgs.APIEndpointsGetMsgEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		ns := extractNamespace(r.PP)
-		return filterResult(getOr(r.Ctx, ns).GetMessageEvents(r.Ctx, ns, r.PP["msgid"], r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.EventQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetMessageEvents(cr.ctx, extractNamespace(r.PP), r.PP["msgid"], cr.filter))
+		},
 	},
 }
