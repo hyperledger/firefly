@@ -38,7 +38,8 @@ var getGroupByHash = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = r.Or.PrivateMessaging().GetGroupByID(r.Ctx, r.PP["hash"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).PrivateMessaging().GetGroupByID(r.Ctx, r.PP["hash"])
 		return output, err
 	},
 }

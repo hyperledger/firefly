@@ -41,7 +41,8 @@ var postNewIdentity = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().RegisterIdentity(r.Ctx, extractNamespace(r.PP), r.Input.(*core.IdentityCreateDTO), waitConfirm)
+		ns := extractNamespace(r.PP)
+		org, err := getOr(r.Ctx, ns).NetworkMap().RegisterIdentity(r.Ctx, ns, r.Input.(*core.IdentityCreateDTO), waitConfirm)
 		return org, err
 	},
 }

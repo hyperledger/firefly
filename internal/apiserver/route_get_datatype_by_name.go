@@ -39,7 +39,8 @@ var getDatatypeByName = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetDatatypeByName(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).GetDatatypeByName(r.Ctx, ns, r.PP["name"], r.PP["version"])
 		return output, err
 	},
 }

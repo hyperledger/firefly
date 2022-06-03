@@ -41,6 +41,7 @@ var postNewContractAPI = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.Input.(*core.ContractAPI), waitConfirm)
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.Input.(*core.ContractAPI), waitConfirm)
 	},
 }

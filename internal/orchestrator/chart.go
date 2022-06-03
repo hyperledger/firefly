@@ -49,7 +49,7 @@ func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startT
 
 	intervals := or.getHistogramIntervals(startTime, endTime, buckets)
 
-	histogram, err := or.databases["database_0"].GetChartHistogram(ctx, ns, intervals, collection)
+	histogram, err := or.database.Plugin.GetChartHistogram(ctx, ns, intervals, collection)
 	if err != nil {
 		return nil, err
 	}

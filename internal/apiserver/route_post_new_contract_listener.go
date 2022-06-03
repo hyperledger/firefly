@@ -36,6 +36,7 @@ var postNewContractListener = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().AddContractListener(r.Ctx, extractNamespace(r.PP), r.Input.(*core.ContractListenerInput))
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Contracts().AddContractListener(r.Ctx, ns, r.Input.(*core.ContractListenerInput))
 	},
 }

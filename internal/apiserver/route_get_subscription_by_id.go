@@ -38,7 +38,8 @@ var getSubscriptionByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetSubscriptionByID(r.Ctx, extractNamespace(r.PP), r.PP["subid"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).GetSubscriptionByID(r.Ctx, ns, r.PP["subid"])
 		return output, err
 	},
 }

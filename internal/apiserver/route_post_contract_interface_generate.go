@@ -37,6 +37,7 @@ var postContractInterfaceGenerate = &oapispec.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		generationRequest := r.Input.(*core.FFIGenerationRequest)
-		return getOr(r.Ctx).Contracts().GenerateFFI(r.Ctx, extractNamespace(r.PP), generationRequest)
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Contracts().GenerateFFI(r.Ctx, ns, generationRequest)
 	},
 }

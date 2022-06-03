@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/oapiffi"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
@@ -52,7 +53,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-type orchestratorContextKey struct{}
+type rootManagerContextKey struct{}
 
 var ffcodeExtractor = regexp.MustCompile(`^(FF\d+):`)
 
@@ -65,7 +66,7 @@ var (
 
 // Server is the external interface for the API Server
 type Server interface {
-	Serve(ctx context.Context, o orchestrator.Orchestrator) error
+	Serve(ctx context.Context, mgr namespace.Manager) error
 }
 
 type apiServer struct {
@@ -99,24 +100,28 @@ func NewAPIServer() Server {
 	}
 }
 
-func getOr(ctx context.Context) orchestrator.Orchestrator {
-	return ctx.Value(orchestratorContextKey{}).(orchestrator.Orchestrator)
+func getRootMgr(ctx context.Context) namespace.Manager {
+	return ctx.Value(rootManagerContextKey{}).(namespace.Manager)
+}
+
+func getOr(ctx context.Context, ns string) orchestrator.Orchestrator {
+	return getRootMgr(ctx).Orchestrator(ns)
 }
 
 // Serve is the main entry point for the API Server
-func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (err error) {
+func (as *apiServer) Serve(ctx context.Context, mgr namespace.Manager) (err error) {
 	httpErrChan := make(chan error)
 	adminErrChan := make(chan error)
 	metricsErrChan := make(chan error)
 
-	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfig, corsConfig)
+	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, mgr), httpErrChan, apiConfig, corsConfig)
 	if err != nil {
 		return err
 	}
 	go apiHTTPServer.ServeHTTP(ctx)
 
 	if config.GetBool(coreconfig.AdminEnabled) {
-		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(o), adminErrChan, adminConfig, corsConfig)
+		adminHTTPServer, err := httpserver.NewHTTPServer(ctx, "admin", as.createAdminMuxRouter(mgr), adminErrChan, adminConfig, corsConfig)
 		if err != nil {
 			return err
 		}
@@ -211,7 +216,7 @@ func (as *apiServer) getParams(req *http.Request, route *oapispec.Route) (queryP
 	return queryParams, pathParams
 }
 
-func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string, route *oapispec.Route) http.HandlerFunc {
+func (as *apiServer) routeHandler(mgr namespace.Manager, apiBaseURL string, route *oapispec.Route) http.HandlerFunc {
 	// Check the mandatory parts are ok at startup time
 	return as.apiWrapper(func(res http.ResponseWriter, req *http.Request) (int, error) {
 
@@ -251,10 +256,10 @@ func (as *apiServer) routeHandler(o orchestrator.Orchestrator, apiBaseURL string
 		}
 
 		if err == nil {
-			rCtx := context.WithValue(req.Context(), orchestratorContextKey{}, o)
+			rCtx := context.WithValue(req.Context(), rootManagerContextKey{}, mgr)
 			r := &oapispec.APIRequest{
 				Ctx:             rCtx,
-				Or:              o,
+				RootMgr:         mgr,
 				Req:             req,
 				PP:              pathParams,
 				QP:              queryParams,
@@ -467,10 +472,10 @@ func (as *apiServer) swaggerGenerator(routes []*oapispec.Route, apiBaseURL strin
 	}
 }
 
-func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+func (as *apiServer) contractSwaggerGenerator(apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
-		cm := o.Contracts()
 		vars := mux.Vars(req)
+		cm := getOr(req.Context(), vars["ns"]).Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
 		if err != nil {
 			return nil, err
@@ -488,7 +493,7 @@ func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBa
 	}
 }
 
-func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
 
 	if as.metricsEnabled {
@@ -499,12 +504,12 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	apiBaseURL := fmt.Sprintf("%s/api/v1", publicURL)
 	for _, route := range routes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
+			r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(mgr, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
 
-	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.contractSwaggerGenerator(o, apiBaseURL))))
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, as.apiWrapper(as.swaggerHandler(as.contractSwaggerGenerator(apiBaseURL))))
 	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api`, func(rw http.ResponseWriter, req *http.Request) {
 		url := req.URL.String() + "/swagger.yaml"
 		handler := as.apiWrapper(as.swaggerUIHandler(url))
@@ -527,14 +532,14 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	return r
 }
 
-func (as *apiServer) adminWSHandler(o orchestrator.Orchestrator) http.HandlerFunc {
+func (as *apiServer) adminWSHandler(mgr namespace.Manager) http.HandlerFunc {
 	// The admin events listener will be initialized when we start, so we access it it from Orchestrator on demand
 	return func(w http.ResponseWriter, r *http.Request) {
-		o.AdminEvents().ServeHTTPWebSocketListener(w, r)
+		// o.AdminEvents().ServeHTTPWebSocketListener(w, r)
 	}
 }
 
-func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createAdminMuxRouter(mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
 	if as.metricsEnabled {
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
@@ -544,7 +549,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	apiBaseURL := fmt.Sprintf("%s/admin/api/v1", publicURL)
 	for _, route := range adminRoutes {
 		if route.JSONHandler != nil {
-			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(o, apiBaseURL, route)).
+			r.HandleFunc(fmt.Sprintf("/admin/api/v1/%s", route.Path), as.routeHandler(mgr, apiBaseURL, route)).
 				Methods(route.Method)
 		}
 	}
@@ -552,7 +557,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	r.HandleFunc(`/admin/api`, as.apiWrapper(as.swaggerUIHandler(publicURL+"/api/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
-	r.HandleFunc(`/admin/ws`, as.adminWSHandler(o))
+	r.HandleFunc(`/admin/ws`, as.adminWSHandler(mgr))
 
 	return r
 }

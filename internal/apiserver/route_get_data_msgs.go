@@ -39,6 +39,7 @@ var getDataMsgs = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetMessagesForData(r.Ctx, extractNamespace(r.PP), r.PP["dataid"], r.Filter))
+		ns := extractNamespace(r.PP)
+		return filterResult(getOr(r.Ctx, ns).GetMessagesForData(r.Ctx, ns, r.PP["dataid"], r.Filter))
 	},
 }

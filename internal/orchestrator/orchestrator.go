@@ -158,6 +158,7 @@ type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
 	started        bool
+	namespace      string
 	blockchain     BlockchainPlugin
 	identity       identity.Manager
 	idPlugin       IdentityPlugin
@@ -185,8 +186,9 @@ type orchestrator struct {
 	txHelper       txcommon.Helper
 }
 
-func NewOrchestrator(bc BlockchainPlugin, db DatabasePlugin, ss SharedStoragePlugin, dx DataexchangePlugin, tokens map[string]TokensPlugin, id IdentityPlugin, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns string, bc BlockchainPlugin, db DatabasePlugin, ss SharedStoragePlugin, dx DataexchangePlugin, tokens map[string]TokensPlugin, id IdentityPlugin, metrics metrics.Manager) Orchestrator {
 	or := &orchestrator{
+		namespace:     ns,
 		blockchain:    bc,
 		database:      db,
 		sharedstorage: ss,
@@ -216,27 +218,22 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 }
 
 func (or *orchestrator) Start() (err error) {
-	// TODO: move bc start before batch
+	var ns *core.Namespace
+	if err == nil {
+		ns, err = or.database.Plugin.GetNamespace(or.ctx, or.namespace)
+	}
+	if err == nil {
+		err = or.blockchain.Plugin.ConfigureContract(or.ctx, &ns.Contracts)
+	}
+	if err == nil {
+		err = or.blockchain.Plugin.Start()
+	}
+	if err == nil {
+		err = or.database.Plugin.UpsertNamespace(or.ctx, ns, true)
+	}
 	if err == nil {
 		err = or.batch.Start()
 	}
-	var ns *core.Namespace
-	if err == nil {
-		ns, err = or.database.Plugin.GetNamespace(or.ctx, core.SystemNamespace)
-	}
-	// if err == nil {
-	// 	for _, el := range or.blockchains {
-	// 		if err = el.ConfigureContract(or.ctx, &ns.Contracts); err != nil {
-	// 			break
-	// 		}
-	// 		if err = el.Start(); err != nil {
-	// 			break
-	// 		}
-	// 	}
-	// 	if err == nil {
-	// 		err = or.database.UpsertNamespace(or.ctx, ns, true)
-	// 	}
-	// }
 	if err == nil {
 		err = or.events.Start()
 	}
@@ -347,7 +344,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		return err
 	}
 
-	err = or.blockchain.Plugin.Init(ctx, or.blockchain.Config, or, or.metrics)
+	err = or.blockchain.Plugin.Init(ctx, or.blockchain.Config, &or.bc, or.metrics)
 	if err != nil {
 		return err
 	}
@@ -396,7 +393,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugins, or.blockchain, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.database.Plugin, or.idPlugin.Plugin, or.blockchain.Plugin, or.data)
 		if err != nil {
 			return err
 		}
@@ -436,7 +433,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database.Plugin, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.database.Plugin, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, nil, or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}

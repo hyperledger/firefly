@@ -41,7 +41,8 @@ var postNewMessageBroadcast = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		output, err = getOr(r.Ctx).Broadcast().BroadcastMessage(r.Ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut), waitConfirm)
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).Broadcast().BroadcastMessage(r.Ctx, ns, r.Input.(*core.MessageInOut), waitConfirm)
 		return output, err
 	},
 }

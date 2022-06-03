@@ -38,7 +38,8 @@ var getDataByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetDataByID(r.Ctx, extractNamespace(r.PP), r.PP["dataid"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).GetDataByID(r.Ctx, ns, r.PP["dataid"])
 		return output, err
 	},
 }

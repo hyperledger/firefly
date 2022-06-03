@@ -38,7 +38,8 @@ var getEventByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetEventByID(r.Ctx, extractNamespace(r.PP), r.PP["eid"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).GetEventByID(r.Ctx, ns, r.PP["eid"])
 		return output, err
 	},
 }

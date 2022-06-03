@@ -43,6 +43,7 @@ var postOpRetry = &oapispec.Route{
 		if err != nil {
 			return nil, err
 		}
-		return getOr(r.Ctx).Operations().RetryOperation(r.Ctx, extractNamespace(r.PP), opid)
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Operations().RetryOperation(r.Ctx, ns, opid)
 	},
 }

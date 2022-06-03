@@ -58,6 +58,7 @@ var getChartHistogram = &oapispec.Route{
 		if err != nil {
 			return nil, i18n.NewError(r.Ctx, coremsgs.MsgInvalidChartNumberParam, "buckets")
 		}
-		return getOr(r.Ctx).GetChartHistogram(r.Ctx, extractNamespace(r.PP), startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).GetChartHistogram(r.Ctx, ns, startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
 	},
 }

@@ -38,7 +38,8 @@ var getBatchByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetBatchByID(r.Ctx, extractNamespace(r.PP), r.PP["batchid"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).GetBatchByID(r.Ctx, ns, r.PP["batchid"])
 		return output, err
 	},
 }

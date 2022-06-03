@@ -50,7 +50,7 @@ func (or *orchestrator) verifyIDAndNamespace(ctx context.Context, ns, id string)
 }
 
 func (or *orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Namespace, error) {
-	return or.databases["database_0"].GetNamespace(ctx, ns)
+	return or.database.Plugin.GetNamespace(ctx, ns)
 }
 
 func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (*core.Transaction, error) {
@@ -58,7 +58,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (
 	if err != nil {
 		return nil, err
 	}
-	tx, err := or.databases["database_0"].GetTransactionByID(ctx, u)
+	tx, err := or.database.Plugin.GetTransactionByID(ctx, u)
 	if err == nil && tx != nil {
 		err = or.checkNamespace(ctx, ns, tx.Namespace)
 	}
@@ -75,7 +75,7 @@ func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id str
 		fb.Eq("tx", u),
 		fb.Eq("namespace", ns),
 	)
-	return or.databases["database_0"].GetOperations(ctx, filter)
+	return or.database.Plugin.GetOperations(ctx, filter)
 }
 
 func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*core.Message, error) {
@@ -83,7 +83,7 @@ func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*cor
 	if err != nil {
 		return nil, err
 	}
-	msg, err := or.databases["database_0"].GetMessageByID(ctx, u)
+	msg, err := or.database.Plugin.GetMessageByID(ctx, u)
 	if err == nil && msg == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
@@ -126,7 +126,7 @@ func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*core.
 	if err != nil {
 		return nil, err
 	}
-	b, err := or.databases["database_0"].GetBatchByID(ctx, u)
+	b, err := or.database.Plugin.GetBatchByID(ctx, u)
 	if err == nil && b != nil {
 		err = or.checkNamespace(ctx, ns, b.Namespace)
 	}
@@ -138,7 +138,7 @@ func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*core.D
 	if err != nil {
 		return nil, err
 	}
-	d, err := or.databases["database_0"].GetDataByID(ctx, u, true)
+	d, err := or.database.Plugin.GetDataByID(ctx, u, true)
 	if err == nil && d != nil {
 		err = or.checkNamespace(ctx, ns, d.Namespace)
 	}
@@ -150,7 +150,7 @@ func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*co
 	if err != nil {
 		return nil, err
 	}
-	dt, err := or.databases["database_0"].GetDatatypeByID(ctx, u)
+	dt, err := or.database.Plugin.GetDatatypeByID(ctx, u)
 	if err == nil && dt != nil {
 		err = or.checkNamespace(ctx, ns, dt.Namespace)
 	}
@@ -164,7 +164,7 @@ func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version
 	if err := core.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
 		return nil, err
 	}
-	dt, err := or.databases["database_0"].GetDatatypeByName(ctx, ns, name, version)
+	dt, err := or.database.Plugin.GetDatatypeByName(ctx, ns, name, version)
 	if err == nil && dt != nil {
 		err = or.checkNamespace(ctx, ns, dt.Namespace)
 	}
@@ -176,7 +176,7 @@ func (or *orchestrator) GetOperationByIDNamespaced(ctx context.Context, ns, id s
 	if err != nil {
 		return nil, err
 	}
-	o, err := or.databases["database_0"].GetOperationByID(ctx, u)
+	o, err := or.database.Plugin.GetOperationByID(ctx, u)
 	if err == nil && o != nil {
 		err = or.checkNamespace(ctx, ns, o.Namespace)
 	}
@@ -188,7 +188,7 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	if err != nil {
 		return nil, err
 	}
-	return or.databases["database_0"].GetOperationByID(ctx, u)
+	return or.database.Plugin.GetOperationByID(ctx, u)
 }
 
 func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.Event, error) {
@@ -196,7 +196,7 @@ func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.
 	if err != nil {
 		return nil, err
 	}
-	e, err := or.databases["database_0"].GetEventByID(ctx, u)
+	e, err := or.database.Plugin.GetEventByID(ctx, u)
 	if err == nil && e != nil {
 		err = or.checkNamespace(ctx, ns, e.Namespace)
 	}
@@ -204,7 +204,7 @@ func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.
 }
 
 func (or *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
-	return or.databases["database_0"].GetNamespaces(ctx, filter)
+	return or.database.Plugin.GetNamespaces(ctx, filter)
 }
 
 func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
@@ -213,17 +213,17 @@ func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.A
 
 func (or *orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetTransactions(ctx, filter)
+	return or.database.Plugin.GetTransactions(ctx, filter)
 }
 
 func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetMessages(ctx, filter)
+	return or.database.Plugin.GetMessages(ctx, filter)
 }
 
 func (or *orchestrator) GetMessagesWithData(ctx context.Context, ns string, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	msgs, fr, err := or.databases["database_0"].GetMessages(ctx, filter)
+	msgs, fr, err := or.database.Plugin.GetMessages(ctx, filter)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -255,7 +255,7 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 		if msg.BatchID == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotSet)
 		}
-		batch, err := or.databases["database_0"].GetBatchByID(ctx, msg.BatchID)
+		batch, err := or.database.Plugin.GetBatchByID(ctx, msg.BatchID)
 		if err != nil {
 			return nil, err
 		}
@@ -277,7 +277,7 @@ func (or *orchestrator) GetMessageTransaction(ctx context.Context, ns, id string
 	if err != nil {
 		return nil, err
 	}
-	return or.databases["database_0"].GetTransactionByID(ctx, txID)
+	return or.database.Plugin.GetTransactionByID(ctx, txID)
 }
 
 func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error) {
@@ -286,7 +286,7 @@ func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string)
 		return nil, nil, err
 	}
 	filter := database.OperationQueryFactory.NewFilter(ctx).Eq("tx", txID)
-	return or.databases["database_0"].GetOperations(ctx, filter)
+	return or.database.Plugin.GetOperations(ctx, filter)
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
@@ -303,17 +303,17 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, fil
 	}
 	filter = filter.Condition(filter.Builder().In("reference", referencedIDs))
 	// Execute the filter
-	return or.databases["database_0"].GetEvents(ctx, filter)
+	return or.database.Plugin.GetEvents(ctx, filter)
 }
 
 func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetBatches(ctx, filter)
+	return or.database.Plugin.GetBatches(ctx, filter)
 }
 
 func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) (core.DataArray, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetData(ctx, filter)
+	return or.database.Plugin.GetData(ctx, filter)
 }
 
 func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
@@ -322,26 +322,26 @@ func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID strin
 	if err != nil {
 		return nil, nil, err
 	}
-	return or.databases["database_0"].GetMessagesForData(ctx, u, filter)
+	return or.database.Plugin.GetMessagesForData(ctx, u, filter)
 }
 
 func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetDatatypes(ctx, filter)
+	return or.database.Plugin.GetDatatypes(ctx, filter)
 }
 
 func (or *orchestrator) GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetOperations(ctx, filter)
+	return or.database.Plugin.GetOperations(ctx, filter)
 }
 
 func (or *orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
-	return or.databases["database_0"].GetOperations(ctx, filter)
+	return or.database.Plugin.GetOperations(ctx, filter)
 }
 
 func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetEvents(ctx, filter)
+	return or.database.Plugin.GetEvents(ctx, filter)
 }
 
 func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, ns, id string) (*core.BlockchainEvent, error) {
@@ -349,7 +349,7 @@ func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, ns, id strin
 	if err != nil {
 		return nil, err
 	}
-	be, err := or.databases["database_0"].GetBlockchainEventByID(ctx, u)
+	be, err := or.database.Plugin.GetBlockchainEventByID(ctx, u)
 	if err == nil && be != nil {
 		err = or.checkNamespace(ctx, ns, be.Namespace)
 	}
@@ -357,7 +357,7 @@ func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, ns, id strin
 }
 
 func (or *orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
-	return or.databases["database_0"].GetBlockchainEvents(ctx, or.scopeNS(ns, filter))
+	return or.database.Plugin.GetBlockchainEvents(ctx, or.scopeNS(ns, filter))
 }
 
 func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
@@ -370,16 +370,16 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 		fb.Eq("tx.id", u),
 		fb.Eq("namespace", ns),
 	)
-	return or.databases["database_0"].GetBlockchainEvents(ctx, filter)
+	return or.database.Plugin.GetBlockchainEvents(ctx, filter)
 }
 
 func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
-	return or.databases["database_0"].GetPins(ctx, filter)
+	return or.database.Plugin.GetPins(ctx, filter)
 }
 
 func (or *orchestrator) GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	events, fr, err := or.databases["database_0"].GetEvents(ctx, filter)
+	events, fr, err := or.database.Plugin.GetEvents(ctx, filter)
 	if err != nil {
 		return nil, nil, err
 	}

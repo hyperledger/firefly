@@ -38,6 +38,7 @@ var postContractQuery = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		req := r.Input.(*core.ContractCallRequest)
 		req.Type = core.CallTypeQuery
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, extractNamespace(r.PP), req, true)
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Contracts().InvokeContract(r.Ctx, ns, req, true)
 	},
 }

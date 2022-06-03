@@ -37,6 +37,6 @@ var getNamespaces = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetNamespaces(r.Ctx, r.Filter))
+		return filterResult(getRootMgr(r.Ctx).GetNamespaces(r.Ctx, r.Filter))
 	},
 }

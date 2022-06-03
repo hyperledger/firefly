@@ -46,9 +46,10 @@ var getContractInterface = &oapispec.Route{
 		if err != nil {
 			return nil, err
 		}
+		ns := extractNamespace(r.PP)
 		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIByIDWithChildren(r.Ctx, interfaceID)
+			return getOr(r.Ctx, ns).Contracts().GetFFIByIDWithChildren(r.Ctx, interfaceID)
 		}
-		return getOr(r.Ctx).Contracts().GetFFIByID(r.Ctx, interfaceID)
+		return getOr(r.Ctx, ns).Contracts().GetFFIByID(r.Ctx, interfaceID)
 	},
 }

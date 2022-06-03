@@ -38,6 +38,7 @@ var getBlockchainEventByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).GetBlockchainEventByID(r.Ctx, extractNamespace(r.PP), r.PP["id"])
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).GetBlockchainEventByID(r.Ctx, ns, r.PP["id"])
 	},
 }

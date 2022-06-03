@@ -38,6 +38,7 @@ var getTxnBlockchainEvents = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &[]*core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetTransactionBlockchainEvents(r.Ctx, extractNamespace(r.PP), r.PP["txnid"]))
+		ns := extractNamespace(r.PP)
+		return filterResult(getOr(r.Ctx, ns).GetTransactionBlockchainEvents(r.Ctx, ns, r.PP["txnid"]))
 	},
 }

@@ -38,7 +38,8 @@ var getTokenTransferByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Assets().GetTokenTransferByID(r.Ctx, extractNamespace(r.PP), r.PP["transferId"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).Assets().GetTokenTransferByID(r.Ctx, ns, r.PP["transferId"])
 		return output, err
 	},
 }

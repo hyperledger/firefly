@@ -38,6 +38,7 @@ var getTxnStatus = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.TransactionStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).GetTransactionStatus(r.Ctx, extractNamespace(r.PP), r.PP["txnid"])
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).GetTransactionStatus(r.Ctx, ns, r.PP["txnid"])
 	},
 }

@@ -46,6 +46,7 @@ var postContractAPIInvoke = &oapispec.Route{
 		r.SuccessStatus = syncRetcode(waitConfirm)
 		req := r.Input.(*core.ContractCallRequest)
 		req.Type = core.CallTypeInvoke
-		return getOr(r.Ctx).Contracts().InvokeContractAPI(r.Ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Contracts().InvokeContractAPI(r.Ctx, ns, r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
 	},
 }

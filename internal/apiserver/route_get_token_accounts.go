@@ -37,6 +37,7 @@ var getTokenAccounts = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.TokenAccount{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Assets().GetTokenAccounts(r.Ctx, extractNamespace(r.PP), r.Filter))
+		ns := extractNamespace(r.PP)
+		return filterResult(getOr(r.Ctx, ns).Assets().GetTokenAccounts(r.Ctx, ns, r.Filter))
 	},
 }

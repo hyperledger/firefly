@@ -20,14 +20,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type APIRequest struct {
 	Ctx             context.Context
-	Or              orchestrator.Orchestrator
+	RootMgr         namespace.Manager
 	Req             *http.Request
 	QP              map[string]string
 	PP              map[string]string

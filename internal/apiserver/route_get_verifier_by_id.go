@@ -37,6 +37,7 @@ var getVerifierByID = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetVerifierByHash(r.Ctx, extractNamespace(r.PP), r.PP["hash"])
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).NetworkMap().GetVerifierByHash(r.Ctx, ns, r.PP["hash"])
 	},
 }

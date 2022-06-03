@@ -42,9 +42,10 @@ var getContractInterfaceNameVersion = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		ns := extractNamespace(r.PP)
 		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+			return getOr(r.Ctx, ns).Contracts().GetFFIWithChildren(r.Ctx, ns, r.PP["name"], r.PP["version"])
 		}
-		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+		return getOr(r.Ctx, ns).Contracts().GetFFI(r.Ctx, ns, r.PP["name"], r.PP["version"])
 	},
 }

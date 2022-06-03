@@ -41,6 +41,7 @@ var postTokenMint = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Assets().MintTokens(r.Ctx, extractNamespace(r.PP), r.Input.(*core.TokenTransferInput), waitConfirm)
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Assets().MintTokens(r.Ctx, ns, r.Input.(*core.TokenTransferInput), waitConfirm)
 	},
 }

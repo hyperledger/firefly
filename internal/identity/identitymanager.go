@@ -58,7 +58,7 @@ type Manager interface {
 
 type identityManager struct {
 	database   database.Plugin
-	plugin     map[string]identity.Plugin
+	plugin     identity.Plugin
 	blockchain blockchain.Plugin
 	data       data.Manager
 
@@ -70,7 +70,7 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, di database.Plugin, ii map[string]identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || ii == nil || bi == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}

@@ -37,7 +37,8 @@ var deleteContractListener = &oapispec.Route{
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).Contracts().DeleteContractListenerByNameOrID(r.Ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+		ns := extractNamespace(r.PP)
+		err = getOr(r.Ctx, ns).Contracts().DeleteContractListenerByNameOrID(r.Ctx, ns, r.PP["nameOrId"])
 		return nil, err
 	},
 }

@@ -40,6 +40,7 @@ var getContractAPIListeners = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIListeners(r.Ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["eventPath"], r.Filter))
+		ns := extractNamespace(r.PP)
+		return filterResult(getOr(r.Ctx, ns).Contracts().GetContractAPIListeners(r.Ctx, ns, r.PP["apiName"], r.PP["eventPath"], r.Filter))
 	},
 }

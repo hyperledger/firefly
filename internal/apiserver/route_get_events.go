@@ -40,9 +40,10 @@ var getEvents = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		ns := extractNamespace(r.PP)
 		if strings.EqualFold(r.QP["fetchreferences"], "true") {
-			return filterResult(getOr(r.Ctx).GetEventsWithReferences(r.Ctx, extractNamespace(r.PP), r.Filter))
+			return filterResult(getOr(r.Ctx, ns).GetEventsWithReferences(r.Ctx, ns, r.Filter))
 		}
-		return filterResult(getOr(r.Ctx).GetEvents(r.Ctx, extractNamespace(r.PP), r.Filter))
+		return filterResult(getOr(r.Ctx, ns).GetEvents(r.Ctx, ns, r.Filter))
 	},
 }

@@ -5,7 +5,7 @@ package apiservermocks
 import (
 	context "context"
 
-	orchestrator "github.com/hyperledger/firefly/internal/orchestrator"
+	namespace "github.com/hyperledger/firefly/internal/namespace"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -14,13 +14,13 @@ type Server struct {
 	mock.Mock
 }
 
-// Serve provides a mock function with given fields: ctx, o
-func (_m *Server) Serve(ctx context.Context, o orchestrator.Orchestrator) error {
-	ret := _m.Called(ctx, o)
+// Serve provides a mock function with given fields: ctx, mgr
+func (_m *Server) Serve(ctx context.Context, mgr namespace.Manager) error {
+	ret := _m.Called(ctx, mgr)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, orchestrator.Orchestrator) error); ok {
-		r0 = rf(ctx, o)
+	if rf, ok := ret.Get(0).(func(context.Context, namespace.Manager) error); ok {
+		r0 = rf(ctx, mgr)
 	} else {
 		r0 = ret.Error(0)
 	}

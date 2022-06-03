@@ -41,7 +41,8 @@ var postNewDatatype = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = getOr(r.Ctx).Broadcast().BroadcastDatatype(r.Ctx, extractNamespace(r.PP), r.Input.(*core.Datatype), waitConfirm)
+		ns := extractNamespace(r.PP)
+		_, err = getOr(r.Ctx, ns).Broadcast().BroadcastDatatype(r.Ctx, ns, r.Input.(*core.Datatype), waitConfirm)
 		return r.Input, err
 	},
 }

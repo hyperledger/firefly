@@ -40,9 +40,10 @@ var getMsgs = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		ns := extractNamespace(r.PP)
 		if strings.EqualFold(r.QP["fetchdata"], "true") {
-			return filterResult(getOr(r.Ctx).GetMessagesWithData(r.Ctx, extractNamespace(r.PP), r.Filter))
+			return filterResult(getOr(r.Ctx, ns).GetMessagesWithData(r.Ctx, ns, r.Filter))
 		}
-		return filterResult(getOr(r.Ctx).GetMessages(r.Ctx, extractNamespace(r.PP), r.Filter))
+		return filterResult(getOr(r.Ctx, ns).GetMessages(r.Ctx, ns, r.Filter))
 	},
 }

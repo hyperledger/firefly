@@ -41,7 +41,8 @@ var postNewOrganization = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = getOr(r.Ctx).NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*core.IdentityCreateDTO), waitConfirm)
+		ns := extractNamespace(r.PP)
+		_, err = getOr(r.Ctx, ns).NetworkMap().RegisterOrganization(r.Ctx, r.Input.(*core.IdentityCreateDTO), waitConfirm)
 		return r.Input, err
 	},
 }

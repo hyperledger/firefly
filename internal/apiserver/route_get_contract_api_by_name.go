@@ -38,6 +38,7 @@ var getContractAPIByName = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GetContractAPI(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.PP["apiName"])
+		ns := extractNamespace(r.PP)
+		return getOr(r.Ctx, ns).Contracts().GetContractAPI(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.PP["apiName"])
 	},
 }

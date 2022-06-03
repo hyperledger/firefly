@@ -46,6 +46,7 @@ var (
 	sharedstorageConfig = config.RootArray("plugins.sharedstorage")
 	dataexchangeConfig  = config.RootArray("plugins.dataexchange")
 	identityConfig      = config.RootArray("plugins.identity")
+
 	// Deprecated configs
 	deprecatedTokensConfig        = config.RootArray("tokens")
 	deprecatedBlockchainConfig    = config.RootSection("blockchain")
@@ -55,15 +56,16 @@ var (
 )
 
 type Manager interface {
-	// Init initializes the manager
 	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Start() error
+	WaitStop()
+
+	Orchestrator(ns string) orchestrator.Orchestrator
+	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error)
 }
 
-//maybe add the orchestrator in this struct?
-// mode??
 type namespace struct {
-	// not sure if we need config
-	config        config.Section
+	orchestrator  orchestrator.Orchestrator
 	multiparty    bool
 	database      orchestrator.DatabasePlugin
 	blockchain    orchestrator.BlockchainPlugin
@@ -76,7 +78,6 @@ type namespace struct {
 type namespaceManager struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
-	orchestrators  map[string]orchestrator.Orchestrator
 	pluginNames    map[string]bool
 	metrics        metrics.Manager
 	blockchains    map[string]orchestrator.BlockchainPlugin
@@ -85,7 +86,6 @@ type namespaceManager struct {
 	sharedstorages map[string]orchestrator.SharedStoragePlugin
 	dataexchanges  map[string]orchestrator.DataexchangePlugin
 	tokens         map[string]orchestrator.TokensPlugin
-	database       database.Plugin
 	adminEvents    adminevents.Manager
 	namespaces     map[string]namespace
 }
@@ -124,28 +124,29 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	}
 
 	// Start an orchestrator per namespace
-	if err = nm.initOrchestrators(ctx, cancelCtx); err != nil {
-		return err
-	}
-
-	return err
-}
-
-func (nm *namespaceManager) initOrchestrators(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
 	for name, ns := range nm.namespaces {
-		//maybe export the namespace struct and have orchestrator take that as a parameter?
-		or := orchestrator.NewOrchestrator(ns.blockchain, ns.database, ns.sharedstorage, ns.dataexchange, ns.tokens, ns.identity, nm.metrics)
+		or := orchestrator.NewOrchestrator(name, ns.blockchain, ns.database, ns.sharedstorage, ns.dataexchange, ns.tokens, ns.identity, nm.metrics)
 		if err = or.Init(ctx, cancelCtx); err != nil {
 			return err
 		}
+		ns.orchestrator = or
+	}
+	return nil
+}
 
-		if err = or.Start(); err != nil {
+func (nm *namespaceManager) Start() error {
+	for _, ns := range nm.namespaces {
+		if err := ns.orchestrator.Start(); err != nil {
 			return err
 		}
-		nm.orchestrators[name] = or
 	}
+	return nil
+}
 
-	return err
+func (nm *namespaceManager) WaitStop() {
+	for _, ns := range nm.namespaces {
+		ns.orchestrator.WaitStop()
+	}
 }
 
 func (nm *namespaceManager) getPlugins(ctx context.Context) (err error) {
@@ -657,4 +658,15 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 	nm.namespaces[name] = ns
 
 	return nil
+}
+
+func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
+	if namespace, ok := nm.namespaces[ns]; ok {
+		return namespace.orchestrator
+	}
+	return nil
+}
+
+func (nm *namespaceManager) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
+	return nil, nil, nil
 }

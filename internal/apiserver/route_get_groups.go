@@ -37,6 +37,7 @@ var getGroups = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.PrivateMessaging().GetGroupsNS(r.Ctx, extractNamespace(r.PP), r.Filter))
+		ns := extractNamespace(r.PP)
+		return filterResult(getOr(r.Ctx, ns).PrivateMessaging().GetGroupsNS(r.Ctx, ns, r.Filter))
 	},
 }

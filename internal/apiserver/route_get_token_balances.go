@@ -37,6 +37,7 @@ var getTokenBalances = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []*core.TokenBalance{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Assets().GetTokenBalances(r.Ctx, extractNamespace(r.PP), r.Filter))
+		ns := extractNamespace(r.PP)
+		return filterResult(getOr(r.Ctx, ns).Assets().GetTokenBalances(r.Ctx, ns, r.Filter))
 	},
 }

@@ -40,7 +40,8 @@ var getDataBlob = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return []byte{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		blob, reader, err := getOr(r.Ctx).Data().DownloadBlob(r.Ctx, extractNamespace(r.PP), r.PP["dataid"])
+		ns := extractNamespace(r.PP)
+		blob, reader, err := getOr(r.Ctx, ns).Data().DownloadBlob(r.Ctx, ns, r.PP["dataid"])
 		if err == nil {
 			r.ResponseHeaders.Set(core.HTTPHeadersBlobHashSHA256, blob.Hash.String())
 			if blob.Size > 0 {

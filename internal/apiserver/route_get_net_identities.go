@@ -39,9 +39,10 @@ var getNetworkIdentities = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &[]*core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
+		ns := extractNamespace(r.PP)
 		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-			return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesWithVerifiersGlobal(r.Ctx, r.Filter))
+			return filterResult(getOr(r.Ctx, ns).NetworkMap().GetIdentitiesWithVerifiersGlobal(r.Ctx, r.Filter))
 		}
-		return filterResult(getOr(r.Ctx).NetworkMap().GetIdentitiesGlobal(r.Ctx, r.Filter))
+		return filterResult(getOr(r.Ctx, ns).NetworkMap().GetIdentitiesGlobal(r.Ctx, r.Filter))
 	},
 }

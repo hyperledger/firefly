@@ -39,7 +39,6 @@ var routes = append(
 		getStatusPins,
 		getStatusWebSockets,
 		postNetworkAction,
-		postNewNamespace,
 		postNewOrganization,
 		postNewOrganizationSelf,
 		postNodesSelf,

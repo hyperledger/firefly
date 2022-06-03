@@ -43,7 +43,8 @@ var patchUpdateIdentity = &oapispec.Route{
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
 		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 		r.SuccessStatus = syncRetcode(waitConfirm)
-		org, err := getOr(r.Ctx).NetworkMap().UpdateIdentity(r.Ctx, extractNamespace(r.PP), r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
+		ns := extractNamespace(r.PP)
+		org, err := getOr(r.Ctx, ns).NetworkMap().UpdateIdentity(r.Ctx, ns, r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
 		return org, err
 	},
 }

@@ -47,7 +47,8 @@ var postData = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Data().UploadJSON(r.Ctx, extractNamespace(r.PP), r.Input.(*core.DataRefOrValue))
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).Data().UploadJSON(r.Ctx, ns, r.Input.(*core.DataRefOrValue))
 		return output, err
 	},
 	FormUploadHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
@@ -71,7 +72,8 @@ var postData = &oapispec.Route{
 			}
 			data.Value = fftypes.JSONAnyPtr(metadata)
 		}
-		output, err = getOr(r.Ctx).Data().UploadBlob(r.Ctx, extractNamespace(r.PP), data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).Data().UploadBlob(r.Ctx, ns, data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 		return output, err
 	},
 }

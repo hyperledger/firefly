@@ -38,7 +38,8 @@ var getMsgData = &oapispec.Route{
 	JSONOutputValue: func() interface{} { return core.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetMessageData(r.Ctx, extractNamespace(r.PP), r.PP["msgid"])
+		ns := extractNamespace(r.PP)
+		output, err = getOr(r.Ctx, ns).GetMessageData(r.Ctx, ns, r.PP["msgid"])
 		return output, err
 	},
 }

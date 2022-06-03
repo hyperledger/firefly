@@ -34,49 +34,34 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	for name, plugin := range or.tokens {
 		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
 			Name:       name,
-			PluginType: plugin.Name(),
+			PluginType: plugin.Plugin.Name(),
 		})
 	}
 
 	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.blockchains {
-		blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
+		PluginType: or.blockchain.Plugin.Name(),
+	})
 
 	databasesArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.databases {
-		databasesArray = append(databasesArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	databasesArray = append(databasesArray, &core.NodeStatusPlugin{
+		PluginType: or.database.Plugin.Name(),
+	})
 
 	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.sharedstoragePlugins {
-		sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
+		PluginType: or.sharedstorage.Plugin.Name(),
+	})
 
 	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.dataexchangePlugins {
-		dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
+		PluginType: or.dataexchange.Plugin.Name(),
+	})
 
 	identityPluginArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.identityPlugins {
-		identityPluginArray = append(identityPluginArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	identityPluginArray = append(identityPluginArray, &core.NodeStatusPlugin{
+		PluginType: or.idPlugin.Plugin.Name(),
+	})
 
 	return core.NodeStatusPlugins{
 		Blockchain:    blockchainsArray,
