@@ -27,15 +27,15 @@ import (
 )
 
 // IdentityType is the type of an identity
-type IdentityType = FFEnum
+type IdentityType = fftypes.FFEnum
 
 var (
 	// IdentityTypeOrg is an organization
-	IdentityTypeOrg = ffEnum("identitytype", "org")
+	IdentityTypeOrg = fftypes.FFEnumValue("identitytype", "org")
 	// IdentityTypeNode is a node
-	IdentityTypeNode = ffEnum("identitytype", "node")
+	IdentityTypeNode = fftypes.FFEnumValue("identitytype", "node")
 	// IdentityTypeCustom is a user defined identity within a namespace
-	IdentityTypeCustom = ffEnum("identitytype", "custom")
+	IdentityTypeCustom = fftypes.FFEnumValue("identitytype", "custom")
 )
 
 const (

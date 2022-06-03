@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -49,7 +50,7 @@ type Manager interface {
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
 	UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error)
-	UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *core.Multipart, autoMeta bool) (*core.Data, error)
+	UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
 	DownloadBlob(ctx context.Context, ns, dataID string) (*core.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *core.BatchPersisted) (*core.Batch, error)
 	WaitStop()

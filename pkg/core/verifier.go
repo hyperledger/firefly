@@ -23,15 +23,15 @@ import (
 )
 
 // VerifierType is the type of an identity verifier. Where possible we use established DID verifier type strings
-type VerifierType = FFEnum
+type VerifierType = fftypes.FFEnum
 
 var (
 	// VerifierTypeEthAddress is an Ethereum (secp256k1) address string
-	VerifierTypeEthAddress = ffEnum("verifiertype", "ethereum_address")
+	VerifierTypeEthAddress = fftypes.FFEnumValue("verifiertype", "ethereum_address")
 	// VerifierTypeMSPIdentity is the MSP id (X509 distinguished name) of an issued signing certificate / keypair
-	VerifierTypeMSPIdentity = ffEnum("verifiertype", "fabric_msp_id")
+	VerifierTypeMSPIdentity = fftypes.FFEnumValue("verifiertype", "fabric_msp_id")
 	// VerifierTypeFFDXPeerID is the peer identifier that FireFly Data Exchange verifies (using plugin specific tech) when receiving data
-	VerifierTypeFFDXPeerID = ffEnum("verifiertype", "dx_peer_id")
+	VerifierTypeFFDXPeerID = fftypes.FFEnumValue("verifiertype", "dx_peer_id")
 )
 
 // VerifierRef is just the type + value (public key identifier etc.) from the verifier

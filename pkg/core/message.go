@@ -31,39 +31,39 @@ const (
 )
 
 // MessageType is the fundamental type of a message
-type MessageType = FFEnum
+type MessageType = fftypes.FFEnum
 
 var (
 	// MessageTypeDefinition is a message broadcasting a definition of a system type, pre-defined by firefly (namespaces, identities, data definitions, etc.)
-	MessageTypeDefinition = ffEnum("messagetype", "definition")
+	MessageTypeDefinition = fftypes.FFEnumValue("messagetype", "definition")
 	// MessageTypeBroadcast is a broadcast message, meaning it is intended to be visible by all parties in the network
-	MessageTypeBroadcast = ffEnum("messagetype", "broadcast")
+	MessageTypeBroadcast = fftypes.FFEnumValue("messagetype", "broadcast")
 	// MessageTypePrivate is a private message, meaning it is only sent explicitly to individual parties in the network
-	MessageTypePrivate = ffEnum("messagetype", "private")
+	MessageTypePrivate = fftypes.FFEnumValue("messagetype", "private")
 	// MessageTypeGroupInit is a special private message that contains the definition of the group
-	MessageTypeGroupInit = ffEnum("messagetype", "groupinit")
+	MessageTypeGroupInit = fftypes.FFEnumValue("messagetype", "groupinit")
 	// MessageTypeTransferBroadcast is a broadcast message to accompany/annotate a token transfer
-	MessageTypeTransferBroadcast = ffEnum("messagetype", "transfer_broadcast")
+	MessageTypeTransferBroadcast = fftypes.FFEnumValue("messagetype", "transfer_broadcast")
 	// MessageTypeTransferPrivate is a private message to accompany/annotate a token transfer
-	MessageTypeTransferPrivate = ffEnum("messagetype", "transfer_private")
+	MessageTypeTransferPrivate = fftypes.FFEnumValue("messagetype", "transfer_private")
 )
 
 // MessageState is the current transmission/confirmation state of a message
-type MessageState = FFEnum
+type MessageState = fftypes.FFEnum
 
 var (
 	// MessageStateStaged is a message created locally which is not ready to send
-	MessageStateStaged = ffEnum("messagestate", "staged")
+	MessageStateStaged = fftypes.FFEnumValue("messagestate", "staged")
 	// MessageStateReady is a message created locally which is ready to send
-	MessageStateReady = ffEnum("messagestate", "ready")
+	MessageStateReady = fftypes.FFEnumValue("messagestate", "ready")
 	// MessageStateSent is a message created locally which has been sent in a batch
-	MessageStateSent = ffEnum("messagestate", "sent")
+	MessageStateSent = fftypes.FFEnumValue("messagestate", "sent")
 	// MessageStatePending is a message that has been received but is awaiting aggregation/confirmation
-	MessageStatePending = ffEnum("messagestate", "pending")
+	MessageStatePending = fftypes.FFEnumValue("messagestate", "pending")
 	// MessageStateConfirmed is a message that has completed all required confirmations (blockchain if pinned, token transfer if transfer coupled, etc)
-	MessageStateConfirmed = ffEnum("messagestate", "confirmed")
+	MessageStateConfirmed = fftypes.FFEnumValue("messagestate", "confirmed")
 	// MessageStateRejected is a message that has completed confirmation, but has been rejected by FireFly
-	MessageStateRejected = ffEnum("messagestate", "rejected")
+	MessageStateRejected = fftypes.FFEnumValue("messagestate", "rejected")
 )
 
 // MessageHeader contains all fields that contribute to the hash

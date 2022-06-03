@@ -264,7 +264,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 }
 
 func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *core.MessageInOut) (sysmessaging.MessageSender, error) {
-	allowedTypes := []core.FFEnum{
+	allowedTypes := []fftypes.FFEnum{
 		core.MessageTypeTransferBroadcast,
 		core.MessageTypeTransferPrivate,
 	}

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapiffi
+package apiserver
 
 import (
 	"context"
@@ -23,8 +23,8 @@ import (
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -55,7 +55,7 @@ func NewFFISwaggerGen() FFISwaggerGen {
 func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *core.FFI) (swagger *openapi3.T) {
 	hasLocation := !api.Location.IsNil()
 
-	routes := []*oapispec.Route{
+	routes := []*ffapi.Route{
 		{
 			Name:            "interface",
 			Path:            "interface", // must match a route defined in apiserver routes!
@@ -72,16 +72,16 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 		routes = og.addEvent(routes, event, hasLocation)
 	}
 
-	return oapispec.SwaggerGen(ctx, routes, &oapispec.SwaggerGenConfig{
+	return ffapi.NewSwaggerGen(&ffapi.Options{
 		Title:       ffi.Name,
 		Version:     ffi.Version,
 		Description: ffi.Description,
 		BaseURL:     baseURL,
-	})
+	}).Generate(ctx, routes)
 }
 
-func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *core.FFIMethod, hasLocation bool) []*oapispec.Route {
-	routes = append(routes, &oapispec.Route{
+func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *core.FFIMethod, hasLocation bool) []*ffapi.Route {
+	routes = append(routes, &ffapi.Route{
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
@@ -89,7 +89,7 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *core.FFIMet
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
 	})
-	routes = append(routes, &oapispec.Route{
+	routes = append(routes, &ffapi.Route{
 		Name:             fmt.Sprintf("query_%s", method.Pathname),
 		Path:             fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
@@ -100,8 +100,8 @@ func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *core.FFIMet
 	return routes
 }
 
-func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *core.FFIEvent, hasLocation bool) []*oapispec.Route {
-	routes = append(routes, &oapispec.Route{
+func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *core.FFIEvent, hasLocation bool) []*ffapi.Route {
+	routes = append(routes, &ffapi.Route{
 		Name:   fmt.Sprintf("createlistener_%s", event.Pathname),
 		Path:   fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
@@ -114,14 +114,16 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *core.FFIEvent
 		JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	})
-	routes = append(routes, &oapispec.Route{
+	routes = append(routes, &ffapi.Route{
 		Name:            fmt.Sprintf("getlistener_%s", event.Pathname),
 		Path:            fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
 		Method:          http.MethodGet,
-		FilterFactory:   database.ContractListenerQueryFactory,
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
+		Extensions: &coreExtensions{
+			FilterFactory: database.ContractListenerQueryFactory,
+		},
 	})
 	return routes
 }

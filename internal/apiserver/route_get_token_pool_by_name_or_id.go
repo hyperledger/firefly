@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getTokenPoolByNameOrID = &oapispec.Route{
+var getTokenPoolByNameOrID = &ffapi.Route{
 	Name:   "getTokenPoolByNameOrID",
 	Path:   "tokens/pools/{nameOrId}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "nameOrId", Description: coremsgs.APIParamsTokenPoolNameOrID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetTokenPoolByNameOrID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).Assets().GetTokenPoolByNameOrID(r.Ctx, extractNamespace(r.PP), r.PP["nameOrId"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.Assets().GetTokenPoolByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			return output, err
+		},
 	},
 }

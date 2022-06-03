@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getDataByID = &oapispec.Route{
+var getDataByID = &ffapi.Route{
 	Name:   "getDataByID",
 	Path:   "data/{dataid}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "dataid", Description: coremsgs.APIParamsDataID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
 	Description:     coremsgs.APIEndpointsGetDataByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetDataByID(r.Ctx, extractNamespace(r.PP), r.PP["dataid"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetDataByID(cr.ctx, extractNamespace(r.PP), r.PP["dataid"])
+			return output, err
+		},
 	},
 }

@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postContractQuery = &oapispec.Route{
+var postContractQuery = &ffapi.Route{
 	Name:            "postContractQuery",
 	Path:            "contracts/query",
 	Method:          http.MethodPost,
 	PathParams:      nil,
-	QueryParams:     []*oapispec.QueryParam{},
-	FilterFactory:   nil,
+	QueryParams:     []*ffapi.QueryParam{},
 	Description:     coremsgs.APIEndpointsPostContractQuery,
 	JSONInputValue:  func() interface{} { return &core.ContractCallRequest{} },
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		req := r.Input.(*core.ContractCallRequest)
-		req.Type = core.CallTypeQuery
-		return getOr(r.Ctx).Contracts().InvokeContract(r.Ctx, extractNamespace(r.PP), req, true)
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			req := r.Input.(*core.ContractCallRequest)
+			req.Type = core.CallTypeQuery
+			return cr.or.Contracts().InvokeContract(cr.ctx, extractNamespace(r.PP), req, true)
+		},
 	},
 }
