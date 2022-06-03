@@ -94,7 +94,6 @@ func TestCreateUpdateSubscriptionOk(t *testing.T) {
 }
 func TestDeleteSubscriptionBadUUID(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := or.DeleteSubscription(or.ctx, "ns2", "! a UUID")
 	assert.Regexp(t, "FF00138", err)
@@ -102,7 +101,6 @@ func TestDeleteSubscriptionBadUUID(t *testing.T) {
 
 func TestDeleteSubscriptionLookupError(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	err := or.DeleteSubscription(or.ctx, "ns2", fftypes.NewUUID().String())
 	assert.EqualError(t, err, "pop")
@@ -110,7 +108,6 @@ func TestDeleteSubscriptionLookupError(t *testing.T) {
 
 func TestDeleteSubscriptionNSMismatch(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	sub := &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
@@ -125,7 +122,6 @@ func TestDeleteSubscriptionNSMismatch(t *testing.T) {
 
 func TestDeleteSubscription(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	sub := &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        fftypes.NewUUID(),
@@ -142,7 +138,6 @@ func TestDeleteSubscription(t *testing.T) {
 func TestGetSubscriptions(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.databases["database_0"] = or.mdi
 	or.mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	fb := database.SubscriptionQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
@@ -152,7 +147,6 @@ func TestGetSubscriptions(t *testing.T) {
 
 func TestGetSGetSubscriptionsByID(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	u := fftypes.NewUUID()
 	or.mdi.On("GetSubscriptionByID", mock.Anything, u).Return(nil, nil)
 	_, err := or.GetSubscriptionByID(context.Background(), "ns1", u.String())

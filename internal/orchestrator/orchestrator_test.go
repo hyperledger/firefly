@@ -18,19 +18,9 @@ package orchestrator
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly-common/pkg/ffresty"
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/database/difactory"
-	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
-	"github.com/hyperledger/firefly/internal/identity/iifactory"
-	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
-	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
@@ -46,7 +36,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
-	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
@@ -54,15 +43,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
-	"github.com/hyperledger/firefly/pkg/blockchain"
-	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/identity"
-	"github.com/hyperledger/firefly/pkg/sharedstorage"
-	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 const configDir = "../../test/data/config"
@@ -92,7 +73,6 @@ type testOrchestrator struct {
 	msd *shareddownloadmocks.Manager
 	mae *admineventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
-	mns *namespacemocks.Manager
 }
 
 func (tor *testOrchestrator) cleanup(t *testing.T) {
@@ -118,7 +98,6 @@ func (tor *testOrchestrator) cleanup(t *testing.T) {
 	tor.msd.AssertExpectations(t)
 	tor.mae.AssertExpectations(t)
 	tor.mdh.AssertExpectations(t)
-	tor.mns.AssertExpectations(t)
 }
 
 func newTestOrchestrator() *testOrchestrator {
@@ -126,9 +105,8 @@ func newTestOrchestrator() *testOrchestrator {
 	ctx, cancel := context.WithCancel(context.Background())
 	tor := &testOrchestrator{
 		orchestrator: orchestrator{
-			ctx:         ctx,
-			cancelCtx:   cancel,
-			pluginNames: make(map[string]bool),
+			ctx:       ctx,
+			cancelCtx: cancel,
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -152,23 +130,22 @@ func newTestOrchestrator() *testOrchestrator {
 		msd: &shareddownloadmocks.Manager{},
 		mae: &admineventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
-		mns: &namespacemocks.Manager{},
 	}
-	tor.orchestrator.databases = map[string]database.Plugin{"postgres": tor.mdi}
+	tor.orchestrator.database.Plugin = tor.mdi
 	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
-	tor.orchestrator.sharedstoragePlugins = map[string]sharedstorage.Plugin{"ipfs": tor.mps}
+	tor.orchestrator.sharedstorage.Plugin = tor.mps
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.identity = tor.mim
-	tor.orchestrator.identityPlugins = map[string]identity.Plugin{"identity": tor.mii}
-	tor.orchestrator.dataexchangePlugins = map[string]dataexchange.Plugin{"ffdx": tor.mdx}
+	tor.orchestrator.idPlugin.Plugin = tor.mii
+	tor.orchestrator.dataexchange.Plugin = tor.mdx
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
-	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
-	tor.orchestrator.blockchains = map[string]blockchain.Plugin{"ethereum": tor.mbi}
+	tor.orchestrator.tokens = map[string]TokensPlugin{"token": {Plugin: tor.mti}}
+	tor.orchestrator.blockchain.Plugin = tor.mbi
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
@@ -176,7 +153,6 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.adminEvents = tor.mae
 	tor.orchestrator.txHelper = tor.mth
 	tor.orchestrator.definitions = tor.mdh
-	tor.orchestrator.namespace = tor.mns
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -191,10 +167,20 @@ func newTestOrchestrator() *testOrchestrator {
 }
 
 func TestNewOrchestrator(t *testing.T) {
-	or := NewOrchestrator(true)
+	or := NewOrchestrator(
+		"ns1",
+		BlockchainPlugin{},
+		DatabasePlugin{},
+		SharedStoragePlugin{},
+		DataexchangePlugin{},
+		map[string]TokensPlugin{},
+		IdentityPlugin{},
+		&metricsmocks.Manager{},
+	)
 	assert.NotNil(t, or)
 }
 
+/*
 func TestBadDeprecatedDatabasePlugin(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -1172,3 +1158,4 @@ func TestNetworkActionBadType(t *testing.T) {
 	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10397", err)
 }
+*/
