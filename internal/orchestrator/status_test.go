@@ -137,7 +137,6 @@ func TestGetStatusRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
 	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
 	assert.ElementsMatch(t, pluginsResult.Events, status.Plugins.Events)
-	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 
@@ -318,7 +317,6 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	assert.ElementsMatch(t, pluginsResult.Database, status.Plugins.Database)
 	assert.ElementsMatch(t, pluginsResult.DataExchange, status.Plugins.DataExchange)
 	assert.ElementsMatch(t, pluginsResult.Events, status.Plugins.Events)
-	assert.ElementsMatch(t, pluginsResult.Identity, status.Plugins.Identity)
 	assert.ElementsMatch(t, pluginsResult.SharedStorage, status.Plugins.SharedStorage)
 	assert.ElementsMatch(t, pluginsResult.Tokens, status.Plugins.Tokens)
 

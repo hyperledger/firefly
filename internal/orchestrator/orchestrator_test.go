@@ -178,6 +178,7 @@ func TestNewOrchestrator(t *testing.T) {
 		map[string]TokensPlugin{},
 		IdentityPlugin{},
 		&metricsmocks.Manager{},
+		&admineventsmocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }

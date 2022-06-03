@@ -231,7 +231,7 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 			}
 		}
 		vars := mux.Vars(r.Req)
-		or := mgr.Orchestrator(vars["ns"])
+		or := mgr.Orchestrator(extractNamespace(vars))
 		cr := &coreRequest{
 			or:         or,
 			ctx:        r.Req.Context(),
@@ -312,7 +312,7 @@ func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request)
 func (as *apiServer) adminWSHandler(mgr namespace.Manager) http.HandlerFunc {
 	// The admin events listener will be initialized when we start, so we access it it from Orchestrator on demand
 	return func(w http.ResponseWriter, r *http.Request) {
-		// o.AdminEvents().ServeHTTPWebSocketListener(w, r)
+		mgr.AdminEvents().ServeHTTPWebSocketListener(w, r)
 	}
 }
 

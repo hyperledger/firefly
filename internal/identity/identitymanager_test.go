@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -36,20 +35,19 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	coreconfig.Reset()
 
 	mdi := &databasemocks.Plugin{}
-	mii := &identitymocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, "", "", "", mdi, mii, mbi, mdm)
+	im, err := NewIdentityManager(ctx, "", "", "", mdi, mbi, mdm)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), "", "", "", nil, nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), "", "", "", nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

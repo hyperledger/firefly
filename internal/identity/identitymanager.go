@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/karlseguin/ccache"
 )
 
@@ -57,7 +56,6 @@ type Manager interface {
 
 type identityManager struct {
 	database   database.Plugin
-	plugin     identity.Plugin
 	blockchain blockchain.Plugin
 	data       data.Manager
 
@@ -72,13 +70,12 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, defaultKey, orgName, orgKey string, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
-	if di == nil || ii == nil || bi == nil {
+func NewIdentityManager(ctx context.Context, defaultKey, orgName, orgKey string, di database.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
+	if di == nil || bi == nil || dm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
 	im := &identityManager{
 		database:               di,
-		plugin:                 ii,
 		blockchain:             bi,
 		data:                   dm,
 		defaultKey:             defaultKey,

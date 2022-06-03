@@ -54,7 +54,6 @@ type Orchestrator interface {
 	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
-	AdminEvents() adminevents.Manager
 	Assets() assets.Manager
 	BatchManager() batch.Manager
 	Broadcast() broadcast.Manager
@@ -190,12 +189,12 @@ type orchestrator struct {
 	node           *fftypes.UUID
 	metrics        metrics.Manager
 	operations     operations.Manager
-	adminEvents    adminevents.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
+	adminEvents    adminevents.Manager
 }
 
-func NewOrchestrator(ns, defaultKey string, multiparty MultipartyConfig, bc BlockchainPlugin, db DatabasePlugin, ss SharedStoragePlugin, dx DataexchangePlugin, tokens map[string]TokensPlugin, id IdentityPlugin, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns, defaultKey string, multiparty MultipartyConfig, bc BlockchainPlugin, db DatabasePlugin, ss SharedStoragePlugin, dx DataexchangePlugin, tokens map[string]TokensPlugin, id IdentityPlugin, metrics metrics.Manager, adminEvents adminevents.Manager) Orchestrator {
 	or := &orchestrator{
 		namespace:     ns,
 		defaultKey:    defaultKey,
@@ -207,6 +206,7 @@ func NewOrchestrator(ns, defaultKey string, multiparty MultipartyConfig, bc Bloc
 		tokens:        tokens,
 		idPlugin:      id,
 		metrics:       metrics,
+		adminEvents:   adminEvents,
 	}
 
 	return or
@@ -230,11 +230,14 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 
 func (or *orchestrator) Start() (err error) {
 	var ns *core.Namespace
-	err = or.metrics.Start()
+	ns, err = or.database.Plugin.GetNamespace(or.ctx, or.namespace)
 	if err == nil {
-		ns, err = or.database.Plugin.GetNamespace(or.ctx, or.namespace)
-	}
-	if err == nil {
+		if ns == nil {
+			ns = &core.Namespace{
+				Name:    or.namespace,
+				Created: fftypes.Now(),
+			}
+		}
 		err = or.blockchain.Plugin.ConfigureContract(or.ctx, &ns.Contracts)
 	}
 	if err == nil {
@@ -296,10 +299,6 @@ func (or *orchestrator) WaitStop() {
 		or.operations.WaitStop()
 		or.operations = nil
 	}
-	if or.adminEvents != nil {
-		or.adminEvents.WaitStop()
-		or.adminEvents = nil
-	}
 	or.started = false
 }
 
@@ -341,10 +340,6 @@ func (or *orchestrator) Metrics() metrics.Manager {
 
 func (or *orchestrator) Operations() operations.Manager {
 	return or.operations
-}
-
-func (or *orchestrator) AdminEvents() adminevents.Manager {
-	return or.adminEvents
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
@@ -401,7 +396,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.defaultKey, or.multiparty.OrgName, or.multiparty.OrgKey, or.database.Plugin, or.idPlugin.Plugin, or.blockchain.Plugin, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.defaultKey, or.multiparty.OrgName, or.multiparty.OrgKey, or.database.Plugin, or.blockchain.Plugin, or.data)
 		if err != nil {
 			return err
 		}
@@ -441,7 +436,11 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database.Plugin, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, nil, or.metrics, or.operations, or.txHelper)
+		plugins := make(map[string]tokens.Plugin, len(or.tokens))
+		for _, v := range or.tokens {
+			plugins[v.Name] = v.Plugin
+		}
+		or.assets, err = assets.NewAssetManager(ctx, or.database.Plugin, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, plugins, or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}
