@@ -28,13 +28,13 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/apiserver"
-	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigDocsUpToDate(t *testing.T) {
 	// Initialize config of all plugins
-	orchestrator.NewOrchestrator(false)
+	namespace.NewNamespaceManager(false)
 	apiserver.InitConfig()
 	generatedConfig, err := config.GenerateConfigMarkdown(context.Background(), config.GetKnownKeys())
 	assert.NoError(t, err)

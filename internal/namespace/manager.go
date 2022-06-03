@@ -66,7 +66,8 @@ type Manager interface {
 
 type namespace struct {
 	orchestrator  orchestrator.Orchestrator
-	multiparty    bool
+	defaultKey    string
+	multiparty    orchestrator.MultipartyConfig
 	database      orchestrator.DatabasePlugin
 	blockchain    orchestrator.BlockchainPlugin
 	dataexchange  orchestrator.DataexchangePlugin
@@ -92,6 +93,8 @@ type namespaceManager struct {
 
 func NewNamespaceManager(withDefaults bool) Manager {
 	nm := &namespaceManager{}
+
+	InitConfig(withDefaults)
 
 	// Initialize the config on all the factories
 	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
@@ -125,7 +128,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 
 	// Start an orchestrator per namespace
 	for name, ns := range nm.namespaces {
-		or := orchestrator.NewOrchestrator(name, ns.blockchain, ns.database, ns.sharedstorage, ns.dataexchange, ns.tokens, ns.identity, nm.metrics)
+		or := orchestrator.NewOrchestrator(name, ns.defaultKey, ns.multiparty, ns.blockchain, ns.database, ns.sharedstorage, ns.dataexchange, ns.tokens, ns.identity, nm.metrics)
 		if err = or.Init(ctx, cancelCtx); err != nil {
 			return err
 		}
@@ -513,9 +516,21 @@ func (nm *namespaceManager) buildAndValidateNamespaces(ctx context.Context, name
 	}
 
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
+	orgName := conf.GetString(coreconfig.NamespaceMultipartyOrgName)
+	if orgName == "" {
+		orgName = config.GetString(coreconfig.OrgName)
+	}
+	orgKey := conf.GetString(coreconfig.NamespaceMultipartyOrgKey)
+	if orgKey == "" {
+		orgKey = config.GetString(coreconfig.OrgKey)
+	}
+	orgDesc := conf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
+	if orgDesc == "" {
+		orgDesc = config.GetString(coreconfig.OrgDescription)
+	}
 	multiparty := conf.Get(coreconfig.NamespaceMultipartyEnabled)
 	if multiparty == nil {
-		multiparty = nm.GetMultipartyConfig(name, coreconfig.OrgName) != "" || nm.GetMultipartyConfig(name, coreconfig.OrgKey) != ""
+		multiparty = orgName != "" || orgKey != ""
 	}
 
 	// If no plugins are listed under this namespace, use all defined plugins by default
@@ -538,13 +553,21 @@ func (nm *namespaceManager) buildAndValidateNamespaces(ctx context.Context, name
 		}
 	}
 
+	defaultKey := conf.GetString(coreconfig.NamespaceDefaultKey)
+
 	if multiparty.(bool) {
-		return nm.validateMultiPartyConfig(ctx, name, plugins)
+		config := orchestrator.MultipartyConfig{
+			Enabled: true,
+			OrgName: orgName,
+			OrgKey:  orgKey,
+			OrgDesc: orgDesc,
+		}
+		return nm.validateMultiPartyConfig(ctx, name, defaultKey, config, plugins)
 	}
-	return nm.validateGatewayConfig(ctx, name, plugins)
+	return nm.validateGatewayConfig(ctx, name, defaultKey, plugins)
 }
 
-func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) error {
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name, defaultKey string, config orchestrator.MultipartyConfig, plugins []string) error {
 	var dbPlugin bool
 	var ssPlugin bool
 	var dxPlugin bool
@@ -552,7 +575,8 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 
 	ns := namespace{
 		tokens:     make(map[string]orchestrator.TokensPlugin),
-		multiparty: true,
+		multiparty: config,
+		defaultKey: defaultKey,
 	}
 
 	for _, pluginName := range plugins {
@@ -608,12 +632,13 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	return nil
 }
 
-func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, plugins []string) error {
+func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name, defaultKey string, plugins []string) error {
 	var dbPlugin bool
 	var bcPlugin bool
 
 	ns := namespace{
-		tokens: make(map[string]orchestrator.TokensPlugin),
+		tokens:     make(map[string]orchestrator.TokensPlugin),
+		defaultKey: defaultKey,
 	}
 
 	for _, pluginName := range plugins {

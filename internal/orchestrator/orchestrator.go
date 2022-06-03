@@ -154,11 +154,20 @@ type IdentityPlugin struct {
 	Config config.Section
 }
 
+type MultipartyConfig struct {
+	Enabled bool
+	OrgName string
+	OrgDesc string
+	OrgKey  string
+}
+
 type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
 	started        bool
 	namespace      string
+	defaultKey     string
+	multiparty     MultipartyConfig
 	blockchain     BlockchainPlugin
 	identity       identity.Manager
 	idPlugin       IdentityPlugin
@@ -186,9 +195,11 @@ type orchestrator struct {
 	txHelper       txcommon.Helper
 }
 
-func NewOrchestrator(ns string, bc BlockchainPlugin, db DatabasePlugin, ss SharedStoragePlugin, dx DataexchangePlugin, tokens map[string]TokensPlugin, id IdentityPlugin, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns, defaultKey string, multiparty MultipartyConfig, bc BlockchainPlugin, db DatabasePlugin, ss SharedStoragePlugin, dx DataexchangePlugin, tokens map[string]TokensPlugin, id IdentityPlugin, metrics metrics.Manager) Orchestrator {
 	or := &orchestrator{
 		namespace:     ns,
+		defaultKey:    defaultKey,
+		multiparty:    multiparty,
 		blockchain:    bc,
 		database:      db,
 		sharedstorage: ss,
@@ -390,7 +401,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database.Plugin, or.idPlugin.Plugin, or.blockchain.Plugin, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.defaultKey, or.multiparty.OrgName, or.multiparty.OrgKey, or.database.Plugin, or.idPlugin.Plugin, or.blockchain.Plugin, or.data)
 		if err != nil {
 			return err
 		}
@@ -465,7 +476,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database.Plugin, or.broadcast, or.dataexchange.Plugin, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.multiparty.OrgName, or.multiparty.OrgDesc, or.database.Plugin, or.data, or.broadcast, or.dataexchange.Plugin, or.identity, or.syncasync)
 		if err != nil {
 			return err
 		}

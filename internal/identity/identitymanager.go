@@ -61,6 +61,9 @@ type identityManager struct {
 	blockchain blockchain.Plugin
 	data       data.Manager
 
+	defaultKey             string
+	orgName                string
+	orgKey                 string
 	multipartyRootVerifier map[string]*core.VerifierRef
 	multipartyRootOrg      map[string]*core.Identity
 	identityCacheTTL       time.Duration
@@ -69,7 +72,7 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, defaultKey, orgName, orgKey string, di database.Plugin, ii identity.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
 	if di == nil || ii == nil || bi == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
@@ -78,6 +81,9 @@ func NewIdentityManager(ctx context.Context, di database.Plugin, ii identity.Plu
 		plugin:                 ii,
 		blockchain:             bi,
 		data:                   dm,
+		defaultKey:             defaultKey,
+		orgName:                orgName,
+		orgKey:                 orgKey,
 		multipartyRootVerifier: make(map[string]*core.VerifierRef),
 		multipartyRootOrg:      make(map[string]*core.Identity),
 		identityCacheTTL:       config.GetDuration(coreconfig.IdentityManagerCacheTTL),
@@ -228,9 +234,8 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, na
 
 // getDefaultVerifier gets the default blockchain verifier via the configuration
 func (im *identityManager) getDefaultVerifier(ctx context.Context, namespace string) (verifier *core.VerifierRef, err error) {
-	defaultKey := im.namespace.GetDefaultKey(namespace)
-	if defaultKey != "" {
-		return im.normalizeKeyViaBlockchainPlugin(ctx, defaultKey)
+	if im.defaultKey != "" {
+		return im.normalizeKeyViaBlockchainPlugin(ctx, im.defaultKey)
 	}
 	return im.GetMultipartyRootVerifier(ctx, namespace)
 }
@@ -241,12 +246,11 @@ func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context, namesp
 		return key, nil
 	}
 
-	orgKey := im.namespace.GetMultipartyConfig(namespace, coreconfig.OrgKey)
-	if orgKey == "" {
+	if im.orgKey == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, orgKey)
+	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, im.orgKey)
 	if err != nil {
 		return nil, err
 	}
@@ -294,14 +298,13 @@ func (im *identityManager) GetMultipartyRootOrg(ctx context.Context, namespace s
 		return nil, err
 	}
 
-	orgName := im.namespace.GetMultipartyConfig(namespace, coreconfig.OrgName)
 	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, namespace, verifierRef)
 	if err != nil || identity == nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, im.orgName, verifierRef.Value)
 	}
 	// Confirm that the specified blockchain key is associated with the correct org
-	if identity.Type != core.IdentityTypeOrg || identity.Name != orgName {
-		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
+	if identity.Type != core.IdentityTypeOrg || identity.Name != im.orgName {
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, im.orgName, verifierRef.Value)
 	}
 	im.multipartyRootOrg[namespace] = identity
 	return identity, nil

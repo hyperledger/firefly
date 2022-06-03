@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -113,8 +112,7 @@ func TestGetStatusRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
-	mns := or.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+	or.multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -177,9 +175,6 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	mnm := or.networkmap.(*networkmapmocks.Manager)
 	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	mns := or.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
-
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
@@ -222,8 +217,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 		}},
 	}, nil, nil)
 
-	mns := or.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+	or.multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -254,8 +248,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
 
-	mns := or.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+	or.multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -302,8 +295,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
-	mns := or.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
+	or.multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -359,9 +351,6 @@ func TestGetStatusNodeError(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
-
-	mns := or.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns", coreconfig.OrgName).Return("org1")
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)

@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,14 +39,13 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	mdx := &dataexchangemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
-	mns := &namespacemocks.Manager{}
-	nm, err := NewNetworkMap(ctx, mdi, mdm, mbm, mdx, mim, msa, mns)
+	nm, err := NewNetworkMap(ctx, "org0", "org0", mdi, mdm, mbm, mdx, mim, msa)
 	assert.NoError(t, err)
 	return nm.(*networkMap), cancel
 
 }
 
 func TestNewNetworkMapMissingDep(t *testing.T) {
-	_, err := NewNetworkMap(context.Background(), nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewNetworkMap(context.Background(), "", "", nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }

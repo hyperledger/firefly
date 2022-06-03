@@ -169,6 +169,8 @@ func newTestOrchestrator() *testOrchestrator {
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
 		"ns1",
+		"0x1234",
+		MultipartyConfig{},
 		BlockchainPlugin{},
 		DatabasePlugin{},
 		SharedStoragePlugin{},

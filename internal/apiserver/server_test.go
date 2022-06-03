@@ -36,6 +36,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/apiservermocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
+	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -44,31 +45,33 @@ import (
 
 const configDir = "../../test/data/config"
 
-func newTestServer() (*orchestratormocks.Orchestrator, *apiServer) {
+func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, *apiServer) {
 	coreconfig.Reset()
 	InitConfig()
-	mor := &orchestratormocks.Orchestrator{}
+	mgr := &namespacemocks.Manager{}
+	o := &orchestratormocks.Orchestrator{}
+	mgr.On("Orchestrator", mock.Anything).Return(o)
 	as := &apiServer{
 		apiTimeout:     5 * time.Second,
 		maxFilterLimit: 100,
 		ffiSwaggerGen:  &apiservermocks.FFISwaggerGen{},
 	}
-	return mor, as
+	return mgr, o, as
 }
 
 func newTestAPIServer() (*orchestratormocks.Orchestrator, *mux.Router) {
-	mor, as := newTestServer()
-	r := as.createMuxRouter(context.Background(), mor)
-	return mor, r
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	return o, r
 }
 
-func newTestAdminServer() (*orchestratormocks.Orchestrator, *mux.Router) {
+func newTestAdminServer() (*namespacemocks.Manager, *mux.Router) {
 	config.Set(coreconfig.NamespacesDefault, "default")
-	mor, as := newTestServer()
+	mgr, _, as := newTestServer()
 	mae := &admineventsmocks.Manager{}
-	mor.On("AdminEvents").Return(mae)
-	r := as.createAdminMuxRouter(mor)
-	return mor, r
+	mgr.On("AdminEvents").Return(mae)
+	r := as.createAdminMuxRouter(mgr)
+	return mgr, r
 }
 
 func TestStartStopServer(t *testing.T) {
@@ -82,10 +85,10 @@ func TestStartStopServer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mgr := &namespacemocks.Manager{}
 	mae := &admineventsmocks.Manager{}
-	mor.On("AdminEvents").Return(mae)
-	err := as.Serve(ctx, mor)
+	mgr.On("AdminEvents").Return(mae)
+	err := as.Serve(ctx, mgr)
 	assert.NoError(t, err)
 }
 
@@ -97,8 +100,8 @@ func TestStartAPIFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
-	err := as.Serve(ctx, mor)
+	mgr := &namespacemocks.Manager{}
+	err := as.Serve(ctx, mgr)
 	assert.Regexp(t, "FF00151", err)
 }
 
@@ -111,10 +114,10 @@ func TestStartAdminFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mgr := &namespacemocks.Manager{}
 	mae := &admineventsmocks.Manager{}
-	mor.On("AdminEvents").Return(mae)
-	err := as.Serve(ctx, mor)
+	mgr.On("AdminEvents").Return(mae)
+	err := as.Serve(ctx, mgr)
 	assert.Regexp(t, "FF00151", err)
 }
 
@@ -125,15 +128,15 @@ func TestStartAdminWSHandler(t *testing.T) {
 	adminConfig.Set(httpserver.HTTPConfAddress, "...://")
 	config.Set(coreconfig.AdminEnabled, true)
 	as := NewAPIServer().(*apiServer)
-	mor := &orchestratormocks.Orchestrator{}
+	mgr := &namespacemocks.Manager{}
 	mae := &admineventsmocks.Manager{}
-	mor.On("AdminEvents").Return(mae)
+	mgr.On("AdminEvents").Return(mae)
 	mae.On("ServeHTTPWebSocketListener", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		res := args[0].(http.ResponseWriter)
 		res.WriteHeader(200)
 	}).Return()
 	res := httptest.NewRecorder()
-	as.adminWSHandler(mor).ServeHTTP(res, httptest.NewRequest("GET", "/", nil))
+	as.adminWSHandler(mgr).ServeHTTP(res, httptest.NewRequest("GET", "/", nil))
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
 
@@ -146,15 +149,15 @@ func TestStartMetricsFail(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // server will immediately shut down
 	as := NewAPIServer()
-	mor := &orchestratormocks.Orchestrator{}
+	mgr := &namespacemocks.Manager{}
 	mae := &admineventsmocks.Manager{}
-	mor.On("AdminEvents").Return(mae)
-	err := as.Serve(ctx, mor)
+	mgr.On("AdminEvents").Return(mae)
+	err := as.Serve(ctx, mgr)
 	assert.Regexp(t, "FF00151", err)
 }
 
 func TestNotFound(t *testing.T) {
-	_, as := newTestServer()
+	_, _, as := newTestServer()
 	handler := as.handlerFactory().APIWrapper(as.notFoundHandler)
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
@@ -168,8 +171,8 @@ func TestNotFound(t *testing.T) {
 }
 
 func TestFilterTooMany(t *testing.T) {
-	mor, as := newTestServer()
-	handler := as.routeHandler(as.handlerFactory(), mor, "", getBatches)
+	mgr, _, as := newTestServer()
+	handler := as.routeHandler(as.handlerFactory(), mgr, "", getBatches)
 
 	req := httptest.NewRequest("GET", "http://localhost:12345/test?limit=99999999999", nil)
 	res := httptest.NewRecorder()
@@ -181,7 +184,7 @@ func TestFilterTooMany(t *testing.T) {
 }
 
 func TestSwaggerYAML(t *testing.T) {
-	_, as := newTestServer()
+	_, _, as := newTestServer()
 	handler := as.handlerFactory().APIWrapper(as.swaggerHandler(as.swaggerGenerator(routes, "http://localhost:12345/api/v1")))
 	s := httptest.NewServer(http.HandlerFunc(handler))
 	defer s.Close()
@@ -243,8 +246,8 @@ func TestWaitForServerStop(t *testing.T) {
 }
 
 func TestContractAPISwaggerJSON(t *testing.T) {
-	o, as := newTestServer()
-	r := as.createMuxRouter(context.Background(), o)
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	mffi := as.ffiSwaggerGen.(*apiservermocks.FFISwaggerGen)
@@ -268,8 +271,8 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 }
 
 func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
-	o, as := newTestServer()
-	r := as.createMuxRouter(context.Background(), o)
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	s := httptest.NewServer(r)
@@ -283,8 +286,8 @@ func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
 }
 
 func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
-	o, as := newTestServer()
-	r := as.createMuxRouter(context.Background(), o)
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	s := httptest.NewServer(r)
@@ -298,8 +301,8 @@ func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
 }
 
 func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
-	o, as := newTestServer()
-	r := as.createMuxRouter(context.Background(), o)
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
 	mcm := &contractmocks.Manager{}
 	o.On("Contracts").Return(mcm)
 	s := httptest.NewServer(r)
