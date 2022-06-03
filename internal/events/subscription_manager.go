@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/system"
-	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -569,12 +568,4 @@ func (sm *subscriptionManager) deliveryResponse(ei events.Plugin, connID string,
 	}
 	sm.mux.Unlock()
 	dispatcher.deliveryResponse(inflight)
-}
-
-func (sm *subscriptionManager) getWebSocketStatus() *core.WebSocketStatus {
-	pluginName := (*websockets.WebSockets)(nil).Name()
-	if plugin, ok := sm.transports[pluginName]; ok {
-		return plugin.(*websockets.WebSockets).GetStatus()
-	}
-	return &core.WebSocketStatus{Enabled: false}
 }

@@ -59,7 +59,6 @@ type EventManager interface {
 	DeletedSubscriptions() chan<- *fftypes.UUID
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
-	GetWebSocketStatus() *core.WebSocketStatus
 	Start() error
 	WaitStop()
 
@@ -258,8 +257,4 @@ func (em *eventManager) GetPlugins() []*core.NodeStatusPlugin {
 	}
 
 	return eventsArray
-}
-
-func (em *eventManager) GetWebSocketStatus() *core.WebSocketStatus {
-	return em.subManager.getWebSocketStatus()
 }

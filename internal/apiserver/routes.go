@@ -44,6 +44,7 @@ var routes = append(
 	globalRoutes([]*ffapi.Route{
 		getNamespace,
 		getNamespaces,
+		getWebSockets,
 	}),
 	namespacedRoutes([]*ffapi.Route{
 		deleteContractListener,
