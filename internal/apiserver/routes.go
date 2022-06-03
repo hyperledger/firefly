@@ -91,6 +91,7 @@ var routes = append(
 		getNetworkOrgs,
 		getOpByID,
 		getOps,
+		getPins,
 		getStatus,
 		getSubscriptionByID,
 		getSubscriptions,

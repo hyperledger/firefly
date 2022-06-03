@@ -19490,6 +19490,155 @@ paths:
           description: ""
       tags:
       - Non-Default Namespace
+  /namespaces/{ns}/pins:
+    get:
+      description: Queries the pins table that is the status of the event aggregator
+      operationId: getPinsNamespace
+      parameters:
+      - description: The namespace which scopes this request
+        in: path
+        name: ns
+        required: true
+        schema:
+          example: default
+          type: string
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: dispatched
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: index
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: masked
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    batch:
+                      description: The UUID of the batch of messages this pin is part
+                        of
+                      format: uuid
+                      type: string
+                    batchHash:
+                      description: The manifest hash batch of messages this pin is
+                        part of
+                      format: byte
+                      type: string
+                    created:
+                      description: The time the FireFly node created the pin
+                      format: date-time
+                      type: string
+                    dispatched:
+                      description: Once true, this pin has been processed and will
+                        not be processed again
+                      type: boolean
+                    hash:
+                      description: The hash represents a topic within a message in
+                        the batch. If a message has multiple topics, then multiple
+                        pins are created. If the message is private, the hash is masked
+                        for privacy
+                      format: byte
+                      type: string
+                    index:
+                      description: The index of this pin within the batch. One pin
+                        is created for each topic, of each message in the batch
+                      format: int64
+                      type: integer
+                    masked:
+                      description: True if the pin is for a private message, and hence
+                        is masked with the group ID and salted with a nonce so observers
+                        of the blockchain cannot use pin hash to match this transaction
+                        to other transactions or participants
+                      type: boolean
+                    sequence:
+                      description: The order of the pin in the local FireFly database,
+                        which matches the order in which pins were delivered to FireFly
+                        by the blockchain connector event stream
+                      format: int64
+                      type: integer
+                    signer:
+                      description: The blockchain signing key that submitted this
+                        transaction, as passed through to FireFly by the smart contract
+                        that emitted the blockchain event
+                      type: string
+                  type: object
+                type: array
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Non-Default Namespace
   /namespaces/{ns}/status:
     get:
       description: Gets the status of this node
@@ -26735,6 +26884,148 @@ paths:
                     format: date-time
                     type: string
                 type: object
+          description: Success
+        default:
+          description: ""
+      tags:
+      - Default Namespace
+  /pins:
+    get:
+      description: Queries the pins table that is the status of the event aggregator
+      operationId: getPins
+      parameters:
+      - description: Server-side request timeout (milliseconds, or set a custom suffix
+          like 10s)
+        in: header
+        name: Request-Timeout
+        schema:
+          default: 2m0s
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: batch
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: created
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: dispatched
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: hash
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: index
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: masked
+        schema:
+          type: string
+      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
+        in: query
+        name: sequence
+        schema:
+          type: string
+      - description: Sort field. For multi-field sort use comma separated values (or
+          multiple query values) with '-' prefix for descending
+        in: query
+        name: sort
+        schema:
+          type: string
+      - description: Ascending sort order (overrides all fields in a multi-field sort)
+        in: query
+        name: ascending
+        schema:
+          type: string
+      - description: Descending sort order (overrides all fields in a multi-field
+          sort)
+        in: query
+        name: descending
+        schema:
+          type: string
+      - description: 'The number of records to skip (max: 1,000). Unsuitable for bulk
+          operations'
+        in: query
+        name: skip
+        schema:
+          type: string
+      - description: 'The maximum number of records to return (max: 1,000)'
+        in: query
+        name: limit
+        schema:
+          example: "25"
+          type: string
+      - description: Return a total count as well as items (adds extra database processing)
+        in: query
+        name: count
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    batch:
+                      description: The UUID of the batch of messages this pin is part
+                        of
+                      format: uuid
+                      type: string
+                    batchHash:
+                      description: The manifest hash batch of messages this pin is
+                        part of
+                      format: byte
+                      type: string
+                    created:
+                      description: The time the FireFly node created the pin
+                      format: date-time
+                      type: string
+                    dispatched:
+                      description: Once true, this pin has been processed and will
+                        not be processed again
+                      type: boolean
+                    hash:
+                      description: The hash represents a topic within a message in
+                        the batch. If a message has multiple topics, then multiple
+                        pins are created. If the message is private, the hash is masked
+                        for privacy
+                      format: byte
+                      type: string
+                    index:
+                      description: The index of this pin within the batch. One pin
+                        is created for each topic, of each message in the batch
+                      format: int64
+                      type: integer
+                    masked:
+                      description: True if the pin is for a private message, and hence
+                        is masked with the group ID and salted with a nonce so observers
+                        of the blockchain cannot use pin hash to match this transaction
+                        to other transactions or participants
+                      type: boolean
+                    sequence:
+                      description: The order of the pin in the local FireFly database,
+                        which matches the order in which pins were delivered to FireFly
+                        by the blockchain connector event stream
+                      format: int64
+                      type: integer
+                    signer:
+                      description: The blockchain signing key that submitted this
+                        transaction, as passed through to FireFly by the smart contract
+                        that emitted the blockchain event
+                      type: string
+                  type: object
+                type: array
           description: Success
         default:
           description: ""
