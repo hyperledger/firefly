@@ -150,7 +150,7 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, "", mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
@@ -172,7 +172,8 @@ func TestRunOperationFail(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusFailed, "pop", mock.Anything).Return(nil)
+	errStr := "pop"
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusFailed, &errStr, mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
@@ -194,7 +195,8 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusPending, "pop", mock.Anything).Return(nil)
+	errStr := "pop"
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusPending, &errStr, mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
@@ -385,7 +387,7 @@ func TestWriteOperationSuccess(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.writeOperationSuccess(ctx, "ns1", opID, nil)
 
@@ -400,7 +402,8 @@ func TestWriteOperationFailure(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
+	errStr := "pop"
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusFailed, &errStr, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.writeOperationFailure(ctx, "ns1", opID, nil, fmt.Errorf("pop"), core.OpStatusFailed)
 
@@ -445,8 +448,8 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 			},
 		},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
-		return strings.Contains(errorMsg, "FF10329")
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg *string) bool {
+		return strings.Contains(*errorMsg, "FF10329")
 	}), fftypes.JSONObject{
 		"extra": "info",
 	}).Return(nil)
@@ -494,8 +497,8 @@ func TestTransferResultHashMismatch(t *testing.T) {
 			},
 		},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
-		return strings.Contains(errorMsg, "FF10348")
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg *string) bool {
+		return strings.Contains(*errorMsg, "FF10348")
 	}), fftypes.JSONObject{
 		"extra": "info",
 	}).Return(nil)
@@ -566,16 +569,17 @@ func TestResolveOperationByIDOk(t *testing.T) {
 
 	ctx := context.Background()
 	opID := fftypes.NewUUID()
+	errStr := "my error"
 	opUpdate := &core.OperationUpdateDTO{
 		Status: core.OpStatusSucceeded,
-		Error:  "my error",
+		Error:  &errStr,
 		Output: fftypes.JSONObject{
 			"my": "data",
 		},
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, "my error", fftypes.JSONObject{
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, &errStr, fftypes.JSONObject{
 		"my": "data",
 	}).Return(nil)
 

@@ -120,10 +120,12 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 		{ID: opID3, Namespace: "ns1", Type: core.OpTypeTokenApproval, Input: fftypes.JSONObject{"test": "test"}},
 	}, nil, nil)
 	mdi.On("GetTransactions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Transaction{tx1}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, "", fftypes.JSONObject(nil)).Return(nil)
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject(nil)).Return(nil)
 	mdi.On("UpdateTransaction", mock.Anything, tx1.ID, mock.Anything).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, core.OpStatusFailed, "err1", fftypes.JSONObject{"test": true}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID3, core.OpStatusFailed, "err2", fftypes.JSONObject(nil)).Return(nil).
+	err1Str := "err1"
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID2, core.OpStatusFailed, &err1Str, fftypes.JSONObject{"test": true}).Return(nil)
+	err2Str := "err2"
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID3, core.OpStatusFailed, &err2Str, fftypes.JSONObject(nil)).Return(nil).
 		Run(func(args mock.Arguments) {
 			close(done)
 		})

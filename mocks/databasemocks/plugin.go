@@ -2521,11 +2521,11 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *core.Message) err
 }
 
 // ResolveOperation provides a mock function with given fields: ctx, ns, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) error {
 	ret := _m.Called(ctx, ns, id, status, errorMsg, output)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, string, fftypes.JSONObject) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, *string, fftypes.JSONObject) error); ok {
 		r0 = rf(ctx, ns, id, status, errorMsg, output)
 	} else {
 		r0 = ret.Error(0)

@@ -220,7 +220,7 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
+	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update Update) (err error)

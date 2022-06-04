@@ -90,7 +90,7 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		args[2].(database.PostCompletionHook)()
 	}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusSucceeded, "", fftypes.JSONObject{
+	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject{
 		"batch": batchID,
 	}).Run(func(args mock.Arguments) {
 		close(called)
@@ -140,7 +140,7 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 		args[2].(database.PostCompletionHook)()
 	}).Return(nil)
 	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusPending, mock.Anything, mock.Anything).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusSucceeded, "", fftypes.JSONObject{
+	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusSucceeded, mock.Anything, fftypes.JSONObject{
 		"hash":         blobHash,
 		"size":         int64(12345),
 		"dxPayloadRef": "privateRef1",
@@ -244,10 +244,11 @@ func TestDownloadManagerStartupRecoveryCombinations(t *testing.T) {
 		assert.NoError(t, err)
 		return fi.Skip == 25 && fi.Limit == 25
 	})).Return([]*core.Operation{}, nil, nil).Once()
-	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusFailed, "pop", mock.Anything).Run(func(args mock.Arguments) {
+	errStr := "pop"
+	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusFailed, &errStr, mock.Anything).Run(func(args mock.Arguments) {
 		called <- true
 	}).Return(nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusSucceeded, "", mock.Anything).Run(func(args mock.Arguments) {
+	mdi.On("ResolveOperation", mock.Anything, "ns1", mock.Anything, core.OpStatusSucceeded, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		called <- true
 	}).Return(nil)
 

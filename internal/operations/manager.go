@@ -200,13 +200,15 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataex
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject) {
-	if err := om.database.ResolveOperation(ctx, ns, opID, core.OpStatusSucceeded, "", outputs); err != nil {
+	emptyString := ""
+	if err := om.database.ResolveOperation(ctx, ns, opID, core.OpStatusSucceeded, &emptyString, outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
 func (om *operationsManager) writeOperationFailure(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
-	if err := om.database.ResolveOperation(ctx, ns, opID, newStatus, err.Error(), outputs); err != nil {
+	errMsg := err.Error()
+	if err := om.database.ResolveOperation(ctx, ns, opID, newStatus, &errMsg, outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }

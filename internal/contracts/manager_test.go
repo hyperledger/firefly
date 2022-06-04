@@ -1580,24 +1580,6 @@ func TestGetContractListenerByNameOrIDFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestGetContractListenerByIDGlobal(t *testing.T) {
-	cm := newTestContractManager()
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	id := fftypes.NewUUID()
-	mdi.On("GetContractListenerByID", context.Background(), id).Return(&core.ContractListener{}, nil)
-
-	_, err := cm.GetContractListenerByIDGlobal(context.Background(), id.String())
-	assert.NoError(t, err)
-}
-
-func TestGetContractListenerByIDGlobalBadUUID(t *testing.T) {
-	cm := newTestContractManager()
-
-	_, err := cm.GetContractListenerByIDGlobal(context.Background(), "!bad")
-	assert.Regexp(t, "FF00138", err)
-}
-
 func TestGetContractListenerByName(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
@@ -1643,17 +1625,6 @@ func TestGetContractListeners(t *testing.T) {
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
 	_, _, err := cm.GetContractListeners(context.Background(), "ns", f.And())
-	assert.NoError(t, err)
-}
-
-func TestGetContractListenersGlobal(t *testing.T) {
-	cm := newTestContractManager()
-	mdi := cm.database.(*databasemocks.Plugin)
-
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
-
-	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractListenersGlobal(context.Background(), f.And())
 	assert.NoError(t, err)
 }
 

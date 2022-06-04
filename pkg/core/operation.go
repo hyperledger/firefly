@@ -101,7 +101,7 @@ type Operation struct {
 type OperationUpdateDTO struct {
 	Status OpStatus           `ffstruct:"Operation" json:"status"`
 	Output fftypes.JSONObject `ffstruct:"Operation" json:"output,omitempty"`
-	Error  string             `ffstruct:"Operation" json:"error,omitempty"`
+	Error  *string            `ffstruct:"Operation" json:"error,omitempty"`
 }
 
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin

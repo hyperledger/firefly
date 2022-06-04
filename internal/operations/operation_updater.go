@@ -278,7 +278,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 		}
 	}
 
-	if err := ou.database.ResolveOperation(ctx, op.Namespace, op.ID, update.Status, update.ErrorMessage, update.Output); err != nil {
+	if err := ou.database.ResolveOperation(ctx, op.Namespace, op.ID, update.Status, &update.ErrorMessage, update.Output); err != nil {
 		return err
 	}
 
