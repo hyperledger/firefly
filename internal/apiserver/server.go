@@ -329,7 +329,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 		}
 	}
 	r.HandleFunc(`/spi/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.swaggerGenerator(spiRoutes, apiBaseURL))))
-	r.HandleFunc(`/spi`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/api/swagger.yaml")))
+	r.HandleFunc(`/spi`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
 	r.HandleFunc(`/spi/ws`, as.spiWSHandler(o))
