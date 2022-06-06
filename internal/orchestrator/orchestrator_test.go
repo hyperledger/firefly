@@ -43,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -131,21 +132,20 @@ func newTestOrchestrator() *testOrchestrator {
 		mae: &admineventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 	}
-	tor.orchestrator.database.Plugin = tor.mdi
+	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
-	tor.orchestrator.sharedstorage.Plugin = tor.mps
+	tor.orchestrator.sharedstorage = tor.mps
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.identity = tor.mim
-	tor.orchestrator.idPlugin.Plugin = tor.mii
-	tor.orchestrator.dataexchange.Plugin = tor.mdx
+	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
-	tor.orchestrator.tokens = map[string]TokensPlugin{"token": {Plugin: tor.mti}}
-	tor.orchestrator.blockchain.Plugin = tor.mbi
+	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
+	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
@@ -169,14 +169,7 @@ func newTestOrchestrator() *testOrchestrator {
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
 		"ns1",
-		"0x1234",
-		MultipartyConfig{},
-		BlockchainPlugin{},
-		DatabasePlugin{},
-		SharedStoragePlugin{},
-		DataexchangePlugin{},
-		map[string]TokensPlugin{},
-		IdentityPlugin{},
+		Config{},
 		&metricsmocks.Manager{},
 		&admineventsmocks.Manager{},
 	)

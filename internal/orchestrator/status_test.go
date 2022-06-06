@@ -112,7 +112,7 @@ func TestGetStatusRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
-	or.multiparty.OrgName = "org1"
+	or.config.Multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -216,7 +216,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 		}},
 	}, nil, nil)
 
-	or.multiparty.OrgName = "org1"
+	or.config.Multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -247,7 +247,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	mim := or.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
 
-	or.multiparty.OrgName = "org1"
+	or.config.Multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -294,7 +294,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		}},
 	}, nil, nil)
 
-	or.multiparty.OrgName = "org1"
+	or.config.Multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)

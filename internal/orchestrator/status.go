@@ -34,28 +34,32 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	for name, plugin := range or.tokens {
 		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
 			Name:       name,
-			PluginType: plugin.Plugin.Name(),
+			PluginType: plugin.Name(),
 		})
 	}
 
 	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
 	blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
-		PluginType: or.blockchain.Plugin.Name(),
+		Name:       or.config.Blockchain.Name,
+		PluginType: or.blockchain.Name(),
 	})
 
 	databasesArray := make([]*core.NodeStatusPlugin, 0)
 	databasesArray = append(databasesArray, &core.NodeStatusPlugin{
-		PluginType: or.database.Plugin.Name(),
+		Name:       or.config.Database.Name,
+		PluginType: or.database.Name(),
 	})
 
 	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
 	sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
-		PluginType: or.sharedstorage.Plugin.Name(),
+		Name:       or.config.Sharedstorage.Name,
+		PluginType: or.sharedstorage.Name(),
 	})
 
 	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
 	dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
-		PluginType: or.dataexchange.Plugin.Name(),
+		Name:       or.config.Dataexchange.Name,
+		PluginType: or.dataexchange.Name(),
 	})
 
 	return core.NodeStatusPlugins{
@@ -97,7 +101,7 @@ func (or *orchestrator) GetStatus(ctx context.Context, ns string) (status *core.
 			Name: config.GetString(coreconfig.NodeName),
 		},
 		Org: core.NodeStatusOrg{
-			Name: or.multiparty.OrgName,
+			Name: or.config.Multiparty.OrgName,
 		},
 		Plugins: or.getPlugins(),
 	}
