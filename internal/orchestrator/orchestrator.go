@@ -483,16 +483,12 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database, or.data, or.broadcast, or.dataexchange, or.identity, or.syncasync)
-		if err != nil {
-			return err
-		}
-	}
-
 	or.syncasync.Init(or.events)
 
-	return nil
+	if or.networkmap == nil {
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database, or.data, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+	}
+	return err
 }
 
 func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {

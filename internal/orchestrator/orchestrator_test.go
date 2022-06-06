@@ -18,9 +18,11 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
@@ -43,8 +45,10 @@ import (
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 const configDir = "../../test/data/config"
@@ -108,6 +112,7 @@ func newTestOrchestrator() *testOrchestrator {
 		orchestrator: orchestrator{
 			ctx:       ctx,
 			cancelCtx: cancel,
+			namespace: "ns",
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -169,658 +174,101 @@ func newTestOrchestrator() *testOrchestrator {
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
 		"ns1",
-		Config{},
+		Config{
+			Tokens: map[string]TokensPlugin{"token": {Plugin: &tokenmocks.Plugin{}}},
+		},
 		&metricsmocks.Manager{},
 		&admineventsmocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }
 
-/*
-func TestBadDeprecatedDatabasePlugin(t *testing.T) {
+func TestInitPluginsDatabaseFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	deprecatedDatabaseConfig.Set(coreconfig.PluginConfigType, "wrong")
-	or.databases = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10122.*wrong", err)
-}
-
-func TestBadDeprecatedDatabaseInitFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	deprecatedDatabaseConfig.AddKnownKey(coreconfig.PluginConfigType, "test")
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
-	err := or.initDeprecatedDatabasePlugin(ctx, or.mdi)
+	err := or.initPlugins(ctx)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestDatabaseGetPlugins(t *testing.T) {
+func TestInitPluginsBlockchainFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	difactory.InitConfig(databaseConfig)
-	config.Set("plugins.database", []fftypes.JSONObject{{}})
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
-	ctx := context.Background()
-	plugins, err := or.getDatabasePlugins(ctx)
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestDatabaseUnknownPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	difactory.InitConfig(databaseConfig)
-	config.Set("plugins.database", []fftypes.JSONObject{{}})
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "unknown")
-	ctx := context.Background()
-	plugins, err := or.getDatabasePlugins(ctx)
-	assert.Nil(t, plugins)
-	assert.Error(t, err)
-}
-
-func TestDatabaseGetPluginsNoName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	difactory.InitConfig(databaseConfig)
-	config.Set("plugins.database", []fftypes.JSONObject{{}})
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
-	ctx := context.Background()
-	plugins, err := or.getDatabasePlugins(ctx)
-	assert.Nil(t, plugins)
-	assert.Error(t, err)
-}
-
-func TestDatabaseGetPluginsBadName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.databases = nil
-	difactory.InitConfig(databaseConfig)
-	config.Set("plugins.database", []fftypes.JSONObject{{}})
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong////")
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.Error(t, err)
-}
-
-func TestDeprecatedDatabaseInitPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	deprecatedDatabaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
 	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	ctx := context.Background()
-	err := or.initDeprecatedDatabasePlugin(ctx, or.mdi)
-	assert.NoError(t, err)
-}
-
-func TestDatabaseInitPlugins(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	difactory.InitConfig(databaseConfig)
-	config.Set("plugins.database", []fftypes.JSONObject{{}})
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
-	plugins := make([]database.Plugin, 1)
-	mdp := &databasemocks.Plugin{}
-	mdp.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	plugins[0] = mdp
-	ctx := context.Background()
-	err := or.initDatabasePlugins(ctx, plugins)
-	assert.NoError(t, err)
-}
-
-func TestDatabaseInitPluginFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.databases = nil
-	difactory.InitConfig(databaseConfig)
-	config.Set("plugins.database", []fftypes.JSONObject{{}})
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "sqlite3")
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, or.mmi).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
-	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestDeprecatedDatabaseInitPluginFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.databases = nil
-	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
-	deprecatedDatabaseConfig.AddKnownKey(coreconfig.PluginConfigType, "sqlite3")
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestIdentityPluginMissingType(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-	or.identityPlugins = nil
-	iifactory.InitConfig(identityConfig)
-	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	config.Set("plugins.identity", []fftypes.JSONObject{{}})
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10386.*type", err)
-}
-
-func TestIdentityPluginBadName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-	or.identityPlugins = nil
-	iifactory.InitConfig(identityConfig)
-	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong//")
-	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "tbd")
-	config.Set("plugins.identity", []fftypes.JSONObject{{}})
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF00140.*name", err)
-}
-
-func TestIdentityPluginUnknownPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-	or.identityPlugins = nil
-	iifactory.InitConfig(identityConfig)
-	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	config.Set("plugins.identity", []fftypes.JSONObject{{}})
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10212.*wrong", err)
-}
-
-func TestIdentityPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-	or.identityPlugins = nil
-	iifactory.InitConfig(identityConfig)
-	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "onchain")
-	config.Set("plugins.identity", []fftypes.JSONObject{{}})
-	or.mns.On("Init", mock.Anything, or.mdi).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.NoError(t, err)
-}
-
-func TestBadIdentityInitFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.blockchains = nil
-	config.Set("plugins.identity", []fftypes.JSONObject{{}})
-	iifactory.InitConfig(identityConfig)
-	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "onchain")
-	plugins := make([]identity.Plugin, 1)
-	mii := &identitymocks.Plugin{}
-	mii.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	plugins[0] = mii
-	ctx := context.Background()
-	err := or.initIdentityPlugins(ctx, plugins)
 	assert.EqualError(t, err, "pop")
 }
 
-func TestBadDeprecatedBlockchainPlugin(t *testing.T) {
+func TestInitPluginsDataexchangeNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	deprecatedBlockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	or.blockchains = nil
-	or.databases["database_0"] = or.mdi
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10110.*wrong", err)
-}
-
-func TestDeprecatedBlockchainInitFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
-	deprecatedBlockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	or.blockchains = nil
-	or.databases["database_0"] = or.mdi
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestBlockchainGetPlugins(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfig(blockchainConfig)
-	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	ctx := context.Background()
-	plugins, err := or.getBlockchainPlugins(ctx)
-	assert.Equal(t, 1, len(plugins))
-	assert.NoError(t, err)
-}
-
-func TestBlockchainGetPluginsNoType(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfig(blockchainConfig)
-	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	ctx := context.Background()
-	_, err := or.getBlockchainPlugins(ctx)
-	assert.Error(t, err)
-}
-
-func TestBlockchainGetPluginsBadName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfig(blockchainConfig)
-	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong/////////////")
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	ctx := context.Background()
-	_, err := or.getBlockchainPlugins(ctx)
-	assert.Error(t, err)
-}
-
-func TestBlockchainGetPluginsBadPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfig(blockchainConfig)
-	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
-	or.blockchains = nil
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, or.mmi).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
-	assert.Error(t, err)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestBlockchainInitPlugins(t *testing.T) {
+func TestInitPluginsDataexchangeFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	bifactory.InitConfig(blockchainConfig)
-	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	plugins := make([]blockchain.Plugin, 1)
-	mbp := &blockchainmocks.Plugin{}
-	mbp.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	plugins[0] = mbp
-	ctx := context.Background()
-	err := or.initBlockchainPlugins(ctx, plugins)
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedBlockchainInitPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
-	deprecatedBlockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	ctx := context.Background()
-	err := or.initDeprecatedBlockchainPlugin(ctx, or.mbi)
-	assert.NoError(t, err)
-}
-
-func TestBlockchainInitPluginsFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	bifactory.InitConfig(blockchainConfig)
-	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
-	blockchainConfig.AddKnownKey("addressResolver.urlTemplate", "")
-	blockchainConfig.AddKnownKey("ethconnect.url", "")
-	or.blockchains = nil
-
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, or.mmi).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
-	assert.Regexp(t, "FF10138.*url", err)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestBadSharedStoragePlugin(t *testing.T) {
+func TestInitPluginsSharedstorageFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	ssfactory.InitConfig(sharedstorageConfig)
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
-	or.sharedstoragePlugins = nil
-	ctx := context.Background()
-	plugins, err := or.getSharedStoragePlugins(ctx)
-	assert.Nil(t, plugins)
-	assert.Regexp(t, "FF10386.*Invalid", err)
-}
-
-func TestBadSharedStoragePluginType(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.sharedstoragePlugins = nil
-	or.database = or.mdi
-	ssfactory.InitConfig(sharedstorageConfig)
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "sharedstorage")
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10134.*wrong", err)
-}
-
-func TestBadSharedStoragePluginName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	ssfactory.InitConfig(sharedstorageConfig)
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong////")
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "ipfs")
-	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
-	or.sharedstoragePlugins = nil
-	ctx := context.Background()
-	plugins, err := or.getSharedStoragePlugins(ctx)
-	assert.Nil(t, plugins)
-	assert.Regexp(t, "FF00140.*name", err)
-}
-
-func TestSharedStorageInitPlugins(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	ssfactory.InitConfig(sharedstorageConfig)
-	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "ipfs")
-	plugins := make([]sharedstorage.Plugin, 1)
-	mss := &sharedstoragemocks.Plugin{}
-	mss.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	plugins[0] = mss
-	ctx := context.Background()
-	err := or.initSharedStoragePlugins(ctx, plugins)
-	assert.NoError(t, err)
-}
-
-func TestSharedStorageInitPluginsFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.sharedstoragePlugins = nil
-	or.database = or.mdi
-	ssfactory.InitConfig(sharedstorageConfig)
-	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "ipfs")
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, or.mmi).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
-	assert.Regexp(t, "FF10138.*url", err)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestDeprecatedSharedStorageInitPlugin(t *testing.T) {
+func TestInitPluginsTokensFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
-	deprecatedSharedStorageConfig.AddKnownKey(coreconfig.PluginConfigType, "ipfs")
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, or.mmi).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	ctx := context.Background()
-	err := or.initDeprecatedSharedStoragePlugin(ctx, or.mps)
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedSharedStorageInitPluginFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.sharedstoragePlugins = nil
-	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
-	deprecatedSharedStorageConfig.AddKnownKey(coreconfig.PluginConfigType, "ipfs")
+	or.mti.On("Init", mock.Anything, "token", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
-	assert.Regexp(t, "FF10138.*url", err)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestBadDeprecatedSharedStoragePlugin(t *testing.T) {
+func TestInitAllPluginsOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	deprecatedSharedStorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	or.sharedstoragePlugins = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10134.*Unknown", err)
-}
-
-func TestBadDataExchangePlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	dxfactory.InitConfig(dataexchangeConfig)
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
-	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10213.*wrong", err)
-}
-
-func TestDataExchangePluginBadName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	dxfactory.InitConfig(dataexchangeConfig)
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong//")
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF00140.*name", err)
-}
-
-func TestDataExchangePluginMissingName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	dxfactory.InitConfig(dataexchangeConfig)
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10386.*name", err)
-}
-
-func TestBadDataExchangeInitFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	dxfactory.InitConfig(dataexchangeConfig)
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestDeprecatedBadDataExchangeInitFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
-	deprecatedDataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10138.*url", err)
-}
-
-func TestDeprecatedDataExchangeInit(t *testing.T) {
-	or := newTestOrchestrator()
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
-	deprecatedDataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	deprecatedDataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	deprecatedDataexchangeConfig.AddKnownKey("ffdx.url", "https://test")
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	ctx := context.Background()
-	err := or.initDataExchange(ctx)
-	assert.NoError(t, err)
-}
-
-func TestDeprecatedBadDataExchangePlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
-	deprecatedDataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
-	or.database = or.mdi
-	or.dataexchangePlugins = nil
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10213.*wrong", err)
-}
-
-func TestTokensMissingName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
-	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10386.*type", err)
-}
-
-func TestTokensBadName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "/////////////")
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
-	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF00140.*name", err)
-}
-
-func TestBadTokensPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
-	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Error(t, err)
-}
-
-func TestDuplicatePluginNames(t *testing.T) {
-	or := newTestOrchestrator()
-	or.pluginNames["duplicate"] = true
-	tifactory.InitConfig(tokensConfig)
-	utConfig := config.RootSection("test")
-	utConfig.AddKnownKey(coreconfig.PluginConfigName, "duplicate")
-	utConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
-	ctx := context.Background()
-	err := or.validatePluginConfig(ctx, utConfig, "test")
-	assert.Regexp(t, "FF10395", err)
-}
-
-func TestGoodTokensPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfig(tokensConfig)
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
-	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
-	tokensConfig.AddKnownKey("fftokens.url", "test")
-	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	or.mns.On("Init", mock.Anything, or.mdi).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.NoError(t, err)
-}
-
-func TestBadDeprecatedTokensPluginNoName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName)
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "wrong")
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10273", err)
-}
-
-func TestBadDeprecatedTokensPluginInvalidName(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "!wrong")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "text")
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF00140.*'name'", err)
-}
-
-func TestBadDeprecatedTokensPluginNoType(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "text")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin)
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.Regexp(t, "FF10272", err)
-}
-
-func TestGoodDeprecatedTokensPlugin(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	deprecatedTokensConfig = config.RootArray("tokens")
-	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
-	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
-	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
-	deprecatedTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "test")
-	config.Set("tokens", []fftypes.JSONObject{{}})
-	or.database = or.mdi
-	or.tokens = nil
-	or.mns.On("Init", mock.Anything, or.mdi).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Init", mock.Anything, mock.Anything, mock.Anything, or.mmi).Return(nil)
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mps.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	or.mti.On("Init", mock.Anything, "token", mock.Anything, mock.Anything).Return(nil)
+	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
 }
 
 func TestInitMessagingComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.messaging = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -829,7 +277,7 @@ func TestInitMessagingComponentFail(t *testing.T) {
 func TestInitEventsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.events = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -838,7 +286,7 @@ func TestInitEventsComponentFail(t *testing.T) {
 func TestInitNetworkMapComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.networkmap = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -847,7 +295,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 func TestInitOperationComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -856,24 +304,16 @@ func TestInitOperationComponentFail(t *testing.T) {
 func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.sharedDownload = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitAdminEventsInit(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.adminEvents = nil
-	err := or.initPlugins(context.Background())
-	assert.NoError(t, err)
-}
-
 func TestInitBatchComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.batch = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -882,7 +322,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 func TestInitBroadcastComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.broadcast = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -891,7 +331,7 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 func TestInitDataComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.data = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -900,7 +340,7 @@ func TestInitDataComponentFail(t *testing.T) {
 func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.identity = nil
 	or.txHelper = nil
 	err := or.initComponents(context.Background())
@@ -910,7 +350,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 func TestInitAssetsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.assets = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -919,7 +359,7 @@ func TestInitAssetsComponentFail(t *testing.T) {
 func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.contracts = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -928,7 +368,7 @@ func TestInitContractsComponentFail(t *testing.T) {
 func TestInitDefinitionsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.definitions = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -937,7 +377,7 @@ func TestInitDefinitionsComponentFail(t *testing.T) {
 func TestInitBatchPinComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.batchpin = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -946,25 +386,20 @@ func TestInitBatchPinComponentFail(t *testing.T) {
 func TestInitOperationsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.databases = nil
+	or.database = nil
 	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
-}
-
-func TestInitNamespaceComponentFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.namespace = nil
-	err := or.initNamespaces(context.Background())
-	assert.Regexp(t, "FF10166", err)
 }
 
 func TestStartBatchFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mmi.On("Start").Return(nil)
+	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	or.mbi.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
+	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -974,8 +409,8 @@ func TestStartTokensFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = or.mdi
-	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
@@ -984,9 +419,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mpm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
-	or.mmi.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -995,12 +428,9 @@ func TestStartBlockchainsFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = or.mdi
-	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(fmt.Errorf("pop"))
-	or.mba.On("Start").Return(nil)
-	or.mmi.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1009,11 +439,8 @@ func TestStartBlockchainsConfigureFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = or.mdi
-	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
-	or.mba.On("Start").Return(nil)
-	or.mmi.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1022,8 +449,8 @@ func TestStartStopOk(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = or.mdi
-	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
+	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
@@ -1031,7 +458,6 @@ func TestStartStopOk(t *testing.T) {
 	or.mbm.On("Start").Return(nil)
 	or.mpm.On("Start").Return(nil)
 	or.mti.On("Start").Return(nil)
-	or.mmi.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
@@ -1039,24 +465,21 @@ func TestStartStopOk(t *testing.T) {
 	or.mdm.On("WaitStop").Return(nil)
 	or.msd.On("WaitStop").Return(nil)
 	or.mom.On("WaitStop").Return(nil)
-	or.mae.On("WaitStop").Return(nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
 	assert.NoError(t, err)
 	or.WaitStop()
 	or.WaitStop() // swallows dups
 }
 
-func TestInitOK(t *testing.T) {
+func TestGetComponents(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = or.mdi
-	err := config.ReadConfig("core", configDir+"/firefly.core.yaml")
-	assert.NoError(t, err)
-	or.mns.On("Init", mock.Anything, or.mdi).Return(nil)
+
+	or.mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = or.Init(ctx, cancelCtx)
-	assert.NoError(t, err)
+	err := or.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
@@ -1068,76 +491,11 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
 	assert.Equal(t, or.mom, or.Operations())
-	assert.Equal(t, or.mae, or.AdminEvents())
-}
-
-func TestInitOKWithMetrics(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.metrics = nil
-	or.database = or.mdi
-	err := config.ReadConfig("core", configDir+"/firefly.core.yaml")
-	assert.NoError(t, err)
-	or.mns.On("Init", mock.Anything, or.mdi).Return(nil)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = or.Init(ctx, cancelCtx)
-	assert.NoError(t, err)
-
-	assert.Equal(t, or.mbm, or.Broadcast())
-	assert.Equal(t, or.mpm, or.PrivateMessaging())
-	assert.Equal(t, or.mem, or.Events())
-	assert.Equal(t, or.mba, or.BatchManager())
-	assert.Equal(t, or.mnm, or.NetworkMap())
-	assert.Equal(t, or.mdm, or.Data())
-	assert.Equal(t, or.mam, or.Assets())
-	assert.Equal(t, or.mcm, or.Contracts())
-	assert.Equal(t, or.mom, or.Operations())
-	assert.Equal(t, or.mae, or.AdminEvents())
-}
-
-func TestInitNamespaceFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-	err := config.ReadConfig("core", configDir+"/firefly.core.yaml")
-	assert.NoError(t, err)
-	or.mns.On("Init", mock.Anything, or.mdi).Return(fmt.Errorf("pop"))
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitDataExchangeGetNodesFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-
-	err := or.initDataExchange(or.ctx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitDataExchangeWithNodes(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.database = or.mdi
-	dxfactory.InitConfig(dataexchangeConfig)
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
-	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
-	dataexchangeConfig.AddKnownKey("ffdx.url", "https://test")
-	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
-
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-
-	err := or.initDataExchange(or.ctx)
-	assert.NoError(t, err)
 }
 
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
-	or.blockchain = or.mbi
-	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
 	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.NoError(t, err)
@@ -1145,15 +503,21 @@ func TestNetworkAction(t *testing.T) {
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
 }
 
 func TestNetworkActionBadType(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10397", err)
 }
-*/
+
+func TestNetworkActionBadNamespace(t *testing.T) {
+	or := newTestOrchestrator()
+	or.mim.On("NormalizeSigningKey", context.Background(), "ns", "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	err := or.SubmitNetworkAction(context.Background(), "ns", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.Regexp(t, "FF10399", err)
+}
