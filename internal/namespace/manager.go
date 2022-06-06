@@ -83,6 +83,7 @@ type namespaceManager struct {
 	tokens         map[string]orchestrator.TokensPlugin
 	adminEvents    adminevents.Manager
 	namespaces     map[string]*namespace
+	utOrchestrator orchestrator.Orchestrator
 	metricsEnabled bool
 }
 
@@ -114,19 +115,21 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	nm.ctx = ctx
 	nm.cancelCtx = cancelCtx
 
-	err = nm.getPlugins(ctx)
+	err = nm.loadPlugins(ctx)
 	if err != nil {
 		return err
 	}
 
-	nsConfig := buildNamespaceMap(ctx)
-	if err = nm.initNamespaces(ctx, nsConfig); err != nil {
+	if err = nm.loadNamespaces(ctx); err != nil {
 		return err
 	}
 
 	// Start an orchestrator per namespace
 	for name, ns := range nm.namespaces {
-		or := orchestrator.NewOrchestrator(name, ns.config, nm.metrics, nm.adminEvents)
+		or := nm.utOrchestrator
+		if or == nil {
+			or = orchestrator.NewOrchestrator(name, ns.config, nm.metrics, nm.adminEvents)
+		}
 		if err = or.Init(ctx, cancelCtx); err != nil {
 			return err
 		}
@@ -155,11 +158,7 @@ func (nm *namespaceManager) WaitStop() {
 	nm.adminEvents.WaitStop()
 }
 
-func (nm *namespaceManager) AdminEvents() adminevents.Manager {
-	return nm.adminEvents
-}
-
-func (nm *namespaceManager) getPlugins(ctx context.Context) (err error) {
+func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 	nm.pluginNames = make(map[string]bool)
 	if nm.metrics == nil {
 		nm.metrics = metrics.NewMetricsManager(ctx)
@@ -248,7 +247,7 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 			deprecatedConfig := deprecatedTokensConfig.ArrayEntry(i)
 			name := deprecatedConfig.GetString(coreconfig.PluginConfigName)
 			pluginType := deprecatedConfig.GetString(tokens.TokensConfigPlugin)
-			if name == "" {
+			if name == "" || pluginType == "" {
 				return nil, i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 			}
 			if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
@@ -294,7 +293,7 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 	}
 
 	// check for deprecated config
-	if len(nm.databases) == 0 {
+	if len(plugins) == 0 {
 		pluginType := deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType)
 		plugin, err := difactory.GetPlugin(ctx, deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType))
 		if err != nil {
@@ -479,12 +478,12 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	return plugins, err
 }
 
-func buildNamespaceMap(ctx context.Context) map[string]config.Section {
-	conf := namespacePredefined
-	namespaces := make(map[string]config.Section, conf.ArraySize())
-	size := conf.ArraySize()
+func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
+	defaultNS := config.GetString(coreconfig.NamespacesDefault)
+	size := namespacePredefined.ArraySize()
+	namespaces := make(map[string]config.Section, size)
 	for i := 0; i < size; i++ {
-		nsConfig := conf.ArrayEntry(i)
+		nsConfig := namespacePredefined.ArrayEntry(i)
 		name := nsConfig.GetString(coreconfig.NamespaceName)
 		if name != "" {
 			if _, ok := namespaces[name]; ok {
@@ -493,15 +492,11 @@ func buildNamespaceMap(ctx context.Context) map[string]config.Section {
 			namespaces[name] = nsConfig
 		}
 	}
-	return namespaces
-}
 
-func (nm *namespaceManager) initNamespaces(ctx context.Context, nsConfig map[string]config.Section) (err error) {
-	defaultNS := config.GetString(coreconfig.NamespacesDefault)
 	i := 0
 	foundDefault := false
-	for name, nsObject := range nsConfig {
-		if err := nm.buildAndValidateNamespaces(ctx, name, i, nsObject); err != nil {
+	for name, nsObject := range namespaces {
+		if err := nm.loadNamespace(ctx, name, i, nsObject); err != nil {
 			return err
 		}
 		i++
@@ -513,7 +508,7 @@ func (nm *namespaceManager) initNamespaces(ctx context.Context, nsConfig map[str
 	return err
 }
 
-func (nm *namespaceManager) buildAndValidateNamespaces(ctx context.Context, name string, index int, conf config.Section) error {
+func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) error {
 	if err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return err
 	}
@@ -541,8 +536,9 @@ func (nm *namespaceManager) buildAndValidateNamespaces(ctx context.Context, name
 	}
 
 	// If no plugins are listed under this namespace, use all defined plugins by default
+	pluginsRaw := conf.Get(coreconfig.NamespacePlugins)
 	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
-	if len(plugins) == 0 {
+	if pluginsRaw == nil {
 		for plugin := range nm.blockchains {
 			plugins = append(plugins, plugin)
 		}
@@ -556,6 +552,10 @@ func (nm *namespaceManager) buildAndValidateNamespaces(ctx context.Context, name
 		}
 
 		for plugin := range nm.databases {
+			plugins = append(plugins, plugin)
+		}
+
+		for plugin := range nm.identities {
 			plugins = append(plugins, plugin)
 		}
 
@@ -687,6 +687,10 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 	return nil
 }
 
+func (nm *namespaceManager) AdminEvents() adminevents.Manager {
+	return nm.adminEvents
+}
+
 func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
 	if namespace, ok := nm.namespaces[ns]; ok {
 		return namespace.orchestrator
@@ -695,5 +699,6 @@ func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
 }
 
 func (nm *namespaceManager) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
+	// TODO: implement
 	return nil, nil, nil
 }
