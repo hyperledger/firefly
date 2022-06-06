@@ -71,9 +71,6 @@ type iNamespaceCollection interface {
 
 	// GetNamespaceByID - Get a namespace by ID
 	GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (namespace *core.Namespace, err error)
-
-	// GetNamespaces - Get namespaces
-	GetNamespaces(ctx context.Context, filter Filter) (namespaces []*core.Namespace, res *FilterResult, err error)
 }
 
 type iMessageCollection interface {
@@ -700,17 +697,6 @@ type Callbacks interface {
 // Capabilities defines the capabilities a plugin can report as implementing or not
 type Capabilities struct {
 	Concurrency bool
-}
-
-// NamespaceQueryFactory filter fields for namespaces
-var NamespaceQueryFactory = &queryFields{
-	"id":          &UUIDField{},
-	"message":     &UUIDField{},
-	"type":        &StringField{},
-	"name":        &StringField{},
-	"description": &StringField{},
-	"created":     &TimeField{},
-	"confirmed":   &TimeField{},
 }
 
 // MessageQueryFactory filter fields for messages

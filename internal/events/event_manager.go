@@ -87,6 +87,7 @@ type EventManager interface {
 
 type eventManager struct {
 	ctx                   context.Context
+	namespace             string
 	ni                    sysmessaging.LocalNodeInfo
 	sharedstorage         sharedstorage.Plugin
 	database              database.Plugin
@@ -111,7 +112,7 @@ type eventManager struct {
 	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -119,6 +120,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
+		namespace:      ns,
 		ni:             ni,
 		sharedstorage:  si,
 		database:       di,

@@ -203,10 +203,6 @@ func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.
 	return e, err
 }
 
-func (or *orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
-	return or.database.GetNamespaces(ctx, filter)
-}
-
 func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }

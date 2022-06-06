@@ -41,7 +41,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -902,6 +901,11 @@ func TestGetNamespaces(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	fb := database.NamespaceQueryFactory.NewFilter(context.Background())
-	nm.GetNamespaces(context.Background(), fb.And())
+	nm.namespaces = map[string]*namespace{
+		"default": {},
+	}
+
+	results, err := nm.GetNamespaces(context.Background())
+	assert.Nil(t, err)
+	assert.Len(t, results, 1)
 }

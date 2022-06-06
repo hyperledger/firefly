@@ -233,6 +233,7 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 		vars := mux.Vars(r.Req)
 		or := mgr.Orchestrator(extractNamespace(vars))
 		cr := &coreRequest{
+			mgr:        mgr,
 			or:         or,
 			ctx:        r.Req.Context(),
 			filter:     filter,

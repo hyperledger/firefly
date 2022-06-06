@@ -62,15 +62,6 @@ func TestGetTransactionOperationBadID(t *testing.T) {
 	assert.Regexp(t, "FF00138", err)
 }
 
-func TestGetNamespaces(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mdi.On("GetNamespaces", mock.Anything, mock.Anything).Return([]*core.Namespace{}, nil, nil)
-	fb := database.NamespaceQueryFactory.NewFilter(context.Background())
-	f := fb.And(fb.Eq("name", "ns1"))
-	_, _, err := or.GetNamespaces(context.Background(), f)
-	assert.NoError(t, err)
-}
-
 func TestGetTransactions(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()

@@ -22,7 +22,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var getNamespaces = &ffapi.Route{
@@ -36,9 +35,9 @@ var getNamespaces = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return []*core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.NamespaceQueryFactory,
+		FilterFactory: nil,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetNamespaces(cr.ctx, cr.filter))
+			return cr.mgr.GetNamespaces(cr.ctx)
 		},
 	},
 }

@@ -23,11 +23,13 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type coreRequest struct {
+	mgr        namespace.Manager
 	or         orchestrator.Orchestrator
 	ctx        context.Context
 	filter     database.AndFilter

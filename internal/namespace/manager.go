@@ -35,7 +35,6 @@ import (
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/tokens"
 )
 
@@ -62,10 +61,11 @@ type Manager interface {
 
 	Orchestrator(ns string) orchestrator.Orchestrator
 	AdminEvents() adminevents.Manager
-	GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error)
+	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
 }
 
 type namespace struct {
+	description  string
 	orchestrator orchestrator.Orchestrator
 	config       orchestrator.Config
 }
@@ -495,8 +495,8 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
 
 	i := 0
 	foundDefault := false
-	for name, nsObject := range namespaces {
-		if err := nm.loadNamespace(ctx, name, i, nsObject); err != nil {
+	for name, nsConfig := range namespaces {
+		if err := nm.loadNamespace(ctx, name, i, nsConfig); err != nil {
 			return err
 		}
 		i++
@@ -508,7 +508,7 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
 	return err
 }
 
-func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) error {
+func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) (err error) {
 	if err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return err
 	}
@@ -576,18 +576,25 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 			OrgKey:  orgKey,
 			OrgDesc: orgDesc,
 		}
-		return nm.validateMultiPartyConfig(ctx, name, config, plugins)
+		err = nm.validateMultiPartyConfig(ctx, name, &config, plugins)
+	} else {
+		err = nm.validateGatewayConfig(ctx, name, &config, plugins)
 	}
-	return nm.validateGatewayConfig(ctx, name, config, plugins)
+
+	if err == nil {
+		nm.namespaces[name] = &namespace{
+			description: conf.GetString(coreconfig.NamespaceDescription),
+			config:      config,
+		}
+	}
+	return err
 }
 
-func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, config orchestrator.Config, plugins []string) error {
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, config *orchestrator.Config, plugins []string) error {
 	var dbPlugin bool
 	var ssPlugin bool
 	var dxPlugin bool
 	var bcPlugin bool
-
-	ns := &namespace{config: config}
 
 	for _, pluginName := range plugins {
 		if instance, ok := nm.blockchains[pluginName]; ok {
@@ -595,7 +602,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
 			}
 			bcPlugin = true
-			ns.config.Blockchain = instance
+			config.Blockchain = instance
 			continue
 		}
 		if instance, ok := nm.dataexchanges[pluginName]; ok {
@@ -603,7 +610,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "dataexchange")
 			}
 			dxPlugin = true
-			ns.config.Dataexchange = instance
+			config.Dataexchange = instance
 			continue
 		}
 		if instance, ok := nm.sharedstorages[pluginName]; ok {
@@ -611,7 +618,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "sharedstorage")
 			}
 			ssPlugin = true
-			ns.config.Sharedstorage = instance
+			config.Sharedstorage = instance
 			continue
 		}
 		if instance, ok := nm.databases[pluginName]; ok {
@@ -619,15 +626,15 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
 			}
 			dbPlugin = true
-			ns.config.Database = instance
+			config.Database = instance
 			continue
 		}
 		if instance, ok := nm.tokens[pluginName]; ok {
-			ns.config.Tokens[pluginName] = instance
+			config.Tokens[pluginName] = instance
 			continue
 		}
 		if instance, ok := nm.identities[pluginName]; ok {
-			ns.config.Identity = instance
+			config.Identity = instance
 			continue
 		}
 
@@ -637,16 +644,13 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	if !dbPlugin || !ssPlugin || !dxPlugin || !bcPlugin {
 		return i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
 	}
-	nm.namespaces[name] = ns
 
 	return nil
 }
 
-func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, config orchestrator.Config, plugins []string) error {
+func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, config *orchestrator.Config, plugins []string) error {
 	var dbPlugin bool
 	var bcPlugin bool
-
-	ns := &namespace{config: config}
 
 	for _, pluginName := range plugins {
 		if instance, ok := nm.blockchains[pluginName]; ok {
@@ -654,7 +658,7 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
 			}
 			bcPlugin = true
-			ns.config.Blockchain = instance
+			config.Blockchain = instance
 			continue
 		}
 		if _, ok := nm.dataexchanges[pluginName]; ok {
@@ -668,11 +672,11 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
 			}
 			dbPlugin = true
-			ns.config.Database = instance
+			config.Database = instance
 			continue
 		}
 		if instance, ok := nm.tokens[pluginName]; ok {
-			ns.config.Tokens[pluginName] = instance
+			config.Tokens[pluginName] = instance
 			continue
 		}
 
@@ -682,7 +686,6 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 	if !dbPlugin {
 		return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayNoDB, name)
 	}
-	nm.namespaces[name] = ns
 
 	return nil
 }
@@ -698,7 +701,13 @@ func (nm *namespaceManager) Orchestrator(ns string) orchestrator.Orchestrator {
 	return nil
 }
 
-func (nm *namespaceManager) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
-	// TODO: implement
-	return nil, nil, nil
+func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+	results := make([]*core.Namespace, 0, len(nm.namespaces))
+	for name, ns := range nm.namespaces {
+		results = append(results, &core.Namespace{
+			Name:        name,
+			Description: ns.description,
+		})
+	}
+	return results, nil
 }

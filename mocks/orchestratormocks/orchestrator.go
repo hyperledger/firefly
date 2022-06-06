@@ -820,38 +820,6 @@ func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Name
 	return r0, r1
 }
 
-// GetNamespaces provides a mock function with given fields: ctx, filter
-func (_m *Orchestrator) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*core.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Namespace); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.Namespace)
-		}
-	}
-
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
-		r2 = rf(ctx, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
 // GetOperationByID provides a mock function with given fields: ctx, id
 func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
 	ret := _m.Called(ctx, id)

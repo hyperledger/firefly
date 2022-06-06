@@ -9,8 +9,6 @@ import (
 
 	core "github.com/hyperledger/firefly/pkg/core"
 
-	database "github.com/hyperledger/firefly/pkg/database"
-
 	mock "github.com/stretchr/testify/mock"
 
 	orchestrator "github.com/hyperledger/firefly/internal/orchestrator"
@@ -37,36 +35,27 @@ func (_m *Manager) AdminEvents() adminevents.Manager {
 	return r0
 }
 
-// GetNamespaces provides a mock function with given fields: ctx, filter
-func (_m *Manager) GetNamespaces(ctx context.Context, filter database.AndFilter) ([]*core.Namespace, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetNamespaces provides a mock function with given fields: ctx
+func (_m *Manager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error) {
+	ret := _m.Called(ctx)
 
 	var r0 []*core.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Namespace); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context) []*core.Namespace); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Namespace)
 		}
 	}
 
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
-		r2 = rf(ctx, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // Init provides a mock function with given fields: ctx, cancelCtx
