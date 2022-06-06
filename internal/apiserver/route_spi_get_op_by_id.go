@@ -26,11 +26,10 @@ import (
 
 var spiGetOpByID = &ffapi.Route{
 	Name:   "spiGetOpByID",
-	Path:   "operations/{ns}/{opid}",
+	Path:   "operations/{nsopid}",
 	Method: http.MethodGet,
 	PathParams: []*ffapi.PathParam{
-		{Name: "ns", Description: coremsgs.APIParamsNamespace},
-		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
+		{Name: "nsopid", Description: coremsgs.APIParamsOperationNamespacedID},
 	},
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsAdminGetOpByID,
@@ -39,7 +38,7 @@ var spiGetOpByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetOperationByID(cr.ctx, extractNamespace(r.PP), r.PP["opid"])
+			output, err = cr.or.GetOperationByNamespacedID(cr.ctx, r.PP["nsopid"])
 			return output, err
 		},
 	},

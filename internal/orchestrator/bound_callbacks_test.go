@@ -62,17 +62,18 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.BlockchainNetworkAction("terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
+	nsOpID := "ns1!" + opID.String()
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
-		ID:             opID,
+		NamespacedOpID: nsOpID,
 		Status:         core.OpStatusFailed,
 		BlockchainTXID: "0xffffeeee",
 		ErrorMessage:   "error info",
 		Output:         info,
 	}).Return()
 
-	bc.BlockchainOpUpdate(mbi, opID, core.OpStatusFailed, "0xffffeeee", "error info", info)
+	bc.BlockchainOpUpdate(mbi, nsOpID, core.OpStatusFailed, "0xffffeeee", "error info", info)
 
-	bc.TokenOpUpdate(mti, opID, core.OpStatusFailed, "0xffffeeee", "error info", info)
+	bc.TokenOpUpdate(mti, nsOpID, core.OpStatusFailed, "0xffffeeee", "error info", info)
 
 	mde := &dataexchangemocks.DXEvent{}
 	mom.On("TransferResult", mdx, mde).Return()

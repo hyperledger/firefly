@@ -126,6 +126,7 @@ type Orchestrator interface {
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
 	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetOperationByID(ctx context.Context, ns, id string) (*core.Operation, error)
+	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*core.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
@@ -899,5 +900,10 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, acti
 	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
+	// TODO: This should be a new operation type
+	po := &core.PreparedOperation{
+		Namespace: ns,
+		ID:        fftypes.NewUUID(),
+	}
+	return or.blockchain.SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
 }

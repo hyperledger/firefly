@@ -394,7 +394,7 @@ func TestSendMessage(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/messages", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
+	err := h.SendMessage(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
 	assert.NoError(t, err)
 }
 
@@ -405,7 +405,7 @@ func TestSendMessageError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
+	err := h.SendMessage(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -417,7 +417,7 @@ func TestTransferBlob(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.TransferBlob(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	err := h.TransferBlob(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
 	assert.NoError(t, err)
 }
 
@@ -428,7 +428,7 @@ func TestTransferBlobError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.TransferBlob(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	err := h.TransferBlob(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -448,7 +448,7 @@ func TestEvents(t *testing.T) {
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "1" &&
+		return ev.NamespacedID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusFailed &&
@@ -459,7 +459,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "2" &&
+		return ev.NamespacedID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded
@@ -469,7 +469,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "3" &&
+		return ev.NamespacedID() == "3" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
@@ -481,7 +481,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "4" &&
+		return ev.NamespacedID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
 			ev.MessageReceived().PeerID == "peer1" &&
 			string(ev.MessageReceived().Data) == "message1"
@@ -491,7 +491,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "5" &&
+		return ev.NamespacedID() == "5" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusFailed &&
@@ -502,7 +502,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "6" &&
+		return ev.NamespacedID() == "6" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
@@ -523,7 +523,7 @@ func TestEvents(t *testing.T) {
 
 	hash := fftypes.NewRandB32()
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "9" &&
+		return ev.NamespacedID() == "9" &&
 			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
 			ev.PrivateBlobReceived().Hash.Equals(hash)
 	})).Run(acker()).Return(nil)
@@ -532,7 +532,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "10" &&
+		return ev.NamespacedID() == "10" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
@@ -561,7 +561,7 @@ func TestEventsWithManifest(t *testing.T) {
 	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "1" &&
+		return ev.NamespacedID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
@@ -570,7 +570,7 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.ID() == "2" &&
+		return ev.NamespacedID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
@@ -701,9 +701,9 @@ func TestDXUninitialized(t *testing.T) {
 	err = h.AddPeer(context.Background(), fftypes.JSONObject{})
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.TransferBlob(context.Background(), fftypes.NewUUID(), "peer1", "ns1/id1")
+	err = h.TransferBlob(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.SendMessage(context.Background(), fftypes.NewUUID(), "peer1", []byte(`some data`))
+	err = h.SendMessage(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
 	assert.Regexp(t, "FF10342", err)
 }

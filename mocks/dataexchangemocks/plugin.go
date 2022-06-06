@@ -160,13 +160,13 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// SendMessage provides a mock function with given fields: ctx, opID, peerID, data
-func (_m *Plugin) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) error {
-	ret := _m.Called(ctx, opID, peerID, data)
+// SendMessage provides a mock function with given fields: ctx, nsOpID, peerID, data
+func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string, data []byte) error {
+	ret := _m.Called(ctx, nsOpID, peerID, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, []byte) error); ok {
-		r0 = rf(ctx, opID, peerID, data)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []byte) error); ok {
+		r0 = rf(ctx, nsOpID, peerID, data)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -188,13 +188,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// TransferBlob provides a mock function with given fields: ctx, opID, peerID, payloadRef
-func (_m *Plugin) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) error {
-	ret := _m.Called(ctx, opID, peerID, payloadRef)
+// TransferBlob provides a mock function with given fields: ctx, nsOpID, peerID, payloadRef
+func (_m *Plugin) TransferBlob(ctx context.Context, nsOpID string, peerID string, payloadRef string) error {
+	ret := _m.Called(ctx, nsOpID, peerID, payloadRef)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, string) error); ok {
-		r0 = rf(ctx, opID, peerID, payloadRef)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, nsOpID, peerID, payloadRef)
 	} else {
 		r0 = ret.Error(0)
 	}

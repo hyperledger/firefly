@@ -49,7 +49,7 @@ type dxEvent struct {
 	transferResult      *dataexchange.TransferResult
 }
 
-func (e *dxEvent) ID() string {
+func (e *dxEvent) NamespacedID() string {
 	return e.id
 }
 

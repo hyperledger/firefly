@@ -130,14 +130,14 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 func (pm *privateMessaging) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case transferBlobData:
-		return nil, false, pm.exchange.TransferBlob(ctx, op.ID, data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
+		return nil, false, pm.exchange.TransferBlob(ctx, op.NamespacedIDString(), data.Node.Profile.GetString("id"), data.Blob.PayloadRef)
 
 	case batchSendData:
 		payload, err := json.Marshal(data.Transport)
 		if err != nil {
 			return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgSerializationFailed)
 		}
-		return nil, false, pm.exchange.SendMessage(ctx, op.ID, data.Node.Profile.GetString("id"), payload)
+		return nil, false, pm.exchange.SendMessage(ctx, op.NamespacedIDString(), data.Node.Profile.GetString("id"), payload)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)

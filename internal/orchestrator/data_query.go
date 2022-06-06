@@ -183,6 +183,18 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, ns, id string) (*c
 	return o, err
 }
 
+func (or *orchestrator) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
+	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
+	if err != nil {
+		return nil, err
+	}
+	o, err := or.databases["database_0"].GetOperationByID(ctx, u)
+	if err == nil && o != nil {
+		err = or.checkNamespace(ctx, ns, o.Namespace)
+	}
+	return o, err
+}
+
 func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.Event, error) {
 	u, err := or.verifyIDAndNamespace(ctx, ns, id)
 	if err != nil {

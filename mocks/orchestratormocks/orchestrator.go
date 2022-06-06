@@ -877,6 +877,29 @@ func (_m *Orchestrator) GetOperationByID(ctx context.Context, ns string, id stri
 	return r0, r1
 }
 
+// GetOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID
+func (_m *Orchestrator) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
+	ret := _m.Called(ctx, nsOpID)
+
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Operation); ok {
+		r0 = rf(ctx, nsOpID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nsOpID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetOperations provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)

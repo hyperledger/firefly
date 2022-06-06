@@ -26,11 +26,10 @@ import (
 
 var spiPatchOpByID = &ffapi.Route{
 	Name:   "spiPatchOpByID",
-	Path:   "operations/{ns}/{opid}",
+	Path:   "operations/{nsopid}",
 	Method: http.MethodPatch,
 	PathParams: []*ffapi.PathParam{
-		{Name: "ns", Description: coremsgs.APIParamsNamespace},
-		{Name: "opid", Description: coremsgs.APIParamsConfigRecordKeyUpdate},
+		{Name: "nsopid", Description: coremsgs.APIParamsOperationNamespacedID},
 	},
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
@@ -39,7 +38,7 @@ var spiPatchOpByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			err = cr.or.Operations().ResolveOperationByID(cr.ctx, extractNamespace(r.PP), r.PP["opid"], r.Input.(*core.OperationUpdateDTO))
+			err = cr.or.Operations().ResolveOperationByNamespacedID(cr.ctx, r.PP["nsopid"], r.Input.(*core.OperationUpdateDTO))
 			return &core.EmptyInput{}, err
 		},
 	},

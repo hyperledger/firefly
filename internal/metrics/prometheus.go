@@ -17,11 +17,14 @@
 package metrics
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	muxprom "gitlab.com/hfuss/mux-prometheus/pkg/middleware"
 )
 
+var regMux sync.Mutex
 var registry *prometheus.Registry
 var adminInstrumentation *muxprom.Instrumentation
 var restInstrumentation *muxprom.Instrumentation
@@ -40,6 +43,8 @@ func Registry() *prometheus.Registry {
 // GetAdminServerInstrumentation returns the admin server's Prometheus middleware, ensuring its metrics are never
 // registered twice
 func GetAdminServerInstrumentation() *muxprom.Instrumentation {
+	regMux.Lock()
+	defer regMux.Unlock()
 	if adminInstrumentation == nil {
 		adminInstrumentation = NewInstrumentation("admin")
 	}
@@ -49,6 +54,8 @@ func GetAdminServerInstrumentation() *muxprom.Instrumentation {
 // GetRestServerInstrumentation returns the REST server's Prometheus middleware, ensuring its metrics are never
 // registered twice
 func GetRestServerInstrumentation() *muxprom.Instrumentation {
+	regMux.Lock()
+	defer regMux.Unlock()
 	if restInstrumentation == nil {
 		restInstrumentation = NewInstrumentation("rest")
 	}

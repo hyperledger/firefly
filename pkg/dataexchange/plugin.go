@@ -85,11 +85,11 @@ type Plugin interface {
 	CheckBlobReceived(ctx context.Context, peerID, ns string, id fftypes.UUID) (hash *fftypes.Bytes32, size int64, err error)
 
 	// SendMessage sends an in-line package of data to another network node.
-	// Should return as quickly as possible for parallelsim, then report completion asynchronously via the operation ID
-	SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) (err error)
+	// Should return as quickly as possible for parallelism, then report completion asynchronously via the operation ID
+	SendMessage(ctx context.Context, nsOpID, peerID string, data []byte) (err error)
 
-	// TransferBlob initiates a transfer of a previoiusly stored blob to another node
-	TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID string, payloadRef string) (err error)
+	// TransferBlob initiates a transfer of a previously stored blob to another node
+	TransferBlob(ctx context.Context, nsOpID, peerID string, payloadRef string) (err error)
 }
 
 // Callbacks is the interface provided to the data exchange plugin, to allow it to pass events back to firefly.
@@ -102,7 +102,7 @@ type DXEventType int
 
 // DXEvent is a single interface that can be passed to all events
 type DXEvent interface {
-	ID() string
+	NamespacedID() string
 	Ack()
 	AckWithManifest(manifest string)
 	Type() DXEventType

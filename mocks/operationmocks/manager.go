@@ -76,6 +76,20 @@ func (_m *Manager) ResolveOperationByID(ctx context.Context, ns string, id strin
 	return r0
 }
 
+// ResolveOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID, op
+func (_m *Manager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
+	ret := _m.Called(ctx, nsOpID, op)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.OperationUpdateDTO) error); ok {
+		r0 = rf(ctx, nsOpID, op)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RetryOperation provides a mock function with given fields: ctx, ns, opID
 func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*core.Operation, error) {
 	ret := _m.Called(ctx, ns, opID)

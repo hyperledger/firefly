@@ -410,27 +410,6 @@ func TestWriteOperationFailure(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestTransferResultBadUUID(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
-		Manifest: true,
-	})
-	mde := &dataexchangemocks.DXEvent{}
-	mde.On("TransferResult").Return(&dataexchange.TransferResult{
-		TrackingID: "wrongun",
-		Status:     core.OpStatusSucceeded,
-		TransportStatusUpdate: core.TransportStatusUpdate{
-			Info:     fftypes.JSONObject{"extra": "info"},
-			Manifest: "Sally",
-		},
-	})
-	om.TransferResult(mdx, mde)
-}
-
 func TestTransferResultManifestMismatch(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
@@ -463,6 +442,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("NamespacedID").Return("ns1!" + opID1.String())
 	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
@@ -509,6 +489,7 @@ func TestTransferResultHashMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("NamespacedID").Return("ns1!" + opID1.String())
 	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
@@ -549,6 +530,7 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("NamespacedID").Return("ns1!" + opID1.String())
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
 		Status:     core.OpStatusSucceeded,
@@ -598,6 +580,46 @@ func TestResolveOperationBadID(t *testing.T) {
 	op := &core.OperationUpdateDTO{}
 
 	err := om.ResolveOperationByID(ctx, "ns1", "badness", op)
+
+	assert.Regexp(t, "FF00138", err)
+
+}
+
+func TestResolveOperationByNamespacedIDOk(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	opID := fftypes.NewUUID()
+	errStr := "my error"
+	opUpdate := &core.OperationUpdateDTO{
+		Status: core.OpStatusSucceeded,
+		Error:  &errStr,
+		Output: fftypes.JSONObject{
+			"my": "data",
+		},
+	}
+
+	mdi := om.database.(*databasemocks.Plugin)
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, &errStr, fftypes.JSONObject{
+		"my": "data",
+	}).Return(nil)
+
+	err := om.ResolveOperationByNamespacedID(ctx, "ns1!"+opID.String(), opUpdate)
+
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedIDBadID(t *testing.T) {
+	om, cancel := newTestOperations(t)
+	defer cancel()
+
+	ctx := context.Background()
+	op := &core.OperationUpdateDTO{}
+
+	err := om.ResolveOperationByNamespacedID(ctx, "ns1!badness", op)
 
 	assert.Regexp(t, "FF00138", err)
 

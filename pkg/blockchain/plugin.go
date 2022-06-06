@@ -61,13 +61,13 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *BatchPin) error
+	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *BatchPin) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error
+	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
+	InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
 	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
@@ -107,7 +107,7 @@ type Callbacks interface {
 	// opOutput can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
 	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
 	// Only the party submitting the transaction will see this data.
-	BlockchainOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
+	BlockchainOpUpdate(plugin Plugin, nsOpID string, txState TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 
 	// BatchPinComplete notifies on the arrival of a sequenced batch of messages, which might have been
 	// submitted by us, or by any other authorized party in the network.

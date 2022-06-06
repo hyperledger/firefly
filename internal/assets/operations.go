@@ -107,7 +107,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		complete, err = plugin.CreateTokenPool(ctx, op.ID, data.Pool)
+		complete, err = plugin.CreateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
 		return nil, complete, err
 
 	case activatePoolData:
@@ -115,7 +115,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		complete, err = plugin.ActivateTokenPool(ctx, op.ID, data.Pool)
+		complete, err = plugin.ActivateTokenPool(ctx, op.NamespacedIDString(), data.Pool)
 		return nil, complete, err
 
 	case transferData:
@@ -125,11 +125,11 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		}
 		switch data.Transfer.Type {
 		case core.TokenTransferTypeMint:
-			return nil, false, plugin.MintTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
+			return nil, false, plugin.MintTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer)
 		case core.TokenTransferTypeTransfer:
-			return nil, false, plugin.TransferTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
+			return nil, false, plugin.TransferTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer)
 		case core.TokenTransferTypeBurn:
-			return nil, false, plugin.BurnTokens(ctx, op.ID, data.Pool.Locator, data.Transfer)
+			return nil, false, plugin.BurnTokens(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Transfer)
 		default:
 			panic(fmt.Sprintf("unknown transfer type: %v", data.Transfer.Type))
 		}
@@ -139,7 +139,7 @@ func (am *assetManager) RunOperation(ctx context.Context, op *core.PreparedOpera
 		if err != nil {
 			return nil, false, err
 		}
-		return nil, false, plugin.TokensApproval(ctx, op.ID, data.Pool.Locator, data.Approval)
+		return nil, false, plugin.TokensApproval(ctx, op.NamespacedIDString(), data.Pool.Locator, data.Approval)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)

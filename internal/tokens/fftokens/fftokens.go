@@ -179,17 +179,12 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return
 	}
-	opID, err := fftypes.ParseUUID(ctx, requestID)
-	if err != nil {
-		l.Errorf("Reply cannot be processed - bad ID: %+v", data)
-		return
-	}
 	replyType := core.OpStatusSucceeded
 	if !success {
 		replyType = core.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	ft.callbacks.TokenOpUpdate(ft, opID, replyType, transactionHash, message, data)
+	ft.callbacks.TokenOpUpdate(ft, requestID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -498,7 +493,7 @@ func wrapError(ctx context.Context, errRes *tokenError, res *resty.Response, err
 	return ffresty.WrapRestErr(ctx, res, err, coremsgs.MsgTokensRESTErr)
 }
 
-func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
 	data, _ := json.Marshal(tokenData{
 		TX:     pool.TX.ID,
 		TXType: pool.TX.Type,
@@ -507,7 +502,7 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&createPool{
 			Type:      pool.Type,
-			RequestID: opID.String(),
+			RequestID: nsOpID,
 			Signer:    pool.Key,
 			Data:      string(data),
 			Config:    pool.Config,
@@ -531,11 +526,11 @@ func (ft *FFTokens) CreateTokenPool(ctx context.Context, opID *fftypes.UUID, poo
 	return false, nil
 }
 
-func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error) {
+func (ft *FFTokens) ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error) {
 	var errRes tokenError
 	res, err := ft.client.R().SetContext(ctx).
 		SetBody(&activatePool{
-			RequestID:   opID.String(),
+			RequestID:   nsOpID,
 			PoolLocator: pool.Locator,
 			Config:      pool.Config,
 		}).
@@ -560,7 +555,7 @@ func (ft *FFTokens) ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, p
 	return false, nil
 }
 
-func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *core.TokenTransfer) error {
+func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          mint.TX.ID,
 		TXType:      mint.TX.Type,
@@ -574,7 +569,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 			TokenIndex:  mint.TokenIndex,
 			To:          mint.To,
 			Amount:      mint.Amount.Int().String(),
-			RequestID:   opID.String(),
+			RequestID:   nsOpID,
 			Signer:      mint.Key,
 			Data:        string(data),
 		}).
@@ -586,7 +581,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 	return nil
 }
 
-func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *core.TokenTransfer) error {
+func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          burn.TX.ID,
 		TXType:      burn.TX.Type,
@@ -600,7 +595,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 			TokenIndex:  burn.TokenIndex,
 			From:        burn.From,
 			Amount:      burn.Amount.Int().String(),
-			RequestID:   opID.String(),
+			RequestID:   nsOpID,
 			Signer:      burn.Key,
 			Data:        string(data),
 		}).
@@ -612,7 +607,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 	return nil
 }
 
-func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *core.TokenTransfer) error {
+func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer) error {
 	data, _ := json.Marshal(tokenData{
 		TX:          transfer.TX.ID,
 		TXType:      transfer.TX.Type,
@@ -627,7 +622,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 			From:        transfer.From,
 			To:          transfer.To,
 			Amount:      transfer.Amount.Int().String(),
-			RequestID:   opID.String(),
+			RequestID:   nsOpID,
 			Signer:      transfer.Key,
 			Data:        string(data),
 		}).
@@ -639,7 +634,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, opID *fftypes.UUID, pool
 	return nil
 }
 
-func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *core.TokenApproval) error {
+func (ft *FFTokens) TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval) error {
 	data, _ := json.Marshal(tokenData{
 		TX:     approval.TX.ID,
 		TXType: approval.TX.Type,
@@ -651,7 +646,7 @@ func (ft *FFTokens) TokensApproval(ctx context.Context, opID *fftypes.UUID, pool
 			Signer:      approval.Key,
 			Operator:    approval.Operator,
 			Approved:    approval.Approved,
-			RequestID:   opID.String(),
+			RequestID:   nsOpID,
 			Data:        string(data),
 			Config:      approval.Config,
 		}).

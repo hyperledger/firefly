@@ -35,7 +35,9 @@ func TestPrepareAndRunCreatePool(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		Type: core.OpTypeTokenCreatePool,
+		Type:      core.OpTypeTokenCreatePool,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -45,7 +47,7 @@ func TestPrepareAndRunCreatePool(t *testing.T) {
 	assert.NoError(t, err)
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("CreateTokenPool", context.Background(), op.ID, pool).Return(false, nil)
+	mti.On("CreateTokenPool", context.Background(), "ns1!"+op.ID.String(), pool).Return(false, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -64,7 +66,9 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		Type: core.OpTypeTokenActivatePool,
+		Type:      core.OpTypeTokenActivatePool,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -75,7 +79,7 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("ActivateTokenPool", context.Background(), op.ID, pool).Return(true, nil)
+	mti.On("ActivateTokenPool", context.Background(), "ns1!"+op.ID.String(), pool).Return(true, nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
@@ -96,7 +100,9 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		Type: core.OpTypeTokenTransfer,
+		Type:      core.OpTypeTokenTransfer,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -111,7 +117,7 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("TransferTokens", context.Background(), op.ID, "F1", transfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), "ns1!"+op.ID.String(), "F1", transfer).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
@@ -133,7 +139,9 @@ func TestPrepareAndRunApproval(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		Type: core.OpTypeTokenApproval,
+		Type:      core.OpTypeTokenApproval,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -148,7 +156,7 @@ func TestPrepareAndRunApproval(t *testing.T) {
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
-	mti.On("TokensApproval", context.Background(), op.ID, "F1", approval).Return(nil)
+	mti.On("TokensApproval", context.Background(), "ns1!"+op.ID.String(), "F1", approval).Return(nil)
 	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
@@ -369,14 +377,15 @@ func TestRunOperationCreatePool(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		ID: fftypes.NewUUID(),
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("CreateTokenPool", context.Background(), op.ID, pool).Return(false, nil)
+	mti.On("CreateTokenPool", context.Background(), "ns1!"+op.ID.String(), pool).Return(false, nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opCreatePool(op, pool))
 
@@ -451,7 +460,8 @@ func TestRunOperationTransferMint(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		ID: fftypes.NewUUID(),
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -462,7 +472,7 @@ func TestRunOperationTransferMint(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("MintTokens", context.Background(), op.ID, "F1", transfer).Return(nil)
+	mti.On("MintTokens", context.Background(), "ns1!"+op.ID.String(), "F1", transfer).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -477,7 +487,8 @@ func TestRunOperationTransferBurn(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		ID: fftypes.NewUUID(),
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -488,7 +499,7 @@ func TestRunOperationTransferBurn(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("BurnTokens", context.Background(), op.ID, "F1", transfer).Return(nil)
+	mti.On("BurnTokens", context.Background(), "ns1!"+op.ID.String(), "F1", transfer).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -503,7 +514,8 @@ func TestRunOperationTransfer(t *testing.T) {
 	defer cancel()
 
 	op := &core.Operation{
-		ID: fftypes.NewUUID(),
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	pool := &core.TokenPool{
 		Connector: "magic-tokens",
@@ -514,7 +526,7 @@ func TestRunOperationTransfer(t *testing.T) {
 	}
 
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
-	mti.On("TransferTokens", context.Background(), op.ID, "F1", transfer).Return(nil)
+	mti.On("TransferTokens", context.Background(), "ns1!"+op.ID.String(), "F1", transfer).Return(nil)
 
 	_, complete, err := am.RunOperation(context.Background(), opTransfer(op, pool, transfer))
 
@@ -529,7 +541,8 @@ func TestOperationUpdatePool(t *testing.T) {
 	defer cancel()
 
 	pool := &core.TokenPool{
-		ID: fftypes.NewUUID(),
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	op := &core.Operation{
 		ID:   fftypes.NewUUID(),

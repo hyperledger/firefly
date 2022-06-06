@@ -5,6 +5,7 @@
   "go.lintTool": "golangci-lint",
   "cSpell.words": [
     "APIID",
+    "autometa",
     "bifactory",
     "blobstore",
     "breq",
@@ -38,6 +39,7 @@
     "fftypes",
     "finalizers",
     "Hyperledger",
+    "IDUUID",
     "Infof",
     "IPFS",
     "karlseguin",
@@ -46,7 +48,6 @@
     "myinsert",
     "mytag",
     "NATS",
-    "ffapi",
     "opid",
     "optype",
     "opupdate",

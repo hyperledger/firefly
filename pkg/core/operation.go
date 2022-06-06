@@ -16,7 +16,13 @@
 
 package core
 
-import "github.com/hyperledger/firefly-common/pkg/fftypes"
+import (
+	"context"
+	"strings"
+
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+)
 
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
@@ -113,4 +119,22 @@ type PreparedOperation struct {
 	Namespace string        `json:"namespace"`
 	Type      OpType        `json:"type" ffenum:"optype"`
 	Data      interface{}   `json:"data"`
+}
+
+func (po *PreparedOperation) NamespacedIDString() string {
+	return po.Namespace + "!" + po.ID.String()
+}
+
+func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.UUID, error) {
+	nsIDSplit := strings.Split(nsIDStr, "!")
+	if len(nsIDSplit) != 2 {
+		return "", nil, i18n.NewError(context.Background(), i18n.MsgInvalidNamespaceUUID, nsIDStr)
+	}
+	ns := nsIDSplit[0]
+	uuidStr := nsIDSplit[1]
+	if err := ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return "", nil, err
+	}
+	u, err := fftypes.ParseUUID(ctx, uuidStr)
+	return ns, u, err
 }
