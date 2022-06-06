@@ -394,7 +394,7 @@ func TestSendMessage(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/messages", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.SendMessage(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
+	err := h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
 	assert.NoError(t, err)
 }
 
@@ -405,7 +405,7 @@ func TestSendMessageError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/message", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.SendMessage(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
+	err := h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -417,7 +417,7 @@ func TestTransferBlob(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, fftypes.JSONObject{}))
 
-	err := h.TransferBlob(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
+	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
 	assert.NoError(t, err)
 }
 
@@ -428,7 +428,7 @@ func TestTransferBlobError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfers", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	err := h.TransferBlob(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
+	err := h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10229", err)
 }
 
@@ -701,9 +701,9 @@ func TestDXUninitialized(t *testing.T) {
 	err = h.AddPeer(context.Background(), fftypes.JSONObject{})
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.TransferBlob(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
+	err = h.TransferBlob(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", "ns1/id1")
 	assert.Regexp(t, "FF10342", err)
 
-	err = h.SendMessage(context.Background(), "ns1!"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
+	err = h.SendMessage(context.Background(), "ns1:"+fftypes.NewUUID().String(), "peer1", []byte(`some data`))
 	assert.Regexp(t, "FF10342", err)
 }

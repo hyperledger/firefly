@@ -50,15 +50,15 @@ func TestParseNamespacedOpID(t *testing.T) {
 	u := fftypes.NewUUID()
 
 	_, _, err := ParseNamespacedOpID(ctx, "")
-	assert.Regexp(t, "FF00168", err)
+	assert.Regexp(t, "FF10411", err)
 
-	_, _, err = ParseNamespacedOpID(ctx, "a!!"+u.String())
-	assert.Regexp(t, "FF00168", err)
+	_, _, err = ParseNamespacedOpID(ctx, "a::"+u.String())
+	assert.Regexp(t, "FF10411", err)
 
-	_, _, err = ParseNamespacedOpID(ctx, "bad%namespace!"+u.String())
+	_, _, err = ParseNamespacedOpID(ctx, "bad%namespace:"+u.String())
 	assert.Regexp(t, "FF00140", err)
 
-	_, _, err = ParseNamespacedOpID(ctx, "ns1!Bad UUID")
+	_, _, err = ParseNamespacedOpID(ctx, "ns1:Bad UUID")
 	assert.Regexp(t, "FF00138", err)
 
 	po := &PreparedOperation{

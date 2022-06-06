@@ -442,7 +442,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
-	mde.On("NamespacedID").Return("ns1!" + opID1.String())
+	mde.On("NamespacedID").Return("ns1:" + opID1.String())
 	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
@@ -489,7 +489,7 @@ func TestTransferResultHashMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
-	mde.On("NamespacedID").Return("ns1!" + opID1.String())
+	mde.On("NamespacedID").Return("ns1:" + opID1.String())
 	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
@@ -530,7 +530,7 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
-	mde.On("NamespacedID").Return("ns1!" + opID1.String())
+	mde.On("NamespacedID").Return("ns1:" + opID1.String())
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
 		Status:     core.OpStatusSucceeded,
@@ -605,7 +605,7 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 		"my": "data",
 	}).Return(nil)
 
-	err := om.ResolveOperationByNamespacedID(ctx, "ns1!"+opID.String(), opUpdate)
+	err := om.ResolveOperationByNamespacedID(ctx, "ns1:"+opID.String(), opUpdate)
 
 	assert.NoError(t, err)
 
@@ -619,7 +619,7 @@ func TestResolveOperationByNamespacedIDBadID(t *testing.T) {
 	ctx := context.Background()
 	op := &core.OperationUpdateDTO{}
 
-	err := om.ResolveOperationByNamespacedID(ctx, "ns1!badness", op)
+	err := om.ResolveOperationByNamespacedID(ctx, "ns1:badness", op)
 
 	assert.Regexp(t, "FF00138", err)
 

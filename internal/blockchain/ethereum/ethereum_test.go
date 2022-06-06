@@ -1538,7 +1538,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"gasUsed": "24655",
 		"headers": {
 			"id": "4603a151-f212-446e-5c15-0f36b57cecc7",
-			"requestId": "ns1!` + operationID.String() + `",
+			"requestId": "ns1:` + operationID.String() + `",
 			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:12",
 			"timeElapsed": 3.966414429,
 			"timeReceived": "2021-05-28T20:54:27.481245697Z",
@@ -1554,7 +1554,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	em.On("BlockchainOpUpdate",
 		e,
-		"ns1!"+operationID.String(),
+		"ns1:"+operationID.String(),
 		core.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
@@ -1581,7 +1581,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		"headers": {
 			"id": "3a37b17b-13b6-4dc5-647a-07c11eae0be3",
-			"requestId": "ns1!` + operationID.String() + `",
+			"requestId": "ns1:` + operationID.String() + `",
 			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:0",
 			"timeElapsed": 0.020969053,
 			"timeReceived": "2021-05-31T02:35:11.458880504Z",
@@ -1594,7 +1594,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
 		e,
-		"ns1!"+operationID.String(),
+		"ns1:"+operationID.String(),
 		core.OpStatusFailed,
 		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
@@ -2951,7 +2951,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitNetworkAction(context.Background(), "ns1!"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate)
+	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate)
 	assert.NoError(t, err)
 }
 

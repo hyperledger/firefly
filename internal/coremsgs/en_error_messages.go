@@ -250,4 +250,5 @@ var (
 	MsgDefRejectedIdentityNotFound        = ffe("FF10408", "Rejected %s '%s' - identity not found: %s")
 	MsgDefRejectedWrongAuthor             = ffe("FF10409", "Rejected %s '%s' - wrong author: %s")
 	MsgDefRejectedHashMismatch            = ffe("FF10410", "Rejected %s '%s' - hash mismatch: %s != %s")
+	MsgInvalidNamespaceUUID               = ffe("FF10411", "Expected 'namespace:' prefix on ID '%s'", 400)
 )

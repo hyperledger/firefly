@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 )
 
 // OpType describes mechanical steps in the process that have to be performed,
@@ -122,13 +123,13 @@ type PreparedOperation struct {
 }
 
 func (po *PreparedOperation) NamespacedIDString() string {
-	return po.Namespace + "!" + po.ID.String()
+	return po.Namespace + ":" + po.ID.String()
 }
 
 func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.UUID, error) {
-	nsIDSplit := strings.Split(nsIDStr, "!")
+	nsIDSplit := strings.Split(nsIDStr, ":")
 	if len(nsIDSplit) != 2 {
-		return "", nil, i18n.NewError(context.Background(), i18n.MsgInvalidNamespaceUUID, nsIDStr)
+		return "", nil, i18n.NewError(context.Background(), coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
 	}
 	ns := nsIDSplit[0]
 	uuidStr := nsIDSplit[1]

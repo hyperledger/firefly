@@ -58,7 +58,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
-	mdx.On("TransferBlob", context.Background(), "ns1!"+op.ID.String(), "peer1", "payload").Return(nil)
+	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), "peer1", "payload").Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -113,7 +113,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
-	mdx.On("SendMessage", context.Background(), "ns1!"+op.ID.String(), "peer1", mock.Anything).Return(nil)
+	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", mock.Anything).Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)

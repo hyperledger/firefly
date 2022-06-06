@@ -89,7 +89,7 @@ func TestSubmitUpdateClosed(t *testing.T) {
 	}
 	ou.cancelFunc()
 	ou.SubmitOperationUpdate(ou.ctx, &OperationUpdate{
-		NamespacedOpID: "ns1!" + fftypes.NewUUID().String(),
+		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
 	})
 }
 
@@ -106,7 +106,7 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 	mdi.On("GetOperations", customCtx, mock.Anything, mock.Anything).Return(nil, nil, nil)
 
 	ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
-		NamespacedOpID: "ns1!" + fftypes.NewUUID().String(),
+		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
 	})
 
 	mdi.AssertExpectations(t)
@@ -145,18 +145,18 @@ func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	om.Start()
 
 	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
-		NamespacedOpID: "ns1!" + opID1.String(),
+		NamespacedOpID: "ns1:" + opID1.String(),
 		Status:         core.OpStatusSucceeded,
 		BlockchainTXID: "tx12345",
 	})
 	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
-		NamespacedOpID: "ns1!" + opID2.String(),
+		NamespacedOpID: "ns1:" + opID2.String(),
 		Status:         core.OpStatusFailed,
 		ErrorMessage:   "err1",
 		Output:         fftypes.JSONObject{"test": true},
 	})
 	om.SubmitOperationUpdate(&mockplug{}, &OperationUpdate{
-		NamespacedOpID: "ns1!" + opID3.String(),
+		NamespacedOpID: "ns1:" + opID3.String(),
 		Status:         core.OpStatusFailed,
 		ErrorMessage:   "err2",
 	})
@@ -178,7 +178,7 @@ func TestUpdateLoopExitRetryCancelledContext(t *testing.T) {
 	})
 
 	ou.SubmitOperationUpdate(ou.ctx, &OperationUpdate{
-		NamespacedOpID: "ns1!" + fftypes.NewUUID().String(),
+		NamespacedOpID: "ns1:" + fftypes.NewUUID().String(),
 	})
 
 	ou.updaterLoop(0)
@@ -213,7 +213,7 @@ func TestDoBatchUpdateFailUpdate(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{NamespacedOpID: "ns1!" + opID1.String(), Status: core.OpStatusSucceeded},
+		{NamespacedOpID: "ns1:" + opID1.String(), Status: core.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -234,7 +234,7 @@ func TestDoBatchUpdateFailGetTransactions(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{NamespacedOpID: "ns1!" + opID1.String(), Status: core.OpStatusSucceeded},
+		{NamespacedOpID: "ns1:" + opID1.String(), Status: core.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -252,7 +252,7 @@ func TestDoBatchUpdateFailGetOperations(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doBatchUpdate(ou.ctx, []*OperationUpdate{
-		{NamespacedOpID: "ns1!" + opID1.String(), Status: core.OpStatusSucceeded},
+		{NamespacedOpID: "ns1:" + opID1.String(), Status: core.OpStatusSucceeded},
 	})
 	assert.Regexp(t, "pop", err)
 
@@ -284,7 +284,7 @@ func TestDoUpdateFailTransactionUpdate(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		NamespacedOpID: "ns1!" + opID1.String(), Status: core.OpStatusSucceeded, BlockchainTXID: "0x12345",
+		NamespacedOpID: "ns1:" + opID1.String(), Status: core.OpStatusSucceeded, BlockchainTXID: "0x12345",
 	}, []*core.Operation{
 		{Namespace: "ns1", ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1},
 	}, []*core.Transaction{
@@ -306,7 +306,7 @@ func TestDoUpdateFailExternalHandler(t *testing.T) {
 	ou.initQueues()
 
 	err := ou.doUpdate(ou.ctx, &OperationUpdate{
-		NamespacedOpID: "ns1!" + opID1.String(), Status: core.OpStatusSucceeded,
+		NamespacedOpID: "ns1:" + opID1.String(), Status: core.OpStatusSucceeded,
 	}, []*core.Operation{
 		{Namespace: "ns1", ID: opID1, Type: core.OpTypeBlockchainInvoke, Transaction: txID1},
 	}, []*core.Transaction{})

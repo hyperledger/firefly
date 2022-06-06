@@ -95,7 +95,7 @@ func TestCreateTokenPool(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
 		TX: core.TransactionRef{
@@ -118,7 +118,7 @@ func TestCreateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId": "ns1!" + opID.String(),
+				"requestId": "ns1:" + opID.String(),
 				"signer":    "0x123",
 				"type":      "fungible",
 				"config": map[string]interface{}{
@@ -165,7 +165,7 @@ func TestCreateTokenPoolError(t *testing.T) {
 			"message": "Missing required field",
 		}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10274.*Bad Request: Missing required field", err)
@@ -188,7 +188,7 @@ func TestCreateTokenPoolErrorMessageOnly(t *testing.T) {
 			"message": "Missing required field",
 		}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10274.*Missing required field", err)
@@ -209,7 +209,7 @@ func TestCreateTokenPoolUnexpectedError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
 		httpmock.NewStringResponder(400, "Failed miserably"))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	complete, err := h.CreateTokenPool(context.Background(), nsOpID, pool)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10274.*Failed miserably", err)
@@ -220,7 +220,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
 		TX: core.TransactionRef{
@@ -274,7 +274,7 @@ func TestCreateTokenPoolSynchronousBadResponse(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	pool := &core.TokenPool{
 		ID: fftypes.NewUUID(),
 		TX: core.TransactionRef{
@@ -317,7 +317,7 @@ func TestActivateTokenPool(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	poolConfig := map[string]interface{}{
 		"address": "0x12345",
 	}
@@ -332,7 +332,7 @@ func TestActivateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
@@ -367,7 +367,7 @@ func TestActivateTokenPoolError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	complete, err := h.ActivateTokenPool(context.Background(), nsOpID, pool)
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10274", err)
@@ -378,7 +378,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	poolConfig := map[string]interface{}{
 		"foo": "bar",
 	}
@@ -393,7 +393,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
@@ -427,7 +427,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	poolConfig := map[string]interface{}{
 		"foo": "bar",
 	}
@@ -442,7 +442,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
@@ -472,7 +472,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 	defer done()
 
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	poolConfig := map[string]interface{}{
 		"foo": "bar",
 	}
@@ -487,7 +487,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
 			}, body)
@@ -518,7 +518,7 @@ func TestMintTokens(t *testing.T) {
 		},
 	}
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -530,7 +530,7 @@ func TestMintTokens(t *testing.T) {
 				"to":          "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -569,7 +569,7 @@ func TestTokenApproval(t *testing.T) {
 		},
 	}
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/approval", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -584,7 +584,7 @@ func TestTokenApproval(t *testing.T) {
 				"config": map[string]interface{}{
 					"foo": "bar",
 				},
-				"requestId": "ns1!" + opID.String(),
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     approval.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenApproval.String(),
@@ -614,7 +614,7 @@ func TestTokenApprovalError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/approval", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	err := h.TokensApproval(context.Background(), nsOpID, "F1", approval)
 	assert.Regexp(t, "FF10274", err)
 }
@@ -628,7 +628,7 @@ func TestMintTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/mint", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	err := h.MintTokens(context.Background(), nsOpID, "F1", mint)
 	assert.Regexp(t, "FF10274", err)
 }
@@ -649,7 +649,7 @@ func TestBurnTokens(t *testing.T) {
 		},
 	}
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -662,7 +662,7 @@ func TestBurnTokens(t *testing.T) {
 				"from":        "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -692,7 +692,7 @@ func TestBurnTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/burn", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	err := h.BurnTokens(context.Background(), nsOpID, "F1", burn)
 	assert.Regexp(t, "FF10274", err)
 }
@@ -714,7 +714,7 @@ func TestTransferTokens(t *testing.T) {
 		},
 	}
 	opID := fftypes.NewUUID()
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		func(req *http.Request) (*http.Response, error) {
@@ -728,7 +728,7 @@ func TestTransferTokens(t *testing.T) {
 				"to":          "user2",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1!" + opID.String(),
+				"requestId":   "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -758,7 +758,7 @@ func TestTransferTokensError(t *testing.T) {
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/transfer", httpURL),
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{}))
 
-	nsOpID := "ns1!" + fftypes.NewUUID().String()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
 	err := h.TransferTokens(context.Background(), nsOpID, "F1", transfer)
 	assert.Regexp(t, "FF10274", err)
 }
@@ -796,24 +796,24 @@ func TestEvents(t *testing.T) {
 	mcb.On("TokenOpUpdate", h, "wrong", core.OpStatusFailed, "", "", mock.Anything).Return(nil).Once()
 
 	// receipt: success
-	mcb.On("TokenOpUpdate", h, "ns1!"+opID.String(), core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("TokenOpUpdate", h, "ns1:"+opID.String(), core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "4",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id":              "ns1!" + opID.String(),
+			"id":              "ns1:" + opID.String(),
 			"success":         true,
 			"transactionHash": "0xffffeeee",
 		},
 	}.String()
 
 	// receipt: failure
-	mcb.On("TokenOpUpdate", h, "ns1!"+opID.String(), core.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
+	mcb.On("TokenOpUpdate", h, "ns1:"+opID.String(), core.OpStatusFailed, "0xffffeeee", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "5",
 		"event": "receipt",
 		"data": fftypes.JSONObject{
-			"id":              "ns1!" + opID.String(),
+			"id":              "ns1:" + opID.String(),
 			"success":         false,
 			"transactionHash": "0xffffeeee",
 		},

@@ -62,7 +62,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.BlockchainNetworkAction("terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	nsOpID := "ns1!" + opID.String()
+	nsOpID := "ns1:" + opID.String()
 	mom.On("SubmitOperationUpdate", mock.Anything, &operations.OperationUpdate{
 		NamespacedOpID: nsOpID,
 		Status:         core.OpStatusFailed,

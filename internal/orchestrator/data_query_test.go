@@ -612,7 +612,7 @@ func TestGetOperationByNamespacedID(t *testing.T) {
 	or.mdi.On("GetOperationByID", mock.Anything, u).Return(&core.Operation{
 		Namespace: "ns1",
 	}, nil)
-	_, err := or.GetOperationByNamespacedID(context.Background(), "ns1!"+u.String())
+	_, err := or.GetOperationByNamespacedID(context.Background(), "ns1:"+u.String())
 	assert.NoError(t, err)
 }
 
@@ -627,7 +627,7 @@ func TestGetOperationNamespacedIDdBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	or.databases["database_0"] = or.mdi
 	_, err := or.GetOperationByNamespacedID(context.Background(), "")
-	assert.Regexp(t, "FF00168", err)
+	assert.Regexp(t, "FF10411", err)
 }
 
 func TestGetEventByID(t *testing.T) {
