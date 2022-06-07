@@ -68,23 +68,26 @@ type namespace struct {
 	description  string
 	orchestrator orchestrator.Orchestrator
 	config       orchestrator.Config
+	plugins      orchestrator.Plugins
 }
 
 type namespaceManager struct {
-	ctx            context.Context
-	cancelCtx      context.CancelFunc
-	pluginNames    map[string]bool
-	metrics        metrics.Manager
-	blockchains    map[string]orchestrator.BlockchainPlugin
-	identities     map[string]orchestrator.IdentityPlugin
-	databases      map[string]orchestrator.DatabasePlugin
-	sharedstorages map[string]orchestrator.SharedStoragePlugin
-	dataexchanges  map[string]orchestrator.DataexchangePlugin
-	tokens         map[string]orchestrator.TokensPlugin
-	adminEvents    adminevents.Manager
-	namespaces     map[string]*namespace
-	utOrchestrator orchestrator.Orchestrator
+	ctx         context.Context
+	cancelCtx   context.CancelFunc
+	namespaces  map[string]*namespace
+	pluginNames map[string]bool
+	plugins     struct {
+		blockchain    map[string]orchestrator.BlockchainPlugin
+		identity      map[string]orchestrator.IdentityPlugin
+		database      map[string]orchestrator.DatabasePlugin
+		sharedstorage map[string]orchestrator.SharedStoragePlugin
+		dataexchange  map[string]orchestrator.DataExchangePlugin
+		tokens        map[string]orchestrator.TokensPlugin
+	}
 	metricsEnabled bool
+	metrics        metrics.Manager
+	adminEvents    adminevents.Manager
+	utOrchestrator orchestrator.Orchestrator
 }
 
 func NewNamespaceManager(withDefaults bool) Manager {
@@ -128,7 +131,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	for name, ns := range nm.namespaces {
 		or := nm.utOrchestrator
 		if or == nil {
-			or = orchestrator.NewOrchestrator(name, ns.config, nm.metrics, nm.adminEvents)
+			or = orchestrator.NewOrchestrator(name, ns.config, ns.plugins, nm.metrics, nm.adminEvents)
 		}
 		if err = or.Init(ctx, cancelCtx); err != nil {
 			return err
@@ -164,8 +167,8 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 		nm.metrics = metrics.NewMetricsManager(ctx)
 	}
 
-	if nm.databases == nil {
-		nm.databases, err = nm.getDatabasePlugins(ctx)
+	if nm.plugins.database == nil {
+		nm.plugins.database, err = nm.getDatabasePlugins(ctx)
 		if err != nil {
 			return err
 		}
@@ -175,36 +178,36 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 		nm.adminEvents = adminevents.NewAdminEventManager(ctx)
 	}
 
-	if nm.identities == nil {
-		nm.identities, err = nm.getIdentityPlugins(ctx)
+	if nm.plugins.identity == nil {
+		nm.plugins.identity, err = nm.getIdentityPlugins(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if nm.blockchains == nil {
-		nm.blockchains, err = nm.getBlockchainPlugins(ctx)
+	if nm.plugins.blockchain == nil {
+		nm.plugins.blockchain, err = nm.getBlockchainPlugins(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if nm.sharedstorages == nil {
-		nm.sharedstorages, err = nm.getSharedStoragePlugins(ctx)
+	if nm.plugins.sharedstorage == nil {
+		nm.plugins.sharedstorage, err = nm.getSharedStoragePlugins(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if nm.dataexchanges == nil {
-		nm.dataexchanges, err = nm.getDataExchangePlugins(ctx)
+	if nm.plugins.dataexchange == nil {
+		nm.plugins.dataexchange, err = nm.getDataExchangePlugins(ctx)
 		if err != nil {
 			return err
 		}
 	}
 
-	if nm.tokens == nil {
-		nm.tokens, err = nm.getTokensPlugins(ctx)
+	if nm.plugins.tokens == nil {
+		nm.plugins.tokens, err = nm.getTokensPlugins(ctx)
 		if err != nil {
 			return err
 		}
@@ -330,8 +333,8 @@ func (nm *namespaceManager) validatePluginConfig(ctx context.Context, config con
 	return name, pluginType, nil
 }
 
-func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins map[string]orchestrator.DataexchangePlugin, err error) {
-	plugins = make(map[string]orchestrator.DataexchangePlugin)
+func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins map[string]orchestrator.DataExchangePlugin, err error) {
+	plugins = make(map[string]orchestrator.DataExchangePlugin)
 	dxConfigArraySize := dataexchangeConfig.ArraySize()
 	for i := 0; i < dxConfigArraySize; i++ {
 		config := dataexchangeConfig.ArrayEntry(i)
@@ -345,7 +348,7 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 			return nil, err
 		}
 
-		plugins[name] = orchestrator.DataexchangePlugin{
+		plugins[name] = orchestrator.DataExchangePlugin{
 			Name:   name,
 			Plugin: plugin,
 			Config: config.SubSection(pluginType),
@@ -361,7 +364,7 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 		}
 
 		name := "dataexchange_0"
-		plugins[name] = orchestrator.DataexchangePlugin{
+		plugins[name] = orchestrator.DataExchangePlugin{
 			Name:   name,
 			Plugin: plugin,
 			Config: deprecatedDataexchangeConfig.SubSection(pluginType),
@@ -539,155 +542,144 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	pluginsRaw := conf.Get(coreconfig.NamespacePlugins)
 	plugins := conf.GetStringSlice(coreconfig.NamespacePlugins)
 	if pluginsRaw == nil {
-		for plugin := range nm.blockchains {
+		for plugin := range nm.plugins.blockchain {
 			plugins = append(plugins, plugin)
 		}
 
-		for plugin := range nm.dataexchanges {
+		for plugin := range nm.plugins.dataexchange {
 			plugins = append(plugins, plugin)
 		}
 
-		for plugin := range nm.sharedstorages {
+		for plugin := range nm.plugins.sharedstorage {
 			plugins = append(plugins, plugin)
 		}
 
-		for plugin := range nm.databases {
+		for plugin := range nm.plugins.database {
 			plugins = append(plugins, plugin)
 		}
 
-		for plugin := range nm.identities {
+		for plugin := range nm.plugins.identity {
 			plugins = append(plugins, plugin)
 		}
 
-		for plugin := range nm.tokens {
+		for plugin := range nm.plugins.tokens {
 			plugins = append(plugins, plugin)
 		}
 	}
 
 	config := orchestrator.Config{
 		DefaultKey: conf.GetString(coreconfig.NamespaceDefaultKey),
-		Tokens:     make(map[string]orchestrator.TokensPlugin),
 	}
-
+	var p *orchestrator.Plugins
 	if multiparty.(bool) {
-		config.Multiparty = orchestrator.MultipartyConfig{
-			Enabled: true,
-			OrgName: orgName,
-			OrgKey:  orgKey,
-			OrgDesc: orgDesc,
-		}
-		err = nm.validateMultiPartyConfig(ctx, name, &config, plugins)
+		config.Multiparty.Enabled = true
+		config.Multiparty.OrgName = orgName
+		config.Multiparty.OrgKey = orgKey
+		config.Multiparty.OrgDesc = orgDesc
+		p, err = nm.validateMultiPartyConfig(ctx, name, plugins)
 	} else {
-		err = nm.validateGatewayConfig(ctx, name, &config, plugins)
+		p, err = nm.validateGatewayConfig(ctx, name, plugins)
 	}
 
 	if err == nil {
 		nm.namespaces[name] = &namespace{
 			description: conf.GetString(coreconfig.NamespaceDescription),
 			config:      config,
+			plugins:     *p,
 		}
 	}
 	return err
 }
 
-func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, config *orchestrator.Config, plugins []string) error {
-	var dbPlugin bool
-	var ssPlugin bool
-	var dxPlugin bool
-	var bcPlugin bool
-
+func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
-		if instance, ok := nm.blockchains[pluginName]; ok {
-			if bcPlugin {
-				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
+			if result.Blockchain.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
 			}
-			bcPlugin = true
-			config.Blockchain = instance
+			result.Blockchain = instance
 			continue
 		}
-		if instance, ok := nm.dataexchanges[pluginName]; ok {
-			if dxPlugin {
-				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "dataexchange")
+		if instance, ok := nm.plugins.dataexchange[pluginName]; ok {
+			if result.DataExchange.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "dataexchange")
 			}
-			dxPlugin = true
-			config.Dataexchange = instance
+			result.DataExchange = instance
 			continue
 		}
-		if instance, ok := nm.sharedstorages[pluginName]; ok {
-			if ssPlugin {
-				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "sharedstorage")
+		if instance, ok := nm.plugins.sharedstorage[pluginName]; ok {
+			if result.SharedStorage.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "sharedstorage")
 			}
-			ssPlugin = true
-			config.Sharedstorage = instance
+			result.SharedStorage = instance
 			continue
 		}
-		if instance, ok := nm.databases[pluginName]; ok {
-			if dbPlugin {
-				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+		if instance, ok := nm.plugins.database[pluginName]; ok {
+			if result.Database.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
 			}
-			dbPlugin = true
-			config.Database = instance
+			result.Database = instance
 			continue
 		}
-		if instance, ok := nm.tokens[pluginName]; ok {
-			config.Tokens[pluginName] = instance
+		if instance, ok := nm.plugins.tokens[pluginName]; ok {
+			result.Tokens = append(result.Tokens, instance)
 			continue
 		}
-		if instance, ok := nm.identities[pluginName]; ok {
-			config.Identity = instance
+		if instance, ok := nm.plugins.identity[pluginName]; ok {
+			result.Identity = instance
 			continue
 		}
 
-		return i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
 
-	if !dbPlugin || !ssPlugin || !dxPlugin || !bcPlugin {
-		return i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
+	if result.Database.Plugin == nil ||
+		result.SharedStorage.Plugin == nil ||
+		result.DataExchange.Plugin == nil ||
+		result.Blockchain.Plugin == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
 	}
 
-	return nil
+	return &result, nil
 }
 
-func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, config *orchestrator.Config, plugins []string) error {
-	var dbPlugin bool
-	var bcPlugin bool
-
+func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
-		if instance, ok := nm.blockchains[pluginName]; ok {
-			if bcPlugin {
-				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
+			if result.Blockchain.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
 			}
-			bcPlugin = true
-			config.Blockchain = instance
+			result.Blockchain = instance
 			continue
 		}
-		if _, ok := nm.dataexchanges[pluginName]; ok {
-			return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+		if _, ok := nm.plugins.dataexchange[pluginName]; ok {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
 		}
-		if _, ok := nm.sharedstorages[pluginName]; ok {
-			return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+		if _, ok := nm.plugins.sharedstorage[pluginName]; ok {
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
 		}
-		if instance, ok := nm.databases[pluginName]; ok {
-			if dbPlugin {
-				return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+		if instance, ok := nm.plugins.database[pluginName]; ok {
+			if result.Database.Plugin != nil {
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
 			}
-			dbPlugin = true
-			config.Database = instance
+			result.Database = instance
 			continue
 		}
-		if instance, ok := nm.tokens[pluginName]; ok {
-			config.Tokens[pluginName] = instance
+		if instance, ok := nm.plugins.tokens[pluginName]; ok {
+			result.Tokens = append(result.Tokens, instance)
 			continue
 		}
 
-		return i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceUnknownPlugin, name, pluginName)
 	}
 
-	if !dbPlugin {
-		return i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayNoDB, name)
+	if result.Database.Plugin == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayNoDB, name)
 	}
 
-	return nil
+	return &result, nil
 }
 
 func (nm *namespaceManager) AdminEvents() adminevents.Manager {

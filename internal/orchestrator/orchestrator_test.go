@@ -46,7 +46,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -137,20 +136,15 @@ func newTestOrchestrator() *testOrchestrator {
 		mae: &admineventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 	}
-	tor.orchestrator.database = tor.mdi
 	tor.orchestrator.data = tor.mdm
 	tor.orchestrator.batch = tor.mba
 	tor.orchestrator.broadcast = tor.mbm
 	tor.orchestrator.events = tor.mem
 	tor.orchestrator.networkmap = tor.mnm
-	tor.orchestrator.sharedstorage = tor.mps
 	tor.orchestrator.messaging = tor.mpm
 	tor.orchestrator.identity = tor.mim
-	tor.orchestrator.dataexchange = tor.mdx
 	tor.orchestrator.assets = tor.mam
 	tor.orchestrator.contracts = tor.mcm
-	tor.orchestrator.tokens = map[string]tokens.Plugin{"token": tor.mti}
-	tor.orchestrator.blockchain = tor.mbi
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
@@ -158,6 +152,11 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.adminEvents = tor.mae
 	tor.orchestrator.txHelper = tor.mth
 	tor.orchestrator.definitions = tor.mdh
+	tor.orchestrator.plugins.Blockchain.Plugin = tor.mbi
+	tor.orchestrator.plugins.SharedStorage.Plugin = tor.mps
+	tor.orchestrator.plugins.DataExchange.Plugin = tor.mdx
+	tor.orchestrator.plugins.Database.Plugin = tor.mdi
+	tor.orchestrator.plugins.Tokens = []TokensPlugin{{Name: "token", Plugin: tor.mti}}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
@@ -174,9 +173,8 @@ func newTestOrchestrator() *testOrchestrator {
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
 		"ns1",
-		Config{
-			Tokens: map[string]TokensPlugin{"token": {Plugin: &tokenmocks.Plugin{}}},
-		},
+		Config{},
+		Plugins{},
 		&metricsmocks.Manager{},
 		&admineventsmocks.Manager{},
 	)
@@ -268,7 +266,7 @@ func TestInitAllPluginsOK(t *testing.T) {
 func TestInitMessagingComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.messaging = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -277,7 +275,7 @@ func TestInitMessagingComponentFail(t *testing.T) {
 func TestInitEventsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.events = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -286,7 +284,7 @@ func TestInitEventsComponentFail(t *testing.T) {
 func TestInitNetworkMapComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.networkmap = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -295,7 +293,7 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 func TestInitOperationComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -304,7 +302,7 @@ func TestInitOperationComponentFail(t *testing.T) {
 func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.sharedDownload = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -313,7 +311,7 @@ func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 func TestInitBatchComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.batch = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -322,7 +320,7 @@ func TestInitBatchComponentFail(t *testing.T) {
 func TestInitBroadcastComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.broadcast = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -331,7 +329,7 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 func TestInitDataComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.data = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -340,7 +338,7 @@ func TestInitDataComponentFail(t *testing.T) {
 func TestInitIdentityComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.identity = nil
 	or.txHelper = nil
 	err := or.initComponents(context.Background())
@@ -350,7 +348,7 @@ func TestInitIdentityComponentFail(t *testing.T) {
 func TestInitAssetsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.assets = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -359,7 +357,7 @@ func TestInitAssetsComponentFail(t *testing.T) {
 func TestInitContractsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.contracts = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -368,7 +366,7 @@ func TestInitContractsComponentFail(t *testing.T) {
 func TestInitDefinitionsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.definitions = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -377,7 +375,7 @@ func TestInitDefinitionsComponentFail(t *testing.T) {
 func TestInitBatchPinComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.batchpin = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -386,7 +384,7 @@ func TestInitBatchPinComponentFail(t *testing.T) {
 func TestInitOperationsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.database = nil
+	or.plugins.Database.Plugin = nil
 	or.operations = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)

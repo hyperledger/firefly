@@ -68,25 +68,25 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		namespaceManager: namespaceManager{
 			namespaces:  make(map[string]*namespace),
 			pluginNames: make(map[string]bool),
-			blockchains: map[string]orchestrator.BlockchainPlugin{
-				"ethereum": {Plugin: &blockchainmocks.Plugin{}},
-			},
-			databases: map[string]orchestrator.DatabasePlugin{
-				"postgres": {Plugin: &databasemocks.Plugin{}},
-			},
-			dataexchanges: map[string]orchestrator.DataexchangePlugin{
-				"ffdx": {Plugin: &dataexchangemocks.Plugin{}},
-			},
-			sharedstorages: map[string]orchestrator.SharedStoragePlugin{
-				"ipfs": {Plugin: &sharedstoragemocks.Plugin{}},
-			},
-			identities: map[string]orchestrator.IdentityPlugin{
-				"tbd": {Plugin: &identitymocks.Plugin{}},
-			},
-			tokens: map[string]orchestrator.TokensPlugin{
-				"erc721": {Plugin: &tokenmocks.Plugin{}},
-			},
 		},
+	}
+	nm.plugins.blockchain = map[string]orchestrator.BlockchainPlugin{
+		"ethereum": {Plugin: &blockchainmocks.Plugin{}},
+	}
+	nm.plugins.database = map[string]orchestrator.DatabasePlugin{
+		"postgres": {Plugin: &databasemocks.Plugin{}},
+	}
+	nm.plugins.dataexchange = map[string]orchestrator.DataExchangePlugin{
+		"ffdx": {Plugin: &dataexchangemocks.Plugin{}},
+	}
+	nm.plugins.sharedstorage = map[string]orchestrator.SharedStoragePlugin{
+		"ipfs": {Plugin: &sharedstoragemocks.Plugin{}},
+	}
+	nm.plugins.identity = map[string]orchestrator.IdentityPlugin{
+		"tbd": {Plugin: &identitymocks.Plugin{}},
+	}
+	nm.plugins.tokens = map[string]orchestrator.TokensPlugin{
+		"erc721": {Plugin: &tokenmocks.Plugin{}},
 	}
 	nm.namespaceManager.metrics = nm.mmi
 	nm.namespaceManager.adminEvents = nm.mae
@@ -118,7 +118,7 @@ func TestInitFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	mdi := nm.databases["postgres"].Plugin.(*databasemocks.Plugin)
+	mdi := nm.plugins.database["postgres"].Plugin.(*databasemocks.Plugin)
 	mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -174,7 +174,7 @@ func TestDatabasePluginBadType(t *testing.T) {
 func TestDatabasePluginBadName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	nm.databases = nil
+	nm.plugins.database = nil
 	difactory.InitConfig(databaseConfig)
 	config.Set("plugins.database", []fftypes.JSONObject{{}})
 	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong////")
@@ -209,7 +209,7 @@ func TestIdentityPluginBadType(t *testing.T) {
 func TestIdentityPluginNoType(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	nm.identities = nil
+	nm.plugins.identity = nil
 	iifactory.InitConfig(identityConfig)
 	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	config.Set("plugins.identity", []fftypes.JSONObject{{}})
@@ -273,7 +273,7 @@ func TestBlockchainPluginNoType(t *testing.T) {
 func TestBlockchainPluginBadType(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	nm.blockchains = nil
+	nm.plugins.blockchain = nil
 	bifactory.InitConfig(blockchainConfig)
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
@@ -327,7 +327,7 @@ func TestSharedStoragePluginNoType(t *testing.T) {
 func TestSharedStoragePluginBadType(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	nm.sharedstorages = nil
+	nm.plugins.sharedstorage = nil
 	ssfactory.InitConfig(sharedstorageConfig)
 	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
 	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
@@ -381,7 +381,7 @@ func TestDataExchangePluginNoType(t *testing.T) {
 func TestDataExchangePluginBadType(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	nm.dataexchanges = nil
+	nm.plugins.dataexchange = nil
 	dxfactory.InitConfig(dataexchangeConfig)
 	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
 	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
@@ -460,7 +460,7 @@ func TestTokensPluginNoType(t *testing.T) {
 func TestTokensPluginBadType(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-	nm.tokens = nil
+	nm.plugins.tokens = nil
 	tifactory.InitConfig(tokensConfig)
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")

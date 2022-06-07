@@ -131,7 +131,7 @@ type DatabasePlugin struct {
 	Config config.Section
 }
 
-type DataexchangePlugin struct {
+type DataExchangePlugin struct {
 	Name   string
 	Plugin dataexchange.Plugin
 	Config config.Section
@@ -155,22 +155,23 @@ type IdentityPlugin struct {
 	Config config.Section
 }
 
-type MultipartyConfig struct {
-	Enabled bool
-	OrgName string
-	OrgDesc string
-	OrgKey  string
+type Plugins struct {
+	Blockchain    BlockchainPlugin
+	Identity      IdentityPlugin
+	SharedStorage SharedStoragePlugin
+	DataExchange  DataExchangePlugin
+	Database      DatabasePlugin
+	Tokens        []TokensPlugin
 }
 
 type Config struct {
-	DefaultKey    string
-	Multiparty    MultipartyConfig
-	Blockchain    BlockchainPlugin
-	Identity      IdentityPlugin
-	Sharedstorage SharedStoragePlugin
-	Dataexchange  DataexchangePlugin
-	Database      DatabasePlugin
-	Tokens        map[string]TokensPlugin
+	DefaultKey string
+	Multiparty struct {
+		Enabled bool
+		OrgName string
+		OrgDesc string
+		OrgKey  string
+	}
 }
 
 type orchestrator struct {
@@ -179,11 +180,8 @@ type orchestrator struct {
 	started        bool
 	namespace      string
 	config         Config
-	blockchain     blockchain.Plugin
+	plugins        Plugins
 	identity       identity.Manager
-	sharedstorage  sharedstorage.Plugin
-	dataexchange   dataexchange.Plugin
-	database       database.Plugin
 	events         events.EventManager
 	networkmap     networkmap.Manager
 	batch          batch.Manager
@@ -194,7 +192,6 @@ type orchestrator struct {
 	syncasync      syncasync.Bridge
 	batchpin       batchpin.Submitter
 	assets         assets.Manager
-	tokens         map[string]tokens.Plugin
 	bc             boundCallbacks
 	contracts      contracts.Manager
 	node           *fftypes.UUID
@@ -205,23 +202,14 @@ type orchestrator struct {
 	adminEvents    adminevents.Manager
 }
 
-func NewOrchestrator(ns string, config Config, metrics metrics.Manager, adminEvents adminevents.Manager) Orchestrator {
-	or := &orchestrator{
-		namespace:     ns,
-		config:        config,
-		blockchain:    config.Blockchain.Plugin,
-		database:      config.Database.Plugin,
-		sharedstorage: config.Sharedstorage.Plugin,
-		dataexchange:  config.Dataexchange.Plugin,
-		tokens:        make(map[string]tokens.Plugin, len(config.Tokens)),
-		metrics:       metrics,
-		adminEvents:   adminEvents,
+func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager, adminEvents adminevents.Manager) Orchestrator {
+	return &orchestrator{
+		namespace:   ns,
+		config:      config,
+		plugins:     plugins,
+		metrics:     metrics,
+		adminEvents: adminEvents,
 	}
-	for name, ti := range config.Tokens {
-		or.tokens[name] = ti.Plugin
-	}
-
-	return or
 }
 
 func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
@@ -232,17 +220,41 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		err = or.initComponents(ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
-	or.bc.bi = or.blockchain
+	or.bc.bi = or.plugins.Blockchain.Plugin
 	or.bc.ei = or.events
-	or.bc.dx = or.dataexchange
-	or.bc.ss = or.sharedstorage
+	or.bc.dx = or.plugins.DataExchange.Plugin
+	or.bc.ss = or.plugins.SharedStorage.Plugin
 	or.bc.om = or.operations
 	return err
 }
 
+func (or *orchestrator) database() database.Plugin {
+	return or.plugins.Database.Plugin
+}
+
+func (or *orchestrator) blockchain() blockchain.Plugin {
+	return or.plugins.Blockchain.Plugin
+}
+
+func (or *orchestrator) dataexchange() dataexchange.Plugin {
+	return or.plugins.DataExchange.Plugin
+}
+
+func (or *orchestrator) sharedstorage() sharedstorage.Plugin {
+	return or.plugins.SharedStorage.Plugin
+}
+
+func (or *orchestrator) tokens() map[string]tokens.Plugin {
+	result := make(map[string]tokens.Plugin, len(or.plugins.Tokens))
+	for _, plugin := range or.plugins.Tokens {
+		result[plugin.Name] = plugin.Plugin
+	}
+	return result
+}
+
 func (or *orchestrator) Start() (err error) {
 	var ns *core.Namespace
-	ns, err = or.database.GetNamespace(or.ctx, or.namespace)
+	ns, err = or.database().GetNamespace(or.ctx, or.namespace)
 	if err == nil {
 		if ns == nil {
 			ns = &core.Namespace{
@@ -250,13 +262,13 @@ func (or *orchestrator) Start() (err error) {
 				Created: fftypes.Now(),
 			}
 		}
-		err = or.blockchain.ConfigureContract(or.ctx, &ns.Contracts)
+		err = or.blockchain().ConfigureContract(or.ctx, &ns.Contracts)
 	}
 	if err == nil {
-		err = or.blockchain.Start()
+		err = or.blockchain().Start()
 	}
 	if err == nil {
-		err = or.database.UpsertNamespace(or.ctx, ns, true)
+		err = or.database().UpsertNamespace(or.ctx, ns, true)
 	}
 	if err == nil {
 		err = or.batch.Start()
@@ -277,7 +289,7 @@ func (or *orchestrator) Start() (err error) {
 		err = or.sharedDownload.Start()
 	}
 	if err == nil {
-		for _, el := range or.tokens {
+		for _, el := range or.tokens() {
 			if err = el.Start(); err != nil {
 				break
 			}
@@ -355,18 +367,18 @@ func (or *orchestrator) Operations() operations.Manager {
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
-	err = or.database.Init(ctx, or.config.Database.Config, or)
+	err = or.plugins.Database.Plugin.Init(ctx, or.plugins.Database.Config, or)
 	if err != nil {
 		return err
 	}
 
-	err = or.blockchain.Init(ctx, or.config.Blockchain.Config, &or.bc, or.metrics)
+	err = or.plugins.Blockchain.Plugin.Init(ctx, or.plugins.Blockchain.Config, &or.bc, or.metrics)
 	if err != nil {
 		return err
 	}
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
-	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
+	nodes, _, err := or.database().GetIdentities(ctx, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
 	))
 	if err != nil {
@@ -377,18 +389,18 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 
-	err = or.dataexchange.Init(ctx, or.config.Dataexchange.Config, nodeInfo, &or.bc)
+	err = or.plugins.DataExchange.Plugin.Init(ctx, or.plugins.DataExchange.Config, nodeInfo, &or.bc)
 	if err != nil {
 		return err
 	}
 
-	err = or.sharedstorage.Init(ctx, or.config.Sharedstorage.Config, &or.bc)
+	err = or.plugins.SharedStorage.Plugin.Init(ctx, or.plugins.SharedStorage.Config, &or.bc)
 	if err != nil {
 		return err
 	}
 
-	for name, token := range or.tokens {
-		err = token.Init(ctx, name, or.config.Tokens[name].Config, &or.bc)
+	for _, token := range or.plugins.Tokens {
+		err = token.Plugin.Init(ctx, token.Name, token.Config, &or.bc)
 	}
 
 	return err
@@ -397,86 +409,86 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database, or.sharedstorage, or.dataexchange)
+		or.data, err = data.NewDataManager(ctx, or.database(), or.sharedstorage(), or.dataexchange())
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.txHelper == nil {
-		or.txHelper = txcommon.NewTransactionHelper(or.database, or.data)
+		or.txHelper = txcommon.NewTransactionHelper(or.database(), or.data)
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database, or.blockchain, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.data)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or, or.database, or.data, or.txHelper)
+		or.batch, err = batch.NewBatchManager(ctx, or, or.database(), or.data, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.operations == nil {
-		if or.operations, err = operations.NewOperationsManager(ctx, or.database, or.txHelper); err != nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.database(), or.txHelper); err != nil {
 			return err
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database, or.data)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database(), or.data)
 
 	if or.batchpin == nil {
-		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database, or.identity, or.blockchain, or.metrics, or.operations); err != nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database(), or.identity, or.blockchain(), or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database, or.identity, or.dataexchange, or.blockchain, or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database(), or.identity, or.dataexchange(), or.blockchain(), or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database, or.identity, or.data, or.blockchain, or.dataexchange, or.sharedstorage, or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database(), or.identity, or.data, or.blockchain(), or.dataexchange(), or.sharedstorage(), or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database, or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens, or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.database(), or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database, or.broadcast, or.identity, or.blockchain, or.operations, or.txHelper, or.syncasync)
+		or.contracts, err = contracts.NewContractManager(ctx, or.database(), or.broadcast, or.identity, or.blockchain(), or.operations, or.txHelper, or.syncasync)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database, or.blockchain, or.dataexchange, or.data, or.identity, or.assets, or.contracts)
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.sharedDownload == nil {
-		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database, or.sharedstorage, or.dataexchange, or.operations, &or.bc)
+		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage, or.database, or.blockchain, or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}
@@ -485,7 +497,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync.Init(or.events)
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database, or.data, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database(), or.data, or.broadcast, or.dataexchange(), or.identity, or.syncasync)
 	}
 	return err
 }
@@ -503,5 +515,5 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, acti
 	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
+	return or.blockchain().SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
 }
