@@ -43,22 +43,22 @@ type Plugin interface {
 	Capabilities() *Capabilities
 
 	// CreateTokenPool creates a new (fungible or non-fungible) pool of tokens
-	CreateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error)
+	CreateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
 
 	// ActivateTokenPool activates a pool in order to begin receiving events
-	ActivateTokenPool(ctx context.Context, opID *fftypes.UUID, pool *core.TokenPool) (complete bool, err error)
+	ActivateTokenPool(ctx context.Context, nsOpID string, pool *core.TokenPool) (complete bool, err error)
 
 	// MintTokens mints new tokens in a pool and adds them to the recipient's account
-	MintTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, mint *core.TokenTransfer) error
+	MintTokens(ctx context.Context, nsOpID string, poolLocator string, mint *core.TokenTransfer) error
 
 	// BurnTokens burns tokens from an account
-	BurnTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, burn *core.TokenTransfer) error
+	BurnTokens(ctx context.Context, nsOpID string, poolLocator string, burn *core.TokenTransfer) error
 
 	// TransferTokens transfers tokens within a pool from one account to another
-	TransferTokens(ctx context.Context, opID *fftypes.UUID, poolLocator string, transfer *core.TokenTransfer) error
+	TransferTokens(ctx context.Context, nsOpID string, poolLocator string, transfer *core.TokenTransfer) error
 
 	// TokenApproval approves an operator to transfer tokens on the owner's behalf
-	TokensApproval(ctx context.Context, opID *fftypes.UUID, poolLocator string, approval *core.TokenApproval) error
+	TokensApproval(ctx context.Context, nsOpID string, poolLocator string, approval *core.TokenApproval) error
 }
 
 // Callbacks is the interface provided to the tokens plugin, to allow it to pass events back to firefly.
@@ -74,7 +74,7 @@ type Callbacks interface {
 	// Only the party submitting the transaction will see this data.
 	//
 	// Error should only be returned in shutdown scenarios
-	TokenOpUpdate(plugin Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
+	TokenOpUpdate(plugin Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
 
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.

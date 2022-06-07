@@ -22,22 +22,24 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var adminGetOps = &ffapi.Route{
-	Name:            "adminGetOps",
-	Path:            "operations",
-	Method:          http.MethodGet,
+var spiGetOpByID = &ffapi.Route{
+	Name:   "spiGetOpByID",
+	Path:   "operations/{nsopid}",
+	Method: http.MethodGet,
+	PathParams: []*ffapi.PathParam{
+		{Name: "nsopid", Description: coremsgs.APIParamsOperationNamespacedID},
+	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsAdminGetOps,
+	Description:     coremsgs.APIEndpointsAdminGetOpByID,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*core.Operation{} },
+	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
-		FilterFactory: database.OperationQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
+			output, err = cr.or.GetOperationByNamespacedID(cr.ctx, r.PP["nsopid"])
+			return output, err
 		},
 	},
 }

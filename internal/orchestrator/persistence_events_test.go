@@ -20,9 +20,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
+	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/mock"
@@ -30,7 +30,7 @@ import (
 
 func TestMessageCreated(t *testing.T) {
 	mb := &batchmocks.Manager{}
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		batch:       mb,
 		adminEvents: mae,
@@ -44,7 +44,7 @@ func TestMessageCreated(t *testing.T) {
 
 func TestPinCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 		events:      mem,
@@ -58,7 +58,7 @@ func TestPinCreated(t *testing.T) {
 
 func TestEventCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 		events:      mem,
@@ -72,7 +72,7 @@ func TestEventCreated(t *testing.T) {
 
 func TestSubscriptionCreated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 		events:      mem,
@@ -86,7 +86,7 @@ func TestSubscriptionCreated(t *testing.T) {
 
 func TestSubscriptionUpdated(t *testing.T) {
 	mem := &eventmocks.EventManager{}
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 		events:      mem,
@@ -100,7 +100,7 @@ func TestSubscriptionUpdated(t *testing.T) {
 
 func TestSubscriptionDeleted(t *testing.T) {
 	mem := &eventmocks.EventManager{}
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 		events:      mem,
@@ -113,7 +113,7 @@ func TestSubscriptionDeleted(t *testing.T) {
 }
 
 func TestUUIDCollectionEventFull(t *testing.T) {
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 	}
@@ -123,7 +123,7 @@ func TestUUIDCollectionEventFull(t *testing.T) {
 }
 
 func TestHashCollectionNSEventOk(t *testing.T) {
-	mae := &admineventsmocks.Manager{}
+	mae := &spieventsmocks.Manager{}
 	o := &orchestrator{
 		adminEvents: mae,
 	}

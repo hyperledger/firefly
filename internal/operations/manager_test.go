@@ -150,7 +150,7 @@ func TestRunOperationSyncSuccess(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, "", mock.Anything).Return(nil)
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Complete: true}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
@@ -172,7 +172,8 @@ func TestRunOperationFail(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusFailed, "pop", mock.Anything).Return(nil)
+	errStr := "pop"
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusFailed, &errStr, mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op)
@@ -194,7 +195,8 @@ func TestRunOperationFailRemainPending(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusPending, "pop", mock.Anything).Return(nil)
+	errStr := "pop"
+	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusPending, &errStr, mock.Anything).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{RunErr: fmt.Errorf("pop")}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RunOperation(ctx, op, RemainPendingOnFailure)
@@ -385,7 +387,7 @@ func TestWriteOperationSuccess(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, "", mock.Anything).Return(fmt.Errorf("pop"))
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.writeOperationSuccess(ctx, "ns1", opID, nil)
 
@@ -400,32 +402,12 @@ func TestWriteOperationFailure(t *testing.T) {
 	opID := fftypes.NewUUID()
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusFailed, "pop", mock.Anything).Return(fmt.Errorf("pop"))
+	errStr := "pop"
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusFailed, &errStr, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.writeOperationFailure(ctx, "ns1", opID, nil, fmt.Errorf("pop"), core.OpStatusFailed)
 
 	mdi.AssertExpectations(t)
-}
-
-func TestTransferResultBadUUID(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-	mdx.On("Capabilities").Return(&dataexchange.Capabilities{
-		Manifest: true,
-	})
-	mde := &dataexchangemocks.DXEvent{}
-	mde.On("TransferResult").Return(&dataexchange.TransferResult{
-		TrackingID: "wrongun",
-		Status:     core.OpStatusSucceeded,
-		TransportStatusUpdate: core.TransportStatusUpdate{
-			Info:     fftypes.JSONObject{"extra": "info"},
-			Manifest: "Sally",
-		},
-	})
-	om.TransferResult(mdx, mde)
 }
 
 func TestTransferResultManifestMismatch(t *testing.T) {
@@ -445,8 +427,8 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 			},
 		},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
-		return strings.Contains(errorMsg, "FF10329")
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg *string) bool {
+		return strings.Contains(*errorMsg, "FF10329")
 	}), fftypes.JSONObject{
 		"extra": "info",
 	}).Return(nil)
@@ -460,6 +442,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("NamespacedID").Return("ns1:" + opID1.String())
 	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
@@ -494,8 +477,8 @@ func TestTransferResultHashMismatch(t *testing.T) {
 			},
 		},
 	}, nil, nil)
-	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg string) bool {
-		return strings.Contains(errorMsg, "FF10348")
+	mdi.On("ResolveOperation", mock.Anything, "ns1", opID1, core.OpStatusFailed, mock.MatchedBy(func(errorMsg *string) bool {
+		return strings.Contains(*errorMsg, "FF10348")
 	}), fftypes.JSONObject{
 		"extra": "info",
 	}).Return(nil)
@@ -506,6 +489,7 @@ func TestTransferResultHashMismatch(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("NamespacedID").Return("ns1:" + opID1.String())
 	mde.On("Ack").Return()
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
@@ -546,6 +530,7 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 		Manifest: true,
 	})
 	mde := &dataexchangemocks.DXEvent{}
+	mde.On("NamespacedID").Return("ns1:" + opID1.String())
 	mde.On("TransferResult").Return(&dataexchange.TransferResult{
 		TrackingID: opID1.String(),
 		Status:     core.OpStatusSucceeded,
@@ -560,42 +545,41 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 
 }
 
-func TestResolveOperationByIDOk(t *testing.T) {
+func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
 	ctx := context.Background()
-	op := &core.Operation{
-		ID:        fftypes.NewUUID(),
-		Namespace: "ns1",
-		Type:      core.OpTypeBlockchainPinBatch,
-		Status:    core.OpStatusSucceeded,
-		Error:     "my error",
+	opID := fftypes.NewUUID()
+	errStr := "my error"
+	opUpdate := &core.OperationUpdateDTO{
+		Status: core.OpStatusSucceeded,
+		Error:  &errStr,
 		Output: fftypes.JSONObject{
 			"my": "data",
 		},
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", op.ID, core.OpStatusSucceeded, "my error", fftypes.JSONObject{
+	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, &errStr, fftypes.JSONObject{
 		"my": "data",
 	}).Return(nil)
 
-	_, err := om.ResolveOperationByID(ctx, op.ID.String(), op)
+	err := om.ResolveOperationByNamespacedID(ctx, "ns1:"+opID.String(), opUpdate)
 
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
 }
 
-func TestResolveOperationBadID(t *testing.T) {
+func TestResolveOperationByNamespacedIDBadID(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
 
 	ctx := context.Background()
-	op := &core.Operation{}
+	op := &core.OperationUpdateDTO{}
 
-	_, err := om.ResolveOperationByID(ctx, "badness", op)
+	err := om.ResolveOperationByNamespacedID(ctx, "ns1:badness", op)
 
 	assert.Regexp(t, "FF00138", err)
 

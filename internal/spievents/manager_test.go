@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package adminevents
+package spievents
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestAdminEventsManager(t *testing.T) (ae *adminEventManager, ws *webSocket, wsc wsclient.WSClient, cancel func()) {
+func newTestSPIEventsManager(t *testing.T) (ae *adminEventManager, ws *webSocket, wsc wsclient.WSClient, cancel func()) {
 	coreconfig.Reset()
 
 	ae = NewAdminEventManager(context.Background()).(*adminEventManager)
@@ -78,8 +78,8 @@ func unmarshalChangeEvent(t *testing.T, msgBytes []byte) *core.ChangeEvent {
 	return &event
 }
 
-func TestAdminEventsE2E(t *testing.T) {
-	ae, _, wsc, cancel := newTestAdminEventsManager(t)
+func TestSPIEventsE2E(t *testing.T) {
+	ae, _, wsc, cancel := newTestSPIEventsManager(t)
 
 	events := make(chan *core.ChangeEvent)
 	go func() {

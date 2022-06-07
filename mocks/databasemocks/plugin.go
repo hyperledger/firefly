@@ -2352,6 +2352,20 @@ func (_m *Plugin) InsertBlockchainEvent(ctx context.Context, event *core.Blockch
 	return r0
 }
 
+// InsertContractListener provides a mock function with given fields: ctx, sub
+func (_m *Plugin) InsertContractListener(ctx context.Context, sub *core.ContractListener) error {
+	ret := _m.Called(ctx, sub)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
+		r0 = rf(ctx, sub)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // InsertDataArray provides a mock function with given fields: ctx, data
 func (_m *Plugin) InsertDataArray(ctx context.Context, data core.DataArray) error {
 	ret := _m.Called(ctx, data)
@@ -2507,11 +2521,11 @@ func (_m *Plugin) ReplaceMessage(ctx context.Context, message *core.Message) err
 }
 
 // ResolveOperation provides a mock function with given fields: ctx, ns, id, status, errorMsg, output
-func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg string, output fftypes.JSONObject) error {
+func (_m *Plugin) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) error {
 	ret := _m.Called(ctx, ns, id, status, errorMsg, output)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, string, fftypes.JSONObject) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, core.OpStatus, *string, fftypes.JSONObject) error); ok {
 		r0 = rf(ctx, ns, id, status, errorMsg, output)
 	} else {
 		r0 = ret.Error(0)
@@ -2821,20 +2835,6 @@ func (_m *Plugin) UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) e
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractAPI) error); ok {
 		r0 = rf(ctx, cd)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpsertContractListener provides a mock function with given fields: ctx, sub
-func (_m *Plugin) UpsertContractListener(ctx context.Context, sub *core.ContractListener) error {
-	ret := _m.Called(ctx, sub)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.ContractListener) error); ok {
-		r0 = rf(ctx, sub)
 	} else {
 		r0 = ret.Error(0)
 	}

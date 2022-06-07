@@ -167,6 +167,9 @@ func TestJSONField(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, v, []byte("{}"))
 
+	err = f.Scan(fftypes.JSONAnyPtr("{}"))
+	assert.NoError(t, err)
+
 	err = f.Scan(nil)
 	assert.NoError(t, err)
 	v, err = f.Value()

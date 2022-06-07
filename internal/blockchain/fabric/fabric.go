@@ -447,17 +447,12 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 		l.Errorf("Reply cannot be processed: %+v", reply)
 		return
 	}
-	operationID, err := fftypes.ParseUUID(ctx, requestID)
-	if err != nil {
-		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
-		return
-	}
 	updateType := core.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	f.callbacks.BlockchainOpUpdate(f, operationID, updateType, txHash, message, reply)
+	f.callbacks.BlockchainOpUpdate(f, requestID, updateType, txHash, message, reply)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -640,7 +635,7 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
@@ -659,10 +654,10 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, 
 	f.fireflyContract.mux.Lock()
 	chaincode := f.fireflyContract.chaincode
 	f.fireflyContract.mux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
 
-func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
+func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error {
 	pinInput := map[string]interface{}{
 		"namespace":  "firefly:" + action,
 		"uuids":      hexFormatB32(nil),
@@ -674,7 +669,7 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, operationID *fftypes.U
 	f.fireflyContract.mux.Lock()
 	chaincode := f.fireflyContract.chaincode
 	f.fireflyContract.mux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, operationID.String(), batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
 
 func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
@@ -708,7 +703,7 @@ func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chainc
 	return body, nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -728,7 +723,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, operationID *fftypes.UUID, 
 		}
 	}
 
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, operationID.String(), prefixItems, input, options)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, nsOpID, prefixItems, input, options)
 }
 
 func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {

@@ -17,25 +17,22 @@
 package apiserver
 
 import (
-	"bytes"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestAdminPatchOperationByID(t *testing.T) {
-	o, r := newTestAdminServer()
-	req := httptest.NewRequest("PUT", "/admin/api/v1/operations/abcd12345", bytes.NewReader([]byte("{}")))
+func TestSPIGetNamespaceByName(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/namespaces/ns1", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mop := &operationmocks.Manager{}
-	o.On("Operations").Return(mop)
-	mop.On("ResolveOperationByID", mock.Anything, "abcd12345", mock.AnythingOfType("*core.Operation")).Return(&core.Operation{}, nil)
+	o.On("GetNamespace", mock.Anything, "ns1").
+		Return(&core.Namespace{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

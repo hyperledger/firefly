@@ -24,22 +24,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var adminGetOpByID = &ffapi.Route{
-	Name:   "adminGetOpByID",
-	Path:   "operations/{opid}",
-	Method: http.MethodGet,
+var spiPatchOpByID = &ffapi.Route{
+	Name:   "spiPatchOpByID",
+	Path:   "operations/{nsopid}",
+	Method: http.MethodPatch,
 	PathParams: []*ffapi.PathParam{
-		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
+		{Name: "nsopid", Description: coremsgs.APIParamsOperationNamespacedID},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsAdminGetOpByID,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Operation{} },
+	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
+	JSONInputValue:  func() interface{} { return &core.OperationUpdateDTO{} },
+	JSONOutputValue: func() interface{} { return &core.EmptyInput{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetOperationByID(cr.ctx, r.PP["opid"])
-			return output, err
+			err = cr.or.Operations().ResolveOperationByNamespacedID(cr.ctx, r.PP["nsopid"], r.Input.(*core.OperationUpdateDTO))
+			return &core.EmptyInput{}, err
 		},
 	},
 }

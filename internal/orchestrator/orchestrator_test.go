@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
-	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
@@ -53,6 +52,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -91,7 +91,7 @@ type testOrchestrator struct {
 	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
-	mae *admineventsmocks.Manager
+	mae *spieventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
 	mns *namespacemocks.Manager
 }
@@ -151,7 +151,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
-		mae: &admineventsmocks.Manager{},
+		mae: &spieventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 		mns: &namespacemocks.Manager{},
 	}
@@ -881,7 +881,7 @@ func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitAdminEventsInit(t *testing.T) {
+func TestInitSPIEventsInit(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.adminEvents = nil
@@ -1087,7 +1087,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
 	assert.Equal(t, or.mom, or.Operations())
-	assert.Equal(t, or.mae, or.AdminEvents())
+	assert.Equal(t, or.mae, or.SPIEvents())
 }
 
 func TestInitOKWithMetrics(t *testing.T) {
@@ -1111,7 +1111,7 @@ func TestInitOKWithMetrics(t *testing.T) {
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mom, or.Operations())
-	assert.Equal(t, or.mae, or.AdminEvents())
+	assert.Equal(t, or.mae, or.SPIEvents())
 }
 
 func TestInitNamespaceFail(t *testing.T) {

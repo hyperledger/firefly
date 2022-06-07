@@ -241,7 +241,7 @@ func (h *FFDX) DownloadBlob(ctx context.Context, payloadRef string) (content io.
 	return res.RawBody(), nil
 }
 
-func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID string, data []byte) (err error) {
+func (h *FFDX) SendMessage(ctx context.Context, nsOpID, peerID string, data []byte) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID strin
 		SetBody(&sendMessage{
 			Message:   string(data),
 			Recipient: peerID,
-			RequestID: opID.String(),
+			RequestID: nsOpID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/messages")
@@ -261,7 +261,7 @@ func (h *FFDX) SendMessage(ctx context.Context, opID *fftypes.UUID, peerID strin
 	return nil
 }
 
-func (h *FFDX) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID, payloadRef string) (err error) {
+func (h *FFDX) TransferBlob(ctx context.Context, nsOpID, peerID, payloadRef string) (err error) {
 	if err := h.checkInitialized(ctx); err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (h *FFDX) TransferBlob(ctx context.Context, opID *fftypes.UUID, peerID, pay
 		SetBody(&transferBlob{
 			Path:      fmt.Sprintf("/%s", payloadRef),
 			Recipient: peerID,
-			RequestID: opID.String(),
+			RequestID: nsOpID,
 		}).
 		SetResult(&responseData).
 		Post("/api/v1/transfers")

@@ -287,6 +287,8 @@ func (f *jsonField) Scan(src interface{}) (err error) {
 		f.b, err = json.Marshal(tv)
 	case nil:
 		f.b = nil
+	case *fftypes.JSONAny:
+		f.b = tv.Bytes()
 	default:
 		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, f.b)
 	}

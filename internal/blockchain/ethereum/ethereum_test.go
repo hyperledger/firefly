@@ -913,7 +913,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
 
 	assert.NoError(t, err)
 
@@ -950,7 +950,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
 
 	assert.NoError(t, err)
 
@@ -978,7 +978,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
 
 	assert.Regexp(t, "FF10111.*pop", err)
 
@@ -1008,7 +1008,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 			"error": "Unknown error",
 		}))
 
-	err := e.SubmitBatchPin(context.Background(), nil, addr, batch)
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
 
 	assert.Regexp(t, "FF10111.*Unknown error", err)
 
@@ -1538,7 +1538,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"gasUsed": "24655",
 		"headers": {
 			"id": "4603a151-f212-446e-5c15-0f36b57cecc7",
-			"requestId": "` + operationID.String() + `",
+			"requestId": "ns1:` + operationID.String() + `",
 			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:12",
 			"timeElapsed": 3.966414429,
 			"timeReceived": "2021-05-28T20:54:27.481245697Z",
@@ -1554,7 +1554,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	em.On("BlockchainOpUpdate",
 		e,
-		operationID,
+		"ns1:"+operationID.String(),
 		core.OpStatusSucceeded,
 		"0x71a38acb7a5d4a970854f6d638ceb1fa10a4b59cbf4ed7674273a1a8dc8b36b8",
 		"",
@@ -1581,7 +1581,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		"headers": {
 			"id": "3a37b17b-13b6-4dc5-647a-07c11eae0be3",
-			"requestId": "` + operationID.String() + `",
+			"requestId": "ns1:` + operationID.String() + `",
 			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:0",
 			"timeElapsed": 0.020969053,
 			"timeReceived": "2021-05-31T02:35:11.458880504Z",
@@ -1594,7 +1594,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
 		e,
-		operationID,
+		"ns1:"+operationID.String(),
 		core.OpStatusFailed,
 		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
@@ -1623,23 +1623,6 @@ func TestHandleMsgBatchBadData(t *testing.T) {
 
 	var reply fftypes.JSONObject
 	data := fftypes.JSONAnyPtr(`{}`)
-	err := json.Unmarshal(data.Bytes(), &reply)
-	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
-}
-
-func TestHandleReceiptBadRequestID(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	wsm := &wsmocks.WSClient{}
-	e := &Ethereum{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: em,
-		wsconn:    wsm,
-	}
-
-	var reply fftypes.JSONObject
-	data := fftypes.JSONAnyPtr(`{"headers":{"requestId":"1","type":"TransactionSuccess"}}`)
 	err := json.Unmarshal(data.Bytes(), &reply)
 	assert.NoError(t, err)
 	e.handleReceipt(context.Background(), reply)
@@ -1961,7 +1944,7 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.NoError(t, err)
 }
 
@@ -1995,7 +1978,7 @@ func TestInvokeContractInvalidOption(t *testing.T) {
 			assert.Equal(t, float64(2), params[1])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF10398", err)
 }
 
@@ -2030,7 +2013,7 @@ func TestInvokeContractInvalidInput(t *testing.T) {
 			assert.Equal(t, body["customOption"].(string), "customValue")
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "unsupported type", err)
 }
 
@@ -2047,7 +2030,7 @@ func TestInvokeContractAddressNotSet(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "'address' not set", err)
 }
 
@@ -2072,7 +2055,7 @@ func TestInvokeContractEthconnectError(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF10111", err)
 }
 
@@ -2100,7 +2083,7 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "invalid json", err)
 }
 
@@ -2968,7 +2951,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitNetworkAction(context.Background(), fftypes.NewUUID(), "0x123", core.NetworkActionTerminate)
+	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate)
 	assert.NoError(t, err)
 }
 

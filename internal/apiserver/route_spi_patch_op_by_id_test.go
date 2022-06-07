@@ -17,22 +17,24 @@
 package apiserver
 
 import (
+	"bytes"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func TestGetOperationByID(t *testing.T) {
-	o, r := newTestAPIServer()
-	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/operations/abcd12345", nil)
+func TestSPIPatchOperationByID(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("PATCH", "/spi/v1/operations/ns1:0df3d864-2646-4e5d-8585-51eb154a8d23", bytes.NewReader([]byte("{}")))
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperationByID", mock.Anything, "mynamespace", "abcd12345").
-		Return(&core.Operation{}, nil)
+	mop := &operationmocks.Manager{}
+	o.On("Operations").Return(mop)
+	mop.On("ResolveOperationByNamespacedID", mock.Anything, "ns1:0df3d864-2646-4e5d-8585-51eb154a8d23", mock.AnythingOfType("*core.OperationUpdateDTO")).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
