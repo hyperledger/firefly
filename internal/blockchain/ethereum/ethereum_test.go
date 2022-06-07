@@ -3004,5 +3004,5 @@ func TestHandleNetworkAction(t *testing.T) {
 func TestNetworkVersion(t *testing.T) {
 	e, _ := newTestEthereum()
 	e.fireflyContract.networkVersion = 2
-	assert.Equal(t, 2, e.NetworkVersion(context.Background()))
+	assert.Equal(t, 2, e.NetworkVersion())
 }

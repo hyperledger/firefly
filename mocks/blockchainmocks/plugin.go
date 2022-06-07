@@ -187,13 +187,13 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// NetworkVersion provides a mock function with given fields: ctx
-func (_m *Plugin) NetworkVersion(ctx context.Context) int {
-	ret := _m.Called(ctx)
+// NetworkVersion provides a mock function with given fields:
+func (_m *Plugin) NetworkVersion() int {
+	ret := _m.Called()
 
 	var r0 int
-	if rf, ok := ret.Get(0).(func(context.Context) int); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(int)
 	}

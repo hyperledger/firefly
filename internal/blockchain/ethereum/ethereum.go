@@ -1092,7 +1092,7 @@ func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, 
 	return strconv.Atoi(output.Output.(string))
 }
 
-func (e *Ethereum) NetworkVersion(ctx context.Context) int {
+func (e *Ethereum) NetworkVersion() int {
 	e.fireflyContract.mux.Lock()
 	defer e.fireflyContract.mux.Unlock()
 	return e.fireflyContract.networkVersion

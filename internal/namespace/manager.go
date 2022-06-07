@@ -120,26 +120,47 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	nm.ctx = ctx
 	nm.cancelCtx = cancelCtx
 
-	err = nm.loadPlugins(ctx)
-	if err != nil {
+	if err = nm.loadPlugins(ctx); err != nil {
 		return err
 	}
-
 	if err = nm.loadNamespaces(ctx); err != nil {
 		return err
 	}
 
+	defaultNS := config.GetString(coreconfig.NamespacesDefault)
+	var systemNS *namespace
+
 	// Start an orchestrator per namespace
 	for name, ns := range nm.namespaces {
-		or := nm.utOrchestrator
-		if or == nil {
-			or = orchestrator.NewOrchestrator(name, ns.config, ns.plugins, nm.metrics, nm.adminEvents)
-		}
-		if err = or.Init(ctx, cancelCtx); err != nil {
+		if err := nm.initNamespace(name, ns); err != nil {
 			return err
 		}
-		ns.orchestrator = or
+
+		// If the default namespace is a multiparty V1 namespace, insert the legacy ff_system namespace
+		if name == defaultNS && ns.config.Multiparty.Enabled && ns.plugins.Blockchain.Plugin.NetworkVersion() == 1 {
+			systemNS = &namespace{}
+			*systemNS = *ns
+			if err := nm.initNamespace(core.LegacySystemNamespace, systemNS); err != nil {
+				return err
+			}
+		}
 	}
+
+	if systemNS != nil {
+		nm.namespaces[core.LegacySystemNamespace] = systemNS
+	}
+	return nil
+}
+
+func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
+	or := nm.utOrchestrator
+	if or == nil {
+		or = orchestrator.NewOrchestrator(name, ns.config, ns.plugins, nm.metrics, nm.adminEvents)
+	}
+	if err := or.Init(nm.ctx, nm.cancelCtx); err != nil {
+		return err
+	}
+	ns.orchestrator = or
 	return nil
 }
 
@@ -486,26 +507,23 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
 	defaultNS := config.GetString(coreconfig.NamespacesDefault)
 	size := namespacePredefined.ArraySize()
-	namespaces := make(map[string]config.Section, size)
+	foundDefault := false
+	names := make(map[string]bool, size)
 	for i := 0; i < size; i++ {
 		nsConfig := namespacePredefined.ArrayEntry(i)
 		name := nsConfig.GetString(coreconfig.NamespaceName)
-		if name != "" {
-			if _, ok := namespaces[name]; ok {
-				log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
-			}
-			namespaces[name] = nsConfig
+		if name == "" {
+			continue
 		}
-	}
-
-	i := 0
-	foundDefault := false
-	for name, nsConfig := range namespaces {
-		if err := nm.loadNamespace(ctx, name, i, nsConfig); err != nil {
+		if _, ok := names[name]; ok {
+			log.L(ctx).Warnf("Duplicate predefined namespace (ignored): %s", name)
+			continue
+		}
+		names[name] = true
+		foundDefault = foundDefault || name == defaultNS
+		if nm.namespaces[name], err = nm.loadNamespace(ctx, name, i, nsConfig); err != nil {
 			return err
 		}
-		i++
-		foundDefault = foundDefault || name == defaultNS
 	}
 	if !foundDefault {
 		return i18n.NewError(ctx, coremsgs.MsgDefaultNamespaceNotFound, defaultNS)
@@ -513,13 +531,12 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
 	return err
 }
 
-func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) (err error) {
+func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) (*namespace, error) {
 	if err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
-		return err
+		return nil, err
 	}
-
 	if name == core.LegacySystemNamespace || conf.GetString(coreconfig.NamespaceRemoteName) == core.LegacySystemNamespace {
-		return i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
+		return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
 	}
 
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
@@ -573,6 +590,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		DefaultKey: conf.GetString(coreconfig.NamespaceDefaultKey),
 	}
 	var p *orchestrator.Plugins
+	var err error
 	if multiparty.(bool) {
 		config.Multiparty.Enabled = true
 		config.Multiparty.OrgName = orgName
@@ -582,15 +600,15 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	} else {
 		p, err = nm.validateGatewayConfig(ctx, name, plugins)
 	}
-
-	if err == nil {
-		nm.namespaces[name] = &namespace{
-			description: conf.GetString(coreconfig.NamespaceDescription),
-			config:      config,
-			plugins:     *p,
-		}
+	if err != nil {
+		return nil, err
 	}
-	return err
+
+	return &namespace{
+		description: conf.GetString(coreconfig.NamespaceDescription),
+		config:      config,
+		plugins:     *p,
+	}, nil
 }
 
 func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {

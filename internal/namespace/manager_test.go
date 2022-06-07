@@ -108,12 +108,53 @@ func TestInit(t *testing.T) {
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.utOrchestrator = mo
 
+	mbi := nm.plugins.blockchain["ethereum"].Plugin.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion").Return(2)
+
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
 	assert.Nil(t, nm.Orchestrator("unknown"))
+}
+
+func TestInitVersion1(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	nm.utOrchestrator = mo
+
+	mbi := nm.plugins.blockchain["ethereum"].Plugin.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion").Return(1)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.NotNil(t, nm.Orchestrator(core.LegacySystemNamespace))
+}
+
+func TestInitVersion1Fail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	nm.utOrchestrator = mo
+
+	mbi := nm.plugins.blockchain["ethereum"].Plugin.(*blockchainmocks.Plugin)
+	mbi.On("NetworkVersion").Return(1)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestInitFail(t *testing.T) {
@@ -537,6 +578,22 @@ func TestInitNamespacesDuplicate(t *testing.T) {
 	err = nm.loadNamespaces(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, nm.namespaces, 1)
+}
+
+func TestInitNamespacesNoName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    predefined:
+    - plugins: [postgres]
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10166", err)
 }
 
 func TestInitNamespacesNoDefault(t *testing.T) {

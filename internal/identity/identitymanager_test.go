@@ -154,7 +154,7 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion", ctx).Return(1)
+	mbi.On("NetworkVersion").Return(1)
 
 	idID := fftypes.NewUUID()
 
@@ -193,7 +193,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion", ctx).Return(1)
+	mbi.On("NetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
@@ -259,7 +259,7 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion", ctx).Return(1)
+	mbi.On("NetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").
@@ -547,7 +547,7 @@ func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion", ctx).Return(1)
+	mbi.On("NetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
@@ -586,7 +586,7 @@ func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion", ctx).Return(1)
+	mbi.On("NetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)

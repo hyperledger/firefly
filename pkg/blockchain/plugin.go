@@ -91,7 +91,7 @@ type Plugin interface {
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
 
 	// NetworkVersion returns the version of the network rules being used by this plugin
-	NetworkVersion(ctx context.Context) int
+	NetworkVersion() int
 }
 
 const FireFlyActionPrefix = "firefly:"

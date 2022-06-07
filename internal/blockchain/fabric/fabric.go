@@ -843,7 +843,7 @@ func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, 
 	return int(output.Result.(float64)), nil
 }
 
-func (f *Fabric) NetworkVersion(ctx context.Context) int {
+func (f *Fabric) NetworkVersion() int {
 	f.fireflyContract.mux.Lock()
 	defer f.fireflyContract.mux.Unlock()
 	return f.fireflyContract.networkVersion
