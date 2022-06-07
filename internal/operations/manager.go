@@ -45,7 +45,7 @@ type Manager interface {
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
 	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
-	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
+	ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
 }
@@ -208,13 +208,8 @@ func (om *operationsManager) writeOperationFailure(ctx context.Context, ns strin
 	}
 }
 
-func (om *operationsManager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
-	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
-	if err != nil {
-		return err
-	}
-	err = om.database.ResolveOperation(ctx, ns, u, op.Status, op.Error, op.Output)
-	return err
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
+	return om.database.ResolveOperation(ctx, ns, opID, op.Status, op.Error, op.Output)
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *OperationUpdate) {

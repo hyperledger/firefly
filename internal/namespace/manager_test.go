@@ -37,10 +37,12 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -908,4 +910,108 @@ func TestGetNamespaces(t *testing.T) {
 	results, err := nm.GetNamespaces(context.Background())
 	assert.Nil(t, err)
 	assert.Len(t, results, 1)
+}
+
+func TestGetOperationByNamespacedID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+	mo.On("GetOperationByID", context.Background(), "default", opID.String()).Return(nil, nil)
+
+	op, err := nm.GetOperationByNamespacedID(context.Background(), "default:"+opID.String())
+	assert.Nil(t, err)
+	assert.Nil(t, op)
+
+	mo.AssertExpectations(t)
+}
+
+func TestGetOperationByNamespacedIDBadID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	_, err := nm.GetOperationByNamespacedID(context.Background(), "default:bad")
+	assert.Regexp(t, "FF00138", err)
+
+	mo.AssertExpectations(t)
+}
+
+func TestGetOperationByNamespacedIDNoOrchestrator(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+
+	_, err := nm.GetOperationByNamespacedID(context.Background(), "bad:"+opID.String())
+	assert.Regexp(t, "FF10109", err)
+
+	mo.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mom := &operationmocks.Manager{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+	mo.On("Operations").Return(mom)
+	mom.On("ResolveOperationByID", context.Background(), "default", opID, mock.Anything).Return(nil)
+
+	err := nm.ResolveOperationByNamespacedID(context.Background(), "default:"+opID.String(), &core.OperationUpdateDTO{})
+	assert.Nil(t, err)
+
+	mo.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedIDBadID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	err := nm.ResolveOperationByNamespacedID(context.Background(), "default:bad", &core.OperationUpdateDTO{})
+	assert.Regexp(t, "FF00138", err)
+
+	mo.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedIDNoOrchestrator(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+
+	err := nm.ResolveOperationByNamespacedID(context.Background(), "bad:"+opID.String(), &core.OperationUpdateDTO{})
+	assert.Regexp(t, "FF10109", err)
+
+	mo.AssertExpectations(t)
 }

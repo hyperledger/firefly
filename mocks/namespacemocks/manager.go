@@ -41,6 +41,29 @@ func (_m *Manager) GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
 	return r0, r1
 }
 
+// GetOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID
+func (_m *Manager) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
+	ret := _m.Called(ctx, nsOpID)
+
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Operation); ok {
+		r0 = rf(ctx, nsOpID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nsOpID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields: ctx, cancelCtx
 func (_m *Manager) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
 	ret := _m.Called(ctx, cancelCtx)
@@ -66,6 +89,20 @@ func (_m *Manager) Orchestrator(ns string) orchestrator.Orchestrator {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(orchestrator.Orchestrator)
 		}
+	}
+
+	return r0
+}
+
+// ResolveOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID, op
+func (_m *Manager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
+	ret := _m.Called(ctx, nsOpID, op)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.OperationUpdateDTO) error); ok {
+		r0 = rf(ctx, nsOpID, op)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0

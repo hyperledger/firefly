@@ -62,6 +62,8 @@ type Manager interface {
 	Orchestrator(ns string) orchestrator.Orchestrator
 	SPIEvents() spievents.Manager
 	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
+	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
+	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
 }
 
 type namespace struct {
@@ -702,4 +704,28 @@ func (nm *namespaceManager) GetNamespaces(ctx context.Context) ([]*core.Namespac
 		})
 	}
 	return results, nil
+}
+
+func (nm *namespaceManager) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
+	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
+	if err != nil {
+		return nil, err
+	}
+	or := nm.Orchestrator(ns)
+	if or == nil {
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	return or.GetOperationByID(ctx, ns, u.String())
+}
+
+func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
+	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
+	if err != nil {
+		return err
+	}
+	or := nm.Orchestrator(ns)
+	if or == nil {
+		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	return or.Operations().ResolveOperationByID(ctx, ns, u, op)
 }

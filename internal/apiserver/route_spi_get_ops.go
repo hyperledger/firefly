@@ -37,6 +37,7 @@ var spiGetOps = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.OperationQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			// TODO: cr.or will be nil (this must be converted to a namespaced query)
 			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
 		},
 	},

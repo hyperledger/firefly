@@ -39,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/namespace"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
@@ -229,8 +230,13 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 				return nil, err
 			}
 		}
-		vars := mux.Vars(r.Req)
-		or := mgr.Orchestrator(extractNamespace(vars))
+
+		var or orchestrator.Orchestrator
+		if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
+			vars := mux.Vars(r.Req)
+			or = mgr.Orchestrator(extractNamespace(vars))
+		}
+
 		cr := &coreRequest{
 			mgr:        mgr,
 			or:         or,
@@ -242,9 +248,14 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 	}
 	if ce.CoreFormUploadHandler != nil {
 		route.FormUploadHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
-			vars := mux.Vars(r.Req)
-			or := mgr.Orchestrator(extractNamespace(vars))
+			var or orchestrator.Orchestrator
+			if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
+				vars := mux.Vars(r.Req)
+				or = mgr.Orchestrator(extractNamespace(vars))
+			}
+
 			cr := &coreRequest{
+				mgr:        mgr,
 				or:         or,
 				ctx:        r.Req.Context(),
 				apiBaseURL: apiBaseURL,

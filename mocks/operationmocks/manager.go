@@ -62,13 +62,13 @@ func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.Opera
 	_m.Called(ctx, handler, ops)
 }
 
-// ResolveOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID, op
-func (_m *Manager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
-	ret := _m.Called(ctx, nsOpID, op)
+// ResolveOperationByID provides a mock function with given fields: ctx, ns, opID, op
+func (_m *Manager) ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
+	ret := _m.Called(ctx, ns, opID, op)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.OperationUpdateDTO) error); ok {
-		r0 = rf(ctx, nsOpID, op)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *core.OperationUpdateDTO) error); ok {
+		r0 = rf(ctx, ns, opID, op)
 	} else {
 		r0 = ret.Error(0)
 	}

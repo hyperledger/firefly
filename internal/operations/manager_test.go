@@ -565,22 +565,9 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 		"my": "data",
 	}).Return(nil)
 
-	err := om.ResolveOperationByNamespacedID(ctx, "ns1:"+opID.String(), opUpdate)
+	err := om.ResolveOperationByID(ctx, "ns1", opID, opUpdate)
 
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-}
-
-func TestResolveOperationByNamespacedIDBadID(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	ctx := context.Background()
-	op := &core.OperationUpdateDTO{}
-
-	err := om.ResolveOperationByNamespacedID(ctx, "ns1:badness", op)
-
-	assert.Regexp(t, "FF00138", err)
-
 }

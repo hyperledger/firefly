@@ -42,6 +42,12 @@ type coreExtensions struct {
 	CoreFormUploadHandler func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
 }
 
+const (
+	routeTagGlobal              = "Global"
+	routeTagDefaultNamespace    = "Default Namespace"
+	routeTagNonDefaultNamespace = "Non-Default Namespace"
+)
+
 var routes = append(
 	globalRoutes([]*ffapi.Route{
 		getNamespace,
@@ -149,7 +155,7 @@ var routes = append(
 
 func globalRoutes(routes []*ffapi.Route) []*ffapi.Route {
 	for _, route := range routes {
-		route.Tag = "Global"
+		route.Tag = routeTagGlobal
 	}
 	return routes
 }
@@ -157,7 +163,7 @@ func globalRoutes(routes []*ffapi.Route) []*ffapi.Route {
 func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
 	newRoutes := make([]*ffapi.Route, len(routes))
 	for i, route := range routes {
-		route.Tag = "Default Namespace"
+		route.Tag = routeTagDefaultNamespace
 
 		routeCopy := *route
 		routeCopy.Name += "Namespace"
@@ -165,7 +171,7 @@ func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
 		routeCopy.PathParams = append(routeCopy.PathParams, &ffapi.PathParam{
 			Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace,
 		})
-		routeCopy.Tag = "Non-Default Namespace"
+		routeCopy.Tag = routeTagNonDefaultNamespace
 		newRoutes[i] = &routeCopy
 	}
 	return append(routes, newRoutes...)
