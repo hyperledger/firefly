@@ -396,838 +396,838 @@
     "relUrl": "/reference/config.html#configuration-reference"
   },"66": {
     "doc": "pages.reference",
-    "title": "admin",
-    "content": "| Key | Description | Type | Default Value | . | address | The IP address on which the admin HTTP API should listen | IP Address string | 127.0.0.1 | . | enabled | Enables the admin HTTP API | boolean | &lt;nil&gt; | . | port | The port on which the admin HTTP API should listen | int | 5001 | . | publicURL | The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation | URL string | &lt;nil&gt; | . | readTimeout | The maximum time to wait when reading from an HTTP connection | time.Duration | 15s | . | shutdownTimeout | The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server | time.Duration | 10s | . | writeTimeout | The maximum time to wait when writing to an HTTP connection | time.Duration | 15s | . ",
-    "url": "/firefly/head/reference/config.html#admin",
-    "relUrl": "/reference/config.html#admin"
-  },"67": {
-    "doc": "pages.reference",
-    "title": "admin.tls",
-    "content": "| Key | Description | Type | Default Value | . | caFile | The path to the CA file for TLS on this API | string | &lt;nil&gt; | . | certFile | The path to the certificate file for TLS on this API | string | &lt;nil&gt; | . | clientAuth | Enables or disables client auth for TLS on this API | string | &lt;nil&gt; | . | enabled | Enables or disables TLS on this API | boolean | false | . | keyFile | The path to the private key file for TLS on this API | string | &lt;nil&gt; | . ",
-    "url": "/firefly/head/reference/config.html#admintls",
-    "relUrl": "/reference/config.html#admintls"
-  },"68": {
-    "doc": "pages.reference",
-    "title": "admin.ws",
-    "content": "| Key | Description | Type | Default Value | . | blockedWarnInterval | How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events | time.Duration | &lt;nil&gt; | . | eventQueueLength | Server-side queue length for events waiting for delivery over an admin change event listener websocket | int | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | &lt;nil&gt; | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | &lt;nil&gt; | . ",
-    "url": "/firefly/head/reference/config.html#adminws",
-    "relUrl": "/reference/config.html#adminws"
-  },"69": {
-    "doc": "pages.reference",
     "title": "api",
     "content": "| Key | Description | Type | Default Value | . | defaultFilterLimit | The maximum number of rows to return if no limit is specified on an API request | int | &lt;nil&gt; | . | maxFilterLimit | The largest value of limit that an HTTP client can specify in a request | int | &lt;nil&gt; | . | requestMaxTimeout | The maximum amount of time that an HTTP client can specify in a Request-Timeout header to keep a specific request open | time.Duration | &lt;nil&gt; | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#api",
     "relUrl": "/reference/config.html#api"
-  },"70": {
+  },"67": {
     "doc": "pages.reference",
     "title": "asset.manager",
     "content": "| Key | Description | Type | Default Value | . | keyNormalization | Mechanism to normalize keys before using them. Valid options are blockchain_plugin - use blockchain plugin (default) or none - do not attempt normalization | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#assetmanager",
     "relUrl": "/reference/config.html#assetmanager"
-  },"71": {
+  },"68": {
     "doc": "pages.reference",
     "title": "batch.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#batchcache",
     "relUrl": "/reference/config.html#batchcache"
-  },"72": {
+  },"69": {
     "doc": "pages.reference",
     "title": "batch.manager",
     "content": "| Key | Description | Type | Default Value | . | minimumPollDelay | The minimum time the batch manager waits between polls on the DB - to prevent thrashing | time.Duration | &lt;nil&gt; | . | pollTimeout | How long to wait without any notifications of new messages before doing a page query | time.Duration | &lt;nil&gt; | . | readPageSize | The size of each page of messages read from the database into memory when assembling batches | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#batchmanager",
     "relUrl": "/reference/config.html#batchmanager"
-  },"73": {
+  },"70": {
     "doc": "pages.reference",
     "title": "batch.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#batchretry",
     "relUrl": "/reference/config.html#batchretry"
-  },"74": {
+  },"71": {
     "doc": "pages.reference",
     "title": "blobreceiver.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blobreceiverretry",
     "relUrl": "/reference/config.html#blobreceiverretry"
-  },"75": {
+  },"72": {
     "doc": "pages.reference",
     "title": "blobreceiver.worker",
     "content": "| Key | Description | Type | Default Value | . | batchMaxInserts | The maximum number of items the blob receiver worker will insert in a batch | int | &lt;nil&gt; | . | batchTimeout | The maximum amount of the the blob receiver worker will wait | time.Duration | &lt;nil&gt; | . | count | The number of blob receiver workers | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blobreceiverworker",
     "relUrl": "/reference/config.html#blobreceiverworker"
-  },"76": {
+  },"73": {
     "doc": "pages.reference",
     "title": "blockchain",
     "content": "| Key | Description | Type | Default Value | . | type | A string defining which type of blockchain plugin to use. This tells FireFly which type of configuration to load for the rest of the blockchain section | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchain",
     "relUrl": "/reference/config.html#blockchain"
-  },"77": {
+  },"74": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.addressResolver",
     "content": "| Key | Description | Type | Default Value | . | bodyTemplate | The body go template string to use when making HTTP requests | Go Template string | &lt;nil&gt; | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | method | The HTTP method to use when making requests to the Address Resolver | string | GET | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | responseField | The name of a JSON field that is provided in the response, that contains the ethereum address (default address) | string | address | . | retainOriginal | When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address | boolean | &lt;nil&gt; | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the Address Resolver | string | &lt;nil&gt; | . | urlTemplate | The URL Go template string to use when calling the Address Resolver | Go Template string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumaddressresolver",
     "relUrl": "/reference/config.html#blockchainethereumaddressresolver"
-  },"78": {
+  },"75": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.addressResolver.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumaddressresolverauth",
     "relUrl": "/reference/config.html#blockchainethereumaddressresolverauth"
-  },"79": {
+  },"76": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.addressResolver.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | 1000 | . | ttl | The time to live (TTL) for the cache | time.Duration | 24h | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumaddressresolvercache",
     "relUrl": "/reference/config.html#blockchainethereumaddressresolvercache"
-  },"80": {
+  },"77": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.addressResolver.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Address Resolver | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumaddressresolverproxy",
     "relUrl": "/reference/config.html#blockchainethereumaddressresolverproxy"
-  },"81": {
+  },"78": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.addressResolver.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumaddressresolverretry",
     "relUrl": "/reference/config.html#blockchainethereumaddressresolverretry"
-  },"82": {
+  },"79": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.ethconnect",
     "content": "| Key | Description | Type | Default Value | . | batchSize | The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream | int | 50 | . | batchTimeout | How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream | time.Duration | 500 | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | fromBlock | The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use fireflyContract[].fromBlock) | Address string | 0 | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | instance | The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use fireflyContract[].address) | Address string | &lt;nil&gt; | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | prefixLong | The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect | string | firefly | . | prefixShort | The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect | string | fly | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | topic | The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect | string | &lt;nil&gt; | . | url | The URL of the Ethconnect instance | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumethconnect",
     "relUrl": "/reference/config.html#blockchainethereumethconnect"
-  },"83": {
+  },"80": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.ethconnect.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumethconnectauth",
     "relUrl": "/reference/config.html#blockchainethereumethconnectauth"
-  },"84": {
+  },"81": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.ethconnect.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to Ethconnect | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumethconnectproxy",
     "relUrl": "/reference/config.html#blockchainethereumethconnectproxy"
-  },"85": {
+  },"82": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.ethconnect.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumethconnectretry",
     "relUrl": "/reference/config.html#blockchainethereumethconnectretry"
-  },"86": {
+  },"83": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.ethconnect.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumethconnectws",
     "relUrl": "/reference/config.html#blockchainethereumethconnectws"
-  },"87": {
+  },"84": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.fftm",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the FireFly Transaction Manager runtime, if enabled | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumfftm",
     "relUrl": "/reference/config.html#blockchainethereumfftm"
-  },"88": {
+  },"85": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.fftm.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumfftmauth",
     "relUrl": "/reference/config.html#blockchainethereumfftmauth"
-  },"89": {
+  },"86": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.fftm.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Transaction Manager | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumfftmproxy",
     "relUrl": "/reference/config.html#blockchainethereumfftmproxy"
-  },"90": {
+  },"87": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.fftm.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumfftmretry",
     "relUrl": "/reference/config.html#blockchainethereumfftmretry"
-  },"91": {
+  },"88": {
     "doc": "pages.reference",
     "title": "blockchain.ethereum.fireflyContract[]",
     "content": "| Key | Description | Type | Default Value | . | address | The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain | Address string | &lt;nil&gt; | . | fromBlock | The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream | Address string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainethereumfireflycontract",
     "relUrl": "/reference/config.html#blockchainethereumfireflycontract"
-  },"92": {
+  },"89": {
     "doc": "pages.reference",
     "title": "blockchain.fabric.fabconnect",
     "content": "| Key | Description | Type | Default Value | . | batchSize | The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream | int | 50 | . | batchTimeout | The maximum amount of time to wait for a batch to complete | time.Duration | 500 | . | chaincode | The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode) | string | &lt;nil&gt; | . | channel | The Fabric channel that FireFly will use for BatchPin transactions | string | &lt;nil&gt; | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | prefixLong | The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect | string | firefly | . | prefixShort | The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect | string | fly | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | signer | The Fabric signing key to use when submitting transactions to Fabconnect | string | &lt;nil&gt; | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | topic | The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect | string | &lt;nil&gt; | . | url | The URL of the Fabconnect instance | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainfabricfabconnect",
     "relUrl": "/reference/config.html#blockchainfabricfabconnect"
-  },"93": {
+  },"90": {
     "doc": "pages.reference",
     "title": "blockchain.fabric.fabconnect.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainfabricfabconnectauth",
     "relUrl": "/reference/config.html#blockchainfabricfabconnectauth"
-  },"94": {
+  },"91": {
     "doc": "pages.reference",
     "title": "blockchain.fabric.fabconnect.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to Fabconnect | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainfabricfabconnectproxy",
     "relUrl": "/reference/config.html#blockchainfabricfabconnectproxy"
-  },"95": {
+  },"92": {
     "doc": "pages.reference",
     "title": "blockchain.fabric.fabconnect.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#blockchainfabricfabconnectretry",
     "relUrl": "/reference/config.html#blockchainfabricfabconnectretry"
-  },"96": {
+  },"93": {
     "doc": "pages.reference",
     "title": "blockchain.fabric.fabconnect.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#blockchainfabricfabconnectws",
     "relUrl": "/reference/config.html#blockchainfabricfabconnectws"
-  },"97": {
+  },"94": {
     "doc": "pages.reference",
     "title": "blockchain.fabric.fireflyContract[]",
     "content": "| Key | Description | Type | Default Value | . | chaincode | The name of the Fabric chaincode that FireFly will use for BatchPin transactions | string | &lt;nil&gt; | . | fromBlock | The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream | Address string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchainfabricfireflycontract",
     "relUrl": "/reference/config.html#blockchainfabricfireflycontract"
-  },"98": {
+  },"95": {
     "doc": "pages.reference",
     "title": "blockchainevent.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#blockchaineventcache",
     "relUrl": "/reference/config.html#blockchaineventcache"
-  },"99": {
+  },"96": {
     "doc": "pages.reference",
     "title": "broadcast.batch",
     "content": "| Key | Description | Type | Default Value | . | agentTimeout | How long to keep around a batching agent for a sending identity before disposal | string | &lt;nil&gt; | . | payloadLimit | The maximum payload size of a batch for broadcast messages | BytesSize | &lt;nil&gt; | . | size | The maximum number of messages that can be packed into a batch | int | &lt;nil&gt; | . | timeout | The timeout to wait for a batch to fill, before sending | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#broadcastbatch",
     "relUrl": "/reference/config.html#broadcastbatch"
-  },"100": {
+  },"97": {
     "doc": "pages.reference",
     "title": "cors",
     "content": "| Key | Description | Type | Default Value | . | credentials | CORS setting to control whether a browser allows credentials to be sent to this API | boolean | true | . | debug | Whether debug is enabled for the CORS implementation | boolean | false | . | enabled | Whether CORS is enabled | boolean | true | . | headers | CORS setting to control the allowed headers | string | [*] | . | maxAge | The maximum age a browser should rely on CORS checks | time.Duration | 600 | . | methods | CORS setting to control the allowed methods | string | [GET POST PUT PATCH DELETE] | . | origins | CORS setting to control the allowed origins | string | [*] | . ",
     "url": "/firefly/head/reference/config.html#cors",
     "relUrl": "/reference/config.html#cors"
-  },"101": {
+  },"98": {
     "doc": "pages.reference",
     "title": "database",
     "content": "| Key | Description | Type | Default Value | . | type | The type of the database interface plugin to use | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#database",
     "relUrl": "/reference/config.html#database"
-  },"102": {
+  },"99": {
     "doc": "pages.reference",
     "title": "database.postgres",
     "content": "| Key | Description | Type | Default Value | . | maxConnIdleTime | The maximum amount of time a database connection can be idle | time.Duration | 1m | . | maxConnLifetime | The maximum amount of time to keep a database connection open | time.Duration | &lt;nil&gt; | . | maxConns | Maximum connections to the database | int | 50 | . | maxIdleConns | The maximum number of idle connections to the database | int | &lt;nil&gt; | . | url | The PostgreSQL connection string for the database | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#databasepostgres",
     "relUrl": "/reference/config.html#databasepostgres"
-  },"103": {
+  },"100": {
     "doc": "pages.reference",
     "title": "database.postgres.migrations",
     "content": "| Key | Description | Type | Default Value | . | auto | Enables automatic database migrations | boolean | false | . | directory | The directory containing the numerically ordered migration DDL files to apply to the database | string | ./db/migrations/postgres | . ",
     "url": "/firefly/head/reference/config.html#databasepostgresmigrations",
     "relUrl": "/reference/config.html#databasepostgresmigrations"
-  },"104": {
+  },"101": {
     "doc": "pages.reference",
     "title": "database.sqlite3",
     "content": "| Key | Description | Type | Default Value | . | maxConnIdleTime | The maximum amount of time a database connection can be idle | time.Duration | 1m | . | maxConnLifetime | The maximum amount of time to keep a database connection open | time.Duration | &lt;nil&gt; | . | maxConns | Maximum connections to the database | int | 1 | . | maxIdleConns | The maximum number of idle connections to the database | int | &lt;nil&gt; | . | url | The SQLite connection string for the database | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#databasesqlite3",
     "relUrl": "/reference/config.html#databasesqlite3"
-  },"105": {
+  },"102": {
     "doc": "pages.reference",
     "title": "database.sqlite3.migrations",
     "content": "| Key | Description | Type | Default Value | . | auto | Enables automatic database migrations | boolean | false | . | directory | The directory containing the numerically ordered migration DDL files to apply to the database | string | ./db/migrations/sqlite | . ",
     "url": "/firefly/head/reference/config.html#databasesqlite3migrations",
     "relUrl": "/reference/config.html#databasesqlite3migrations"
-  },"106": {
+  },"103": {
     "doc": "pages.reference",
     "title": "dataexchange",
     "content": "| Key | Description | Type | Default Value | . | type | The Data Exchange plugin to use | string | ffdx | . ",
     "url": "/firefly/head/reference/config.html#dataexchange",
     "relUrl": "/reference/config.html#dataexchange"
-  },"107": {
+  },"104": {
     "doc": "pages.reference",
     "title": "dataexchange.ffdx",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | initEnabled | Instructs FireFly to always post all current nodes to the /init API before connecting or reconnecting to the connector | boolean | false | . | manifestEnabled | Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector | string | false | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the Data Exchange instance | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#dataexchangeffdx",
     "relUrl": "/reference/config.html#dataexchangeffdx"
-  },"108": {
+  },"105": {
     "doc": "pages.reference",
     "title": "dataexchange.ffdx.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#dataexchangeffdxauth",
     "relUrl": "/reference/config.html#dataexchangeffdxauth"
-  },"109": {
+  },"106": {
     "doc": "pages.reference",
     "title": "dataexchange.ffdx.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Data Exchange | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#dataexchangeffdxproxy",
     "relUrl": "/reference/config.html#dataexchangeffdxproxy"
-  },"110": {
+  },"107": {
     "doc": "pages.reference",
     "title": "dataexchange.ffdx.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#dataexchangeffdxretry",
     "relUrl": "/reference/config.html#dataexchangeffdxretry"
-  },"111": {
+  },"108": {
     "doc": "pages.reference",
     "title": "dataexchange.ffdx.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#dataexchangeffdxws",
     "relUrl": "/reference/config.html#dataexchangeffdxws"
-  },"112": {
+  },"109": {
     "doc": "pages.reference",
     "title": "debug",
     "content": "| Key | Description | Type | Default Value | . | port | An HTTP port on which to enable the go debugger | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#debug",
     "relUrl": "/reference/config.html#debug"
-  },"113": {
+  },"110": {
     "doc": "pages.reference",
     "title": "download.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxAttempts | The maximum number attempts | int | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#downloadretry",
     "relUrl": "/reference/config.html#downloadretry"
-  },"114": {
+  },"111": {
     "doc": "pages.reference",
     "title": "download.worker",
     "content": "| Key | Description | Type | Default Value | . | count | The number of download workers | int | &lt;nil&gt; | . | queueLength | The length of the work queue in the channel to the workers - defaults to 2x the worker count | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#downloadworker",
     "relUrl": "/reference/config.html#downloadworker"
-  },"115": {
+  },"112": {
     "doc": "pages.reference",
     "title": "event.aggregator",
     "content": "| Key | Description | Type | Default Value | . | batchSize | The maximum number of records to read from the DB before performing an aggregation run | BytesSize | &lt;nil&gt; | . | batchTimeout | How long to wait for new events to arrive before performing aggregation on a page of events | time.Duration | &lt;nil&gt; | . | firstEvent | The first event the aggregator should process, if no previous offest is stored in the DB. Valid options are oldest or newest | string | &lt;nil&gt; | . | pollTimeout | The time to wait without a notification of new events, before trying a select on the table | time.Duration | &lt;nil&gt; | . | rewindQueryLimit | Safety limit on the maximum number of records to search when performing queries to search for rewinds | int | &lt;nil&gt; | . | rewindQueueLength | The size of the queue into the rewind dispatcher | int | &lt;nil&gt; | . | rewindTimeout | The minimum time to wait for rewinds to accumulate before resolving them | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventaggregator",
     "relUrl": "/reference/config.html#eventaggregator"
-  },"116": {
+  },"113": {
     "doc": "pages.reference",
     "title": "event.aggregator.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventaggregatorretry",
     "relUrl": "/reference/config.html#eventaggregatorretry"
-  },"117": {
+  },"114": {
     "doc": "pages.reference",
     "title": "event.dbevents",
     "content": "| Key | Description | Type | Default Value | . | bufferSize | The size of the buffer of change events | BytesSize | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventdbevents",
     "relUrl": "/reference/config.html#eventdbevents"
-  },"118": {
+  },"115": {
     "doc": "pages.reference",
     "title": "event.dispatcher",
     "content": "| Key | Description | Type | Default Value | . | batchTimeout | A short time to wait for new events to arrive before re-polling for new events | time.Duration | &lt;nil&gt; | . | bufferLength | The number of events + attachments an individual dispatcher should hold in memory ready for delivery to the subscription | int | &lt;nil&gt; | . | pollTimeout | The time to wait without a notification of new events, before trying a select on the table | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventdispatcher",
     "relUrl": "/reference/config.html#eventdispatcher"
-  },"119": {
+  },"116": {
     "doc": "pages.reference",
     "title": "event.dispatcher.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventdispatcherretry",
     "relUrl": "/reference/config.html#eventdispatcherretry"
-  },"120": {
+  },"117": {
     "doc": "pages.reference",
     "title": "event.listenerTopic.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventlistenertopiccache",
     "relUrl": "/reference/config.html#eventlistenertopiccache"
-  },"121": {
+  },"118": {
     "doc": "pages.reference",
     "title": "event.transports",
     "content": "| Key | Description | Type | Default Value | . | default | The default event transport for new subscriptions | string | &lt;nil&gt; | . | enabled | Which event interface plugins are enabled | boolean | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#eventtransports",
     "relUrl": "/reference/config.html#eventtransports"
-  },"122": {
+  },"119": {
     "doc": "pages.reference",
     "title": "group.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#groupcache",
     "relUrl": "/reference/config.html#groupcache"
-  },"123": {
+  },"120": {
     "doc": "pages.reference",
     "title": "histograms",
     "content": "| Key | Description | Type | Default Value | . | maxChartRows | The maximum rows to fetch for each histogram bucket | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#histograms",
     "relUrl": "/reference/config.html#histograms"
-  },"124": {
+  },"121": {
     "doc": "pages.reference",
     "title": "http",
     "content": "| Key | Description | Type | Default Value | . | address | The IP address on which the HTTP API should listen | IP Address string | 127.0.0.1 | . | port | The port on which the HTTP API should listen | int | 5000 | . | publicURL | The fully qualified public URL for the API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation | URL string | &lt;nil&gt; | . | readTimeout | The maximum time to wait when reading from an HTTP connection | time.Duration | 15s | . | shutdownTimeout | The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server | time.Duration | 10s | . | writeTimeout | The maximum time to wait when writing to an HTTP connection | time.Duration | 15s | . ",
     "url": "/firefly/head/reference/config.html#http",
     "relUrl": "/reference/config.html#http"
-  },"125": {
+  },"122": {
     "doc": "pages.reference",
     "title": "http.tls",
     "content": "| Key | Description | Type | Default Value | . | caFile | The path to the CA file for TLS on this API | string | &lt;nil&gt; | . | certFile | The path to the certificate file for TLS on this API | string | &lt;nil&gt; | . | clientAuth | Enables or disables client auth for TLS on this API | string | &lt;nil&gt; | . | enabled | Enables or disables TLS on this API | boolean | false | . | keyFile | The path to the private key file for TLS on this API | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#httptls",
     "relUrl": "/reference/config.html#httptls"
-  },"126": {
+  },"123": {
     "doc": "pages.reference",
     "title": "identity.manager.cache",
     "content": "| Key | Description | Type | Default Value | . | limit | The identity manager cache limit in count of items | int | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#identitymanagercache",
     "relUrl": "/reference/config.html#identitymanagercache"
-  },"127": {
+  },"124": {
     "doc": "pages.reference",
     "title": "log",
     "content": "| Key | Description | Type | Default Value | . | compress | Determines if the rotated log files should be compressed using gzip | boolean | &lt;nil&gt; | . | filename | Filename is the file to write logs to. Backup log files will be retained in the same directory | string | &lt;nil&gt; | . | filesize | MaxSize is the maximum size the log file before it gets rotated | BytesSize | &lt;nil&gt; | . | forceColor | Force color to be enabled, even when a non-TTY output is detected | boolean | &lt;nil&gt; | . | includeCodeInfo | Enables the report caller for including the calling file and line number, and the calling function. If using text logs, it uses the logrus text format rather than the default prefix format. | boolean | &lt;nil&gt; | . | level | The log level - error, warn, info, debug, trace | string | &lt;nil&gt; | . | maxAge | The maximum time to retain old log files based on the timestamp encoded in their filename | time.Duration | &lt;nil&gt; | . | maxBackups | Maximum number of old log files to retain | int | &lt;nil&gt; | . | noColor | Force color to be disabled, event when TTY output is detected | boolean | &lt;nil&gt; | . | timeFormat | Custom time format for logs | Time format string | &lt;nil&gt; | . | utc | Use UTC timestamps for logs | boolean | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#log",
     "relUrl": "/reference/config.html#log"
-  },"128": {
+  },"125": {
     "doc": "pages.reference",
     "title": "log.json",
     "content": "| Key | Description | Type | Default Value | . | enabled | Enables JSON formatted logs rather than text. All log color settings are ignored when enabled. | boolean | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#logjson",
     "relUrl": "/reference/config.html#logjson"
-  },"129": {
+  },"126": {
     "doc": "pages.reference",
     "title": "log.json.fields",
     "content": "| Key | Description | Type | Default Value | . | file | configures the JSON key containing the calling file | string | &lt;nil&gt; | . | func | Configures the JSON key containing the calling function | string | &lt;nil&gt; | . | level | Configures the JSON key containing the log level | string | &lt;nil&gt; | . | message | Configures the JSON key containing the log message | string | &lt;nil&gt; | . | timestamp | Configures the JSON key containing the timestamp of the log | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#logjsonfields",
     "relUrl": "/reference/config.html#logjsonfields"
-  },"130": {
+  },"127": {
     "doc": "pages.reference",
     "title": "message.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#messagecache",
     "relUrl": "/reference/config.html#messagecache"
-  },"131": {
+  },"128": {
     "doc": "pages.reference",
     "title": "message.writer",
     "content": "| Key | Description | Type | Default Value | . | batchMaxInserts | The maximum number of database inserts to include when writing a single batch of messages + data | int | &lt;nil&gt; | . | batchTimeout | How long to wait for more messages to arrive before flushing the batch | time.Duration | &lt;nil&gt; | . | count | The number of message writer workers | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#messagewriter",
     "relUrl": "/reference/config.html#messagewriter"
-  },"132": {
+  },"129": {
     "doc": "pages.reference",
     "title": "metrics",
     "content": "| Key | Description | Type | Default Value | . | address | The IP address on which the metrics HTTP API should listen | int | 127.0.0.1 | . | enabled | Enables the metrics API | boolean | true | . | path | The path from which to serve the Prometheus metrics | string | /metrics | . | port | The port on which the metrics HTTP API should listen | int | 6000 | . | publicURL | The fully qualified public URL for the metrics API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation | URL string | &lt;nil&gt; | . | readTimeout | The maximum time to wait when reading from an HTTP connection | time.Duration | 15s | . | shutdownTimeout | The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server | time.Duration | 10s | . | writeTimeout | The maximum time to wait when writing to an HTTP connection | time.Duration | 15s | . ",
     "url": "/firefly/head/reference/config.html#metrics",
     "relUrl": "/reference/config.html#metrics"
-  },"133": {
+  },"130": {
     "doc": "pages.reference",
     "title": "metrics.tls",
     "content": "| Key | Description | Type | Default Value | . | caFile | The path to the CA file for TLS on this API | string | &lt;nil&gt; | . | certFile | The path to the certificate file for TLS on this API | string | &lt;nil&gt; | . | clientAuth | Enables or disables client auth for TLS on this API | string | &lt;nil&gt; | . | enabled | Enables or disables TLS on this API | boolean | false | . | keyFile | The path to the private key file for TLS on this API | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#metricstls",
     "relUrl": "/reference/config.html#metricstls"
-  },"134": {
+  },"131": {
     "doc": "pages.reference",
     "title": "namespaces",
     "content": "| Key | Description | Type | Default Value | . | default | The default namespace - must be in the predefined list | string | &lt;nil&gt; | . | predefined | A list of namespaces to ensure exists, without requiring a broadcast from the network | List string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespaces",
     "relUrl": "/reference/config.html#namespaces"
-  },"135": {
+  },"132": {
     "doc": "pages.reference",
     "title": "namespaces.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | &lt;nil&gt; | . | ttl | The time to live (TTL) for the cache | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacescache",
     "relUrl": "/reference/config.html#namespacescache"
-  },"136": {
+  },"133": {
     "doc": "pages.reference",
     "title": "namespaces.predefined[]",
     "content": "| Key | Description | Type | Default Value | . | defaultKey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remoteName | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefined",
     "relUrl": "/reference/config.html#namespacespredefined"
-  },"137": {
+  },"134": {
     "doc": "pages.reference",
     "title": "namespaces.predefined[].multiparty",
     "content": "| Key | Description | Type | Default Value | . | enabled | Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level) | boolean | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefinedmultiparty",
     "relUrl": "/reference/config.html#namespacespredefinedmultiparty"
-  },"138": {
+  },"135": {
     "doc": "pages.reference",
     "title": "namespaces.predefined[].multiparty.org",
     "content": "| Key | Description | Type | Default Value | . | description | A description for the local root organization within this namespace | string | &lt;nil&gt; | . | key | The signing key allocated to the root organization within this namespace | string | &lt;nil&gt; | . | name | A short name for the local root organization within this namespace | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefinedmultipartyorg",
     "relUrl": "/reference/config.html#namespacespredefinedmultipartyorg"
-  },"139": {
+  },"136": {
     "doc": "pages.reference",
     "title": "node",
     "content": "| Key | Description | Type | Default Value | . | description | The description of this FireFly node | string | &lt;nil&gt; | . | name | The name of this FireFly node | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#node",
     "relUrl": "/reference/config.html#node"
-  },"140": {
+  },"137": {
     "doc": "pages.reference",
     "title": "opupdate.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initialDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#opupdateretry",
     "relUrl": "/reference/config.html#opupdateretry"
-  },"141": {
+  },"138": {
     "doc": "pages.reference",
     "title": "opupdate.worker",
     "content": "| Key | Description | Type | Default Value | . | batchMaxInserts | The maximum number of database inserts to include when writing a single batch of messages + data | int | &lt;nil&gt; | . | batchTimeout | How long to wait for more messages to arrive before flushing the batch | time.Duration | &lt;nil&gt; | . | count | The number of operation update works | int | &lt;nil&gt; | . | queueLength | The size of the queue for the Operation Update worker | int | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#opupdateworker",
     "relUrl": "/reference/config.html#opupdateworker"
-  },"142": {
+  },"139": {
     "doc": "pages.reference",
     "title": "orchestrator",
     "content": "| Key | Description | Type | Default Value | . | startupAttempts | The number of times to attempt to connect to core infrastructure on startup | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#orchestrator",
     "relUrl": "/reference/config.html#orchestrator"
-  },"143": {
+  },"140": {
     "doc": "pages.reference",
     "title": "org",
     "content": "| Key | Description | Type | Default Value | . | description | A description of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead) | string | &lt;nil&gt; | . | key | The signing key allocated to the organization (deprecated - should be set on each multi-party namespace instead) | string | &lt;nil&gt; | . | name | The name of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead) | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#org",
     "relUrl": "/reference/config.html#org"
-  },"144": {
+  },"141": {
     "doc": "pages.reference",
     "title": "plugins",
     "content": "| Key | Description | Type | Default Value | . | blockchain | The list of configured Blockchain plugins | string | &lt;nil&gt; | . | database | The list of configured Database plugins | string | &lt;nil&gt; | . | dataexchange | The array of configured Data Exchange plugins | string | &lt;nil&gt; | . | identity | The list of available Identity plugins | string | &lt;nil&gt; | . | sharedstorage | The list of configured Shared Storage plugins | string | &lt;nil&gt; | . | tokens | The tokens plugin configurations. This will be used to configure tokens connectors | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#plugins",
     "relUrl": "/reference/config.html#plugins"
-  },"145": {
+  },"142": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[]",
     "content": "| Key | Description | Type | Default Value | . | name | The name of the configured Blockchain plugin | string | &lt;nil&gt; | . | type | The type of the configured Blockchain Connector plugin | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchain",
     "relUrl": "/reference/config.html#pluginsblockchain"
-  },"146": {
+  },"143": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.addressResolver",
     "content": "| Key | Description | Type | Default Value | . | bodyTemplate | The body go template string to use when making HTTP requests | Go Template string | &lt;nil&gt; | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | method | The HTTP method to use when making requests to the Address Resolver | string | GET | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | responseField | The name of a JSON field that is provided in the response, that contains the ethereum address (default address) | string | address | . | retainOriginal | When true the original pre-resolved string is retained after the lookup, and passed down to Ethconnect as the from address | boolean | &lt;nil&gt; | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the Address Resolver | string | &lt;nil&gt; | . | urlTemplate | The URL Go template string to use when calling the Address Resolver | Go Template string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumaddressresolver",
     "relUrl": "/reference/config.html#pluginsblockchainethereumaddressresolver"
-  },"147": {
+  },"144": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.addressResolver.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumaddressresolverauth",
     "relUrl": "/reference/config.html#pluginsblockchainethereumaddressresolverauth"
-  },"148": {
+  },"145": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.addressResolver.cache",
     "content": "| Key | Description | Type | Default Value | . | size | The size of the cache | BytesSize | 1000 | . | ttl | The time to live (TTL) for the cache | time.Duration | 24h | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumaddressresolvercache",
     "relUrl": "/reference/config.html#pluginsblockchainethereumaddressresolvercache"
-  },"149": {
+  },"146": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.addressResolver.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Address Resolver | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumaddressresolverproxy",
     "relUrl": "/reference/config.html#pluginsblockchainethereumaddressresolverproxy"
-  },"150": {
+  },"147": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.addressResolver.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumaddressresolverretry",
     "relUrl": "/reference/config.html#pluginsblockchainethereumaddressresolverretry"
-  },"151": {
+  },"148": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.ethconnect",
     "content": "| Key | Description | Type | Default Value | . | batchSize | The number of events Ethconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream | int | 50 | . | batchTimeout | How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream | time.Duration | 500 | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | fromBlock | The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream | Address string | 0 | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | instance | The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain | Address string | &lt;nil&gt; | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | prefixLong | The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect | string | firefly | . | prefixShort | The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect | string | fly | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | topic | The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single ethconnect | string | &lt;nil&gt; | . | url | The URL of the Ethconnect instance | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumethconnect",
     "relUrl": "/reference/config.html#pluginsblockchainethereumethconnect"
-  },"152": {
+  },"149": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.ethconnect.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumethconnectauth",
     "relUrl": "/reference/config.html#pluginsblockchainethereumethconnectauth"
-  },"153": {
+  },"150": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.ethconnect.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to Ethconnect | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumethconnectproxy",
     "relUrl": "/reference/config.html#pluginsblockchainethereumethconnectproxy"
-  },"154": {
+  },"151": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.ethconnect.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumethconnectretry",
     "relUrl": "/reference/config.html#pluginsblockchainethereumethconnectretry"
-  },"155": {
+  },"152": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.ethconnect.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumethconnectws",
     "relUrl": "/reference/config.html#pluginsblockchainethereumethconnectws"
-  },"156": {
+  },"153": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.fftm",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the FireFly Transaction Manager runtime, if enabled | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumfftm",
     "relUrl": "/reference/config.html#pluginsblockchainethereumfftm"
-  },"157": {
+  },"154": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.fftm.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumfftmauth",
     "relUrl": "/reference/config.html#pluginsblockchainethereumfftmauth"
-  },"158": {
+  },"155": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.fftm.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Transaction Manager | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumfftmproxy",
     "relUrl": "/reference/config.html#pluginsblockchainethereumfftmproxy"
-  },"159": {
+  },"156": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.fftm.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumfftmretry",
     "relUrl": "/reference/config.html#pluginsblockchainethereumfftmretry"
-  },"160": {
+  },"157": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].ethereum.fireflyContract[]",
     "content": "| Key | Description | Type | Default Value | . | address | The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain | Address string | &lt;nil&gt; | . | fromBlock | The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream | Address string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainethereumfireflycontract",
     "relUrl": "/reference/config.html#pluginsblockchainethereumfireflycontract"
-  },"161": {
+  },"158": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].fabric.fabconnect",
     "content": "| Key | Description | Type | Default Value | . | batchSize | The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream | int | 50 | . | batchTimeout | The maximum amount of time to wait for a batch to complete | time.Duration | 500 | . | chaincode | The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode) | string | &lt;nil&gt; | . | channel | The Fabric channel that FireFly will use for BatchPin transactions | string | &lt;nil&gt; | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | prefixLong | The prefix that will be used for Fabconnect specific HTTP headers when FireFly makes requests to Fabconnect | string | firefly | . | prefixShort | The prefix that will be used for Fabconnect specific query parameters when FireFly makes requests to Fabconnect | string | fly | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | signer | The Fabric signing key to use when submitting transactions to Fabconnect | string | &lt;nil&gt; | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | topic | The websocket listen topic that the node should register on, which is important if there are multiple nodes using a single Fabconnect | string | &lt;nil&gt; | . | url | The URL of the Fabconnect instance | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainfabricfabconnect",
     "relUrl": "/reference/config.html#pluginsblockchainfabricfabconnect"
-  },"162": {
+  },"159": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].fabric.fabconnect.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainfabricfabconnectauth",
     "relUrl": "/reference/config.html#pluginsblockchainfabricfabconnectauth"
-  },"163": {
+  },"160": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].fabric.fabconnect.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to Fabconnect | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainfabricfabconnectproxy",
     "relUrl": "/reference/config.html#pluginsblockchainfabricfabconnectproxy"
-  },"164": {
+  },"161": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].fabric.fabconnect.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainfabricfabconnectretry",
     "relUrl": "/reference/config.html#pluginsblockchainfabricfabconnectretry"
-  },"165": {
+  },"162": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].fabric.fabconnect.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainfabricfabconnectws",
     "relUrl": "/reference/config.html#pluginsblockchainfabricfabconnectws"
-  },"166": {
+  },"163": {
     "doc": "pages.reference",
     "title": "plugins.blockchain[].fabric.fireflyContract[]",
     "content": "| Key | Description | Type | Default Value | . | chaincode | The name of the Fabric chaincode that FireFly will use for BatchPin transactions | string | &lt;nil&gt; | . | fromBlock | The first event this FireFly instance should listen to from the BatchPin chaincode. Default=0. Only affects initial creation of the event stream | Address string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsblockchainfabricfireflycontract",
     "relUrl": "/reference/config.html#pluginsblockchainfabricfireflycontract"
-  },"167": {
+  },"164": {
     "doc": "pages.reference",
     "title": "plugins.database[]",
     "content": "| Key | Description | Type | Default Value | . | name | The name of the Database plugin | string | &lt;nil&gt; | . | type | The type of the configured Database plugin | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdatabase",
     "relUrl": "/reference/config.html#pluginsdatabase"
-  },"168": {
+  },"165": {
     "doc": "pages.reference",
     "title": "plugins.database[].postgres",
     "content": "| Key | Description | Type | Default Value | . | maxConnIdleTime | The maximum amount of time a database connection can be idle | time.Duration | 1m | . | maxConnLifetime | The maximum amount of time to keep a database connection open | time.Duration | &lt;nil&gt; | . | maxConns | Maximum connections to the database | int | 50 | . | maxIdleConns | The maximum number of idle connections to the database | int | &lt;nil&gt; | . | url | The PostgreSQL connection string for the database | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdatabasepostgres",
     "relUrl": "/reference/config.html#pluginsdatabasepostgres"
-  },"169": {
+  },"166": {
     "doc": "pages.reference",
     "title": "plugins.database[].postgres.migrations",
     "content": "| Key | Description | Type | Default Value | . | auto | Enables automatic database migrations | boolean | false | . | directory | The directory containing the numerically ordered migration DDL files to apply to the database | string | ./db/migrations/postgres | . ",
     "url": "/firefly/head/reference/config.html#pluginsdatabasepostgresmigrations",
     "relUrl": "/reference/config.html#pluginsdatabasepostgresmigrations"
-  },"170": {
+  },"167": {
     "doc": "pages.reference",
     "title": "plugins.database[].sqlite3",
     "content": "| Key | Description | Type | Default Value | . | maxConnIdleTime | The maximum amount of time a database connection can be idle | time.Duration | 1m | . | maxConnLifetime | The maximum amount of time to keep a database connection open | time.Duration | &lt;nil&gt; | . | maxConns | Maximum connections to the database | int | 1 | . | maxIdleConns | The maximum number of idle connections to the database | int | &lt;nil&gt; | . | url | The SQLite connection string for the database | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdatabasesqlite3",
     "relUrl": "/reference/config.html#pluginsdatabasesqlite3"
-  },"171": {
+  },"168": {
     "doc": "pages.reference",
     "title": "plugins.database[].sqlite3.migrations",
     "content": "| Key | Description | Type | Default Value | . | auto | Enables automatic database migrations | boolean | false | . | directory | The directory containing the numerically ordered migration DDL files to apply to the database | string | ./db/migrations/sqlite | . ",
     "url": "/firefly/head/reference/config.html#pluginsdatabasesqlite3migrations",
     "relUrl": "/reference/config.html#pluginsdatabasesqlite3migrations"
-  },"172": {
+  },"169": {
     "doc": "pages.reference",
     "title": "plugins.dataexchange[]",
     "content": "| Key | Description | Type | Default Value | . | name | The name of the configured Data Exchange plugin | string | &lt;nil&gt; | . | type | The Data Exchange plugin to use | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchange",
     "relUrl": "/reference/config.html#pluginsdataexchange"
-  },"173": {
+  },"170": {
     "doc": "pages.reference",
     "title": "plugins.dataexchange[].ffdx",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | initEnabled | Instructs FireFly to always post all current nodes to the /init API before connecting or reconnecting to the connector | boolean | false | . | manifestEnabled | Determines whether to require+validate a manifest from other DX instances in the network. Must be supported by the connector | string | false | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the Data Exchange instance | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchangeffdx",
     "relUrl": "/reference/config.html#pluginsdataexchangeffdx"
-  },"174": {
+  },"171": {
     "doc": "pages.reference",
     "title": "plugins.dataexchange[].ffdx.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchangeffdxauth",
     "relUrl": "/reference/config.html#pluginsdataexchangeffdxauth"
-  },"175": {
+  },"172": {
     "doc": "pages.reference",
     "title": "plugins.dataexchange[].ffdx.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Data Exchange | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchangeffdxproxy",
     "relUrl": "/reference/config.html#pluginsdataexchangeffdxproxy"
-  },"176": {
+  },"173": {
     "doc": "pages.reference",
     "title": "plugins.dataexchange[].ffdx.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchangeffdxretry",
     "relUrl": "/reference/config.html#pluginsdataexchangeffdxretry"
-  },"177": {
+  },"174": {
     "doc": "pages.reference",
     "title": "plugins.dataexchange[].ffdx.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#pluginsdataexchangeffdxws",
     "relUrl": "/reference/config.html#pluginsdataexchangeffdxws"
-  },"178": {
+  },"175": {
     "doc": "pages.reference",
     "title": "plugins.identity[]",
     "content": "| Key | Description | Type | Default Value | . | name | The name of a configured Identity plugin | string | &lt;nil&gt; | . | type | The type of a configured Identity plugin | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginsidentity",
     "relUrl": "/reference/config.html#pluginsidentity"
-  },"179": {
+  },"176": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[]",
     "content": "| Key | Description | Type | Default Value | . | name | The name of the Shared Storage plugin to use | string | &lt;nil&gt; | . | type | The Shared Storage plugin to use | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorage",
     "relUrl": "/reference/config.html#pluginssharedstorage"
-  },"180": {
+  },"177": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.api",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL for the IPFS API | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsapi",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsapi"
-  },"181": {
+  },"178": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.api.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsapiauth",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsapiauth"
-  },"182": {
+  },"179": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.api.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the IPFS API | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsapiproxy",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsapiproxy"
-  },"183": {
+  },"180": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.api.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsapiretry",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsapiretry"
-  },"184": {
+  },"181": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.gateway",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL for the IPFS Gateway | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsgateway",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsgateway"
-  },"185": {
+  },"182": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.gateway.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsgatewayauth",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsgatewayauth"
-  },"186": {
+  },"183": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.gateway.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the IPFS Gateway | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsgatewayproxy",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsgatewayproxy"
-  },"187": {
+  },"184": {
     "doc": "pages.reference",
     "title": "plugins.sharedstorage[].ipfs.gateway.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginssharedstorageipfsgatewayretry",
     "relUrl": "/reference/config.html#pluginssharedstorageipfsgatewayretry"
-  },"188": {
+  },"185": {
     "doc": "pages.reference",
     "title": "plugins.tokens[]",
     "content": "| Key | Description | Type | Default Value | . | name | The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector | string | &lt;nil&gt; | . | type | The type of the Tokens Connector plugin to use | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokens",
     "relUrl": "/reference/config.html#pluginstokens"
-  },"189": {
+  },"186": {
     "doc": "pages.reference",
     "title": "plugins.tokens[].fftokens",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL of the Token Connector | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokens",
     "relUrl": "/reference/config.html#pluginstokensfftokens"
-  },"190": {
+  },"187": {
     "doc": "pages.reference",
     "title": "plugins.tokens[].fftokens.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokensauth",
     "relUrl": "/reference/config.html#pluginstokensfftokensauth"
-  },"191": {
+  },"188": {
     "doc": "pages.reference",
     "title": "plugins.tokens[].fftokens.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the Token Connector | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokensproxy",
     "relUrl": "/reference/config.html#pluginstokensfftokensproxy"
-  },"192": {
+  },"189": {
     "doc": "pages.reference",
     "title": "plugins.tokens[].fftokens.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokensretry",
     "relUrl": "/reference/config.html#pluginstokensfftokensretry"
-  },"193": {
+  },"190": {
     "doc": "pages.reference",
     "title": "plugins.tokens[].fftokens.ws",
     "content": "| Key | Description | Type | Default Value | . | heartbeatInterval | The amount of time to wait between heartbeat signals on the WebSocket connection | time.Duration | 30s | . | initialConnectAttempts | The number of attempts FireFly will make to connect to the WebSocket when starting up, before failing | int | 5 | . | path | The WebSocket sever URL to which FireFly should connect | WebSocket URL string | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | 16Kb | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | 16Kb | . ",
     "url": "/firefly/head/reference/config.html#pluginstokensfftokensws",
     "relUrl": "/reference/config.html#pluginstokensfftokensws"
-  },"194": {
+  },"191": {
     "doc": "pages.reference",
     "title": "privatemessaging.batch",
     "content": "| Key | Description | Type | Default Value | . | agentTimeout | How long to keep around a batching agent for a sending identity before disposal | time.Duration | &lt;nil&gt; | . | payloadLimit | The maximum payload size of a private message Data Exchange payload | BytesSize | &lt;nil&gt; | . | size | The maximum number of messages in a batch for private messages | int | &lt;nil&gt; | . | timeout | The timeout to wait for a batch to fill, before sending | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#privatemessagingbatch",
     "relUrl": "/reference/config.html#privatemessagingbatch"
-  },"195": {
+  },"192": {
     "doc": "pages.reference",
     "title": "privatemessaging.retry",
     "content": "| Key | Description | Type | Default Value | . | factor | The retry backoff factor | boolean | &lt;nil&gt; | . | initDelay | The initial retry delay | time.Duration | &lt;nil&gt; | . | maxDelay | The maximum retry delay | time.Duration | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#privatemessagingretry",
     "relUrl": "/reference/config.html#privatemessagingretry"
-  },"196": {
+  },"193": {
     "doc": "pages.reference",
     "title": "sharedstorage",
     "content": "| Key | Description | Type | Default Value | . | type | The Shared Storage plugin to use | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorage",
     "relUrl": "/reference/config.html#sharedstorage"
-  },"197": {
+  },"194": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.api",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL for the IPFS API | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsapi",
     "relUrl": "/reference/config.html#sharedstorageipfsapi"
-  },"198": {
+  },"195": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.api.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsapiauth",
     "relUrl": "/reference/config.html#sharedstorageipfsapiauth"
-  },"199": {
+  },"196": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.api.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the IPFS API | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsapiproxy",
     "relUrl": "/reference/config.html#sharedstorageipfsapiproxy"
-  },"200": {
+  },"197": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.api.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsapiretry",
     "relUrl": "/reference/config.html#sharedstorageipfsapiretry"
-  },"201": {
+  },"198": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.gateway",
     "content": "| Key | Description | Type | Default Value | . | connectionTimeout | The maximum amount of time that a connection is allowed to remain with no data transmitted | time.Duration | 30s | . | expectContinueTimeout | See ExpectContinueTimeout in the Go docs | time.Duration | 1s | . | headers | Adds custom headers to HTTP requests | map[string]string | &lt;nil&gt; | . | idleTimeout | The max duration to hold a HTTP keepalive connection between calls | time.Duration | 475ms | . | maxIdleConns | The max number of idle connections to hold pooled | int | 100 | . | requestTimeout | The maximum amount of time that a request is allowed to remain open | time.Duration | 30s | . | tlsHandshakeTimeout | The maximum amount of time to wait for a successful TLS handshake | time.Duration | 10s | . | url | The URL for the IPFS Gateway | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsgateway",
     "relUrl": "/reference/config.html#sharedstorageipfsgateway"
-  },"202": {
+  },"199": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.gateway.auth",
     "content": "| Key | Description | Type | Default Value | . | password | Password | string | &lt;nil&gt; | . | username | Username | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsgatewayauth",
     "relUrl": "/reference/config.html#sharedstorageipfsgatewayauth"
-  },"203": {
+  },"200": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.gateway.proxy",
     "content": "| Key | Description | Type | Default Value | . | url | Optional HTTP proxy server to use when connecting to the IPFS Gateway | URL string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsgatewayproxy",
     "relUrl": "/reference/config.html#sharedstorageipfsgatewayproxy"
-  },"204": {
+  },"201": {
     "doc": "pages.reference",
     "title": "sharedstorage.ipfs.gateway.retry",
     "content": "| Key | Description | Type | Default Value | . | count | The maximum number of times to retry | int | 5 | . | enabled | Enables retries | boolean | false | . | initWaitTime | The initial retry delay | time.Duration | 250ms | . | maxWaitTime | The maximum retry delay | time.Duration | 30s | . ",
     "url": "/firefly/head/reference/config.html#sharedstorageipfsgatewayretry",
     "relUrl": "/reference/config.html#sharedstorageipfsgatewayretry"
+  },"202": {
+    "doc": "pages.reference",
+    "title": "spi",
+    "content": "| Key | Description | Type | Default Value | . | address | The IP address on which the admin HTTP API should listen | IP Address string | 127.0.0.1 | . | enabled | Enables the admin HTTP API | boolean | &lt;nil&gt; | . | port | The port on which the admin HTTP API should listen | int | 5001 | . | publicURL | The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation | URL string | &lt;nil&gt; | . | readTimeout | The maximum time to wait when reading from an HTTP connection | time.Duration | 15s | . | shutdownTimeout | The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server | time.Duration | 10s | . | writeTimeout | The maximum time to wait when writing to an HTTP connection | time.Duration | 15s | . ",
+    "url": "/firefly/head/reference/config.html#spi",
+    "relUrl": "/reference/config.html#spi"
+  },"203": {
+    "doc": "pages.reference",
+    "title": "spi.tls",
+    "content": "| Key | Description | Type | Default Value | . | caFile | The path to the CA file for TLS on this API | string | &lt;nil&gt; | . | certFile | The path to the certificate file for TLS on this API | string | &lt;nil&gt; | . | clientAuth | Enables or disables client auth for TLS on this API | string | &lt;nil&gt; | . | enabled | Enables or disables TLS on this API | boolean | false | . | keyFile | The path to the private key file for TLS on this API | string | &lt;nil&gt; | . ",
+    "url": "/firefly/head/reference/config.html#spitls",
+    "relUrl": "/reference/config.html#spitls"
+  },"204": {
+    "doc": "pages.reference",
+    "title": "spi.ws",
+    "content": "| Key | Description | Type | Default Value | . | blockedWarnInterval | How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events | time.Duration | &lt;nil&gt; | . | eventQueueLength | Server-side queue length for events waiting for delivery over an admin change event listener websocket | int | &lt;nil&gt; | . | readBufferSize | The size in bytes of the read buffer for the WebSocket connection | BytesSize | &lt;nil&gt; | . | writeBufferSize | The size in bytes of the write buffer for the WebSocket connection | BytesSize | &lt;nil&gt; | . ",
+    "url": "/firefly/head/reference/config.html#spiws",
+    "relUrl": "/reference/config.html#spiws"
   },"205": {
     "doc": "pages.reference",
     "title": "subscription",
