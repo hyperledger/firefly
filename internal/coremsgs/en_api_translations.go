@@ -23,7 +23,7 @@ var (
 	APIParamsConfigRecordKeyUpdate          = ffm("api.params.configRecordKey.update", "The configuration key to update. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
 	APIParamsConfigRecordKeyGet             = ffm("api.params.configRecordKey.get", "The configuration key to get. This should use dot notation to reference a key documented in https://hyperledger.github.io/firefly/reference/config.html")
 	APIParamsOperationIDGet                 = ffm("api.params.operationID.get", "The operation ID key to get")
-	APIParamsOperationNamespacedID          = ffm("api.params.spiOperationID", "The operation ID as passed to the connector when the operation was performed, including the 'ns!' prefix")
+	APIParamsOperationNamespacedID          = ffm("api.params.spiOperationID", "The operation ID as passed to the connector when the operation was performed, including the 'namespace:' prefix")
 	APIParamsNamespace                      = ffm("api.params.namespace", "The namespace which scopes this request")
 	APIParamsContractListenerNameOrID       = ffm("api.params.contractListenerNameOrID", "The contract listener name or ID")
 	APIParamsContractListenerID             = ffm("api.params.contractListenerID", "The contract listener ID")

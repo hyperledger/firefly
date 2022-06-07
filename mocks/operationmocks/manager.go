@@ -62,20 +62,6 @@ func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.Opera
 	_m.Called(ctx, handler, ops)
 }
 
-// ResolveOperationByID provides a mock function with given fields: ctx, ns, id, op
-func (_m *Manager) ResolveOperationByID(ctx context.Context, ns string, id string, op *core.OperationUpdateDTO) error {
-	ret := _m.Called(ctx, ns, id, op)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.OperationUpdateDTO) error); ok {
-		r0 = rf(ctx, ns, id, op)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // ResolveOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID, op
 func (_m *Manager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
 	ret := _m.Called(ctx, nsOpID, op)

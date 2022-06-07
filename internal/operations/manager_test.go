@@ -545,46 +545,6 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 
 }
 
-func TestResolveOperationByIDOk(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	ctx := context.Background()
-	opID := fftypes.NewUUID()
-	errStr := "my error"
-	opUpdate := &core.OperationUpdateDTO{
-		Status: core.OpStatusSucceeded,
-		Error:  &errStr,
-		Output: fftypes.JSONObject{
-			"my": "data",
-		},
-	}
-
-	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, &errStr, fftypes.JSONObject{
-		"my": "data",
-	}).Return(nil)
-
-	err := om.ResolveOperationByID(ctx, "ns1", opID.String(), opUpdate)
-
-	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
-}
-
-func TestResolveOperationBadID(t *testing.T) {
-	om, cancel := newTestOperations(t)
-	defer cancel()
-
-	ctx := context.Background()
-	op := &core.OperationUpdateDTO{}
-
-	err := om.ResolveOperationByID(ctx, "ns1", "badness", op)
-
-	assert.Regexp(t, "FF00138", err)
-
-}
-
 func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer cancel()
