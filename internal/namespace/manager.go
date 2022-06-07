@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/adminevents"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -33,6 +32,7 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
+	"github.com/hyperledger/firefly/internal/spievents"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -60,7 +60,7 @@ type Manager interface {
 	WaitStop()
 
 	Orchestrator(ns string) orchestrator.Orchestrator
-	AdminEvents() adminevents.Manager
+	SPIEvents() spievents.Manager
 	GetNamespaces(ctx context.Context) ([]*core.Namespace, error)
 }
 
@@ -86,7 +86,7 @@ type namespaceManager struct {
 	}
 	metricsEnabled bool
 	metrics        metrics.Manager
-	adminEvents    adminevents.Manager
+	adminEvents    spievents.Manager
 	utOrchestrator orchestrator.Orchestrator
 }
 
@@ -175,7 +175,7 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 	}
 
 	if nm.adminEvents == nil {
-		nm.adminEvents = adminevents.NewAdminEventManager(ctx)
+		nm.adminEvents = spievents.NewAdminEventManager(ctx)
 	}
 
 	if nm.plugins.identity == nil {
@@ -682,7 +682,7 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 	return &result, nil
 }
 
-func (nm *namespaceManager) AdminEvents() adminevents.Manager {
+func (nm *namespaceManager) SPIEvents() spievents.Manager {
 	return nm.adminEvents
 }
 

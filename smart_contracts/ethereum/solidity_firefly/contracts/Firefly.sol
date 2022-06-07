@@ -19,6 +19,6 @@ contract Firefly {
     }
 
     function networkVersion() public pure returns (uint8) {
-        return 2;
+        return 1;
     }
 }

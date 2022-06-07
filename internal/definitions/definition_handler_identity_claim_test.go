@@ -423,7 +423,7 @@ func TestHandleDefinitionIdentityClaimVerifierClash(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -471,7 +471,7 @@ func TestHandleDefinitionIdentityClaimIdentityClash(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	mdi.AssertExpectations(t)
@@ -512,7 +512,7 @@ func TestHandleDefinitionIdentityMissingAuthor(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -530,7 +530,7 @@ func TestHandleDefinitionIdentityClaimBadSignature(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{claimData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -581,7 +581,7 @@ func TestHandleDefinitionIdentityClaimBadData(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, claimMsg, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }

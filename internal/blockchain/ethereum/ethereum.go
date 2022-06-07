@@ -474,17 +474,12 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed - missing fields: %+v", reply)
 		return
 	}
-	operationID, err := fftypes.ParseUUID(ctx, requestID)
-	if err != nil {
-		l.Errorf("Reply cannot be processed - bad ID: %+v", reply)
-		return
-	}
 	updateType := core.OpStatusSucceeded
 	if replyType != "TransactionSuccess" {
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	e.callbacks.BlockchainOpUpdate(e, operationID, updateType, txHash, message, reply)
+	e.callbacks.BlockchainOpUpdate(e, requestID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
@@ -681,7 +676,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -699,10 +694,10 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID
 	e.fireflyContract.mux.Lock()
 	address := e.fireflyContract.address
 	e.fireflyContract.mux.Unlock()
-	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input, nil)
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, nsOpID, input, nil)
 }
 
-func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action core.NetworkActionType) error {
+func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error {
 	input := []interface{}{
 		blockchain.FireFlyActionPrefix + action,
 		ethHexFormatB32(nil),
@@ -713,10 +708,10 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, operationID *fftypes
 	e.fireflyContract.mux.Lock()
 	address := e.fireflyContract.address
 	e.fireflyContract.mux.Unlock()
-	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, operationID.String(), input, nil)
+	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, nsOpID, input, nil)
 }
 
-func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
+func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	ethereumLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -725,7 +720,7 @@ func (e *Ethereum) InvokeContract(ctx context.Context, operationID *fftypes.UUID
 	if err != nil {
 		return err
 	}
-	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, operationID.String(), orderedInput, options)
+	return e.invokeContractMethod(ctx, ethereumLocation.Address, signingKey, abi, nsOpID, orderedInput, options)
 }
 
 func (e *Ethereum) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {

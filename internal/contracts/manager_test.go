@@ -591,7 +591,7 @@ func TestAddContractListenerInline(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
-	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
+	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), "ns", sub)
 	assert.NoError(t, err)
@@ -642,7 +642,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(event, nil)
-	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
+	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
 	result, err := cm.AddContractListener(context.Background(), "ns1", sub)
 	assert.NoError(t, err)
@@ -1027,7 +1027,7 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
-	mdi.On("UpsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
+	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns", sub)
 	assert.EqualError(t, err, "pop")
@@ -1068,7 +1068,7 @@ func TestAddContractAPIListener(t *testing.T) {
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListenerInput) bool {
 		return *l.Interface.ID == *interfaceID && l.EventPath == "changed" && l.Topic == "test-topic"
 	})).Return(nil)
-	mdi.On("UpsertContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListener) bool {
+	mdi.On("InsertContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListener) bool {
 		return *l.Interface.ID == *interfaceID && l.Event.Name == "changed" && l.Topic == "test-topic"
 	})).Return(nil)
 
@@ -1558,7 +1558,7 @@ func TestCallContractInvalidType(t *testing.T) {
 	})
 }
 
-func TestGetContractListenerByID(t *testing.T) {
+func TestGetContractListenerByNameOrID(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
@@ -1569,7 +1569,7 @@ func TestGetContractListenerByID(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGetContractListenerByIDFail(t *testing.T) {
+func TestGetContractListenerByNameOrIDFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 

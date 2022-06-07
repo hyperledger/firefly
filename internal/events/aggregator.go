@@ -539,6 +539,9 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		if handlerResult.Action == definitions.ActionWait {
 			return "", false, nil
 		}
+		if handlerResult.Action == definitions.ActionReject {
+			log.L(ctx).Warnf("Definition broadcast rejected: %s", err)
+		}
 		customCorrelator = handlerResult.CustomCorrelator
 		valid = handlerResult.Action == definitions.ActionConfirm
 

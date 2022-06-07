@@ -131,7 +131,7 @@ func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, core.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -148,7 +148,7 @@ func TestHandleDefinitionIdentityNotFound(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, core.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mim.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -202,7 +202,7 @@ func TestHandleDefinitionIdentityValidateFail(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, core.DataArray{updateData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }
@@ -227,7 +227,7 @@ func TestHandleDefinitionIdentityMissingData(t *testing.T) {
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, updateMsg, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	bs.assertNoFinalizers()
 }

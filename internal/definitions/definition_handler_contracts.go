@@ -20,87 +20,79 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (valid bool, err error) {
-	if err := dh.contracts.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
+func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (err error) {
+	if err = dh.contracts.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
 		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
-		return false, nil
+		return nil
 	}
 
 	err = dh.database.UpsertFFI(ctx, ffi)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	for _, method := range ffi.Methods {
 		err := dh.database.UpsertFFIMethod(ctx, method)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
 
 	for _, event := range ffi.Events {
 		err := dh.database.UpsertFFIEvent(ctx, event)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
 
-	return true, nil
+	return nil
 }
 
-func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.ContractAPI) (valid bool, err error) {
+func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.ContractAPI) (retry bool, err error) {
 	existing, err := dh.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 	if err != nil {
-		return false, err // retryable
+		return true, err
 	}
 	if existing != nil {
 		if !api.LocationAndLedgerEquals(existing) {
-			return false, nil // not retryable
+			return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedLocationMismatch, "contract API", api.ID)
 		}
 	}
 	err = dh.database.UpsertContractAPI(ctx, api)
 	if err != nil {
 		if err == database.IDMismatch {
-			log.L(ctx).Errorf("Invalid contract API '%s'. ID mismatch with existing record", api.ID)
-			return false, nil // not retryable
+			return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedIDMismatch, "contract API", api.ID)
 		}
-		log.L(ctx).Errorf("Failed to insert contract API '%s': %s", api.ID, err)
-		return false, err // retryable
+		return true, err
 	}
-	return true, nil
+	return false, nil
 }
 
 func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	var broadcast core.FFI
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
-	if valid {
-		if validationErr := broadcast.Validate(ctx, true); validationErr != nil {
-			l.Warnf("Unable to process contract definition broadcast %s - validate failed: %s", msg.Header.ID, validationErr)
-			valid = false
-		} else {
-			var err error
-			broadcast.Message = msg.Header.ID
-			valid, err = dh.persistFFI(ctx, &broadcast)
-			if err != nil {
-				return HandlerResult{Action: ActionRetry}, err
-			}
-		}
+	var ffi core.FFI
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
+	}
+	if err := ffi.Validate(ctx, true); err != nil {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
 	}
 
-	if !valid {
-		l.Warnf("Contract interface rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		return HandlerResult{Action: ActionReject}, nil
+	ffi.Message = msg.Header.ID
+	if err := dh.persistFFI(ctx, &ffi); err != nil {
+		return HandlerResult{Action: ActionRetry}, err
 	}
 
-	l.Infof("Contract interface created id=%s author=%s", broadcast.ID, msg.Header.Author)
+	l.Infof("Contract interface created id=%s author=%s", ffi.ID, msg.Header.Author)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := core.NewEvent(core.EventTypeContractInterfaceConfirmed, broadcast.Namespace, broadcast.ID, tx, broadcast.Topic())
+		event := core.NewEvent(core.EventTypeContractInterfaceConfirmed, ffi.Namespace, ffi.ID, tx, ffi.Topic())
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil
@@ -108,30 +100,25 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state Defi
 
 func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	var broadcast core.ContractAPI
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &broadcast)
-	if valid {
-		if validateErr := broadcast.Validate(ctx, true); validateErr != nil {
-			l.Warnf("Unable to process contract API broadcast %s - validate failed: %s", msg.Header.ID, validateErr)
-			valid = false
-		} else {
-			var err error
-			broadcast.Message = msg.Header.ID
-			valid, err = dh.persistContractAPI(ctx, &broadcast)
-			if err != nil {
-				return HandlerResult{Action: ActionRetry}, err
-			}
+	var api core.ContractAPI
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
+	}
+	if err := api.Validate(ctx, true); err != nil {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
+	}
+
+	api.Message = msg.Header.ID
+	if retry, err := dh.persistContractAPI(ctx, &api); err != nil {
+		if retry {
+			return HandlerResult{Action: ActionRetry}, err
 		}
+		return HandlerResult{Action: ActionReject}, err
 	}
 
-	if !valid {
-		l.Warnf("Contract API rejected id=%s author=%s", broadcast.ID, msg.Header.Author)
-		return HandlerResult{Action: ActionReject}, nil
-	}
-
-	l.Infof("Contract API created id=%s author=%s", broadcast.ID, msg.Header.Author)
+	l.Infof("Contract API created id=%s author=%s", api.ID, msg.Header.Author)
 	state.AddFinalize(func(ctx context.Context) error {
-		event := core.NewEvent(core.EventTypeContractAPIConfirmed, broadcast.Namespace, broadcast.ID, tx, core.SystemTopicDefinitions)
+		event := core.NewEvent(core.EventTypeContractAPIConfirmed, api.Namespace, api.ID, tx, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)
 	})
 	return HandlerResult{Action: ActionConfirm}, nil

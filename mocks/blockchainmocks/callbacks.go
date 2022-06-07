@@ -58,7 +58,7 @@ func (_m *Callbacks) BlockchainNetworkAction(action string, event *blockchain.Ev
 	return r0
 }
 
-// BlockchainOpUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
-	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
+// BlockchainOpUpdate provides a mock function with given fields: plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput
+func (_m *Callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
+	_m.Called(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
 }

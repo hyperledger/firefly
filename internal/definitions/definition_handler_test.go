@@ -95,7 +95,7 @@ func TestHandleDefinitionBroadcastUnknown(t *testing.T) {
 		},
 	}, core.DataArray{}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 

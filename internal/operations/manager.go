@@ -45,7 +45,7 @@ type Manager interface {
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
 	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
-	ResolveOperationByID(ctx context.Context, id string, op *core.Operation) (*core.Operation, error)
+	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
 }
@@ -168,14 +168,9 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataex
 	tr := event.TransferResult()
 
 	log.L(om.ctx).Infof("Transfer result %s=%s error='%s' manifest='%s' info='%s'", tr.TrackingID, tr.Status, tr.Error, tr.Manifest, tr.Info)
-	opID, err := fftypes.ParseUUID(om.ctx, tr.TrackingID)
-	if err != nil {
-		log.L(om.ctx).Errorf("Invalid UUID for tracking ID from DX: %s", tr.TrackingID)
-		return
-	}
 
 	opUpdate := &OperationUpdate{
-		ID:             opID,
+		NamespacedOpID: event.NamespacedID(),
 		Status:         tr.Status,
 		VerifyManifest: dx.Capabilities().Manifest,
 		ErrorMessage:   tr.Error,
@@ -200,24 +195,26 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataex
 }
 
 func (om *operationsManager) writeOperationSuccess(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject) {
-	if err := om.database.ResolveOperation(ctx, ns, opID, core.OpStatusSucceeded, "", outputs); err != nil {
+	emptyString := ""
+	if err := om.database.ResolveOperation(ctx, ns, opID, core.OpStatusSucceeded, &emptyString, outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
 func (om *operationsManager) writeOperationFailure(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
-	if err := om.database.ResolveOperation(ctx, ns, opID, newStatus, err.Error(), outputs); err != nil {
+	errMsg := err.Error()
+	if err := om.database.ResolveOperation(ctx, ns, opID, newStatus, &errMsg, outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
-func (om *operationsManager) ResolveOperationByID(ctx context.Context, id string, op *core.Operation) (*core.Operation, error) {
-	u, err := fftypes.ParseUUID(ctx, id)
+func (om *operationsManager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
+	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = om.database.ResolveOperation(ctx, op.Namespace, u, op.Status, op.Error, op.Output)
-	return op, err
+	err = om.database.ResolveOperation(ctx, ns, u, op.Status, op.Error, op.Output)
+	return err
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *OperationUpdate) {
@@ -225,7 +222,7 @@ func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *Op
 	if update.ErrorMessage != "" {
 		errString = fmt.Sprintf(" error=%s", update.ErrorMessage)
 	}
-	log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", plugin.Name(), update.ID, update.Status, errString)
+	log.L(om.ctx).Debugf("%s updating operation %s status=%s%s", plugin.Name(), update.NamespacedOpID, update.Status, errString)
 	om.updater.SubmitOperationUpdate(om.ctx, update)
 }
 

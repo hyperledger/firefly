@@ -19,39 +19,33 @@ package definitions
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (dh *definitionHandlers) handleIdentityUpdateBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var update core.IdentityUpdate
-	valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update)
-	if !valid {
-		return HandlerResult{Action: ActionReject}, nil
+	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update); !valid {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity update", msg.Header.ID)
+	}
+	if err := update.Identity.Validate(ctx); err != nil {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity update", msg.Header.ID, err)
 	}
 
-	// See if we find the message to which it refers
-	err := update.Identity.Validate(ctx)
-	if err != nil {
-		log.L(ctx).Warnf("Invalid identity update message %s: %v", msg.Header.ID, err)
-		return HandlerResult{Action: ActionReject}, nil
-	}
-
-	// Get the existing identity (must be a confirmed identity to at the point an update is issued)
+	// Get the existing identity (must be a confirmed identity at the point an update is issued)
 	identity, err := dh.identity.CachedIdentityLookupByID(ctx, update.Identity.ID)
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	}
 	if identity == nil {
-		log.L(ctx).Warnf("Invalid identity update message %s - not found: %s", msg.Header.ID, update.Identity.ID)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity update", msg.Header.ID, update.Identity.ID)
 	}
 
 	// Check the author matches
 	if identity.DID != msg.Header.Author {
-		log.L(ctx).Warnf("Invalid identity update message %s - wrong author: %s", msg.Header.ID, msg.Header.Author)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", msg.Header.ID, msg.Header.Author)
 	}
 
 	// Update the profile

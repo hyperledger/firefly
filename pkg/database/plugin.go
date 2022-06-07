@@ -217,7 +217,7 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg string, output fftypes.JSONObject) (err error)
+	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
 
 	// UpdateOperation - Update an operation
 	UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update Update) (err error)
@@ -480,8 +480,8 @@ type iContractAPICollection interface {
 }
 
 type iContractListenerCollection interface {
-	// UpsertContractListener - upsert a subscription to an external smart contract
-	UpsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
+	// InsertContractListener - upsert a subscription to an external smart contract
+	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
 	// GetContractListener - get smart contract subscription by name
 	GetContractListener(ctx context.Context, ns, name string) (sub *core.ContractListener, err error)
@@ -1018,6 +1018,8 @@ var ContractListenerQueryFactory = &queryFields{
 	"signature": &StringField{},
 	"backendid": &StringField{},
 	"created":   &TimeField{},
+	"updated":   &TimeField{},
+	"state":     &JSONField{},
 }
 
 // BlockchainEventQueryFactory filter fields for contract events

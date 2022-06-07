@@ -23,7 +23,6 @@ import (
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/identity"
-	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
@@ -43,6 +42,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -75,7 +75,7 @@ type testOrchestrator struct {
 	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
-	mae *admineventsmocks.Manager
+	mae *spieventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
 }
 
@@ -133,7 +133,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
-		mae: &admineventsmocks.Manager{},
+		mae: &spieventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 	}
 	tor.orchestrator.data = tor.mdm
@@ -176,7 +176,7 @@ func TestNewOrchestrator(t *testing.T) {
 		Config{},
 		Plugins{},
 		&metricsmocks.Manager{},
-		&admineventsmocks.Manager{},
+		&spieventsmocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }

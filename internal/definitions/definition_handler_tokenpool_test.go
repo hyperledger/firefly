@@ -173,7 +173,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject, CustomCorrelator: pool.ID}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	mdi.AssertExpectations(t)
 	bs.assertNoFinalizers()
@@ -238,7 +238,7 @@ func TestHandleDefinitionBroadcastTokenPoolValidateFail(t *testing.T) {
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }
 
@@ -254,6 +254,6 @@ func TestHandleDefinitionBroadcastTokenPoolBadMessage(t *testing.T) {
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, nil, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 	bs.assertNoFinalizers()
 }

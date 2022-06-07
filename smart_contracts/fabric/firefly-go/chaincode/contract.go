@@ -60,5 +60,5 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 }
 
 func (s *SmartContract) NetworkVersion() int {
-	return 2
+	return 1
 }

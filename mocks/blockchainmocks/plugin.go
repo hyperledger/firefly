@@ -159,13 +159,13 @@ func (_m *Plugin) InitConfig(_a0 config.Section) {
 	_m.Called(_a0)
 }
 
-// InvokeContract provides a mock function with given fields: ctx, operationID, signingKey, location, method, input, options
-func (_m *Plugin) InvokeContract(ctx context.Context, operationID *fftypes.UUID, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
-	ret := _m.Called(ctx, operationID, signingKey, location, method, input, options)
+// InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, options
+func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
-		r0 = rf(ctx, operationID, signingKey, location, method, input, options)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, location, method, input, options)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -282,13 +282,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, operationID, signingKey, batch
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID, signingKey string, batch *blockchain.BatchPin) error {
-	ret := _m.Called(ctx, operationID, signingKey, batch)
+// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, signingKey, batch
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, batch)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, *blockchain.BatchPin) error); ok {
-		r0 = rf(ctx, operationID, signingKey, batch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *blockchain.BatchPin) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, batch)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -296,13 +296,13 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, operationID *fftypes.UUID,
 	return r0
 }
 
-// SubmitNetworkAction provides a mock function with given fields: ctx, operationID, signingKey, action
-func (_m *Plugin) SubmitNetworkAction(ctx context.Context, operationID *fftypes.UUID, signingKey string, action fftypes.FFEnum) error {
-	ret := _m.Called(ctx, operationID, signingKey, action)
+// SubmitNetworkAction provides a mock function with given fields: ctx, nsOpID, signingKey, action
+func (_m *Plugin) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action fftypes.FFEnum) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, action)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, string, fftypes.FFEnum) error); ok {
-		r0 = rf(ctx, operationID, signingKey, action)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.FFEnum) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, action)
 	} else {
 		r0 = ret.Error(0)
 	}

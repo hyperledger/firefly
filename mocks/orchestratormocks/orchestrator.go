@@ -820,31 +820,8 @@ func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Name
 	return r0, r1
 }
 
-// GetOperationByID provides a mock function with given fields: ctx, id
-func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *core.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Operation); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Operation)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetOperationByIDNamespaced provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetOperationByIDNamespaced(ctx context.Context, ns string, id string) (*core.Operation, error) {
+// GetOperationByID provides a mock function with given fields: ctx, ns, id
+func (_m *Orchestrator) GetOperationByID(ctx context.Context, ns string, id string) (*core.Operation, error) {
 	ret := _m.Called(ctx, ns, id)
 
 	var r0 *core.Operation
@@ -859,6 +836,29 @@ func (_m *Orchestrator) GetOperationByIDNamespaced(ctx context.Context, ns strin
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, ns, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID
+func (_m *Orchestrator) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
+	ret := _m.Called(ctx, nsOpID)
+
+	var r0 *core.Operation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Operation); ok {
+		r0 = rf(ctx, nsOpID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Operation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nsOpID)
 	} else {
 		r1 = ret.Error(1)
 	}

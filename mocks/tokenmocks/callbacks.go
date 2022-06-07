@@ -16,9 +16,9 @@ type Callbacks struct {
 	mock.Mock
 }
 
-// TokenOpUpdate provides a mock function with given fields: plugin, operationID, txState, blockchainTXID, errorMessage, opOutput
-func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, operationID *fftypes.UUID, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
-	_m.Called(plugin, operationID, txState, blockchainTXID, errorMessage, opOutput)
+// TokenOpUpdate provides a mock function with given fields: plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput
+func (_m *Callbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID string, errorMessage string, opOutput fftypes.JSONObject) {
+	_m.Called(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
 }
 
 // TokenPoolCreated provides a mock function with given fields: plugin, pool

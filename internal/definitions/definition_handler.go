@@ -19,6 +19,7 @@ package definitions
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -120,7 +121,7 @@ func NewDefinitionHandler(ctx context.Context, di database.Plugin, bi blockchain
 
 func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
-	l.Infof("Processing system definition broadcast '%s' [%s]", msg.Header.Tag, msg.Header.ID)
+	l.Infof("Processing system definition '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
 	case core.SystemTagDefineDatatype:
 		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)
@@ -143,20 +144,19 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	case core.SystemTagDefineContractAPI:
 		return dh.handleContractAPIBroadcast(ctx, state, msg, data, tx)
 	default:
-		l.Warnf("Unknown SystemTag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
-		return HandlerResult{Action: ActionReject}, nil
+		return HandlerResult{Action: ActionReject}, fmt.Errorf("unknown system tag '%s' for definition ID '%s'", msg.Header.Tag, msg.Header.ID)
 	}
 }
 
 func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *core.Message, data core.DataArray, res core.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
-		l.Warnf("Unable to process system broadcast %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
+		l.Warnf("Unable to process system definition %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
 		return false
 	}
 	err := json.Unmarshal(data[0].Value.Bytes(), &res)
 	if err != nil {
-		l.Warnf("Unable to process system broadcast %s - unmarshal failed: %s", msg.Header.ID, err)
+		l.Warnf("Unable to process system definition %s - unmarshal failed: %s", msg.Header.ID, err)
 		return false
 	}
 	res.SetBroadcastMessage(msg.Header.ID)

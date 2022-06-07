@@ -16,7 +16,14 @@
 
 package core
 
-import "github.com/hyperledger/firefly-common/pkg/fftypes"
+import (
+	"context"
+	"strings"
+
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+)
 
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
@@ -97,6 +104,13 @@ type Operation struct {
 	Retry       *fftypes.UUID      `ffstruct:"Operation" json:"retry,omitempty" ffexcludeinput:"true"`
 }
 
+// OperationUpdateDTO is the subset of fields on an operation that are mutable, via the SPI
+type OperationUpdateDTO struct {
+	Status OpStatus           `ffstruct:"Operation" json:"status"`
+	Output fftypes.JSONObject `ffstruct:"Operation" json:"output,omitempty"`
+	Error  *string            `ffstruct:"Operation" json:"error,omitempty"`
+}
+
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin
 // It is never stored, but it should always be possible for the owning Manager to generate a
 // PreparedOperation from an Operation. Data is defined by the Manager, but should be JSON-serializable
@@ -106,4 +120,22 @@ type PreparedOperation struct {
 	Namespace string        `json:"namespace"`
 	Type      OpType        `json:"type" ffenum:"optype"`
 	Data      interface{}   `json:"data"`
+}
+
+func (po *PreparedOperation) NamespacedIDString() string {
+	return po.Namespace + ":" + po.ID.String()
+}
+
+func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.UUID, error) {
+	nsIDSplit := strings.Split(nsIDStr, ":")
+	if len(nsIDSplit) != 2 {
+		return "", nil, i18n.NewError(context.Background(), coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
+	}
+	ns := nsIDSplit[0]
+	uuidStr := nsIDSplit[1]
+	if err := ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return "", nil, err
+	}
+	u, err := fftypes.ParseUUID(ctx, uuidStr)
+	return ns, u, err
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly/internal/adminevents"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -38,6 +37,7 @@ import (
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
+	"github.com/hyperledger/firefly/internal/spievents"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -98,9 +98,9 @@ type Orchestrator interface {
 	GetDatatypeByID(ctx context.Context, ns, id string) (*core.Datatype, error)
 	GetDatatypeByName(ctx context.Context, ns, name, version string) (*core.Datatype, error)
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
-	GetOperationByIDNamespaced(ctx context.Context, ns, id string) (*core.Operation, error)
 	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
-	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
+	GetOperationByID(ctx context.Context, ns, id string) (*core.Operation, error)
+	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*core.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
@@ -199,10 +199,10 @@ type orchestrator struct {
 	operations     operations.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
-	adminEvents    adminevents.Manager
+	adminEvents    spievents.Manager
 }
 
-func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager, adminEvents adminevents.Manager) Orchestrator {
+func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager, adminEvents spievents.Manager) Orchestrator {
 	return &orchestrator{
 		namespace:   ns,
 		config:      config,
@@ -515,5 +515,10 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, acti
 	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain().SubmitNetworkAction(ctx, fftypes.NewUUID(), key, action.Type)
+	// TODO: This should be a new operation type
+	po := &core.PreparedOperation{
+		Namespace: ns,
+		ID:        fftypes.NewUUID(),
+	}
+	return or.blockchain().SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
 }

@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
-	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
@@ -40,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
@@ -50,7 +50,7 @@ import (
 type testNamespaceManager struct {
 	namespaceManager
 	mmi *metricsmocks.Manager
-	mae *admineventsmocks.Manager
+	mae *spieventsmocks.Manager
 }
 
 func (nm *testNamespaceManager) cleanup(t *testing.T) {
@@ -64,7 +64,7 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 	}
 	nm := &testNamespaceManager{
 		mmi: &metricsmocks.Manager{},
-		mae: &admineventsmocks.Manager{},
+		mae: &spieventsmocks.Manager{},
 		namespaceManager: namespaceManager{
 			namespaces:  make(map[string]*namespace),
 			pluginNames: make(map[string]bool),
@@ -865,7 +865,7 @@ func TestWaitStop(t *testing.T) {
 	nm.namespaces = map[string]*namespace{
 		"ns": {orchestrator: mo},
 	}
-	mae := nm.adminEvents.(*admineventsmocks.Manager)
+	mae := nm.adminEvents.(*spieventsmocks.Manager)
 
 	mo.On("WaitStop").Return()
 	mae.On("WaitStop").Return()
@@ -894,7 +894,7 @@ func TestLoadAdminEvents(t *testing.T) {
 
 	err := nm.loadPlugins(context.Background())
 	assert.NoError(t, err)
-	assert.NotNil(t, nm.AdminEvents())
+	assert.NotNil(t, nm.SPIEvents())
 }
 
 func TestGetNamespaces(t *testing.T) {

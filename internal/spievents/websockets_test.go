@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package adminevents
+package spievents
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 )
 
 func TestWriteFail(t *testing.T) {
-	_, ws, _, cancel := newTestAdminEventsManager(t)
+	_, ws, _, cancel := newTestSPIEventsManager(t)
 	defer cancel()
 
 	// Close socket that will break receiver loop, and wait for sender to exit
@@ -55,7 +55,7 @@ func TestBlockedDispatch(t *testing.T) {
 }
 
 func TestBlockedConsume(t *testing.T) {
-	_, ws, wsc, cancel := newTestAdminEventsManager(t)
+	_, ws, wsc, cancel := newTestSPIEventsManager(t)
 	defer cancel()
 
 	ws.mux.Lock()
