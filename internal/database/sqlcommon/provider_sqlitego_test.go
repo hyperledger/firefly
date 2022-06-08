@@ -63,8 +63,9 @@ func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 	tp.config.Set(SQLConfMigrationsDirectory, "../../../db/migrations/sqlite")
 	tp.config.Set(SQLConfMaxConnections, 1)
 
-	err = tp.Init(context.Background(), tp, tp.config, tp.callbacks, tp.capabilities)
+	err = tp.Init(context.Background(), tp, tp.config, tp.capabilities)
 	assert.NoError(tp.t, err)
+	tp.RegisterListener(tp.callbacks)
 
 	return tp, func() {
 		tp.Close()

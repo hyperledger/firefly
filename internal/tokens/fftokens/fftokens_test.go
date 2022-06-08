@@ -60,7 +60,7 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	ffTokensConfig.AddKnownKey(ffresty.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "fftokens", h.Name())
 	assert.Equal(t, "testtokens", h.configuredName)
@@ -77,7 +77,7 @@ func TestInitBadURL(t *testing.T) {
 	h.InitConfig(ffTokensConfig)
 
 	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -86,7 +86,7 @@ func TestInitMissingURL(t *testing.T) {
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -259,7 +259,8 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 			return res, nil
 		})
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.callbacks = mcb
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
@@ -412,7 +413,8 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			return res, nil
 		})
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.callbacks = mcb
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
@@ -457,7 +459,8 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			return res, nil
 		})
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.callbacks = mcb
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
@@ -776,7 +779,8 @@ func TestEvents(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"data":{"id":"1"},"event":"ack"}`, string(msg))
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.callbacks = mcb
 	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
 

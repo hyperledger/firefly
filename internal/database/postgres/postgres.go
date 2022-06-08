@@ -37,9 +37,13 @@ type Postgres struct {
 	sqlcommon.SQLCommon
 }
 
-func (psql *Postgres) Init(ctx context.Context, config config.Section, callbacks database.Callbacks) error {
+func (psql *Postgres) Init(ctx context.Context, config config.Section) error {
 	capabilities := &database.Capabilities{}
-	return psql.SQLCommon.Init(ctx, psql, config, callbacks, capabilities)
+	return psql.SQLCommon.Init(ctx, psql, config, capabilities)
+}
+
+func (psql *Postgres) RegisterListener(callbacks database.Callbacks) {
+	psql.SQLCommon.RegisterListener(callbacks)
 }
 
 func (psql *Postgres) Name() string {

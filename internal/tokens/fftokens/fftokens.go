@@ -132,9 +132,8 @@ func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
-func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section, callbacks tokens.Callbacks) (err error) {
+func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section) (err error) {
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
-	ft.callbacks = callbacks
 	ft.configuredName = name
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
@@ -158,6 +157,10 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	go ft.eventLoop()
 
 	return nil
+}
+
+func (ft *FFTokens) RegisterListener(callbacks tokens.Callbacks) {
+	ft.callbacks = callbacks
 }
 
 func (ft *FFTokens) Start() error {

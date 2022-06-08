@@ -23,17 +23,15 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPostgresProvider(t *testing.T) {
 	psql := &Postgres{}
-	dcb := &databasemocks.Callbacks{}
 	config := config.RootSection("unittest")
 	psql.InitConfig(config)
 	config.Set(sqlcommon.SQLConfDatasourceURL, "!bad connection")
-	err := psql.Init(context.Background(), config, dcb)
+	err := psql.Init(context.Background(), config)
 	assert.NoError(t, err)
 	_, err = psql.GetMigrationDriver(psql.DB())
 	assert.Error(t, err)

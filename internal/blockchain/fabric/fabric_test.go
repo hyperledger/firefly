@@ -118,7 +118,7 @@ func TestInitMissingURL(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()
 	resetConf(e)
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -130,7 +130,7 @@ func TestInitMissingTopic(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigChaincodeDeprecated, "Firefly")
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10138.*topic", err)
 }
 
@@ -174,7 +174,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "fabric", e.Name())
@@ -216,7 +216,7 @@ func TestWSInitFail(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF00149", err)
 
 }
@@ -240,7 +240,7 @@ func TestInitMissingInstance(t *testing.T) {
 	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.Regexp(t, "FF10138.*chaincode", err)
@@ -271,7 +271,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
@@ -307,7 +307,7 @@ func TestInitNewConfig(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
@@ -337,7 +337,7 @@ func TestInitNewConfigError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.Regexp(t, "FF10138", err)
@@ -363,7 +363,7 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{
 		Active: core.FireFlyContractInfo{Index: 1},
@@ -399,7 +399,7 @@ func TestInitNetworkVersionNotFound(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
@@ -435,7 +435,7 @@ func TestInitNetworkVersionError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.Regexp(t, "FF10284", err)
@@ -468,7 +468,7 @@ func TestInitNetworkVersionBadResponse(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.Regexp(t, "json: cannot unmarshal", err)
@@ -507,7 +507,7 @@ func TestInitTerminateContract(t *testing.T) {
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".1."+FireFlyContractChaincode, "firefly2")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, contracts)
 	assert.NoError(t, err)
@@ -566,7 +566,7 @@ func TestInitTerminateContractIgnore(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, contracts)
 	assert.NoError(t, err)
@@ -603,7 +603,7 @@ func TestStreamQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -630,7 +630,7 @@ func TestStreamCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.Regexp(t, "FF10284.*pop", err)
 
 }
@@ -659,7 +659,7 @@ func TestSubQueryError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.Regexp(t, "FF10284.*pop", err)
@@ -692,7 +692,7 @@ func TestSubQueryCreateError(t *testing.T) {
 	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
 	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
 
-	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, &metricsmocks.Manager{})
+	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.Regexp(t, "FF10284.*pop", err)

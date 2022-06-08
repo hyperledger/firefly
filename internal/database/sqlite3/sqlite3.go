@@ -46,7 +46,7 @@ func connHook(conn *sqlite3.SQLiteConn) error {
 	return err
 }
 
-func (sqlite *SQLite3) Init(ctx context.Context, config config.Section, callbacks database.Callbacks) error {
+func (sqlite *SQLite3) Init(ctx context.Context, config config.Section) error {
 	capabilities := &database.Capabilities{}
 	if !ffSQLiteRegistered {
 		sql.Register("sqlite3_ff",
@@ -55,7 +55,11 @@ func (sqlite *SQLite3) Init(ctx context.Context, config config.Section, callback
 			})
 		ffSQLiteRegistered = true
 	}
-	return sqlite.SQLCommon.Init(ctx, sqlite, config, callbacks, capabilities)
+	return sqlite.SQLCommon.Init(ctx, sqlite, config, capabilities)
+}
+
+func (sqlite *SQLite3) RegisterListener(callbacks database.Callbacks) {
+	sqlite.SQLCommon.RegisterListener(callbacks)
 }
 
 func (sqlite *SQLite3) Name() string {

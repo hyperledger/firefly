@@ -33,10 +33,13 @@ func (tbd *TBD) Name() string {
 	return "onchain" // For backwards compatibility with previous config that might have specified "onchain"
 }
 
-func (tbd *TBD) Init(ctx context.Context, config config.Section, callbacks identity.Callbacks) (err error) {
-	tbd.callbacks = callbacks
+func (tbd *TBD) Init(ctx context.Context, config config.Section) (err error) {
 	tbd.capabilities = &identity.Capabilities{}
 	return nil
+}
+
+func (tbd *TBD) RegisterListener(callbacks identity.Callbacks) {
+	tbd.callbacks = callbacks
 }
 
 func (tbd *TBD) Start() error {

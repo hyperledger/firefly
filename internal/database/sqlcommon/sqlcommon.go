@@ -53,9 +53,8 @@ type txWrapper struct {
 	tableLocks      []string
 }
 
-func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.Section, callbacks database.Callbacks, capabilities *database.Capabilities) (err error) {
+func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.Section, capabilities *database.Capabilities) (err error) {
 	s.capabilities = capabilities
-	s.callbacks = callbacks
 	s.provider = provider
 	if s.provider != nil {
 		s.features = s.provider.Features()
@@ -95,6 +94,10 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.S
 	}
 
 	return nil
+}
+
+func (s *SQLCommon) RegisterListener(callbacks database.Callbacks) {
+	s.callbacks = callbacks
 }
 
 func (s *SQLCommon) Capabilities() *database.Capabilities { return s.capabilities }

@@ -367,15 +367,15 @@ func (or *orchestrator) Operations() operations.Manager {
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
-	err = or.plugins.Database.Plugin.Init(ctx, or.plugins.Database.Config, or)
-	if err != nil {
+	if err = or.plugins.Database.Plugin.Init(ctx, or.plugins.Database.Config); err != nil {
 		return err
 	}
+	or.plugins.Database.Plugin.RegisterListener(or)
 
-	err = or.plugins.Blockchain.Plugin.Init(ctx, or.plugins.Blockchain.Config, &or.bc, or.metrics)
-	if err != nil {
+	if err = or.plugins.Blockchain.Plugin.Init(ctx, or.plugins.Blockchain.Config, or.metrics); err != nil {
 		return err
 	}
+	or.plugins.Blockchain.Plugin.RegisterListener(&or.bc)
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database().GetIdentities(ctx, fb.And(
@@ -389,18 +389,21 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 
-	err = or.plugins.DataExchange.Plugin.Init(ctx, or.plugins.DataExchange.Config, nodeInfo, &or.bc)
-	if err != nil {
+	if err = or.plugins.DataExchange.Plugin.Init(ctx, or.plugins.DataExchange.Config, nodeInfo); err != nil {
 		return err
 	}
+	or.plugins.DataExchange.Plugin.RegisterListener(&or.bc)
 
-	err = or.plugins.SharedStorage.Plugin.Init(ctx, or.plugins.SharedStorage.Config, &or.bc)
-	if err != nil {
+	if err = or.plugins.SharedStorage.Plugin.Init(ctx, or.plugins.SharedStorage.Config); err != nil {
 		return err
 	}
+	or.plugins.SharedStorage.Plugin.RegisterListener(&or.bc)
 
 	for _, token := range or.plugins.Tokens {
-		err = token.Plugin.Init(ctx, token.Name, token.Config, &or.bc)
+		if err = token.Plugin.Init(ctx, token.Name, token.Config); err != nil {
+			return err
+		}
+		token.Plugin.RegisterListener(&or.bc)
 	}
 
 	return err

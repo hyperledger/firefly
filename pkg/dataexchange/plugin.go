@@ -61,7 +61,10 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject, callbacks Callbacks) error
+	Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject) error
+
+	// RegisterListener registers a listener to receive callbacks
+	RegisterListener(callbacks Callbacks)
 
 	// Data exchange interface must not deliver any events until start is called
 	Start() error

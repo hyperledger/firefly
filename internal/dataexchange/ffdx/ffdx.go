@@ -108,9 +108,8 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) (err error) {
+func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
-	h.callbacks = callbacks
 	h.ackChannel = make(chan *ack)
 
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
@@ -135,6 +134,10 @@ func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.
 	go h.eventLoop()
 	go h.ackLoop()
 	return nil
+}
+
+func (h *FFDX) RegisterListener(callbacks dataexchange.Callbacks) {
+	h.callbacks = callbacks
 }
 
 func (h *FFDX) Start() error {

@@ -127,13 +127,13 @@ func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, erro
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, nodes, callbacks
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) error {
-	ret := _m.Called(ctx, _a1, nodes, callbacks)
+// Init provides a mock function with given fields: ctx, _a1, nodes
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, nodes []fftypes.JSONObject) error {
+	ret := _m.Called(ctx, _a1, nodes)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, []fftypes.JSONObject, dataexchange.Callbacks) error); ok {
-		r0 = rf(ctx, _a1, nodes, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, []fftypes.JSONObject) error); ok {
+		r0 = rf(ctx, _a1, nodes)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -158,6 +158,11 @@ func (_m *Plugin) Name() string {
 	}
 
 	return r0
+}
+
+// RegisterListener provides a mock function with given fields: callbacks
+func (_m *Plugin) RegisterListener(callbacks dataexchange.Callbacks) {
+	_m.Called(callbacks)
 }
 
 // SendMessage provides a mock function with given fields: ctx, nsOpID, peerID, data

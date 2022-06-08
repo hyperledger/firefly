@@ -161,12 +161,11 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
 	f.InitConfig(config)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
-	f.callbacks = callbacks
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
@@ -284,6 +283,10 @@ func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyC
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
 	return f.ConfigureContract(ctx, contracts)
+}
+
+func (f *Fabric) RegisterListener(callbacks blockchain.Callbacks) {
+	f.callbacks = callbacks
 }
 
 func (f *Fabric) Start() (err error) {

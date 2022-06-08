@@ -63,7 +63,7 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	h.InitConfig(utConfig)
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(dxCtx, utConfig, nodes)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -80,7 +80,7 @@ func TestInitBadURL(t *testing.T) {
 	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfig, nodes)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -89,7 +89,7 @@ func TestInitMissingURL(t *testing.T) {
 	h := &FFDX{}
 	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfig, nodes)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -445,7 +445,8 @@ func TestEvents(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
-	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
+	mcb := &dataexchangemocks.Callbacks{}
+	h.callbacks = mcb
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.NamespacedID() == "1" &&
@@ -558,7 +559,8 @@ func TestEventsWithManifest(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
-	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
+	mcb := &dataexchangemocks.Callbacks{}
+	h.callbacks = mcb
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.NamespacedID() == "1" &&
@@ -679,7 +681,7 @@ func TestWebsocketWithReinit(t *testing.T) {
 		})
 
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfig, nodes)
 	assert.NoError(t, err)
 
 	err = h.Start()

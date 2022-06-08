@@ -31,8 +31,10 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config config.Section, callbacks Callbacks) error
+	Init(ctx context.Context, config config.Section) error
+
+	// RegisterListener registers a listener to receive callbacks
+	RegisterListener(callbacks Callbacks)
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error

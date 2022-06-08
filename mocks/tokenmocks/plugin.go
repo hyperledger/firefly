@@ -91,13 +91,13 @@ func (_m *Plugin) CreateTokenPool(ctx context.Context, nsOpID string, pool *core
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, name, _a2, callbacks
-func (_m *Plugin) Init(ctx context.Context, name string, _a2 config.Section, callbacks tokens.Callbacks) error {
-	ret := _m.Called(ctx, name, _a2, callbacks)
+// Init provides a mock function with given fields: ctx, name, _a2
+func (_m *Plugin) Init(ctx context.Context, name string, _a2 config.Section) error {
+	ret := _m.Called(ctx, name, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, config.Section, tokens.Callbacks) error); ok {
-		r0 = rf(ctx, name, _a2, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, string, config.Section) error); ok {
+		r0 = rf(ctx, name, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -136,6 +136,11 @@ func (_m *Plugin) Name() string {
 	}
 
 	return r0
+}
+
+// RegisterListener provides a mock function with given fields: callbacks
+func (_m *Plugin) RegisterListener(callbacks tokens.Callbacks) {
+	_m.Called(callbacks)
 }
 
 // Start provides a mock function with given fields:

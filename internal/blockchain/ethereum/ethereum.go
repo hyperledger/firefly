@@ -156,14 +156,13 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
 	e.InitConfig(config)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	fftmConf := config.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
-	e.callbacks = callbacks
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 
@@ -212,6 +211,10 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	go e.eventLoop()
 
 	return nil
+}
+
+func (e *Ethereum) RegisterListener(callbacks blockchain.Callbacks) {
+	e.callbacks = callbacks
 }
 
 func (e *Ethereum) Start() (err error) {
