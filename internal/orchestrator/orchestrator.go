@@ -119,40 +119,40 @@ type Orchestrator interface {
 	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
 }
 
+type PluginConfig struct {
+	Name       string
+	PluginType string
+	Config     config.Section
+}
+
 type BlockchainPlugin struct {
-	Name   string
+	PluginConfig
 	Plugin blockchain.Plugin
-	Config config.Section
 }
 
 type DatabasePlugin struct {
-	Name   string
+	PluginConfig
 	Plugin database.Plugin
-	Config config.Section
 }
 
 type DataExchangePlugin struct {
-	Name   string
+	PluginConfig
 	Plugin dataexchange.Plugin
-	Config config.Section
 }
 
 type SharedStoragePlugin struct {
-	Name   string
+	PluginConfig
 	Plugin sharedstorage.Plugin
-	Config config.Section
 }
 
 type TokensPlugin struct {
-	Name   string
+	PluginConfig
 	Plugin tokens.Plugin
-	Config config.Section
 }
 
 type IdentityPlugin struct {
-	Name   string
+	PluginConfig
 	Plugin idplugin.Plugin
-	Config config.Section
 }
 
 type Plugins struct {

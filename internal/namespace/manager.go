@@ -256,9 +256,12 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 		}
 
 		plugins[name] = orchestrator.TokensPlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     config.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: config.SubSection(pluginType),
 		}
 	}
 
@@ -286,9 +289,12 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 			}
 
 			plugins[name] = orchestrator.TokensPlugin{
-				Name:   name,
+				PluginConfig: orchestrator.PluginConfig{
+					Name:       name,
+					PluginType: pluginType,
+					Config:     deprecatedConfig,
+				},
 				Plugin: plugin,
-				Config: deprecatedConfig,
 			}
 		}
 	}
@@ -312,9 +318,12 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 		}
 
 		plugins[name] = orchestrator.DatabasePlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     config.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: config.SubSection(pluginType),
 		}
 	}
 
@@ -327,9 +336,12 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 		}
 		name := "database_0"
 		plugins[name] = orchestrator.DatabasePlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     deprecatedDatabaseConfig.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: deprecatedDatabaseConfig.SubSection(pluginType),
 		}
 	}
 
@@ -372,9 +384,12 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 		}
 
 		plugins[name] = orchestrator.DataExchangePlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     config.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: config.SubSection(pluginType),
 		}
 	}
 
@@ -388,9 +403,12 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 
 		name := "dataexchange_0"
 		plugins[name] = orchestrator.DataExchangePlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     deprecatedDataexchangeConfig.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: deprecatedDataexchangeConfig.SubSection(pluginType),
 		}
 	}
 
@@ -413,9 +431,12 @@ func (nm *namespaceManager) getIdentityPlugins(ctx context.Context) (plugins map
 		}
 
 		plugins[name] = orchestrator.IdentityPlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     config.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: config.SubSection(pluginType),
 		}
 	}
 
@@ -438,9 +459,12 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins m
 		}
 
 		plugins[name] = orchestrator.BlockchainPlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     config.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: config.SubSection(pluginType),
 		}
 	}
 
@@ -454,9 +478,12 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins m
 
 		name := "blockchain_0"
 		plugins[name] = orchestrator.BlockchainPlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     deprecatedBlockchainConfig.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: deprecatedBlockchainConfig.SubSection(pluginType),
 		}
 	}
 
@@ -479,9 +506,12 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 		}
 
 		plugins[name] = orchestrator.SharedStoragePlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     config.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: config.SubSection(pluginType),
 		}
 	}
 
@@ -495,9 +525,12 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 
 		name := "sharedstorage_0"
 		plugins[name] = orchestrator.SharedStoragePlugin{
-			Name:   name,
+			PluginConfig: orchestrator.PluginConfig{
+				Name:       name,
+				PluginType: pluginType,
+				Config:     deprecatedSharedStorageConfig.SubSection(pluginType),
+			},
 			Plugin: plugin,
-			Config: deprecatedSharedStorageConfig.SubSection(pluginType),
 		}
 	}
 

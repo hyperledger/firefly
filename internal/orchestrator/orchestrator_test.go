@@ -156,7 +156,10 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.plugins.SharedStorage.Plugin = tor.mps
 	tor.orchestrator.plugins.DataExchange.Plugin = tor.mdx
 	tor.orchestrator.plugins.Database.Plugin = tor.mdi
-	tor.orchestrator.plugins.Tokens = []TokensPlugin{{Name: "token", Plugin: tor.mti}}
+	tor.orchestrator.plugins.Tokens = []TokensPlugin{{
+		PluginConfig: PluginConfig{Name: "token"},
+		Plugin:       tor.mti,
+	}}
 	tor.mdi.On("Name").Return("mock-di").Maybe()
 	tor.mem.On("Name").Return("mock-ei").Maybe()
 	tor.mps.On("Name").Return("mock-ps").Maybe()
