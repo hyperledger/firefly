@@ -123,6 +123,9 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
 	}
+	if err = nm.initPlugins(ctx); err != nil {
+		return err
+	}
 	if err = nm.loadNamespaces(ctx); err != nil {
 		return err
 	}
@@ -535,6 +538,35 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	}
 
 	return plugins, err
+}
+
+func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
+	for _, plugin := range nm.plugins.database {
+		if err = plugin.Plugin.Init(ctx, plugin.Config); err != nil {
+			return err
+		}
+	}
+	for _, plugin := range nm.plugins.blockchain {
+		if err = plugin.Plugin.Init(ctx, plugin.Config, nm.metrics); err != nil {
+			return err
+		}
+	}
+	for _, plugin := range nm.plugins.dataexchange {
+		if err = plugin.Plugin.Init(ctx, plugin.Config); err != nil {
+			return err
+		}
+	}
+	for _, plugin := range nm.plugins.sharedstorage {
+		if err = plugin.Plugin.Init(ctx, plugin.Config); err != nil {
+			return err
+		}
+	}
+	for _, plugin := range nm.plugins.tokens {
+		if err = plugin.Plugin.Init(ctx, plugin.Name, plugin.Config); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {

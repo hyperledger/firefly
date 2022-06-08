@@ -108,7 +108,7 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject) (err error) {
+func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.ackChannel = make(chan *ack)
 
@@ -117,8 +117,6 @@ func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
-
-	h.nodes = nodes
 
 	h.client = ffresty.New(h.ctx, config)
 	h.capabilities = &dataexchange.Capabilities{
@@ -134,6 +132,10 @@ func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.
 	go h.eventLoop()
 	go h.ackLoop()
 	return nil
+}
+
+func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
+	h.nodes = nodes
 }
 
 func (h *FFDX) RegisterListener(callbacks dataexchange.Callbacks) {

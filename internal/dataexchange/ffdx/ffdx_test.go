@@ -59,11 +59,10 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	utConfig.Set(DataExchangeManifestEnabled, manifestEnabled)
 
 	h = &FFDX{initialized: true}
-	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, utConfig, nodes)
+	err := h.Init(dxCtx, utConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -77,19 +76,17 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
-	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfig, nodes)
+	err := h.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF00149", err)
 }
 
 func TestInitMissingURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
-	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig, nodes)
+	err := h.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -681,8 +678,9 @@ func TestWebsocketWithReinit(t *testing.T) {
 		})
 
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig, nodes)
+	err := h.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
+	h.SetNodes(nodes)
 
 	err = h.Start()
 	assert.NoError(t, err)

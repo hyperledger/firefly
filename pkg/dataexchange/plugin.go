@@ -61,7 +61,10 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject) error
+	Init(ctx context.Context, config config.Section) error
+
+	// SetNodes initializes the known nodes from the database
+	SetNodes(nodes []fftypes.JSONObject)
 
 	// RegisterListener registers a listener to receive callbacks
 	RegisterListener(callbacks Callbacks)

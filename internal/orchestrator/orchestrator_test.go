@@ -184,82 +184,12 @@ func TestNewOrchestrator(t *testing.T) {
 	assert.NotNil(t, or)
 }
 
-func TestInitPluginsDatabaseFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitPluginsBlockchainFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("Init", mock.Anything, mock.Anything, or.mmi).Return(fmt.Errorf("pop"))
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.EqualError(t, err, "pop")
-}
-
 func TestInitPluginsDataexchangeNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("Init", mock.Anything, mock.Anything, or.mmi).Return(nil)
 	or.mbi.On("RegisterListener", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitPluginsDataexchangeFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("Init", mock.Anything, mock.Anything, or.mmi).Return(nil)
-	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitPluginsSharedstorageFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("Init", mock.Anything, mock.Anything, or.mmi).Return(nil)
-	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdx.On("RegisterListener", mock.Anything).Return()
-	or.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitPluginsTokensFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("Init", mock.Anything, mock.Anything, or.mmi).Return(nil)
-	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	or.mdx.On("RegisterListener", mock.Anything).Return()
-	or.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
-	or.mps.On("RegisterListener", mock.Anything).Return()
-	or.mti.On("Init", mock.Anything, "token", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
 	assert.EqualError(t, err, "pop")
@@ -268,16 +198,12 @@ func TestInitPluginsTokensFail(t *testing.T) {
 func TestInitAllPluginsOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("Init", mock.Anything, mock.Anything, or.mmi).Return(nil)
 	or.mbi.On("RegisterListener", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	or.mdx.On("RegisterListener", mock.Anything).Return()
-	or.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("RegisterListener", mock.Anything).Return()
-	or.mti.On("Init", mock.Anything, "token", mock.Anything).Return(nil)
 	or.mti.On("RegisterListener", mock.Anything).Return()
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
@@ -487,28 +413,6 @@ func TestStartStopOk(t *testing.T) {
 	assert.NoError(t, err)
 	or.WaitStop()
 	or.WaitStop() // swallows dups
-}
-
-func TestGetComponents(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-
-	or.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := or.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
-
-	assert.Equal(t, or.mbm, or.Broadcast())
-	assert.Equal(t, or.mpm, or.PrivateMessaging())
-	assert.Equal(t, or.mem, or.Events())
-	assert.Equal(t, or.mba, or.BatchManager())
-	assert.Equal(t, or.mnm, or.NetworkMap())
-	assert.Equal(t, or.mdm, or.Data())
-	assert.Equal(t, or.mam, or.Assets())
-	assert.Equal(t, or.mcm, or.Contracts())
-	assert.Equal(t, or.mmi, or.Metrics())
-	assert.Equal(t, or.mom, or.Operations())
 }
 
 func TestNetworkAction(t *testing.T) {

@@ -53,9 +53,21 @@ type testNamespaceManager struct {
 	namespaceManager
 	mmi *metricsmocks.Manager
 	mae *spieventsmocks.Manager
+	mbi *blockchainmocks.Plugin
+	mdi *databasemocks.Plugin
+	mdx *dataexchangemocks.Plugin
+	mps *sharedstoragemocks.Plugin
+	mti *tokenmocks.Plugin
 }
 
 func (nm *testNamespaceManager) cleanup(t *testing.T) {
+	nm.mmi.AssertExpectations(t)
+	nm.mae.AssertExpectations(t)
+	nm.mbi.AssertExpectations(t)
+	nm.mdi.AssertExpectations(t)
+	nm.mdx.AssertExpectations(t)
+	nm.mps.AssertExpectations(t)
+	nm.mti.AssertExpectations(t)
 }
 
 func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
@@ -67,28 +79,33 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 	nm := &testNamespaceManager{
 		mmi: &metricsmocks.Manager{},
 		mae: &spieventsmocks.Manager{},
+		mbi: &blockchainmocks.Plugin{},
+		mdi: &databasemocks.Plugin{},
+		mdx: &dataexchangemocks.Plugin{},
+		mps: &sharedstoragemocks.Plugin{},
+		mti: &tokenmocks.Plugin{},
 		namespaceManager: namespaceManager{
 			namespaces:  make(map[string]*namespace),
 			pluginNames: make(map[string]bool),
 		},
 	}
 	nm.plugins.blockchain = map[string]orchestrator.BlockchainPlugin{
-		"ethereum": {Plugin: &blockchainmocks.Plugin{}},
+		"ethereum": {Plugin: nm.mbi},
 	}
 	nm.plugins.database = map[string]orchestrator.DatabasePlugin{
-		"postgres": {Plugin: &databasemocks.Plugin{}},
+		"postgres": {Plugin: nm.mdi},
 	}
 	nm.plugins.dataexchange = map[string]orchestrator.DataExchangePlugin{
-		"ffdx": {Plugin: &dataexchangemocks.Plugin{}},
+		"ffdx": {Plugin: nm.mdx},
 	}
 	nm.plugins.sharedstorage = map[string]orchestrator.SharedStoragePlugin{
-		"ipfs": {Plugin: &sharedstoragemocks.Plugin{}},
+		"ipfs": {Plugin: nm.mps},
 	}
 	nm.plugins.identity = map[string]orchestrator.IdentityPlugin{
 		"tbd": {Plugin: &identitymocks.Plugin{}},
 	}
 	nm.plugins.tokens = map[string]orchestrator.TokensPlugin{
-		"erc721": {Plugin: &tokenmocks.Plugin{}},
+		"erc721": {Plugin: nm.mti},
 	}
 	nm.namespaceManager.metrics = nm.mmi
 	nm.namespaceManager.adminEvents = nm.mae
@@ -108,8 +125,12 @@ func TestInit(t *testing.T) {
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.utOrchestrator = mo
 
-	mbi := nm.plugins.blockchain["ethereum"].Plugin.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion").Return(2)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("NetworkVersion").Return(2)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
@@ -128,8 +149,12 @@ func TestInitVersion1(t *testing.T) {
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	nm.utOrchestrator = mo
 
-	mbi := nm.plugins.blockchain["ethereum"].Plugin.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion").Return(1)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("NetworkVersion").Return(1)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
@@ -149,26 +174,16 @@ func TestInitVersion1Fail(t *testing.T) {
 	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	nm.utOrchestrator = mo
 
-	mbi := nm.plugins.blockchain["ethereum"].Plugin.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion").Return(1)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("NetworkVersion").Return(1)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
 	assert.EqualError(t, err, "pop")
-}
-
-func TestInitFail(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	mdi := nm.plugins.database["postgres"].Plugin.(*databasemocks.Plugin)
-	mdi.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
-	assert.EqualError(t, err, "pop")
-
-	mdi.AssertExpectations(t)
 }
 
 func TestDeprecatedDatabasePlugin(t *testing.T) {
@@ -610,8 +625,7 @@ func TestInitNamespacesNoDefault(t *testing.T) {
   `))
 	assert.NoError(t, err)
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.loadNamespaces(context.Background())
 	assert.Regexp(t, "FF10166", err)
 }
 

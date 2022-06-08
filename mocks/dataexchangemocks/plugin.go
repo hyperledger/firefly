@@ -127,13 +127,13 @@ func (_m *Plugin) GetEndpointInfo(ctx context.Context) (fftypes.JSONObject, erro
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, nodes
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, nodes []fftypes.JSONObject) error {
-	ret := _m.Called(ctx, _a1, nodes)
+// Init provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section) error {
+	ret := _m.Called(ctx, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, []fftypes.JSONObject) error); ok {
-		r0 = rf(ctx, _a1, nodes)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section) error); ok {
+		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -177,6 +177,11 @@ func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string,
 	}
 
 	return r0
+}
+
+// SetNodes provides a mock function with given fields: nodes
+func (_m *Plugin) SetNodes(nodes []fftypes.JSONObject) {
+	_m.Called(nodes)
 }
 
 // Start provides a mock function with given fields:
