@@ -156,10 +156,14 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
+			var ns string
 			pathParts := strings.Split(msg.Path, "/")
+			if len(pathParts) >= 2 {
+				ns = pathParts[len(pathParts)-2]
+			}
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
-				Namespace:  pathParts[0],
+				Namespace:  ns,
 				PeerID:     msg.Sender,
 				Hash:       *hash,
 				Size:       msg.Size,
