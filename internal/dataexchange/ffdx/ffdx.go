@@ -39,7 +39,7 @@ import (
 type FFDX struct {
 	ctx          context.Context
 	capabilities *dataexchange.Capabilities
-	callbacks    dataexchange.Callbacks
+	callbacks    callbacks
 	client       *resty.Client
 	wsconn       wsclient.WSClient
 	needsInit    bool
@@ -47,6 +47,16 @@ type FFDX struct {
 	initMutex    sync.Mutex
 	nodes        []fftypes.JSONObject
 	ackChannel   chan *ack
+}
+
+type callbacks struct {
+	listeners []dataexchange.Callbacks
+}
+
+func (cb *callbacks) DXEvent(event dataexchange.DXEvent) {
+	for _, cb := range cb.listeners {
+		cb.DXEvent(event)
+	}
 }
 
 const (
@@ -138,8 +148,8 @@ func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
 	h.nodes = nodes
 }
 
-func (h *FFDX) RegisterListener(callbacks dataexchange.Callbacks) {
-	h.callbacks = callbacks
+func (h *FFDX) RegisterListener(listener dataexchange.Callbacks) {
+	h.callbacks.listeners = append(h.callbacks.listeners, listener)
 }
 
 func (h *FFDX) Start() error {

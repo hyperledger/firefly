@@ -268,9 +268,9 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// RegisterListener provides a mock function with given fields: callbacks
-func (_m *Plugin) RegisterListener(callbacks blockchain.Callbacks) {
-	_m.Called(callbacks)
+// RegisterListener provides a mock function with given fields: listener
+func (_m *Plugin) RegisterListener(listener blockchain.Callbacks) {
+	_m.Called(listener)
 }
 
 // Start provides a mock function with given fields:

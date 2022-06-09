@@ -91,9 +91,9 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// RegisterListener provides a mock function with given fields: callbacks
-func (_m *Plugin) RegisterListener(callbacks sharedstorage.Callbacks) {
-	_m.Called(callbacks)
+// RegisterListener provides a mock function with given fields: listener
+func (_m *Plugin) RegisterListener(listener sharedstorage.Callbacks) {
+	_m.Called(listener)
 }
 
 // UploadData provides a mock function with given fields: ctx, data

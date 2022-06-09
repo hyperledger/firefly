@@ -35,7 +35,6 @@ import (
 type IPFS struct {
 	ctx          context.Context
 	capabilities *sharedstorage.Capabilities
-	callbacks    sharedstorage.Callbacks
 	apiClient    *resty.Client
 	gwClient     *resty.Client
 }
@@ -68,8 +67,7 @@ func (i *IPFS) Init(ctx context.Context, config config.Section) error {
 	return nil
 }
 
-func (i *IPFS) RegisterListener(callbacks sharedstorage.Callbacks) {
-	i.callbacks = callbacks
+func (i *IPFS) RegisterListener(listener sharedstorage.Callbacks) {
 }
 
 func (i *IPFS) Capabilities() *sharedstorage.Capabilities {

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -99,7 +100,9 @@ func newMessageReceived(peerID string, data []byte, expectedManifest string) *da
 
 func newPrivateBlobReceivedNoAck(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string) *dataexchangemocks.DXEvent {
 	mde := &dataexchangemocks.DXEvent{}
+	pathParts := strings.Split(payloadRef, "/")
 	mde.On("PrivateBlobReceived").Return(&dataexchange.PrivateBlobReceived{
+		Namespace:  pathParts[0],
 		PeerID:     peerID,
 		Hash:       *hash,
 		Size:       size,

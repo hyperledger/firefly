@@ -34,7 +34,7 @@ type Plugin interface {
 	Init(ctx context.Context, config config.Section) error
 
 	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(callbacks Callbacks)
+	RegisterListener(listener Callbacks)
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error

@@ -26,7 +26,6 @@ import (
 // TBD is a null implementation of the Identity Interface to avoid breaking configuration created with the previous "onchain" plugin
 type TBD struct {
 	capabilities *identity.Capabilities
-	callbacks    identity.Callbacks
 }
 
 func (tbd *TBD) Name() string {
@@ -38,8 +37,7 @@ func (tbd *TBD) Init(ctx context.Context, config config.Section) (err error) {
 	return nil
 }
 
-func (tbd *TBD) RegisterListener(callbacks identity.Callbacks) {
-	tbd.callbacks = callbacks
+func (tbd *TBD) RegisterListener(listener identity.Callbacks) {
 }
 
 func (tbd *TBD) Start() error {

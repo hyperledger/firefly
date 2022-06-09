@@ -67,7 +67,7 @@ type Plugin interface {
 	SetNodes(nodes []fftypes.JSONObject)
 
 	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(callbacks Callbacks)
+	RegisterListener(listener Callbacks)
 
 	// Data exchange interface must not deliver any events until start is called
 	Start() error
@@ -129,6 +129,7 @@ type MessageReceived struct {
 }
 
 type PrivateBlobReceived struct {
+	Namespace  string
 	PeerID     string
 	Hash       fftypes.Bytes32
 	Size       int64

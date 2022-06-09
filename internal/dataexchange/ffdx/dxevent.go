@@ -17,6 +17,8 @@
 package ffdx
 
 import (
+	"strings"
+
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -154,8 +156,10 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
+			pathParts := strings.Split(msg.Path, "/")
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
+				Namespace:  pathParts[0],
 				PeerID:     msg.Sender,
 				Hash:       *hash,
 				Size:       msg.Size,
