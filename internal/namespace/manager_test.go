@@ -29,7 +29,6 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
-	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -89,23 +88,23 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 			pluginNames: make(map[string]bool),
 		},
 	}
-	nm.plugins.blockchain = map[string]orchestrator.BlockchainPlugin{
-		"ethereum": {Plugin: nm.mbi},
+	nm.plugins.blockchain = map[string]blockchainPlugin{
+		"ethereum": {plugin: nm.mbi},
 	}
-	nm.plugins.database = map[string]orchestrator.DatabasePlugin{
-		"postgres": {Plugin: nm.mdi},
+	nm.plugins.database = map[string]databasePlugin{
+		"postgres": {plugin: nm.mdi},
 	}
-	nm.plugins.dataexchange = map[string]orchestrator.DataExchangePlugin{
-		"ffdx": {Plugin: nm.mdx},
+	nm.plugins.dataexchange = map[string]dataExchangePlugin{
+		"ffdx": {plugin: nm.mdx},
 	}
-	nm.plugins.sharedstorage = map[string]orchestrator.SharedStoragePlugin{
-		"ipfs": {Plugin: nm.mps},
+	nm.plugins.sharedstorage = map[string]sharedStoragePlugin{
+		"ipfs": {plugin: nm.mps},
 	}
-	nm.plugins.identity = map[string]orchestrator.IdentityPlugin{
-		"tbd": {Plugin: &identitymocks.Plugin{}},
+	nm.plugins.identity = map[string]identityPlugin{
+		"tbd": {plugin: &identitymocks.Plugin{}},
 	}
-	nm.plugins.tokens = map[string]orchestrator.TokensPlugin{
-		"erc721": {Plugin: nm.mti},
+	nm.plugins.tokens = map[string]tokensPlugin{
+		"erc721": {plugin: nm.mti},
 	}
 	nm.namespaceManager.metrics = nm.mmi
 	nm.namespaceManager.adminEvents = nm.mae

@@ -19,7 +19,6 @@ package orchestrator
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/assets"
@@ -119,39 +118,33 @@ type Orchestrator interface {
 	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
 }
 
-type PluginConfig struct {
-	Name       string
-	PluginType string
-	Config     config.Section
-}
-
 type BlockchainPlugin struct {
-	PluginConfig
+	Name   string
 	Plugin blockchain.Plugin
 }
 
 type DatabasePlugin struct {
-	PluginConfig
+	Name   string
 	Plugin database.Plugin
 }
 
 type DataExchangePlugin struct {
-	PluginConfig
+	Name   string
 	Plugin dataexchange.Plugin
 }
 
 type SharedStoragePlugin struct {
-	PluginConfig
+	Name   string
 	Plugin sharedstorage.Plugin
 }
 
 type TokensPlugin struct {
-	PluginConfig
+	Name   string
 	Plugin tokens.Plugin
 }
 
 type IdentityPlugin struct {
-	PluginConfig
+	Name   string
 	Plugin idplugin.Plugin
 }
 
