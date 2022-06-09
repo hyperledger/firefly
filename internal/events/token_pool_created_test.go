@@ -427,7 +427,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 			ID: fftypes.NewUUID(),
 			Input: fftypes.JSONObject{
 				"id":        poolID.String(),
-				"namespace": "test-ns",
+				"namespace": "ns1",
 				"name":      "my-pool",
 			},
 		},
@@ -451,8 +451,8 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
-	mbm.On("BroadcastTokenPool", em.ctx, "test-ns", mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
-		return pool.Pool.Namespace == "test-ns" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
+	mbm.On("BroadcastTokenPool", em.ctx, "ns1", mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
+		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 
 	err := em.TokenPoolCreated(mti, pool)

@@ -78,6 +78,10 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		log.L(ctx).Infof("Token approval received for unknown pool '%s' - ignoring: %s", approval.PoolLocator, approval.Event.ProtocolID)
 		return false, nil
 	}
+	if pool.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring token approval from wrong namespace '%s'", pool.Namespace)
+		return false, nil
+	}
 	approval.Namespace = pool.Namespace
 	approval.Pool = pool.ID
 

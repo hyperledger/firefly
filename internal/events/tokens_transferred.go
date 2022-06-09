@@ -78,6 +78,10 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		log.L(ctx).Infof("Token transfer received for unknown pool '%s' - ignoring: %s", transfer.PoolLocator, transfer.Event.ProtocolID)
 		return false, nil
 	}
+	if pool.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring token transfer from wrong namespace '%s'", pool.Namespace)
+		return false, nil
+	}
 	transfer.Namespace = pool.Namespace
 	transfer.Pool = pool.ID
 

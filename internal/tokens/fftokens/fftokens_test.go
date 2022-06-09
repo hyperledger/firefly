@@ -260,7 +260,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.callbacks = mcb
+	h.RegisterListener(mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
@@ -414,7 +414,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.callbacks = mcb
+	h.RegisterListener(mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
@@ -460,7 +460,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.callbacks = mcb
+	h.RegisterListener(mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
@@ -780,7 +780,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"data":{"id":"1"},"event":"ack"}`, string(msg))
 
 	mcb := &tokenmocks.Callbacks{}
-	h.callbacks = mcb
+	h.RegisterListener(mcb)
 	opID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()
 
@@ -1118,12 +1118,10 @@ func TestEvents(t *testing.T) {
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
-	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	h := &FFTokens{
-		ctx:       context.Background(),
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:    context.Background(),
+		wsconn: wsm,
 	}
 	r := make(chan []byte)
 	close(r)
@@ -1133,12 +1131,10 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
-	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	h := &FFTokens{
-		ctx:       context.Background(),
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:    context.Background(),
+		wsconn: wsm,
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{"id":"1"}`) // ignored but acked
@@ -1149,14 +1145,12 @@ func TestEventLoopSendClosed(t *testing.T) {
 }
 
 func TestEventLoopClosedContext(t *testing.T) {
-	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	h := &FFTokens{
-		ctx:       ctx,
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:    ctx,
+		wsconn: wsm,
 	}
 	r := make(chan []byte, 1)
 	wsm.On("Close").Return()
