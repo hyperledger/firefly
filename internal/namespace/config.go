@@ -23,7 +23,8 @@ import (
 
 const (
 	// NamespacePredefined is the list of pre-defined namespaces
-	NamespacePredefined = "predefined"
+	NamespacePredefined         = "predefined"
+	NamespaceMultipartyContract = "contract"
 )
 
 var (
@@ -37,10 +38,17 @@ func InitConfig(withDefaults bool) {
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceRemoteName)
 	namespacePredefined.AddKnownKey(coreconfig.NamespacePlugins)
 	namespacePredefined.AddKnownKey(coreconfig.NamespaceDefaultKey)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyEnabled)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyOrgName)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyOrgDescription)
-	namespacePredefined.AddKnownKey(coreconfig.NamespaceMultipartyOrgKey)
+
+	multipartyConf := namespacePredefined.SubSection(coreconfig.NamespaceMultiparty)
+	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyEnabled)
+	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgName)
+	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgDescription)
+	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgKey)
+
+	contractConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
+	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, "oldest")
+	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
+
 	if withDefaults {
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceName, "default")
 		namespaceConfig.AddKnownKey(NamespacePredefined+".0."+coreconfig.NamespaceDescription, "Default predefined namespace")

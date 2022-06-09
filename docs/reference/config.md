@@ -618,6 +618,13 @@ nav_order: 2
 |---|-----------|----|-------------|
 |enabled|Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)|`boolean`|`<nil>`
 
+## namespaces.predefined[].multiparty.contract[]
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|firstEvent|The first event the contract should process. Valid options are `oldest` or `newest`|`string`|`<nil>`
+|location|Object containing namespace specific configuration for this blockchain plugin|`string`|`<nil>`
+
 ## namespaces.predefined[].multiparty.org
 
 |Key|Description|Type|Default Value|

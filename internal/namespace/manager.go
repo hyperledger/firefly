@@ -617,20 +617,21 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
 	}
 
+	multipartyConf := conf.SubSection(coreconfig.NamespaceMultiparty)
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
-	orgName := conf.GetString(coreconfig.NamespaceMultipartyOrgName)
+	orgName := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgName)
 	if orgName == "" {
 		orgName = config.GetString(coreconfig.OrgName)
 	}
-	orgKey := conf.GetString(coreconfig.NamespaceMultipartyOrgKey)
+	orgKey := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgKey)
 	if orgKey == "" {
 		orgKey = config.GetString(coreconfig.OrgKey)
 	}
-	orgDesc := conf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
+	orgDesc := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
 	if orgDesc == "" {
 		orgDesc = config.GetString(coreconfig.OrgDescription)
 	}
-	multiparty := conf.Get(coreconfig.NamespaceMultipartyEnabled)
+	multiparty := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
 	if multiparty == nil {
 		multiparty = orgName != "" || orgKey != ""
 	}
