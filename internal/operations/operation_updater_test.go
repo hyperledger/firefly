@@ -115,6 +115,16 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestSubmitUpdateWrongNS(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
+
+	ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
+		NamespacedOpID: "ns2:" + fftypes.NewUUID().String(),
+	})
+}
+
 func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {
 	om, cancel := newTestOperations(t)
 	defer om.WaitStop()

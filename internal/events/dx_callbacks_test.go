@@ -297,6 +297,23 @@ func TestMessageReceivedNilMessage(t *testing.T) {
 	mde.AssertExpectations(t)
 }
 
+func TestMessageReceivedWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.namespace = "ns2"
+
+	_, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
+
+}
+
 func TestMessageReceivedNilGroup(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -495,6 +512,22 @@ func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
 
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+}
+
+func TestPrivateBlobReceivedWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	em.namespace = "ns2"
+	hash := fftypes.NewRandB32()
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	// no ack as we are simulating termination mid retry
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageIdentityFail(t *testing.T) {

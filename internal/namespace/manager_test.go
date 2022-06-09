@@ -84,6 +84,7 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mps: &sharedstoragemocks.Plugin{},
 		mti: &tokenmocks.Plugin{},
 		namespaceManager: namespaceManager{
+			ctx:         context.Background(),
 			namespaces:  make(map[string]*namespace),
 			pluginNames: make(map[string]bool),
 		},
@@ -138,6 +139,105 @@ func TestInit(t *testing.T) {
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
 	assert.Nil(t, nm.Orchestrator("unknown"))
+
+	mo.AssertExpectations(t)
+}
+
+func TestInitDatabaseFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestInitBlockchainFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestInitDataExchangeFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestInitSharedStorageFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestInitTokensFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
+func TestInitOrchestratorFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mbi.On("RegisterListener", mock.Anything).Return()
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestInitVersion1(t *testing.T) {
@@ -164,6 +264,8 @@ func TestInitVersion1(t *testing.T) {
 	assert.Equal(t, mo, nm.Orchestrator("default"))
 	assert.Nil(t, nm.Orchestrator("unknown"))
 	assert.NotNil(t, nm.Orchestrator(core.LegacySystemNamespace))
+
+	mo.AssertExpectations(t)
 }
 
 func TestInitVersion1Fail(t *testing.T) {
@@ -186,6 +288,8 @@ func TestInitVersion1Fail(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
 	assert.EqualError(t, err, "pop")
+
+	mo.AssertExpectations(t)
 }
 
 func TestDeprecatedDatabasePlugin(t *testing.T) {
@@ -542,9 +646,18 @@ func TestTokensPluginDuplicate(t *testing.T) {
 	assert.Regexp(t, "FF10395", err)
 }
 
-func TestInitNamespacesBadName(t *testing.T) {
+func TestInitBadNamespace(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
@@ -555,11 +668,12 @@ func TestInitNamespacesBadName(t *testing.T) {
     `))
 	assert.NoError(t, err)
 
-	err = nm.loadNamespaces(context.Background())
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
 	assert.Regexp(t, "FF00140", err)
 }
 
-func TestInitNamespacesReservedName(t *testing.T) {
+func TestLoadNamespacesReservedName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -576,7 +690,7 @@ func TestInitNamespacesReservedName(t *testing.T) {
 	assert.Regexp(t, "FF10388", err)
 }
 
-func TestInitNamespacesDuplicate(t *testing.T) {
+func TestLoadNamespacesDuplicate(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -597,7 +711,7 @@ func TestInitNamespacesDuplicate(t *testing.T) {
 	assert.Len(t, nm.namespaces, 1)
 }
 
-func TestInitNamespacesNoName(t *testing.T) {
+func TestLoadNamespacesNoName(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -613,7 +727,7 @@ func TestInitNamespacesNoName(t *testing.T) {
 	assert.Regexp(t, "FF10166", err)
 }
 
-func TestInitNamespacesNoDefault(t *testing.T) {
+func TestLoadNamespacesNoDefault(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -631,7 +745,7 @@ func TestInitNamespacesNoDefault(t *testing.T) {
 	assert.Regexp(t, "FF10166", err)
 }
 
-func TestInitNamespacesUseDefaults(t *testing.T) {
+func TestLoadNamespacesUseDefaults(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -651,7 +765,7 @@ func TestInitNamespacesUseDefaults(t *testing.T) {
 	assert.Len(t, nm.namespaces, 1)
 }
 
-func TestInitNamespacesGatewayNoDatabase(t *testing.T) {
+func TestLoadNamespacesGatewayNoDatabase(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -669,7 +783,7 @@ func TestInitNamespacesGatewayNoDatabase(t *testing.T) {
 	assert.Regexp(t, "FF10392", err)
 }
 
-func TestInitNamespacesMultipartyUnknownPlugin(t *testing.T) {
+func TestLoadNamespacesMultipartyUnknownPlugin(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -689,7 +803,7 @@ func TestInitNamespacesMultipartyUnknownPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
-func TestInitNamespacesMultipartyMultipleBlockchains(t *testing.T) {
+func TestLoadNamespacesMultipartyMultipleBlockchains(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -709,7 +823,7 @@ func TestInitNamespacesMultipartyMultipleBlockchains(t *testing.T) {
 	assert.Regexp(t, "FF10394.*blockchain", err)
 }
 
-func TestInitNamespacesMultipartyMultipleDX(t *testing.T) {
+func TestLoadNamespacesMultipartyMultipleDX(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -729,7 +843,7 @@ func TestInitNamespacesMultipartyMultipleDX(t *testing.T) {
 	assert.Regexp(t, "FF10394.*dataexchange", err)
 }
 
-func TestInitNamespacesMultipartyMultipleSS(t *testing.T) {
+func TestLoadNamespacesMultipartyMultipleSS(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -749,7 +863,7 @@ func TestInitNamespacesMultipartyMultipleSS(t *testing.T) {
 	assert.Regexp(t, "FF10394.*sharedstorage", err)
 }
 
-func TestInitNamespacesMultipartyMultipleDB(t *testing.T) {
+func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -769,7 +883,7 @@ func TestInitNamespacesMultipartyMultipleDB(t *testing.T) {
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
-func TestInitNamespacesGatewayMultipleDB(t *testing.T) {
+func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -787,7 +901,7 @@ func TestInitNamespacesGatewayMultipleDB(t *testing.T) {
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
-func TestInitNamespacesGatewayMultipleBlockchains(t *testing.T) {
+func TestLoadNamespacesGatewayMultipleBlockchains(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -805,7 +919,7 @@ func TestInitNamespacesGatewayMultipleBlockchains(t *testing.T) {
 	assert.Regexp(t, "FF10394.*blockchain", err)
 }
 
-func TestInitNamespacesMultipartyMissingPlugins(t *testing.T) {
+func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -825,7 +939,7 @@ func TestInitNamespacesMultipartyMissingPlugins(t *testing.T) {
 	assert.Regexp(t, "FF10391", err)
 }
 
-func TestInitNamespacesGatewayWithDX(t *testing.T) {
+func TestLoadNamespacesGatewayWithDX(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -843,7 +957,7 @@ func TestInitNamespacesGatewayWithDX(t *testing.T) {
 	assert.Regexp(t, "FF10393", err)
 }
 
-func TestInitNamespacesGatewayWithSharedStorage(t *testing.T) {
+func TestLoadNamespacesGatewayWithSharedStorage(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -861,7 +975,7 @@ func TestInitNamespacesGatewayWithSharedStorage(t *testing.T) {
 	assert.Regexp(t, "FF10393", err)
 }
 
-func TestInitNamespacesGatewayUnknownPlugin(t *testing.T) {
+func TestLoadNamespacesGatewayUnknownPlugin(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -879,7 +993,7 @@ func TestInitNamespacesGatewayUnknownPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
-func TestInitNamespacesGatewayTokens(t *testing.T) {
+func TestLoadNamespacesGatewayTokens(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 

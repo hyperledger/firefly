@@ -105,6 +105,38 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestContractEventWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	ev := &blockchain.EventWithSubscription{
+		Subscription: "sb-1",
+		Event: blockchain.Event{
+			BlockchainTXID: "0xabcd1234",
+			Name:           "Changed",
+			Output: fftypes.JSONObject{
+				"value": "1",
+			},
+			Info: fftypes.JSONObject{
+				"blockNumber": "10",
+			},
+		},
+	}
+	sub := &core.ContractListener{
+		Namespace: "ns2",
+		ID:        fftypes.NewUUID(),
+		Topic:     "topic1",
+	}
+
+	mdi := em.database.(*databasemocks.Plugin)
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(sub, nil)
+
+	err := em.BlockchainEvent(ev)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

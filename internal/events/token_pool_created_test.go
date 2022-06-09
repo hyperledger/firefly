@@ -157,6 +157,60 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestTokenPoolCreatedConfirmWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+	mth := em.txHelper.(*txcommonmocks.Helper)
+	mdm := em.data.(*datamocks.Manager)
+
+	txID := fftypes.NewUUID()
+	info1 := fftypes.JSONObject{"pool": "info"}
+	info2 := fftypes.JSONObject{"block": "info"}
+	chainPool := &tokens.TokenPool{
+		Type:        core.TokenTypeFungible,
+		PoolLocator: "123",
+		Connector:   "erc1155",
+		TX: core.TransactionRef{
+			ID:   txID,
+			Type: core.TransactionTypeTokenPool,
+		},
+		Standard: "ERC1155",
+		Symbol:   "FFT",
+		Info:     info1,
+		Event: blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			Name:           "TokenPool",
+			ProtocolID:     "tx1",
+			Info:           info2,
+		},
+	}
+	storedPool := &core.TokenPool{
+		Namespace: "ns2",
+		ID:        fftypes.NewUUID(),
+		State:     core.TokenPoolStatePending,
+		Message:   fftypes.NewUUID(),
+		TX: core.TransactionRef{
+			Type: core.TransactionTypeTokenPool,
+			ID:   txID,
+		},
+	}
+
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil).Once()
+	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
+		return e.Name == chainPool.Event.Name
+	})).Return(nil).Once()
+	mth.On("PersistTransaction", mock.Anything, "ns1", txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
+
+	err := em.TokenPoolCreated(mti, chainPool)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
 func TestTokenPoolCreatedAlreadyConfirmed(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
@@ -461,6 +515,51 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	mti.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mbm.AssertExpectations(t)
+}
+
+func TestTokenPoolCreatedAnnounceWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	mdi := em.database.(*databasemocks.Plugin)
+	mti := &tokenmocks.Plugin{}
+
+	poolID := fftypes.NewUUID()
+	txID := fftypes.NewUUID()
+	operations := []*core.Operation{
+		{
+			ID: fftypes.NewUUID(),
+			Input: fftypes.JSONObject{
+				"id":        poolID.String(),
+				"namespace": "ns2",
+				"name":      "my-pool",
+			},
+		},
+	}
+	info := fftypes.JSONObject{"some": "info"}
+	pool := &tokens.TokenPool{
+		Type:        core.TokenTypeFungible,
+		PoolLocator: "123",
+		TX: core.TransactionRef{
+			ID:   txID,
+			Type: core.TransactionTypeTokenPool,
+		},
+		Connector: "erc1155",
+		Event: blockchain.Event{
+			BlockchainTXID: "0xffffeeee",
+			ProtocolID:     "tx1",
+			Info:           info,
+		},
+	}
+
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
+
+	err := em.TokenPoolCreated(mti, pool)
+	assert.NoError(t, err)
+
+	mti.AssertExpectations(t)
+	mdi.AssertExpectations(t)
 }
 
 func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {

@@ -23,11 +23,13 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/database/sqlcommon"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPostgresProvider(t *testing.T) {
 	psql := &Postgres{}
+	psql.RegisterListener(&databasemocks.Callbacks{})
 	config := config.RootSection("unittest")
 	psql.InitConfig(config)
 	config.Set(sqlcommon.SQLConfDatasourceURL, "!bad connection")

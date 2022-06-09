@@ -59,7 +59,6 @@ type Orchestrator interface {
 	Contracts() contracts.Manager
 	Data() data.Manager
 	Events() events.EventManager
-	Metrics() metrics.Manager
 	NetworkMap() networkmap.Manager
 	Operations() operations.Manager
 	PrivateMessaging() privatemessaging.Manager
@@ -348,10 +347,6 @@ func (or *orchestrator) Assets() assets.Manager {
 
 func (or *orchestrator) Contracts() contracts.Manager {
 	return or.contracts
-}
-
-func (or *orchestrator) Metrics() metrics.Manager {
-	return or.metrics
 }
 
 func (or *orchestrator) Operations() operations.Manager {

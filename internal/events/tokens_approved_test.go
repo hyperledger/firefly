@@ -123,6 +123,27 @@ func TestPersistApprovalDuplicate(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
+func TestPersistApprovalWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+
+	approval := newApproval()
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns2",
+	}
+
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+
+	valid, err := em.persistTokenApproval(em.ctx, approval)
+	assert.False(t, valid)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestPersistApprovalOpFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

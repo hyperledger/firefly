@@ -32,16 +32,16 @@ import (
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
 func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	if batchPin.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring BatchPin from wrong namespace '%s'", batchPin.Namespace)
-		return nil // move on
-	}
 	if batchPin.TransactionID == nil {
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
 	}
 	if err := core.ValidateFFNameField(em.ctx, batchPin.Namespace, "namespace"); err != nil {
 		log.L(em.ctx).Errorf("Invalid transaction ID='%s' - invalid namespace '%s': %a", batchPin.TransactionID, batchPin.Namespace, err)
+		return nil // move on
+	}
+	if batchPin.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring BatchPin from wrong namespace '%s'", batchPin.Namespace)
 		return nil // move on
 	}
 

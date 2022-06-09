@@ -182,18 +182,7 @@ func TestNewOrchestrator(t *testing.T) {
 	assert.NotNil(t, or)
 }
 
-func TestInitPluginsDataexchangeNodesFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("RegisterListener", mock.Anything).Return()
-	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	ctx := context.Background()
-	err := or.initPlugins(ctx)
-	assert.EqualError(t, err, "pop")
-}
-
-func TestInitAllPluginsOK(t *testing.T) {
+func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.mdi.On("RegisterListener", mock.Anything).Return()
@@ -205,6 +194,27 @@ func TestInitAllPluginsOK(t *testing.T) {
 	or.mti.On("RegisterListener", mock.Anything).Return()
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
+
+	assert.Equal(t, or.mba, or.BatchManager())
+	assert.Equal(t, or.mbm, or.Broadcast())
+	assert.Equal(t, or.mpm, or.PrivateMessaging())
+	assert.Equal(t, or.mem, or.Events())
+	assert.Equal(t, or.mam, or.Assets())
+	assert.Equal(t, or.mdm, or.Data())
+	assert.Equal(t, or.mom, or.Operations())
+	assert.Equal(t, or.mcm, or.Contracts())
+	assert.Equal(t, or.mnm, or.NetworkMap())
+}
+
+func TestInitDataexchangeNodesFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.mdi.On("RegisterListener", mock.Anything).Return()
+	or.mbi.On("RegisterListener", mock.Anything).Return()
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	ctx := context.Background()
+	err := or.initPlugins(ctx)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestInitMessagingComponentFail(t *testing.T) {
