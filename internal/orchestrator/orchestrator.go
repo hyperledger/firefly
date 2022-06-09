@@ -37,7 +37,6 @@ import (
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
-	"github.com/hyperledger/firefly/internal/spievents"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -193,16 +192,14 @@ type orchestrator struct {
 	operations     operations.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
-	adminEvents    spievents.Manager
 }
 
-func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager, adminEvents spievents.Manager) Orchestrator {
+func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
 	or := &orchestrator{
-		namespace:   ns,
-		config:      config,
-		plugins:     plugins,
-		metrics:     metrics,
-		adminEvents: adminEvents,
+		namespace: ns,
+		config:    config,
+		plugins:   plugins,
+		metrics:   metrics,
 	}
 	return or
 }

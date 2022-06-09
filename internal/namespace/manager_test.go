@@ -125,6 +125,7 @@ func TestInit(t *testing.T) {
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -149,6 +150,7 @@ func TestInitVersion1(t *testing.T) {
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -174,6 +176,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)

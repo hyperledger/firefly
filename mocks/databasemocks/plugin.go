@@ -2460,9 +2460,9 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// RegisterListener provides a mock function with given fields: callbacks
-func (_m *Plugin) RegisterListener(callbacks database.Callbacks) {
-	_m.Called(callbacks)
+// RegisterListener provides a mock function with given fields: listener
+func (_m *Plugin) RegisterListener(listener database.Callbacks) {
+	_m.Called(listener)
 }
 
 // ReplaceMessage provides a mock function with given fields: ctx, message

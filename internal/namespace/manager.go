@@ -199,7 +199,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
 	or := nm.utOrchestrator
 	if or == nil {
-		or = orchestrator.NewOrchestrator(name, ns.config, ns.plugins, nm.metrics, nm.adminEvents)
+		or = orchestrator.NewOrchestrator(name, ns.config, ns.plugins, nm.metrics)
 	}
 	if err := or.Init(nm.ctx, nm.cancelCtx); err != nil {
 		return err
@@ -553,6 +553,7 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
 		}
+		entry.plugin.RegisterListener(nm)
 	}
 	for _, entry := range nm.plugins.blockchain {
 		if err = entry.plugin.Init(ctx, entry.config, nm.metrics); err != nil {

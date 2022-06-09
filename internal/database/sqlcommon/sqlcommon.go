@@ -39,9 +39,43 @@ import (
 type SQLCommon struct {
 	db           *sql.DB
 	capabilities *database.Capabilities
-	callbacks    database.Callbacks
+	callbacks    callbacks
 	provider     Provider
 	features     SQLFeatures
+}
+
+type callbacks struct {
+	listeners []database.Callbacks
+}
+
+func (cb *callbacks) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
+	for _, cb := range cb.listeners {
+		cb.OrderedUUIDCollectionNSEvent(resType, eventType, ns, id, sequence)
+	}
+}
+
+func (cb *callbacks) OrderedCollectionNSEvent(resType database.OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64) {
+	for _, cb := range cb.listeners {
+		cb.OrderedCollectionNSEvent(resType, eventType, ns, sequence)
+	}
+}
+
+func (cb *callbacks) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID) {
+	for _, cb := range cb.listeners {
+		cb.UUIDCollectionNSEvent(resType, eventType, ns, id)
+	}
+}
+
+func (cb *callbacks) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
+	for _, cb := range cb.listeners {
+		cb.UUIDCollectionEvent(resType, eventType, id)
+	}
+}
+
+func (cb *callbacks) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
+	for _, cb := range cb.listeners {
+		cb.HashCollectionNSEvent(resType, eventType, ns, hash)
+	}
 }
 
 type txContextKey struct{}
@@ -96,8 +130,8 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.S
 	return nil
 }
 
-func (s *SQLCommon) RegisterListener(callbacks database.Callbacks) {
-	s.callbacks = callbacks
+func (s *SQLCommon) RegisterListener(listener database.Callbacks) {
+	s.callbacks.listeners = append(s.callbacks.listeners, listener)
 }
 
 func (s *SQLCommon) Capabilities() *database.Capabilities { return s.capabilities }

@@ -149,7 +149,6 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.batchpin = tor.mbp
 	tor.orchestrator.sharedDownload = tor.msd
-	tor.orchestrator.adminEvents = tor.mae
 	tor.orchestrator.txHelper = tor.mth
 	tor.orchestrator.definitions = tor.mdh
 	tor.orchestrator.plugins.Blockchain.Plugin = tor.mbi
@@ -179,7 +178,6 @@ func TestNewOrchestrator(t *testing.T) {
 		Config{},
 		Plugins{},
 		&metricsmocks.Manager{},
-		&spieventsmocks.Manager{},
 	)
 	assert.NotNil(t, or)
 }

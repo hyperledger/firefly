@@ -42,8 +42,8 @@ func (psql *Postgres) Init(ctx context.Context, config config.Section) error {
 	return psql.SQLCommon.Init(ctx, psql, config, capabilities)
 }
 
-func (psql *Postgres) RegisterListener(callbacks database.Callbacks) {
-	psql.SQLCommon.RegisterListener(callbacks)
+func (psql *Postgres) RegisterListener(listener database.Callbacks) {
+	psql.SQLCommon.RegisterListener(listener)
 }
 
 func (psql *Postgres) Name() string {
