@@ -94,7 +94,7 @@ var routes = append(
 		getOpByID,
 		getOps,
 		getStatus,
-		getStatusPins,
+		getPins,
 		getSubscriptionByID,
 		getSubscriptions,
 		getTokenAccountPools,

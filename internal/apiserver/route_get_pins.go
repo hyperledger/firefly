@@ -25,13 +25,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getStatusPins = &ffapi.Route{
-	Name:            "getStatusPins",
-	Path:            "status/pins",
+var getPins = &ffapi.Route{
+	Name:            "getPins",
+	Path:            "pins",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetStatusPins,
+	Description:     coremsgs.APIEndpointsGetPins,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []core.Pin{} },
 	JSONOutputCodes: []int{http.StatusOK},
