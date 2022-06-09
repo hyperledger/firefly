@@ -51,7 +51,7 @@ func TestPinCreated(t *testing.T) {
 	}
 	mae.On("Dispatch", mock.Anything).Return()
 	mem.On("NewPins").Return((chan<- int64)(make(chan int64, 1)))
-	o.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeCreated, 12345)
+	o.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, "ns1", 12345)
 	mem.AssertExpectations(t)
 	mae.AssertExpectations(t)
 }

@@ -45,7 +45,6 @@ var routes = append(
 		getNamespace,
 		getNamespaces,
 		getStatusBatchManager,
-		getStatusPins,
 		getStatusWebSockets,
 	}),
 	namespacedRoutes([]*ffapi.Route{
@@ -95,6 +94,7 @@ var routes = append(
 		getOpByID,
 		getOps,
 		getStatus,
+		getStatusPins,
 		getSubscriptionByID,
 		getSubscriptions,
 		getTokenAccountPools,

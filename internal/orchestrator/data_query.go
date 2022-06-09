@@ -377,7 +377,8 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, 
 	return or.databases["database_0"].GetBlockchainEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
+func (or *orchestrator) GetPins(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
+	filter = or.scopeNS(ns, filter)
 	return or.databases["database_0"].GetPins(ctx, filter)
 }
 

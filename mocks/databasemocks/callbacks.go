@@ -21,9 +21,9 @@ func (_m *Callbacks) HashCollectionNSEvent(resType database.HashCollectionNS, ev
 	_m.Called(resType, eventType, ns, hash)
 }
 
-// OrderedCollectionEvent provides a mock function with given fields: resType, eventType, sequence
-func (_m *Callbacks) OrderedCollectionEvent(resType database.OrderedCollection, eventType core.ChangeEventType, sequence int64) {
-	_m.Called(resType, eventType, sequence)
+// OrderedCollectionNSEvent provides a mock function with given fields: resType, eventType, ns, sequence
+func (_m *Callbacks) OrderedCollectionNSEvent(resType database.OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64) {
+	_m.Called(resType, eventType, ns, sequence)
 }
 
 // OrderedUUIDCollectionNSEvent provides a mock function with given fields: resType, eventType, ns, id, sequence
