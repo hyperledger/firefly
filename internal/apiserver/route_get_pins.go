@@ -31,14 +31,14 @@ var getPins = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetStatusPins,
+	Description:     coremsgs.APIEndpointsGetPins,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []core.Pin{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		FilterFactory: database.PinQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetPins(cr.ctx, cr.filter))
+			return filterResult(cr.or.GetPins(cr.ctx, extractNamespace(r.PP), cr.filter))
 		},
 	},
 }

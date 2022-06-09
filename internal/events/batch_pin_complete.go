@@ -102,6 +102,7 @@ func (em *eventManager) persistContexts(ctx context.Context, batchPin *blockchai
 	pins := make([]*core.Pin, len(batchPin.Contexts))
 	for idx, hash := range batchPin.Contexts {
 		pins[idx] = &core.Pin{
+			Namespace: batchPin.Namespace,
 			Masked:    private,
 			Hash:      hash,
 			Batch:     batchPin.BatchID,

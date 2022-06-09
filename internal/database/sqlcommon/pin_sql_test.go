@@ -39,6 +39,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 
 	// Create a new pin entry
 	pin := &core.Pin{
+		Namespace:  "ns",
 		Masked:     true,
 		Hash:       fftypes.NewRandB32(),
 		Batch:      fftypes.NewUUID(),
@@ -49,8 +50,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 		Dispatched: false,
 	}
 
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeCreated, mock.Anything).Return()
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeDeleted, mock.Anything).Return()
+	s.callbacks.On("OrderedCollectionNSEvent", database.CollectionPins, core.ChangeEventTypeCreated, "ns", mock.Anything).Return()
 
 	err := s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
@@ -82,13 +82,6 @@ func TestPinsE2EWithDB(t *testing.T) {
 	assert.Equal(t, 1, len(pinRes)) // we didn't add twice
 	assert.Equal(t, existingSequence, pin.Sequence)
 	assert.True(t, pin.Dispatched)
-
-	// Test delete
-	err = s.DeletePin(ctx, pin.Sequence)
-	assert.NoError(t, err)
-	p, _, err := s.GetPins(ctx, filter)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(p))
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -157,10 +150,10 @@ func TestInsertPinsMultiRowOK(t *testing.T) {
 	s.features.MultiRowInsert = true
 	s.fakePSQLInsert = true
 
-	pin1 := &core.Pin{Hash: fftypes.NewRandB32()}
-	pin2 := &core.Pin{Hash: fftypes.NewRandB32()}
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeCreated, int64(1001))
-	s.callbacks.On("OrderedCollectionEvent", database.CollectionPins, core.ChangeEventTypeCreated, int64(1002))
+	pin1 := &core.Pin{Namespace: "ns1", Hash: fftypes.NewRandB32()}
+	pin2 := &core.Pin{Namespace: "ns1", Hash: fftypes.NewRandB32()}
+	s.callbacks.On("OrderedCollectionNSEvent", database.CollectionPins, core.ChangeEventTypeCreated, "ns1", int64(1001))
+	s.callbacks.On("OrderedCollectionNSEvent", database.CollectionPins, core.ChangeEventTypeCreated, "ns1", int64(1002))
 
 	mock.ExpectBegin()
 	mock.ExpectQuery("INSERT.*").WillReturnRows(sqlmock.NewRows([]string{sequenceColumn}).
@@ -257,20 +250,4 @@ func TestUpdatePinsBadUpdate(t *testing.T) {
 	ctx := context.Background()
 	err := s.UpdatePins(ctx, database.PinQueryFactory.NewFilter(ctx).Eq("bad", 1), database.PinQueryFactory.NewUpdate(ctx).Set("dispatched", true))
 	assert.Regexp(t, "FF00142", err)
-}
-
-func TestPinDeleteBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeletePin(context.Background(), 12345)
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestPinDeleteFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.DeletePin(context.Background(), 12345)
-	assert.Regexp(t, "FF10118", err)
 }

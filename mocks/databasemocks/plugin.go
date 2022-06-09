@@ -135,20 +135,6 @@ func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.FFEnum, name strin
 	return r0
 }
 
-// DeletePin provides a mock function with given fields: ctx, sequence
-func (_m *Plugin) DeletePin(ctx context.Context, sequence int64) error {
-	ret := _m.Called(ctx, sequence)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
-		r0 = rf(ctx, sequence)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteSubscriptionByID provides a mock function with given fields: ctx, id
 func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
 	ret := _m.Called(ctx, id)

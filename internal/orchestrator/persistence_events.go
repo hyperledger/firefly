@@ -43,13 +43,14 @@ func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUI
 	})
 }
 
-func (or *orchestrator) OrderedCollectionEvent(resType database.OrderedCollection, eventType core.ChangeEventType, sequence int64) {
+func (or *orchestrator) OrderedCollectionNSEvent(resType database.OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64) {
 	if eventType == core.ChangeEventTypeCreated && resType == database.CollectionPins {
 		or.events.NewPins() <- sequence
 	}
 	or.adminEvents.Dispatch(&core.ChangeEvent{
 		Collection: string(resType),
 		Type:       eventType,
+		Namespace:  ns,
 		Sequence:   &sequence,
 	})
 }

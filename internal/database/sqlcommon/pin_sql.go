@@ -30,6 +30,7 @@ import (
 
 var (
 	pinColumns = []string{
+		"namespace",
 		"masked",
 		"hash",
 		"batch_id",
@@ -93,7 +94,7 @@ func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *co
 		s.setPinInsertValues(sq.Insert(pinsTable).Columns(pinColumns...), pin),
 		func() {
 			log.L(ctx).Debugf("Triggering creation event for pin %d", pin.Sequence)
-			s.callbacks.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Sequence)
+			s.callbacks.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Namespace, pin.Sequence)
 		},
 	)
 	return err
@@ -101,6 +102,7 @@ func (s *SQLCommon) attemptPinInsert(ctx context.Context, tx *txWrapper, pin *co
 
 func (s *SQLCommon) setPinInsertValues(query sq.InsertBuilder, pin *core.Pin) sq.InsertBuilder {
 	return query.Values(
+		pin.Namespace,
 		pin.Masked,
 		pin.Hash,
 		pin.Batch,
@@ -128,7 +130,7 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
 		err := s.insertTxRows(ctx, pinsTable, tx, query, func() {
 			for i, pin := range pins {
 				pin.Sequence = sequences[i]
-				s.callbacks.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Sequence)
+				s.callbacks.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, pin.Namespace, pin.Sequence)
 			}
 		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
@@ -149,6 +151,7 @@ func (s *SQLCommon) InsertPins(ctx context.Context, pins []*core.Pin) error {
 func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*core.Pin, error) {
 	pin := core.Pin{}
 	err := row.Scan(
+		&pin.Namespace,
 		&pin.Masked,
 		&pin.Hash,
 		&pin.Batch,
@@ -212,27 +215,6 @@ func (s *SQLCommon) UpdatePins(ctx context.Context, filter database.Filter, upda
 	}
 
 	_, err = s.updateTx(ctx, pinsTable, tx, query, nil /* no change events filter based update */)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
-}
-
-func (s *SQLCommon) DeletePin(ctx context.Context, sequence int64) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	err = s.deleteTx(ctx, pinsTable, tx, sq.Delete(pinsTable).Where(sq.Eq{
-		sequenceColumn: sequence,
-	}),
-		func() {
-			s.callbacks.OrderedCollectionEvent(database.CollectionPins, core.ChangeEventTypeDeleted, sequence)
-		})
 	if err != nil {
 		return err
 	}

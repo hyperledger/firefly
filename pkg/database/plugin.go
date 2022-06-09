@@ -209,9 +209,6 @@ type iPinCollection interface {
 
 	// UpdatePins - Updates pins
 	UpdatePins(ctx context.Context, filter Filter, update Update) (err error)
-
-	// DeletePin - Delete a pin
-	DeletePin(ctx context.Context, sequence int64) (err error)
 }
 
 type iOperationCollection interface {
@@ -601,11 +598,11 @@ const (
 	CollectionEvents   OrderedUUIDCollectionNS = "events"
 )
 
-// OrderedCollection is a collection that is ordered, and that sequence is the only key
-type OrderedCollection CollectionName
+// OrderedCollectionNS is a collection that is ordered, and that sequence is the only key
+type OrderedCollectionNS CollectionName
 
 const (
-	CollectionPins OrderedCollection = "pins"
+	CollectionPins OrderedCollectionNS = "pins"
 )
 
 // UUIDCollectionNS is the most common type of collection - each entry has a UUID that
@@ -690,7 +687,7 @@ type PostCompletionHook func()
 type Callbacks interface {
 	// OrderedUUIDCollectionNSEvent emits the sequence on insert, but it will be -1 on update
 	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64)
-	OrderedCollectionEvent(resType OrderedCollection, eventType core.ChangeEventType, sequence int64)
+	OrderedCollectionNSEvent(resType OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64)
 	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID)
 	UUIDCollectionEvent(resType UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID)
 	HashCollectionNSEvent(resType HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32)
