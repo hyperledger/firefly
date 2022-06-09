@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -196,21 +197,22 @@ type orchestrator struct {
 }
 
 func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager, adminEvents spievents.Manager) Orchestrator {
-	return &orchestrator{
+	or := &orchestrator{
 		namespace:   ns,
 		config:      config,
 		plugins:     plugins,
 		metrics:     metrics,
 		adminEvents: adminEvents,
 	}
+	return or
 }
 
 func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
-	or.ctx = ctx
+	or.ctx = log.WithLogField(ctx, "ns", or.namespace)
 	or.cancelCtx = cancelCtx
-	err = or.initPlugins(ctx)
+	err = or.initPlugins(or.ctx)
 	if err == nil {
-		err = or.initComponents(ctx)
+		err = or.initComponents(or.ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
 	or.bc.bi = or.plugins.Blockchain.Plugin
@@ -414,7 +416,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.operations == nil {
-		if or.operations, err = operations.NewOperationsManager(ctx, or.database(), or.txHelper); err != nil {
+		if or.operations, err = operations.NewOperationsManager(ctx, or.namespace, or.database(), or.txHelper); err != nil {
 			return err
 		}
 	}

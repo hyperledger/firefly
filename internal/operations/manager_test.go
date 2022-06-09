@@ -77,13 +77,13 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	om, err := NewOperationsManager(ctx, mdi, txHelper)
+	om, err := NewOperationsManager(ctx, "ns1", mdi, txHelper)
 	assert.NoError(t, err)
 	return om.(*operationsManager), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewOperationsManager(context.Background(), nil, nil)
+	_, err := NewOperationsManager(context.Background(), "ns1", nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

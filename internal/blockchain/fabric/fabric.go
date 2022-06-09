@@ -51,7 +51,7 @@ type Fabric struct {
 	prefixShort     string
 	prefixLong      string
 	capabilities    *blockchain.Capabilities
-	callbacks       blockchain.Callbacks
+	callbacks       callbacks
 	client          *resty.Client
 	streams         *streamManager
 	streamID        string
@@ -69,6 +69,43 @@ type Fabric struct {
 	fabconnectConf   config.Section
 	contractConf     config.ArraySection
 	contractConfSize int
+}
+
+type callbacks struct {
+	listeners []blockchain.Callbacks
+}
+
+func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	for _, cb := range cb.listeners {
+		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	}
+}
+
+func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainEvent(event); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type eventStreamWebsocket struct {
@@ -285,8 +322,8 @@ func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyC
 	return f.ConfigureContract(ctx, contracts)
 }
 
-func (f *Fabric) RegisterListener(callbacks blockchain.Callbacks) {
-	f.callbacks = callbacks
+func (f *Fabric) RegisterListener(listener blockchain.Callbacks) {
+	f.callbacks.listeners = append(f.callbacks.listeners, listener)
 }
 
 func (f *Fabric) Start() (err error) {

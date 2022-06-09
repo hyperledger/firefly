@@ -57,20 +57,22 @@ const (
 )
 
 type operationsManager struct {
-	ctx      context.Context
-	database database.Plugin
-	handlers map[core.OpType]OperationHandler
-	updater  *operationUpdater
+	ctx       context.Context
+	namespace string
+	database  database.Plugin
+	handlers  map[core.OpType]OperationHandler
+	updater   *operationUpdater
 }
 
-func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
+func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || txHelper == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "OperationsManager")
 	}
 	om := &operationsManager{
-		ctx:      ctx,
-		database: di,
-		handlers: make(map[core.OpType]OperationHandler),
+		ctx:       ctx,
+		namespace: ns,
+		database:  di,
+		handlers:  make(map[core.OpType]OperationHandler),
 	}
 	updater := newOperationUpdater(ctx, om, di, txHelper)
 	om.updater = updater

@@ -55,7 +55,10 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)
 	logrus.SetLevel(logrus.DebugLevel)
 
-	mom := &operationsManager{handlers: make(map[fftypes.FFEnum]OperationHandler)}
+	mom := &operationsManager{
+		namespace: "ns1",
+		handlers:  make(map[fftypes.FFEnum]OperationHandler),
+	}
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCapabilities)
 	mdm := &datamocks.Manager{}

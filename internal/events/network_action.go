@@ -29,13 +29,11 @@ func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.
 	if err != nil {
 		return err
 	}
-	contracts := &namespace.Contracts
-	if err := bi.TerminateContract(em.ctx, contracts, event); err != nil {
+	if err := bi.TerminateContract(em.ctx, &namespace.Contracts, event); err != nil {
 		return err
 	}
 	// Currently, a termination event is implied to apply to ALL namespaces
 	return em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-		namespace.Contracts = *contracts
 		if err := em.database.UpsertNamespace(em.ctx, namespace, true); err != nil {
 			return err
 		}

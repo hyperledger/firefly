@@ -53,7 +53,6 @@ func resetConf(e *Fabric) {
 
 func newTestFabric() (*Fabric, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
-	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
 		ctx:            ctx,
@@ -62,7 +61,6 @@ func newTestFabric() (*Fabric, func()) {
 		topic:          "topic1",
 		prefixShort:    defaultPrefixShort,
 		prefixLong:     defaultPrefixLong,
-		callbacks:      em,
 		wsconn:         wsm,
 	}
 	e.fireflyContract.chaincode = "firefly"
@@ -945,7 +943,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
@@ -992,7 +990,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
@@ -1039,7 +1037,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
@@ -1071,7 +1069,9 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 ]`)
 
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	var events []interface{}
@@ -1095,7 +1095,9 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 ]`)
 
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	var events []interface{}
@@ -1108,7 +1110,9 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
@@ -1128,7 +1132,9 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
@@ -1148,7 +1154,9 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 
 func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
@@ -1168,7 +1176,9 @@ func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 
 func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
@@ -1188,7 +1198,9 @@ func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 
 func TestHandleMessageBatchBadJSON(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
-	e := &Fabric{callbacks: em}
+	e := &Fabric{
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+	}
 	err := e.handleMessageBatch(context.Background(), []interface{}{10, 20})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(em.Calls))
@@ -1257,7 +1269,8 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 		"receivedAt": 1622428511616,
 		"requestPayload": "{\"from\":\"0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635\",\"gas\":0,\"gasPrice\":0,\"headers\":{\"id\":\"6fb94fff-81d3-4094-567d-e031b1871694\",\"type\":\"SendTransaction\"},\"method\":{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"txnId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"batchId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"payloadRef\",\"type\":\"bytes32\"}],\"name\":\"broadcastBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},\"params\":[\"12345\",\"!\",\"!\"],\"to\":\"0xd3266a857285fb75eb7df37353b4a15c8bb828f5\",\"value\":0}"
 	}`)
-	em := e.callbacks.(*blockchainmocks.Callbacks)
+	em := &blockchainmocks.Callbacks{}
+	e.RegisterListener(em)
 	txsu := em.On("BlockchainOpUpdate",
 		e,
 		"ns1:"+operationID.String(),
@@ -1283,7 +1296,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 		wsconn:    wsm,
 	}
 
@@ -1323,7 +1336,7 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 		wsconn:    wsm,
 	}
 
@@ -1340,7 +1353,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 		wsconn:    wsm,
 	}
 
@@ -1532,7 +1545,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -1590,7 +1603,7 @@ func TestHandleMessageContractEventBadPayload(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -1618,7 +1631,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -2017,7 +2030,7 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 

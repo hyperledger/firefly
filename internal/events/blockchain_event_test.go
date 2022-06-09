@@ -49,7 +49,7 @@ func TestContractEventWithRetries(t *testing.T) {
 		},
 	}
 	sub := &core.ContractListener{
-		Namespace: "ns",
+		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Topic:     "topic1",
 	}
@@ -59,11 +59,11 @@ func TestContractEventWithRetries(t *testing.T) {
 	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(sub, nil).Times(1) // cached
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", sub.ID, ev.ProtocolID).Return(nil, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", sub.ID, ev.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		eventID = e.ID
-		return *e.Listener == *sub.ID && e.Name == "Changed" && e.Namespace == "ns"
+		return *e.Listener == *sub.ID && e.Name == "Changed" && e.Namespace == "ns1"
 	})).Return(nil).Times(2)
 	mdi.On("GetContractListenerByID", mock.Anything, sub.ID).Return(sub, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
@@ -111,7 +111,7 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 
 	ev := &core.BlockchainEvent{
 		Name:       "Changed",
-		Namespace:  "ns",
+		Namespace:  "ns1",
 		ProtocolID: "10/20/30",
 		Output: fftypes.JSONObject{
 			"value": "1",
@@ -123,7 +123,7 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", ev.Listener, ev.ProtocolID).Return(&core.BlockchainEvent{}, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", ev.Listener, ev.ProtocolID).Return(&core.BlockchainEvent{}, nil)
 
 	err := em.maybePersistBlockchainEvent(em.ctx, ev)
 	assert.NoError(t, err)
@@ -137,7 +137,7 @@ func TestPersistBlockchainEventLookupFail(t *testing.T) {
 
 	ev := &core.BlockchainEvent{
 		Name:       "Changed",
-		Namespace:  "ns",
+		Namespace:  "ns1",
 		ProtocolID: "10/20/30",
 		Output: fftypes.JSONObject{
 			"value": "1",
@@ -149,7 +149,7 @@ func TestPersistBlockchainEventLookupFail(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", ev.Listener, ev.ProtocolID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", ev.Listener, ev.ProtocolID).Return(nil, fmt.Errorf("pop"))
 
 	err := em.maybePersistBlockchainEvent(em.ctx, ev)
 	assert.EqualError(t, err, "pop")
@@ -163,7 +163,7 @@ func TestPersistBlockchainEventChainListenerLookupFail(t *testing.T) {
 
 	ev := &core.BlockchainEvent{
 		Name:       "Changed",
-		Namespace:  "ns",
+		Namespace:  "ns1",
 		ProtocolID: "10/20/30",
 		Output: fftypes.JSONObject{
 			"value": "1",
@@ -176,7 +176,7 @@ func TestPersistBlockchainEventChainListenerLookupFail(t *testing.T) {
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns", ev.Listener, ev.ProtocolID).Return(nil, nil)
+	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", ev.Listener, ev.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetContractListenerByID", mock.Anything, ev.Listener).Return(nil, fmt.Errorf("pop"))
 
@@ -192,7 +192,7 @@ func TestGetTopicForChainListenerFallback(t *testing.T) {
 	defer cancel()
 
 	sub := &core.ContractListener{
-		Namespace: "ns",
+		Namespace: "ns1",
 		ID:        fftypes.NewUUID(),
 		Topic:     "",
 	}

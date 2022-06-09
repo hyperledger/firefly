@@ -54,7 +54,7 @@ func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
 	mdi.On("Capabilities").Return(&database.Capabilities{
 		Concurrency: false,
 	})
-	operations, err := operations.NewOperationsManager(context.Background(), mdi, txHelper)
+	operations, err := operations.NewOperationsManager(context.Background(), "ns1", mdi, txHelper)
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())

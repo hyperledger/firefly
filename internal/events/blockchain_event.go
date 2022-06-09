@@ -127,6 +127,10 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
 				return nil // no retry
 			}
+			if sub.Namespace != em.namespace {
+				log.L(em.ctx).Debugf("Ignoring blockchain event from wrong namespace '%s'", sub.Namespace)
+				return nil
+			}
 
 			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,

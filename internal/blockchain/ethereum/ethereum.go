@@ -55,7 +55,7 @@ type Ethereum struct {
 	prefixShort     string
 	prefixLong      string
 	capabilities    *blockchain.Capabilities
-	callbacks       blockchain.Callbacks
+	callbacks       callbacks
 	client          *resty.Client
 	fftmClient      *resty.Client
 	streams         *streamManager
@@ -74,6 +74,43 @@ type Ethereum struct {
 	ethconnectConf   config.Section
 	contractConf     config.ArraySection
 	contractConfSize int
+}
+
+type callbacks struct {
+	listeners []blockchain.Callbacks
+}
+
+func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	for _, cb := range cb.listeners {
+		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	}
+}
+
+func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainEvent(event); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type eventStreamWebsocket struct {
@@ -213,8 +250,8 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 	return nil
 }
 
-func (e *Ethereum) RegisterListener(callbacks blockchain.Callbacks) {
-	e.callbacks = callbacks
+func (e *Ethereum) RegisterListener(listener blockchain.Callbacks) {
+	e.callbacks.listeners = append(e.callbacks.listeners, listener)
 }
 
 func (e *Ethereum) Start() (err error) {

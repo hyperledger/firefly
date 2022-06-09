@@ -75,7 +75,6 @@ func resetConf(e *Ethereum) {
 
 func newTestEthereum() (*Ethereum, func()) {
 	ctx, cancel := context.WithCancel(context.Background())
-	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	mm := &metricsmocks.Manager{}
 	mm.On("IsMetricsEnabled").Return(true)
@@ -87,7 +86,6 @@ func newTestEthereum() (*Ethereum, func()) {
 		topic:       "topic1",
 		prefixShort: defaultPrefixShort,
 		prefixLong:  defaultPrefixLong,
-		callbacks:   em,
 		wsconn:      wsm,
 		metrics:     mm,
 	}
@@ -1095,7 +1093,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	e.fireflyContract.networkVersion = 1
@@ -1179,10 +1177,7 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
   }
 ]`)
 
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{
-		callbacks: em,
-	}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
@@ -1190,8 +1185,6 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-
-	em.AssertExpectations(t)
 
 }
 
@@ -1223,7 +1216,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	e.fireflyContract.networkVersion = 1
@@ -1285,7 +1278,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	e.fireflyContract.networkVersion = 1
@@ -1298,11 +1291,11 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.EqualError(t, err, "pop")
 
+	em.AssertExpectations(t)
 }
 
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
@@ -1316,12 +1309,10 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchMissingData(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
@@ -1336,12 +1327,10 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1368,12 +1357,10 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1400,12 +1387,10 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1432,12 +1417,10 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
@@ -1464,15 +1447,12 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	assert.NoError(t, err)
 	err = e.handleMessageBatch(context.Background(), events)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestHandleMessageBatchBadJSON(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	e := &Ethereum{callbacks: em}
+	e := &Ethereum{}
 	err := e.handleMessageBatch(context.Background(), []interface{}{10, 20})
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(em.Calls))
 }
 
 func TestEventLoopContextCancelled(t *testing.T) {
@@ -1523,7 +1503,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	e := &Ethereum{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 		wsconn:    wsm,
 	}
 
@@ -1564,6 +1544,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	e.handleReceipt(context.Background(), reply)
 
+	em.AssertExpectations(t)
 }
 
 func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
@@ -1591,7 +1572,8 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 		"requestPayload": "{\"from\":\"0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635\",\"gas\":0,\"gasPrice\":0,\"headers\":{\"id\":\"6fb94fff-81d3-4094-567d-e031b1871694\",\"type\":\"SendTransaction\"},\"method\":{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"txnId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"batchId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"payloadRef\",\"type\":\"bytes32\"}],\"name\":\"broadcastBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},\"params\":[\"12345\",\"!\",\"!\"],\"to\":\"0xd3266a857285fb75eb7df37353b4a15c8bb828f5\",\"value\":0}"
 	}`)
 
-	em := e.callbacks.(*blockchainmocks.Callbacks)
+	em := &blockchainmocks.Callbacks{}
+	e.callbacks.listeners = []blockchain.Callbacks{em}
 	txsu := em.On("BlockchainOpUpdate",
 		e,
 		"ns1:"+operationID.String(),
@@ -1609,16 +1591,16 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	r <- []byte(`"not an object"`) // ignored wrong type
 	r <- data.Bytes()
 	<-done
+
+	em.AssertExpectations(t)
 }
 
 func TestHandleMsgBatchBadData(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Ethereum{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: em,
-		wsconn:    wsm,
+		ctx:    context.Background(),
+		topic:  "topic1",
+		wsconn: wsm,
 	}
 
 	var reply fftypes.JSONObject
@@ -1836,7 +1818,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -1898,7 +1880,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -2980,7 +2962,7 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: em,
+		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
