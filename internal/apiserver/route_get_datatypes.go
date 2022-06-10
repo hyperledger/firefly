@@ -32,7 +32,7 @@ var getDatatypes = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.DatatypeQueryFactory,
-	Description:     coremsgs.APIEndpointsGetDatatypes,
+	DescriptionKey:  coremsgs.APIEndpointsGetDatatypes,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},

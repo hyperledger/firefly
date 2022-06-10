@@ -32,7 +32,7 @@ var getBlockchainEvents = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.BlockchainEventQueryFactory,
-	Description:     coremsgs.APIEndpointsListBlockchainEvents,
+	DescriptionKey:  coremsgs.APIEndpointsListBlockchainEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},

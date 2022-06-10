@@ -404,6 +404,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -466,6 +473,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -867,6 +881,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -1023,6 +1044,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -2026,6 +2053,13 @@ paths:
                           description:
                             description: A description of the smart contract event
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional details about the smart contract
+                                event
+                            description: Additional details about the smart contract
+                              event
+                            type: object
                           id:
                             description: The UUID of the FFI event definition
                             format: uuid
@@ -2090,6 +2124,13 @@ paths:
                           description:
                             description: A description of the smart contract method
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional details about the smart contract
+                                function
+                            description: Additional details about the smart contract
+                              function
+                            type: object
                           id:
                             description: The UUID of the FFI method definition
                             format: uuid
@@ -2203,6 +2244,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -2234,6 +2281,12 @@ paths:
                       description:
                         description: A description of the smart contract method
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            function
+                        description: Additional details about the smart contract function
+                        type: object
                       name:
                         description: The name of the method
                         type: string
@@ -2301,6 +2354,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2363,6 +2423,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -2480,6 +2547,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2542,6 +2616,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -2665,6 +2746,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2727,6 +2815,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -2857,6 +2952,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2919,6 +3021,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -3051,6 +3160,11 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract function
+                      description: Additional details about the smart contract function
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -3351,6 +3465,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -3455,6 +3576,11 @@ paths:
                     description:
                       description: A description of the smart contract event
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract event
+                      description: Additional details about the smart contract event
+                      type: object
                     name:
                       description: The name of the event
                       type: string
@@ -3543,6 +3669,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -3688,6 +3820,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -3818,6 +3956,11 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract function
+                      description: Additional details about the smart contract function
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -9034,6 +9177,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -9096,6 +9246,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -9249,6 +9406,11 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract function
+                      description: Additional details about the smart contract function
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -9569,6 +9731,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -9693,6 +9862,11 @@ paths:
                     description:
                       description: A description of the smart contract event
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract event
+                      description: Additional details about the smart contract event
+                      type: object
                     name:
                       description: The name of the event
                       type: string
@@ -9776,6 +9950,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -9927,6 +10107,11 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract function
+                      description: Additional details about the smart contract function
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -10893,6 +11078,13 @@ paths:
                           description:
                             description: A description of the smart contract event
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional details about the smart contract
+                                event
+                            description: Additional details about the smart contract
+                              event
+                            type: object
                           id:
                             description: The UUID of the FFI event definition
                             format: uuid
@@ -10957,6 +11149,13 @@ paths:
                           description:
                             description: A description of the smart contract method
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional details about the smart contract
+                                function
+                            description: Additional details about the smart contract
+                              function
+                            type: object
                           id:
                             description: The UUID of the FFI method definition
                             format: uuid
@@ -11077,6 +11276,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -11108,6 +11313,12 @@ paths:
                       description:
                         description: A description of the smart contract method
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            function
+                        description: Additional details about the smart contract function
+                        type: object
                       name:
                         description: The name of the method
                         type: string
@@ -11175,6 +11386,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11237,6 +11455,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11361,6 +11586,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11423,6 +11655,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11553,6 +11792,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11615,6 +11861,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11752,6 +12005,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11814,6 +12074,13 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              function
+                          description: Additional details about the smart contract
+                            function
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11953,6 +12220,11 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract function
+                      description: Additional details about the smart contract function
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -12260,6 +12532,13 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional details about the smart contract
+                              event
+                          description: Additional details about the smart contract
+                            event
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -12371,6 +12650,11 @@ paths:
                     description:
                       description: A description of the smart contract event
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract event
+                      description: Additional details about the smart contract event
+                      type: object
                     name:
                       description: The name of the event
                       type: string
@@ -12459,6 +12743,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -12618,6 +12908,12 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional details about the smart contract
+                            event
+                        description: Additional details about the smart contract event
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -12755,6 +13051,11 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional details about the smart contract function
+                      description: Additional details about the smart contract function
+                      type: object
                     name:
                       description: The name of the method
                       type: string

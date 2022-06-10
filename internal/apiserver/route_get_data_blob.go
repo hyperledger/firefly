@@ -35,7 +35,7 @@ var getDataBlob = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.MessageQueryFactory,
-	Description:     coremsgs.APIEndpointsGetDataBlob,
+	DescriptionKey:  coremsgs.APIEndpointsGetDataBlob,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []byte{} },
 	JSONOutputCodes: []int{http.StatusOK},

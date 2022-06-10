@@ -33,7 +33,7 @@ var getNetworkOrg = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetNetworkOrg,
+	DescriptionKey:  coremsgs.APIEndpointsGetNetworkOrg,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -34,7 +34,7 @@ var postContractInvoke = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostContractInvoke,
+	DescriptionKey:  coremsgs.APIEndpointsPostContractInvoke,
 	JSONInputValue:  func() interface{} { return &core.ContractCallRequest{} },
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},

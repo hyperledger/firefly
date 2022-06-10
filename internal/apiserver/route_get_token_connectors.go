@@ -31,7 +31,7 @@ var getTokenConnectors = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetTokenConnectors,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenConnectors,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenConnector{} },
 	JSONOutputCodes: []int{http.StatusOK},

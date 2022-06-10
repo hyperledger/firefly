@@ -32,7 +32,7 @@ var getVerifiers = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.VerifierQueryFactory,
-	Description:     coremsgs.APIEndpointsGetVerifiers,
+	DescriptionKey:  coremsgs.APIEndpointsGetVerifiers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},

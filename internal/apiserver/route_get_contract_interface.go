@@ -37,7 +37,7 @@ var getContractInterface = &oapispec.Route{
 		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIParamsContractInterfaceFetchChildren, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetContractInterface,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractInterface,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},

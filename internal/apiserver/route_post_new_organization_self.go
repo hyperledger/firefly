@@ -34,7 +34,7 @@ var postNewOrganizationSelf = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewOrganizationSelf,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewOrganizationSelf,
 	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

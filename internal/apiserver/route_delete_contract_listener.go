@@ -32,7 +32,7 @@ var deleteContractListener = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsDeleteContractListener,
+	DescriptionKey:  coremsgs.APIEndpointsDeleteContractListener,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output

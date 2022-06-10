@@ -32,7 +32,7 @@ var getContractInterfaces = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.FFIQueryFactory,
-	Description:     coremsgs.APIEndpointsGetContractInterfaces,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractInterfaces,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},

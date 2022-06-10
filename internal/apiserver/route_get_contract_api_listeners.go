@@ -35,7 +35,7 @@ var getContractAPIListeners = &oapispec.Route{
 	},
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   database.ContractListenerQueryFactory,
-	Description:     coremsgs.APIEndpointsGetContractListeners,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractListeners,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},

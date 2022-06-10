@@ -36,7 +36,7 @@ var getMsgByID = &oapispec.Route{
 		{Name: "fetchdata", IsBool: true, Description: coremsgs.APIFetchDataDesc},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetMsgByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetMsgByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.MessageInOut{} }, // can include full values
 	JSONOutputCodes: []int{http.StatusOK},

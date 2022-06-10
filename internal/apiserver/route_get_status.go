@@ -31,7 +31,7 @@ var getStatus = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetStatus,
+	DescriptionKey:  coremsgs.APIEndpointsGetStatus,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.NodeStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},

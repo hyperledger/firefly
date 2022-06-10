@@ -33,7 +33,7 @@ var adminPatchOpByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
+	DescriptionKey:  coremsgs.APIEndpointsAdminPatchOpByID,
 	JSONInputValue:  func() interface{} { return &core.Operation{} },
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

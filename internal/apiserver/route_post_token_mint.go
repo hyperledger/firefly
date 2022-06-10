@@ -34,7 +34,7 @@ var postTokenMint = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostTokenMint,
+	DescriptionKey:  coremsgs.APIEndpointsPostTokenMint,
 	JSONInputValue:  func() interface{} { return &core.TokenTransferInput{} },
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

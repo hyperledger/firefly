@@ -32,7 +32,7 @@ var getIdentityDID = &oapispec.Route{
 		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetIdentityDID,
+	DescriptionKey:  coremsgs.APIEndpointsGetIdentityDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},

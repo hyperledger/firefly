@@ -36,7 +36,7 @@ var getIdentityByDID = &oapispec.Route{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetIdentityByDID,
+	DescriptionKey:  coremsgs.APIEndpointsGetIdentityByDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

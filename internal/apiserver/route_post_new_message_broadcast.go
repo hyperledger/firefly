@@ -34,7 +34,7 @@ var postNewMessageBroadcast = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewMessageBroadcast,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewMessageBroadcast,
 	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

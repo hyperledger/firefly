@@ -34,7 +34,7 @@ var postContractAPIQuery = &oapispec.Route{
 	},
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostContractAPIQuery,
+	DescriptionKey:  coremsgs.APIEndpointsPostContractAPIQuery,
 	JSONInputValue:  func() interface{} { return &core.ContractCallRequest{} },
 	JSONOutputValue: func() interface{} { return make(map[string]interface{}) },
 	JSONOutputCodes: []int{http.StatusOK},

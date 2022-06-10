@@ -33,7 +33,7 @@ var getTokenPoolByNameOrID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetTokenPoolByNameOrID,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenPoolByNameOrID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.TokenPool{} },
 	JSONOutputCodes: []int{http.StatusOK},

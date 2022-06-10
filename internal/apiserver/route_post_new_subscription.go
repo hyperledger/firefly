@@ -31,7 +31,7 @@ var postNewSubscription = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewSubscription,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewSubscription,
 	JSONInputValue:  func() interface{} { return &core.Subscription{} },
 	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusCreated}, // Sync operation

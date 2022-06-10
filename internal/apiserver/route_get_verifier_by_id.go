@@ -32,7 +32,7 @@ var getVerifierByID = &oapispec.Route{
 		{Name: "hash", Example: "hash", Description: coremsgs.APIParamsVerifierHash},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetVerifierByHash,
+	DescriptionKey:  coremsgs.APIEndpointsGetVerifierByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},

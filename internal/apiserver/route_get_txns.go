@@ -32,7 +32,7 @@ var getTxns = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.TransactionQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTxns,
+	DescriptionKey:  coremsgs.APIEndpointsGetTxns,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},

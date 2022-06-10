@@ -35,7 +35,7 @@ var getEvents = &oapispec.Route{
 		{Name: "fetchreferences", Example: "true", Description: coremsgs.APIParamsFetchReferences, IsBool: true},
 	},
 	FilterFactory:   database.EventQueryFactory,
-	Description:     coremsgs.APIEndpointsGetEvents,
+	DescriptionKey:  coremsgs.APIEndpointsGetEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -33,7 +33,7 @@ var postNewNamespace = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewNamespace,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewNamespace,
 	JSONInputValue:  func() interface{} { return &core.Namespace{} },
 	JSONOutputValue: func() interface{} { return &core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

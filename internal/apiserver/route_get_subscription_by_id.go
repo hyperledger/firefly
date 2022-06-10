@@ -33,7 +33,7 @@ var getSubscriptionByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetSubscriptionByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetSubscriptionByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},

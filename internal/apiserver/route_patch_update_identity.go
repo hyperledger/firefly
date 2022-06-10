@@ -36,7 +36,7 @@ var patchUpdateIdentity = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPatchUpdateIdentity,
+	DescriptionKey:  coremsgs.APIEndpointsPatchUpdateIdentity,
 	JSONInputValue:  func() interface{} { return &core.IdentityUpdateDTO{} },
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

@@ -33,7 +33,7 @@ var getMsgData = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil, // No filtering on this route - use data
-	Description:     coremsgs.APIEndpointsGetMsgData,
+	DescriptionKey:  coremsgs.APIEndpointsGetMsgData,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return core.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},

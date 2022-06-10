@@ -2230,6 +2230,83 @@ func TestFFIMethodToABIObject(t *testing.T) {
 	assert.ObjectsAreEqual(expectedABIElement, abi)
 }
 
+func TestABIFFIConversionArrayOfObjects(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abiJSON := `[
+		{
+			"inputs": [
+				{
+					"components": [
+						{
+							"internalType": "string",
+							"name": "name",
+							"type": "string"
+						},
+						{
+							"internalType": "uint256",
+							"name": "weight",
+							"type": "uint256"
+						},
+						{
+							"internalType": "uint256",
+							"name": "volume",
+							"type": "uint256"
+						},
+						{
+							"components": [
+								{
+									"internalType": "string",
+									"name": "name",
+									"type": "string"
+								},
+								{
+									"internalType": "string",
+									"name": "description",
+									"type": "string"
+								},
+								{
+									"internalType": "enum ComplexStorage.Alignment",
+									"name": "alignment",
+									"type": "uint8"
+								}
+							],
+							"internalType": "struct ComplexStorage.BoxContent[]",
+							"name": "contents",
+							"type": "tuple[]"
+						}
+					],
+					"internalType": "struct ComplexStorage.Box[]",
+					"name": "newBox",
+					"type": "tuple[]"
+				}
+			],
+			"name": "set",
+			"outputs": [],
+			"stateMutability": "payable",
+			"type": "function",
+			"payable": true,
+			"constant": true
+		}
+	]`
+
+	var abi *abi.ABI
+	json.Unmarshal([]byte(abiJSON), &abi)
+	abiFunction := abi.Functions()["set"]
+
+	ffiMethod, err := e.convertABIFunctionToFFIMethod(context.Background(), abiFunction)
+	assert.NoError(t, err)
+	abiFunctionOut, err := e.FFIMethodToABI(context.Background(), ffiMethod, nil)
+	assert.NoError(t, err)
+
+	expectedABIFunctionJSON, err := json.Marshal(abiFunction)
+	assert.NoError(t, err)
+	abiFunctionJSON, err := json.Marshal(abiFunctionOut)
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expectedABIFunctionJSON), string(abiFunctionJSON))
+
+}
+
 func TestFFIMethodToABINestedArray(t *testing.T) {
 	e, _ := newTestEthereum()
 
@@ -2272,7 +2349,11 @@ func TestFFIMethodToABINestedArray(t *testing.T) {
 
 	abi, err := e.FFIMethodToABI(context.Background(), method, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedABIElement, abi)
+	expectedABIJSON, err := json.Marshal(expectedABIElement)
+	assert.NoError(t, err)
+	abiJSON, err := json.Marshal(abi)
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expectedABIJSON), string(abiJSON))
 }
 
 func TestFFIMethodToABIInvalidJSON(t *testing.T) {
@@ -2423,7 +2504,8 @@ func TestConvertABIToFFI(t *testing.T) {
 		},
 	}
 
-	actualFFI := e.convertABIToFFI(context.Background(), "default", "SimpleStorage", "v0.0.1", "desc", abi)
+	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "SimpleStorage", "v0.0.1", "desc", abi)
+	assert.NoError(t, err)
 	assert.NotNil(t, actualFFI)
 	assert.ObjectsAreEqual(expectedFFI, actualFFI)
 }
@@ -2476,14 +2558,22 @@ func TestConvertABIToFFIWithObject(t *testing.T) {
 					},
 				},
 				Returns: core.FFIParams{},
+				Details: map[string]interface{}{},
 			},
 		},
 		Events: []*core.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	assert.NoError(t, err)
 	assert.NotNil(t, actualFFI)
-	assert.Equal(t, expectedFFI, actualFFI)
+
+	expectedFFIJSON, err := json.Marshal(expectedFFI)
+	assert.NoError(t, err)
+	actualFFIJSON, err := json.Marshal(actualFFI)
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
+
 }
 
 func TestConvertABIToFFIWithArray(t *testing.T) {
@@ -2521,14 +2611,21 @@ func TestConvertABIToFFIWithArray(t *testing.T) {
 					},
 				},
 				Returns: core.FFIParams{},
+				Details: map[string]interface{}{},
 			},
 		},
 		Events: []*core.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	assert.NoError(t, err)
 	assert.NotNil(t, actualFFI)
-	assert.Equal(t, expectedFFI, actualFFI)
+
+	expectedFFIJSON, err := json.Marshal(expectedFFI)
+	assert.NoError(t, err)
+	actualFFIJSON, err := json.Marshal(actualFFI)
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
 }
 
 func TestConvertABIToFFIWithNestedArray(t *testing.T) {
@@ -2549,7 +2646,7 @@ func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 		},
 	}
 
-	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"uint256[][]","internalType":"uint256[][]"},"items":{"type":"array","items":{"oneOf":[{"type":"string"},{"type":"integer"}]}}}`)
+	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"uint256[][]","internalType":"uint256[][]"},"items":{"type":"array","items":{"oneOf":[{"type":"string"},{"type":"integer"}],"description":"An integer. You are recommended to use a JSON string. A JSON number can be used for values up to the safe maximum."}}}`)
 	expectedFFI := &core.FFI{
 		Name:        "WidgetTest",
 		Version:     "v0.0.1",
@@ -2565,14 +2662,20 @@ func TestConvertABIToFFIWithNestedArray(t *testing.T) {
 					},
 				},
 				Returns: core.FFIParams{},
+				Details: map[string]interface{}{},
 			},
 		},
 		Events: []*core.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	assert.NoError(t, err)
 	assert.NotNil(t, actualFFI)
-	assert.Equal(t, expectedFFI, actualFFI)
+	expectedFFIJSON, err := json.Marshal(expectedFFI)
+	assert.NoError(t, err)
+	actualFFIJSON, err := json.Marshal(actualFFI)
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
 }
 
 func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
@@ -2627,14 +2730,20 @@ func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
 					},
 				},
 				Returns: core.FFIParams{},
+				Details: map[string]interface{}{},
 			},
 		},
 		Events: []*core.FFIEvent{},
 	}
 
-	actualFFI := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
+	assert.NoError(t, err)
 	assert.NotNil(t, actualFFI)
-	assert.Equal(t, expectedFFI, actualFFI)
+	expectedFFIJSON, err := json.Marshal(expectedFFI)
+	assert.NoError(t, err)
+	actualFFIJSON, err := json.Marshal(actualFFI)
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
 }
 
 func TestGenerateFFI(t *testing.T) {
@@ -2690,7 +2799,6 @@ func TestGetFFIType(t *testing.T) {
 	assert.Equal(t, core.FFIInputTypeString, e.getFFIType("byte"))
 	assert.Equal(t, core.FFIInputTypeBoolean, e.getFFIType("bool"))
 	assert.Equal(t, core.FFIInputTypeInteger, e.getFFIType("uint256"))
-	assert.Equal(t, core.FFIInputTypeArray, e.getFFIType("string[]"))
 	assert.Equal(t, core.FFIInputTypeObject, e.getFFIType("tuple"))
 	assert.Equal(t, core.FFEnum(""), e.getFFIType("foobar"))
 }
@@ -2825,4 +2933,112 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em.AssertExpectations(t)
 
+}
+
+func TestConvertABIToFFIBadInputType(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abiJSON := `[
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "name",
+					"type": "foobar"
+				}
+			],
+			"name": "set",
+			"outputs": [],
+			"stateMutability": "payable",
+			"type": "function",
+			"payable": true,
+			"constant": true
+		}
+	]`
+
+	var abi *abi.ABI
+	json.Unmarshal([]byte(abiJSON), &abi)
+	_, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
+	assert.Regexp(t, "FF22025", err)
+}
+
+func TestConvertABIToFFIBadOutputType(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abiJSON := `[
+		{
+			"outputs": [
+				{
+					"internalType": "string",
+					"name": "name",
+					"type": "foobar"
+				}
+			],
+			"name": "set",
+			"stateMutability": "viewable",
+			"type": "function"
+		}
+	]`
+
+	var abi *abi.ABI
+	json.Unmarshal([]byte(abiJSON), &abi)
+	_, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
+	assert.Regexp(t, "FF22025", err)
+}
+
+func TestConvertABIToFFIBadEventType(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abiJSON := `[
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "name",
+					"type": "foobar"
+				}
+			],
+			"name": "set",
+			"type": "event"
+		}
+	]`
+
+	var abi *abi.ABI
+	json.Unmarshal([]byte(abiJSON), &abi)
+	_, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
+	assert.Regexp(t, "FF22025", err)
+}
+
+func TestConvertABIEventFFIEvent(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	abiJSON := `[
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "name",
+					"type": "string"
+				}
+			],
+			"name": "set",
+			"type": "event",
+			"anonymous": true
+		}
+	]`
+
+	var abi *abi.ABI
+	json.Unmarshal([]byte(abiJSON), &abi)
+	ffi, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
+	assert.NoError(t, err)
+
+	actualABIEvent, err := e.FFIEventDefinitionToABI(context.Background(), &ffi.Events[0].FFIEventDefinition)
+	assert.NoError(t, err)
+
+	expectedABIEventJSON, err := json.Marshal(abi.Events()["set"])
+	assert.NoError(t, err)
+	actualABIEventJSON, err := json.Marshal(actualABIEvent)
+	assert.NoError(t, err)
+
+	assert.JSONEq(t, string(expectedABIEventJSON), string(actualABIEventJSON))
 }

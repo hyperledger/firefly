@@ -33,7 +33,7 @@ var getEventByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetEventByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetEventByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},

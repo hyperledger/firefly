@@ -34,7 +34,7 @@ var postNewIdentity = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewIdentity,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewIdentity,
 	JSONInputValue:  func() interface{} { return &core.IdentityCreateDTO{} },
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

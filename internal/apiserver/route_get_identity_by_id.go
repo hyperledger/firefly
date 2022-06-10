@@ -35,7 +35,7 @@ var getIdentityByID = &oapispec.Route{
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
-	Description:     coremsgs.APIEndpointsGetIdentityByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetIdentityByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

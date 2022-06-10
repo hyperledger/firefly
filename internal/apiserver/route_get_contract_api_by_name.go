@@ -33,7 +33,7 @@ var getContractAPIByName = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetContractAPIByName,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractAPIByName,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},

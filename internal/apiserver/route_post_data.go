@@ -42,7 +42,7 @@ var postData = &oapispec.Route{
 		{Name: "datatype.version", Description: coremsgs.APIParamsDatatypeVersion},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostData,
+	DescriptionKey:  coremsgs.APIEndpointsPostData,
 	JSONInputValue:  func() interface{} { return &core.DataRefOrValue{} },
 	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusCreated},

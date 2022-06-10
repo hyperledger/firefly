@@ -32,7 +32,7 @@ var getTokenBalances = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.TokenBalanceQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTokenBalances,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenBalances,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenBalance{} },
 	JSONOutputCodes: []int{http.StatusOK},

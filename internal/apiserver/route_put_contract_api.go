@@ -37,7 +37,7 @@ var putContractAPI = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIParamsContractAPIID,
+	DescriptionKey:  coremsgs.APIParamsContractAPIID,
 	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
 	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},

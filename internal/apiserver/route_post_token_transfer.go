@@ -34,7 +34,7 @@ var postTokenTransfer = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostTokenTransfer,
+	DescriptionKey:  coremsgs.APIEndpointsPostTokenTransfer,
 	JSONInputValue:  func() interface{} { return &core.TokenTransferInput{} },
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

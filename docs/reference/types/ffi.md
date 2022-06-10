@@ -132,6 +132,7 @@ nav_order: 8
 | `description` | A description of the smart contract method | `string` |
 | `params` | An array of method parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
 | `returns` | An array of method return definitions | [`FFIParam[]`](#ffiparam) |
+| `details` | Additional details about the smart contract function | [`JSONObject`](simpletypes#jsonobject) |
 
 ## FFIParam
 
@@ -154,6 +155,7 @@ nav_order: 8
 | `name` | The name of the event | `string` |
 | `description` | A description of the smart contract event | `string` |
 | `params` | An array of event parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
+| `details` | Additional details about the smart contract event | [`JSONObject`](simpletypes#jsonobject) |
 
 ## FFIParam
 

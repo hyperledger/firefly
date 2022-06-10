@@ -31,7 +31,7 @@ var postContractInterfaceGenerate = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostContractInterfaceGenerate,
+	DescriptionKey:  coremsgs.APIEndpointsPostContractInterfaceGenerate,
 	JSONInputValue:  func() interface{} { return &core.FFIGenerationRequest{} },
 	JSONOutputValue: func() interface{} { return &core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},

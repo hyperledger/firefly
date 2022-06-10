@@ -32,7 +32,7 @@ var getSubscriptions = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.SubscriptionQueryFactory,
-	Description:     coremsgs.APIEndpointsGetSubscriptions,
+	DescriptionKey:  coremsgs.APIEndpointsGetSubscriptions,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Subscription{} },
 	JSONOutputCodes: []int{http.StatusOK},

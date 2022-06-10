@@ -33,7 +33,7 @@ var getTokenTransferByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetTokenTransferByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenTransferByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},

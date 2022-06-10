@@ -32,7 +32,7 @@ var getOps = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.OperationQueryFactory,
-	Description:     coremsgs.APIEndpointsGetOps,
+	DescriptionKey:  coremsgs.APIEndpointsGetOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -33,7 +33,7 @@ var getDataByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetDataByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetDataByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Data{} },
 	JSONOutputCodes: []int{http.StatusOK},

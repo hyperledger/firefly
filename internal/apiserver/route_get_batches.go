@@ -32,7 +32,7 @@ var getBatches = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.BatchQueryFactory,
-	Description:     coremsgs.APIEndpointsGetBatches,
+	DescriptionKey:  coremsgs.APIEndpointsGetBatches,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},

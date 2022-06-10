@@ -41,7 +41,7 @@ var getChartHistogram = &oapispec.Route{
 		{Name: "buckets", Description: coremsgs.APIHistogramBucketsParam, IsBool: false},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetChartHistogram,
+	DescriptionKey:  coremsgs.APIEndpointsGetChartHistogram,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ChartHistogram{} },
 	JSONOutputCodes: []int{http.StatusOK},

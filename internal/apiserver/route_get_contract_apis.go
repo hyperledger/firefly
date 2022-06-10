@@ -32,7 +32,7 @@ var getContractAPIs = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.ContractAPIQueryFactory,
-	Description:     coremsgs.APIEndpointsGetContractAPIs,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractAPIs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK},

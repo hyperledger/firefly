@@ -32,7 +32,7 @@ var deleteSubscription = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsDeleteSubscription,
+	DescriptionKey:  coremsgs.APIEndpointsDeleteSubscription,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output

@@ -31,7 +31,7 @@ var getStatusBatchManager = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetStatusBatchManager,
+	DescriptionKey:  coremsgs.APIEndpointsGetStatusBatchManager,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &batch.ManagerStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},

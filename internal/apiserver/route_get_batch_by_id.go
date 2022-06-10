@@ -33,7 +33,7 @@ var getBatchByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetBatchBbyID,
+	DescriptionKey:  coremsgs.APIEndpointsGetBatchBbyID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.BatchPersisted{} },
 	JSONOutputCodes: []int{http.StatusOK},

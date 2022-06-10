@@ -66,20 +66,22 @@ type FFI struct {
 }
 
 type FFIMethod struct {
-	ID          *fftypes.UUID `ffstruct:"FFIMethod" json:"id,omitempty" ffexcludeinput:"true"`
-	Interface   *fftypes.UUID `ffstruct:"FFIMethod" json:"interface,omitempty" ffexcludeinput:"true"`
-	Name        string        `ffstruct:"FFIMethod" json:"name"`
-	Namespace   string        `ffstruct:"FFIMethod" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Pathname    string        `ffstruct:"FFIMethod" json:"pathname" ffexcludeinput:"true"`
-	Description string        `ffstruct:"FFIMethod" json:"description"`
-	Params      FFIParams     `ffstruct:"FFIMethod" json:"params"`
-	Returns     FFIParams     `ffstruct:"FFIMethod" json:"returns"`
+	ID          *fftypes.UUID      `ffstruct:"FFIMethod" json:"id,omitempty" ffexcludeinput:"true"`
+	Interface   *fftypes.UUID      `ffstruct:"FFIMethod" json:"interface,omitempty" ffexcludeinput:"true"`
+	Name        string             `ffstruct:"FFIMethod" json:"name"`
+	Namespace   string             `ffstruct:"FFIMethod" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Pathname    string             `ffstruct:"FFIMethod" json:"pathname" ffexcludeinput:"true"`
+	Description string             `ffstruct:"FFIMethod" json:"description"`
+	Params      FFIParams          `ffstruct:"FFIMethod" json:"params"`
+	Returns     FFIParams          `ffstruct:"FFIMethod" json:"returns"`
+	Details     fftypes.JSONObject `ffstruct:"FFIMethod" json:"details,omitempty"`
 }
 
 type FFIEventDefinition struct {
-	Name        string    `ffstruct:"FFIEvent" json:"name"`
-	Description string    `ffstruct:"FFIEvent" json:"description"`
-	Params      FFIParams `ffstruct:"FFIEvent" json:"params"`
+	Name        string             `ffstruct:"FFIEvent" json:"name"`
+	Description string             `ffstruct:"FFIEvent" json:"description"`
+	Params      FFIParams          `ffstruct:"FFIEvent" json:"params"`
+	Details     fftypes.JSONObject `ffstruct:"FFIEvent" json:"details,omitempty"`
 }
 
 type FFIEvent struct {
@@ -128,21 +130,21 @@ func (f *FFI) SetBroadcastMessage(msgID *fftypes.UUID) {
 }
 
 // Scan implements sql.Scanner
-func (m *FFIParams) Scan(src interface{}) error {
+func (p *FFIParams) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case nil:
-		m = nil
+		p = nil
 		return nil
 	case string:
-		return json.Unmarshal([]byte(src), &m)
+		return json.Unmarshal([]byte(src), &p)
 	case []byte:
-		return json.Unmarshal(src, &m)
+		return json.Unmarshal(src, &p)
 	default:
-		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, m)
+		return i18n.NewError(context.Background(), i18n.MsgTypeRestoreFailed, src, p)
 	}
 }
 
-func (m FFIParams) Value() (driver.Value, error) {
-	bytes, _ := json.Marshal(m)
+func (p FFIParams) Value() (driver.Value, error) {
+	bytes, _ := json.Marshal(p)
 	return bytes, nil
 }

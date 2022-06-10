@@ -33,8 +33,8 @@ var postTokenApproval = &oapispec.Route{
 	QueryParams: []*oapispec.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
-	FilterFactory: nil,
-	Description:   coremsgs.APIEndpointsPostTokenApproval,
+	FilterFactory:  nil,
+	DescriptionKey: coremsgs.APIEndpointsPostTokenApproval,
 	JSONInputValue: func() interface{} {
 		return &core.TokenApprovalInput{
 			TokenApproval: core.TokenApproval{

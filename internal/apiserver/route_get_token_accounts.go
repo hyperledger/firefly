@@ -32,7 +32,7 @@ var getTokenAccounts = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.TokenAccountQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTokenAccounts,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenAccounts,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenAccount{} },
 	JSONOutputCodes: []int{http.StatusOK},

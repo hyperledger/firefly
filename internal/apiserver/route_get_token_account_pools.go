@@ -34,7 +34,7 @@ var getTokenAccountPools = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TokenAccountPoolQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTokenAccountPools,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenAccountPools,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenAccountPool{} },
 	JSONOutputCodes: []int{http.StatusOK},

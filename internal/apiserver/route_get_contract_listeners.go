@@ -32,7 +32,7 @@ var getContractListeners = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.ContractListenerQueryFactory,
-	Description:     coremsgs.APIEndpointsGetContractListeners,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractListeners,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},

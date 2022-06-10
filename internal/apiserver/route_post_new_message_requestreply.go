@@ -31,7 +31,7 @@ var postNewMessageRequestReply = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewMessageRequestReply,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewMessageRequestReply,
 	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
 	JSONOutputValue: func() interface{} { return &core.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation

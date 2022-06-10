@@ -34,7 +34,7 @@ var getTxnByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.TransactionQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTxnByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetTxnByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Transaction{} },
 	JSONOutputCodes: []int{http.StatusOK},

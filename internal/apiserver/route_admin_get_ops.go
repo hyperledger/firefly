@@ -31,7 +31,7 @@ var adminGetOps = &oapispec.Route{
 	Method:          http.MethodGet,
 	QueryParams:     nil,
 	FilterFactory:   database.OperationQueryFactory,
-	Description:     coremsgs.APIEndpointsAdminGetOps,
+	DescriptionKey:  coremsgs.APIEndpointsAdminGetOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

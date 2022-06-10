@@ -31,7 +31,7 @@ var getTokenApprovals = &oapispec.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	FilterFactory:   database.TokenApprovalQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTokenApprovals,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenApprovals,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenApproval{} },
 	JSONOutputCodes: []int{http.StatusOK},

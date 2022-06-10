@@ -31,7 +31,7 @@ var postNetworkAction = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNetworkAction,
+	DescriptionKey:  coremsgs.APIEndpointsPostNetworkAction,
 	JSONInputValue:  func() interface{} { return &core.NetworkAction{} },
 	JSONOutputValue: func() interface{} { return &core.NetworkAction{} },
 	JSONOutputCodes: []int{http.StatusAccepted},

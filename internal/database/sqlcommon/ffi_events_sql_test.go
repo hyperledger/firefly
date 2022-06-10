@@ -178,7 +178,7 @@ func TestGetFFIEvents(t *testing.T) {
 	)
 	s, mock := newMockProvider().init()
 	rows := sqlmock.NewRows(ffiEventsColumns).
-		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`))
+		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`), []byte(`{}`))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	_, _, err := s.GetFFIEvents(context.Background(), filter)
 	assert.NoError(t, err)
@@ -222,7 +222,7 @@ func TestGetFFIEventsQueryResultFail(t *testing.T) {
 func TestGetFFIEvent(t *testing.T) {
 	s, mock := newMockProvider().init()
 	rows := sqlmock.NewRows(ffiEventsColumns).
-		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`))
+		AddRow(fftypes.NewUUID().String(), fftypes.NewUUID().String(), "ns1", "sum", "sum", "", []byte(`[]`), []byte(`{}`))
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	FFIEvent, err := s.GetFFIEvent(context.Background(), "ns1", fftypes.NewUUID(), "math")
 	assert.NoError(t, err)

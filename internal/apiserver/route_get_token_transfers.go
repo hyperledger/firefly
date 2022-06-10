@@ -34,7 +34,7 @@ var getTokenTransfers = &oapispec.Route{
 		{Name: "fromOrTo", Description: coremsgs.APIParamsTokenTransferFromOrTo},
 	},
 	FilterFactory:   database.TokenTransferQueryFactory,
-	Description:     coremsgs.APIEndpointsGetTokenTransfers,
+	DescriptionKey:  coremsgs.APIEndpointsGetTokenTransfers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenTransfer{} },
 	JSONOutputCodes: []int{http.StatusOK},

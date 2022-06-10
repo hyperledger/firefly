@@ -34,7 +34,7 @@ var postContractAPIListeners = &oapispec.Route{
 	},
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewContractListener,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewContractListener,
 	JSONInputValue:  func() interface{} { return &core.ContractListener{} },
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},

@@ -33,7 +33,7 @@ var getNetworkNode = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetNetworkNode,
+	DescriptionKey:  coremsgs.APIEndpointsGetNetworkNode,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},

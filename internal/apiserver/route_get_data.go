@@ -32,7 +32,7 @@ var getData = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.DataQueryFactory,
-	Description:     coremsgs.APIEndpointsGetData,
+	DescriptionKey:  coremsgs.APIEndpointsGetData,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return core.DataArray{} },
 	JSONOutputCodes: []int{http.StatusOK},

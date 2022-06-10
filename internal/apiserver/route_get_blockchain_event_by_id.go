@@ -33,7 +33,7 @@ var getBlockchainEventByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetBlockchainEventByID,
+	DescriptionKey:  coremsgs.APIEndpointsGetBlockchainEventByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},

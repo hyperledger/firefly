@@ -34,7 +34,7 @@ var getNetworkIdentities = &oapispec.Route{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
 	FilterFactory:   database.IdentityQueryFactory,
-	Description:     coremsgs.APIEndpointsGetNetworkIdentities,
+	DescriptionKey:  coremsgs.APIEndpointsGetNetworkIdentities,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},

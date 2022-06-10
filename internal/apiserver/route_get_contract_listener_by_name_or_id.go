@@ -33,7 +33,7 @@ var getContractListenerByNameOrID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetContractListenerByNameOrID,
+	DescriptionKey:  coremsgs.APIEndpointsGetContractListenerByNameOrID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},

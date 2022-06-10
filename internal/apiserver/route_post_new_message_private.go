@@ -34,7 +34,7 @@ var postNewMessagePrivate = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewMessagePrivate,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewMessagePrivate,
 	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

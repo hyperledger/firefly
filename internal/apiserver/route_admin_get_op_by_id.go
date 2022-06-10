@@ -33,7 +33,7 @@ var adminGetOpByID = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsAdminGetOpByID,
+	DescriptionKey:  coremsgs.APIEndpointsAdminGetOpByID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

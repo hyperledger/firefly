@@ -33,7 +33,7 @@ var getTxnOps = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetTxnOps,
+	DescriptionKey:  coremsgs.APIEndpointsGetTxnOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},

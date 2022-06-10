@@ -34,7 +34,7 @@ var postOpRetry = &oapispec.Route{
 	},
 	QueryParams:     []*oapispec.QueryParam{},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostOpRetry,
+	DescriptionKey:  coremsgs.APIEndpointsPostOpRetry,
 	JSONInputValue:  func() interface{} { return &core.EmptyInput{} },
 	JSONOutputValue: func() interface{} { return &core.Operation{} },
 	JSONOutputCodes: []int{http.StatusAccepted},

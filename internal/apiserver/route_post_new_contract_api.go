@@ -34,7 +34,7 @@ var postNewContractAPI = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewContractAPI,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewContractAPI,
 	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
 	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},

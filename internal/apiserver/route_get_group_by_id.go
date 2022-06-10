@@ -33,7 +33,7 @@ var getGroupByHash = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetGroupByHash,
+	DescriptionKey:  coremsgs.APIEndpointsGetGroupByHash,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},

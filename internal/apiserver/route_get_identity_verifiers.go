@@ -34,7 +34,7 @@ var getIdentityVerifiers = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.VerifierQueryFactory,
-	Description:     coremsgs.APIEndpointsGetIdentityVerifiers,
+	DescriptionKey:  coremsgs.APIEndpointsGetIdentityVerifiers,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Verifier{} },
 	JSONOutputCodes: []int{http.StatusOK},

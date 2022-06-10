@@ -34,7 +34,7 @@ var postNewDatatype = &oapispec.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsPostNewDatatype,
+	DescriptionKey:  coremsgs.APIEndpointsPostNewDatatype,
 	JSONInputValue:  func() interface{} { return &core.Datatype{} },
 	JSONOutputValue: func() interface{} { return &core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},

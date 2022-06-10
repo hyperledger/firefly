@@ -32,7 +32,7 @@ var getGroups = &oapispec.Route{
 	PathParams:      nil,
 	QueryParams:     nil,
 	FilterFactory:   database.GroupQueryFactory,
-	Description:     coremsgs.APIEndpointsGetGroups,
+	DescriptionKey:  coremsgs.APIEndpointsGetGroups,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},

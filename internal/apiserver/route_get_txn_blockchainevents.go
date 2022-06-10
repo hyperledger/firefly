@@ -33,7 +33,7 @@ var getTxnBlockchainEvents = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   nil,
-	Description:     coremsgs.APIEndpointsGetTxnBlockchainEvents,
+	DescriptionKey:  coremsgs.APIEndpointsGetTxnBlockchainEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.BlockchainEvent{} },
 	JSONOutputCodes: []int{http.StatusOK},

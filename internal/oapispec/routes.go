@@ -43,8 +43,10 @@ type Route struct {
 	FilterFactory database.QueryFactory
 	// Method is the HTTP method
 	Method string
-	// Description is a message key to a translatable description of the operation
-	Description i18n.MessageKey
+	// DescriptionKey is a message key to a translatable description of the operation
+	DescriptionKey i18n.MessageKey
+	// Description is a string description of the route. Can sometimes be used instead of DescriptionKey
+	Description string
 	// JSONInputValue is a function that returns a pointer to a structure to take JSON input
 	JSONInputValue func() interface{}
 	// JSONInputMask are fields that aren't available for users to supply on input

@@ -34,7 +34,7 @@ var getMsgEvents = &oapispec.Route{
 	},
 	QueryParams:     nil,
 	FilterFactory:   database.EventQueryFactory,
-	Description:     coremsgs.APIEndpointsGetMsgEvents,
+	DescriptionKey:  coremsgs.APIEndpointsGetMsgEvents,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Event{} },
 	JSONOutputCodes: []int{http.StatusOK},
