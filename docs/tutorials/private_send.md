@@ -272,7 +272,7 @@ Just include a reference to the `id` returned from the upload.
 }
 ```
 
-## Sandbox Instructions
+## Sending Private Messages using the Sandbox
 All of the functionality discussed above can be done through the [FireFly Sandbox](../gettingstarted/sandbox.md).
 
 To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.
