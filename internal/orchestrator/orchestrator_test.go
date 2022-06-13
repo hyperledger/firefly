@@ -191,7 +191,7 @@ func TestInitOK(t *testing.T) {
 	or.mdx.On("RegisterListener", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("RegisterListener", mock.Anything).Return()
-	or.mti.On("RegisterListener", mock.Anything).Return()
+	or.mti.On("RegisterListener", "ns", mock.Anything).Return(nil)
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
 
@@ -204,6 +204,20 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mom, or.Operations())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mnm, or.NetworkMap())
+}
+
+func TestInitTokenListenerFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.mdi.On("RegisterListener", mock.Anything).Return()
+	or.mbi.On("RegisterListener", mock.Anything).Return()
+	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdx.On("RegisterListener", mock.Anything).Return()
+	or.mdx.On("SetNodes", mock.Anything).Return()
+	or.mps.On("RegisterListener", mock.Anything).Return()
+	or.mti.On("RegisterListener", "ns", mock.Anything).Return(fmt.Errorf("pop"))
+	err := or.Init(or.ctx, or.cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
 func TestInitDataexchangeNodesFail(t *testing.T) {
