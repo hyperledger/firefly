@@ -1510,10 +1510,6 @@ paths:
                       description: The UUID of the node that generated the batch
                       format: uuid
                       type: string
-                    payloadRef:
-                      description: For broadcast batches, this is the reference to
-                        the binary batch in shared storage
-                      type: string
                     tx:
                       description: The FireFly transaction associated with this batch
                       properties:
@@ -1597,10 +1593,6 @@ paths:
                   node:
                     description: The UUID of the node that generated the batch
                     format: uuid
-                    type: string
-                  payloadRef:
-                    description: For broadcast batches, this is the reference to the
-                      binary batch in shared storage
                     type: string
                   tx:
                     description: The FireFly transaction associated with this batch
@@ -10512,10 +10504,6 @@ paths:
                       description: The UUID of the node that generated the batch
                       format: uuid
                       type: string
-                    payloadRef:
-                      description: For broadcast batches, this is the reference to
-                        the binary batch in shared storage
-                      type: string
                     tx:
                       description: The FireFly transaction associated with this batch
                       properties:
@@ -10606,10 +10594,6 @@ paths:
                   node:
                     description: The UUID of the node that generated the batch
                     format: uuid
-                    type: string
-                  payloadRef:
-                    description: For broadcast batches, this is the reference to the
-                      binary batch in shared storage
                     type: string
                   tx:
                     description: The FireFly transaction associated with this batch
