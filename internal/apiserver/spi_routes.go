@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,15 +14,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapispec
+package apiserver
 
-import (
-	"context"
-	"testing"
+import "github.com/hyperledger/firefly-common/pkg/ffapi"
 
-	"github.com/stretchr/testify/assert"
-)
-
-func TestOpenAPI3SwaggerUI(t *testing.T) {
-	assert.NotEmpty(t, SwaggerUIHTML(context.Background(), "http://localhost:12345/api/v1"))
+// The Service Provider Interface (SPI) allows external microservices (such as the FireFly Transaction Manager)
+// to act as augmented components to the core.
+var spiRoutes = []*ffapi.Route{
+	spiGetNamespaceByName,
+	spiGetNamespaces,
+	spiGetOpByID,
+	spiGetOps,
+	spiPatchOpByID,
 }

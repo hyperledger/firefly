@@ -662,7 +662,7 @@ func generateObjectReferenceMarkdown(ctx context.Context, descRequired bool, exa
 
 func generateEnumList(f reflect.StructField) string {
 	enumName := f.Tag.Get("ffenum")
-	enumOptions := core.FFEnumValues(enumName)
+	enumOptions := fftypes.FFEnumValues(enumName)
 	buff := new(strings.Builder)
 	buff.WriteString("`FFEnum`:")
 	for _, v := range enumOptions {

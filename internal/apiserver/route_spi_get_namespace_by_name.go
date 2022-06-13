@@ -18,29 +18,28 @@ package apiserver
 
 import (
 	"net/http"
-	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewNamespace = &oapispec.Route{
-	Name:   "postNewNamespace",
-	Path:   "namespaces",
-	Method: http.MethodPost,
-	QueryParams: []*oapispec.QueryParam{
-		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
+var spiGetNamespaceByName = &ffapi.Route{
+	Name:   "spiGetNamespaceByName",
+	Path:   "namespaces/{ns}",
+	Method: http.MethodGet,
+	PathParams: []*ffapi.PathParam{
+		{Name: "ns", Description: coremsgs.APIParamsNamespace},
 	},
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsPostNewNamespace,
-	JSONInputValue:  func() interface{} { return &core.Namespace{} },
+	QueryParams:     nil,
+	Description:     coremsgs.APIEndpointsPostNewNamespace,
+	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Namespace{} },
-	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		_, err = getOr(r.Ctx).Broadcast().BroadcastNamespace(r.Ctx, r.Input.(*core.Namespace), waitConfirm)
-		return r.Input, err
+	JSONOutputCodes: []int{http.StatusOK},
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output, err = cr.or.GetNamespace(cr.ctx, extractNamespace(r.PP))
+			return output, err
+		},
 	},
 }

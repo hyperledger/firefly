@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getTxnOps = &oapispec.Route{
+var getTxnOps = &ffapi.Route{
 	Name:   "getTxnOps",
 	Path:   "transactions/{txnid}/operations",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "txnid", Description: coremsgs.APIParamsTransactionID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetTxnOps,
+	Description:     coremsgs.APIEndpointsGetTxnOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &[]*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetTransactionOperations(r.Ctx, extractNamespace(r.PP), r.PP["txnid"]))
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetTransactionOperations(cr.ctx, extractNamespace(r.PP), r.PP["txnid"]))
+		},
 	},
 }

@@ -98,3 +98,16 @@ var batchPinEventABI = &abi.Entry{
 		},
 	},
 }
+
+var networkVersionMethodABI = &abi.Entry{
+	Name:            "networkVersion",
+	Type:            "function",
+	StateMutability: "pure",
+	Inputs:          abi.ParameterArray{},
+	Outputs: abi.ParameterArray{
+		{
+			InternalType: "uint8",
+			Type:         "uint8",
+		},
+	},
+}

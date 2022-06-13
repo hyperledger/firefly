@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getContractListenerByNameOrID = &oapispec.Route{
+var getContractListenerByNameOrID = &ffapi.Route{
 	Name:   "getContractListenerByNameOrID",
 	Path:   "contracts/listeners/{nameOrId}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "nameOrId", Description: coremsgs.APIParamsContractListenerNameOrID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetContractListenerByNameOrID,
+	Description:     coremsgs.APIEndpointsGetContractListenerByNameOrID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().GetContractListenerByNameOrID(r.Ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.Contracts().GetContractListenerByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+		},
 	},
 }

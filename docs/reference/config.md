@@ -17,37 +17,6 @@ nav_order: 2
 ---
 
 
-## admin
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
-|enabled|Enables the admin HTTP API|`boolean`|`<nil>`
-|port|The port on which the admin HTTP API should listen|`int`|`5001`
-|publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
-|readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
-|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
-|writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
-
-## admin.tls
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
-|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
-|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
-|enabled|Enables or disables TLS on this API|`boolean`|`false`
-|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
-
-## admin.ws
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`<nil>`
-|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-
 ## api
 
 |Key|Description|Type|Default Value|
@@ -626,15 +595,36 @@ nav_order: 2
 |default|The default namespace - must be in the predefined list|`string`|`<nil>`
 |predefined|A list of namespaces to ensure exists, without requiring a broadcast from the network|List `string`|`<nil>`
 
+## namespaces.cache
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+
 ## namespaces.predefined[]
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
+|defaultKey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
 |description|A description for the namespace|`string`|`<nil>`
-|mode|The namespace mode. Valid values: gateway, multiparty|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
 |remoteName|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
+
+## namespaces.predefined[].multiparty
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|enabled|Enables multi-party mode for this namespace (defaults to true if an org name or key is configured, either here or at the root level)|`boolean`|`<nil>`
+
+## namespaces.predefined[].multiparty.org
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|description|A description for the local root organization within this namespace|`string`|`<nil>`
+|key|The signing key allocated to the root organization within this namespace|`string`|`<nil>`
+|name|A short name for the local root organization within this namespace|`string`|`<nil>`
 
 ## node
 
@@ -670,10 +660,9 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|description|A description of the organization to which this FireFly node belongs|`string`|`<nil>`
-|identity|`DEPRECATED` Please use `org.key` instead|`string`|`<nil>`
-|key|The signing identity allocated to the organization (can be the same as the nodes)|`string`|`<nil>`
-|name|The name of the organization to which this FireFly node belongs|`string`|`<nil>`
+|description|A description of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+|key|The signing key allocated to the organization (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
+|name|The name of the organization to which this FireFly node belongs (deprecated - should be set on each multi-party namespace instead)|`string`|`<nil>`
 
 ## plugins
 
@@ -1217,6 +1206,37 @@ nav_order: 2
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
+
+## spi
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|address|The IP address on which the admin HTTP API should listen|IP Address `string`|`127.0.0.1`
+|enabled|Enables the admin HTTP API|`boolean`|`<nil>`
+|port|The port on which the admin HTTP API should listen|`int`|`5001`
+|publicURL|The fully qualified public URL for the admin API. This is used for building URLs in HTTP responses and in OpenAPI Spec generation|URL `string`|`<nil>`
+|readTimeout|The maximum time to wait when reading from an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+|shutdownTimeout|The maximum amount of time to wait for any open HTTP requests to finish before shutting down the HTTP server|[`time.Duration`](https://pkg.go.dev/time#Duration)|`10s`
+|writeTimeout|The maximum time to wait when writing to an HTTP connection|[`time.Duration`](https://pkg.go.dev/time#Duration)|`15s`
+
+## spi.tls
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|caFile|The path to the CA file for TLS on this API|`string`|`<nil>`
+|certFile|The path to the certificate file for TLS on this API|`string`|`<nil>`
+|clientAuth|Enables or disables client auth for TLS on this API|`string`|`<nil>`
+|enabled|Enables or disables TLS on this API|`boolean`|`false`
+|keyFile|The path to the private key file for TLS on this API|`string`|`<nil>`
+
+## spi.ws
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|blockedWarnInterval|How often to log warnings in core, when an admin change event listener falls behind the stream they requested and misses events|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
+|eventQueueLength|Server-side queue length for events waiting for delivery over an admin change event listener websocket|`int`|`<nil>`
+|readBufferSize|The size in bytes of the read buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
+|writeBufferSize|The size in bytes of the write buffer for the WebSocket connection|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
 
 ## subscription
 

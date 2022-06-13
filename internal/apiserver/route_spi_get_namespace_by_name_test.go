@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,13 +14,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package core
+package apiserver
 
-import "io"
+import (
+	"net/http/httptest"
+	"testing"
 
-// Multipart represents streaming data in a multi-part upload
-type Multipart struct {
-	Filename string
-	Mimetype string
-	Data     io.Reader
+	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+func TestSPIGetNamespaceByName(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/namespaces/ns1", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetNamespace", mock.Anything, "ns1").
+		Return(&core.Namespace{}, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

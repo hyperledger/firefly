@@ -79,7 +79,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *co
 func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Identity, nodeInput string) (node *core.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
-		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, nodeInput)
+		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, identity.Namespace, nodeInput)
 	} else {
 		// Find any node owned by this organization
 		inputIdentityDebugInfo := fmt.Sprintf("%s (%s)", identity.DID, identity.ID)
@@ -107,7 +107,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Iden
 
 func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageInOut) (gi *core.GroupIdentity, err error) {
 
-	localOrg, err := pm.identity.GetNodeOwnerOrg(ctx)
+	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx, in.Header.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageI
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the identity
-		identity, _, err := pm.identity.CachedIdentityLookupMustExist(ctx, rInput.Identity)
+		identity, _, err := pm.identity.CachedIdentityLookupMustExist(ctx, in.Header.Namespace, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}

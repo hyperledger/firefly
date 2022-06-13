@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/networkmap"
-	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var getIdentityDID = &oapispec.Route{
+var getIdentityDID = &ffapi.Route{
 	Name:   "getIdentityDID",
 	Path:   "identities/{iid}/did",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "iid", Example: "id", Description: coremsgs.APIParamsIdentityID},
 	},
 	QueryParams:     nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetIdentityDID,
+	Description:     coremsgs.APIEndpointsGetIdentityDID,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &networkmap.DIDDocument{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).NetworkMap().GetDIDDocForIndentityByID(r.Ctx, extractNamespace(r.PP), r.PP["iid"])
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.NetworkMap().GetDIDDocForIndentityByID(cr.ctx, extractNamespace(r.PP), r.PP["iid"])
+		},
 	},
 }

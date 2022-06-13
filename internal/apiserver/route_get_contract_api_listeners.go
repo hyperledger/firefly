@@ -19,27 +19,29 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getContractAPIListeners = &oapispec.Route{
+var getContractAPIListeners = &ffapi.Route{
 	Name:   "getContractAPIListeners",
 	Path:   "apis/{apiName}/listeners/{eventPath}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "apiName", Description: coremsgs.APIParamsContractAPIName},
 		{Name: "eventPath", Description: coremsgs.APIParamsEventPath},
 	},
-	QueryParams:     []*oapispec.QueryParam{},
-	FilterFactory:   database.ContractListenerQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetContractListeners,
+	QueryParams:     []*ffapi.QueryParam{},
+	Description:     coremsgs.APIEndpointsGetContractListeners,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).Contracts().GetContractAPIListeners(r.Ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["eventPath"], r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.ContractListenerQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.Contracts().GetContractAPIListeners(cr.ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["eventPath"], cr.filter))
+		},
 	},
 }

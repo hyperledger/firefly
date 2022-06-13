@@ -282,9 +282,9 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 
 	// Emit the response
 	if reply {
-		txType := core.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
+		txType := fftypes.FFEnum(strings.ToLower(sub.Options.TransportOptions().GetString("replytx")))
 		if req != nil && req.replyTx != "" {
-			txType = core.FFEnum(strings.ToLower(req.replyTx))
+			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 		}
 		wh.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
 			ID:           event.ID,

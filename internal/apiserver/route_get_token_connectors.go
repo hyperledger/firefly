@@ -19,23 +19,24 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getTokenConnectors = &oapispec.Route{
+var getTokenConnectors = &ffapi.Route{
 	Name:            "getTokenConnectors",
 	Path:            "tokens/connectors",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetTokenConnectors,
+	Description:     coremsgs.APIEndpointsGetTokenConnectors,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenConnector{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Assets().GetTokenConnectors(r.Ctx, extractNamespace(r.PP)), nil
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.Assets().GetTokenConnectors(cr.ctx, extractNamespace(r.PP)), nil
+		},
 	},
 }

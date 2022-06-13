@@ -20,30 +20,32 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getIdentityByDID = &oapispec.Route{
-	Name:   "getIdentityByDID",
+var getNetworkIdentityByDID = &ffapi.Route{
+	Name:   "getNetworkIdentityByDID",
 	Path:   "network/identities/{did:.+}",
 	Method: http.MethodGet,
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchverifiers", Example: "true", Description: coremsgs.APIParamsFetchVerifiers, IsBool: true},
 	},
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetIdentityByDID,
+	Description:     coremsgs.APIEndpointsGetIdentityByDID,
+	Deprecated:      true, // use getIdentityByDID instead
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.IdentityWithVerifiers{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-			return getOr(r.Ctx).NetworkMap().GetIdentityByDIDWithVerifiers(r.Ctx, r.PP["did"])
-		}
-		return getOr(r.Ctx).NetworkMap().GetIdentityByDID(r.Ctx, r.PP["did"])
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			if strings.EqualFold(r.QP["fetchverifiers"], "true") {
+				return cr.or.NetworkMap().GetIdentityByDIDWithVerifiers(cr.ctx, extractNamespace(r.PP), r.PP["did"])
+			}
+			return cr.or.NetworkMap().GetIdentityByDID(cr.ctx, extractNamespace(r.PP), r.PP["did"])
+		},
 	},
 }

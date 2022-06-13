@@ -14,19 +14,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapiffi
+package apiserver
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
-	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -57,7 +55,7 @@ func NewFFISwaggerGen() FFISwaggerGen {
 func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core.ContractAPI, ffi *core.FFI) (swagger *openapi3.T) {
 	hasLocation := !api.Location.IsNil()
 
-	routes := []*oapispec.Route{
+	routes := []*ffapi.Route{
 		{
 			Name:            "interface",
 			Path:            "interface", // must match a route defined in apiserver routes!
@@ -74,46 +72,44 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 		routes = og.addEvent(routes, event, hasLocation)
 	}
 
-	return oapispec.SwaggerGen(ctx, routes, &oapispec.SwaggerGenConfig{
+	return ffapi.NewSwaggerGen(&ffapi.Options{
 		Title:       ffi.Name,
 		Version:     ffi.Version,
 		Description: ffi.Description,
 		BaseURL:     baseURL,
-	})
+	}).Generate(ctx, routes)
 }
 
-func (og *ffiSwaggerGen) addMethod(routes []*oapispec.Route, method *core.FFIMethod, hasLocation bool) []*oapispec.Route {
-	description := method.Description
-	if method.Details != nil && len(method.Details) > 0 {
-		description = fmt.Sprintf("%s\n\nAdditional smart contract details:\n\n%s", description, buildDetailsTable(method.Details))
-	}
-	routes = append(routes, &oapispec.Route{
+func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *core.FFIMethod, hasLocation bool) []*ffapi.Route {
+	// description := method.Description
+	// if method.Details != nil && len(method.Details) > 0 {
+	// 	description = fmt.Sprintf("%s\n\nAdditional smart contract details:\n\n%s", description, buildDetailsTable(method.Details))
+	// }
+	routes = append(routes, &ffapi.Route{
 		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
 		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
 		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
-		Description:      description,
 	})
-	routes = append(routes, &oapispec.Route{
+	routes = append(routes, &ffapi.Route{
 		Name:             fmt.Sprintf("query_%s", method.Pathname),
 		Path:             fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
 		Method:           http.MethodPost,
 		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
 		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
 		JSONOutputCodes:  []int{http.StatusOK},
-		Description:      description,
 	})
 	return routes
 }
 
-func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *core.FFIEvent, hasLocation bool) []*oapispec.Route {
-	description := event.Description
-	if event.Details != nil && len(event.Details) > 0 {
-		description = fmt.Sprintf("%s\n\nAdditional smart contract details:\n\n%s", description, buildDetailsTable(event.Details))
-	}
-	routes = append(routes, &oapispec.Route{
+func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *core.FFIEvent, hasLocation bool) []*ffapi.Route {
+	// description := event.Description
+	// if event.Details != nil && len(event.Details) > 0 {
+	// 	description = fmt.Sprintf("%s\n\nAdditional smart contract details:\n\n%s", description, buildDetailsTable(event.Details))
+	// }
+	routes = append(routes, &ffapi.Route{
 		Name:   fmt.Sprintf("createlistener_%s", event.Pathname),
 		Path:   fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
 		Method: http.MethodPost,
@@ -126,15 +122,16 @@ func (og *ffiSwaggerGen) addEvent(routes []*oapispec.Route, event *core.FFIEvent
 		JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
 	})
-	routes = append(routes, &oapispec.Route{
+	routes = append(routes, &ffapi.Route{
 		Name:            fmt.Sprintf("getlistener_%s", event.Pathname),
 		Path:            fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
 		Method:          http.MethodGet,
-		FilterFactory:   database.ContractListenerQueryFactory,
 		JSONInputValue:  nil,
 		JSONOutputValue: func() interface{} { return []*core.ContractListener{} },
 		JSONOutputCodes: []int{http.StatusOK},
-		Description:     description,
+		Extensions: &coreExtensions{
+			FilterFactory: database.ContractListenerQueryFactory,
+		},
 	})
 	return routes
 }
@@ -175,17 +172,17 @@ func ffiParamJSONSchema(param *core.FFIParam) *fftypes.JSONObject {
 	return nil
 }
 
-func buildDetailsTable(details map[string]interface{}) string {
-	var s strings.Builder
-	s.WriteString(`| | |\n-----`)
-	keys := make([]string, len(details))
-	i := 0
-	for key := range details {
-		keys[i] = key
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		s.WriteString(fmt.Sprintf(`|%s|%s|\n`, key, details[key]))
-	}
-	return s.String()
-}
+// func buildDetailsTable(details map[string]interface{}) string {
+// 	var s strings.Builder
+// 	s.WriteString(`| | |\n-----`)
+// 	keys := make([]string, len(details))
+// 	i := 0
+// 	for key := range details {
+// 		keys[i] = key
+// 	}
+// 	sort.Strings(keys)
+// 	for _, key := range keys {
+// 		s.WriteString(fmt.Sprintf(`|%s|%s|\n`, key, details[key]))
+// 	}
+// 	return s.String()
+// }

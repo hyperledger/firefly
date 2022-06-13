@@ -52,72 +52,40 @@ var (
 
 const contractlistenersTable = "contractlisteners"
 
-func (s *SQLCommon) UpsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
+func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.ContractListener) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	rows, _, err := s.queryTx(ctx, contractlistenersTable, tx,
-		sq.Select("seq").
-			From(contractlistenersTable).
-			Where(sq.Eq{"backend_id": listener.BackendID}),
-	)
-	if err != nil {
-		return err
-	}
-	existing := rows.Next()
-	rows.Close()
-
 	var interfaceID *fftypes.UUID
 	if listener.Interface != nil {
 		interfaceID = listener.Interface.ID
 	}
 
-	if existing {
-		if _, err = s.updateTx(ctx, contractlistenersTable, tx,
-			sq.Update(contractlistenersTable).
-				Set("id", listener.ID).
-				Set("interface_id", interfaceID).
-				Set("event", listener.Event).
-				Set("namespace", listener.Namespace).
-				Set("name", listener.Name).
-				Set("location", listener.Location).
-				Set("signature", listener.Signature).
-				Set("topic", listener.Topic).
-				Set("options", listener.Options).
-				Where(sq.Eq{"backend_id": listener.BackendID}),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeUpdated, listener.Namespace, listener.ID)
-			},
-		); err != nil {
-			return err
-		}
-	} else {
-		listener.Created = fftypes.Now()
-		if _, err = s.insertTx(ctx, contractlistenersTable, tx,
-			sq.Insert(contractlistenersTable).
-				Columns(contractListenerColumns...).
-				Values(
-					listener.ID,
-					interfaceID,
-					listener.Event,
-					listener.Namespace,
-					listener.Name,
-					listener.BackendID,
-					listener.Location,
-					listener.Signature,
-					listener.Topic,
-					listener.Options,
-					listener.Created,
-				),
-			func() {
-				s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeCreated, listener.Namespace, listener.ID)
-			},
-		); err != nil {
-			return err
-		}
+	listener.Created = fftypes.Now()
+	if _, err = s.insertTx(ctx, contractlistenersTable, tx,
+		sq.Insert(contractlistenersTable).
+			Columns(contractListenerColumns...).
+			Values(
+				listener.ID,
+				interfaceID,
+				listener.Event,
+				listener.Namespace,
+				listener.Name,
+				listener.BackendID,
+				listener.Location,
+				listener.Signature,
+				listener.Topic,
+				listener.Options,
+				listener.Created,
+			),
+		func() {
+			s.callbacks.UUIDCollectionNSEvent(database.CollectionContractListeners, core.ChangeEventTypeCreated, listener.Namespace, listener.ID)
+		},
+	); err != nil {
+		return err
 	}
 
 	return s.commitTx(ctx, tx, autoCommit)

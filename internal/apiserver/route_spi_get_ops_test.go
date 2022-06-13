@@ -25,9 +25,9 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestAdminGetOperations(t *testing.T) {
-	o, r := newTestAdminServer()
-	req := httptest.NewRequest("GET", "/admin/api/v1/operations", nil)
+func TestSPIGetOperations(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/operations", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

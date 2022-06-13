@@ -45,37 +45,34 @@ jobs:
           docker push ghcr.io/hyperledger/firefly:latest
 
       - name: Tag alpha release
-        if: github.event.action == 'prereleased' && contains(env.GITHUB_REF, 'alpha')
+        if: github.event.action == 'prereleased' && contains(github.ref, 'alpha')
         run: |
-          echo ${{ env.GITHUB_REF }}
           docker tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} ghcr.io/hyperledger/firefly:alpha
 
       - name: Push alpha tag
-        if: github.event.action == 'prereleased' && contains(env.GITHUB_REF, 'alpha')
+        if: github.event.action == 'prereleased' && contains(github.ref, 'alpha')
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
           docker push ghcr.io/hyperledger/firefly:alpha
 
       - name: Tag beta release
-        if: github.event.action == 'prereleased' && contains(env.GITHUB_REF, 'beta')
+        if: github.event.action == 'prereleased' && contains(github.ref, 'beta')
         run: |
-          echo ${{ env.GITHUB_REF }}
           docker tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} ghcr.io/hyperledger/firefly:beta
 
       - name: Push beta tag
-        if: github.event.action == 'prereleased' && contains(env.GITHUB_REF, 'beta')
+        if: github.event.action == 'prereleased' && contains(github.ref, 'beta')
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
           docker push ghcr.io/hyperledger/firefly:beta
 
       - name: Tag rc release
-        if: github.event.action == 'prereleased' && contains(env.GITHUB_REF, 'rc')
+        if: github.event.action == 'prereleased' && contains(github.ref, 'rc')
         run: |
-          echo ${{ env.GITHUB_REF }}
           docker tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} ghcr.io/hyperledger/firefly:rc
 
       - name: Push rc tag
-        if: github.event.action == 'prereleased' && contains(env.GITHUB_REF, 'rc')
+        if: github.event.action == 'prereleased' && contains(github.ref, 'rc')
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
           docker push ghcr.io/hyperledger/firefly:rc

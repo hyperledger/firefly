@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getOps = &oapispec.Route{
+var getOps = &ffapi.Route{
 	Name:            "getOps",
 	Path:            "operations",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.OperationQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetOps,
+	Description:     coremsgs.APIEndpointsGetOps,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetOperationsNamespaced(r.Ctx, extractNamespace(r.PP), r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.OperationQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetOperationsNamespaced(cr.ctx, extractNamespace(r.PP), cr.filter))
+		},
 	},
 }

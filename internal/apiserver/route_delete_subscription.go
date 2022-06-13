@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var deleteSubscription = &oapispec.Route{
+var deleteSubscription = &ffapi.Route{
 	Name:   "deleteSubscription",
 	Path:   "subscriptions/{subid}",
 	Method: http.MethodDelete,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "subid", Description: coremsgs.APIParamsSubscriptionID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsDeleteSubscription,
+	Description:     coremsgs.APIEndpointsDeleteSubscription,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).DeleteSubscription(r.Ctx, extractNamespace(r.PP), r.PP["subid"])
-		return nil, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			err = cr.or.DeleteSubscription(cr.ctx, extractNamespace(r.PP), r.PP["subid"])
+			return nil, err
+		},
 	},
 }

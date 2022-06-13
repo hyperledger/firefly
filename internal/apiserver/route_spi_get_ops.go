@@ -14,28 +14,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oapispec
+package apiserver
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-type APIRequest struct {
-	Ctx             context.Context
-	Or              orchestrator.Orchestrator
-	Req             *http.Request
-	QP              map[string]string
-	PP              map[string]string
-	FP              map[string]string
-	Filter          database.AndFilter
-	Input           interface{}
-	Part            *core.Multipart
-	SuccessStatus   int
-	APIBaseURL      string
-	ResponseHeaders http.Header
+var spiGetOps = &ffapi.Route{
+	Name:            "spiGetOps",
+	Path:            "operations",
+	Method:          http.MethodGet,
+	QueryParams:     nil,
+	Description:     coremsgs.APIEndpointsAdminGetOps,
+	JSONInputValue:  nil,
+	JSONOutputValue: func() interface{} { return []*core.Operation{} },
+	JSONOutputCodes: []int{http.StatusOK},
+	Extensions: &coreExtensions{
+		FilterFactory: database.OperationQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
+		},
+	},
 }

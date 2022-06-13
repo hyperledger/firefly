@@ -27,19 +27,19 @@ import (
 )
 
 // FFIInputType is the type of a JSON field in a request to FireFly's API
-type FFIInputType = FFEnum
+type FFIInputType = fftypes.FFEnum
 
 var (
 	// FFIInputTypeInteger is a json integer or string to be treated as an integer
-	FFIInputTypeInteger = ffEnum("ffiinputtype", "integer")
+	FFIInputTypeInteger = fftypes.FFEnumValue("ffiinputtype", "integer")
 	// FFIInputTypeString is a JSON string
-	FFIInputTypeString = ffEnum("ffiinputtype", "string")
+	FFIInputTypeString = fftypes.FFEnumValue("ffiinputtype", "string")
 	// FFIInputTypeArray is a JSON boolean
-	FFIInputTypeBoolean = ffEnum("ffiinputtype", "boolean")
+	FFIInputTypeBoolean = fftypes.FFEnumValue("ffiinputtype", "boolean")
 	// FFIInputTypeArray is a JSON array
-	FFIInputTypeArray = ffEnum("ffiinputtype", "array")
+	FFIInputTypeArray = fftypes.FFEnumValue("ffiinputtype", "array")
 	// FFIInputTypeObject is a JSON object
-	FFIInputTypeObject = ffEnum("ffiinputtype", "object")
+	FFIInputTypeObject = fftypes.FFEnumValue("ffiinputtype", "object")
 )
 
 type FFIParamValidator interface {

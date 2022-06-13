@@ -28,13 +28,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (org *core.Identity, err error) {
+func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, ns, nameOrID string) (org *core.Identity, err error) {
 	u, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
 		if err := core.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
 			return nil, err
 		}
-		if org, err = nm.database.GetIdentityByName(ctx, core.IdentityTypeOrg, core.SystemNamespace, nameOrID); err != nil {
+		if org, err = nm.database.GetIdentityByName(ctx, core.IdentityTypeOrg, ns, nameOrID); err != nil {
 			return nil, err
 		}
 	} else if org, err = nm.database.GetIdentityByID(ctx, u); err != nil {
@@ -50,23 +50,23 @@ func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, nameOrID st
 	return org, nil
 }
 
-func (nm *networkMap) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (nm *networkMap) GetOrganizations(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("type", core.IdentityTypeOrg))
-	return nm.GetIdentities(ctx, core.SystemNamespace, filter)
+	return nm.GetIdentities(ctx, ns, filter)
 }
 
-func (nm *networkMap) GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+func (nm *networkMap) GetOrganizationsWithVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("type", core.IdentityTypeOrg))
-	return nm.GetIdentitiesWithVerifiers(ctx, core.SystemNamespace, filter)
+	return nm.GetIdentitiesWithVerifiers(ctx, ns, filter)
 }
 
-func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, nameOrID string) (node *core.Identity, err error) {
+func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, ns, nameOrID string) (node *core.Identity, err error) {
 	u, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
 		if err := core.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
 			return nil, err
 		}
-		if node, err = nm.database.GetIdentityByName(ctx, core.IdentityTypeNode, core.SystemNamespace, nameOrID); err != nil {
+		if node, err = nm.database.GetIdentityByName(ctx, core.IdentityTypeNode, ns, nameOrID); err != nil {
 			return nil, err
 		}
 	} else if node, err = nm.database.GetIdentityByID(ctx, u); err != nil {
@@ -82,9 +82,9 @@ func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, nameOrID string) (n
 	return node, nil
 }
 
-func (nm *networkMap) GetNodes(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+func (nm *networkMap) GetNodes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("type", core.IdentityTypeNode))
-	filter.Condition(filter.Builder().Eq("namespace", core.SystemNamespace))
+	filter.Condition(filter.Builder().Eq("namespace", ns))
 	return nm.database.GetIdentities(ctx, filter)
 }
 
@@ -131,16 +131,16 @@ func (nm *networkMap) GetIdentityByIDWithVerifiers(ctx context.Context, ns, id s
 	return nm.withVerifiers(ctx, identity)
 }
 
-func (nm *networkMap) GetIdentityByDID(ctx context.Context, did string) (*core.Identity, error) {
-	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, did)
+func (nm *networkMap) GetIdentityByDID(ctx context.Context, ns, did string) (*core.Identity, error) {
+	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, did)
 	if err != nil {
 		return nil, err
 	}
 	return identity, nil
 }
 
-func (nm *networkMap) GetIdentityByDIDWithVerifiers(ctx context.Context, did string) (*core.IdentityWithVerifiers, error) {
-	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, did)
+func (nm *networkMap) GetIdentityByDIDWithVerifiers(ctx context.Context, ns, did string) (*core.IdentityWithVerifiers, error) {
+	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, did)
 	if err != nil {
 		return nil, err
 	}
@@ -152,16 +152,12 @@ func (nm *networkMap) GetIdentities(ctx context.Context, ns string, filter datab
 	return nm.database.GetIdentities(ctx, filter)
 }
 
-func (nm *networkMap) GetIdentitiesGlobal(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
-	return nm.database.GetIdentities(ctx, filter)
-}
-
 func (nm *networkMap) GetIdentitiesWithVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
 	filter.Condition(filter.Builder().Eq("namespace", ns))
-	return nm.GetIdentitiesWithVerifiersGlobal(ctx, filter)
+	return nm.getIdentitiesWithVerifiersGlobal(ctx, filter)
 }
 
-func (nm *networkMap) GetIdentitiesWithVerifiersGlobal(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+func (nm *networkMap) getIdentitiesWithVerifiersGlobal(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
 	identities, res, err := nm.database.GetIdentities(ctx, filter)
 	if err != nil {
 		return nil, nil, err
@@ -210,8 +206,8 @@ func (nm *networkMap) GetDIDDocForIndentityByID(ctx context.Context, ns, id stri
 	return nm.generateDIDDocument(ctx, identity)
 }
 
-func (nm *networkMap) GetDIDDocForIndentityByDID(ctx context.Context, did string) (*DIDDocument, error) {
-	identity, err := nm.GetIdentityByDID(ctx, did)
+func (nm *networkMap) GetDIDDocForIndentityByDID(ctx context.Context, ns, did string) (*DIDDocument, error) {
+	identity, err := nm.GetIdentityByDID(ctx, ns, did)
 	if err != nil {
 		return nil, err
 	}

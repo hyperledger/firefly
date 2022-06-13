@@ -3,8 +3,8 @@
 package batchmocks
 
 import (
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
 	batch "github.com/hyperledger/firefly/internal/batch"
-	core "github.com/hyperledger/firefly/pkg/core"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -36,7 +36,7 @@ func (_m *Manager) NewMessages() chan<- int64 {
 }
 
 // RegisterDispatcher provides a mock function with given fields: name, txType, msgTypes, handler, batchOptions
-func (_m *Manager) RegisterDispatcher(name string, txType core.FFEnum, msgTypes []core.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
+func (_m *Manager) RegisterDispatcher(name string, txType fftypes.FFEnum, msgTypes []fftypes.FFEnum, handler batch.DispatchHandler, batchOptions batch.DispatcherOptions) {
 	_m.Called(name, txType, msgTypes, handler, batchOptions)
 }
 

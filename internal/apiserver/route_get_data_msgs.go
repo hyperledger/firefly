@@ -19,26 +19,28 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getDataMsgs = &oapispec.Route{
+var getDataMsgs = &ffapi.Route{
 	Name:   "getDataMsgs",
 	Path:   "data/{dataid}/messages",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "dataid", Description: coremsgs.APIParamsDataID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   database.MessageQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetDataMsgs,
+	Description:     coremsgs.APIEndpointsGetDataMsgs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetMessagesForData(r.Ctx, extractNamespace(r.PP), r.PP["dataid"], r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.MessageQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetMessagesForData(cr.ctx, extractNamespace(r.PP), r.PP["dataid"], cr.filter))
+		},
 	},
 }

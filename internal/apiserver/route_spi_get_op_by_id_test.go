@@ -25,13 +25,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestAdminGetOperationByID(t *testing.T) {
-	o, r := newTestAdminServer()
-	req := httptest.NewRequest("GET", "/admin/api/v1/operations/abcd12345", nil)
+func TestSPIGetOperationByID(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/operations/ns1:0df3d864-2646-4e5d-8585-51eb154a8d23", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperationByID", mock.Anything, "abcd12345").
+	o.On("GetOperationByNamespacedID", mock.Anything, "ns1:0df3d864-2646-4e5d-8585-51eb154a8d23").
 		Return(&core.Operation{}, nil)
 	r.ServeHTTP(res, req)
 

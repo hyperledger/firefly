@@ -284,6 +284,7 @@ var (
 	ContractListenerOptions   = ffm("ContractListener.options", "Options that control how the listener subscribes to events from the underlying blockchain")
 	ContractListenerEventPath = ffm("ContractListener.eventPath", "When creating a listener from an existing FFI, this is the pathname of the event on that FFI to be detected by this listener")
 	ContractListenerSignature = ffm("ContractListener.signature", "The stringified signature of the event, as computed by the blockchain plugin")
+	ContractListenerState     = ffm("ContractListener.state", "This field is provided for the event listener implementation of the blockchain provider to record state, such as checkpoint information")
 
 	// ContractListenerOptions field descriptions
 	ContractListenerOptionsFirstEvent = ffm("ContractListenerOptions.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors. Default is 'newest'")
@@ -388,9 +389,9 @@ var (
 	NetworkActionType          = ffm("NetworkAction.type", "The action to be performed")
 
 	// NodeStatus field descriptions
+	NodeNamespace  = ffm("NodeStatus.namespace", "The namespace that this status applies to")
 	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
 	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
-	NodeDefaults   = ffm("NodeStatus.defaults", "Information about defaults configured on this node that appplications might need to query on startup")
 	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
 
 	// NodeStatusNode field descriptions
@@ -587,6 +588,7 @@ var (
 	ContractCallRequestMethod     = ffm("ContractCallRequest.method", "An in-line FFI method definition for the method to invoke. Required when FFI is not specified")
 	ContractCallRequestMethodPath = ffm("ContractCallRequest.methodPath", "The pathname of the method on the specified FFI")
 	ContractCallRequestInput      = ffm("ContractCallRequest.input", "A map of named inputs. The name and type of each input must be compatible with the FFI description of the method, so that FireFly knows how to serialize it to the blockchain via the connector")
+	ContractCallRequestOptions    = ffm("ContractCallRequest.options", "A map of named inputs that will be passed through to the blockchain connector")
 
 	// WebSocketStatus field descriptions
 	WebSocketStatusEnabled     = ffm("WebSocketStatus.enabled", "Indicates whether the websockets plugin is enabled")

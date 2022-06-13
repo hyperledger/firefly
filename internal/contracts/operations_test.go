@@ -33,8 +33,9 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	cm := newTestContractManager()
 
 	op := &core.Operation{
-		Type: core.OpTypeBlockchainInvoke,
-		ID:   fftypes.NewUUID(),
+		Type:      core.OpTypeBlockchainInvoke,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	req := &core.ContractCallRequest{
 		Key:      "0x123",
@@ -50,11 +51,11 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	assert.NoError(t, err)
 
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("InvokeContract", context.Background(), op.ID, "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
+	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
 		return loc.String() == req.Location.String()
 	}), mock.MatchedBy(func(method *core.FFIMethod) bool {
 		return method.Name == req.Method.Name
-	}), req.Input).Return(nil)
+	}), req.Input, req.Options).Return(nil)
 
 	po, err := cm.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)

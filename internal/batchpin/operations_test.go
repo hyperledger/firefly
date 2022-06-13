@@ -32,8 +32,9 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	bp := newTestBatchPinSubmitter(t, false)
 
 	op := &core.Operation{
-		Type: core.OpTypeBlockchainPinBatch,
-		ID:   fftypes.NewUUID(),
+		Type:      core.OpTypeBlockchainPinBatch,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
 	}
 	batch := &core.BatchPersisted{
 		BatchHeader: core.BatchHeader{
@@ -52,7 +53,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(batch, nil)
-	mbi.On("SubmitBatchPin", context.Background(), op.ID, "0x123", mock.Anything).Return(nil)
+	mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything).Return(nil)
 
 	po, err := bp.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)

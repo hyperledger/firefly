@@ -28,10 +28,10 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	identitymanager "github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
-	"github.com/hyperledger/firefly/mocks/admineventsmocks"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
 	"github.com/hyperledger/firefly/mocks/batchpinmocks"
@@ -52,6 +52,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -90,7 +91,7 @@ type testOrchestrator struct {
 	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
-	mae *admineventsmocks.Manager
+	mae *spieventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
 	mns *namespacemocks.Manager
 }
@@ -150,7 +151,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
-		mae: &admineventsmocks.Manager{},
+		mae: &spieventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 		mns: &namespacemocks.Manager{},
 	}
@@ -880,7 +881,7 @@ func TestInitSharedStorageDownloadComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitAdminEventsInit(t *testing.T) {
+func TestInitSPIEventsInit(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.adminEvents = nil
@@ -982,6 +983,7 @@ func TestStartBatchFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.mmi.On("Start").Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -1001,6 +1003,7 @@ func TestStartTokensFail(t *testing.T) {
 	or.mpm.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	or.mti.On("Start").Return(fmt.Errorf("pop"))
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	err := or.Start()
@@ -1016,6 +1019,7 @@ func TestStartBlockchainsFail(t *testing.T) {
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
 	or.mbi.On("Start").Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1028,6 +1032,7 @@ func TestStartBlockchainsConfigureFail(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, "ff_system").Return(&core.Namespace{}, nil)
 	or.mbi.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
 	or.mba.On("Start").Return(nil)
+	or.mmi.On("Start").Return(nil)
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -1082,7 +1087,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mmi, or.Metrics())
 	assert.Equal(t, or.mom, or.Operations())
-	assert.Equal(t, or.mae, or.AdminEvents())
+	assert.Equal(t, or.mae, or.SPIEvents())
 }
 
 func TestInitOKWithMetrics(t *testing.T) {
@@ -1106,7 +1111,7 @@ func TestInitOKWithMetrics(t *testing.T) {
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mom, or.Operations())
-	assert.Equal(t, or.mae, or.AdminEvents())
+	assert.Equal(t, or.mae, or.SPIEvents())
 }
 
 func TestInitNamespaceFail(t *testing.T) {
@@ -1151,24 +1156,31 @@ func TestInitDataExchangeWithNodes(t *testing.T) {
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.blockchain = or.mbi
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.NoError(t, err)
 }
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(nil, fmt.Errorf("pop"))
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
 }
 
 func TestNetworkActionBadType(t *testing.T) {
 	or := newTestOrchestrator()
-	verifier := &core.VerifierRef{Value: "0x123"}
-	or.mim.On("GetNodeOwnerBlockchainKey", context.Background()).Return(verifier, nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
+	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10397", err)
+}
+
+func TestNetworkActionTerminateBadNamespace(t *testing.T) {
+	or := newTestOrchestrator()
+	or.blockchain = or.mbi
+	or.mim.On("NormalizeSigningKey", context.Background(), "ns1", "", identitymanager.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
+	err := or.SubmitNetworkAction(context.Background(), "ns1", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.Regexp(t, "FF10399", err)
 }

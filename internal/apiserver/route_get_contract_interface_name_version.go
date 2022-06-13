@@ -20,31 +20,32 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getContractInterfaceNameVersion = &oapispec.Route{
+var getContractInterfaceNameVersion = &ffapi.Route{
 	Name:   "getContractInterfaceByNameAndVersion",
 	Path:   "contracts/interfaces/{name}/{version}",
 	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "name", Description: coremsgs.APIParamsContractInterfaceName},
 		{Name: "version", Description: coremsgs.APIParamsContractInterfaceVersion},
 	},
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "fetchchildren", Example: "true", Description: coremsgs.APIParamsContractInterfaceFetchChildren, IsBool: true},
 	},
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetContractInterfaceNameVersion,
+	Description:     coremsgs.APIEndpointsGetContractInterfaceNameVersion,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		if strings.EqualFold(r.QP["fetchchildren"], "true") {
-			return getOr(r.Ctx).Contracts().GetFFIWithChildren(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
-		}
-		return getOr(r.Ctx).Contracts().GetFFI(r.Ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			if strings.EqualFold(r.QP["fetchchildren"], "true") {
+				return cr.or.Contracts().GetFFIWithChildren(cr.ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+			}
+			return cr.or.Contracts().GetFFI(cr.ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+		},
 	},
 }

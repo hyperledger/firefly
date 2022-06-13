@@ -23,15 +23,15 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
-type ValidatorType = FFEnum
+type ValidatorType = fftypes.FFEnum
 
 var (
 	// ValidatorTypeJSON is the validator type for JSON Schema validation
-	ValidatorTypeJSON = ffEnum("validatortype", "json")
+	ValidatorTypeJSON = fftypes.FFEnumValue("validatortype", "json")
 	// ValidatorTypeNone explicitly disables validation, even when a datatype is set. Allowing categorization of datatype without validation.
-	ValidatorTypeNone = ffEnum("validatortype", "none")
+	ValidatorTypeNone = fftypes.FFEnumValue("validatortype", "none")
 	// ValidatorTypeSystemDefinition is the validator type for system definitions
-	ValidatorTypeSystemDefinition = ffEnum("validatortype", "definition")
+	ValidatorTypeSystemDefinition = fftypes.FFEnumValue("validatortype", "definition")
 )
 
 // Datatype is the structure defining a data definition, such as a JSON schema

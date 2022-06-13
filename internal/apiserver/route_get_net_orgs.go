@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getNetworkOrgs = &oapispec.Route{
+var getNetworkOrgs = &ffapi.Route{
 	Name:            "getNetworkOrgs",
 	Path:            "network/organizations",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.IdentityQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetNetworkOrgs,
+	Description:     coremsgs.APIEndpointsGetNetworkOrgs,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Identity{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).NetworkMap().GetOrganizations(r.Ctx, r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.IdentityQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.NetworkMap().GetOrganizations(cr.ctx, extractNamespace(r.PP), cr.filter))
+		},
 	},
 }

@@ -181,22 +181,29 @@ func (s *SQLCommon) UpdateOperation(ctx context.Context, ns string, id *fftypes.
 		sq.Eq{"namespace": ns},
 	})
 
-	_, err = s.updateTx(ctx, operationsTable, tx, query, func() {
+	ra, err := s.updateTx(ctx, operationsTable, tx, query, func() {
 		s.callbacks.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeUpdated, ns, id)
 	})
 	if err != nil {
 		return err
 	}
+	if ra < 1 {
+		return i18n.NewError(ctx, coremsgs.Msg404NoResult)
+	}
 
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg string, output fftypes.JSONObject) (err error) {
-	update := database.OperationQueryFactory.NewUpdate(ctx).
-		Set("status", status).
-		Set("error", errorMsg)
+func (s *SQLCommon) ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error) {
+	update := database.OperationQueryFactory.NewUpdate(ctx).S()
+	if status != "" {
+		update = update.Set("status", status)
+	}
+	if errorMsg != nil {
+		update = update.Set("error", *errorMsg)
+	}
 	if output != nil {
-		update.Set("output", output)
+		update = update.Set("output", output)
 	}
 	return s.UpdateOperation(ctx, ns, id, update)
 }

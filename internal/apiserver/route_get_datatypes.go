@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getDatatypes = &oapispec.Route{
+var getDatatypes = &ffapi.Route{
 	Name:            "getDatatypes",
 	Path:            "datatypes",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.DatatypeQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetDatatypes,
+	Description:     coremsgs.APIEndpointsGetDatatypes,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(getOr(r.Ctx).GetDatatypes(r.Ctx, extractNamespace(r.PP), r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.DatatypeQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.GetDatatypes(cr.ctx, extractNamespace(r.PP), cr.filter))
+		},
 	},
 }

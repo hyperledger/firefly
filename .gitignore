@@ -15,3 +15,4 @@ frontend
 __debug*
 !deploy/charts/firefly
 containerlogs
+.vscode/*.log

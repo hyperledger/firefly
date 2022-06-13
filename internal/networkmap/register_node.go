@@ -25,9 +25,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *core.Identity, err error) {
+func (nm *networkMap) RegisterNode(ctx context.Context, ns string, waitConfirm bool) (identity *core.Identity, err error) {
 
-	nodeOwningOrg, err := nm.identity.GetNodeOwnerOrg(ctx)
+	nodeOwningOrg, err := nm.identity.GetMultipartyRootOrg(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -52,5 +52,5 @@ func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (ident
 	}
 	nodeRequest.Profile = dxInfo
 
-	return nm.RegisterIdentity(ctx, core.SystemNamespace, nodeRequest, waitConfirm)
+	return nm.RegisterIdentity(ctx, ns, nodeRequest, waitConfirm)
 }

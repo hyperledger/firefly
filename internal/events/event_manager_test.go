@@ -86,7 +86,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	if metrics {
 		mmi.On("TransferConfirmed", mock.Anything)
 	}
-	mni.On("GetNodeUUID", mock.Anything).Return(testNodeID).Maybe()
+	mni.On("GetNodeUUID", mock.Anything, "ns1").Return(testNodeID).Maybe()
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()

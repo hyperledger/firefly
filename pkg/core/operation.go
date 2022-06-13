@@ -16,38 +16,45 @@
 
 package core
 
-import "github.com/hyperledger/firefly-common/pkg/fftypes"
+import (
+	"context"
+	"strings"
+
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
+)
 
 // OpType describes mechanical steps in the process that have to be performed,
 // might be asynchronous, and have results in the back-end systems that might need
 // to be correlated with messages by operators.
-type OpType = FFEnum
+type OpType = fftypes.FFEnum
 
 var (
 	// OpTypeBlockchainPinBatch is a blockchain transaction to pin a batch
-	OpTypeBlockchainPinBatch = ffEnum("optype", "blockchain_pin_batch")
+	OpTypeBlockchainPinBatch = fftypes.FFEnumValue("optype", "blockchain_pin_batch")
 	// OpTypeBlockchainInvoke is a smart contract invoke
-	OpTypeBlockchainInvoke = ffEnum("optype", "blockchain_invoke")
+	OpTypeBlockchainInvoke = fftypes.FFEnumValue("optype", "blockchain_invoke")
 	// OpTypeSharedStorageUploadBatch is a shared storage operation to upload broadcast data
-	OpTypeSharedStorageUploadBatch = ffEnum("optype", "sharedstorage_upload_batch")
+	OpTypeSharedStorageUploadBatch = fftypes.FFEnumValue("optype", "sharedstorage_upload_batch")
 	// OpTypeSharedStorageUploadBlob is a shared storage operation to upload blob data
-	OpTypeSharedStorageUploadBlob = ffEnum("optype", "sharedstorage_upload_blob")
+	OpTypeSharedStorageUploadBlob = fftypes.FFEnumValue("optype", "sharedstorage_upload_blob")
 	// OpTypeSharedStorageDownloadBatch is a shared storage operation to download broadcast data
-	OpTypeSharedStorageDownloadBatch = ffEnum("optype", "sharedstorage_download_batch")
+	OpTypeSharedStorageDownloadBatch = fftypes.FFEnumValue("optype", "sharedstorage_download_batch")
 	// OpTypeSharedStorageDownloadBlob is a shared storage operation to download broadcast data
-	OpTypeSharedStorageDownloadBlob = ffEnum("optype", "sharedstorage_download_blob")
+	OpTypeSharedStorageDownloadBlob = fftypes.FFEnumValue("optype", "sharedstorage_download_blob")
 	// OpTypeDataExchangeSendBatch is a private send of a batch
-	OpTypeDataExchangeSendBatch = ffEnum("optype", "dataexchange_send_batch")
+	OpTypeDataExchangeSendBatch = fftypes.FFEnumValue("optype", "dataexchange_send_batch")
 	// OpTypeDataExchangeSendBlob is a private send of a blob
-	OpTypeDataExchangeSendBlob = ffEnum("optype", "dataexchange_send_blob")
+	OpTypeDataExchangeSendBlob = fftypes.FFEnumValue("optype", "dataexchange_send_blob")
 	// OpTypeTokenCreatePool is a token pool creation
-	OpTypeTokenCreatePool = ffEnum("optype", "token_create_pool")
+	OpTypeTokenCreatePool = fftypes.FFEnumValue("optype", "token_create_pool")
 	// OpTypeTokenActivatePool is a token pool activation
-	OpTypeTokenActivatePool = ffEnum("optype", "token_activate_pool")
+	OpTypeTokenActivatePool = fftypes.FFEnumValue("optype", "token_activate_pool")
 	// OpTypeTokenTransfer is a token transfer
-	OpTypeTokenTransfer = ffEnum("optype", "token_transfer")
+	OpTypeTokenTransfer = fftypes.FFEnumValue("optype", "token_transfer")
 	// OpTypeTokenApproval is a token approval
-	OpTypeTokenApproval = ffEnum("optype", "token_approval")
+	OpTypeTokenApproval = fftypes.FFEnumValue("optype", "token_approval")
 )
 
 // OpStatus is the current status of an operation
@@ -97,6 +104,13 @@ type Operation struct {
 	Retry       *fftypes.UUID      `ffstruct:"Operation" json:"retry,omitempty" ffexcludeinput:"true"`
 }
 
+// OperationUpdateDTO is the subset of fields on an operation that are mutable, via the SPI
+type OperationUpdateDTO struct {
+	Status OpStatus           `ffstruct:"Operation" json:"status"`
+	Output fftypes.JSONObject `ffstruct:"Operation" json:"output,omitempty"`
+	Error  *string            `ffstruct:"Operation" json:"error,omitempty"`
+}
+
 // PreparedOperation is an operation that has gathered all the raw data ready to send to a plugin
 // It is never stored, but it should always be possible for the owning Manager to generate a
 // PreparedOperation from an Operation. Data is defined by the Manager, but should be JSON-serializable
@@ -106,4 +120,22 @@ type PreparedOperation struct {
 	Namespace string        `json:"namespace"`
 	Type      OpType        `json:"type" ffenum:"optype"`
 	Data      interface{}   `json:"data"`
+}
+
+func (po *PreparedOperation) NamespacedIDString() string {
+	return po.Namespace + ":" + po.ID.String()
+}
+
+func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.UUID, error) {
+	nsIDSplit := strings.Split(nsIDStr, ":")
+	if len(nsIDSplit) != 2 {
+		return "", nil, i18n.NewError(context.Background(), coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
+	}
+	ns := nsIDSplit[0]
+	uuidStr := nsIDSplit[1]
+	if err := ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+		return "", nil, err
+	}
+	u, err := fftypes.ParseUUID(ctx, uuidStr)
+	return ns, u, err
 }

@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getTokenApprovals = &oapispec.Route{
+var getTokenApprovals = &ffapi.Route{
 	Name:            "getTokenApprovals",
 	Path:            "tokens/approvals",
 	Method:          http.MethodGet,
 	PathParams:      nil,
-	FilterFactory:   database.TokenApprovalQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetTokenApprovals,
+	Description:     coremsgs.APIEndpointsGetTokenApprovals,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.TokenApproval{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		filter := r.Filter
-		return filterResult(getOr(r.Ctx).Assets().GetTokenApprovals(r.Ctx, extractNamespace(r.PP), filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.TokenApprovalQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			filter := cr.filter
+			return filterResult(cr.or.Assets().GetTokenApprovals(cr.ctx, extractNamespace(r.PP), filter))
+		},
 	},
 }

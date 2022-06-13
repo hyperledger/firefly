@@ -56,16 +56,16 @@ func newTestFabric() (*Fabric, func()) {
 	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
-		ctx:              ctx,
-		client:           resty.New().SetBaseURL("http://localhost:12345"),
-		defaultChannel:   "firefly",
-		fireflyChaincode: "firefly",
-		topic:            "topic1",
-		prefixShort:      defaultPrefixShort,
-		prefixLong:       defaultPrefixLong,
-		callbacks:        em,
-		wsconn:           wsm,
+		ctx:            ctx,
+		client:         resty.New().SetBaseURL("http://localhost:12345"),
+		defaultChannel: "firefly",
+		topic:          "topic1",
+		prefixShort:    defaultPrefixShort,
+		prefixLong:     defaultPrefixLong,
+		callbacks:      em,
+		wsconn:         wsm,
 	}
+	e.fireflyContract.chaincode = "firefly"
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -98,6 +98,19 @@ func testFFIMethod() *core.FFIMethod {
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 		},
+	}
+}
+
+func mockNetworkVersion(t *testing.T, version float64) func(req *http.Request) (*http.Response, error) {
+	return func(req *http.Request) (*http.Response, error) {
+		var body map[string]interface{}
+		json.NewDecoder(req.Body).Decode(&body)
+		if body["func"] == "NetworkVersion" {
+			return httpmock.NewJsonResponderOrPanic(200, fabQueryNamedOutput{
+				Result: version,
+			})(req)
+		}
+		return nil, nil
 	}
 }
 
@@ -152,6 +165,7 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 			assert.Equal(t, "0", body["fromBlock"])
 			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
 		})
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/query", httpURL), mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
@@ -171,9 +185,9 @@ func TestInitAllNewStreamsAndWSEvent(t *testing.T) {
 	err = e.Start()
 	assert.NoError(t, err)
 
-	assert.Equal(t, 4, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+	assert.Equal(t, 5, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 	assert.NotNil(t, e.Capabilities())
 
 	startupMessage := <-toServer
@@ -248,6 +262,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"), mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -261,9 +276,9 @@ func TestInitAllExistingStreams(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 
 }
 
@@ -282,6 +297,8 @@ func TestInitNewConfig(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
 			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
 		}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -295,9 +312,9 @@ func TestInitNewConfig(t *testing.T) {
 	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.initInfo.stream.ID)
-	assert.Equal(t, "sub12345", e.initInfo.sub.ID)
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.streamID)
+	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 
 }
 
@@ -355,6 +372,108 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 
 }
 
+func TestInitNetworkVersionNotFound(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
+		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Function NetworkVersion not found"}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	assert.NoError(t, err)
+	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "firefly", e.fireflyContract.chaincode)
+	assert.Equal(t, 1, e.fireflyContract.networkVersion)
+}
+
+func TestInitNetworkVersionError(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
+		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "Unknown"}))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	assert.NoError(t, err)
+	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
+	assert.Regexp(t, "FF10284", err)
+}
+
+func TestInitNetworkVersionBadResponse(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/query",
+		httpmock.NewJsonResponderOrPanic(200, ""))
+
+	resetConf(e)
+	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utFabconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utFabconnectConf.Set(FabconnectConfigSigner, "signer001")
+	utFabconnectConf.Set(FabconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractChaincode, "firefly")
+
+	err := e.Init(e.ctx, utConfig, &blockchainmocks.Callbacks{}, e.metrics)
+	assert.NoError(t, err)
+	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
+	assert.Regexp(t, "json: cannot unmarshal", err)
+}
+
 func TestInitTerminateContract(t *testing.T) {
 	e, _ := newTestFabric()
 
@@ -378,6 +497,8 @@ func TestInitTerminateContract(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sb-1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -436,6 +557,8 @@ func TestInitTerminateContractIgnore(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sb-1"}))
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utFabconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -606,7 +729,7 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), "", signer, batch)
 
 	assert.NoError(t, err)
 
@@ -641,7 +764,7 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), "", signer, batch)
 
 	assert.NoError(t, err)
 
@@ -669,7 +792,7 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), "", signer, batch)
 
 	assert.Regexp(t, "FF10284.*pop", err)
 
@@ -699,7 +822,7 @@ func TestSubmitBatchPinError(t *testing.T) {
 			"error": "Invalid",
 		}))
 
-	err := e.SubmitBatchPin(context.Background(), nil, signer, batch)
+	err := e.SubmitBatchPin(context.Background(), "", signer, batch)
 
 	assert.Regexp(t, "FF10284.*Invalid", err)
 
@@ -824,9 +947,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeMSPIdentity,
@@ -873,9 +994,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeMSPIdentity,
@@ -922,9 +1041,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeMSPIdentity,
@@ -955,9 +1072,7 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -981,9 +1096,7 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -996,9 +1109,7 @@ func TestHandleMessageUnknownEventName(t *testing.T) {
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -1018,9 +1129,7 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -1040,9 +1149,7 @@ func TestHandleMessageBatchPinBadPin(t *testing.T) {
 func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -1062,9 +1169,7 @@ func TestHandleMessageBatchPinBadPayloadEncoding(t *testing.T) {
 func TestHandleMessageBatchPinBadPayloadUUIDs(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{callbacks: em}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 	data := []byte(`[{
 		"chaincodeId": "firefly",
 		"blockNumber": 91,
@@ -1143,7 +1248,7 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 		"errorMessage": "Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
 		"headers": {
 			"id": "3a37b17b-13b6-4dc5-647a-07c11eae0be3",
-			"requestId": "` + operationID.String() + `",
+			"requestId": "ns1:` + operationID.String() + `",
 			"requestOffset": "zzn4y4v4si-zzjjepe9x4-requests:0:0",
 			"timeElapsed": 0.020969053,
 			"timeReceived": "2021-05-31T02:35:11.458880504Z",
@@ -1155,7 +1260,7 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 	em := e.callbacks.(*blockchainmocks.Callbacks)
 	txsu := em.On("BlockchainOpUpdate",
 		e,
-		operationID,
+		"ns1:"+operationID.String(),
 		core.OpStatusFailed,
 		"",
 		"Packing arguments for method 'broadcastBatch': abi: cannot use [3]uint8 as type [32]uint8 as argument",
@@ -1188,7 +1293,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"_id": "748e7587-9e72-4244-7351-808f69b88291",
 		"headers": {
 				"id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-				"requestId": "` + operationID.String() + `",
+				"requestId": "ns1:` + operationID.String() + `",
 				"requestOffset": "",
 				"timeElapsed": 0.475721,
 				"timeReceived": "2021-08-27T03:04:34.199742Z",
@@ -1200,7 +1305,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 
 	em.On("BlockchainOpUpdate",
 		e,
-		operationID,
+		"ns1:"+operationID.String(),
 		core.OpStatusSucceeded,
 		"ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
 		"",
@@ -1229,35 +1334,6 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 	e.handleReceipt(context.Background(), reply)
 }
 
-func TestHandleReceiptBadRequestID(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
-	wsm := &wsmocks.WSClient{}
-	e := &Fabric{
-		ctx:       context.Background(),
-		topic:     "topic1",
-		callbacks: em,
-		wsconn:    wsm,
-	}
-
-	var reply fftypes.JSONObject
-	data := []byte(`{
-		"_id": "748e7587-9e72-4244-7351-808f69b88291",
-		"headers": {
-				"id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-				"requestId": "bad-UUID",
-				"requestOffset": "",
-				"timeElapsed": 0.475721,
-				"timeReceived": "2021-08-27T03:04:34.199742Z",
-				"type": "TransactionSuccess"
-		},
-		"receivedAt": 1630033474675
-  }`)
-
-	err := json.Unmarshal(data, &reply)
-	assert.NoError(t, err)
-	e.handleReceipt(context.Background(), reply)
-}
-
 func TestHandleReceiptFailedTx(t *testing.T) {
 	em := &blockchainmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
@@ -1274,7 +1350,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 		"_id": "748e7587-9e72-4244-7351-808f69b88291",
 		"headers": {
 				"id": "0ef91fb6-09c5-4ca2-721c-74b4869097c2",
-				"requestId": "` + operationID.String() + `",
+				"requestId": "ns1:` + operationID.String() + `",
 				"requestOffset": "",
 				"timeElapsed": 0.475721,
 				"timeReceived": "2021-08-27T03:04:34.199742Z",
@@ -1286,7 +1362,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 
 	em.On("BlockchainOpUpdate",
 		e,
-		operationID,
+		"ns1:"+operationID.String(),
 		core.OpStatusFailed,
 		"ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2",
 		"",
@@ -1307,9 +1383,7 @@ func TestAddSubscription(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1346,9 +1420,7 @@ func TestAddSubscriptionBadLocation(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1371,9 +1443,7 @@ func TestAddSubscriptionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1405,9 +1475,7 @@ func TestDeleteSubscription(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1430,9 +1498,7 @@ func TestDeleteSubscriptionFail(t *testing.T) {
 	httpmock.ActivateNonDefault(e.client.GetClient())
 	defer httpmock.DeactivateAndReset()
 
-	e.initInfo.stream = &eventStream{
-		ID: "es-1",
-	}
+	e.streamID = "es-1"
 	e.streams = &streamManager{
 		client: e.client,
 	}
@@ -1468,9 +1534,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "4763a0c50e3bba7cef1a7ba35dd3f9f3426bb04d0156f326e84ec99387c4746d", e.BlockchainTXID)
@@ -1528,9 +1592,7 @@ func TestHandleMessageContractEventBadPayload(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	var events []interface{}
 	err := json.Unmarshal(data, &events)
@@ -1558,9 +1620,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
-	}
+	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1589,6 +1649,9 @@ func TestInvokeContractOK(t *testing.T) {
 		"y":           float64(2),
 		"description": "test",
 	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
@@ -1601,9 +1664,10 @@ func TestInvokeContractOK(t *testing.T) {
 			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
 			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
 			assert.Equal(t, "test", body["args"].(map[string]interface{})["description"])
+			assert.Equal(t, "customValue", body["customOption"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.NoError(t, err)
 }
 
@@ -1632,10 +1696,33 @@ func TestInvokeContractBadSchema(t *testing.T) {
 		"y":           float64(2),
 		"description": "test",
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF00127", err)
+}
+
+func TestInvokeContractInvalidOption(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	signingKey := fftypes.NewRandB32().String()
+	location := &Location{
+		Channel:   "firefly",
+		Chaincode: "simplestorage",
+	}
+	method := testFFIMethod()
+	params := map[string]interface{}{
+		"x": float64(1),
+		"y": float64(2),
+	}
+	options := map[string]interface{}{
+		"func": "foobar",
+	}
+	locationBytes, err := json.Marshal(location)
+	assert.NoError(t, err)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
+	assert.Regexp(t, "FF10398", err)
 }
 
 func TestInvokeContractChaincodeNotSet(t *testing.T) {
@@ -1648,9 +1735,10 @@ func TestInvokeContractChaincodeNotSet(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1669,13 +1757,14 @@ func TestInvokeContractFabconnectError(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -1695,6 +1784,9 @@ func TestQueryContractOK(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
+	options := map[string]interface{}{
+		"customOption": "customValue",
+	}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
@@ -1706,9 +1798,10 @@ func TestQueryContractOK(t *testing.T) {
 			assert.Equal(t, "simplestorage", body["headers"].(map[string]interface{})["chaincode"])
 			assert.Equal(t, "1", body["args"].(map[string]interface{})["x"])
 			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
+			assert.Equal(t, "customValue", body["customOption"])
 			return httpmock.NewJsonResponderOrPanic(200, &fabQueryNamedOutput{})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.NoError(t, err)
 }
 
@@ -1727,9 +1820,10 @@ func TestQueryContractInputNotJSON(t *testing.T) {
 	params := map[string]interface{}{
 		"bad": map[interface{}]interface{}{true: false},
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -1745,7 +1839,8 @@ func TestQueryContractBadLocation(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
-	_, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtr(`{"validLocation": false}`), method, params)
+	options := map[string]interface{}{}
+	_, err := e.QueryContract(context.Background(), fftypes.JSONAnyPtr(`{"validLocation": false}`), method, params, options)
 	assert.Regexp(t, "FF10310", err)
 }
 
@@ -1763,13 +1858,14 @@ func TestQueryContractFabconnectError(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, &fabQueryNamedOutput{})(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF10284", err)
 }
 
@@ -1787,6 +1883,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 		"x": float64(1),
 		"y": float64(2),
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/query`,
@@ -1799,7 +1896,7 @@ func TestQueryContractUnmarshalResponseError(t *testing.T) {
 			assert.Equal(t, "2", body["args"].(map[string]interface{})["y"])
 			return httpmock.NewStringResponder(200, "[definitely not JSON}")(req)
 		})
-	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	_, err = e.QueryContract(context.Background(), fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "invalid character", err)
 }
 
@@ -1843,13 +1940,14 @@ func TestInvokeJSONEncodeParamsError(t *testing.T) {
 		"x": map[bool]interface{}{true: false},
 		"y": float64(2),
 	}
+	options := map[string]interface{}{}
 	locationBytes, err := json.Marshal(location)
 	assert.NoError(t, err)
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		func(req *http.Request) (*http.Response, error) {
 			return httpmock.NewJsonResponderOrPanic(400, "")(req)
 		})
-	err = e.InvokeContract(context.Background(), nil, signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params)
+	err = e.InvokeContract(context.Background(), "", signingKey, fftypes.JSONAnyPtrBytes(locationBytes), method, params, options)
 	assert.Regexp(t, "FF00127", err)
 }
 
@@ -1897,7 +1995,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitNetworkAction(context.Background(), nil, signer, core.NetworkActionTerminate)
+	err := e.SubmitNetworkAction(context.Background(), "", signer, core.NetworkActionTerminate)
 	assert.NoError(t, err)
 
 }
@@ -1921,9 +2019,7 @@ func TestHandleNetworkAction(t *testing.T) {
 	e := &Fabric{
 		callbacks: em,
 	}
-	e.initInfo.sub = &subscription{
-		ID: "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e",
-	}
+	e.fireflyContract.subscription = "sb-0910f6a8-7bd6-4ced-453e-2db68149ce8e"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeMSPIdentity,
@@ -1940,4 +2036,10 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em.AssertExpectations(t)
 
+}
+
+func TestNetworkVersion(t *testing.T) {
+	e, _ := newTestFabric()
+	e.fireflyContract.networkVersion = 2
+	assert.Equal(t, 2, e.NetworkVersion(context.Background()))
 }

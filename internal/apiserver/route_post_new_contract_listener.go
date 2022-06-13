@@ -19,23 +19,24 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewContractListener = &oapispec.Route{
+var postNewContractListener = &ffapi.Route{
 	Name:            "postNewContractListener",
 	Path:            "contracts/listeners",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsPostNewContractListener,
+	Description:     coremsgs.APIEndpointsPostNewContractListener,
 	JSONInputValue:  func() interface{} { return &core.ContractListenerInput{} },
 	JSONOutputValue: func() interface{} { return &core.ContractListener{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Contracts().AddContractListener(r.Ctx, extractNamespace(r.PP), r.Input.(*core.ContractListenerInput))
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.Contracts().AddContractListener(cr.ctx, extractNamespace(r.PP), r.Input.(*core.ContractListenerInput))
+		},
 	},
 }

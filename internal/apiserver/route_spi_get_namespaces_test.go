@@ -1,4 +1,4 @@
-// Copyright © 2022 Kaleido, Inc.
+// Copyright © 2021 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -16,10 +16,24 @@
 
 package apiserver
 
-import "github.com/hyperledger/firefly/internal/oapispec"
+import (
+	"net/http/httptest"
+	"testing"
 
-var adminRoutes = []*oapispec.Route{
-	adminGetOpByID,
-	adminGetOps,
-	adminPatchOpByID,
+	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+func TestSPIGetNamespaces(t *testing.T) {
+	o, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/namespaces", nil)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	o.On("GetNamespaces", mock.Anything, mock.Anything).
+		Return([]*core.Namespace{}, nil, nil)
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 200, res.Result().StatusCode)
 }

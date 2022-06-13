@@ -29,16 +29,24 @@ const (
 	PluginConfigName = "name"
 	// PluginConfigType is the type of the plugin to be loaded
 	PluginConfigType = "type"
-	// NamespaceMode is the configured mode of a namespace
-	NamespaceMode = "mode"
-	// NamespaceRemoteName is the namespace name to be sent in plugin calls
-	NamespaceRemoteName = "remoteName"
-	// NamespacePlugins is the list of namespace plugins
-	NamespacePlugins = "plugins"
 	// NamespaceName is the short name for a pre-defined namespace
 	NamespaceName = "name"
 	// NamespaceName is the long description for a pre-defined namespace
 	NamespaceDescription = "description"
+	// NamespaceRemoteName is the namespace name to be sent in plugin calls
+	NamespaceRemoteName = "remoteName"
+	// NamespacePlugins is the list of namespace plugins
+	NamespacePlugins = "plugins"
+	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
+	NamespaceDefaultKey = "defaultKey"
+	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace
+	NamespaceMultipartyEnabled = "multiparty.enabled"
+	// NamespaceMultipartyOrgName is a short name for the local root org within a namespace
+	NamespaceMultipartyOrgName = "multiparty.org.name"
+	// NamespaceMultipartyOrgDescription is a description for the local root org within a namespace
+	NamespaceMultipartyOrgDescription = "multiparty.org.description"
+	// NamespaceMultipartyOrgKey is the signing key allocated to the local root org within a namespace
+	NamespaceMultipartyOrgKey = "multiparty.org.key"
 )
 
 // The following keys can be access from the root configuration.
@@ -186,16 +194,16 @@ var (
 	GroupCacheSize = ffc("group.cache.size")
 	// GroupCacheTTL cache time-to-live for private group addresses
 	GroupCacheTTL = ffc("group.cache.ttl")
-	// AdminEnabled determines whether the admin interface will be enabled or not
-	AdminEnabled = ffc("admin.enabled")
-	// AdminWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
-	AdminWebSocketEventQueueLength = ffc("admin.ws.eventQueueLength")
-	// AdminWebSocketBlockedWarnInterval how often to emit a warning if an admin.ws is blocked and not receiving events
-	AdminWebSocketBlockedWarnInterval = ffc("admin.ws.blockedWarnInterval")
-	// AdminWebSocketReadBufferSize is the WebSocket read buffer size for the admin change-event WebSocket
-	AdminWebSocketReadBufferSize = ffc("admin.ws.readBufferSize")
-	// AdminWebSocketWriteBufferSize is the WebSocket write buffer size for the admin change-event WebSocket
-	AdminWebSocketWriteBufferSize = ffc("admin.ws.writeBufferSize")
+	// SPIEnabled determines whether the admin interface will be enabled or not
+	SPIEnabled = ffc("spi.enabled")
+	// SPIWebSocketEventQueueLength is the maximum number of events that will queue up on the server side of each WebSocket connection before events start being dropped
+	SPIWebSocketEventQueueLength = ffc("spi.ws.eventQueueLength")
+	// SPIWebSocketBlockedWarnInterval how often to emit a warning if an admin.ws is blocked and not receiving events
+	SPIWebSocketBlockedWarnInterval = ffc("spi.ws.blockedWarnInterval")
+	// SPIWebSocketReadBufferSize is the WebSocket read buffer size for the admin change-event WebSocket
+	SPIWebSocketReadBufferSize = ffc("spi.ws.readBufferSize")
+	// SPIWebSocketWriteBufferSize is the WebSocket write buffer size for the admin change-event WebSocket
+	SPIWebSocketWriteBufferSize = ffc("spi.ws.writeBufferSize")
 	// IdentityManagerCacheTTL the identity manager cache time to live
 	IdentityManagerCacheTTL = ffc("identity.manager.cache.ttl")
 	// IdentityManagerCacheLimit the identity manager cache limit in count of items
@@ -218,7 +226,11 @@ var (
 	NamespacesDefault = ffc("namespaces.default")
 	// NamespacesPredefined is a list of namespaces to ensure exists, without requiring a broadcast from the network
 	NamespacesPredefined = ffc("namespaces.predefined")
-	// NodeName is a description for the node
+	// NamespaceCacheSize cache size for namespaces
+	NamespaceCacheSize = ffc("namespaces.cache.size")
+	// NamespaceCacheTTL cache time-to-live for namespaces
+	NamespaceCacheTTL = ffc("namespaces.cache.ttl")
+	// NodeName is the short name for the node
 	NodeName = ffc("node.name")
 	// NodeDescription is a description for the node
 	NodeDescription = ffc("node.description")
@@ -236,10 +248,8 @@ var (
 	OpUpdateWorkerBatchMaxInserts = ffc("opupdate.worker.batchMaxInserts")
 	// OpUpdateWorkerQueueLength
 	OpUpdateWorkerQueueLength = ffc("opupdate.worker.queueLength")
-	// OrgName is the short name o the org
+	// OrgName is the short name for the org
 	OrgName = ffc("org.name")
-	// OrgIdentityDeprecated deprecated synonym to org.key
-	OrgIdentityDeprecated = ffc("org.identity")
 	// OrgKey is the signing identity allocated to the organization (can be the same as the nodes)
 	OrgKey = ffc("org.key")
 	// OrgDescription is a description for the org
@@ -329,11 +339,11 @@ func setDefaults() {
 	viper.SetDefault(string(EventListenerTopicCacheTTL), "5m")
 	viper.SetDefault(string(GroupCacheSize), "1Mb")
 	viper.SetDefault(string(GroupCacheTTL), "1h")
-	viper.SetDefault(string(AdminEnabled), false)
-	viper.SetDefault(string(AdminWebSocketReadBufferSize), "16Kb")
-	viper.SetDefault(string(AdminWebSocketWriteBufferSize), "16Kb")
-	viper.SetDefault(string(AdminWebSocketBlockedWarnInterval), "1m")
-	viper.SetDefault(string(AdminWebSocketEventQueueLength), 250)
+	viper.SetDefault(string(SPIEnabled), false)
+	viper.SetDefault(string(SPIWebSocketReadBufferSize), "16Kb")
+	viper.SetDefault(string(SPIWebSocketWriteBufferSize), "16Kb")
+	viper.SetDefault(string(SPIWebSocketBlockedWarnInterval), "1m")
+	viper.SetDefault(string(SPIWebSocketEventQueueLength), 250)
 	viper.SetDefault(string(MessageCacheSize), "50Mb")
 	viper.SetDefault(string(MessageCacheTTL), "5m")
 	viper.SetDefault(string(MessageWriterBatchMaxInserts), 200)

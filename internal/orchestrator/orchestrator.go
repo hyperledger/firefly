@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/adminevents"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/batchpin"
@@ -46,6 +45,7 @@ import (
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
+	"github.com/hyperledger/firefly/internal/spievents"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -78,7 +78,7 @@ type Orchestrator interface {
 	Init(ctx context.Context, cancelCtx context.CancelFunc) error
 	Start() error
 	WaitStop() // The close itself is performed by canceling the context
-	AdminEvents() adminevents.Manager
+	SPIEvents() spievents.Manager
 	Assets() assets.Manager
 	BatchManager() batch.Manager
 	Broadcast() broadcast.Manager
@@ -91,7 +91,7 @@ type Orchestrator interface {
 	PrivateMessaging() privatemessaging.Manager
 
 	// Status
-	GetStatus(ctx context.Context) (*core.NodeStatus, error)
+	GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
@@ -124,9 +124,9 @@ type Orchestrator interface {
 	GetDatatypeByID(ctx context.Context, ns, id string) (*core.Datatype, error)
 	GetDatatypeByName(ctx context.Context, ns, name, version string) (*core.Datatype, error)
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
-	GetOperationByIDNamespaced(ctx context.Context, ns, id string) (*core.Operation, error)
 	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
-	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
+	GetOperationByID(ctx context.Context, ns, id string) (*core.Operation, error)
+	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
 	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*core.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
@@ -142,7 +142,7 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
-	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
+	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
 }
 
 type orchestrator struct {
@@ -175,7 +175,7 @@ type orchestrator struct {
 	node                 *fftypes.UUID
 	metrics              metrics.Manager
 	operations           operations.Manager
-	adminEvents          adminevents.Manager
+	adminEvents          spievents.Manager
 	sharedDownload       shareddownload.Manager
 	txHelper             txcommon.Helper
 	namespace            namespace.Manager
@@ -224,11 +224,14 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 
 func (or *orchestrator) Start() (err error) {
 	if err == nil {
+		err = or.metrics.Start()
+	}
+	if err == nil {
 		err = or.batch.Start()
 	}
 	var ns *core.Namespace
 	if err == nil {
-		ns, err = or.database.GetNamespace(or.ctx, core.SystemNamespace)
+		ns, err = or.database.GetNamespace(or.ctx, core.LegacySystemNamespace)
 	}
 	if err == nil {
 		for _, el := range or.blockchains {
@@ -264,9 +267,6 @@ func (or *orchestrator) Start() (err error) {
 				break
 			}
 		}
-	}
-	if err == nil {
-		err = or.metrics.Start()
 	}
 	or.started = true
 	return err
@@ -343,7 +343,7 @@ func (or *orchestrator) Operations() operations.Manager {
 	return or.operations
 }
 
-func (or *orchestrator) AdminEvents() adminevents.Manager {
+func (or *orchestrator) SPIEvents() spievents.Manager {
 	return or.adminEvents
 }
 
@@ -420,7 +420,6 @@ func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database.GetIdentities(ctx, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
-		fb.Eq("namespace", core.SystemNamespace),
 	))
 	if err != nil {
 		return err
@@ -497,7 +496,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	// Not really a plugin, but this has to be initialized here after the database (at least temporarily).
 	// Shortly after this step, namespaces will be synced to the database and will generate notifications to adminEvents.
 	if or.adminEvents == nil {
-		or.adminEvents = adminevents.NewAdminEventManager(ctx)
+		or.adminEvents = spievents.NewAdminEventManager(ctx)
 	}
 
 	if or.identityPlugins == nil {
@@ -795,7 +794,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugins, or.blockchain, or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.database, or.identityPlugins, or.blockchain, or.data, or.namespace)
 		if err != nil {
 			return err
 		}
@@ -870,7 +869,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.broadcast, or.dataexchange, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.database, or.data, or.broadcast, or.dataexchange, or.identity, or.syncasync, or.namespace)
 		if err != nil {
 			return err
 		}
@@ -888,13 +887,23 @@ func (or *orchestrator) initNamespaces(ctx context.Context) (err error) {
 	return or.namespace.Init(ctx, or.database)
 }
 
-func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
-	verifier, err := or.identity.GetNodeOwnerBlockchainKey(ctx)
+func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
+	key, err := or.identity.NormalizeSigningKey(ctx, ns, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return err
 	}
-	if action.Type != core.NetworkActionTerminate {
+	if action.Type == core.NetworkActionTerminate {
+		if ns != core.LegacySystemNamespace {
+			// For now, "terminate" only works on ff_system
+			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, ns)
+		}
+	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
-	return or.blockchain.SubmitNetworkAction(ctx, fftypes.NewUUID(), verifier.Value, action.Type)
+	// TODO: This should be a new operation type
+	po := &core.PreparedOperation{
+		Namespace: ns,
+		ID:        fftypes.NewUUID(),
+	}
+	return or.blockchain.SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
 }

@@ -20,28 +20,29 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewMessagePrivate = &oapispec.Route{
+var postNewMessagePrivate = &ffapi.Route{
 	Name:       "postNewMessagePrivate",
 	Path:       "messages/private",
 	Method:     http.MethodPost,
 	PathParams: nil,
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true},
 	},
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsPostNewMessagePrivate,
+	Description:     coremsgs.APIEndpointsPostNewMessagePrivate,
 	JSONInputValue:  func() interface{} { return &core.MessageInOut{} },
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		output, err = getOr(r.Ctx).PrivateMessaging().SendMessage(r.Ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut), waitConfirm)
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+			r.SuccessStatus = syncRetcode(waitConfirm)
+			output, err = cr.or.PrivateMessaging().SendMessage(cr.ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut), waitConfirm)
+			return output, err
+		},
 	},
 }

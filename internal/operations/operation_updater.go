@@ -36,7 +36,7 @@ import (
 
 // OperationUpdate is dispatched asynchronously to perform an update.
 type OperationUpdate struct {
-	ID             *fftypes.UUID
+	NamespacedOpID string
 	Status         core.OpStatus
 	BlockchainTXID string
 	ErrorMessage   string
@@ -100,23 +100,29 @@ func newOperationUpdater(ctx context.Context, om *operationsManager, di database
 }
 
 // pickWorker ensures multiple updates for the same ID go to the same worker
-func (ou *operationUpdater) pickWorker(ctx context.Context, update *OperationUpdate) chan *OperationUpdate {
-	worker := update.ID.HashBucket(ou.conf.workerCount)
-	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", update.ID, update.Status, update.BlockchainTXID, worker)
+func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, update *OperationUpdate) chan *OperationUpdate {
+	worker := id.HashBucket(ou.conf.workerCount)
+	log.L(ctx).Debugf("Submitting operation update id=%s status=%s blockchainTX=%s worker=opu_%.3d", id, update.Status, update.BlockchainTXID, worker)
 	return ou.workQueues[worker]
 }
 
 func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *OperationUpdate) {
+	_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+	if err != nil {
+		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
+		return
+	}
+
 	if ou.conf.workerCount > 0 {
 		select {
-		case ou.pickWorker(ctx, update) <- update:
+		case ou.pickWorker(ctx, id, update) <- update:
 		case <-ou.ctx.Done():
 			log.L(ctx).Debugf("Not submitting operation update due to cancelled context")
 		}
 		return
 	}
 	// Otherwise do it in-line on this context
-	err := ou.doBatchUpdateWithRetry(ctx, []*OperationUpdate{update})
+	err = ou.doBatchUpdateWithRetry(ctx, []*OperationUpdate{update})
 	if err != nil {
 		log.L(ctx).Warnf("Exiting while updating operation: %s", err)
 	}
@@ -198,9 +204,17 @@ func (ou *operationUpdater) doBatchUpdateWithRetry(ctx context.Context, updates 
 func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*OperationUpdate) error {
 
 	// Get all the operations that match
-	opIDs := make([]driver.Value, len(updates))
-	for idx, update := range updates {
-		opIDs[idx] = update.ID
+	opIDs := make([]driver.Value, 0, len(updates))
+	for _, update := range updates {
+		_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+		if err != nil {
+			log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
+			continue
+		}
+		opIDs = append(opIDs, id)
+	}
+	if len(opIDs) == 0 {
+		return nil
 	}
 	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", opIDs)
 	ops, _, err := ou.database.GetOperations(ctx, opFilter)
@@ -236,16 +250,22 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 
 func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdate, ops []*core.Operation, transactions []*core.Transaction) error {
 
+	_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+	if err != nil {
+		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
+		return nil
+	}
+
 	// Find the operation we already retrieved, and do the update
 	var op *core.Operation
 	for _, candidate := range ops {
-		if update.ID.Equals(candidate.ID) {
+		if id.Equals(candidate.ID) {
 			op = candidate
 			break
 		}
 	}
 	if op == nil {
-		log.L(ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", update.ID)
+		log.L(ctx).Warnf("Operation update '%s' ignored, as it was not submitted by this node", update.NamespacedOpID)
 		return nil
 	}
 
@@ -278,7 +298,7 @@ func (ou *operationUpdater) doUpdate(ctx context.Context, update *OperationUpdat
 		}
 	}
 
-	if err := ou.database.ResolveOperation(ctx, op.Namespace, op.ID, update.Status, update.ErrorMessage, update.Output); err != nil {
+	if err := ou.database.ResolveOperation(ctx, op.Namespace, op.ID, update.Status, &update.ErrorMessage, update.Output); err != nil {
 		return err
 	}
 

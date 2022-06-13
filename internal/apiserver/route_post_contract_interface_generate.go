@@ -19,24 +19,25 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postContractInterfaceGenerate = &oapispec.Route{
+var postContractInterfaceGenerate = &ffapi.Route{
 	Name:            "postGenerateContractInterface",
 	Path:            "contracts/interfaces/generate",
 	Method:          http.MethodPost,
 	PathParams:      nil,
-	QueryParams:     []*oapispec.QueryParam{},
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsPostContractInterfaceGenerate,
+	QueryParams:     []*ffapi.QueryParam{},
+	Description:     coremsgs.APIEndpointsPostContractInterfaceGenerate,
 	JSONInputValue:  func() interface{} { return &core.FFIGenerationRequest{} },
 	JSONOutputValue: func() interface{} { return &core.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		generationRequest := r.Input.(*core.FFIGenerationRequest)
-		return getOr(r.Ctx).Contracts().GenerateFFI(r.Ctx, extractNamespace(r.PP), generationRequest)
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			generationRequest := r.Input.(*core.FFIGenerationRequest)
+			return cr.or.Contracts().GenerateFFI(cr.ctx, extractNamespace(r.PP), generationRequest)
+		},
 	},
 }

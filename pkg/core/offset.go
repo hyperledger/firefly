@@ -16,15 +16,17 @@
 
 package core
 
-type OffsetType = FFEnum
+import "github.com/hyperledger/firefly-common/pkg/fftypes"
+
+type OffsetType = fftypes.FFEnum
 
 var (
 	// OffsetTypeBatch is an offset stored by the batch manager on the messages table
-	OffsetTypeBatch = ffEnum("offsettype", "batch")
+	OffsetTypeBatch = fftypes.FFEnumValue("offsettype", "batch")
 	// OffsetTypeAggregator is an offset stored by the aggregator on the events table
-	OffsetTypeAggregator = ffEnum("offsettype", "aggregator")
+	OffsetTypeAggregator = fftypes.FFEnumValue("offsettype", "aggregator")
 	// OffsetTypeSubscription is an offeset stored by a dispatcher on the events table
-	OffsetTypeSubscription = ffEnum("offsettype", "subscription")
+	OffsetTypeSubscription = fftypes.FFEnumValue("offsettype", "subscription")
 )
 
 // Offset is a simple stored data structure that records a sequence position within another collection

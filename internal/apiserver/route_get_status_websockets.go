@@ -19,23 +19,24 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getStatusWebSockets = &oapispec.Route{
+var getStatusWebSockets = &ffapi.Route{
 	Name:            "getStatusWebSockets",
 	Path:            "status/websockets",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetStatusWebSockets,
+	Description:     coremsgs.APIEndpointsGetStatusWebSockets,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.WebSocketStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return getOr(r.Ctx).Events().GetWebSocketStatus(), nil
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return cr.or.Events().GetWebSocketStatus(), nil
+		},
 	},
 }

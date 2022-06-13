@@ -20,27 +20,28 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNewContractAPI = &oapispec.Route{
+var postNewContractAPI = &ffapi.Route{
 	Name:       "postNewContractAPI",
 	Path:       "apis",
 	Method:     http.MethodPost,
 	PathParams: nil,
-	QueryParams: []*oapispec.QueryParam{
+	QueryParams: []*ffapi.QueryParam{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsPostNewContractAPI,
+	Description:     coremsgs.APIEndpointsPostNewContractAPI,
 	JSONInputValue:  func() interface{} { return &core.ContractAPI{} },
 	JSONOutputValue: func() interface{} { return &core.ContractAPI{} },
 	JSONOutputCodes: []int{http.StatusOK, http.StatusAccepted},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
-		r.SuccessStatus = syncRetcode(waitConfirm)
-		return getOr(r.Ctx).Contracts().BroadcastContractAPI(r.Ctx, r.APIBaseURL, extractNamespace(r.PP), r.Input.(*core.ContractAPI), waitConfirm)
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
+			r.SuccessStatus = syncRetcode(waitConfirm)
+			return cr.or.Contracts().BroadcastContractAPI(cr.ctx, cr.apiBaseURL, extractNamespace(r.PP), r.Input.(*core.ContractAPI), waitConfirm)
+		},
 	},
 }

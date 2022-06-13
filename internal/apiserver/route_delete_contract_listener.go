@@ -19,25 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var deleteContractListener = &oapispec.Route{
+var deleteContractListener = &ffapi.Route{
 	Name:   "deleteContractListener",
 	Path:   "contracts/listeners/{nameOrId}",
 	Method: http.MethodDelete,
-	PathParams: []*oapispec.PathParam{
+	PathParams: []*ffapi.PathParam{
 		{Name: "nameOrId", Description: coremsgs.APIParamsContractListenerNameOrID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsDeleteContractListener,
+	Description:     coremsgs.APIEndpointsDeleteContractListener,
 	JSONInputValue:  nil,
 	JSONOutputValue: nil,
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).Contracts().DeleteContractListenerByNameOrID(r.Ctx, extractNamespace(r.PP), r.PP["nameOrId"])
-		return nil, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			err = cr.or.Contracts().DeleteContractListenerByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			return nil, err
+		},
 	},
 }

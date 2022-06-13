@@ -19,24 +19,25 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 )
 
-var getStatusBatchManager = &oapispec.Route{
+var getStatusBatchManager = &ffapi.Route{
 	Name:            "getStatusBatchManager",
 	Path:            "status/batchmanager",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsGetStatusBatchManager,
+	Description:     coremsgs.APIEndpointsGetStatusBatchManager,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &batch.ManagerStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output = getOr(r.Ctx).BatchManager().Status()
-		return output, nil
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			output = cr.or.BatchManager().Status()
+			return output, nil
+		},
 	},
 }

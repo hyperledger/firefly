@@ -19,24 +19,25 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var postNetworkAction = &oapispec.Route{
+var postNetworkAction = &ffapi.Route{
 	Name:            "postNetworkAction",
 	Path:            "network/action",
 	Method:          http.MethodPost,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsPostNetworkAction,
+	Description:     coremsgs.APIEndpointsPostNetworkAction,
 	JSONInputValue:  func() interface{} { return &core.NetworkAction{} },
 	JSONOutputValue: func() interface{} { return &core.NetworkAction{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		err = getOr(r.Ctx).SubmitNetworkAction(r.Ctx, r.Input.(*core.NetworkAction))
-		return r.Input, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			err = cr.or.SubmitNetworkAction(cr.ctx, extractNamespace(r.PP), r.Input.(*core.NetworkAction))
+			return r.Input, err
+		},
 	},
 }

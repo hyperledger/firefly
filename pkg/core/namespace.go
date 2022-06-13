@@ -27,15 +27,15 @@ import (
 )
 
 // NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
-type NamespaceType = FFEnum
+type NamespaceType = fftypes.FFEnum
 
 var (
 	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node
-	NamespaceTypeLocal = ffEnum("namespacetype", "local")
+	NamespaceTypeLocal = fftypes.FFEnumValue("namespacetype", "local")
 	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
-	NamespaceTypeBroadcast = ffEnum("namespacetype", "broadcast")
+	NamespaceTypeBroadcast = fftypes.FFEnumValue("namespacetype", "broadcast")
 	// NamespaceTypeSystem is a reserved namespace used by FireFly itself
-	NamespaceTypeSystem = ffEnum("namespacetype", "system")
+	NamespaceTypeSystem = fftypes.FFEnumValue("namespacetype", "system")
 )
 
 // Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
@@ -62,11 +62,11 @@ type FireFlyContractInfo struct {
 }
 
 // NetworkActionType is a type of action to perform
-type NetworkActionType = FFEnum
+type NetworkActionType = fftypes.FFEnum
 
 var (
 	// NetworkActionTerminate request all network members to stop using the current contract and move to the next one configured
-	NetworkActionTerminate = ffEnum("networkactiontype", "terminate")
+	NetworkActionTerminate = fftypes.FFEnumValue("networkactiontype", "terminate")
 )
 
 type NetworkAction struct {

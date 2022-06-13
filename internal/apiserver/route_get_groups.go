@@ -19,24 +19,26 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-var getGroups = &oapispec.Route{
+var getGroups = &ffapi.Route{
 	Name:            "getGroups",
 	Path:            "groups",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	FilterFactory:   database.GroupQueryFactory,
-	DescriptionKey:  coremsgs.APIEndpointsGetGroups,
+	Description:     coremsgs.APIEndpointsGetGroups,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Group{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		return filterResult(r.Or.PrivateMessaging().GetGroupsNS(r.Ctx, extractNamespace(r.PP), r.Filter))
+	Extensions: &coreExtensions{
+		FilterFactory: database.GroupQueryFactory,
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			return filterResult(cr.or.PrivateMessaging().GetGroupsNS(cr.ctx, extractNamespace(r.PP), cr.filter))
+		},
 	},
 }

@@ -19,26 +19,27 @@ package apiserver
 import (
 	"net/http"
 
+	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/oapispec"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var adminGetOpByID = &oapispec.Route{
-	Name:   "adminGetOpByID",
-	Path:   "operations/{opid}",
-	Method: http.MethodGet,
-	PathParams: []*oapispec.PathParam{
-		{Name: "opid", Description: coremsgs.APIParamsOperationIDGet},
+var spiPatchOpByID = &ffapi.Route{
+	Name:   "spiPatchOpByID",
+	Path:   "operations/{nsopid}",
+	Method: http.MethodPatch,
+	PathParams: []*ffapi.PathParam{
+		{Name: "nsopid", Description: coremsgs.APIParamsOperationNamespacedID},
 	},
 	QueryParams:     nil,
-	FilterFactory:   nil,
-	DescriptionKey:  coremsgs.APIEndpointsAdminGetOpByID,
-	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.Operation{} },
+	Description:     coremsgs.APIEndpointsAdminPatchOpByID,
+	JSONInputValue:  func() interface{} { return &core.OperationUpdateDTO{} },
+	JSONOutputValue: func() interface{} { return &core.EmptyInput{} },
 	JSONOutputCodes: []int{http.StatusOK},
-	JSONHandler: func(r *oapispec.APIRequest) (output interface{}, err error) {
-		output, err = getOr(r.Ctx).GetOperationByID(r.Ctx, r.PP["opid"])
-		return output, err
+	Extensions: &coreExtensions{
+		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
+			err = cr.or.Operations().ResolveOperationByNamespacedID(cr.ctx, r.PP["nsopid"], r.Input.(*core.OperationUpdateDTO))
+			return &core.EmptyInput{}, err
+		},
 	},
 }

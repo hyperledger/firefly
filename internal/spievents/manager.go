@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package adminevents
+package spievents
 
 import (
 	"context"
@@ -50,16 +50,16 @@ type adminEventManager struct {
 func NewAdminEventManager(ctx context.Context) Manager {
 	ae := &adminEventManager{
 		upgrader: websocket.Upgrader{
-			ReadBufferSize:  int(config.GetByteSize(coreconfig.AdminWebSocketReadBufferSize)),
-			WriteBufferSize: int(config.GetByteSize(coreconfig.AdminWebSocketWriteBufferSize)),
+			ReadBufferSize:  int(config.GetByteSize(coreconfig.SPIWebSocketReadBufferSize)),
+			WriteBufferSize: int(config.GetByteSize(coreconfig.SPIWebSocketWriteBufferSize)),
 			CheckOrigin: func(r *http.Request) bool {
 				// Cors is handled by the API server that wraps this handler
 				return true
 			},
 		},
 		activeWebsockets:    make(map[string]*webSocket),
-		queueLength:         config.GetInt(coreconfig.AdminWebSocketEventQueueLength),
-		blockedWarnInterval: config.GetDuration(coreconfig.AdminWebSocketBlockedWarnInterval),
+		queueLength:         config.GetInt(coreconfig.SPIWebSocketEventQueueLength),
+		blockedWarnInterval: config.GetDuration(coreconfig.SPIWebSocketBlockedWarnInterval),
 	}
 	ae.ctx, ae.cancelCtx = context.WithCancel(
 		log.WithLogField(ctx, "role", "change-event-manager"),
