@@ -69,6 +69,7 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		DataExchange:  dataexchangeArray,
 		Events:        or.events.GetPlugins(),
 		Tokens:        tokensArray,
+		Identity:      []*core.NodeStatusPlugin{},
 	}
 }
 
