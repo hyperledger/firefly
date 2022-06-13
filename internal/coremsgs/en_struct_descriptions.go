@@ -445,6 +445,7 @@ var (
 
 	// Pin field descriptions
 	PinSequence   = ffm("Pin.sequence", "The order of the pin in the local FireFly database, which matches the order in which pins were delivered to FireFly by the blockchain connector event stream")
+	PinNamespace  = ffm("Pin.namespace", "The namespace of the pin")
 	PinMasked     = ffm("Pin.masked", "True if the pin is for a private message, and hence is masked with the group ID and salted with a nonce so observers of the blockchain cannot use pin hash to match this transaction to other transactions or participants")
 	PinHash       = ffm("Pin.hash", "The hash represents a topic within a message in the batch. If a message has multiple topics, then multiple pins are created. If the message is private, the hash is masked for privacy")
 	PinBatch      = ffm("Pin.batch", "The UUID of the batch of messages this pin is part of")
