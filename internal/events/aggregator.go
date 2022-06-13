@@ -103,7 +103,8 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 		getItems:         ag.getPins,
 		queryFactory:     database.PinQueryFactory,
 		addCriteria: func(af database.AndFilter) database.AndFilter {
-			return af.Condition(af.Builder().Eq("dispatched", false))
+			fb := af.Builder()
+			return af.Condition(fb.Eq("dispatched", false), fb.Eq("namespace", ns))
 		},
 		maybeRewind: ag.rewindOffchainBatches,
 	})
@@ -226,8 +227,7 @@ func (ag *aggregator) processPinsEventsHandler(items []core.LocallySequenced) (r
 
 func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
-	fb := database.PinQueryFactory.NewFilter(ctx)
-	pins, _, err := ag.database.GetPins(ctx, fb.And(filter, fb.Eq("namespace", ag.namespace)))
+	pins, _, err := ag.database.GetPins(ctx, filter)
 	ls := make([]core.LocallySequenced, len(pins))
 	for i, p := range pins {
 		ls[i] = p
