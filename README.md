@@ -43,7 +43,7 @@ all the plumbing for your blockchain application from scratch.
 
 There are lots of places you can contribute, regardless of whether your skills are front-end, backend-end, or full-stack.
 
-Check out our [Contributor Guide](https://hyperledger.github.io/firefly/contributors/contributors.html), and **welcome!**.
+Check out our [Contributor Guide](https://hyperledger.github.io/firefly/contributors/), and **welcome!**.
 
 ## Other repos
 
