@@ -837,6 +837,6 @@ func TestGetPins(t *testing.T) {
 	or.mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	fb := database.PinQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("hash", u))
-	_, _, err := or.GetPins(context.Background(), f)
+	_, _, err := or.GetPins(context.Background(), "ns1", f)
 	assert.NoError(t, err)
 }

@@ -133,7 +133,7 @@ type Orchestrator interface {
 	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error)
 	GetBlockchainEventByID(ctx context.Context, ns, id string) (*core.BlockchainEvent, error)
 	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error)
-	GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
+	GetPins(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
 
 	// Charts
 	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)

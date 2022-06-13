@@ -40,6 +40,7 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 //
 type Pin struct {
 	Sequence   int64            `ffstruct:"Pin" json:"sequence"`
+	Namespace  string           `ffstruct:"Pin" json:"namespace"`
 	Masked     bool             `ffstruct:"Pin" json:"masked,omitempty"`
 	Hash       *fftypes.Bytes32 `ffstruct:"Pin" json:"hash,omitempty"`
 	Batch      *fftypes.UUID    `ffstruct:"Pin" json:"batch,omitempty"`
