@@ -822,6 +822,7 @@ var EventQueryFactory = &queryFields{
 
 // PinQueryFactory filter fields for parked contexts
 var PinQueryFactory = &queryFields{
+	"namespace":  &StringField{},
 	"sequence":   &Int64Field{},
 	"masked":     &BoolField{},
 	"hash":       &Bytes32Field{},

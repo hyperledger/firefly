@@ -59,7 +59,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	ctx, cancel := context.WithCancel(context.Background())
-	ag := newAggregator(ctx, mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
+	ag := newAggregator(ctx, "ns1", mdi, mbi, mpm, msh, mim, mdm, newEventNotifier(ctx, "ut"), mmi)
 	return ag, func() {
 		cancel()
 		ag.batchCache.Stop()

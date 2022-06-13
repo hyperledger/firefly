@@ -45,6 +45,7 @@ const (
 
 type aggregator struct {
 	ctx           context.Context
+	namespace     string
 	database      database.Plugin
 	messaging     privatemessaging.Manager
 	definitions   definitions.DefinitionHandler
@@ -64,10 +65,11 @@ type batchCacheEntry struct {
 	manifest *core.BatchManifest
 }
 
-func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
+		namespace:     ns,
 		database:      di,
 		messaging:     pm,
 		definitions:   sh,
@@ -94,7 +96,7 @@ func newAggregator(ctx context.Context, di database.Plugin, bi blockchain.Plugin
 			Factor:       config.GetFloat64(coreconfig.EventAggregatorRetryFactor),
 		},
 		firstEvent:       &firstEvent,
-		namespace:        "pins", // not a real namespace (used only for logging)
+		namespace:        ns,
 		offsetType:       core.OffsetTypeAggregator,
 		offsetName:       aggregatorOffsetName,
 		newEventsHandler: ag.processPinsEventsHandler,
@@ -160,6 +162,7 @@ func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
 		pfb := database.PinQueryFactory.NewFilter(ag.ctx)
 		pinFilter := pfb.And(
+			pfb.Eq("namespace", ag.namespace),
 			pfb.In("batch", batchIDs),
 			pfb.Eq("dispatched", false),
 		).Sort("sequence").Limit(1) // only need the one oldest sequence
@@ -223,7 +226,8 @@ func (ag *aggregator) processPinsEventsHandler(items []core.LocallySequenced) (r
 
 func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
-	pins, _, err := ag.database.GetPins(ctx, filter)
+	fb := database.PinQueryFactory.NewFilter(ctx)
+	pins, _, err := ag.database.GetPins(ctx, fb.And(filter, fb.Eq("namespace", ag.namespace)))
 	ls := make([]core.LocallySequenced, len(pins))
 	for i, p := range pins {
 		ls[i] = p

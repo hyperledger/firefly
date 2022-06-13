@@ -33,6 +33,7 @@ import (
 
 func newBatchState(ag *aggregator) *batchState {
 	return &batchState{
+		namespace:          ag.namespace,
 		database:           ag.database,
 		messaging:          ag.messaging,
 		data:               ag.data,
@@ -95,6 +96,7 @@ type dispatchedMessage struct {
 //              Runs in a database operation group/tranaction, which will be the same as phase (1) if there
 //              are no pre-finalize handlers registered.
 type batchState struct {
+	namespace          string
 	database           database.Plugin
 	messaging          privatemessaging.Manager
 	data               data.Manager
@@ -171,6 +173,7 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 		// We need to check there's no earlier sequences with the same unmasked context
 		fb := database.PinQueryFactory.NewFilterLimit(ctx, 1) // only need the first one
 		filter := fb.And(
+			fb.Eq("namespace", bs.namespace),
 			fb.Eq("hash", contextUnmasked),
 			fb.Eq("dispatched", false),
 			fb.Lt("sequence", firstMsgPinSequence),
@@ -445,6 +448,7 @@ func (bs *batchState) attemptContextInit(ctx context.Context, msg *core.Message,
 	// Check none of the other zerohashes exist before us in the stream
 	fb := database.PinQueryFactory.NewFilter(ctx)
 	filter := fb.And(
+		fb.Eq("namespace", bs.namespace),
 		fb.In("hash", zeroHashes),
 		fb.Eq("dispatched", false),
 		fb.Lt("sequence", pinnedSequence),
