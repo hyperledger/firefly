@@ -184,6 +184,9 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 							}`),
 						},
 					},
+					Details: fftypes.JSONObject{
+						"stateMutability": "viewable",
+					},
 				},
 				{
 					ID:          fftypes.MustParseUUID("fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b"),
@@ -204,6 +207,9 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 						},
 					},
 					Returns: core.FFIParams{},
+					Details: fftypes.JSONObject{
+						"stateMutability": "payable",
+					},
 				},
 			},
 			Events: []*core.FFIEvent{
@@ -237,6 +243,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 								}`),
 							},
 						},
+						Details: fftypes.JSONObject{},
 					},
 				},
 			},

@@ -21,10 +21,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
+	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -73,34 +79,49 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 	}
 
 	return ffapi.NewSwaggerGen(&ffapi.Options{
-		Title:       ffi.Name,
-		Version:     ffi.Version,
-		Description: ffi.Description,
-		BaseURL:     baseURL,
+		Title:                 ffi.Name,
+		Version:               ffi.Version,
+		Description:           ffi.Description,
+		BaseURL:               baseURL,
+		DefaultRequestTimeout: config.GetDuration(coreconfig.APIRequestTimeout),
 	}).Generate(ctx, routes)
 }
 
 func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *core.FFIMethod, hasLocation bool) []*ffapi.Route {
+	ctx := context.Background()
+	description := method.Description
+	if method.Details != nil && len(method.Details) > 0 {
+		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
+		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, method.Details))
+	}
 	routes = append(routes, &ffapi.Route{
-		Name:             fmt.Sprintf("invoke_%s", method.Pathname),
-		Path:             fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
-		Method:           http.MethodPost,
-		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
-		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
-		JSONOutputCodes:  []int{http.StatusOK},
+		Name:                     fmt.Sprintf("invoke_%s", method.Pathname),
+		Path:                     fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
+		Method:                   http.MethodPost,
+		JSONInputSchema:          func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
+		JSONOutputSchema:         func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
+		JSONOutputCodes:          []int{http.StatusOK},
+		PreTranslatedDescription: description,
 	})
 	routes = append(routes, &ffapi.Route{
-		Name:             fmt.Sprintf("query_%s", method.Pathname),
-		Path:             fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
-		Method:           http.MethodPost,
-		JSONInputSchema:  func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
-		JSONOutputSchema: func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
-		JSONOutputCodes:  []int{http.StatusOK},
+		Name:                     fmt.Sprintf("query_%s", method.Pathname),
+		Path:                     fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
+		Method:                   http.MethodPost,
+		JSONInputSchema:          func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
+		JSONOutputSchema:         func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
+		JSONOutputCodes:          []int{http.StatusOK},
+		PreTranslatedDescription: description,
 	})
 	return routes
 }
 
 func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *core.FFIEvent, hasLocation bool) []*ffapi.Route {
+	ctx := context.Background()
+	description := event.Description
+	if event.Details != nil && len(event.Details) > 0 {
+		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
+		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, event.Details))
+	}
 	routes = append(routes, &ffapi.Route{
 		Name:   fmt.Sprintf("createlistener_%s", event.Pathname),
 		Path:   fmt.Sprintf("listeners/%s", event.Pathname), // must match a route defined in apiserver routes!
@@ -111,8 +132,9 @@ func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *core.FFIEvent, h
 			}
 			return &ContractListenerInputWithLocation{}
 		},
-		JSONOutputValue: func() interface{} { return &core.ContractListener{} },
-		JSONOutputCodes: []int{http.StatusOK},
+		JSONOutputValue:          func() interface{} { return &core.ContractListener{} },
+		JSONOutputCodes:          []int{http.StatusOK},
+		PreTranslatedDescription: description,
 	})
 	routes = append(routes, &ffapi.Route{
 		Name:            fmt.Sprintf("getlistener_%s", event.Pathname),
@@ -133,15 +155,18 @@ func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *core.FFIEvent, h
  * Returns the JSON Schema as an `fftypes.JSONObject`.
  */
 func contractCallJSONSchema(params *core.FFIParams, hasLocation bool) *fftypes.JSONObject {
-	req := &core.ContractCallRequest{
-		Input: *ffiParamsJSONSchema(params),
+	properties := fftypes.JSONObject{
+		"input": ffiParamsJSONSchema(params),
+		"options": fftypes.JSONObject{
+			"type": "object",
+		},
 	}
 	if !hasLocation {
-		req.Location = fftypes.JSONAnyPtr(`{}`)
+		properties["location"] = fftypes.JSONAnyPtr(`{}`)
 	}
 	return &fftypes.JSONObject{
 		"type":       "object",
-		"properties": req,
+		"properties": properties,
 	}
 }
 
@@ -162,4 +187,21 @@ func ffiParamJSONSchema(param *core.FFIParam) *fftypes.JSONObject {
 		return &out
 	}
 	return nil
+}
+
+func buildDetailsTable(ctx context.Context, details map[string]interface{}) string {
+	keyHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetailsKey)
+	valueHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetailsKey)
+	var s strings.Builder
+	s.WriteString(fmt.Sprintf("| %s | %s |\n|-----|-------|\n", keyHeader, valueHeader))
+	keys := make([]string, len(details))
+	i := 0
+	for key := range details {
+		keys[i] = key
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		s.WriteString(fmt.Sprintf("|%s|%s|\n", key, details[key]))
+	}
+	return s.String()
 }
