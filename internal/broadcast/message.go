@@ -122,7 +122,7 @@ func (s *broadcastSender) resolve(ctx context.Context) error {
 
 	// Resolve the sending identity
 	if msg.Header.Type != core.MessageTypeDefinition || msg.Header.Tag != core.SystemTagIdentityClaim {
-		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
+		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, &msg.Header.SignerRef); err != nil {
 			return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 		}
 	}

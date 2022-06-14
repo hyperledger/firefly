@@ -329,7 +329,7 @@ func TestGetVerifierByHashBadUUID(t *testing.T) {
 func TestGetVerifierByDIDOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "ns", "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(testOrg("abc"), true, nil)
 	id, err := nm.GetIdentityByDID(nm.ctx, "ns", "did:firefly:org/abc")
 	assert.NoError(t, err)
@@ -339,7 +339,7 @@ func TestGetVerifierByDIDOk(t *testing.T) {
 func TestGetVerifierByDIDWithVerifiersOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "ns", "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(testOrg("abc"), true, nil)
 	nm.database.(*databasemocks.Plugin).On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
@@ -356,7 +356,7 @@ func TestGetVerifierByDIDWithVerifiersOk(t *testing.T) {
 func TestGetVerifierByDIDWithVerifiersError(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "ns", "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(nil, true, fmt.Errorf("pop"))
 	_, err := nm.GetIdentityByDIDWithVerifiers(nm.ctx, "ns", "did:firefly:org/abc")
 	assert.Regexp(t, "pop", err)
@@ -365,7 +365,7 @@ func TestGetVerifierByDIDWithVerifiersError(t *testing.T) {
 func TestGetVerifierByDIDNotErr(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "ns", "did:firefly:org/abc").
+	nm.identity.(*identitymanagermocks.Manager).On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/abc").
 		Return(nil, true, fmt.Errorf("pop"))
 	id, err := nm.GetIdentityByDID(nm.ctx, "ns", "did:firefly:org/abc")
 	assert.Regexp(t, "pop", err)

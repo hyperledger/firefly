@@ -34,7 +34,7 @@ func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns st
 
 func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
-	err = bm.identity.ResolveInputSigningIdentity(ctx, ns, signingIdentity)
+	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, 
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
 func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns string, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
-	signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, ns, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
+	signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}

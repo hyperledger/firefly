@@ -41,7 +41,7 @@ var postNewIdentity = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			org, err := cr.or.NetworkMap().RegisterIdentity(cr.ctx, extractNamespace(r.PP), r.Input.(*core.IdentityCreateDTO), waitConfirm)
+			org, err := cr.or.NetworkMap().RegisterIdentity(cr.ctx, r.Input.(*core.IdentityCreateDTO), waitConfirm)
 			return org, err
 		},
 	},

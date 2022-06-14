@@ -39,7 +39,7 @@ func TestNewOrganization(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterOrganization", mock.Anything, "default", mock.AnythingOfType("*core.IdentityCreateDTO"), false).
+	mnm.On("RegisterOrganization", mock.Anything, mock.AnythingOfType("*core.IdentityCreateDTO"), false).
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -132,7 +132,7 @@ func (nm *networkMap) GetIdentityByIDWithVerifiers(ctx context.Context, ns, id s
 }
 
 func (nm *networkMap) GetIdentityByDID(ctx context.Context, ns, did string) (*core.Identity, error) {
-	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, did)
+	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, did)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (nm *networkMap) GetIdentityByDID(ctx context.Context, ns, did string) (*co
 }
 
 func (nm *networkMap) GetIdentityByDIDWithVerifiers(ctx context.Context, ns, did string) (*core.IdentityWithVerifiers, error) {
-	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, did)
+	identity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, did)
 	if err != nil {
 		return nil, err
 	}

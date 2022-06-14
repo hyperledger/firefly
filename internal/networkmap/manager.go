@@ -31,11 +31,11 @@ import (
 )
 
 type Manager interface {
-	RegisterOrganization(ctx context.Context, ns string, org *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error)
-	RegisterNode(ctx context.Context, ns string, waitConfirm bool) (node *core.Identity, err error)
-	RegisterNodeOrganization(ctx context.Context, ns string, waitConfirm bool) (org *core.Identity, err error)
-	RegisterIdentity(ctx context.Context, ns string, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error)
-	UpdateIdentity(ctx context.Context, ns string, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error)
+	RegisterOrganization(ctx context.Context, org *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error)
+	RegisterNode(ctx context.Context, waitConfirm bool) (node *core.Identity, err error)
+	RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (org *core.Identity, err error)
+	RegisterIdentity(ctx context.Context, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error)
+	UpdateIdentity(ctx context.Context, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error)
 
 	GetOrganizationByNameOrID(ctx context.Context, ns, nameOrID string) (*core.Identity, error)
 	GetOrganizations(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error)
@@ -57,6 +57,7 @@ type Manager interface {
 
 type networkMap struct {
 	ctx       context.Context
+	namespace string
 	orgName   string
 	orgDesc   string
 	database  database.Plugin
@@ -67,13 +68,14 @@ type networkMap struct {
 	syncasync syncasync.Bridge
 }
 
-func NewNetworkMap(ctx context.Context, orgName, orgDesc string, di database.Plugin, dm data.Manager, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
+func NewNetworkMap(ctx context.Context, ns, orgName, orgDesc string, di database.Plugin, dm data.Manager, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || dm == nil || bm == nil || dx == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "NetworkMap")
 	}
 
 	nm := &networkMap{
 		ctx:       ctx,
+		namespace: ns,
 		orgName:   orgName,
 		orgDesc:   orgDesc,
 		database:  di,

@@ -449,13 +449,13 @@ func (_m *Manager) GetVerifiers(ctx context.Context, ns string, filter database.
 	return r0, r1, r2
 }
 
-// RegisterIdentity provides a mock function with given fields: ctx, ns, dto, waitConfirm
-func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, dto, waitConfirm)
+// RegisterIdentity provides a mock function with given fields: ctx, dto, waitConfirm
+func (_m *Manager) RegisterIdentity(ctx context.Context, dto *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, dto, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityCreateDTO, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, dto, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityCreateDTO, bool) *core.Identity); ok {
+		r0 = rf(ctx, dto, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -463,8 +463,8 @@ func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *core.Id
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityCreateDTO, bool) error); ok {
-		r1 = rf(ctx, ns, dto, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.IdentityCreateDTO, bool) error); ok {
+		r1 = rf(ctx, dto, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -472,13 +472,13 @@ func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *core.Id
 	return r0, r1
 }
 
-// RegisterNode provides a mock function with given fields: ctx, ns, waitConfirm
-func (_m *Manager) RegisterNode(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, waitConfirm)
+// RegisterNode provides a mock function with given fields: ctx, waitConfirm
+func (_m *Manager) RegisterNode(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) *core.Identity); ok {
+		r0 = rf(ctx, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -486,8 +486,8 @@ func (_m *Manager) RegisterNode(ctx context.Context, ns string, waitConfirm bool
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -495,13 +495,13 @@ func (_m *Manager) RegisterNode(ctx context.Context, ns string, waitConfirm bool
 	return r0, r1
 }
 
-// RegisterNodeOrganization provides a mock function with given fields: ctx, ns, waitConfirm
-func (_m *Manager) RegisterNodeOrganization(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, waitConfirm)
+// RegisterNodeOrganization provides a mock function with given fields: ctx, waitConfirm
+func (_m *Manager) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) *core.Identity); ok {
+		r0 = rf(ctx, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -509,8 +509,8 @@ func (_m *Manager) RegisterNodeOrganization(ctx context.Context, ns string, wait
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -518,13 +518,13 @@ func (_m *Manager) RegisterNodeOrganization(ctx context.Context, ns string, wait
 	return r0, r1
 }
 
-// RegisterOrganization provides a mock function with given fields: ctx, ns, org, waitConfirm
-func (_m *Manager) RegisterOrganization(ctx context.Context, ns string, org *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, org, waitConfirm)
+// RegisterOrganization provides a mock function with given fields: ctx, org, waitConfirm
+func (_m *Manager) RegisterOrganization(ctx context.Context, org *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, org, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityCreateDTO, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, org, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityCreateDTO, bool) *core.Identity); ok {
+		r0 = rf(ctx, org, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -532,8 +532,8 @@ func (_m *Manager) RegisterOrganization(ctx context.Context, ns string, org *cor
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityCreateDTO, bool) error); ok {
-		r1 = rf(ctx, ns, org, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.IdentityCreateDTO, bool) error); ok {
+		r1 = rf(ctx, org, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -541,13 +541,13 @@ func (_m *Manager) RegisterOrganization(ctx context.Context, ns string, org *cor
 	return r0, r1
 }
 
-// UpdateIdentity provides a mock function with given fields: ctx, ns, id, dto, waitConfirm
-func (_m *Manager) UpdateIdentity(ctx context.Context, ns string, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, id, dto, waitConfirm)
+// UpdateIdentity provides a mock function with given fields: ctx, id, dto, waitConfirm
+func (_m *Manager) UpdateIdentity(ctx context.Context, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, id, dto, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.IdentityUpdateDTO, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, id, dto, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityUpdateDTO, bool) *core.Identity); ok {
+		r0 = rf(ctx, id, dto, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -555,8 +555,8 @@ func (_m *Manager) UpdateIdentity(ctx context.Context, ns string, id string, dto
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, *core.IdentityUpdateDTO, bool) error); ok {
-		r1 = rf(ctx, ns, id, dto, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityUpdateDTO, bool) error); ok {
+		r1 = rf(ctx, id, dto, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

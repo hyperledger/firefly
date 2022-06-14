@@ -103,7 +103,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	parent, _, _ := testDeprecatedRootOrg(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(parent.Migrated().Identity, nil)
@@ -163,7 +163,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 	node, msg, data := testDeprecatedRootNode(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, fmt.Errorf("pop"))
@@ -184,7 +184,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 	node, msg, data := testDeprecatedRootNode(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, nil)

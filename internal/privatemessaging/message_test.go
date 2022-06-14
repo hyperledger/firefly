@@ -80,9 +80,9 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	intermediateOrg := newTestOrg("localorg")
 	intermediateOrg.Parent = rootOrg.ID
 	localNode := newTestNode("node1", intermediateOrg)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(intermediateOrg, nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(intermediateOrg, false, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(intermediateOrg, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
@@ -132,8 +132,8 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[2].(*core.SignerRef)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -181,7 +181,7 @@ func TestSendMessageBadGroup(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
 		InlineData: core.InlineData{
@@ -204,7 +204,7 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
 		InlineData: core.InlineData{
@@ -231,14 +231,14 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
@@ -279,8 +279,8 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[2].(*core.SignerRef)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -350,14 +350,14 @@ func TestMessagePrepare(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[2].(*core.SignerRef)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
@@ -457,7 +457,7 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *core.SignerRef) bool {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.MatchedBy(func(identity *core.SignerRef) bool {
 		assert.Empty(t, identity.Author)
 		return true
 	})).Return(nil)
@@ -504,7 +504,7 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
 		Message: core.Message{
@@ -535,7 +535,7 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 
@@ -578,7 +578,7 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 
@@ -647,7 +647,7 @@ func TestRequestReplySuccess(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
 	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
@@ -692,11 +692,11 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *core.SignerRef) bool {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.MatchedBy(func(identity *core.SignerRef) bool {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(nil)
@@ -763,7 +763,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -812,7 +812,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	nodes := []*core.Identity{node2}
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
@@ -865,7 +865,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))

@@ -389,7 +389,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []core.IdentityType{
 		core.IdentityTypeOrg,
 		core.IdentityTypeCustom,
-	}, msg.Header.Namespace, verifierRef)
+	}, verifierRef)
 	if err != nil {
 		return false, err
 	}

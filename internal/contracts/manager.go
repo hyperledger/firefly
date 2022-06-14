@@ -218,7 +218,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string
 }
 
 func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
-	req.Key, err = cm.identity.NormalizeSigningKey(ctx, ns, req.Key, identity.KeyNormalizationBlockchainPlugin)
+	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}

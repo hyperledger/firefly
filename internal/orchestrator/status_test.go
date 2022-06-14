@@ -89,7 +89,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -97,7 +97,7 @@ func TestGetStatusRegistered(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
@@ -117,7 +117,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx, "ns")
+	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ns", status.Namespace)
@@ -156,7 +156,7 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -164,7 +164,7 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
@@ -177,7 +177,7 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	_, err := or.GetStatus(or.ctx, "ns")
+	_, err := or.GetStatus(or.ctx)
 	assert.Regexp(t, "pop", err)
 
 }
@@ -193,7 +193,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	nodeID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -201,7 +201,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:     nodeID,
 			Name:   "node1",
@@ -221,7 +221,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx, "ns")
+	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ns", status.Namespace)
@@ -245,14 +245,14 @@ func TestGetStatusUnregistered(t *testing.T) {
 	config.Set(coreconfig.NodeName, "node1")
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
 
 	or.config.Multiparty.OrgName = "org1"
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx, "ns")
+	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ns", status.Namespace)
@@ -277,7 +277,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -285,7 +285,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(nil, false, nil)
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
 	mnm := or.networkmap.(*networkmapmocks.Manager)
 	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
@@ -299,7 +299,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	status, err := or.GetStatus(or.ctx, "ns")
+	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "ns", status.Namespace)
@@ -333,7 +333,7 @@ func TestGetStatusNodeError(t *testing.T) {
 	orgID := fftypes.NewUUID()
 
 	mim := or.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", or.ctx, "ns").Return(&core.Identity{
+	mim.On("GetMultipartyRootOrg", or.ctx).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        orgID,
 			Name:      "org1",
@@ -341,7 +341,7 @@ func TestGetStatusNodeError(t *testing.T) {
 			DID:       "did:firefly:org/org1",
 		},
 	}, nil)
-	mim.On("CachedIdentityLookupNilOK", or.ctx, "ns", "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
 	mnm := or.networkmap.(*networkmapmocks.Manager)
 	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
@@ -353,7 +353,7 @@ func TestGetStatusNodeError(t *testing.T) {
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
 
-	_, err := or.GetStatus(or.ctx, "ns")
+	_, err := or.GetStatus(or.ctx)
 	assert.EqualError(t, err, "pop")
 
 	assert.Nil(t, or.GetNodeUUID(or.ctx, "ns"))

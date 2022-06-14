@@ -41,7 +41,7 @@ var postNewOrganization = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			_, err = cr.or.NetworkMap().RegisterOrganization(cr.ctx, extractNamespace(r.PP), r.Input.(*core.IdentityCreateDTO), waitConfirm)
+			_, err = cr.or.NetworkMap().RegisterOrganization(cr.ctx, r.Input.(*core.IdentityCreateDTO), waitConfirm)
 			return r.Input, err
 		},
 	},
