@@ -41,7 +41,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 		return nil // move on
 	}
 	if batchPin.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring BatchPin from wrong namespace '%s'", batchPin.Namespace)
+		log.L(em.ctx).Debugf("Ignoring BatchPin from different namespace '%s'", batchPin.Namespace)
 		return nil // move on
 	}
 

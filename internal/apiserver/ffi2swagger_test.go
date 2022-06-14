@@ -65,6 +65,10 @@ func testFFI() *core.FFI {
 						Schema: fftypes.JSONAnyPtr(`{"type": "boolean"}`),
 					},
 				},
+				Details: fftypes.JSONObject{
+					"payable":         true,
+					"stateMutability": "payable",
+				},
 			},
 			{
 				Name:     "method2",
@@ -83,6 +87,9 @@ func testFFI() *core.FFI {
 							Name:   "result",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 						},
+					},
+					Details: fftypes.JSONObject{
+						"anonymous": true,
 					},
 				},
 			},

@@ -91,6 +91,7 @@ nav_order: 9
 | `name` | The name of the event | `string` |
 | `description` | A description of the smart contract event | `string` |
 | `params` | An array of event parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
+| `details` | Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation. | [`JSONObject`](simpletypes#jsonobject) |
 
 ## FFIParam
 

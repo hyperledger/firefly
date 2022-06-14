@@ -35,7 +35,7 @@ var getNetworkIdentityByDID = &ffapi.Route{
 	PathParams: []*ffapi.PathParam{
 		{Name: "did", Description: coremsgs.APIParamsDID},
 	},
-	Description:     coremsgs.APIEndpointsGetNetworkIdentityByDID,
+	Description:     coremsgs.APIEndpointsGetIdentityByDID,
 	Deprecated:      true, // use getIdentityByDID instead
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.IdentityWithVerifiers{} },

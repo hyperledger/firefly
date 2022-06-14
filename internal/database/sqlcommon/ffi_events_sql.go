@@ -38,6 +38,7 @@ var (
 		"pathname",
 		"description",
 		"params",
+		"details",
 	}
 	ffiEventFilterFieldMap = map[string]string{
 		"interface": "interface_id",
@@ -87,6 +88,7 @@ func (s *SQLCommon) UpsertFFIEvent(ctx context.Context, event *core.FFIEvent) (e
 					event.Pathname,
 					event.Description,
 					event.Params,
+					event.Details,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIEvents, core.ChangeEventTypeCreated, event.Namespace, event.ID)
@@ -109,6 +111,7 @@ func (s *SQLCommon) ffiEventResult(ctx context.Context, row *sql.Rows) (*core.FF
 		&event.Pathname,
 		&event.Description,
 		&event.Params,
+		&event.Details,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, ffieventsTable)

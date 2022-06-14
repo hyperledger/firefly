@@ -113,7 +113,7 @@ func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *O
 		return
 	}
 	if ns != ou.manager.namespace {
-		log.L(ou.ctx).Debugf("Ignoring operation update from wrong namespace '%s'", ns)
+		log.L(ou.ctx).Debugf("Ignoring operation update from different namespace '%s'", ns)
 		return
 	}
 

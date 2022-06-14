@@ -148,7 +148,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			}
 			if existingPool != nil {
 				if existingPool.Namespace != em.namespace {
-					log.L(em.ctx).Debugf("Ignoring token pool from wrong namespace '%s'", existingPool.Namespace)
+					log.L(em.ctx).Debugf("Ignoring token pool from different namespace '%s'", existingPool.Namespace)
 					return nil
 				}
 				if existingPool.State == core.TokenPoolStateConfirmed {
@@ -168,7 +168,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				return err
 			} else if announcePool != nil {
 				if announcePool.Namespace != em.namespace {
-					log.L(em.ctx).Debugf("Ignoring token pool from wrong namespace '%s'", announcePool.Namespace)
+					log.L(em.ctx).Debugf("Ignoring token pool from different namespace '%s'", announcePool.Namespace)
 					announcePool = nil
 					return nil
 				}

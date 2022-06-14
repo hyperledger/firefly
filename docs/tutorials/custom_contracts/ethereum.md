@@ -517,6 +517,35 @@ To make a read-only request to the blockchain to check the current value of the 
 
 > **NOTE:** Some contracts may have queries that require input parameters. That's why the query endpoint is a `POST`, rather than a `GET` so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.
 
+## Passing additional options with a request
+
+Some smart contract functions may accept or require additional options to be passed with the request. For example, a Solidity function might be `payable`, meaning that a `value` field must be specified, indicating an amount of ETH to be transferred with the request. Each of your smart contract API's `/invoke` or `/query` endpoints support an `options` object in addition to the `input` arguments for the function itself.
+
+Here is an example of sending 100 wei with a transaction:
+
+### Request
+
+`POST` `http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/set`
+
+```json
+{
+  "input": {
+    "newValue": 3
+  },
+  "options": {
+    "value": 100
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "id": "41c67c63-52cf-47ce-8a59-895fe2ffdc86"
+}
+```
+
 ## Create a blockchain event listener
 
 Now that we've seen how to submit transactions and preform read-only queries to the blockchain, let's look at how to receive blockchain events so we know when things are happening in realtime.

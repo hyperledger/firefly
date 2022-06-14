@@ -79,7 +79,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		return false, nil
 	}
 	if pool.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring token transfer from wrong namespace '%s'", pool.Namespace)
+		log.L(em.ctx).Debugf("Ignoring token transfer from different namespace '%s'", pool.Namespace)
 		return false, nil
 	}
 	transfer.Namespace = pool.Namespace

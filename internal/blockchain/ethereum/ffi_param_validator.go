@@ -33,31 +33,40 @@ var bytesRegex, _ = regexp.Compile("^bytes([0-9]{1,2})?")
 func (v *FFIParamValidator) Compile(ctx jsonschema.CompilerContext, m map[string]interface{}) (jsonschema.ExtSchema, error) {
 	valid := true
 	if details, ok := m["details"]; ok {
+		var jsonTypeString string
 		n, _ := details.(map[string]interface{})
 		blockchainType := n["type"].(string)
-		jsonType := m["type"].(string)
-		switch jsonType {
-		case "string":
-			if blockchainType != "string" &&
-				blockchainType != "address" &&
+		jsonType, ok := m["type"]
+		if ok {
+			jsonTypeString = jsonType.(string)
+		} else {
+			_, ok := m["oneOf"]
+			if ok {
+				jsonTypeString = integerType
+			}
+		}
+		switch jsonTypeString {
+		case stringType:
+			if blockchainType != stringType &&
+				blockchainType != addressType &&
 				!isEthereumNumberType(blockchainType) &&
 				!isEthereumBytesType(blockchainType) {
 				valid = false
 			}
-		case "integer":
+		case integerType:
 			if !isEthereumNumberType(blockchainType) {
 				valid = false
 			}
-		case "boolean":
-			if blockchainType != "bool" {
+		case booleanType:
+			if blockchainType != boolType {
 				valid = false
 			}
-		case "array":
+		case arrayType:
 			if !strings.HasSuffix(blockchainType, "[]") {
 				valid = false
 			}
-		case "object":
-			if blockchainType != "tuple" {
+		case objectType:
+			if blockchainType != tupleType {
 				valid = false
 			}
 		}
@@ -75,118 +84,129 @@ func (v *FFIParamValidator) GetMetaSchema() *jsonschema.Schema {
 		"$ref": "#/$defs/ethereumParam",
 		"$defs": {
 			"ethereumParam": {
-			"oneOf": [
-				{
-				"type": "object",
-				"properties": {
-					"type": {
-					"type": "string",
-					"not": {
-						"const": "object"
-					}
+				"oneOf": [
+					{
+						"type": "object",
+						"properties": {
+							"type": {
+								"type": "string",
+								"not": {
+									"const": "object"
+								}
+							},
+							"details": {
+								"$ref": "#/$defs/details"
+							}
+						},
+						"required": [
+							"details"
+						]
 					},
-					"details": {
-					"$ref": "#/$defs/details"
+					{
+						"type": "object",
+						"properties": {
+							"type": {
+								"const": "object"
+							},
+							"details": {
+								"$ref": "#/$defs/details"
+							},
+							"properties": {
+								"type": "object",
+								"patternProperties": {
+									".*": {
+										"$ref": "#/$defs/ethereumObjectChildParam"
+									}
+								}
+							}
+						},
+						"required": [
+							"details",
+							"type"
+						]
 					}
-				},
-				"required": ["details"]
-				},
-				{
-				"type": "object",
-				"properties": {
-					"type": {
-					"const": "object"
-					},
-					"details": {
-					"$ref": "#/$defs/details"
-					},
-					"properties": {
-					"type": "object",
-					"patternProperties": {
-						".*": {
-						"$ref": "#/$defs/ethereumObjectChildParam"
-						}
-					}
-					}
-				},
-				"required": ["details"]
-				}
-			]
+				]
 			},
-
 			"ethereumObjectChildParam": {
-			"oneOf": [
-				{
-				"type": "object",
-				"properties": {
-					"type": {
-					"type": "string",
-					"not": {
-						"const": "object"
-					}
+				"oneOf": [
+					{
+						"type": "object",
+						"properties": {
+							"type": {
+								"type": "string",
+								"not": {
+									"const": "object"
+								}
+							},
+							"details": {
+								"$ref": "#/$defs/objectFieldDetails"
+							}
+						},
+						"required": [
+							"details"
+						]
 					},
-					"details": {
-					"$ref": "#/$defs/objectFieldDetails"
+					{
+						"type": "object",
+						"properties": {
+							"type": {
+								"const": "object"
+							},
+							"details": {
+								"$ref": "#/$defs/objectFieldDetails"
+							},
+							"properties": {
+								"type": "object",
+								"patternProperties": {
+									".*": {
+										"$ref": "#/$defs/ethereumObjectChildParam"
+									}
+								}
+							}
+						},
+						"required": [
+							"details"
+						]
 					}
-				},
-				"required": ["details"]
-				},
-				{
-				"type": "object",
-				"properties": {
-					"type": {
-					"const": "object"
-					},
-					"details": {
-					"$ref": "#/$defs/objectFieldDetails"
-					},
-					"properties": {
-					"type": "object",
-					"patternProperties": {
-						".*": {
-						"$ref": "#/$defs/ethereumObjectChildParam"
-						}
-					}
-					}
-				},
-				"required": ["details"]
-				}
-			]
+				]
 			},
-
 			"details": {
-			"type": "object",
-			"properties": {
-				"type": {
-				"type": "string"
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string"
+					},
+					"internalType": {
+						"type": "string"
+					},
+					"indexed": {
+						"type": "boolean"
+					}
 				},
-				"internalType": {
-				"type": "string"
-				},
-				"indexed": {
-				"type": "boolean"
-				}
+				"required": [
+					"type"
+				]
 			},
-			"required": ["type"]
-			},
-
 			"objectFieldDetails": {
-			"type": "object",
-			"properties": {
-				"type": {
-				"type": "string"
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string"
+					},
+					"internalType": {
+						"type": "string"
+					},
+					"indexed": {
+						"type": "boolean"
+					},
+					"index": {
+						"type": "integer"
+					}
 				},
-				"internalType": {
-				"type": "string"
-				},
-				"indexed": {
-				"type": "boolean"
-				},
-				"index": {
-				"type": "integer"
-				}
-			},
-			"required": ["type", "index"]
+				"required": [
+					"type",
+					"index"
+				]
 			}
 		}
 	}`)
