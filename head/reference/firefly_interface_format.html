@@ -294,13 +294,14 @@
       </h2>
     
 
-<p>Let’s look at a what goes inside the <code class="language-plaintext highlighter-rouge">methods</code> array now. It is also a JSON object that has a <code class="language-plaintext highlighter-rouge">name</code>, a list of <code class="language-plaintext highlighter-rouge">params</code> which are the arguments the function will take and a list of <code class="language-plaintext highlighter-rouge">returns</code> which are the return values of the function. Optionally, it also has a <code class="language-plaintext highlighter-rouge">description</code> which can be helpful in OpenAPI Spec generation.</p>
+<p>Let’s look at a what goes inside the <code class="language-plaintext highlighter-rouge">methods</code> array now. It is also a JSON object that has a <code class="language-plaintext highlighter-rouge">name</code>, a list of <code class="language-plaintext highlighter-rouge">params</code> which are the arguments the function will take and a list of <code class="language-plaintext highlighter-rouge">returns</code> which are the return values of the function. It also has an optional <code class="language-plaintext highlighter-rouge">description</code> which can be helpful in OpenAPI Spec generation. Finally, it has an optional <code class="language-plaintext highlighter-rouge">details</code> object which wraps blockchain specific information about this method. This can be used by the blockchain plugin when invoking this function, and it is also used in documentation generation.</p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
     </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"add"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Add two numbers together"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
-    </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h2 id="event">
@@ -312,12 +313,13 @@
       </h2>
     
 
-<p>What goes into the <code class="language-plaintext highlighter-rouge">events</code> array is very similar. It is also a JSON object that has a <code class="language-plaintext highlighter-rouge">name</code> and a list of <code class="language-plaintext highlighter-rouge">params</code>. The difference is that <code class="language-plaintext highlighter-rouge">events</code> don’t have <code class="language-plaintext highlighter-rouge">returns</code>. Arguments that are passed to the event when it is emitted are in <code class="language-plaintext highlighter-rouge">params</code>. Optionally, it also has a <code class="language-plaintext highlighter-rouge">description</code> which can be helpful in OpenAPI Spec generation.</p>
+<p>What goes into the <code class="language-plaintext highlighter-rouge">events</code> array is very similar. It is also a JSON object that has a <code class="language-plaintext highlighter-rouge">name</code> and a list of <code class="language-plaintext highlighter-rouge">params</code>. The difference is that <code class="language-plaintext highlighter-rouge">events</code> don’t have <code class="language-plaintext highlighter-rouge">returns</code>. Arguments that are passed to the event when it is emitted are in <code class="language-plaintext highlighter-rouge">params</code>. It also has an optional <code class="language-plaintext highlighter-rouge">description</code> which can be helpful in OpenAPI Spec generation. Finally, it has an optional <code class="language-plaintext highlighter-rouge">details</code> object which wraps blockchain specific information about this event. This can be used by the blockchain plugin when invoking this function, and it is also used in documentation generation.</p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
     </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"added"</span><span class="p">,</span><span class="w">
     </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An event that occurs when numbers have been added"</span><span class="p">,</span><span class="w"> 
-    </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+    </span><span class="nl">"params"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+    </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
       <h2 id="param">
@@ -434,7 +436,10 @@
                         </span><span class="p">}</span><span class="w">
                     </span><span class="p">}</span><span class="w">
                 </span><span class="p">}</span><span class="w">
-            </span><span class="p">]</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"stateMutability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"viewable"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
         </span><span class="p">},</span><span class="w">
         </span><span class="p">{</span><span class="w">
             </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"set"</span><span class="p">,</span><span class="w">
@@ -451,7 +456,10 @@
                     </span><span class="p">}</span><span class="w">
                 </span><span class="p">}</span><span class="w">
             </span><span class="p">],</span><span class="w">
-            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"stateMutability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"payable"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
         </span><span class="p">}</span><span class="w">
     </span><span class="p">],</span><span class="w">
     </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
@@ -480,7 +488,8 @@
                         </span><span class="p">}</span><span class="w">
                     </span><span class="p">}</span><span class="w">
                 </span><span class="p">}</span><span class="w">
-            </span><span class="p">]</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
         </span><span class="p">}</span><span class="w">
     </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">

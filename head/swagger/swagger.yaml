@@ -404,6 +404,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -466,6 +475,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -884,6 +902,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -1040,6 +1067,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -2042,6 +2078,15 @@ paths:
                           description:
                             description: A description of the smart contract event
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
                           id:
                             description: The UUID of the FFI event definition
                             format: uuid
@@ -2106,6 +2151,15 @@ paths:
                           description:
                             description: A description of the smart contract method
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this method from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
                           id:
                             description: The UUID of the FFI method definition
                             format: uuid
@@ -2219,6 +2273,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -2250,6 +2313,15 @@ paths:
                       description:
                         description: A description of the smart contract method
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the method
                         type: string
@@ -2317,6 +2389,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2379,6 +2460,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -2496,6 +2586,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2558,6 +2657,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -2681,6 +2789,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2743,6 +2860,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -2873,6 +2999,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -2935,6 +3070,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -3067,6 +3211,15 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        method from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -3384,6 +3537,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -3488,6 +3650,15 @@ paths:
                     description:
                       description: A description of the smart contract event
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the event
                       type: string
@@ -3576,6 +3747,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -3721,6 +3901,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -3851,6 +4040,15 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        method from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -9196,6 +9394,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -9258,6 +9465,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -9411,6 +9627,15 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        method from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -9748,6 +9973,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -9872,6 +10106,15 @@ paths:
                     description:
                       description: A description of the smart contract event
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the event
                       type: string
@@ -9955,6 +10198,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -10106,6 +10358,15 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        method from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -11071,6 +11332,15 @@ paths:
                           description:
                             description: A description of the smart contract event
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this event from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
                           id:
                             description: The UUID of the FFI event definition
                             format: uuid
@@ -11135,6 +11405,15 @@ paths:
                           description:
                             description: A description of the smart contract method
                             type: string
+                          details:
+                            additionalProperties:
+                              description: Additional blockchain specific fields about
+                                this method from the original smart contract. Used
+                                by the blockchain plugin and for documentation generation.
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                            type: object
                           id:
                             description: The UUID of the FFI method definition
                             format: uuid
@@ -11255,6 +11534,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -11286,6 +11574,15 @@ paths:
                       description:
                         description: A description of the smart contract method
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the method
                         type: string
@@ -11353,6 +11650,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11415,6 +11721,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11539,6 +11854,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11601,6 +11925,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11731,6 +12064,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11793,6 +12135,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -11930,6 +12281,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI event definition
                           format: uuid
@@ -11992,6 +12352,15 @@ paths:
                         description:
                           description: A description of the smart contract method
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this method from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this method from the original smart contract. Used by
+                            the blockchain plugin and for documentation generation.
+                          type: object
                         id:
                           description: The UUID of the FFI method definition
                           format: uuid
@@ -12131,6 +12500,15 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        method from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -12455,6 +12833,15 @@ paths:
                         description:
                           description: A description of the smart contract event
                           type: string
+                        details:
+                          additionalProperties:
+                            description: Additional blockchain specific fields about
+                              this event from the original smart contract. Used by
+                              the blockchain plugin and for documentation generation.
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                          type: object
                         name:
                           description: The name of the event
                           type: string
@@ -12566,6 +12953,15 @@ paths:
                     description:
                       description: A description of the smart contract event
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        event from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the event
                       type: string
@@ -12654,6 +13050,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -12813,6 +13218,15 @@ paths:
                       description:
                         description: A description of the smart contract event
                         type: string
+                      details:
+                        additionalProperties:
+                          description: Additional blockchain specific fields about
+                            this event from the original smart contract. Used by the
+                            blockchain plugin and for documentation generation.
+                        description: Additional blockchain specific fields about this
+                          event from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                        type: object
                       name:
                         description: The name of the event
                         type: string
@@ -12950,6 +13364,15 @@ paths:
                     description:
                       description: A description of the smart contract method
                       type: string
+                    details:
+                      additionalProperties:
+                        description: Additional blockchain specific fields about this
+                          method from the original smart contract. Used by the blockchain
+                          plugin and for documentation generation.
+                      description: Additional blockchain specific fields about this
+                        method from the original smart contract. Used by the blockchain
+                        plugin and for documentation generation.
+                      type: object
                     name:
                       description: The name of the method
                       type: string
@@ -18194,8 +18617,7 @@ paths:
   /namespaces/{ns}/network/identities/{did}:
     get:
       deprecated: true
-      description: Gets an identity by its DID (deprecated - use /identities/{did}
-        instead of /network/identities/{did})
+      description: Gets an identity by its DID
       operationId: getNetworkIdentityByDIDNamespace
       parameters:
       - description: The identity DID
@@ -25673,8 +26095,7 @@ paths:
   /network/identities/{did}:
     get:
       deprecated: true
-      description: Gets an identity by its DID (deprecated - use /identities/{did}
-        instead of /network/identities/{did})
+      description: Gets an identity by its DID
       operationId: getNetworkIdentityByDID
       parameters:
       - description: The identity DID

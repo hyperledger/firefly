@@ -290,14 +290,19 @@
           <li><a href="#response-4" id="markdown-toc-response-4">Response</a></li>
         </ol>
       </li>
-      <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>        <ol>
+      <li><a href="#passing-additional-options-with-a-request" id="markdown-toc-passing-additional-options-with-a-request">Passing additional options with a request</a>        <ol>
           <li><a href="#request-5" id="markdown-toc-request-5">Request</a></li>
           <li><a href="#response-5" id="markdown-toc-response-5">Response</a></li>
         </ol>
       </li>
-      <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>        <ol>
+      <li><a href="#create-a-blockchain-event-listener" id="markdown-toc-create-a-blockchain-event-listener">Create a blockchain event listener</a>        <ol>
           <li><a href="#request-6" id="markdown-toc-request-6">Request</a></li>
           <li><a href="#response-6" id="markdown-toc-response-6">Response</a></li>
+        </ol>
+      </li>
+      <li><a href="#subscribe-to-events-from-our-contract" id="markdown-toc-subscribe-to-events-from-our-contract">Subscribe to events from our contract</a>        <ol>
+          <li><a href="#request-7" id="markdown-toc-request-7">Request</a></li>
+          <li><a href="#response-7" id="markdown-toc-response-7">Response</a></li>
         </ol>
       </li>
       <li><a href="#receive-custom-smart-contract-events" id="markdown-toc-receive-custom-smart-contract-events">Receive custom smart contract events</a>        <ol>
@@ -305,13 +310,13 @@
         </ol>
       </li>
       <li><a href="#appendix-i-work-with-a-custom-contract-without-creating-a-named-api" id="markdown-toc-appendix-i-work-with-a-custom-contract-without-creating-a-named-api">Appendix I: Work with a custom contract without creating a named API</a>        <ol>
-          <li><a href="#request-7" id="markdown-toc-request-7">Request</a></li>
-          <li><a href="#response-7" id="markdown-toc-response-7">Response</a></li>
+          <li><a href="#request-8" id="markdown-toc-request-8">Request</a></li>
+          <li><a href="#response-8" id="markdown-toc-response-8">Response</a></li>
         </ol>
       </li>
       <li><a href="#appendix-ii-work-directly-with-contracts-with-inline-requests" id="markdown-toc-appendix-ii-work-directly-with-contracts-with-inline-requests">Appendix II: Work directly with contracts with inline requests</a>        <ol>
-          <li><a href="#request-8" id="markdown-toc-request-8">Request</a></li>
-          <li><a href="#response-8" id="markdown-toc-response-8">Response</a></li>
+          <li><a href="#request-9" id="markdown-toc-request-9">Request</a></li>
+          <li><a href="#response-9" id="markdown-toc-response-9">Response</a></li>
         </ol>
       </li>
     </ol>
@@ -924,6 +929,51 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 <blockquote>
   <p><strong>NOTE:</strong> Some contracts may have queries that require input parameters. That’s why the query endpoint is a <code class="language-plaintext highlighter-rouge">POST</code>, rather than a <code class="language-plaintext highlighter-rouge">GET</code> so that parameters can be passed as JSON in the request body. This particular function does not have any parameters, so we just pass an empty JSON object.</p>
 </blockquote>
+      <h2 id="passing-additional-options-with-a-request">
+        
+        
+          <a href="#passing-additional-options-with-a-request" class="anchor-heading" aria-labelledby="passing-additional-options-with-a-request"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Passing additional options with a request
+        
+        
+      </h2>
+    
+
+<p>Some smart contract functions may accept or require additional options to be passed with the request. For example, a Solidity function might be <code class="language-plaintext highlighter-rouge">payable</code>, meaning that a <code class="language-plaintext highlighter-rouge">value</code> field must be specified, indicating an amount of ETH to be transferred with the request. Each of your smart contract API’s <code class="language-plaintext highlighter-rouge">/invoke</code> or <code class="language-plaintext highlighter-rouge">/query</code> endpoints support an <code class="language-plaintext highlighter-rouge">options</code> object in addition to the <code class="language-plaintext highlighter-rouge">input</code> arguments for the function itself.</p>
+
+<p>Here is an example of sending 100 wei with a transaction:</p>
+      <h3 id="request-5">
+        
+        
+          <a href="#request-5" class="anchor-heading" aria-labelledby="request-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+        
+        
+      </h3>
+    
+
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">http://localhost:5000/api/v1/namespaces/default/apis/simple-storage/invoke/set</code></p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"input"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"newValue"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+      <h3 id="response-5">
+        
+        
+          <a href="#response-5" class="anchor-heading" aria-labelledby="response-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+        
+        
+      </h3>
+    
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"41c67c63-52cf-47ce-8a59-895fe2ffdc86"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
       <h2 id="create-a-blockchain-event-listener">
         
         
@@ -936,10 +986,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 <p>Now that we’ve seen how to submit transactions and preform read-only queries to the blockchain, let’s look at how to receive blockchain events so we know when things are happening in realtime.</p>
 
 <p>If you look at the source code for the smart contract we’re working with above, you’ll notice that it emits an event when the stored value of the integer is set. In order to receive these events, we first need to instruct FireFly to listen for this specific type of blockchain event. To do this, we create an <strong>Event Listener</strong>. The <code class="language-plaintext highlighter-rouge">/contracts/listeners</code> endpoint is RESTful so there are <code class="language-plaintext highlighter-rouge">POST</code>, <code class="language-plaintext highlighter-rouge">GET</code>, and <code class="language-plaintext highlighter-rouge">DELETE</code> methods available on it. To create a new listener, we will make a <code class="language-plaintext highlighter-rouge">POST</code> request. We are going to tell FireFly to listen to events with name <code class="language-plaintext highlighter-rouge">"Changed"</code> from the FireFly Interface we defined earlier, referenced by its ID. We will also tell FireFly which contract address we expect to emit these events.</p>
-      <h3 id="request-5">
+      <h3 id="request-6">
         
         
-          <a href="#request-5" class="anchor-heading" aria-labelledby="request-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+          <a href="#request-6" class="anchor-heading" aria-labelledby="request-6"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
         
         
       </h3>
@@ -962,10 +1012,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
-      <h3 id="response-5">
+      <h3 id="response-6">
         
         
-          <a href="#response-5" class="anchor-heading" aria-labelledby="response-5"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+          <a href="#response-6" class="anchor-heading" aria-labelledby="response-6"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
         
         
       </h3>
@@ -1031,10 +1081,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 <p>We will set a friendly name <code class="language-plaintext highlighter-rouge">simple-storage</code> to identify the Subscription when we are connecting to it in the next step.</p>
 
 <p>We’re also going to set up a filter to only send events blockchain events from our listener that we created in the previous step. To do that, we’ll <strong>copy the listener ID</strong> from the step above (<code class="language-plaintext highlighter-rouge">1bfa3b0f-3d90-403e-94a4-af978d8c5b14</code>) and set that as the value of the <code class="language-plaintext highlighter-rouge">listener</code> field in the example below:</p>
-      <h3 id="request-6">
+      <h3 id="request-7">
         
         
-          <a href="#request-6" class="anchor-heading" aria-labelledby="request-6"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+          <a href="#request-7" class="anchor-heading" aria-labelledby="request-7"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
         
         
       </h3>
@@ -1057,10 +1107,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
-      <h3 id="response-6">
+      <h3 id="response-7">
         
         
-          <a href="#response-6" class="anchor-heading" aria-labelledby="response-6"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+          <a href="#response-7" class="anchor-heading" aria-labelledby="response-7"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
         
         
       </h3>
@@ -1193,10 +1243,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
   <li>The contract location will <em>not</em> have been broadcasted to all other members of the network</li>
   <li>The URL to invoke/query the contract will be different (described below)</li>
 </ul>
-      <h3 id="request-7">
+      <h3 id="request-8">
         
         
-          <a href="#request-7" class="anchor-heading" aria-labelledby="request-7"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+          <a href="#request-8" class="anchor-heading" aria-labelledby="request-8"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
         
         
       </h3>
@@ -1213,10 +1263,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
-      <h3 id="response-7">
+      <h3 id="response-8">
         
         
-          <a href="#response-7" class="anchor-heading" aria-labelledby="response-7"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+          <a href="#response-8" class="anchor-heading" aria-labelledby="response-8"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
         
         
       </h3>
@@ -1240,10 +1290,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
 <p>The final way of working with custom smart contracts with FireFly is to just put everything FireFly needs all in one request, each time a contract is invoked or queried. This is the most lightweight, but least feature-rich way of using a custom contract.</p>
 
 <p>To do this, we will need to put both the contract location, and a subset of the FireFly Interface that describes the method we want to invoke in the request body, in addition to the function input.</p>
-      <h3 id="request-8">
+      <h3 id="request-9">
         
         
-          <a href="#request-8" class="anchor-heading" aria-labelledby="request-8"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
+          <a href="#request-9" class="anchor-heading" aria-labelledby="request-9"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Request
         
         
       </h3>
@@ -1275,10 +1325,10 @@ contract address: 0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
-      <h3 id="response-8">
+      <h3 id="response-9">
         
         
-          <a href="#response-8" class="anchor-heading" aria-labelledby="response-8"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
+          <a href="#response-9" class="anchor-heading" aria-labelledby="response-9"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Response
         
         
       </h3>

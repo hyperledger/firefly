@@ -306,7 +306,10 @@
                         </span><span class="p">}</span><span class="w">
                     </span><span class="p">}</span><span class="w">
                 </span><span class="p">}</span><span class="w">
-            </span><span class="p">]</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"stateMutability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"viewable"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
         </span><span class="p">},</span><span class="w">
         </span><span class="p">{</span><span class="w">
             </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b"</span><span class="p">,</span><span class="w">
@@ -326,7 +329,10 @@
                     </span><span class="p">}</span><span class="w">
                 </span><span class="p">}</span><span class="w">
             </span><span class="p">],</span><span class="w">
-            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+            </span><span class="nl">"returns"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+            </span><span class="nl">"details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"stateMutability"</span><span class="p">:</span><span class="w"> </span><span class="s2">"payable"</span><span class="w">
+            </span><span class="p">}</span><span class="w">
         </span><span class="p">}</span><span class="w">
     </span><span class="p">],</span><span class="w">
     </span><span class="nl">"events"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
@@ -481,6 +487,11 @@
       <td>An array of method return definitions</td>
       <td><a href="#ffiparam"><code class="language-plaintext highlighter-rouge">FFIParam[]</code></a></td>
     </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">details</code></td>
+      <td>Additional blockchain specific fields about this method from the original smart contract. Used by the blockchain plugin and for documentation generation.</td>
+      <td><a href="simpletypes#jsonobject"><code class="language-plaintext highlighter-rouge">JSONObject</code></a></td>
+    </tr>
   </tbody>
 </table>
       <h2 id="ffiparam">
@@ -570,6 +581,11 @@
       <td><code class="language-plaintext highlighter-rouge">params</code></td>
       <td>An array of event parameter/argument definitions</td>
       <td><a href="#ffiparam"><code class="language-plaintext highlighter-rouge">FFIParam[]</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">details</code></td>
+      <td>Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation.</td>
+      <td><a href="simpletypes#jsonobject"><code class="language-plaintext highlighter-rouge">JSONObject</code></a></td>
     </tr>
   </tbody>
 </table>
