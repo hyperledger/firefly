@@ -247,7 +247,7 @@ var (
 	FFIMethodDescription = ffm("FFIMethod.description", "A description of the smart contract method")
 	FFIMethodParams      = ffm("FFIMethod.params", "An array of method parameter/argument definitions")
 	FFIMethodReturns     = ffm("FFIMethod.returns", "An array of method return definitions")
-	FFIMethodDetails     = ffm("FFIMethod.details", "Additional details about the smart contract function")
+	FFIMethodDetails     = ffm("FFIMethod.details", "Additional blockchain specific fields about this method from the original smart contract. Used by the blockchain plugin and for documentation generation.")
 
 	// FFIEvent field descriptions
 	FFIEventID          = ffm("FFIEvent.id", "The UUID of the FFI event definition")
@@ -258,7 +258,7 @@ var (
 	FFIEventDescription = ffm("FFIEvent.description", "A description of the smart contract event")
 	FFIEventParams      = ffm("FFIEvent.params", "An array of event parameter/argument definitions")
 	FFIEventSignature   = ffm("FFIEvent.signature", "The stringified signature of the event, as computed by the blockchain plugin")
-	FFIEventDetails     = ffm("FFIEvent.details", "Additional details about the smart contract event")
+	FFIEventDetails     = ffm("FFIEvent.details", "Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation.")
 
 	// FFIParam field descriptions
 	FFIParamName   = ffm("FFIParam.name", "The name of the parameter. Note that parameters must be ordered correctly on the FFI, according to the order in the blockchain smart contract")

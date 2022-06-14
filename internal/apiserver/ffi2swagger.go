@@ -28,7 +28,9 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -86,9 +88,11 @@ func (og *ffiSwaggerGen) Generate(ctx context.Context, baseURL string, api *core
 }
 
 func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *core.FFIMethod, hasLocation bool) []*ffapi.Route {
+	ctx := context.Background()
 	description := method.Description
 	if method.Details != nil && len(method.Details) > 0 {
-		description = fmt.Sprintf("%s\n\nAdditional smart contract details:\n\n%s", description, buildDetailsTable(method.Details))
+		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
+		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, method.Details))
 	}
 	routes = append(routes, &ffapi.Route{
 		Name:                     fmt.Sprintf("invoke_%s", method.Pathname),
@@ -112,9 +116,11 @@ func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *core.FFIMethod
 }
 
 func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *core.FFIEvent, hasLocation bool) []*ffapi.Route {
+	ctx := context.Background()
 	description := event.Description
 	if event.Details != nil && len(event.Details) > 0 {
-		description = fmt.Sprintf("%s\n\nAdditional smart contract details:\n\n%s", description, buildDetailsTable(event.Details))
+		additionalDetailsHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetails)
+		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, event.Details))
 	}
 	routes = append(routes, &ffapi.Route{
 		Name:   fmt.Sprintf("createlistener_%s", event.Pathname),
@@ -183,9 +189,11 @@ func ffiParamJSONSchema(param *core.FFIParam) *fftypes.JSONObject {
 	return nil
 }
 
-func buildDetailsTable(details map[string]interface{}) string {
+func buildDetailsTable(ctx context.Context, details map[string]interface{}) string {
+	keyHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetailsKey)
+	valueHeader := i18n.Expand(ctx, coremsgs.APISmartContractDetailsKey)
 	var s strings.Builder
-	s.WriteString("| Key | Value |\n|-----|-------|\n")
+	s.WriteString(fmt.Sprintf("| %s | %s |\n|-----|-------|\n", keyHeader, valueHeader))
 	keys := make([]string, len(details))
 	i := 0
 	for key := range details {

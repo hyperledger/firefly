@@ -49,7 +49,10 @@ nav_order: 8
                         }
                     }
                 }
-            ]
+            ],
+            "details": {
+                "stateMutability": "viewable"
+            }
         },
         {
             "id": "fc6f54ee-2e3c-4e56-b17c-4a1a0ae7394b",
@@ -69,7 +72,10 @@ nav_order: 8
                     }
                 }
             ],
-            "returns": []
+            "returns": [],
+            "details": {
+                "stateMutability": "payable"
+            }
         }
     ],
     "events": [
@@ -132,7 +138,7 @@ nav_order: 8
 | `description` | A description of the smart contract method | `string` |
 | `params` | An array of method parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
 | `returns` | An array of method return definitions | [`FFIParam[]`](#ffiparam) |
-| `details` | Additional details about the smart contract function | [`JSONObject`](simpletypes#jsonobject) |
+| `details` | Additional blockchain specific fields about this method from the original smart contract. Used by the blockchain plugin and for documentation generation. | [`JSONObject`](simpletypes#jsonobject) |
 
 ## FFIParam
 
@@ -155,7 +161,7 @@ nav_order: 8
 | `name` | The name of the event | `string` |
 | `description` | A description of the smart contract event | `string` |
 | `params` | An array of event parameter/argument definitions | [`FFIParam[]`](#ffiparam) |
-| `details` | Additional details about the smart contract event | [`JSONObject`](simpletypes#jsonobject) |
+| `details` | Additional blockchain specific fields about this event from the original smart contract. Used by the blockchain plugin and for documentation generation. | [`JSONObject`](simpletypes#jsonobject) |
 
 ## FFIParam
 
