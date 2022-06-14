@@ -28,7 +28,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +45,7 @@ func TestInitMissingAPIURL(t *testing.T) {
 	resetConf()
 
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -55,7 +54,7 @@ func TestInitMissingGWURL(t *testing.T) {
 	resetConf()
 
 	utConfig.SubSection(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -65,7 +64,7 @@ func TestInit(t *testing.T) {
 	utConfig.SubSection(IPFSConfAPISubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.Equal(t, "ipfs", i.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, i.Capabilities())
@@ -83,7 +82,7 @@ func TestIPFSUploadSuccess(t *testing.T) {
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -110,7 +109,7 @@ func TestIPFSUploadFail(t *testing.T) {
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfAPISubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("POST", "http://localhost:12345/api/v0/add",
@@ -134,7 +133,7 @@ func TestIPFSDownloadSuccess(t *testing.T) {
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
 
 	data := []byte(`{"hello": "world"}`)
@@ -163,7 +162,7 @@ func TestIPFSDownloadFail(t *testing.T) {
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",
@@ -186,7 +185,7 @@ func TestIPFSDownloadError(t *testing.T) {
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPConfigURL, "http://localhost:12345")
 	utConfig.SubSection(IPFSConfGatewaySubconf).Set(ffresty.HTTPCustomClient, mockedClient)
 
-	err := i.Init(context.Background(), utConfig, &sharedstoragemocks.Callbacks{})
+	err := i.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
 
 	httpmock.RegisterResponder("GET", "http://localhost:12345/ipfs/QmRAQfHNnknnz8S936M2yJGhhVNA6wXJ4jTRP3VXtptmmL",

@@ -123,6 +123,27 @@ func TestTokensTransferredIgnoreExisting(t *testing.T) {
 	mti.AssertExpectations(t)
 }
 
+func TestPersistTransferWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+
+	mdi := em.database.(*databasemocks.Plugin)
+
+	transfer := newTransfer()
+	pool := &core.TokenPool{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns2",
+	}
+
+	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+
+	valid, err := em.persistTokenTransfer(em.ctx, transfer)
+	assert.False(t, valid)
+	assert.NoError(t, err)
+
+	mdi.AssertExpectations(t)
+}
+
 func TestPersistTransferOpFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

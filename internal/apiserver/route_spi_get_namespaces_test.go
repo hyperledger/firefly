@@ -26,12 +26,13 @@ import (
 )
 
 func TestSPIGetNamespaces(t *testing.T) {
-	o, r := newTestSPIServer()
+	mgr, _, as := newTestServer()
+	r := as.createAdminMuxRouter(mgr)
 	req := httptest.NewRequest("GET", "/spi/v1/namespaces", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetNamespaces", mock.Anything, mock.Anything).
+	mgr.On("GetNamespaces", mock.Anything, mock.Anything).
 		Return([]*core.Namespace{}, nil, nil)
 	r.ServeHTTP(res, req)
 

@@ -36,10 +36,47 @@ import (
 type FFTokens struct {
 	ctx            context.Context
 	capabilities   *tokens.Capabilities
-	callbacks      tokens.Callbacks
+	callbacks      callbacks
 	configuredName string
 	client         *resty.Client
 	wsconn         wsclient.WSClient
+}
+
+type callbacks struct {
+	listeners []tokens.Callbacks
+}
+
+func (cb *callbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	for _, cb := range cb.listeners {
+		cb.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	}
+}
+
+func (cb *callbacks) TokenPoolCreated(plugin tokens.Plugin, pool *tokens.TokenPool) error {
+	for _, cb := range cb.listeners {
+		if err := cb.TokenPoolCreated(plugin, pool); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) TokensTransferred(plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
+	for _, cb := range cb.listeners {
+		if err := cb.TokensTransferred(plugin, transfer); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+	for _, cb := range cb.listeners {
+		if err := cb.TokensApproved(plugin, approval); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type wsEvent struct {
@@ -132,9 +169,8 @@ func (ft *FFTokens) Name() string {
 	return "fftokens"
 }
 
-func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section, callbacks tokens.Callbacks) (err error) {
+func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section) (err error) {
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
-	ft.callbacks = callbacks
 	ft.configuredName = name
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
@@ -158,6 +194,10 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	go ft.eventLoop()
 
 	return nil
+}
+
+func (ft *FFTokens) RegisterListener(listener tokens.Callbacks) {
+	ft.callbacks.listeners = append(ft.callbacks.listeners, listener)
 }
 
 func (ft *FFTokens) Start() error {

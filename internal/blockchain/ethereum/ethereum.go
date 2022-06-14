@@ -59,7 +59,7 @@ type Ethereum struct {
 	prefixShort     string
 	prefixLong      string
 	capabilities    *blockchain.Capabilities
-	callbacks       blockchain.Callbacks
+	callbacks       callbacks
 	client          *resty.Client
 	fftmClient      *resty.Client
 	streams         *streamManager
@@ -78,6 +78,43 @@ type Ethereum struct {
 	ethconnectConf   config.Section
 	contractConf     config.ArraySection
 	contractConfSize int
+}
+
+type callbacks struct {
+	listeners []blockchain.Callbacks
+}
+
+func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	for _, cb := range cb.listeners {
+		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	}
+}
+
+func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainEvent(event); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type eventStreamWebsocket struct {
@@ -153,14 +190,13 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
 	e.InitConfig(config)
 	ethconnectConf := e.ethconnectConf
 	addressResolverConf := config.SubSection(AddressResolverConfigKey)
 	fftmConf := config.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
-	e.callbacks = callbacks
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 
@@ -209,6 +245,10 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, callbacks bl
 	go e.eventLoop()
 
 	return nil
+}
+
+func (e *Ethereum) RegisterListener(listener blockchain.Callbacks) {
+	e.callbacks.listeners = append(e.callbacks.listeners, listener)
 }
 
 func (e *Ethereum) Start() (err error) {
@@ -1153,7 +1193,7 @@ func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, 
 	return strconv.Atoi(output.Output.(string))
 }
 
-func (e *Ethereum) NetworkVersion(ctx context.Context) int {
+func (e *Ethereum) NetworkVersion() int {
 	e.fireflyContract.mux.Lock()
 	defer e.fireflyContract.mux.Unlock()
 	return e.fireflyContract.networkVersion

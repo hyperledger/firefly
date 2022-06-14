@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -33,15 +32,15 @@ func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, ns string, w
 		return nil, err
 	}
 
+	if nm.orgName == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNodeAndOrgIDMustBeSet)
+	}
 	orgRequest := &core.IdentityCreateDTO{
-		Name: nm.namespace.GetMultipartyConfig(ns, coreconfig.OrgName),
+		Name: nm.orgName,
 		IdentityProfile: core.IdentityProfile{
-			Description: nm.namespace.GetMultipartyConfig(ns, coreconfig.OrgDescription),
+			Description: nm.orgDesc,
 		},
 		Key: key.Value,
-	}
-	if orgRequest.Name == "" {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNodeAndOrgIDMustBeSet)
 	}
 	return nm.RegisterOrganization(ctx, ns, orgRequest, waitConfirm)
 }

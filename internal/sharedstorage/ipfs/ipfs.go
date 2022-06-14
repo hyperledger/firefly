@@ -35,7 +35,6 @@ import (
 type IPFS struct {
 	ctx          context.Context
 	capabilities *sharedstorage.Capabilities
-	callbacks    sharedstorage.Callbacks
 	apiClient    *resty.Client
 	gwClient     *resty.Client
 }
@@ -50,10 +49,9 @@ func (i *IPFS) Name() string {
 	return "ipfs"
 }
 
-func (i *IPFS) Init(ctx context.Context, config config.Section, callbacks sharedstorage.Callbacks) error {
+func (i *IPFS) Init(ctx context.Context, config config.Section) error {
 
 	i.ctx = log.WithLogField(ctx, "sharedstorage", "ipfs")
-	i.callbacks = callbacks
 
 	apiConfig := config.SubSection(IPFSConfAPISubconf)
 	if apiConfig.GetString(ffresty.HTTPConfigURL) == "" {
@@ -67,6 +65,9 @@ func (i *IPFS) Init(ctx context.Context, config config.Section, callbacks shared
 	i.gwClient = ffresty.New(i.ctx, gwConfig)
 	i.capabilities = &sharedstorage.Capabilities{}
 	return nil
+}
+
+func (i *IPFS) RegisterListener(listener sharedstorage.Callbacks) {
 }
 
 func (i *IPFS) Capabilities() *sharedstorage.Capabilities {

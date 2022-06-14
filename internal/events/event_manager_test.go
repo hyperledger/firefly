@@ -42,7 +42,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -90,7 +89,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
-	emi, err := NewEventManager(ctx, mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper)
+	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -125,7 +124,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -148,7 +147,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false}).Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
-	_, err := NewEventManager(context.Background(), mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)
+	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)
 	assert.Regexp(t, "FF10172", err)
 }
 
@@ -424,16 +423,4 @@ func TestGetPlugins(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, em.GetPlugins(), expectedPlugins)
-}
-
-func TestGetWebSocketStatus(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	status := em.GetWebSocketStatus()
-	assert.Equal(t, true, status.Enabled)
-
-	em.subManager.transports = make(map[string]events.Plugin)
-	status = em.GetWebSocketStatus()
-	assert.Equal(t, false, status.Enabled)
 }

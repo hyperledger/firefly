@@ -21,12 +21,14 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/events/eifactory"
+	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-var getStatusWebSockets = &ffapi.Route{
-	Name:            "getStatusWebSockets",
-	Path:            "status/websockets",
+var getWebSockets = &ffapi.Route{
+	Name:            "getWebSockets",
+	Path:            "websockets",
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
@@ -36,7 +38,8 @@ var getStatusWebSockets = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Events().GetWebSocketStatus(), nil
+			ws, _ := eifactory.GetPlugin(cr.ctx, "websockets")
+			return ws.(*websockets.WebSockets).GetStatus(), nil
 		},
 	},
 }

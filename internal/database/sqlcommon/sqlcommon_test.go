@@ -42,7 +42,7 @@ func TestInitSQLCommonMissingURL(t *testing.T) {
 		config:       conf,
 	}
 	s.InitConfig(tp, conf)
-	err := s.Init(context.Background(), tp, conf, nil, nil)
+	err := s.Init(context.Background(), tp, conf, nil)
 	assert.Regexp(t, "FF10138.*url", err)
 }
 
@@ -55,14 +55,14 @@ func TestInitSQLCommon(t *testing.T) {
 
 func TestInitSQLCommonMissingOptions(t *testing.T) {
 	s := &SQLCommon{}
-	err := s.Init(context.Background(), nil, nil, nil, nil)
+	err := s.Init(context.Background(), nil, nil, nil)
 	assert.Regexp(t, "FF10112", err)
 }
 
 func TestInitSQLCommonOpenFailed(t *testing.T) {
 	mp := newMockProvider()
 	mp.openError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
+	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.capabilities)
 	assert.Regexp(t, "FF10112.*pop", err)
 }
 
@@ -70,7 +70,7 @@ func TestInitSQLCommonMigrationOpenFailed(t *testing.T) {
 	mp := newMockProvider()
 	mp.config.Set(SQLConfMigrationsAuto, true)
 	mp.getMigrationDriverError = fmt.Errorf("pop")
-	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.callbacks, mp.capabilities)
+	err := mp.SQLCommon.Init(context.Background(), mp, mp.config, mp.capabilities)
 	assert.Regexp(t, "FF10163.*pop", err)
 }
 

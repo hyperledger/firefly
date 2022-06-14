@@ -32,11 +32,11 @@ import (
 
 func TestSQLite3GoProvider(t *testing.T) {
 	sqlite := &SQLite3{}
-	dcb := &databasemocks.Callbacks{}
+	sqlite.RegisterListener(&databasemocks.Callbacks{})
 	config := config.RootSection("unittest")
 	sqlite.InitConfig(config)
 	config.Set(sqlcommon.SQLConfDatasourceURL, "!wrong://")
-	err := sqlite.Init(context.Background(), config, dcb)
+	err := sqlite.Init(context.Background(), config)
 	assert.NoError(t, err)
 	_, err = sqlite.GetMigrationDriver(sqlite.DB())
 	assert.Error(t, err)

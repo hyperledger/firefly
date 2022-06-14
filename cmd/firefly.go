@@ -31,7 +31,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/apiserver"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/orchestrator"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +58,7 @@ var showConfigCommand = &cobra.Command{
 	Short:   "List out the configuration options",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Initialize config of all plugins
-		getOrchestrator()
+		getRootManager()
 		_ = config.ReadConfig(configSuffix, cfgFile)
 
 		// Print it all out
@@ -72,18 +72,18 @@ var showConfigCommand = &cobra.Command{
 
 var cfgFile string
 
-var _utOrchestrator orchestrator.Orchestrator
+var _utManager namespace.Manager
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "config file")
 	rootCmd.AddCommand(showConfigCommand)
 }
 
-func getOrchestrator() orchestrator.Orchestrator {
-	if _utOrchestrator != nil {
-		return _utOrchestrator
+func getRootManager() namespace.Manager {
+	if _utManager != nil {
+		return _utManager
 	}
-	return orchestrator.NewOrchestrator(true)
+	return namespace.NewNamespaceManager(true)
 }
 
 // Execute is called by the main method of the package
@@ -118,19 +118,19 @@ func run() error {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
-		orchestratorCtx, cancelOrchestratorCtx := context.WithCancel(ctx)
-		o := getOrchestrator()
+		rootCtx, rootCancelCtx := context.WithCancel(ctx)
+		mgr := getRootManager()
 		as := apiserver.NewAPIServer()
-		go startFirefly(orchestratorCtx, cancelOrchestratorCtx, o, as, errChan)
+		go startFirefly(rootCtx, rootCancelCtx, mgr, as, errChan)
 		select {
 		case sig := <-sigs:
 			log.L(ctx).Infof("Shutting down due to %s", sig.String())
 			cancelCtx()
-			o.WaitStop()
+			mgr.WaitStop()
 			return nil
-		case <-orchestratorCtx.Done():
+		case <-rootCtx.Done():
 			log.L(ctx).Infof("Restarting due to configuration change")
-			o.WaitStop()
+			mgr.WaitStop()
 			// Re-read the configuration
 			coreconfig.Reset()
 			if err := config.ReadConfig(configSuffix, cfgFile); err != nil {
@@ -144,7 +144,7 @@ func run() error {
 	}
 }
 
-func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestrator.Orchestrator, as apiserver.Server, errChan chan error) {
+func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, mgr namespace.Manager, as apiserver.Server, errChan chan error) {
 	var err error
 	// Start debug listener
 	debugPort := config.GetInt(coreconfig.DebugPort)
@@ -161,18 +161,18 @@ func startFirefly(ctx context.Context, cancelCtx context.CancelFunc, o orchestra
 		log.L(ctx).Debugf("Debug HTTP endpoint listening on localhost:%d", debugPort)
 	}
 
-	if err = o.Init(ctx, cancelCtx); err != nil {
+	if err = mgr.Init(ctx, cancelCtx); err != nil {
 		errChan <- err
 		return
 	}
-	if err = o.Start(); err != nil {
+	if err = mgr.Start(); err != nil {
 		errChan <- err
 		return
 	}
 
 	// Run the API Server
 
-	if err = as.Serve(ctx, o); err != nil {
+	if err = as.Serve(ctx, mgr); err != nil {
 		errChan <- err
 	}
 }

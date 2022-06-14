@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -99,7 +100,9 @@ func newMessageReceived(peerID string, data []byte, expectedManifest string) *da
 
 func newPrivateBlobReceivedNoAck(peerID string, hash *fftypes.Bytes32, size int64, payloadRef string) *dataexchangemocks.DXEvent {
 	mde := &dataexchangemocks.DXEvent{}
+	pathParts := strings.Split(payloadRef, "/")
 	mde.On("PrivateBlobReceived").Return(&dataexchange.PrivateBlobReceived{
+		Namespace:  pathParts[0],
 		PeerID:     peerID,
 		Hash:       *hash,
 		Size:       size,
@@ -292,6 +295,23 @@ func TestMessageReceivedNilMessage(t *testing.T) {
 	em.messageReceived(mdx, mde)
 
 	mde.AssertExpectations(t)
+}
+
+func TestMessageReceivedWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.namespace = "ns2"
+
+	_, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newMessageReceivedNoAck("peer1", b)
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
+
 }
 
 func TestMessageReceivedNilGroup(t *testing.T) {
@@ -492,6 +512,22 @@ func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
 
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+}
+
+func TestPrivateBlobReceivedWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	em.namespace = "ns2"
+	hash := fftypes.NewRandB32()
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	// no ack as we are simulating termination mid retry
+	mde := newPrivateBlobReceivedNoAck("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageIdentityFail(t *testing.T) {

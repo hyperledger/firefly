@@ -38,7 +38,7 @@ var spiPatchOpByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			err = cr.or.Operations().ResolveOperationByNamespacedID(cr.ctx, r.PP["nsopid"], r.Input.(*core.OperationUpdateDTO))
+			err = cr.mgr.ResolveOperationByNamespacedID(cr.ctx, r.PP["nsopid"], r.Input.(*core.OperationUpdateDTO))
 			return &core.EmptyInput{}, err
 		},
 	},

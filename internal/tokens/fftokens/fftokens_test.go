@@ -60,7 +60,7 @@ func newTestFFTokens(t *testing.T) (h *FFTokens, toServer, fromServer chan strin
 	ffTokensConfig.AddKnownKey(ffresty.HTTPCustomClient, mockedClient)
 	config.Set("tokens", []fftypes.JSONObject{{}})
 
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "fftokens", h.Name())
 	assert.Equal(t, "testtokens", h.configuredName)
@@ -77,7 +77,7 @@ func TestInitBadURL(t *testing.T) {
 	h.InitConfig(ffTokensConfig)
 
 	ffTokensConfig.AddKnownKey(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF00149", err)
 }
 
@@ -86,7 +86,7 @@ func TestInitMissingURL(t *testing.T) {
 	h := &FFTokens{}
 	h.InitConfig(ffTokensConfig)
 
-	err := h.Init(context.Background(), "testtokens", ffTokensConfig, &tokenmocks.Callbacks{})
+	err := h.Init(context.Background(), "testtokens", ffTokensConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -259,7 +259,8 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 			return res, nil
 		})
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
@@ -412,7 +413,8 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 			return res, nil
 		})
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
@@ -457,7 +459,8 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 			return res, nil
 		})
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
@@ -763,7 +766,7 @@ func TestTransferTokensError(t *testing.T) {
 	assert.Regexp(t, "FF10274", err)
 }
 
-func TestEvents(t *testing.T) {
+func TestIgnoredEvents(t *testing.T) {
 	h, toServer, fromServer, _, done := newTestFFTokens(t)
 	defer done()
 
@@ -776,24 +779,31 @@ func TestEvents(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"data":{"id":"1"},"event":"ack"}`, string(msg))
 
-	mcb := h.callbacks.(*tokenmocks.Callbacks)
-	opID := fftypes.NewUUID()
-	txID := fftypes.NewUUID()
-
 	fromServer <- fftypes.JSONObject{
 		"id":    "2",
 		"event": "receipt",
 		"data":  fftypes.JSONObject{},
 	}.String()
+}
 
+func TestReceiptEvents(t *testing.T) {
+	h, _, fromServer, _, done := newTestFFTokens(t)
+	defer done()
+
+	err := h.Start()
+	assert.NoError(t, err)
+
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
+	opID := fftypes.NewUUID()
+
+	// receipt: bad ID - passed through
+	mcb.On("TokenOpUpdate", h, "wrong", core.OpStatusFailed, "", "", mock.Anything).Return(nil).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "3",
 		"event": "receipt",
 		"data":  fftypes.JSONObject{"id": "wrong"}, // passed through to TokenOpUpdate to ignore
 	}.String()
-
-	// receipt: bad ID - passed through
-	mcb.On("TokenOpUpdate", h, "wrong", core.OpStatusFailed, "", "", mock.Anything).Return(nil).Once()
 
 	// receipt: success
 	mcb.On("TokenOpUpdate", h, "ns1:"+opID.String(), core.OpStatusSucceeded, "0xffffeeee", "", mock.Anything).Return(nil).Once()
@@ -818,13 +828,25 @@ func TestEvents(t *testing.T) {
 			"transactionHash": "0xffffeeee",
 		},
 	}.String()
+}
+
+func TestPoolEvents(t *testing.T) {
+	h, toServer, fromServer, _, done := newTestFFTokens(t)
+	defer done()
+
+	err := h.Start()
+	assert.NoError(t, err)
+
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
+	txID := fftypes.NewUUID()
 
 	// token-pool: missing data
 	fromServer <- fftypes.JSONObject{
 		"id":    "6",
 		"event": "token-pool",
 	}.String()
-	msg = <-toServer
+	msg := <-toServer
 	assert.Equal(t, `{"data":{"id":"6"},"event":"ack"}`, string(msg))
 
 	// token-pool: invalid uuid (success)
@@ -875,12 +897,46 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
+	// token-pool: callback fail
+	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
+		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
+	})).Return(fmt.Errorf("pop")).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "9",
+		"event": "token-pool",
+		"data": fftypes.JSONObject{
+			"id":          "000000000010/000020/000030/000040",
+			"type":        "fungible",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
+			"blockchain": fftypes.JSONObject{
+				"id": "000000000010/000020/000030",
+				"info": fftypes.JSONObject{
+					"transactionHash": "0xffffeeee",
+				},
+			},
+		},
+	}.String()
+}
+
+func TestTransferEvents(t *testing.T) {
+	h, toServer, fromServer, _, done := newTestFFTokens(t)
+	defer done()
+
+	err := h.Start()
+	assert.NoError(t, err)
+
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
+	txID := fftypes.NewUUID()
+
 	// token-mint: missing data
 	fromServer <- fftypes.JSONObject{
 		"id":    "9",
 		"event": "token-mint",
 	}.String()
-	msg = <-toServer
+	msg := <-toServer
 	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
 
 	// token-mint: invalid amount
@@ -1057,6 +1113,42 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"16"},"event":"ack"}`, string(msg))
 
+	// token-transfer: callback fail
+	mcb.On("TokensTransferred", h, mock.MatchedBy(func(t *tokens.TokenTransfer) bool {
+		return t.Amount.Int().Int64() == 2 && t.From == "0x0" && t.To == "0x1" && t.TokenIndex == "" && messageID.Equals(t.Message) && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+	})).Return(fmt.Errorf("pop")).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "17",
+		"event": "token-transfer",
+		"data": fftypes.JSONObject{
+			"id":          "000000000010/000020/000030/000040",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"from":        "0x0",
+			"to":          "0x1",
+			"amount":      "2",
+			"data":        fftypes.JSONObject{"tx": txID.String(), "message": messageID.String()}.String(),
+			"blockchain": fftypes.JSONObject{
+				"id": "000000000010/000020/000030",
+				"info": fftypes.JSONObject{
+					"transactionHash": "0xffffeeee",
+				},
+			},
+		},
+	}.String()
+}
+
+func TestApprovalEvents(t *testing.T) {
+	h, toServer, fromServer, _, done := newTestFFTokens(t)
+	defer done()
+
+	err := h.Start()
+	assert.NoError(t, err)
+
+	mcb := &tokenmocks.Callbacks{}
+	h.RegisterListener(mcb)
+	txID := fftypes.NewUUID()
+
 	// token-approval: success
 	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
 		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
@@ -1080,7 +1172,7 @@ func TestEvents(t *testing.T) {
 			},
 		},
 	}.String()
-	msg = <-toServer
+	msg := <-toServer
 	assert.Equal(t, `{"data":{"id":"17"},"event":"ack"}`, string(msg))
 
 	// token-approval: success (no data)
@@ -1104,22 +1196,42 @@ func TestEvents(t *testing.T) {
 
 	// token-approval: missing data
 	fromServer <- fftypes.JSONObject{
-		"id":    "9",
+		"id":    "19",
 		"event": "token-approval",
 	}.String()
 	msg = <-toServer
-	assert.Equal(t, `{"data":{"id":"9"},"event":"ack"}`, string(msg))
+	assert.Equal(t, `{"data":{"id":"19"},"event":"ack"}`, string(msg))
 
-	mcb.AssertExpectations(t)
+	// token-approval: callback fail
+	mcb.On("TokensApproved", h, mock.MatchedBy(func(t *tokens.TokenApproval) bool {
+		return t.Approved == true && t.Operator == "0x0" && t.PoolLocator == "F1" && t.Event.ProtocolID == "000000000010/000020/000030"
+	})).Return(fmt.Errorf("pop")).Once()
+	fromServer <- fftypes.JSONObject{
+		"id":    "20",
+		"event": "token-approval",
+		"data": fftypes.JSONObject{
+			"id":          "000000000010/000020/000030/000040",
+			"subject":     "a:b",
+			"poolLocator": "F1",
+			"signer":      "0x0",
+			"operator":    "0x0",
+			"approved":    true,
+			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
+			"blockchain": fftypes.JSONObject{
+				"id": "000000000010/000020/000030",
+				"info": fftypes.JSONObject{
+					"transactionHash": "0xffffeeee",
+				},
+			},
+		},
+	}.String()
 }
 
 func TestEventLoopReceiveClosed(t *testing.T) {
-	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	h := &FFTokens{
-		ctx:       context.Background(),
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:    context.Background(),
+		wsconn: wsm,
 	}
 	r := make(chan []byte)
 	close(r)
@@ -1129,12 +1241,10 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 }
 
 func TestEventLoopSendClosed(t *testing.T) {
-	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	h := &FFTokens{
-		ctx:       context.Background(),
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:    context.Background(),
+		wsconn: wsm,
 	}
 	r := make(chan []byte, 1)
 	r <- []byte(`{"id":"1"}`) // ignored but acked
@@ -1145,14 +1255,12 @@ func TestEventLoopSendClosed(t *testing.T) {
 }
 
 func TestEventLoopClosedContext(t *testing.T) {
-	dxc := &tokenmocks.Callbacks{}
 	wsm := &wsmocks.WSClient{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	h := &FFTokens{
-		ctx:       ctx,
-		callbacks: dxc,
-		wsconn:    wsm,
+		ctx:    ctx,
+		wsconn: wsm,
 	}
 	r := make(chan []byte, 1)
 	wsm.On("Close").Return()

@@ -148,22 +148,6 @@ func (_m *EventManager) GetPlugins() []*core.NodeStatusPlugin {
 	return r0
 }
 
-// GetWebSocketStatus provides a mock function with given fields:
-func (_m *EventManager) GetWebSocketStatus() *core.WebSocketStatus {
-	ret := _m.Called()
-
-	var r0 *core.WebSocketStatus
-	if rf, ok := ret.Get(0).(func() *core.WebSocketStatus); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.WebSocketStatus)
-		}
-	}
-
-	return r0
-}
-
 // NewEvents provides a mock function with given fields:
 func (_m *EventManager) NewEvents() chan<- int64 {
 	ret := _m.Called()

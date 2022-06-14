@@ -55,7 +55,10 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	config.Set(coreconfig.OpUpdateWorkerBatchMaxInserts, 200)
 	logrus.SetLevel(logrus.DebugLevel)
 
-	mom := &operationsManager{handlers: make(map[fftypes.FFEnum]OperationHandler)}
+	mom := &operationsManager{
+		namespace: "ns1",
+		handlers:  make(map[fftypes.FFEnum]OperationHandler),
+	}
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCapabilities)
 	mdm := &datamocks.Manager{}
@@ -110,6 +113,16 @@ func TestSubmitUpdateSyncFallbackOpNotFound(t *testing.T) {
 	})
 
 	mdi.AssertExpectations(t)
+}
+
+func TestSubmitUpdateWrongNS(t *testing.T) {
+	ou := newTestOperationUpdaterNoConcurrency(t)
+	defer ou.close()
+	customCtx := context.WithValue(context.Background(), "dbtx", "on this context")
+
+	ou.SubmitOperationUpdate(customCtx, &OperationUpdate{
+		NamespacedOpID: "ns2:" + fftypes.NewUUID().String(),
+	})
 }
 
 func TestSubmitUpdateWorkerE2ESuccess(t *testing.T) {

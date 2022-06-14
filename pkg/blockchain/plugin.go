@@ -33,7 +33,10 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	Init(ctx context.Context, config config.Section, callbacks Callbacks, metrics metrics.Manager) error
+	Init(ctx context.Context, config config.Section, metrics metrics.Manager) error
+
+	// RegisterListener registers a listener to receive callbacks
+	RegisterListener(listener Callbacks)
 
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
@@ -91,7 +94,7 @@ type Plugin interface {
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
 
 	// NetworkVersion returns the version of the network rules being used by this plugin
-	NetworkVersion(ctx context.Context) int
+	NetworkVersion() int
 }
 
 const FireFlyActionPrefix = "firefly:"

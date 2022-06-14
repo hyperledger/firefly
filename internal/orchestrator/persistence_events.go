@@ -18,44 +18,39 @@ package orchestrator
 
 import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
+	if ns != or.namespace {
+		log.L(or.ctx).Debugf("Ignoring database event from different namespace '%s'", ns)
+		return
+	}
 	switch {
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionMessages:
 		or.batch.NewMessages() <- sequence
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionEvents:
 		or.events.NewEvents() <- sequence
 	}
-	var ces *int64
-	if eventType == core.ChangeEventTypeCreated {
-		// Sequence is only provided on create events
-		ces = &sequence
-	}
-	or.adminEvents.Dispatch(&core.ChangeEvent{
-		Collection: string(resType),
-		Type:       eventType,
-		Namespace:  ns,
-		ID:         id,
-		Sequence:   ces,
-	})
 }
 
 func (or *orchestrator) OrderedCollectionNSEvent(resType database.OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64) {
+	if ns != or.namespace {
+		log.L(or.ctx).Debugf("Ignoring database event from different namespace '%s'", ns)
+		return
+	}
 	if eventType == core.ChangeEventTypeCreated && resType == database.CollectionPins {
 		or.events.NewPins() <- sequence
 	}
-	or.adminEvents.Dispatch(&core.ChangeEvent{
-		Collection: string(resType),
-		Type:       eventType,
-		Namespace:  ns,
-		Sequence:   &sequence,
-	})
 }
 
 func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID) {
+	if ns != or.namespace {
+		log.L(or.ctx).Debugf("Ignoring database event from different namespace '%s'", ns)
+		return
+	}
 	switch {
 	case eventType == core.ChangeEventTypeCreated && resType == database.CollectionSubscriptions:
 		or.events.NewSubscriptions() <- id
@@ -64,28 +59,12 @@ func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS,
 	case eventType == core.ChangeEventTypeUpdated && resType == database.CollectionSubscriptions:
 		or.events.SubscriptionUpdates() <- id
 	}
-	or.adminEvents.Dispatch(&core.ChangeEvent{
-		Collection: string(resType),
-		Type:       eventType,
-		Namespace:  ns,
-		ID:         id,
-	})
 }
 
 func (or *orchestrator) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	or.adminEvents.Dispatch(&core.ChangeEvent{
-		Collection: string(resType),
-		Type:       eventType,
-		ID:         id,
-	})
+	// do nothing
 }
 
 func (or *orchestrator) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
-	or.adminEvents.Dispatch(&core.ChangeEvent{
-		Collection: string(resType),
-		Type:       eventType,
-		Namespace:  ns,
-		Hash:       hash,
-	})
-
+	// do nothing
 }

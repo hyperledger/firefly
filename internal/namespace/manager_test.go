@@ -24,17 +24,24 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/internal/database/difactory"
+	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/identity/iifactory"
+	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
+	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/identitymocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
+	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
+	"github.com/hyperledger/firefly/mocks/spieventsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
-	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -43,358 +50,649 @@ import (
 
 type testNamespaceManager struct {
 	namespaceManager
-	mdi *databasemocks.Plugin
+	mmi *metricsmocks.Manager
+	mae *spieventsmocks.Manager
 	mbi *blockchainmocks.Plugin
-	mps *sharedstoragemocks.Plugin
+	mdi *databasemocks.Plugin
 	mdx *dataexchangemocks.Plugin
+	mps *sharedstoragemocks.Plugin
 	mti *tokenmocks.Plugin
 }
 
 func (nm *testNamespaceManager) cleanup(t *testing.T) {
+	nm.mmi.AssertExpectations(t)
+	nm.mae.AssertExpectations(t)
+	nm.mbi.AssertExpectations(t)
 	nm.mdi.AssertExpectations(t)
+	nm.mdx.AssertExpectations(t)
+	nm.mps.AssertExpectations(t)
+	nm.mti.AssertExpectations(t)
 }
 
 func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 	if resetConfig {
 		coreconfig.Reset()
 		InitConfig(true)
+		namespaceConfig.AddKnownKey("predefined.0.multiparty.enabled", true)
 	}
 	nm := &testNamespaceManager{
+		mmi: &metricsmocks.Manager{},
+		mae: &spieventsmocks.Manager{},
+		mbi: &blockchainmocks.Plugin{},
 		mdi: &databasemocks.Plugin{},
+		mdx: &dataexchangemocks.Plugin{},
+		mps: &sharedstoragemocks.Plugin{},
+		mti: &tokenmocks.Plugin{},
 		namespaceManager: namespaceManager{
-			nsConfig:      buildNamespaceMap(context.Background()),
-			bcPlugins:     map[string]blockchain.Plugin{"ethereum": &blockchainmocks.Plugin{}, "fabric": &blockchainmocks.Plugin{}},
-			dbPlugins:     map[string]database.Plugin{"postgres": &databasemocks.Plugin{}, "sqlite3": &databasemocks.Plugin{}},
-			dxPlugins:     map[string]dataexchange.Plugin{"ffdx": &dataexchangemocks.Plugin{}, "ffdx2": &dataexchangemocks.Plugin{}},
-			ssPlugins:     map[string]sharedstorage.Plugin{"ipfs": &sharedstoragemocks.Plugin{}, "ipfs2": &sharedstoragemocks.Plugin{}},
-			tokensPlugins: map[string]tokens.Plugin{"erc721": &tokenmocks.Plugin{}},
+			ctx:         context.Background(),
+			namespaces:  make(map[string]*namespace),
+			pluginNames: make(map[string]bool),
 		},
 	}
+	nm.plugins.blockchain = map[string]blockchainPlugin{
+		"ethereum": {plugin: nm.mbi},
+	}
+	nm.plugins.database = map[string]databasePlugin{
+		"postgres": {plugin: nm.mdi},
+	}
+	nm.plugins.dataexchange = map[string]dataExchangePlugin{
+		"ffdx": {plugin: nm.mdx},
+	}
+	nm.plugins.sharedstorage = map[string]sharedStoragePlugin{
+		"ipfs": {plugin: nm.mps},
+	}
+	nm.plugins.identity = map[string]identityPlugin{
+		"tbd": {plugin: &identitymocks.Plugin{}},
+	}
+	nm.plugins.tokens = map[string]tokensPlugin{
+		"erc721": {plugin: nm.mti},
+	}
+	nm.namespaceManager.metrics = nm.mmi
+	nm.namespaceManager.adminEvents = nm.mae
 	return nm
 }
 
 func TestNewNamespaceManager(t *testing.T) {
-	bc := map[string]blockchain.Plugin{"ethereum": &blockchainmocks.Plugin{}}
-	db := map[string]database.Plugin{"postgres": &databasemocks.Plugin{}}
-	dx := map[string]dataexchange.Plugin{"ffdx": &dataexchangemocks.Plugin{}}
-	ss := map[string]sharedstorage.Plugin{"ipfs": &sharedstoragemocks.Plugin{}}
-	tokens := map[string]tokens.Plugin{"erc721": &tokenmocks.Plugin{}}
-
-	nm := NewNamespaceManager(context.Background(), bc, db, dx, ss, tokens)
+	nm := NewNamespaceManager(true)
 	assert.NotNil(t, nm)
 }
 
 func TestInit(t *testing.T) {
-	coreconfig.Reset()
-	nm := newTestNamespaceManager(false)
-	defer nm.cleanup(t)
-
-	nm.Init(context.Background(), nm.mdi)
-}
-
-func TestInitNamespacesBadName(t *testing.T) {
-	coreconfig.Reset()
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "!Badness")
-	nm := newTestNamespaceManager(false)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("test")
-
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "!Badness")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "test")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
-	nm.nsConfig = map[string]config.Section{"!Badness": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF00140", err)
-}
-
-func TestInitNamespacesReservedName(t *testing.T) {
-	coreconfig.Reset()
-	nm := newTestNamespaceManager(false)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("test")
-
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "ff_system")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "test")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
-	nm.nsConfig = map[string]config.Section{"ff_system": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10388", err)
-}
-
-func TestInitNamespacesGetFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	mo := &orchestratormocks.Orchestrator{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.utOrchestrator = mo
 
-	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "pop", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("NetworkVersion").Return(2)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
+
+	mo.AssertExpectations(t)
 }
 
-func TestInitNamespacesUpsertFail(t *testing.T) {
+func TestInitDatabaseFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
-	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	nm.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(fmt.Errorf("pop"))
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "pop", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestInitNamespacesMultipartyUnknownPlugin(t *testing.T) {
+func TestInitBlockchainFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "bad_unknown_plugin"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10390.*unknown", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestInitNamespacesMultipartyMultipleBlockchains(t *testing.T) {
+func TestInitDataExchangeFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "fabric"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestInitNamespacesMultipartyMultipleDX(t *testing.T) {
+func TestInitSharedStorageFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "ffdx2"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestInitNamespacesMultipartyMultipleSS(t *testing.T) {
+func TestInitTokensFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "ipfs2"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestInitNamespacesMultipartyMultipleDB(t *testing.T) {
+func TestInitOrchestratorFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721", "sqlite3"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mbi.On("RegisterListener", mock.Anything).Return()
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
 }
 
-func TestInitNamespacesDeprecatedConfigMultipleBlockchains(t *testing.T) {
+func TestInitVersion1(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	mo := &orchestratormocks.Orchestrator{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	nm.utOrchestrator = mo
 
-	// nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(nil, nil)
-	// nm.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("NetworkVersion").Return(1)
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mo, nm.Orchestrator("default"))
+	assert.Nil(t, nm.Orchestrator("unknown"))
+	assert.NotNil(t, nm.Orchestrator(core.LegacySystemNamespace))
+
+	mo.AssertExpectations(t)
 }
 
-func TestInitNamespacesGatewayMultipleDB(t *testing.T) {
+func TestInitVersion1Fail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "sqlite3"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
+	mo := &orchestratormocks.Orchestrator{}
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	nm.utOrchestrator = mo
 
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mbi.On("NetworkVersion").Return(1)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+
+	mo.AssertExpectations(t)
 }
 
-func TestInitNamespacesGatewayMultipleBlockchains(t *testing.T) {
+func TestDeprecatedDatabasePlugin(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "fabric"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10394", err)
-}
-
-func TestInitNamespacesMultipartyMissingPlugins(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10391", err)
-}
-
-func TestInitNamespacesGatewayWithDX(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "ffdx"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10393", err)
-}
-
-func TestInitNamespacesGatewayWithSharedStorage(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "ipfs"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10393", err)
-}
-
-func TestInitNamespacesGatewayUnknownPlugin(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "bad_unknown_plugin"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10390.*unknown", err)
-}
-
-func TestInitNamespacesGatewayNoDB(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, false)
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10392", err)
-}
-
-func TestInitNamespacesUpsertNotNeeded(t *testing.T) {
-	nm := newTestNamespaceManager(true)
-	defer nm.cleanup(t)
-
-	utTestConfig := config.RootSection("default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceRemoteName, "default")
-	utTestConfig.AddKnownKey(coreconfig.NamespaceMultipartyEnabled, true)
-	utTestConfig.AddKnownKey(coreconfig.NamespaceDescription, "test description")
-	utTestConfig.AddKnownKey(coreconfig.NamespacePlugins, []string{"ethereum", "postgres", "ffdx", "ipfs", "erc721"})
-	nm.nsConfig = map[string]config.Section{"default": utTestConfig}
-
-	nm.mdi.On("GetNamespace", mock.Anything, mock.Anything).Return(&core.Namespace{
-		Type: core.NamespaceTypeBroadcast, // any broadcasted NS will not be updated
-	}, nil)
-	err := nm.initNamespaces(context.Background(), nm.mdi)
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	deprecatedDatabaseConfig.Set(coreconfig.PluginConfigType, "postgres")
+	plugins, err := nm.getDatabasePlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
 	assert.NoError(t, err)
 }
 
-func TestInitNamespacesDefaultMissing(t *testing.T) {
-	coreconfig.Reset()
-	config.Set(coreconfig.NamespacesPredefined, fftypes.JSONObjectArray{})
-
-	nm := newTestNamespaceManager(false)
+func TestDeprecatedDatabasePluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
-
-	err := nm.initNamespaces(context.Background(), nm.mdi)
-	assert.Regexp(t, "FF10166", err)
+	difactory.InitConfigDeprecated(deprecatedDatabaseConfig)
+	deprecatedDatabaseConfig.Set(coreconfig.PluginConfigType, "wrong")
+	_, err := nm.getDatabasePlugins(context.Background())
+	assert.Regexp(t, "FF10122.*wrong", err)
 }
 
-func TestInitNamespacesDupName(t *testing.T) {
-	coreconfig.Reset()
-	InitConfig(false)
+func TestDatabasePlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
+	plugins, err := nm.getDatabasePlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDatabasePluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "unknown")
+	plugins, err := nm.getDatabasePlugins(context.Background())
+	assert.Nil(t, plugins)
+	assert.Error(t, err)
+}
+
+func TestDatabasePluginBadName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.database = nil
+	difactory.InitConfig(databaseConfig)
+	config.Set("plugins.database", []fftypes.JSONObject{{}})
+	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong////")
+	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
+func TestIdentityPluginBadName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong//")
+	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "tbd")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	_, err := nm.getIdentityPlugins(context.Background())
+	assert.Regexp(t, "FF00140.*name", err)
+}
+
+func TestIdentityPluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	_, err := nm.getIdentityPlugins(context.Background())
+	assert.Regexp(t, "FF10212.*wrong", err)
+}
+
+func TestIdentityPluginNoType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.identity = nil
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF10386.*type", err)
+}
+
+func TestIdentityPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	iifactory.InitConfig(identityConfig)
+	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	identityConfig.AddKnownKey(coreconfig.PluginConfigType, "onchain")
+	config.Set("plugins.identity", []fftypes.JSONObject{{}})
+	plugins, err := nm.getIdentityPlugins(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(plugins))
+}
+
+func TestDeprecatedBlockchainPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	bifactory.InitConfigDeprecated(deprecatedBlockchainConfig)
+	deprecatedBlockchainConfig.Set(coreconfig.PluginConfigType, "ethereum")
+	plugins, err := nm.getBlockchainPlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDeprecatedBlockchainPluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	deprecatedBlockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+	_, err := nm.getBlockchainPlugins(context.Background())
+	assert.Regexp(t, "FF10110.*wrong", err)
+}
+
+func TestBlockchainPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "ethereum")
+	plugins, err := nm.getBlockchainPlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestBlockchainPluginNoType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	_, err := nm.getBlockchainPlugins(context.Background())
+	assert.Error(t, err)
+}
+
+func TestBlockchainPluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.blockchain = nil
+	bifactory.InitConfig(blockchainConfig)
+	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
+	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
+func TestDeprecatedSharedStoragePlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
+	deprecatedSharedStorageConfig.Set(coreconfig.PluginConfigType, "ipfs")
+	plugins, err := nm.getSharedStoragePlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDeprecatedSharedStoragePluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	ssfactory.InitConfigDeprecated(deprecatedSharedStorageConfig)
+	deprecatedSharedStorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+	_, err := nm.getSharedStoragePlugins(context.Background())
+	assert.Regexp(t, "FF10134.*wrong", err)
+}
+
+func TestSharedStoragePlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	ssfactory.InitConfig(sharedstorageConfig)
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
+	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "ipfs")
+	plugins, err := nm.getSharedStoragePlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestSharedStoragePluginNoType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	ssfactory.InitConfig(sharedstorageConfig)
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
+	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	_, err := nm.getSharedStoragePlugins(context.Background())
+	assert.Error(t, err)
+}
+
+func TestSharedStoragePluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.sharedstorage = nil
+	ssfactory.InitConfig(sharedstorageConfig)
+	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
+	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
+func TestDeprecatedDataExchangePlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
+	deprecatedDataexchangeConfig.Set(coreconfig.PluginConfigType, "ffdx")
+	plugins, err := nm.getDataExchangePlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDeprecatedDataExchangePluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	dxfactory.InitConfigDeprecated(deprecatedDataexchangeConfig)
+	deprecatedDataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+	_, err := nm.getDataExchangePlugins(context.Background())
+	assert.Regexp(t, "FF10213.*wrong", err)
+}
+
+func TestDataExchangePlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	dxfactory.InitConfig(dataexchangeConfig)
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
+	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "ffdx")
+	plugins, err := nm.getDataExchangePlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDataExchangePluginNoType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	dxfactory.InitConfig(dataexchangeConfig)
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
+	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	_, err := nm.getDataExchangePlugins(context.Background())
+	assert.Error(t, err)
+}
+
+func TestDataExchangePluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.dataexchange = nil
+	dxfactory.InitConfig(dataexchangeConfig)
+	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
+	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
+	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
+func TestDeprecatedTokensPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
+	plugins, err := nm.getTokensPlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestDeprecatedTokensPluginNoName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
+	_, err := nm.getTokensPlugins(context.Background())
+	assert.Regexp(t, "FF10273", err)
+}
+
+func TestDeprecatedTokensPluginBadName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "BAD!")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "fftokens")
+	_, err := nm.getTokensPlugins(context.Background())
+	assert.Regexp(t, "FF00140", err)
+}
+
+func TestDeprecatedTokensPluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfigDeprecated(deprecatedTokensConfig)
+	config.Set("tokens", []fftypes.JSONObject{{}})
+	deprecatedTokensConfig.AddKnownKey(coreconfig.PluginConfigName, "test")
+	deprecatedTokensConfig.AddKnownKey(tokens.TokensConfigPlugin, "wrong")
+	_, err := nm.getTokensPlugins(context.Background())
+	assert.Regexp(t, "FF10272.*wrong", err)
+}
+
+func TestTokensPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfig(tokensConfig)
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
+	plugins, err := nm.getTokensPlugins(context.Background())
+	assert.Equal(t, 1, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestTokensPluginNoType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	tifactory.InitConfig(tokensConfig)
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
+	_, err := nm.getTokensPlugins(context.Background())
+	assert.Error(t, err)
+}
+
+func TestTokensPluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.tokens = nil
+	tifactory.InitConfig(tokensConfig)
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
+func TestTokensPluginDuplicate(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.pluginNames["erc20_erc721"] = true
+	tifactory.InitConfig(tokensConfig)
+	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
+	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "fftokens")
+	_, err := nm.getTokensPlugins(context.Background())
+	assert.Regexp(t, "FF10395", err)
+}
+
+func TestInitBadNamespace(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: "!Badness"
+    predefined:
+    - name: "!Badness"
+    `))
+	assert.NoError(t, err)
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err = nm.Init(ctx, cancelCtx)
+	assert.Regexp(t, "FF00140", err)
+}
+
+func TestLoadNamespacesReservedName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ff_system
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10388", err)
+}
+
+func TestLoadNamespacesDuplicate(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
 
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
@@ -402,80 +700,505 @@ func TestInitNamespacesDupName(t *testing.T) {
     default: ns1
     predefined:
     - name: ns1
-      remoteName: ns1
-      plugins: [sqlite3, ethereum, erc721]
+      plugins: [postgres]
+    - name: ns1
+      plugins: [postgres]
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, nm.namespaces, 1)
+}
+
+func TestLoadNamespacesNoName(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    predefined:
+    - plugins: [postgres]
+    `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10166", err)
+}
+
+func TestLoadNamespacesNoDefault(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
     - name: ns2
-      remoteName: ns2
-      plugins:
-      - sqlite3
-      - ethereum
-      - erc721
-    - name: ns2
-      remoteName: ns2
-      plugins:
-      - sqlite3
-      - ethereum
-      - erc721
+      plugins: [postgres]
   `))
 	assert.NoError(t, err)
 
-	nm := newTestNamespaceManager(false)
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10166", err)
+}
+
+func TestLoadNamespacesUseDefaults(t *testing.T) {
+	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	nsList, err := nm.getPredefinedNamespaces(context.Background())
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+  org:
+    name: org1
+  `))
 	assert.NoError(t, err)
-	assert.Len(t, nsList, 3)
-	names := make([]string, len(nsList))
-	for i, ns := range nsList {
-		names[i] = ns.Name
+
+	err = nm.loadNamespaces(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, nm.namespaces, 1)
+}
+
+func TestLoadNamespacesGatewayNoDatabase(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: []
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10392", err)
+}
+
+func TestLoadNamespacesMultipartyUnknownPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [bad]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10390.*unknown", err)
+}
+
+func TestLoadNamespacesMultipartyMultipleBlockchains(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [ethereum, ethereum]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10394.*blockchain", err)
+}
+
+func TestLoadNamespacesMultipartyMultipleDX(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [ffdx, ffdx]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10394.*dataexchange", err)
+}
+
+func TestLoadNamespacesMultipartyMultipleSS(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [ipfs, ipfs]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10394.*sharedstorage", err)
+}
+
+func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [postgres, postgres]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10394.*database", err)
+}
+
+func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [postgres, postgres]
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10394.*database", err)
+}
+
+func TestLoadNamespacesGatewayMultipleBlockchains(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [ethereum, ethereum]
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10394.*blockchain", err)
+}
+
+func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [postgres]
+      multiparty:
+        enabled: true
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10391", err)
+}
+
+func TestLoadNamespacesGatewayWithDX(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [ffdx]
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10393", err)
+}
+
+func TestLoadNamespacesGatewayWithSharedStorage(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [ipfs]
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10393", err)
+}
+
+func TestLoadNamespacesGatewayUnknownPlugin(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [bad]
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "FF10390.*unknown", err)
+}
+
+func TestLoadNamespacesGatewayTokens(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      plugins: [postgres, erc721]
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestStart(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"ns": {orchestrator: mo},
 	}
-	assert.Contains(t, names, core.LegacySystemNamespace)
-	assert.Contains(t, names, "ns1")
-	assert.Contains(t, names, "ns2")
+	nm.metricsEnabled = true
+
+	mo.On("Start").Return(nil)
+
+	err := nm.Start()
+	assert.NoError(t, err)
+
+	mo.AssertExpectations(t)
 }
 
-func TestGetConfig(t *testing.T) {
-	coreconfig.Reset()
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceMultipartyOrgKey, "0x12345")
-
-	nm := newTestNamespaceManager(false)
+func TestStartFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	key := nm.GetMultipartyConfig("ns1", coreconfig.OrgKey)
-	assert.Equal(t, "0x12345", key)
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"ns": {orchestrator: mo},
+	}
+
+	mo.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+	mo.AssertExpectations(t)
 }
 
-func TestGetConfigFallback(t *testing.T) {
-	coreconfig.Reset()
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
-	config.Set(coreconfig.OrgKey, "0x123")
-
-	nm := newTestNamespaceManager(false)
+func TestWaitStop(t *testing.T) {
+	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	key := nm.GetMultipartyConfig("ns1", coreconfig.OrgKey)
-	assert.Equal(t, "0x123", key)
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"ns": {orchestrator: mo},
+	}
+	mae := nm.adminEvents.(*spieventsmocks.Manager)
+
+	mo.On("WaitStop").Return()
+	mae.On("WaitStop").Return()
+
+	nm.WaitStop()
+
+	mo.AssertExpectations(t)
+	mae.AssertExpectations(t)
 }
 
-func TestGetDefaultKey(t *testing.T) {
-	coreconfig.Reset()
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceName, "ns1")
-	namespaceConfig.AddKnownKey("predefined.0."+coreconfig.NamespaceDefaultKey, "0x12345")
-
-	nm := newTestNamespaceManager(false)
+func TestLoadMetrics(t *testing.T) {
+	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	key := nm.GetDefaultKey("ns1")
-	assert.Equal(t, "0x12345", key)
+	nm.metrics = nil
+
+	err := nm.loadPlugins(context.Background())
+	assert.NoError(t, err)
 }
 
-func TestGetDefaultKeyNotFound(t *testing.T) {
-	coreconfig.Reset()
-
-	nm := newTestNamespaceManager(false)
+func TestLoadAdminEvents(t *testing.T) {
+	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
-	key := nm.GetDefaultKey("ns1")
-	assert.Equal(t, "", key)
+	nm.adminEvents = nil
+
+	err := nm.loadPlugins(context.Background())
+	assert.NoError(t, err)
+	assert.NotNil(t, nm.SPIEvents())
+}
+
+func TestGetNamespaces(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"default": {},
+	}
+
+	results, err := nm.GetNamespaces(context.Background())
+	assert.Nil(t, err)
+	assert.Len(t, results, 1)
+}
+
+func TestGetOperationByNamespacedID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+	mo.On("GetOperationByID", context.Background(), "default", opID.String()).Return(nil, nil)
+
+	op, err := nm.GetOperationByNamespacedID(context.Background(), "default:"+opID.String())
+	assert.Nil(t, err)
+	assert.Nil(t, op)
+
+	mo.AssertExpectations(t)
+}
+
+func TestGetOperationByNamespacedIDBadID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	_, err := nm.GetOperationByNamespacedID(context.Background(), "default:bad")
+	assert.Regexp(t, "FF00138", err)
+
+	mo.AssertExpectations(t)
+}
+
+func TestGetOperationByNamespacedIDNoOrchestrator(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+
+	_, err := nm.GetOperationByNamespacedID(context.Background(), "bad:"+opID.String())
+	assert.Regexp(t, "FF10109", err)
+
+	mo.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	mom := &operationmocks.Manager{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+	mo.On("Operations").Return(mom)
+	mom.On("ResolveOperationByID", context.Background(), "default", opID, mock.Anything).Return(nil)
+
+	err := nm.ResolveOperationByNamespacedID(context.Background(), "default:"+opID.String(), &core.OperationUpdateDTO{})
+	assert.Nil(t, err)
+
+	mo.AssertExpectations(t)
+	mom.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedIDBadID(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	err := nm.ResolveOperationByNamespacedID(context.Background(), "default:bad", &core.OperationUpdateDTO{})
+	assert.Regexp(t, "FF00138", err)
+
+	mo.AssertExpectations(t)
+}
+
+func TestResolveOperationByNamespacedIDNoOrchestrator(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"default": {orchestrator: mo},
+	}
+
+	opID := fftypes.NewUUID()
+
+	err := nm.ResolveOperationByNamespacedID(context.Background(), "bad:"+opID.String(), &core.OperationUpdateDTO{})
+	assert.Regexp(t, "FF10109", err)
+
+	mo.AssertExpectations(t)
 }

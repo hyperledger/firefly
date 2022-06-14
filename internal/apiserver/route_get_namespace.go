@@ -39,8 +39,9 @@ var getNamespace = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetNamespace(cr.ctx, extractNamespace(r.PP))
-			return output, err
+			ns := r.PP["ns"]
+			or := cr.mgr.Orchestrator(ns)
+			return or.GetNamespace(cr.ctx, ns)
 		},
 	},
 }

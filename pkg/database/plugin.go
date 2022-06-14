@@ -51,8 +51,10 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config config.Section, callbacks Callbacks) error
+	Init(ctx context.Context, config config.Section) error
+
+	// RegisterListener registers a listener to receive callbacks
+	RegisterListener(listener Callbacks)
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -71,9 +73,6 @@ type iNamespaceCollection interface {
 
 	// GetNamespaceByID - Get a namespace by ID
 	GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (namespace *core.Namespace, err error)
-
-	// GetNamespaces - Get namespaces
-	GetNamespaces(ctx context.Context, filter Filter) (namespaces []*core.Namespace, res *FilterResult, err error)
 }
 
 type iMessageCollection interface {
@@ -699,17 +698,6 @@ type Capabilities struct {
 	Concurrency bool
 }
 
-// NamespaceQueryFactory filter fields for namespaces
-var NamespaceQueryFactory = &queryFields{
-	"id":          &UUIDField{},
-	"message":     &UUIDField{},
-	"type":        &StringField{},
-	"name":        &StringField{},
-	"description": &StringField{},
-	"created":     &TimeField{},
-	"confirmed":   &TimeField{},
-}
-
 // MessageQueryFactory filter fields for messages
 var MessageQueryFactory = &queryFields{
 	"id":        &UUIDField{},
@@ -834,6 +822,7 @@ var EventQueryFactory = &queryFields{
 
 // PinQueryFactory filter fields for parked contexts
 var PinQueryFactory = &queryFields{
+	"namespace":  &StringField{},
 	"sequence":   &Int64Field{},
 	"masked":     &BoolField{},
 	"hash":       &Bytes32Field{},

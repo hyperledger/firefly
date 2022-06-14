@@ -26,12 +26,13 @@ import (
 )
 
 func TestSPIGetOperationByID(t *testing.T) {
-	o, r := newTestSPIServer()
+	mgr, _, as := newTestServer()
+	r := as.createAdminMuxRouter(mgr)
 	req := httptest.NewRequest("GET", "/spi/v1/operations/ns1:0df3d864-2646-4e5d-8585-51eb154a8d23", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperationByNamespacedID", mock.Anything, "ns1:0df3d864-2646-4e5d-8585-51eb154a8d23").
+	mgr.On("GetOperationByNamespacedID", mock.Anything, "ns1:0df3d864-2646-4e5d-8585-51eb154a8d23").
 		Return(&core.Operation{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -25,11 +25,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetStatusWebSockets(t *testing.T) {
+func TestGetWebSockets(t *testing.T) {
 	o, r := newTestAPIServer()
 	mem := &eventmocks.EventManager{}
 	o.On("Events").Return(mem)
-	req := httptest.NewRequest("GET", "/api/v1/status/websockets", nil)
+	req := httptest.NewRequest("GET", "/api/v1/websockets", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 

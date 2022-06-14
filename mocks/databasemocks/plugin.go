@@ -1383,38 +1383,6 @@ func (_m *Plugin) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (*core
 	return r0, r1
 }
 
-// GetNamespaces provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetNamespaces(ctx context.Context, filter database.Filter) ([]*core.Namespace, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 []*core.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Namespace); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.Namespace)
-		}
-	}
-
-	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
 // GetNextPinByContextAndIdentity provides a mock function with given fields: ctx, _a1, identity
 func (_m *Plugin) GetNextPinByContextAndIdentity(ctx context.Context, _a1 *fftypes.Bytes32, identity string) (*core.NextPin, error) {
 	ret := _m.Called(ctx, _a1, identity)
@@ -2277,13 +2245,13 @@ func (_m *Plugin) GetVerifiers(ctx context.Context, filter database.Filter) ([]*
 	return r0, r1, r2
 }
 
-// Init provides a mock function with given fields: ctx, _a1, callbacks
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks database.Callbacks) error {
-	ret := _m.Called(ctx, _a1, callbacks)
+// Init provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section) error {
+	ret := _m.Called(ctx, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, database.Callbacks) error); ok {
-		r0 = rf(ctx, _a1, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section) error); ok {
+		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -2490,6 +2458,11 @@ func (_m *Plugin) Name() string {
 	}
 
 	return r0
+}
+
+// RegisterListener provides a mock function with given fields: listener
+func (_m *Plugin) RegisterListener(listener database.Callbacks) {
+	_m.Called(listener)
 }
 
 // ReplaceMessage provides a mock function with given fields: ctx, message

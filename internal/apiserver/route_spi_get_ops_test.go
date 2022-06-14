@@ -26,12 +26,12 @@ import (
 )
 
 func TestSPIGetOperations(t *testing.T) {
-	o, r := newTestSPIServer()
-	req := httptest.NewRequest("GET", "/spi/v1/operations", nil)
+	or, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/namespaces/ns1/operations", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetOperations", mock.Anything, mock.Anything).
+	or.On("GetOperations", mock.Anything, mock.Anything).
 		Return([]*core.Operation{}, nil, nil)
 	r.ServeHTTP(res, req)
 

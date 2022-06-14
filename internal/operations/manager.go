@@ -45,7 +45,7 @@ type Manager interface {
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
 	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
-	ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error
+	ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
 }
@@ -57,20 +57,22 @@ const (
 )
 
 type operationsManager struct {
-	ctx      context.Context
-	database database.Plugin
-	handlers map[core.OpType]OperationHandler
-	updater  *operationUpdater
+	ctx       context.Context
+	namespace string
+	database  database.Plugin
+	handlers  map[core.OpType]OperationHandler
+	updater   *operationUpdater
 }
 
-func NewOperationsManager(ctx context.Context, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
+func NewOperationsManager(ctx context.Context, ns string, di database.Plugin, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || txHelper == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "OperationsManager")
 	}
 	om := &operationsManager{
-		ctx:      ctx,
-		database: di,
-		handlers: make(map[core.OpType]OperationHandler),
+		ctx:       ctx,
+		namespace: ns,
+		database:  di,
+		handlers:  make(map[core.OpType]OperationHandler),
 	}
 	updater := newOperationUpdater(ctx, om, di, txHelper)
 	om.updater = updater
@@ -208,13 +210,8 @@ func (om *operationsManager) writeOperationFailure(ctx context.Context, ns strin
 	}
 }
 
-func (om *operationsManager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
-	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
-	if err != nil {
-		return err
-	}
-	err = om.database.ResolveOperation(ctx, ns, u, op.Status, op.Error, op.Output)
-	return err
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
+	return om.database.ResolveOperation(ctx, ns, opID, op.Status, op.Error, op.Output)
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *OperationUpdate) {

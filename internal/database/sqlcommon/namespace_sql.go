@@ -39,10 +39,6 @@ var (
 		"created",
 		"firefly_contracts",
 	}
-	namespaceFilterFieldMap = map[string]string{
-		"message": "message_id",
-		"type":    "ntype",
-	}
 )
 
 const namespacesTable = "namespaces"
@@ -174,32 +170,6 @@ func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *cor
 
 func (s *SQLCommon) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (ns *core.Namespace, err error) {
 	return s.getNamespaceEq(ctx, sq.Eq{"id": id}, id.String())
-}
-
-func (s *SQLCommon) GetNamespaces(ctx context.Context, filter database.Filter) (message []*core.Namespace, fr *database.FilterResult, err error) {
-
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(namespaceColumns...).From(namespacesTable), filter, namespaceFilterFieldMap, []interface{}{"sequence"})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	rows, tx, err := s.query(ctx, namespacesTable, query)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	namespace := []*core.Namespace{}
-	for rows.Next() {
-		d, err := s.namespaceResult(ctx, rows)
-		if err != nil {
-			return nil, nil, err
-		}
-		namespace = append(namespace, d)
-	}
-
-	return namespace, s.queryRes(ctx, namespacesTable, tx, fop, fi), err
-
 }
 
 func (s *SQLCommon) DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error) {

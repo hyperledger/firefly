@@ -59,7 +59,6 @@ type EventManager interface {
 	DeletedSubscriptions() chan<- *fftypes.UUID
 	DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error)
 	CreateUpdateDurableSubscription(ctx context.Context, subDef *core.Subscription, mustNew bool) (err error)
-	GetWebSocketStatus() *core.WebSocketStatus
 	Start() error
 	WaitStop()
 
@@ -88,6 +87,7 @@ type EventManager interface {
 
 type eventManager struct {
 	ctx                   context.Context
+	namespace             string
 	ni                    sysmessaging.LocalNodeInfo
 	sharedstorage         sharedstorage.Plugin
 	database              database.Plugin
@@ -112,7 +112,7 @@ type eventManager struct {
 	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -120,6 +120,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 	newEventNotifier := newEventNotifier(ctx, "events")
 	em := &eventManager{
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
+		namespace:      ns,
 		ni:             ni,
 		sharedstorage:  si,
 		database:       di,
@@ -139,7 +140,7 @@ func NewEventManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, si shar
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
-		aggregator:            newAggregator(ctx, di, bi, pm, dh, im, dm, newPinNotifier, mm),
+		aggregator:            newAggregator(ctx, ns, di, bi, pm, dh, im, dm, newPinNotifier, mm),
 		metrics:               mm,
 		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
@@ -258,8 +259,4 @@ func (em *eventManager) GetPlugins() []*core.NodeStatusPlugin {
 	}
 
 	return eventsArray
-}
-
-func (em *eventManager) GetWebSocketStatus() *core.WebSocketStatus {
-	return em.subManager.getWebSocketStatus()
 }

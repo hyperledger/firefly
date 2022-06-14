@@ -59,12 +59,6 @@ func newTestMetricsManager(t *testing.T) (*metricsManager, func()) {
 	return mm, cancel
 }
 
-func TestStartDoesNothing(t *testing.T) {
-	mm, cancel := newTestMetricsManager(t)
-	defer cancel()
-	assert.NoError(t, mm.Start())
-}
-
 func TestCountBatchPin(t *testing.T) {
 	mm, cancel := newTestMetricsManager(t)
 	defer cancel()

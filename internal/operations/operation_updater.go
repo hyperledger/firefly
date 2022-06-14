@@ -107,9 +107,13 @@ func (ou *operationUpdater) pickWorker(ctx context.Context, id *fftypes.UUID, up
 }
 
 func (ou *operationUpdater) SubmitOperationUpdate(ctx context.Context, update *OperationUpdate) {
-	_, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
+	ns, id, err := core.ParseNamespacedOpID(ctx, update.NamespacedOpID)
 	if err != nil {
 		log.L(ctx).Warnf("Unable to update operation '%s' due to invalid ID: %s", update.NamespacedOpID, err)
+		return
+	}
+	if ns != ou.manager.namespace {
+		log.L(ou.ctx).Debugf("Ignoring operation update from different namespace '%s'", ns)
 		return
 	}
 

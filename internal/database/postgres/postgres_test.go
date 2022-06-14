@@ -29,11 +29,11 @@ import (
 
 func TestPostgresProvider(t *testing.T) {
 	psql := &Postgres{}
-	dcb := &databasemocks.Callbacks{}
+	psql.RegisterListener(&databasemocks.Callbacks{})
 	config := config.RootSection("unittest")
 	psql.InitConfig(config)
 	config.Set(sqlcommon.SQLConfDatasourceURL, "!bad connection")
-	err := psql.Init(context.Background(), config, dcb)
+	err := psql.Init(context.Background(), config)
 	assert.NoError(t, err)
 	_, err = psql.GetMigrationDriver(psql.DB())
 	assert.Error(t, err)

@@ -140,13 +140,13 @@ func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (core.FFIParamValida
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, _a1, callbacks, _a3
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks blockchain.Callbacks, _a3 metrics.Manager) error {
-	ret := _m.Called(ctx, _a1, callbacks, _a3)
+// Init provides a mock function with given fields: ctx, _a1, _a2
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, _a2 metrics.Manager) error {
+	ret := _m.Called(ctx, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, blockchain.Callbacks, metrics.Manager) error); ok {
-		r0 = rf(ctx, _a1, callbacks, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section, metrics.Manager) error); ok {
+		r0 = rf(ctx, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -187,13 +187,13 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// NetworkVersion provides a mock function with given fields: ctx
-func (_m *Plugin) NetworkVersion(ctx context.Context) int {
-	ret := _m.Called(ctx)
+// NetworkVersion provides a mock function with given fields:
+func (_m *Plugin) NetworkVersion() int {
+	ret := _m.Called()
 
 	var r0 int
-	if rf, ok := ret.Get(0).(func(context.Context) int); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(int)
 	}
@@ -266,6 +266,11 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	}
 
 	return r0, r1
+}
+
+// RegisterListener provides a mock function with given fields: listener
+func (_m *Plugin) RegisterListener(listener blockchain.Callbacks) {
+	_m.Called(listener)
 }
 
 // Start provides a mock function with given fields:

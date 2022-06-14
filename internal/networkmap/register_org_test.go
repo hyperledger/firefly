@@ -21,13 +21,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/namespacemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -60,8 +57,6 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(coreconfig.NodeDescription, "Node 1")
-
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootVerifier", nm.ctx, "ns1").Return(&core.VerifierRef{
 		Value: "0x12345",
@@ -81,10 +76,6 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 		}),
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	mns := nm.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("org1")
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgDescription).Return("")
-
 	org, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *org.Messages.Claim)
@@ -92,7 +83,6 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 	mdm.AssertExpectations(t)
-	mns.AssertExpectations(t)
 }
 
 func TestRegisterNodeOrgNoName(t *testing.T) {
@@ -100,31 +90,23 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	config.Set(coreconfig.NodeDescription, "")
+	nm.orgName = ""
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootVerifier", nm.ctx, "ns1").Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
 
-	mns := nm.namespace.(*namespacemocks.Manager)
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgName).Return("")
-	mns.On("GetMultipartyConfig", "ns1", coreconfig.OrgDescription).Return("")
-
 	_, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
 	assert.Regexp(t, "FF10216", err)
 
 	mim.AssertExpectations(t)
-	mns.AssertExpectations(t)
 }
 
 func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
-
-	config.Set(coreconfig.OrgName, "")
-	config.Set(coreconfig.NodeDescription, "")
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootVerifier", nm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))

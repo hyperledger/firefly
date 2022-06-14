@@ -58,7 +58,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) e
 	if err != nil {
 		return err
 	}
-	sub, err := or.databases["database_0"].GetSubscriptionByID(ctx, u)
+	sub, err := or.database().GetSubscriptionByID(ctx, u)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (or *orchestrator) DeleteSubscription(ctx context.Context, ns, id string) e
 
 func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
 	filter = or.scopeNS(ns, filter)
-	return or.databases["database_0"].GetSubscriptions(ctx, filter)
+	return or.database().GetSubscriptions(ctx, filter)
 }
 
 func (or *orchestrator) GetSubscriptionByID(ctx context.Context, ns, id string) (*core.Subscription, error) {
@@ -78,5 +78,5 @@ func (or *orchestrator) GetSubscriptionByID(ctx context.Context, ns, id string) 
 	if err != nil {
 		return nil, err
 	}
-	return or.databases["database_0"].GetSubscriptionByID(ctx, u)
+	return or.database().GetSubscriptionByID(ctx, u)
 }

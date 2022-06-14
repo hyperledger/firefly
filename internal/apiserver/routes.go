@@ -23,11 +23,13 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type coreRequest struct {
+	mgr        namespace.Manager
 	or         orchestrator.Orchestrator
 	ctx        context.Context
 	filter     database.AndFilter
@@ -40,12 +42,17 @@ type coreExtensions struct {
 	CoreFormUploadHandler func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
 }
 
+const (
+	routeTagGlobal              = "Global"
+	routeTagDefaultNamespace    = "Default Namespace"
+	routeTagNonDefaultNamespace = "Non-Default Namespace"
+)
+
 var routes = append(
 	globalRoutes([]*ffapi.Route{
 		getNamespace,
 		getNamespaces,
-		getStatusBatchManager,
-		getStatusWebSockets,
+		getWebSockets,
 	}),
 	namespacedRoutes([]*ffapi.Route{
 		deleteContractListener,
@@ -93,8 +100,9 @@ var routes = append(
 		getNetworkOrgs,
 		getOpByID,
 		getOps,
-		getStatus,
 		getPins,
+		getStatus,
+		getStatusBatchManager,
 		getSubscriptionByID,
 		getSubscriptions,
 		getTokenAccountPools,
@@ -147,7 +155,7 @@ var routes = append(
 
 func globalRoutes(routes []*ffapi.Route) []*ffapi.Route {
 	for _, route := range routes {
-		route.Tag = "Global"
+		route.Tag = routeTagGlobal
 	}
 	return routes
 }
@@ -155,7 +163,7 @@ func globalRoutes(routes []*ffapi.Route) []*ffapi.Route {
 func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
 	newRoutes := make([]*ffapi.Route, len(routes))
 	for i, route := range routes {
-		route.Tag = "Default Namespace"
+		route.Tag = routeTagDefaultNamespace
 
 		routeCopy := *route
 		routeCopy.Name += "Namespace"
@@ -163,7 +171,7 @@ func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
 		routeCopy.PathParams = append(routeCopy.PathParams, &ffapi.PathParam{
 			Name: "ns", ExampleFromConf: coreconfig.NamespacesDefault, Description: coremsgs.APIParamsNamespace,
 		})
-		routeCopy.Tag = "Non-Default Namespace"
+		routeCopy.Tag = routeTagNonDefaultNamespace
 		newRoutes[i] = &routeCopy
 	}
 	return append(routes, newRoutes...)

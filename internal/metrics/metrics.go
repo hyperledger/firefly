@@ -42,18 +42,12 @@ type Manager interface {
 	GetTime(id string) time.Time
 	DeleteTime(id string)
 	IsMetricsEnabled() bool
-	Start() error
 }
 
 type metricsManager struct {
 	ctx            context.Context
 	metricsEnabled bool
 	timeMap        map[string]time.Time
-}
-
-func (mm *metricsManager) Start() error {
-	Registry() // ensure registry is initialized
-	return nil
 }
 
 func NewMetricsManager(ctx context.Context) Manager {

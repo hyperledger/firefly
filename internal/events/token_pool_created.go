@@ -147,6 +147,10 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				return err
 			}
 			if existingPool != nil {
+				if existingPool.Namespace != em.namespace {
+					log.L(em.ctx).Debugf("Ignoring token pool from different namespace '%s'", existingPool.Namespace)
+					return nil
+				}
 				if existingPool.State == core.TokenPoolStateConfirmed {
 					return nil // already confirmed
 				}
@@ -163,6 +167,11 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 			if announcePool, err = em.shouldAnnounce(ctx, pool); err != nil {
 				return err
 			} else if announcePool != nil {
+				if announcePool.Namespace != em.namespace {
+					log.L(em.ctx).Debugf("Ignoring token pool from different namespace '%s'", announcePool.Namespace)
+					announcePool = nil
+					return nil
+				}
 				return nil // trigger announce after completion of database transaction
 			}
 

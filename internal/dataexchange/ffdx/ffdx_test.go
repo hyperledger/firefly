@@ -59,11 +59,10 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	utConfig.Set(DataExchangeManifestEnabled, manifestEnabled)
 
 	h = &FFDX{initialized: true}
-	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
 
 	dxCtx, dxCancel := context.WithCancel(context.Background())
-	err := h.Init(dxCtx, utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(dxCtx, utConfig)
 	assert.NoError(t, err)
 	assert.Equal(t, "ffdx", h.Name())
 	assert.NotNil(t, h.Capabilities())
@@ -77,19 +76,17 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
-	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
 	utConfig.Set(ffresty.HTTPConfigURL, "::::////")
-	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF00149", err)
 }
 
 func TestInitMissingURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
-	nodes := make([]fftypes.JSONObject, 0)
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfig)
 	assert.Regexp(t, "FF10138", err)
 }
 
@@ -445,7 +442,8 @@ func TestEvents(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
-	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
+	mcb := &dataexchangemocks.Callbacks{}
+	h.RegisterListener(mcb)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.NamespacedID() == "1" &&
@@ -558,7 +556,8 @@ func TestEventsWithManifest(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
-	mcb := h.callbacks.(*dataexchangemocks.Callbacks)
+	mcb := &dataexchangemocks.Callbacks{}
+	h.RegisterListener(mcb)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.NamespacedID() == "1" &&
@@ -586,7 +585,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	h := &FFDX{
 		ctx:       context.Background(),
-		callbacks: dxc,
+		callbacks: callbacks{listeners: []dataexchange.Callbacks{dxc}},
 		wsconn:    wsm,
 	}
 	r := make(chan []byte)
@@ -602,7 +601,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	h := &FFDX{
 		ctx:        ctx,
-		callbacks:  dxc,
+		callbacks:  callbacks{listeners: []dataexchange.Callbacks{dxc}},
 		wsconn:     wsm,
 		ackChannel: make(chan *ack, 1),
 	}
@@ -623,7 +622,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	cancel()
 	h := &FFDX{
 		ctx:       ctx,
-		callbacks: dxc,
+		callbacks: callbacks{listeners: []dataexchange.Callbacks{dxc}},
 		wsconn:    wsm,
 	}
 	r := make(chan []byte, 1)
@@ -679,8 +678,9 @@ func TestWebsocketWithReinit(t *testing.T) {
 		})
 
 	h.InitConfig(utConfig)
-	err := h.Init(context.Background(), utConfig, nodes, &dataexchangemocks.Callbacks{})
+	err := h.Init(context.Background(), utConfig)
 	assert.NoError(t, err)
+	h.SetNodes(nodes)
 
 	err = h.Start()
 	assert.NoError(t, err)

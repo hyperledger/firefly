@@ -51,7 +51,7 @@ type Fabric struct {
 	prefixShort     string
 	prefixLong      string
 	capabilities    *blockchain.Capabilities
-	callbacks       blockchain.Callbacks
+	callbacks       callbacks
 	client          *resty.Client
 	streams         *streamManager
 	streamID        string
@@ -69,6 +69,43 @@ type Fabric struct {
 	fabconnectConf   config.Section
 	contractConf     config.ArraySection
 	contractConfSize int
+}
+
+type callbacks struct {
+	listeners []blockchain.Callbacks
+}
+
+func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	for _, cb := range cb.listeners {
+		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	}
+}
+
+func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
+	for _, cb := range cb.listeners {
+		if err := cb.BlockchainEvent(event); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type eventStreamWebsocket struct {
@@ -161,12 +198,11 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, config config.Section, callbacks blockchain.Callbacks, metrics metrics.Manager) (err error) {
+func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
 	f.InitConfig(config)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
-	f.callbacks = callbacks
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
@@ -284,6 +320,10 @@ func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyC
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
 	return f.ConfigureContract(ctx, contracts)
+}
+
+func (f *Fabric) RegisterListener(listener blockchain.Callbacks) {
+	f.callbacks.listeners = append(f.callbacks.listeners, listener)
 }
 
 func (f *Fabric) Start() (err error) {
@@ -843,7 +883,7 @@ func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, 
 	return int(output.Result.(float64)), nil
 }
 
-func (f *Fabric) NetworkVersion(ctx context.Context) int {
+func (f *Fabric) NetworkVersion() int {
 	f.fireflyContract.mux.Lock()
 	defer f.fireflyContract.mux.Unlock()
 	return f.fireflyContract.networkVersion

@@ -39,7 +39,7 @@ import (
 type FFDX struct {
 	ctx          context.Context
 	capabilities *dataexchange.Capabilities
-	callbacks    dataexchange.Callbacks
+	callbacks    callbacks
 	client       *resty.Client
 	wsconn       wsclient.WSClient
 	needsInit    bool
@@ -47,6 +47,16 @@ type FFDX struct {
 	initMutex    sync.Mutex
 	nodes        []fftypes.JSONObject
 	ackChannel   chan *ack
+}
+
+type callbacks struct {
+	listeners []dataexchange.Callbacks
+}
+
+func (cb *callbacks) DXEvent(event dataexchange.DXEvent) {
+	for _, cb := range cb.listeners {
+		cb.DXEvent(event)
+	}
 }
 
 const (
@@ -108,9 +118,8 @@ func (h *FFDX) Name() string {
 	return "ffdx"
 }
 
-func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.JSONObject, callbacks dataexchange.Callbacks) (err error) {
+func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
-	h.callbacks = callbacks
 	h.ackChannel = make(chan *ack)
 
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
@@ -118,8 +127,6 @@ func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "dataexchange.ffdx")
 	}
-
-	h.nodes = nodes
 
 	h.client = ffresty.New(h.ctx, config)
 	h.capabilities = &dataexchange.Capabilities{
@@ -135,6 +142,14 @@ func (h *FFDX) Init(ctx context.Context, config config.Section, nodes []fftypes.
 	go h.eventLoop()
 	go h.ackLoop()
 	return nil
+}
+
+func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
+	h.nodes = nodes
+}
+
+func (h *FFDX) RegisterListener(listener dataexchange.Callbacks) {
+	h.callbacks.listeners = append(h.callbacks.listeners, listener)
 }
 
 func (h *FFDX) Start() error {

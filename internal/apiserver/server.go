@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
@@ -37,9 +38,9 @@ import (
 	"github.com/hyperledger/firefly/internal/events/eifactory"
 	"github.com/hyperledger/firefly/internal/events/websockets"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/namespace"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/database"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -51,7 +52,7 @@ var (
 
 // Server is the external interface for the API Server
 type Server interface {
-	Serve(ctx context.Context, o orchestrator.Orchestrator) error
+	Serve(ctx context.Context, mgr namespace.Manager) error
 }
 
 type apiServer struct {
@@ -86,19 +87,19 @@ func NewAPIServer() Server {
 }
 
 // Serve is the main entry point for the API Server
-func (as *apiServer) Serve(ctx context.Context, o orchestrator.Orchestrator) (err error) {
+func (as *apiServer) Serve(ctx context.Context, mgr namespace.Manager) (err error) {
 	httpErrChan := make(chan error)
 	spiErrChan := make(chan error)
 	metricsErrChan := make(chan error)
 
-	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, o), httpErrChan, apiConfig, corsConfig)
+	apiHTTPServer, err := httpserver.NewHTTPServer(ctx, "api", as.createMuxRouter(ctx, mgr), httpErrChan, apiConfig, corsConfig)
 	if err != nil {
 		return err
 	}
 	go apiHTTPServer.ServeHTTP(ctx)
 
 	if config.GetBool(coreconfig.SPIEnabled) {
-		spiHTTPServer, err := httpserver.NewHTTPServer(ctx, "spi", as.createAdminMuxRouter(o), spiErrChan, spiConfig, corsConfig)
+		spiHTTPServer, err := httpserver.NewHTTPServer(ctx, "spi", as.createAdminMuxRouter(mgr), spiErrChan, spiConfig, corsConfig)
 		if err != nil {
 			return err
 		}
@@ -196,10 +197,10 @@ func (as *apiServer) swaggerGenerator(routes []*ffapi.Route, apiBaseURL string) 
 	}
 }
 
-func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
+func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
-		cm := o.Contracts()
 		vars := mux.Vars(req)
+		cm := mgr.Orchestrator(vars["ns"]).Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
 		if err != nil {
 			return nil, err
@@ -217,7 +218,7 @@ func (as *apiServer) contractSwaggerGenerator(o orchestrator.Orchestrator, apiBa
 	}
 }
 
-func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, or orchestrator.Orchestrator, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
+func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
 	// We extend the base ffapi functionality, with standardized DB filter support for all core resources.
 	// We also pass the Orchestrator context through
 	ce := route.Extensions.(*coreExtensions)
@@ -229,7 +230,15 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, or orchestrator.Orch
 				return nil, err
 			}
 		}
+
+		var or orchestrator.Orchestrator
+		if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
+			vars := mux.Vars(r.Req)
+			or = mgr.Orchestrator(extractNamespace(vars))
+		}
+
 		cr := &coreRequest{
+			mgr:        mgr,
 			or:         or,
 			ctx:        r.Req.Context(),
 			filter:     filter,
@@ -239,7 +248,14 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, or orchestrator.Orch
 	}
 	if ce.CoreFormUploadHandler != nil {
 		route.FormUploadHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
+			var or orchestrator.Orchestrator
+			if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
+				vars := mux.Vars(r.Req)
+				or = mgr.Orchestrator(extractNamespace(vars))
+			}
+
 			cr := &coreRequest{
+				mgr:        mgr,
 				or:         or,
 				ctx:        r.Req.Context(),
 				apiBaseURL: apiBaseURL,
@@ -257,7 +273,7 @@ func (as *apiServer) handlerFactory() *ffapi.HandlerFactory {
 	}
 }
 
-func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createMuxRouter(ctx context.Context, mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
 	hf := as.handlerFactory()
 
@@ -270,13 +286,13 @@ func (as *apiServer) createMuxRouter(ctx context.Context, o orchestrator.Orchest
 	for _, route := range routes {
 		if ce, ok := route.Extensions.(*coreExtensions); ok {
 			if ce.CoreJSONHandler != nil {
-				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(hf, o, apiBaseURL, route)).
+				r.HandleFunc(fmt.Sprintf("/api/v1/%s", route.Path), as.routeHandler(hf, mgr, apiBaseURL, route)).
 					Methods(route.Method)
 			}
 		}
 	}
 
-	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.contractSwaggerGenerator(o, apiBaseURL))))
+	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api/swagger{ext:\.yaml|\.json|}`, hf.APIWrapper(as.swaggerHandler(as.contractSwaggerGenerator(mgr, apiBaseURL))))
 	r.HandleFunc(`/api/v1/namespaces/{ns}/apis/{apiName}/api`, func(rw http.ResponseWriter, req *http.Request) {
 		url := req.URL.String() + "/swagger.yaml"
 		handler := hf.APIWrapper(hf.SwaggerUIHandler(url))
@@ -304,14 +320,14 @@ func (as *apiServer) notFoundHandler(res http.ResponseWriter, req *http.Request)
 	return 404, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
 }
 
-func (as *apiServer) spiWSHandler(o orchestrator.Orchestrator) http.HandlerFunc {
+func (as *apiServer) spiWSHandler(mgr namespace.Manager) http.HandlerFunc {
 	// The SPI events listener will be initialized when we start, so we access it it from Orchestrator on demand
 	return func(w http.ResponseWriter, r *http.Request) {
-		o.SPIEvents().ServeHTTPWebSocketListener(w, r)
+		mgr.SPIEvents().ServeHTTPWebSocketListener(w, r)
 	}
 }
 
-func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Router {
+func (as *apiServer) createAdminMuxRouter(mgr namespace.Manager) *mux.Router {
 	r := mux.NewRouter()
 	if as.metricsEnabled {
 		r.Use(metrics.GetAdminServerInstrumentation().Middleware)
@@ -323,7 +339,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	for _, route := range spiRoutes {
 		if ce, ok := route.Extensions.(*coreExtensions); ok {
 			if ce.CoreJSONHandler != nil {
-				r.HandleFunc(fmt.Sprintf("/spi/v1/%s", route.Path), as.routeHandler(hf, o, apiBaseURL, route)).
+				r.HandleFunc(fmt.Sprintf("/spi/v1/%s", route.Path), as.routeHandler(hf, mgr, apiBaseURL, route)).
 					Methods(route.Method)
 			}
 		}
@@ -332,7 +348,7 @@ func (as *apiServer) createAdminMuxRouter(o orchestrator.Orchestrator) *mux.Rout
 	r.HandleFunc(`/spi`, hf.APIWrapper(hf.SwaggerUIHandler(publicURL+"/swagger.yaml")))
 	r.HandleFunc(`/favicon{any:.*}.png`, favIcons)
 
-	r.HandleFunc(`/spi/ws`, as.spiWSHandler(o))
+	r.HandleFunc(`/spi/ws`, as.spiWSHandler(mgr))
 
 	return r
 }

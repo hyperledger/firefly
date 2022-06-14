@@ -185,7 +185,7 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 
 	mr := event.MessageReceived()
 
-	// De-serializae the transport wrapper
+	// De-serialize the transport wrapper
 	var wrapper *core.TransportWrapper
 	err := json.Unmarshal(mr.Data, &wrapper)
 	if err != nil {
@@ -196,6 +196,10 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 	if wrapper.Batch == nil {
 		l.Errorf("Invalid transmission: nil batch")
 		event.AckWithManifest("")
+		return
+	}
+	if wrapper.Batch.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring batch from different namespace '%s'", wrapper.Batch.Namespace)
 		return
 	}
 	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), mr.PeerID, len(mr.Data))
@@ -216,6 +220,10 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 	if br.PeerID == "" || len(br.PeerID) > 256 || br.PayloadRef == "" || len(br.PayloadRef) > 1024 {
 		log.L(em.ctx).Errorf("Invalid blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", br.PeerID, &br.Hash, br.PayloadRef)
 		event.Ack() // Still confirm the event
+		return
+	}
+	if br.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring blob from different namespace '%s'", br.Namespace)
 		return
 	}
 

@@ -31,52 +31,36 @@ import (
 func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	// Plugins can have more than one name, so they must be iterated over
 	tokensArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.tokens {
+	for _, plugin := range or.plugins.Tokens {
 		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
+			Name:       plugin.Name,
+			PluginType: plugin.Plugin.Name(),
 		})
 	}
 
 	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.blockchains {
-		blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
+		Name:       or.plugins.Blockchain.Name,
+		PluginType: or.plugins.Blockchain.Plugin.Name(),
+	})
 
 	databasesArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.databases {
-		databasesArray = append(databasesArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	databasesArray = append(databasesArray, &core.NodeStatusPlugin{
+		Name:       or.plugins.Database.Name,
+		PluginType: or.plugins.Database.Plugin.Name(),
+	})
 
 	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.sharedstoragePlugins {
-		sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
+		Name:       or.plugins.SharedStorage.Name,
+		PluginType: or.plugins.SharedStorage.Plugin.Name(),
+	})
 
 	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.dataexchangePlugins {
-		dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
-
-	identityPluginArray := make([]*core.NodeStatusPlugin, 0)
-	for name, plugin := range or.identityPlugins {
-		identityPluginArray = append(identityPluginArray, &core.NodeStatusPlugin{
-			Name:       name,
-			PluginType: plugin.Name(),
-		})
-	}
+	dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
+		Name:       or.plugins.DataExchange.Name,
+		PluginType: or.plugins.DataExchange.Plugin.Name(),
+	})
 
 	return core.NodeStatusPlugins{
 		Blockchain:    blockchainsArray,
@@ -84,8 +68,8 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 		SharedStorage: sharedstorageArray,
 		DataExchange:  dataexchangeArray,
 		Events:        or.events.GetPlugins(),
-		Identity:      identityPluginArray,
 		Tokens:        tokensArray,
+		Identity:      []*core.NodeStatusPlugin{},
 	}
 }
 
@@ -118,7 +102,7 @@ func (or *orchestrator) GetStatus(ctx context.Context, ns string) (status *core.
 			Name: config.GetString(coreconfig.NodeName),
 		},
 		Org: core.NodeStatusOrg{
-			Name: or.namespace.GetMultipartyConfig(ns, coreconfig.OrgName),
+			Name: or.config.Multiparty.OrgName,
 		},
 		Plugins: or.getPlugins(),
 	}

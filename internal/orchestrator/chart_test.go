@@ -58,7 +58,6 @@ func TestGetHistogramBadStartEndTimes(t *testing.T) {
 
 func TestGetHistogramFailDB(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	intervals := makeTestIntervals(1000000000, 10)
 	or.mdi.On("GetChartHistogram", mock.Anything, "ns1", intervals, database.CollectionName("test")).Return(nil, fmt.Errorf("pop"))
 	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
@@ -67,7 +66,6 @@ func TestGetHistogramFailDB(t *testing.T) {
 
 func TestGetHistogramSuccess(t *testing.T) {
 	or := newTestOrchestrator()
-	or.databases["database_0"] = or.mdi
 	intervals := makeTestIntervals(1000000000, 10)
 	mockHistogram := []*core.ChartHistogram{}
 
