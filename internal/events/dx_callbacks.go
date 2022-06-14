@@ -199,7 +199,7 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 		return
 	}
 	if wrapper.Batch.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring batch from wrong namespace '%s'", wrapper.Batch.Namespace)
+		log.L(em.ctx).Debugf("Ignoring batch from different namespace '%s'", wrapper.Batch.Namespace)
 		return
 	}
 	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), mr.PeerID, len(mr.Data))
@@ -223,7 +223,7 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 		return
 	}
 	if br.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring blob from wrong namespace '%s'", br.Namespace)
+		log.L(em.ctx).Debugf("Ignoring blob from different namespace '%s'", br.Namespace)
 		return
 	}
 

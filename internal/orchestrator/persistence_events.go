@@ -25,7 +25,7 @@ import (
 
 func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
 	if ns != or.namespace {
-		log.L(or.ctx).Debugf("Ignoring database event from wrong namespace '%s'", ns)
+		log.L(or.ctx).Debugf("Ignoring database event from different namespace '%s'", ns)
 		return
 	}
 	switch {
@@ -38,7 +38,7 @@ func (or *orchestrator) OrderedUUIDCollectionNSEvent(resType database.OrderedUUI
 
 func (or *orchestrator) OrderedCollectionNSEvent(resType database.OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64) {
 	if ns != or.namespace {
-		log.L(or.ctx).Debugf("Ignoring database event from wrong namespace '%s'", ns)
+		log.L(or.ctx).Debugf("Ignoring database event from different namespace '%s'", ns)
 		return
 	}
 	if eventType == core.ChangeEventTypeCreated && resType == database.CollectionPins {
@@ -48,7 +48,7 @@ func (or *orchestrator) OrderedCollectionNSEvent(resType database.OrderedCollect
 
 func (or *orchestrator) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID) {
 	if ns != or.namespace {
-		log.L(or.ctx).Debugf("Ignoring database event from wrong namespace '%s'", ns)
+		log.L(or.ctx).Debugf("Ignoring database event from different namespace '%s'", ns)
 		return
 	}
 	switch {

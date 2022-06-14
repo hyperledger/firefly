@@ -79,7 +79,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		return false, nil
 	}
 	if pool.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring token approval from wrong namespace '%s'", pool.Namespace)
+		log.L(em.ctx).Debugf("Ignoring token approval from different namespace '%s'", pool.Namespace)
 		return false, nil
 	}
 	approval.Namespace = pool.Namespace
