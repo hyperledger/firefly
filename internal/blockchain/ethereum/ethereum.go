@@ -805,9 +805,7 @@ func (e *Ethereum) FFIEventDefinitionToABI(ctx context.Context, event *core.FFIE
 		Inputs: abiInputs,
 	}
 	if event.Details != nil {
-		if anonymous, ok := event.Details["anonymous"]; ok {
-			abiEntry.Anonymous = anonymous.(bool)
-		}
+		abiEntry.Anonymous = event.Details.GetBool("anonymous")
 	}
 	return abiEntry, nil
 }
@@ -829,19 +827,11 @@ func (e *Ethereum) FFIMethodToABI(ctx context.Context, method *core.FFIMethod, i
 		Outputs: abiOutputs,
 	}
 	if method.Details != nil {
-		stateMutability, ok := method.Details["stateMutability"]
-		if ok {
-			stateMutabilityString, ok := stateMutability.(string)
-			if ok {
-				abiEntry.StateMutability = abi.StateMutability(stateMutabilityString)
-			}
+		if stateMutability, ok := method.Details.GetStringOk("stateMutability"); ok {
+			abiEntry.StateMutability = abi.StateMutability(stateMutability)
 		}
-		if payable, ok := method.Details["payable"]; ok {
-			abiEntry.Payable = payable.(bool)
-		}
-		if constant, ok := method.Details["constant"]; ok {
-			abiEntry.Constant = constant.(bool)
-		}
+		abiEntry.Payable = method.Details.GetBool("payable")
+		abiEntry.Constant = method.Details.GetBool("constant")
 	}
 	return abiEntry, nil
 }
