@@ -72,15 +72,15 @@ func TestDIDGenerationOK(t *testing.T) {
 	}).Seal()
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", nm.ctx, mock.Anything).Return(org1, nil)
-	mdi.On("GetVerifiers", nm.ctx, mock.Anything).Return([]*core.Verifier{
+	mdi.On("GetIdentityByID", nm.ctx, "ns1", mock.Anything).Return(org1, nil)
+	mdi.On("GetVerifiers", nm.ctx, "ns1", mock.Anything).Return([]*core.Verifier{
 		verifierEth,
 		verifierMSP,
 		verifierDX,
 		verifierUnknown,
 	}, nil, nil)
 
-	doc, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.Namespace, org1.ID.String())
+	doc, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.ID.String())
 	assert.NoError(t, err)
 	assert.Equal(t, &DIDDocument{
 		Context: []string{
@@ -125,10 +125,10 @@ func TestDIDGenerationGetVerifiersFail(t *testing.T) {
 	org1 := testOrg("org1")
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", nm.ctx, mock.Anything).Return(org1, nil)
-	mdi.On("GetVerifiers", nm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", nm.ctx, "ns1", mock.Anything).Return(org1, nil)
+	mdi.On("GetVerifiers", nm.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.Namespace, org1.ID.String())
+	_, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.ID.String())
 	assert.Regexp(t, "pop", err)
 }
 
@@ -139,9 +139,9 @@ func TestDIDGenerationGetIdentityFail(t *testing.T) {
 	org1 := testOrg("org1")
 
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", nm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", nm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.Namespace, org1.ID.String())
+	_, err := nm.GetDIDDocForIndentityByID(nm.ctx, org1.ID.String())
 	assert.Regexp(t, "pop", err)
 }
 
@@ -154,7 +154,7 @@ func TestDIDGenerationGetIdentityByDIDFail(t *testing.T) {
 	mii := nm.identity.(*identitymanagermocks.Manager)
 	mii.On("CachedIdentityLookupMustExist", nm.ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
 
-	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, "ns", org1.DID)
+	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, org1.DID)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -171,8 +171,8 @@ func TestDIDGenerationGetIdentityByDIDFailVerifiers(t *testing.T) {
 		},
 	}, false, nil)
 	mdi := nm.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifiers", nm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetVerifiers", nm.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, "ns", org1.DID)
+	_, err := nm.GetDIDDocForIndentityByDID(nm.ctx, org1.DID)
 	assert.Regexp(t, "pop", err)
 }

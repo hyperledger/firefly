@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/karlseguin/ccache"
@@ -33,13 +34,15 @@ import (
 
 type GroupManager interface {
 	GetGroupByID(ctx context.Context, id string) (*core.Group, error)
-	GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error)
+	GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error)
 	ResolveInitGroup(ctx context.Context, msg *core.Message) (*core.Group, error)
 	EnsureLocalGroup(ctx context.Context, group *core.Group) (ok bool, err error)
 }
 
 type groupManager struct {
+	namespace     string
 	database      database.Plugin
+	identity      identity.Manager
 	data          data.Manager
 	groupCacheTTL time.Duration
 	groupCache    *ccache.Cache
@@ -60,7 +63,7 @@ func (gm *groupManager) EnsureLocalGroup(ctx context.Context, group *core.Group)
 	// the group via the blockchain.
 	// So this method checks if a group exists, and if it doesn't inserts it.
 	// We do assume the other side has sent the batch init of the group (rather than generating a second one)
-	if g, err := gm.database.GetGroupByHash(ctx, group.Hash); err != nil {
+	if g, err := gm.database.GetGroupByHash(ctx, gm.namespace, group.Hash); err != nil {
 		return false, err
 	} else if g != nil {
 		// The group already exists
@@ -148,15 +151,11 @@ func (gm *groupManager) GetGroupByID(ctx context.Context, hash string) (*core.Gr
 	if err != nil {
 		return nil, err
 	}
-	return gm.database.GetGroupByHash(ctx, h)
-}
-
-func (gm *groupManager) GetGroupsNS(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error) {
-	return gm.GetGroups(ctx, filter.Condition(filter.Builder().Eq("namespace", ns)))
+	return gm.database.GetGroupByHash(ctx, gm.namespace, h)
 }
 
 func (gm *groupManager) GetGroups(ctx context.Context, filter database.AndFilter) ([]*core.Group, *database.FilterResult, error) {
-	return gm.database.GetGroups(ctx, filter)
+	return gm.database.GetGroups(ctx, gm.namespace, filter)
 }
 
 func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.Bytes32, allowNil bool) (*core.Group, []*core.Identity, error) {
@@ -167,7 +166,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 		return ghe.group, ghe.nodes, nil
 	}
 
-	group, err := gm.database.GetGroupByHash(ctx, groupHash)
+	group, err := gm.database.GetGroupByHash(ctx, gm.namespace, groupHash)
 	if err != nil || (allowNil && group == nil) {
 		return nil, nil, err
 	}
@@ -180,7 +179,7 @@ func (gm *groupManager) getGroupNodes(ctx context.Context, groupHash *fftypes.By
 	nodes := make([]*core.Identity, 0, len(group.Members))
 	knownIDs := make(map[fftypes.UUID]bool)
 	for _, r := range group.Members {
-		node, err := gm.database.GetIdentityByID(ctx, r.Node)
+		node, err := gm.identity.CachedIdentityLookupByID(ctx, r.Node)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -237,7 +236,7 @@ func (gm *groupManager) ResolveInitGroup(ctx context.Context, msg *core.Message)
 	}
 
 	// Get the existing group
-	group, err := gm.database.GetGroupByHash(ctx, msg.Header.Group)
+	group, err := gm.database.GetGroupByHash(ctx, gm.namespace, msg.Header.Group)
 	if err != nil {
 		return group, err
 	}

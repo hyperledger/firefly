@@ -42,6 +42,7 @@ type Helper interface {
 }
 
 type transactionHelper struct {
+	namespace            string
 	database             database.Plugin
 	data                 data.Manager
 	transactionCache     *ccache.Cache
@@ -50,10 +51,11 @@ type transactionHelper struct {
 	blockchainEventTTL   time.Duration
 }
 
-func NewTransactionHelper(di database.Plugin, dm data.Manager) Helper {
+func NewTransactionHelper(ns string, di database.Plugin, dm data.Manager) Helper {
 	t := &transactionHelper{
-		database: di,
-		data:     dm,
+		namespace: ns,
+		database:  di,
+		data:      dm,
 	}
 	t.transactionCache = ccache.New(
 		// We use a LRU cache with a size-aware max

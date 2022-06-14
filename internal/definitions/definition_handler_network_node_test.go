@@ -111,7 +111,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, core.LegacySystemNamespace, node.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, node.ID).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, "ns1", node.ID).Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, core.LegacySystemNamespace, "member_0").Return(nil, nil)
 	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)

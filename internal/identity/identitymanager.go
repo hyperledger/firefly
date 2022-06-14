@@ -203,7 +203,7 @@ func (im *identityManager) firstVerifierForIdentity(ctx context.Context, vType c
 		fb.Eq("type", vType),
 		fb.Eq("identity", identity.ID),
 	)
-	verifiers, _, err := im.database.GetVerifiers(ctx, filter)
+	verifiers, _, err := im.database.GetVerifiers(ctx, im.namespace, filter)
 	if err != nil {
 		return nil, true /* DB Error */, err
 	}
@@ -394,7 +394,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 		}
 		return nil, err
 	}
-	identity, err := im.database.GetIdentityByID(ctx, verifier.Identity)
+	identity, err := im.database.GetIdentityByID(ctx, namespace, verifier.Identity)
 	if err != nil {
 		return nil, err
 	}
@@ -427,14 +427,14 @@ func (im *identityManager) CachedIdentityLookupNilOK(ctx context.Context, didLoo
 				return nil, false, i18n.NewError(ctx, coremsgs.MsgDIDResolverUnknown, didLookupStr)
 			}
 			// Look up by the full DID
-			if identity, err = im.database.GetIdentityByDID(ctx, didLookupStr); err != nil {
+			if identity, err = im.database.GetIdentityByDID(ctx, im.namespace, didLookupStr); err != nil {
 				return nil, true /* DB Error */, err
 			}
 			if identity == nil && strings.HasPrefix(didLookupStr, core.FireFlyOrgDIDPrefix) {
 				// We allow the UUID to be used to resolve DIDs as an alias to the name
 				uuid, err := fftypes.ParseUUID(ctx, strings.TrimPrefix(didLookupStr, core.FireFlyOrgDIDPrefix))
 				if err == nil {
-					if identity, err = im.database.GetIdentityByID(ctx, uuid); err != nil {
+					if identity, err = im.database.GetIdentityByID(ctx, im.namespace, uuid); err != nil {
 						return nil, true /* DB Error */, err
 					}
 				}
@@ -472,7 +472,7 @@ func (im *identityManager) CachedIdentityLookupByID(ctx context.Context, id *fft
 		cached.Extend(im.identityCacheTTL)
 		identity = cached.Value().(*core.Identity)
 	} else {
-		identity, err = im.database.GetIdentityByID(ctx, id)
+		identity, err = im.database.GetIdentityByID(ctx, im.namespace, id)
 		if err != nil || identity == nil {
 			return identity, err
 		}

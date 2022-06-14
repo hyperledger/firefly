@@ -358,7 +358,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Blockchain.Plugin.RegisterListener(&or.bc)
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
-	nodes, _, err := or.database().GetIdentities(ctx, fb.And(
+	nodes, _, err := or.database().GetIdentities(ctx, or.namespace, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
 	))
 	if err != nil {
@@ -390,7 +390,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.txHelper == nil {
-		or.txHelper = txcommon.NewTransactionHelper(or.database(), or.data)
+		or.txHelper = txcommon.NewTransactionHelper(or.namespace, or.database(), or.data)
 	}
 
 	if or.identity == nil {
@@ -413,7 +413,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database(), or.data)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace, or.database(), or.data)
 
 	if or.batchpin == nil {
 		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database(), or.identity, or.blockchain(), or.metrics, or.operations); err != nil {
@@ -422,7 +422,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database(), or.identity, or.dataexchange(), or.blockchain(), or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace, or.database(), or.identity, or.dataexchange(), or.blockchain(), or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -448,7 +448,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}

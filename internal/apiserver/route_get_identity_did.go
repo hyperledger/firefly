@@ -38,7 +38,7 @@ var getIdentityDID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.NetworkMap().GetDIDDocForIndentityByID(cr.ctx, extractNamespace(r.PP), r.PP["iid"])
+			return cr.or.NetworkMap().GetDIDDocForIndentityByID(cr.ctx, r.PP["iid"])
 		},
 	},
 }

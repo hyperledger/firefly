@@ -38,7 +38,7 @@ var getNetworkNode = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.NetworkMap().GetNodeByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			output, err = cr.or.NetworkMap().GetNodeByNameOrID(cr.ctx, r.PP["nameOrId"])
 			return output, err
 		},
 	},

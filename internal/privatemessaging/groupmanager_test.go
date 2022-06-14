@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -280,7 +281,7 @@ func TestResolveInitGroupExistingOK(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&core.Group{}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(&core.Group{}, nil)
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
@@ -302,7 +303,7 @@ func TestResolveInitGroupExistingFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
@@ -324,7 +325,7 @@ func TestResolveInitGroupExistingNotFound(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	group, err := pm.ResolveInitGroup(pm.ctx, &core.Message{
 		Header: core.MessageHeader{
@@ -348,7 +349,7 @@ func TestGetGroupByIDOk(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(&core.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(&core.Group{Hash: groupID}, nil)
 
 	group, err := pm.GetGroupByID(pm.ctx, groupID.String())
 	assert.NoError(t, err)
@@ -367,7 +368,7 @@ func TestGetGroupsOk(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroups", pm.ctx, mock.Anything).Return([]*core.Group{}, nil, nil)
+	mdi.On("GetGroups", pm.ctx, "ns1", mock.Anything).Return([]*core.Group{}, nil, nil)
 
 	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
 	groups, _, err := pm.GetGroups(pm.ctx, fb.And(fb.Eq("description", "mygroup")))
@@ -380,16 +381,10 @@ func TestGetGroupsNSOk(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroups", pm.ctx, mock.MatchedBy(func(filter database.AndFilter) bool {
-		f, err := filter.Finalize()
-		assert.NoError(t, err)
-		assert.Contains(t, f.String(), "namespace")
-		assert.Contains(t, f.String(), "ns1")
-		return true
-	})).Return([]*core.Group{}, nil, nil)
+	mdi.On("GetGroups", pm.ctx, "ns1", mock.Anything).Return([]*core.Group{}, nil, nil)
 
 	fb := database.GroupQueryFactory.NewFilter(pm.ctx)
-	groups, _, err := pm.GetGroupsNS(pm.ctx, "ns1", fb.And(fb.Eq("description", "mygroup")))
+	groups, _, err := pm.GetGroups(pm.ctx, fb.And(fb.Eq("description", "mygroup")))
 	assert.NoError(t, err)
 	assert.Empty(t, groups)
 }
@@ -409,8 +404,9 @@ func TestGetGroupNodesCache(t *testing.T) {
 	group.Seal()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, mock.Anything).Return(&core.Identity{
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil).Once()
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", pm.ctx, mock.Anything).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:   node1,
 			Type: core.IdentityTypeNode,
@@ -435,7 +431,7 @@ func TestGetGroupNodesGetGroupFail(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, _, err := pm.getGroupNodes(pm.ctx, groupID, false)
 	assert.EqualError(t, err, "pop")
@@ -447,7 +443,7 @@ func TestGetGroupNodesGetGroupNotFound(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	_, _, err := pm.getGroupNodes(pm.ctx, groupID, false)
 	assert.Regexp(t, "FF10226", err)
@@ -468,8 +464,9 @@ func TestGetGroupNodesNodeLookupFail(t *testing.T) {
 	group.Seal()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil).Once()
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop")).Once()
 
 	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.EqualError(t, err, "pop")
@@ -489,8 +486,9 @@ func TestGetGroupNodesNodeLookupNotFound(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1).Return(nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil).Once()
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", pm.ctx, mock.Anything).Return(nil, nil).Once()
 
 	_, _, err := pm.getGroupNodes(pm.ctx, group.Hash, false)
 	assert.Regexp(t, "FF10224", err)
@@ -512,7 +510,7 @@ func TestEnsureLocalGroupNewOk(t *testing.T) {
 	group.Seal()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("UpsertGroup", pm.ctx, group, database.UpsertOptimizationNew).Return(nil)
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
@@ -545,7 +543,7 @@ func TestEnsureLocalGroupExistingOk(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(group, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(group, nil)
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.NoError(t, err)
@@ -568,7 +566,7 @@ func TestEnsureLocalGroupLookupErr(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.EqualError(t, err, "pop")
@@ -593,7 +591,7 @@ func TestEnsureLocalGroupInsertErr(t *testing.T) {
 	group.Seal()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(fmt.Errorf("pop"))
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
@@ -610,7 +608,7 @@ func TestEnsureLocalGroupBadGroup(t *testing.T) {
 	group := &core.Group{}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	ok, err := pm.EnsureLocalGroup(pm.ctx, group)
 	assert.NoError(t, err)

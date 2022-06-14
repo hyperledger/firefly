@@ -20,8 +20,6 @@ import (
 
 	events "github.com/hyperledger/firefly/internal/events"
 
-	metrics "github.com/hyperledger/firefly/internal/metrics"
-
 	mock "github.com/stretchr/testify/mock"
 
 	networkmap "github.com/hyperledger/firefly/internal/networkmap"
@@ -1191,22 +1189,6 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Metrics provides a mock function with given fields:
-func (_m *Orchestrator) Metrics() metrics.Manager {
-	ret := _m.Called()
-
-	var r0 metrics.Manager
-	if rf, ok := ret.Get(0).(func() metrics.Manager); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(metrics.Manager)
-		}
 	}
 
 	return r0

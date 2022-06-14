@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
-	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -104,8 +103,7 @@ func TestGetStatusRegistered(t *testing.T) {
 			Parent: orgID,
 		},
 	}, false, nil)
-	mnm := or.networkmap.(*networkmapmocks.Manager)
-	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
@@ -171,8 +169,7 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 			Parent: fftypes.NewUUID(),
 		},
 	}, false, nil)
-	mnm := or.networkmap.(*networkmapmocks.Manager)
-	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	mem := or.events.(*eventmocks.EventManager)
 	mem.On("GetPlugins").Return(mockEventPlugins)
@@ -208,8 +205,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 			Parent: fftypes.NewUUID(),
 		},
 	}, false, nil)
-	mnm := or.networkmap.(*networkmapmocks.Manager)
-	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
@@ -286,8 +282,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, nil)
-	mnm := or.networkmap.(*networkmapmocks.Manager)
-	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",
@@ -342,8 +337,7 @@ func TestGetStatusNodeError(t *testing.T) {
 		},
 	}, nil)
 	mim.On("CachedIdentityLookupNilOK", or.ctx, "did:firefly:node/node1").Return(nil, false, fmt.Errorf("pop"))
-	mnm := or.networkmap.(*networkmapmocks.Manager)
-	mnm.On("GetIdentityVerifiers", or.ctx, "ns", orgID.String(), mock.Anything).Return([]*core.Verifier{
+	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return([]*core.Verifier{
 		{Hash: fftypes.NewRandB32(), VerifierRef: core.VerifierRef{
 			Type:  core.VerifierTypeEthAddress,
 			Value: "0x12345",

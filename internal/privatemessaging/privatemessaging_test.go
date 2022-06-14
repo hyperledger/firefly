@@ -77,7 +77,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi, mom)
+	pm, err := NewPrivateMessaging(ctx, "ns1", mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi, mom)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -136,7 +136,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	mom := pm.operations.(*operationmocks.Manager)
 
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: core.GroupIdentity{
 			Name: "group1",
@@ -146,8 +146,8 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
 	mdi.On("GetBlobMatchingHash", pm.ctx, blob1).Return(&core.Blob{
 		Hash:       blob1,
 		PayloadRef: "/blob/1",
@@ -212,7 +212,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 }
 
 func TestNewPrivateMessagingMissingDeps(t *testing.T) {
-	_, err := NewPrivateMessaging(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewPrivateMessaging(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -221,7 +221,7 @@ func TestDispatchErrorFindingGroup(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{})
 	assert.Regexp(t, "pop", err)
@@ -232,7 +232,7 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mbp := pm.batchpin.(*batchpinmocks.Submitter)
 	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
@@ -260,9 +260,10 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: core.GroupIdentity{
 			Name: "group1",
@@ -273,7 +274,6 @@ func TestSendAndSubmitBatchUnregisteredNode(t *testing.T) {
 		},
 	}, nil)
 
-	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
@@ -298,7 +298,7 @@ func TestSendImmediateFail(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
@@ -327,9 +327,9 @@ func TestSendSubmitInsertOperationFail(t *testing.T) {
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
+	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: core.GroupIdentity{
 			Name: "group1",
@@ -373,9 +373,9 @@ func TestSendSubmitBlobTransferFail(t *testing.T) {
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
+	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: core.GroupIdentity{
 			Name: "group1",
@@ -433,9 +433,9 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
+	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{
 		Hash: fftypes.NewRandB32(),
 		GroupIdentity: core.GroupIdentity{
 			Name: "group1",

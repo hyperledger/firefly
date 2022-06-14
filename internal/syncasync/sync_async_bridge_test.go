@@ -36,7 +36,7 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mse := &sysmessagingmocks.SystemEvents{}
-	sa := NewSyncAsyncBridge(ctx, mdi, mdm)
+	sa := NewSyncAsyncBridge(ctx, "ns1", mdi, mdm)
 	sa.Init(mse)
 	return sa.(*syncAsyncBridge), cancel
 }
@@ -372,7 +372,7 @@ func TestEventCallbackIdentityLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -403,7 +403,7 @@ func TestEventCallbackIdentityLookupNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetIdentityByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1384,7 +1384,7 @@ func TestAwaitIdentityConfirmed(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", sa.ctx, requestID).Return(identity, nil)
+	mdi.On("GetIdentityByID", sa.ctx, "ns1", requestID).Return(identity, nil)
 
 	retIdentity, err := sa.WaitForIdentity(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
 		go func() {

@@ -40,7 +40,7 @@ var getIdentityVerifiers = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.VerifierQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.NetworkMap().GetIdentityVerifiers(cr.ctx, extractNamespace(r.PP), r.PP["iid"], cr.filter))
+			return filterResult(cr.or.NetworkMap().GetIdentityVerifiers(cr.ctx, r.PP["iid"], cr.filter))
 		},
 	},
 }

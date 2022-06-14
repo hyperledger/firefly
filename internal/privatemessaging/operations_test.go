@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -56,7 +57,8 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), mock.Anything).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blob.Hash).Return(blob, nil)
 	mdx.On("TransferBlob", context.Background(), "ns1:"+op.ID.String(), "peer1", "payload").Return(nil)
 
@@ -72,6 +74,7 @@ func TestPrepareAndRunTransferBlob(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareAndRunBatchSend(t *testing.T) {
@@ -110,8 +113,9 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
 	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", mock.Anything).Return(nil)
 
@@ -129,6 +133,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mdi.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
@@ -166,8 +171,9 @@ func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdm := pm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
@@ -175,6 +181,7 @@ func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mdm.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
@@ -214,13 +221,13 @@ func TestPrepareOperationBlobSendNodeFail(t *testing.T) {
 		},
 	}
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), nodeID).Return(nil, fmt.Errorf("pop"))
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), nodeID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBlobSendNodeNotFound(t *testing.T) {
@@ -237,13 +244,13 @@ func TestPrepareOperationBlobSendNodeNotFound(t *testing.T) {
 		},
 	}
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), nodeID).Return(nil, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), nodeID).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 
-	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBlobSendBlobFail(t *testing.T) {
@@ -270,13 +277,15 @@ func TestPrepareOperationBlobSendBlobFail(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blobHash).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBlobSendBlobNotFound(t *testing.T) {
@@ -303,13 +312,15 @@ func TestPrepareOperationBlobSendBlobNotFound(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetBlobMatchingHash", context.Background(), blobHash).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBatchSendBadInput(t *testing.T) {
@@ -341,13 +352,13 @@ func TestPrepareOperationBatchSendNodeFail(t *testing.T) {
 		},
 	}
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), nodeID).Return(nil, fmt.Errorf("pop"))
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), nodeID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
 
-	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBatchSendNodeNotFound(t *testing.T) {
@@ -366,13 +377,13 @@ func TestPrepareOperationBatchSendNodeNotFound(t *testing.T) {
 		},
 	}
 
-	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), nodeID).Return(nil, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), nodeID).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 
-	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBatchSendGroupFail(t *testing.T) {
@@ -396,13 +407,15 @@ func TestPrepareOperationBatchSendGroupFail(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetGroupByHash", context.Background(), groupHash).Return(nil, fmt.Errorf("pop"))
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), "ns1", groupHash).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBatchSendGroupNotFound(t *testing.T) {
@@ -426,13 +439,15 @@ func TestPrepareOperationBatchSendGroupNotFound(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetGroupByHash", context.Background(), groupHash).Return(nil, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), "ns1", groupHash).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBatchSendBatchFail(t *testing.T) {
@@ -458,14 +473,16 @@ func TestPrepareOperationBatchSendBatchFail(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestPrepareOperationBatchSendBatchNotFound(t *testing.T) {
@@ -491,14 +508,16 @@ func TestPrepareOperationBatchSendBatchNotFound(t *testing.T) {
 	}
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", context.Background(), node.ID).Return(node, nil)
-	mdi.On("GetGroupByHash", context.Background(), group.Hash).Return(group, nil)
+	mim := pm.identity.(*identitymanagermocks.Manager)
+	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
+	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
 	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
+	mim.AssertExpectations(t)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {

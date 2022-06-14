@@ -80,7 +80,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mdd := &shareddownloadmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	if metrics {
 		mmi.On("TransferConfirmed", mock.Anything)
@@ -144,7 +144,7 @@ func TestStartStopBadTransports(t *testing.T) {
 	mam := &assetmocks.Manager{}
 	msd := &shareddownloadmocks.Manager{}
 	mm := &metricsmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false}).Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)

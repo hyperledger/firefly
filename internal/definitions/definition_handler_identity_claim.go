@@ -149,7 +149,7 @@ func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state Def
 
 	existingIdentity, err := dh.database.GetIdentityByName(ctx, identity.Type, identity.Namespace, identity.Name)
 	if err == nil && existingIdentity == nil {
-		existingIdentity, err = dh.database.GetIdentityByID(ctx, identity.ID)
+		existingIdentity, err = dh.database.GetIdentityByID(ctx, dh.namespace, identity.ID)
 	}
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err // retry database errors

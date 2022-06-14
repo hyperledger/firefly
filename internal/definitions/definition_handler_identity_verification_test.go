@@ -45,7 +45,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, nil) // Simulate pending confirm in same pin batch
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, custom1.ID).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
 	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *claimMsg.Header.ID, *identity.Messages.Claim)

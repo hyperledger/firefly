@@ -32,7 +32,7 @@ import (
 func TestEnrichMessageConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -58,7 +58,7 @@ func TestEnrichMessageConfirmed(t *testing.T) {
 func TestEnrichMessageFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -81,7 +81,7 @@ func TestEnrichMessageFail(t *testing.T) {
 func TestEnrichMessageRejected(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -107,7 +107,7 @@ func TestEnrichMessageRejected(t *testing.T) {
 func TestEnrichTxSubmitted(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -133,7 +133,7 @@ func TestEnrichTxSubmitted(t *testing.T) {
 func TestEnrichTxFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -156,7 +156,7 @@ func TestEnrichTxFail(t *testing.T) {
 func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -182,7 +182,7 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 func TestEnrichBlockchainEventFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -205,7 +205,7 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 func TestEnrichContractAPISubmitted(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -231,7 +231,7 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 func TestEnrichContractAPItFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -254,7 +254,7 @@ func TestEnrichContractAPItFail(t *testing.T) {
 func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -280,7 +280,7 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 func TestEnrichContractInterfacetFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -303,7 +303,7 @@ func TestEnrichContractInterfacetFail(t *testing.T) {
 func TestEnrichDatatypeConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -329,7 +329,7 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -352,7 +352,7 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 func TestEnrichIdentityConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -360,7 +360,7 @@ func TestEnrichIdentityConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(&core.Identity{
+	mdi.On("GetIdentityByID", mock.Anything, "ns1", ref1).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID: ref1,
 		},
@@ -380,7 +380,7 @@ func TestEnrichIdentityConfirmed(t *testing.T) {
 func TestEnrichIdentityConfirmedFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -388,7 +388,7 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetIdentityByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -403,7 +403,7 @@ func TestEnrichIdentityConfirmedFail(t *testing.T) {
 func TestEnrichNamespaceConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -429,7 +429,7 @@ func TestEnrichNamespaceConfirmed(t *testing.T) {
 func TestEnrichNamespaceConfirmedFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -452,7 +452,7 @@ func TestEnrichNamespaceConfirmedFail(t *testing.T) {
 func TestEnrichTokenPoolConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -478,7 +478,7 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -501,7 +501,7 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -527,7 +527,7 @@ func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 func TestEnrichTokenApprovalFailed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -553,7 +553,7 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -576,7 +576,7 @@ func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 func TestEnrichTokenTransferConfirmed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -602,7 +602,7 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 func TestEnrichTokenTransferFailed(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -628,7 +628,7 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs
@@ -651,7 +651,7 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 func TestEnrichOperationFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper(mdi, mdm)
+	txHelper := NewTransactionHelper("ns1", mdi, mdm)
 	ctx := context.Background()
 
 	// Setup the IDs

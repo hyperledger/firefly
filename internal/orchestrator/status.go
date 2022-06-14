@@ -112,10 +112,8 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus,
 		status.Org.ID = org.ID
 		status.Org.DID = org.DID
 
-		// It's possible namespace will fallback to SystemNamespace (if configured to do so)
-		ns := org.Namespace
-
-		verifiers, _, err := or.networkmap.GetIdentityVerifiers(ctx, ns, org.ID.String(), database.VerifierQueryFactory.NewFilter(ctx).And())
+		fb := database.VerifierQueryFactory.NewFilter(ctx)
+		verifiers, _, err := or.database().GetVerifiers(ctx, org.Namespace, fb.And(fb.Eq("identity", org.ID)))
 		if err != nil {
 			return nil, err
 		}

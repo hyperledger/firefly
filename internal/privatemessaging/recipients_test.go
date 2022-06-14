@@ -42,9 +42,9 @@ func TestResolveMemberListNewGroupE2E(t *testing.T) {
 
 	var dataID *fftypes.UUID
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{remoteNode}, nil, nil).Once()
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{remoteNode}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, nil).Once()
 	mdi.On("UpsertGroup", pm.ctx, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -112,8 +112,8 @@ func TestResolveMemberListExistingGroup(t *testing.T) {
 	localNode := newTestNode("node1", localOrg)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localNode, nil)
@@ -180,8 +180,8 @@ func TestResolveMemberListGetGroupsFail(t *testing.T) {
 	localNode := newTestNode("node1", localOrg)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localNode, nil)
@@ -247,8 +247,8 @@ func TestResolveMemberListMissingLocalMemberLookupFailed(t *testing.T) {
 	remoteNode := newTestNode("node2", remoteOrg)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{remoteNode}, nil, nil).Once()
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{remoteNode}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, fmt.Errorf("pop")).Once()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
@@ -284,7 +284,7 @@ func TestResolveMemberListNodeNotFound(t *testing.T) {
 	localNode := newTestNode("node1", localOrg)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{}, nil, nil).Once()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(localOrg, false, nil)
@@ -322,9 +322,9 @@ func TestResolveMemberNodeOwnedParentOrg(t *testing.T) {
 	localNode := newTestNode("node1", parentOrg)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil).Once()
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootOrg", pm.ctx).Return(parentOrg, nil)
 	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(childOrg, false, nil)
@@ -369,7 +369,7 @@ func TestResolveNodeByIDNoResult(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{}, nil, nil)
 
 	parentOrgID := fftypes.NewUUID()
 	mim := pm.identity.(*identitymanagermocks.Manager)
@@ -389,7 +389,7 @@ func TestResolveReceipientListExisting(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{Hash: groupID}, nil)
 
 	err := pm.resolveRecipientList(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
@@ -425,7 +425,7 @@ func TestResolveLocalNodeNotFound(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil)
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{}, nil, nil)
 
 	_, err := pm.resolveLocalNode(pm.ctx, newTestOrg("localorg"))
 	assert.Regexp(t, "FF10225", err)
@@ -436,7 +436,7 @@ func TestResolveLocalNodeNotError(t *testing.T) {
 	defer cancel()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := pm.resolveLocalNode(pm.ctx, newTestOrg("localorg"))
 	assert.EqualError(t, err, "pop")

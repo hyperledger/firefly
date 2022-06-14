@@ -83,7 +83,7 @@ func TestResolveInputSigningIdentityOrgFallbackOk(t *testing.T) {
 				Value: "fullkey123",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, orgID).
+	mdi.On("GetIdentityByID", ctx, "ns1", orgID).
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        orgID,
@@ -124,7 +124,7 @@ func TestResolveInputSigningIdentityByKeyOk(t *testing.T) {
 				Value: "fullkey123",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, idID).
+	mdi.On("GetIdentityByID", ctx, "ns1", idID).
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
@@ -162,7 +162,7 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "fullkey123").Return(nil, nil)
-	mdi.On("GetIdentityByDID", ctx, "did:firefly:ns/ns1/myid").
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:ns/ns1/myid").
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
@@ -230,7 +230,7 @@ func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
 				Value: "fullkey123",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, idID).
+	mdi.On("GetIdentityByID", ctx, "ns1", idID).
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        idID,
@@ -268,7 +268,7 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 		Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "fullkey123").
 		Return(nil, nil)
-	mdi.On("GetIdentityByDID", ctx, "did:firefly:ns/ns1/unknown").
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:ns/ns1/unknown").
 		Return(nil, nil)
 
 	msgIdentity := &core.SignerRef{
@@ -338,7 +338,7 @@ func TestResolveInputSigningIdentityByOrgNameOk(t *testing.T) {
 				Type:      core.IdentityTypeOrg,
 			},
 		}, nil)
-	mdi.On("GetVerifiers", ctx, mock.Anything).
+	mdi.On("GetVerifiers", ctx, "ns1", mock.Anything).
 		Return([]*core.Verifier{
 			(&core.Verifier{
 				Identity:  idID,
@@ -415,7 +415,7 @@ func TestResolveInputSigningIdentityByOrgVerifierFail(t *testing.T) {
 				Type:      core.IdentityTypeOrg,
 			},
 		}, nil)
-	mdi.On("GetVerifiers", ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetVerifiers", ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	msgIdentity := &core.SignerRef{
 		Author: "org1",
@@ -528,7 +528,7 @@ func TestFirstVerifierForIdentityNotFound(t *testing.T) {
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetVerifiers", ctx, mock.Anything).Return([]*core.Verifier{}, nil, nil)
+	mdi.On("GetVerifiers", ctx, "ns1", mock.Anything).Return([]*core.Verifier{}, nil, nil)
 
 	_, retryable, err := im.firstVerifierForIdentity(ctx, core.VerifierTypeEthAddress, id)
 	assert.Regexp(t, "FF10353", err)
@@ -591,7 +591,7 @@ func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, core.LegacySystemNamespace, "key12345").Return(verifier, nil)
-	mdi.On("GetIdentityByID", ctx, id.ID).Return(id, nil)
+	mdi.On("GetIdentityByID", ctx, core.LegacySystemNamespace, id.ID).Return(id, nil)
 
 	im.orgName = "org1"
 
@@ -690,7 +690,7 @@ func TestGetMultipartyRootOrgMismatch(t *testing.T) {
 				Value: "fullkey123",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, orgID).
+	mdi.On("GetIdentityByID", ctx, "ns1", orgID).
 		Return(&core.Identity{
 			IdentityBase: core.IdentityBase{
 				ID:        orgID,
@@ -729,7 +729,7 @@ func TestCachedIdentityLookupByVerifierRefCaching(t *testing.T) {
 				Value: "peer1",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, id.ID).
+	mdi.On("GetIdentityByID", ctx, "ns1", id.ID).
 		Return(id, nil)
 
 	v1, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
@@ -771,7 +771,7 @@ func TestCachedIdentityLookupByVerifierRefError(t *testing.T) {
 				Value: "peer1",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", ctx, "ns1", id.ID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -804,7 +804,7 @@ func TestCachedIdentityLookupByVerifierRefNotFound(t *testing.T) {
 				Value: "peer1",
 			},
 		}).Seal(), nil)
-	mdi.On("GetIdentityByID", ctx, id.ID).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, "ns1", id.ID).Return(nil, nil)
 
 	_, err := im.cachedIdentityLookupByVerifierRef(ctx, "ns1", &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -828,7 +828,7 @@ func TestCachedIdentityLookupMustExistCaching(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(id, nil).Once()
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:node/peer1").Return(id, nil).Once()
 
 	v1, _, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
 	assert.NoError(t, err)
@@ -854,7 +854,7 @@ func TestCachedIdentityLookupMustExistGetIDFail(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByDID", ctx, "did:firefly:node/peer1").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByDID", ctx, "ns1", "did:firefly:node/peer1").Return(nil, fmt.Errorf("pop"))
 
 	_, retryable, err := im.CachedIdentityLookupMustExist(ctx, "did:firefly:node/peer1")
 	assert.Regexp(t, "pop", err)
@@ -870,8 +870,8 @@ func TestCachedIdentityLookupByVerifierByOldDIDFail(t *testing.T) {
 	did := core.FireFlyOrgDIDPrefix + orgUUID.String()
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByDID", ctx, did).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, mock.MatchedBy(func(uuid *fftypes.UUID) bool {
+	mdi.On("GetIdentityByDID", ctx, "ns1", did).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, "ns1", mock.MatchedBy(func(uuid *fftypes.UUID) bool {
 		return uuid.Equals(orgUUID)
 	})).Return(nil, fmt.Errorf("pop"))
 
@@ -895,7 +895,7 @@ func TestCachedIdentityLookupByIDCaching(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, id.ID).Return(id, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", id.ID).Return(id, nil).Once()
 
 	v1, err := im.CachedIdentityLookupByID(ctx, id.ID)
 	assert.NoError(t, err)
@@ -961,9 +961,9 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 		},
 	}
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, idIntermediateOrg.ID).Return(idIntermediateOrg, nil).Once()
-	mdi.On("GetIdentityByID", ctx, idIntermediateCustom.ID).Return(idIntermediateCustom, nil).Once()
-	mdi.On("GetIdentityByID", ctx, idRoot.ID).Return(idRoot, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", idIntermediateOrg.ID).Return(idIntermediateOrg, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", idIntermediateCustom.ID).Return(idIntermediateCustom, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", idRoot.ID).Return(idRoot, nil).Once()
 
 	immeidateParent, _, err := im.VerifyIdentityChain(ctx, idLeaf)
 	assert.Equal(t, idIntermediateCustom, immeidateParent)
@@ -1020,7 +1020,7 @@ func TestVerifyIdentityChainLoop(t *testing.T) {
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", idID2).Return(id2, nil).Once()
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10364", err)
@@ -1056,7 +1056,7 @@ func TestVerifyIdentityChainBadParent(t *testing.T) {
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, idID2).Return(id2, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", idID2).Return(id2, nil).Once()
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10366", err)
@@ -1082,7 +1082,7 @@ func TestVerifyIdentityChainErr(t *testing.T) {
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, idID2).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", ctx, "ns1", idID2).Return(nil, fmt.Errorf("pop"))
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "pop", err)
@@ -1108,7 +1108,7 @@ func TestVerifyIdentityChainNotFound(t *testing.T) {
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, idID2).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, "ns1", idID2).Return(nil, nil)
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id1)
 	assert.Regexp(t, "FF10214", err)
@@ -1143,7 +1143,7 @@ func TestVerifyIdentityChainInvalidParent(t *testing.T) {
 	}
 
 	mdi := im.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", ctx, id1.ID).Return(id1, nil).Once()
+	mdi.On("GetIdentityByID", ctx, "ns1", id1.ID).Return(id1, nil).Once()
 
 	_, retryable, err := im.VerifyIdentityChain(ctx, id2)
 	assert.Regexp(t, "FF10365", err)
