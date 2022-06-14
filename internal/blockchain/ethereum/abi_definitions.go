@@ -16,10 +16,12 @@
 
 package ethereum
 
-var batchPinMethodABI = ABIElementMarshaling{
+import "github.com/hyperledger/firefly-signer/pkg/abi"
+
+var batchPinMethodABI = &abi.Entry{
 	Name: "pinBatch",
 	Type: "function",
-	Inputs: []ABIArgumentMarshaling{
+	Inputs: abi.ParameterArray{
 		{
 			InternalType: "string",
 			Name:         "namespace",
@@ -48,10 +50,10 @@ var batchPinMethodABI = ABIElementMarshaling{
 	},
 }
 
-var batchPinEventABI = ABIElementMarshaling{
+var batchPinEventABI = &abi.Entry{
 	Name: "BatchPin",
 	Type: "event",
-	Inputs: []ABIArgumentMarshaling{
+	Inputs: abi.ParameterArray{
 		{
 			Indexed:      false,
 			InternalType: "address",
@@ -97,12 +99,12 @@ var batchPinEventABI = ABIElementMarshaling{
 	},
 }
 
-var networkVersionMethodABI = ABIElementMarshaling{
+var networkVersionMethodABI = &abi.Entry{
 	Name:            "networkVersion",
 	Type:            "function",
 	StateMutability: "pure",
-	Inputs:          []ABIArgumentMarshaling{},
-	Outputs: []ABIArgumentMarshaling{
+	Inputs:          abi.ParameterArray{},
+	Outputs: abi.ParameterArray{
 		{
 			InternalType: "uint8",
 			Type:         "uint8",

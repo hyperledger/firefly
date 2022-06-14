@@ -32,7 +32,7 @@ var spiGetNamespaceByName = &ffapi.Route{
 		{Name: "ns", Description: coremsgs.APIParamsNamespace},
 	},
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsAdminGetNamespaceByName,
+	Description:     coremsgs.APIEndpointsPostNewNamespace,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.Namespace{} },
 	JSONOutputCodes: []int{http.StatusOK},

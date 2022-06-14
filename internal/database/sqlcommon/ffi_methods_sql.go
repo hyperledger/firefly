@@ -39,6 +39,7 @@ var (
 		"description",
 		"params",
 		"returns",
+		"details",
 	}
 	ffiMethodFilterFieldMap = map[string]string{
 		"interface": "interface_id",
@@ -90,6 +91,7 @@ func (s *SQLCommon) UpsertFFIMethod(ctx context.Context, method *core.FFIMethod)
 					method.Description,
 					method.Params,
 					method.Returns,
+					method.Details,
 				),
 			func() {
 				s.callbacks.UUIDCollectionNSEvent(database.CollectionFFIMethods, core.ChangeEventTypeCreated, method.Namespace, method.ID)
@@ -113,6 +115,7 @@ func (s *SQLCommon) ffiMethodResult(ctx context.Context, row *sql.Rows) (*core.F
 		&method.Description,
 		&method.Params,
 		&method.Returns,
+		&method.Details,
 	)
 	if err != nil {
 		return nil, i18n.WrapError(ctx, err, coremsgs.MsgDBReadErr, ffimethodsTable)

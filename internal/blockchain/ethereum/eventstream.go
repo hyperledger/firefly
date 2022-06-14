@@ -25,6 +25,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/log"
+	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -45,12 +46,12 @@ type eventStream struct {
 }
 
 type subscription struct {
-	ID        string               `json:"id"`
-	Name      string               `json:"name,omitempty"`
-	Stream    string               `json:"stream"`
-	FromBlock string               `json:"fromBlock"`
-	Address   string               `json:"address"`
-	Event     ABIElementMarshaling `json:"event"`
+	ID        string     `json:"id"`
+	Name      string     `json:"name,omitempty"`
+	Stream    string     `json:"stream"`
+	FromBlock string     `json:"fromBlock"`
+	Address   string     `json:"address"`
+	Event     *abi.Entry `json:"event"`
 }
 
 func (s *streamManager) getEventStreams(ctx context.Context) (streams []*eventStream, err error) {
@@ -134,7 +135,7 @@ func (s *streamManager) getSubscriptions(ctx context.Context) (subs []*subscript
 	return subs, nil
 }
 
-func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, fromBlock string, abi ABIElementMarshaling) (*subscription, error) {
+func (s *streamManager) createSubscription(ctx context.Context, location *Location, stream, subName, fromBlock string, abi *abi.Entry) (*subscription, error) {
 	// Map FireFly "firstEvent" values to Ethereum "fromBlock" values
 	switch fromBlock {
 	case string(core.SubOptsFirstEventOldest):
@@ -170,7 +171,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, instancePath, fromBlock, stream string, abi ABIElementMarshaling) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, instancePath, fromBlock, stream string, abi *abi.Entry) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
