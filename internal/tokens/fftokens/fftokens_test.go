@@ -914,25 +914,30 @@ func TestPoolEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
-	// token-pool: callback fail
+	// token-pool: batch + callback fail
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(fmt.Errorf("pop")).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "9",
-		"event": "token-pool",
+		"event": "batch",
 		"data": fftypes.JSONObject{
-			"id":          "000000000010/000020/000030/000040",
-			"type":        "fungible",
-			"poolLocator": "F1",
-			"signer":      "0x0",
-			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
-			"blockchain": fftypes.JSONObject{
-				"id": "000000000010/000020/000030",
-				"info": fftypes.JSONObject{
-					"transactionHash": "0xffffeeee",
+			"events": fftypes.JSONObjectArray{{
+				"event": "token-pool",
+				"data": fftypes.JSONObject{
+					"id":          "000000000010/000020/000030/000040",
+					"type":        "fungible",
+					"poolLocator": "F1",
+					"signer":      "0x0",
+					"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
+					"blockchain": fftypes.JSONObject{
+						"id": "000000000010/000020/000030",
+						"info": fftypes.JSONObject{
+							"transactionHash": "0xffffeeee",
+						},
+					},
 				},
-			},
+			}},
 		},
 	}.String()
 }

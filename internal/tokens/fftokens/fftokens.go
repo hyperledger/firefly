@@ -113,6 +113,7 @@ type msgType string
 
 const (
 	messageReceipt       msgType = "receipt"
+	messageBatch         msgType = "batch"
 	messageTokenPool     msgType = "token-pool"
 	messageTokenMint     msgType = "token-mint"
 	messageTokenBurn     msgType = "token-burn"
@@ -502,6 +503,53 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 	return ft.callbacks.TokensApproved(namespace, ft, approval)
 }
 
+func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err error) {
+	l := log.L(ctx)
+
+	var msg wsEvent
+	if err = json.Unmarshal(msgBytes, &msg); err != nil {
+		l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
+		return nil // Swallow this and move on
+	}
+
+	l.Debugf("Received %s event %s", msg.Event, msg.ID)
+	switch msg.Event {
+	case messageReceipt:
+		ft.handleReceipt(ctx, msg.Data)
+	case messageBatch:
+		for _, msg := range msg.Data.GetObjectArray("events") {
+			if err = ft.handleMessage(ctx, []byte(msg.String())); err != nil {
+				break
+			}
+		}
+	case messageTokenPool:
+		err = ft.handleTokenPoolCreate(ctx, msg.Data)
+	case messageTokenMint:
+		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeMint, msg.Data)
+	case messageTokenBurn:
+		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeBurn, msg.Data)
+	case messageTokenTransfer:
+		err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
+	case messageTokenApproval:
+		err = ft.handleTokenApproval(ctx, msg.Data)
+	default:
+		l.Errorf("Message unexpected: %s", msg.Event)
+	}
+
+	if err == nil && msg.Event != messageReceipt && msg.ID != "" {
+		l.Debugf("Sending ack %s", msg.ID)
+		ack, _ := json.Marshal(fftypes.JSONObject{
+			"event": "ack",
+			"data": fftypes.JSONObject{
+				"id": msg.ID,
+			},
+		})
+		err = ft.wsconn.Send(ctx, ack)
+	}
+
+	return err
+}
+
 func (ft *FFTokens) eventLoop() {
 	defer ft.wsconn.Close()
 	l := log.L(ft.ctx).WithField("role", "event-loop")
@@ -516,43 +564,7 @@ func (ft *FFTokens) eventLoop() {
 				l.Debugf("Event loop exiting (receive channel closed)")
 				return
 			}
-
-			var msg wsEvent
-			err := json.Unmarshal(msgBytes, &msg)
-			if err != nil {
-				l.Errorf("Message cannot be parsed as JSON: %s\n%s", err, string(msgBytes))
-				continue // Swallow this and move on
-			}
-			l.Debugf("Received %s event %s", msg.Event, msg.ID)
-			switch msg.Event {
-			case messageReceipt:
-				ft.handleReceipt(ctx, msg.Data)
-			case messageTokenPool:
-				err = ft.handleTokenPoolCreate(ctx, msg.Data)
-			case messageTokenMint:
-				err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeMint, msg.Data)
-			case messageTokenBurn:
-				err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeBurn, msg.Data)
-			case messageTokenTransfer:
-				err = ft.handleTokenTransfer(ctx, core.TokenTransferTypeTransfer, msg.Data)
-			case messageTokenApproval:
-				err = ft.handleTokenApproval(ctx, msg.Data)
-			default:
-				l.Errorf("Message unexpected: %s", msg.Event)
-			}
-
-			if err == nil && msg.Event != messageReceipt && msg.ID != "" {
-				l.Debugf("Sending ack %s", msg.ID)
-				ack, _ := json.Marshal(fftypes.JSONObject{
-					"event": "ack",
-					"data": fftypes.JSONObject{
-						"id": msg.ID,
-					},
-				})
-				err = ft.wsconn.Send(ctx, ack)
-			}
-
-			if err != nil {
+			if err := ft.handleMessage(ctx, msgBytes); err != nil {
 				l.Errorf("Event loop exiting: %s", err)
 				return
 			}
