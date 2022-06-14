@@ -20,18 +20,20 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestSPIGetOperations(t *testing.T) {
-	_, r := newTestSPIServer()
-	req := httptest.NewRequest("GET", "/spi/v1/operations", nil)
+	or, r := newTestSPIServer()
+	req := httptest.NewRequest("GET", "/spi/v1/namespaces/ns1/operations", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	assert.Panics(t, func() {
-		r.ServeHTTP(res, req)
-	})
+	or.On("GetOperations", mock.Anything, mock.Anything).
+		Return([]*core.Operation{}, nil, nil)
+	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
 }
