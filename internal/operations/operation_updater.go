@@ -315,7 +315,7 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 		batchID, _ := fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 		expectedManifest := ""
 		if batchID != nil {
-			batch, err := ou.database.GetBatchByID(ctx, batchID)
+			batch, err := ou.database.GetBatchByID(ctx, ou.manager.namespace, batchID)
 			if err != nil {
 				return err
 			}

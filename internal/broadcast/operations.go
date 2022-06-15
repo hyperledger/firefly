@@ -79,7 +79,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		bp, err := bm.database.GetBatchByID(ctx, id)
+		bp, err := bm.database.GetBatchByID(ctx, bm.namespace, id)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {

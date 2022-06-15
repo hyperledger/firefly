@@ -143,10 +143,10 @@ type iBatchCollection interface {
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetBatchByID - Get a batch by ID
-	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *core.BatchPersisted, err error)
+	GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.BatchPersisted, err error)
 
 	// GetBatches - Get batches
-	GetBatches(ctx context.Context, filter Filter) (message []*core.BatchPersisted, res *FilterResult, err error)
+	GetBatches(ctx context.Context, namespace string, filter Filter) (message []*core.BatchPersisted, res *FilterResult, err error)
 }
 
 type iTransactionCollection interface {

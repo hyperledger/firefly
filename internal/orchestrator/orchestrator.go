@@ -89,8 +89,8 @@ type Orchestrator interface {
 	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
 	GetMessageData(ctx context.Context, ns, id string) (core.DataArray, error)
 	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
-	GetBatchByID(ctx context.Context, ns, id string) (*core.BatchPersisted, error)
-	GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error)
+	GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error)
+	GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error)
 	GetDataByID(ctx context.Context, ns, id string) (*core.Data, error)
 	GetData(ctx context.Context, ns string, filter database.AndFilter) (core.DataArray, *database.FilterResult, error)
 	GetDatatypeByID(ctx context.Context, ns, id string) (*core.Datatype, error)
@@ -414,7 +414,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace, or.database(), or.data)
 
 	if or.batchpin == nil {
-		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database(), or.identity, or.blockchain(), or.metrics, or.operations); err != nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.namespace, or.database(), or.identity, or.blockchain(), or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -426,7 +426,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.broadcast == nil {
-		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.database(), or.identity, or.data, or.blockchain(), or.dataexchange(), or.sharedstorage(), or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace, or.database(), or.identity, or.data, or.blockchain(), or.dataexchange(), or.sharedstorage(), or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}

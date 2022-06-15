@@ -101,7 +101,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.BatchQueryFactory.NewFilter(ctx)
-		switch batches, _, err := or.database().GetBatches(ctx, f.Eq("tx.id", id)); {
+		switch batches, _, err := or.database().GetBatches(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(batches) == 0:

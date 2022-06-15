@@ -109,7 +109,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		} else if group == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		bp, err := pm.database.GetBatchByID(ctx, batchID)
+		bp, err := pm.database.GetBatchByID(ctx, pm.namespace, batchID)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {

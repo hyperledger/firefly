@@ -255,7 +255,7 @@ func TestGetMessageTransactionOk(t *testing.T) {
 			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&core.BatchPersisted{
+	or.mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeBatchPin,
 			ID:   txID,
@@ -282,7 +282,7 @@ func TestGetMessageTransactionOperations(t *testing.T) {
 			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&core.BatchPersisted{
+	or.mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{
 		TX: core.TransactionRef{
 			Type: core.TransactionTypeBatchPin,
 			ID:   txID,
@@ -319,7 +319,7 @@ func TestGetMessageTransactionNoBatchTX(t *testing.T) {
 			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(&core.BatchPersisted{}, nil)
+	or.mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(&core.BatchPersisted{}, nil)
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
 	assert.Regexp(t, "FF10210", err)
 }
@@ -335,7 +335,7 @@ func TestGetMessageTransactionNoBatch(t *testing.T) {
 			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(nil, nil)
+	or.mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(nil, nil)
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
 	assert.Regexp(t, "FF10209", err)
 }
@@ -351,7 +351,7 @@ func TestGetMessageTransactionBatchLookupErr(t *testing.T) {
 			TxType:    core.TransactionTypeBatchPin,
 		},
 	}, nil)
-	or.mdi.On("GetBatchByID", mock.Anything, batchID).Return(nil, fmt.Errorf("pop"))
+	or.mdi.On("GetBatchByID", mock.Anything, "ns1", batchID).Return(nil, fmt.Errorf("pop"))
 	_, err := or.GetMessageTransaction(context.Background(), "ns1", msgID.String())
 	assert.Regexp(t, "pop", err)
 }
@@ -454,28 +454,28 @@ func TestGetMessageEventsBadMsgID(t *testing.T) {
 func TestGetBatchByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetBatchByID", mock.Anything, u).Return(&core.BatchPersisted{
+	or.mdi.On("GetBatchByID", mock.Anything, "ns", u).Return(&core.BatchPersisted{
 		BatchHeader: core.BatchHeader{
-			Namespace: "ns1",
+			Namespace: "ns",
 		},
 	}, nil)
-	_, err := or.GetBatchByID(context.Background(), "ns1", u.String())
+	_, err := or.GetBatchByID(context.Background(), u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetBatchByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetBatchByID(context.Background(), "", "")
+	_, err := or.GetBatchByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetBatches(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return([]*core.BatchPersisted{}, nil, nil)
+	or.mdi.On("GetBatches", mock.Anything, "ns", mock.Anything).Return([]*core.BatchPersisted{}, nil, nil)
 	fb := database.BatchQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetBatches(context.Background(), "ns1", f)
+	_, _, err := or.GetBatches(context.Background(), f)
 	assert.NoError(t, err)
 }
 

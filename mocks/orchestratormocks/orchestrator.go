@@ -190,13 +190,13 @@ func (_m *Orchestrator) Events() events.EventManager {
 	return r0
 }
 
-// GetBatchByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) (*core.BatchPersisted, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetBatchByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *core.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.BatchPersisted); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.BatchPersisted); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.BatchPersisted)
@@ -204,8 +204,8 @@ func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -213,13 +213,13 @@ func (_m *Orchestrator) GetBatchByID(ctx context.Context, ns string, id string) 
 	return r0, r1
 }
 
-// GetBatches provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetBatches provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.BatchPersisted); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.BatchPersisted); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.BatchPersisted)
@@ -227,8 +227,8 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -236,8 +236,8 @@ func (_m *Orchestrator) GetBatches(ctx context.Context, ns string, filter databa
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

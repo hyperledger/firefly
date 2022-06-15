@@ -149,13 +149,13 @@ func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) 
 	return r0
 }
 
-// GetBatchByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*core.BatchPersisted, error) {
-	ret := _m.Called(ctx, id)
+// GetBatchByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BatchPersisted, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.BatchPersisted); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.BatchPersisted); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.BatchPersisted)
@@ -163,8 +163,8 @@ func (_m *Plugin) GetBatchByID(ctx context.Context, id *fftypes.UUID) (*core.Bat
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -218,13 +218,13 @@ func (_m *Plugin) GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.
 	return r0, r1
 }
 
-// GetBatches provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*core.BatchPersisted, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetBatches provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetBatches(ctx context.Context, namespace string, filter database.Filter) ([]*core.BatchPersisted, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.BatchPersisted
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.BatchPersisted); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.BatchPersisted); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.BatchPersisted)
@@ -232,8 +232,8 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*co
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -241,8 +241,8 @@ func (_m *Plugin) GetBatches(ctx context.Context, filter database.Filter) ([]*co
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

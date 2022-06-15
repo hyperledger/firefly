@@ -191,7 +191,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Look for existing nextpins - none found, first on context
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{}, nil, nil).Once()
 	// Get the group members
@@ -337,7 +337,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Look for existing nextpins - none found, first on context
 	mdi.On("GetNextPins", ag.ctx, mock.Anything).Return([]*core.NextPin{
 		{Context: contextUnmasked, Identity: member1org.DID, Hash: member1Nonce100, Nonce: 100, Sequence: 929},
@@ -440,7 +440,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Do not resolve any pins earlier
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	// Validate the message is ok
@@ -535,7 +535,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	}
 
 	// Get the batch
-	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Do not resolve any pins earlier
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
 	// Validate the message is ok
@@ -617,7 +617,7 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 		Manifest:    fftypes.JSONAnyPtr(string(payloadBinary)),
 	}
 
-	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 
 	err = ag.processPins(ag.ctx, []*core.Pin{
 		{
@@ -683,7 +683,7 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 		Manifest:    fftypes.JSONAnyPtr("{}"),
 	}
 
-	mdi.On("GetBatchByID", ag.ctx, batchID).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 
 	err := ag.processPins(ag.ctx, []*core.Pin{
 		{
@@ -737,7 +737,7 @@ func TestProcessPinsDBGroupFail(t *testing.T) {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := ag.processPinsEventsHandler([]core.LocallySequenced{
 		&core.Pin{
@@ -767,7 +767,7 @@ func TestProcessPinsMissingBatch(t *testing.T) {
 	bs := newBatchState(ag)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
@@ -797,7 +797,7 @@ func TestProcessPinsMissingNoMsg(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(bp, nil)
 
 	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 25},
@@ -831,7 +831,7 @@ func TestProcessPinsBadMsgHeader(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(bp, nil)
 
 	err := ag.processPins(ag.ctx, []*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID(), Index: 0},
@@ -867,7 +867,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil).Once()
+	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(bp, nil).Once()
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{
 		{Sequence: 1111}, // blocks the context
 	}, nil, nil)
@@ -911,7 +911,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 	bp, _ := batch.Confirmed()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, mock.Anything).Return(bp, nil).Once()
+	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(bp, nil).Once()
 	mdi.On("GetPins", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
@@ -1937,7 +1937,7 @@ func TestRewindOffchainBatchesAndTXRewind(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
+	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, "ns1", mock.Anything).Return([]*fftypes.UUID{
 		fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Pin{
@@ -1963,7 +1963,7 @@ func TestRewindOffchainBatchesError(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, mock.Anything).Return([]*fftypes.UUID{
+	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, "ns1", mock.Anything).Return([]*fftypes.UUID{
 		fftypes.NewUUID(),
 	}, nil)
 	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Pin{
@@ -2202,7 +2202,7 @@ func TestBatchCaching(t *testing.T) {
 	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, batch.ID).Return(persisted, nil).Once() // to prove caching
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batch.ID).Return(persisted, nil).Once() // to prove caching
 
 	batchRetrieved, manifest, err := ag.GetBatchForPin(ag.ctx, pin)
 	assert.NoError(t, err)
@@ -2229,7 +2229,7 @@ func TestGetBatchForPinHashMismatch(t *testing.T) {
 	}
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", ag.ctx, batch.ID).Return(persisted, nil)
+	mdi.On("GetBatchByID", ag.ctx, "ns1", batch.ID).Return(persisted, nil)
 
 	batchRetrieved, manifest, err := ag.GetBatchForPin(ag.ctx, pin)
 	assert.Nil(t, batchRetrieved)

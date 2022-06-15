@@ -38,7 +38,7 @@ var getBatchByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetBatchByID(cr.ctx, extractNamespace(r.PP), r.PP["batchid"])
+			output, err = cr.or.GetBatchByID(cr.ctx, r.PP["batchid"])
 			return output, err
 		},
 	},

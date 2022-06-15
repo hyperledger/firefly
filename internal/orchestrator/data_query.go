@@ -116,16 +116,12 @@ func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, ns, id strin
 	return or.fetchMessageData(ctx, msg)
 }
 
-func (or *orchestrator) GetBatchByID(ctx context.Context, ns, id string) (*core.BatchPersisted, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	b, err := or.database().GetBatchByID(ctx, u)
-	if err == nil && b != nil {
-		err = or.checkNamespace(ctx, ns, b.Namespace)
-	}
-	return b, err
+	return or.database().GetBatchByID(ctx, or.namespace, u)
 }
 
 func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*core.Data, error) {
@@ -233,7 +229,7 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 		if msg.BatchID == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotSet)
 		}
-		batch, err := or.database().GetBatchByID(ctx, msg.BatchID)
+		batch, err := or.database().GetBatchByID(ctx, ns, msg.BatchID)
 		if err != nil {
 			return nil, err
 		}
@@ -284,9 +280,8 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, fil
 	return or.database().GetEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetBatches(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetBatches(ctx, filter)
+func (or *orchestrator) GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
+	return or.database().GetBatches(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) (core.DataArray, *database.FilterResult, error) {

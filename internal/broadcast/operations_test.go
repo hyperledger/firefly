@@ -54,7 +54,7 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
-	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", bp.ID).Return(bp, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 
 	po, err := bm.PrepareOperation(context.Background(), op)
@@ -89,7 +89,7 @@ func TestPrepareAndRunBatchBroadcastHydrateFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
-	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", bp.ID).Return(bp, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "pop", err)
@@ -132,7 +132,7 @@ func TestPrepareOperationBatchBroadcastError(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -149,7 +149,7 @@ func TestPrepareOperationBatchBroadcastNotFound(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)

@@ -38,7 +38,7 @@ var getBatches = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.BatchQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetBatches(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetBatches(cr.ctx, cr.filter))
 		},
 	},
 }

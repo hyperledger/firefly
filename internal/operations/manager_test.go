@@ -432,7 +432,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 	}), fftypes.JSONObject{
 		"extra": "info",
 	}).Return(nil)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(&core.BatchPersisted{
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(&core.BatchPersisted{
 		Manifest: fftypes.JSONAnyPtr("my-manifest"),
 	}, nil)
 
@@ -522,7 +522,7 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 			},
 		},
 	}, nil, nil)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	mdx := &dataexchangemocks.Plugin{}
 	mdx.On("Name").Return("utdx")

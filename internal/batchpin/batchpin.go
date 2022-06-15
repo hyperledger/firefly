@@ -41,6 +41,7 @@ type Submitter interface {
 }
 
 type batchPinSubmitter struct {
+	namespace  string
 	database   database.Plugin
 	identity   identity.Manager
 	blockchain blockchain.Plugin
@@ -48,11 +49,12 @@ type batchPinSubmitter struct {
 	operations operations.Manager
 }
 
-func NewBatchPinSubmitter(ctx context.Context, di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
+func NewBatchPinSubmitter(ctx context.Context, ns string, di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
 	if di == nil || im == nil || bi == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchPinSubmitter")
 	}
 	bp := &batchPinSubmitter{
+		namespace:  ns,
 		database:   di,
 		identity:   im,
 		blockchain: bi,

@@ -297,7 +297,7 @@ func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *core.Pin) (*core.
 		log.L(ag.ctx).Debugf("Batch cache hit %s", cacheKey)
 		return bce.batch, bce.manifest, nil
 	}
-	batch, err := ag.database.GetBatchByID(ctx, pin.Batch)
+	batch, err := ag.database.GetBatchByID(ctx, ag.namespace, pin.Batch)
 	if err != nil {
 		return nil, nil, err
 	}
