@@ -38,7 +38,7 @@ var getEventByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetEventByID(cr.ctx, extractNamespace(r.PP), r.PP["eid"])
+			output, err = cr.or.GetEventByID(cr.ctx, r.PP["eid"])
 			return output, err
 		},
 	},

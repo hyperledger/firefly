@@ -31,7 +31,7 @@ func TestGetEventByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetEventByID", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetEventByID", mock.Anything, "abcd12345").
 		Return(&core.Event{}, nil)
 	r.ServeHTTP(res, req)
 

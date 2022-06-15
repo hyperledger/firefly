@@ -74,7 +74,7 @@ func (or *orchestrator) GetSubscriptions(ctx context.Context, ns string, filter 
 }
 
 func (or *orchestrator) GetSubscriptionByID(ctx context.Context, ns, id string) (*core.Subscription, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

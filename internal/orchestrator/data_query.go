@@ -22,39 +22,17 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
-
-func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
-	return core.ValidateFFNameField(ctx, ns, "namespace")
-}
-
-func (or *orchestrator) checkNamespace(ctx context.Context, requiredNS, objectNS string) error {
-	if objectNS != requiredNS {
-		log.L(ctx).Warnf("Object queried by ID in wrong namespace. Required=%s Found=%s", requiredNS, objectNS)
-		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
-	}
-	return nil
-}
-
-func (or *orchestrator) verifyIDAndNamespace(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
-	u, err := fftypes.ParseUUID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	err = or.verifyNamespaceSyntax(ctx, ns)
-	return u, err
-}
 
 func (or *orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Namespace, error) {
 	return or.database().GetNamespace(ctx, ns)
 }
 
 func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +40,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*cor
 }
 
 func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -74,7 +52,7 @@ func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string)
 }
 
 func (or *orchestrator) getMessageByID(ctx context.Context, id string) (*core.Message, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +89,7 @@ func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, id string) (
 }
 
 func (or *orchestrator) GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +97,7 @@ func (or *orchestrator) GetBatchByID(ctx context.Context, id string) (*core.Batc
 }
 
 func (or *orchestrator) GetDataByID(ctx context.Context, id string) (*core.Data, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +105,7 @@ func (or *orchestrator) GetDataByID(ctx context.Context, id string) (*core.Data,
 }
 
 func (or *orchestrator) GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -142,23 +120,19 @@ func (or *orchestrator) GetDatatypeByName(ctx context.Context, name, version str
 }
 
 func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	return or.database().GetOperationByID(ctx, or.namespace, u)
 }
 
-func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.Event, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetEventByID(ctx context.Context, id string) (*core.Event, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	e, err := or.database().GetEventByID(ctx, u)
-	if err == nil && e != nil {
-		err = or.checkNamespace(ctx, ns, e.Namespace)
-	}
-	return e, err
+	return or.database().GetEventByID(ctx, or.namespace, u)
 }
 
 func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
@@ -245,7 +219,7 @@ func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter 
 	}
 	filter = filter.Condition(filter.Builder().In("reference", referencedIDs))
 	// Execute the filter
-	return or.database().GetEvents(ctx, filter)
+	return or.database().GetEvents(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error) {
@@ -272,13 +246,12 @@ func (or *orchestrator) GetOperations(ctx context.Context, filter database.AndFi
 	return or.database().GetOperations(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetEvents(ctx, filter)
+func (or *orchestrator) GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+	return or.database().GetEvents(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +263,7 @@ func (or *orchestrator) GetBlockchainEvents(ctx context.Context, filter database
 }
 
 func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
-	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -302,9 +275,8 @@ func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) 
 	return or.database().GetPins(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	events, fr, err := or.database().GetEvents(ctx, filter)
+func (or *orchestrator) GetEventsWithReferences(ctx context.Context, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
+	events, fr, err := or.database().GetEvents(ctx, or.namespace, filter)
 	if err != nil {
 		return nil, nil, err
 	}

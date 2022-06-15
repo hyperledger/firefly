@@ -377,12 +377,12 @@ func TestGetMessageEventsOk(t *testing.T) {
 		},
 	}
 	or.mdi.On("GetMessageByID", mock.Anything, "ns", mock.Anything).Return(msg, nil)
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
+	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return([]*core.Event{}, nil, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("type", core.EventTypeMessageConfirmed))
 	_, _, err := or.GetMessageEvents(context.Background(), fftypes.NewUUID().String(), f)
 	assert.NoError(t, err)
-	calculatedFilter, err := or.mdi.Calls[1].Arguments[1].(database.Filter).Finalize()
+	calculatedFilter, err := or.mdi.Calls[1].Arguments[2].(database.Filter).Finalize()
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf(
 		`( type == 'message_confirmed' ) && ( reference IN ['%s','%s','%s'] )`,
@@ -511,16 +511,16 @@ func TestGetOperationIDdBadID(t *testing.T) {
 func TestGetEventByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetEventByID", mock.Anything, u).Return(&core.Event{
-		Namespace: "ns1",
+	or.mdi.On("GetEventByID", mock.Anything, "ns", u).Return(&core.Event{
+		Namespace: "ns",
 	}, nil)
-	_, err := or.GetEventByID(context.Background(), "ns1", u.String())
+	_, err := or.GetEventByID(context.Background(), u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetEventIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetEventByID(context.Background(), "", "")
+	_, err := or.GetEventByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
 }
 
@@ -547,20 +547,20 @@ func TestGetOperations(t *testing.T) {
 func TestGetEvents(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
+	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return([]*core.Event{}, nil, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetEvents(context.Background(), "ns1", f)
+	_, _, err := or.GetEvents(context.Background(), f)
 	assert.NoError(t, err)
 }
 
 func TestGetEventsWithReferencesFail(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetEventsWithReferences(context.Background(), "ns1", f)
+	_, _, err := or.GetEventsWithReferences(context.Background(), f)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -620,14 +620,14 @@ func TestGetEventsWithReferences(t *testing.T) {
 		},
 	}, nil)
 
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{
+	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return([]*core.Event{
 		blockchainEvent,
 		txEvent,
 		msgEvent,
 	}, nil, nil)
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetEventsWithReferences(context.Background(), "ns1", f)
+	_, _, err := or.GetEventsWithReferences(context.Background(), f)
 	assert.NoError(t, err)
 }
 
@@ -635,11 +635,11 @@ func TestGetEventsWithReferencesEnrichFail(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
 
-	or.mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{{ID: fftypes.NewUUID()}}, nil, nil)
+	or.mdi.On("GetEvents", mock.Anything, "ns", mock.Anything).Return([]*core.Event{{ID: fftypes.NewUUID()}}, nil, nil)
 	or.mth.On("EnrichEvent", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 	fb := database.EventQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetEventsWithReferences(context.Background(), "ns1", f)
+	_, _, err := or.GetEventsWithReferences(context.Background(), f)
 	assert.EqualError(t, err, "pop")
 }
 
@@ -648,7 +648,7 @@ func TestGetBlockchainEventByID(t *testing.T) {
 
 	id := fftypes.NewUUID()
 	or.mdi.On("GetBlockchainEventByID", context.Background(), "ns", id).Return(&core.BlockchainEvent{
-		Namespace: "ns1",
+		Namespace: "ns",
 	}, nil)
 
 	_, err := or.GetBlockchainEventByID(context.Background(), id.String())

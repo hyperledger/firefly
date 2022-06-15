@@ -736,13 +736,13 @@ func (_m *Plugin) GetDatatypes(ctx context.Context, namespace string, filter dat
 	return r0, r1, r2
 }
 
-// GetEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*core.Event, error) {
-	ret := _m.Called(ctx, id)
+// GetEventByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.Event, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.Event
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Event); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.Event); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Event)
@@ -750,8 +750,8 @@ func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*core.Eve
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -759,13 +759,13 @@ func (_m *Plugin) GetEventByID(ctx context.Context, id *fftypes.UUID) (*core.Eve
 	return r0, r1
 }
 
-// GetEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*core.Event, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetEvents provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetEvents(ctx context.Context, namespace string, filter database.Filter) ([]*core.Event, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.Event
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Event); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.Event); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Event)
@@ -773,8 +773,8 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*cor
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -782,8 +782,8 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*cor
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -2431,20 +2431,6 @@ func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update data
 
 // UpdateData provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateEvent provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateEvent(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
 
 	var r0 error

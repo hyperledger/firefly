@@ -456,13 +456,13 @@ func (_m *Orchestrator) GetDatatypes(ctx context.Context, filter database.AndFil
 	return r0, r1, r2
 }
 
-// GetEventByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetEventByID(ctx context.Context, ns string, id string) (*core.Event, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetEventByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetEventByID(ctx context.Context, id string) (*core.Event, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *core.Event
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Event); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Event); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Event)
@@ -470,8 +470,8 @@ func (_m *Orchestrator) GetEventByID(ctx context.Context, ns string, id string) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -479,13 +479,13 @@ func (_m *Orchestrator) GetEventByID(ctx context.Context, ns string, id string) 
 	return r0, r1
 }
 
-// GetEvents provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetEvents provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetEvents(ctx context.Context, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Event
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Event); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Event); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Event)
@@ -493,8 +493,8 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -502,8 +502,8 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -511,13 +511,13 @@ func (_m *Orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	return r0, r1, r2
 }
 
-// GetEventsWithReferences provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetEventsWithReferences provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.EnrichedEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.EnrichedEvent); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.EnrichedEvent); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.EnrichedEvent)
@@ -525,8 +525,8 @@ func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, ns string, 
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -534,8 +534,8 @@ func (_m *Orchestrator) GetEventsWithReferences(ctx context.Context, ns string, 
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

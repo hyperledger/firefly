@@ -306,7 +306,7 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{
+	mdi.On("GetEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.Event{
 		{Sequence: 12345},
 	}, nil, nil)
 	mdi.On("UpsertSubscription", mock.Anything, mock.Anything, false).Return(nil)

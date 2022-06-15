@@ -941,7 +941,11 @@ func TestGetEvents(t *testing.T) {
 	defer cancel()
 
 	sub := &subscription{
-		definition: &core.Subscription{},
+		definition: &core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{
+				Namespace: "ns1",
+			},
+		},
 	}
 
 	ed, cancel := newTestEventDispatcher(sub)
@@ -949,7 +953,7 @@ func TestGetEvents(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 
-	mdi.On("GetEvents", ag.ctx, mock.Anything).Return([]*core.Event{
+	mdi.On("GetEvents", ag.ctx, "ns1", mock.Anything).Return([]*core.Event{
 		{Sequence: 12345},
 	}, nil, nil)
 

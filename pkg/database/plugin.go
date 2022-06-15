@@ -253,14 +253,11 @@ type iEventCollection interface {
 	//               to hold an exclusive table lock.
 	InsertEvent(ctx context.Context, data *core.Event) (err error)
 
-	// UpdateEvent - Update event
-	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
 	// GetEventByID - Get a event by ID
-	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *core.Event, err error)
+	GetEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Event, err error)
 
 	// GetEvents - Get events
-	GetEvents(ctx context.Context, filter Filter) (message []*core.Event, res *FilterResult, err error)
+	GetEvents(ctx context.Context, namespace string, filter Filter) (message []*core.Event, res *FilterResult, err error)
 }
 
 type iIdentitiesCollection interface {
