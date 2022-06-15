@@ -168,11 +168,13 @@ func (s *SQLCommon) pinResult(ctx context.Context, row *sql.Rows) (*core.Pin, er
 	return &pin, nil
 }
 
-func (s *SQLCommon) GetPins(ctx context.Context, filter database.Filter) (message []*core.Pin, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetPins(ctx context.Context, namespace string, filter database.Filter) (message []*core.Pin, fr *database.FilterResult, err error) {
 
 	cols := append([]string{}, pinColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(pinsTable), filter, pinFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "", sq.Select(cols...).From(pinsTable),
+		filter, pinFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

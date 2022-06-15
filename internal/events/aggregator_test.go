@@ -204,7 +204,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 		},
 	}, nil)
 	// Look for any earlier pins - none found
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil).Once()
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil).Once()
 	// Insert all the zero pins
 	mdi.On("InsertNextPin", ag.ctx, mock.MatchedBy(func(np *core.NextPin) bool {
 		assert.Equal(t, *np.Context, *contextUnmasked)
@@ -442,7 +442,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Do not resolve any pins earlier
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
@@ -537,7 +537,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	// Get the batch
 	mdi.On("GetBatchByID", ag.ctx, "ns1", batchID).Return(bp, nil)
 	// Do not resolve any pins earlier
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	// Validate the message is ok
 	mdm.On("GetMessageWithDataCached", ag.ctx, batch.Payload.Messages[0].Header.ID, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
@@ -716,7 +716,7 @@ func TestShutdownOnCancel(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	ag.start()
 	assert.Equal(t, int64(12345), ag.eventPoller.pollingOffset)
 	ag.eventPoller.eventNotifier.newEvents <- 12345
@@ -752,7 +752,7 @@ func TestGetPins(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345},
 	}, nil, nil)
 
@@ -868,7 +868,7 @@ func TestProcessSkipDupMsg(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(bp, nil).Once()
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{
 		{Sequence: 1111}, // blocks the context
 	}, nil, nil)
 
@@ -912,7 +912,7 @@ func TestProcessMsgFailGetPins(t *testing.T) {
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", ag.ctx, "ns1", mock.Anything).Return(bp, nil).Once()
-	mdi.On("GetPins", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(batch.Payload.Messages[0], nil, true, nil)
@@ -1032,7 +1032,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	defer cancel()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
@@ -1270,7 +1270,7 @@ func TestAttemptContextInitGetPinsFail(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	bs := newBatchState(ag)
 	_, err := bs.attemptContextInit(ag.ctx, &core.Message{
@@ -1305,7 +1305,7 @@ func TestAttemptContextInitGetPinsBlocked(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345},
 	}, nil, nil)
 
@@ -1343,7 +1343,7 @@ func TestAttemptContextInitInsertPinsFail(t *testing.T) {
 			},
 		},
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	mdi.On("InsertNextPin", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	bs := newBatchState(ag)
@@ -1625,7 +1625,7 @@ func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
 	mdm.On("GetMessageWithDataCached", ag.ctx, msg2.Header.ID, data.CRORequirePublicBlobRefs).Return(msg2, core.DataArray{}, true, nil).Once()
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetPins", ag.ctx, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 
 	// First message should dispatch
 	err := ag.processMessage(ag.ctx, manifest, &core.Pin{Sequence: 12345}, 0, manifest.Messages[0], bs)
@@ -1940,7 +1940,7 @@ func TestRewindOffchainBatchesAndTXRewind(t *testing.T) {
 	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, "ns1", mock.Anything).Return([]*fftypes.UUID{
 		fftypes.NewUUID(),
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Pin{
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, nil)
 
@@ -1966,7 +1966,7 @@ func TestRewindOffchainBatchesError(t *testing.T) {
 	mdi.On("GetBatchIDs", ag.ctx, mock.Anything, "ns1", mock.Anything).Return([]*fftypes.UUID{
 		fftypes.NewUUID(),
 	}, nil)
-	mdi.On("GetPins", ag.ctx, mock.Anything, mock.Anything).Return([]*core.Pin{
+	mdi.On("GetPins", ag.ctx, "ns1", mock.Anything).Return([]*core.Pin{
 		{Sequence: 12345, Batch: fftypes.NewUUID()},
 	}, nil, fmt.Errorf("pop"))
 

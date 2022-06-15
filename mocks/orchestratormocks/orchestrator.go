@@ -841,29 +841,6 @@ func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	return r0, r1
 }
 
-// GetOperationByNamespacedID provides a mock function with given fields: ctx, nsOpID
-func (_m *Orchestrator) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
-	ret := _m.Called(ctx, nsOpID)
-
-	var r0 *core.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Operation); ok {
-		r0 = rf(ctx, nsOpID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Operation)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, nsOpID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetOperations provides a mock function with given fields: ctx, filter
 func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -896,13 +873,13 @@ func (_m *Orchestrator) GetOperations(ctx context.Context, filter database.AndFi
 	return r0, r1, r2
 }
 
-// GetPins provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetPins(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetPins provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Pin
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Pin); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Pin); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Pin)
@@ -910,8 +887,8 @@ func (_m *Orchestrator) GetPins(ctx context.Context, ns string, filter database.
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -919,8 +896,8 @@ func (_m *Orchestrator) GetPins(ctx context.Context, ns string, filter database.
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

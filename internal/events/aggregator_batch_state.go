@@ -173,12 +173,11 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 		// We need to check there's no earlier sequences with the same unmasked context
 		fb := database.PinQueryFactory.NewFilterLimit(ctx, 1) // only need the first one
 		filter := fb.And(
-			fb.Eq("namespace", bs.namespace),
 			fb.Eq("hash", contextUnmasked),
 			fb.Eq("dispatched", false),
 			fb.Lt("sequence", firstMsgPinSequence),
 		)
-		earlier, _, err := bs.database.GetPins(ctx, filter)
+		earlier, _, err := bs.database.GetPins(ctx, bs.namespace, filter)
 		if err != nil {
 			return false, err
 		}
@@ -449,12 +448,11 @@ func (bs *batchState) attemptContextInit(ctx context.Context, msg *core.Message,
 	// Check none of the other zerohashes exist before us in the stream
 	fb := database.PinQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("namespace", bs.namespace),
 		fb.In("hash", zeroHashes),
 		fb.Eq("dispatched", false),
 		fb.Lt("sequence", pinnedSequence),
 	)
-	earlier, _, err := bs.database.GetPins(ctx, filter)
+	earlier, _, err := bs.database.GetPins(ctx, bs.namespace, filter)
 	if err != nil {
 		return nil, err
 	}

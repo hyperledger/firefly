@@ -1626,13 +1626,13 @@ func (_m *Plugin) GetOperations(ctx context.Context, namespace string, filter da
 	return r0, r1, r2
 }
 
-// GetPins provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*core.Pin, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetPins provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetPins(ctx context.Context, namespace string, filter database.Filter) ([]*core.Pin, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.Pin
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Pin); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.Pin); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Pin)
@@ -1640,8 +1640,8 @@ func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*core.
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -1649,8 +1649,8 @@ func (_m *Plugin) GetPins(ctx context.Context, filter database.Filter) ([]*core.
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

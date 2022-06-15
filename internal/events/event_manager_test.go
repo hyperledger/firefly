@@ -114,7 +114,7 @@ func TestStartStop(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
@@ -160,7 +160,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 
 	getSubCallReady := make(chan bool, 1)

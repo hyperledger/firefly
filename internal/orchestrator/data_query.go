@@ -321,9 +321,8 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id s
 	return or.database().GetBlockchainEvents(ctx, or.namespace, fb.And(fb.Eq("tx.id", u)))
 }
 
-func (or *orchestrator) GetPins(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetPins(ctx, filter)
+func (or *orchestrator) GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {
+	return or.database().GetPins(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error) {

@@ -202,7 +202,7 @@ type iPinCollection interface {
 	UpsertPin(ctx context.Context, parked *core.Pin) (err error)
 
 	// GetPins - Get pins
-	GetPins(ctx context.Context, filter Filter) (offset []*core.Pin, res *FilterResult, err error)
+	GetPins(ctx context.Context, namespace string, filter Filter) (offset []*core.Pin, res *FilterResult, err error)
 
 	// UpdatePins - Updates pins
 	UpdatePins(ctx context.Context, filter Filter, update Update) (err error)

@@ -737,9 +737,9 @@ func TestGetTransactionBlockchainEventsBadID(t *testing.T) {
 func TestGetPins(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetPins", mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	or.mdi.On("GetPins", mock.Anything, "ns", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	fb := database.PinQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("hash", u))
-	_, _, err := or.GetPins(context.Background(), "ns1", f)
+	_, _, err := or.GetPins(context.Background(), f)
 	assert.NoError(t, err)
 }
