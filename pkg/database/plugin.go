@@ -359,21 +359,6 @@ type iBlobCollection interface {
 	DeleteBlob(ctx context.Context, sequence int64) (err error)
 }
 
-type iConfigRecordCollection interface {
-	// UpsertConfigRecord - Upsert a config record
-	// Throws IDMismatch error if updating and ids don't match
-	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
-
-	// GetConfigRecord - Get a config record by key
-	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
-
-	// GetConfigRecords - Get config records
-	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, res *FilterResult, err error)
-
-	// DeleteConfigRecord - Delete config record
-	DeleteConfigRecord(ctx context.Context, key string) (err error)
-}
-
 type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
 	UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error
@@ -558,7 +543,6 @@ type PersistenceInterface interface {
 	iNonceCollection
 	iNextPinCollection
 	iBlobCollection
-	iConfigRecordCollection
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
@@ -641,7 +625,6 @@ const (
 type OtherCollection CollectionName
 
 const (
-	CollectionConfigrecords OtherCollection = "configrecords"
 	CollectionBlobs         OtherCollection = "blobs"
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
@@ -869,12 +852,6 @@ var NextPinQueryFactory = &queryFields{
 	"identity": &StringField{},
 	"hash":     &Bytes32Field{},
 	"nonce":    &Int64Field{},
-}
-
-// ConfigRecordQueryFactory filter fields for config records
-var ConfigRecordQueryFactory = &queryFields{
-	"key":   &StringField{},
-	"value": &StringField{},
 }
 
 // BlobQueryFactory filter fields for config records
