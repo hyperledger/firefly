@@ -35,7 +35,7 @@ const (
 type Events struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
-	callbacks    events.Callbacks
+	callbacks    map[string]events.Callbacks
 	mux          sync.Mutex
 	listeners    map[string][]EventListener
 	connID       string
@@ -46,17 +46,22 @@ type EventListener func(event *core.EventDelivery) error
 
 func (se *Events) Name() string { return SystemEventsTransport }
 
-func (se *Events) Init(ctx context.Context, config config.Section, callbacks events.Callbacks) (err error) {
+func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
 	*se = Events{
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
-		callbacks:    callbacks,
+		callbacks:    make(map[string]events.Callbacks),
 		listeners:    make(map[string][]EventListener),
 		readAhead:    uint16(config.GetInt(SystemEventsConfReadAhead)),
 		connID:       fftypes.ShortID(),
 	}
+	return nil
+}
+
+func (se *Events) RegisterListener(namespace string, listener events.Callbacks) error {
+	se.callbacks[namespace] = listener
 	// We have a single logical connection, that matches all subscriptions
-	return callbacks.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
+	return listener.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
 }
 
 func (se *Events) Capabilities() *events.Capabilities {
@@ -70,19 +75,21 @@ func (se *Events) ValidateOptions(options *core.SubscriptionOptions) error {
 func (se *Events) AddListener(ns string, el EventListener) error {
 	no := false
 	newest := core.SubOptsFirstEventNewest
-	err := se.callbacks.EphemeralSubscription(se.connID, ns, &core.SubscriptionFilter{ /* all events */ }, &core.SubscriptionOptions{
-		SubscriptionCoreOptions: core.SubscriptionCoreOptions{
-			WithData:   &no,
-			ReadAhead:  &se.readAhead,
-			FirstEvent: &newest,
-		},
-	})
-	if err != nil {
-		return err
+	if cb, ok := se.callbacks[ns]; ok {
+		err := cb.EphemeralSubscription(se.connID, ns, &core.SubscriptionFilter{ /* all events */ }, &core.SubscriptionOptions{
+			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
+				WithData:   &no,
+				ReadAhead:  &se.readAhead,
+				FirstEvent: &newest,
+			},
+		})
+		if err != nil {
+			return err
+		}
+		se.mux.Lock()
+		se.listeners[ns] = append(se.listeners[ns], el)
+		se.mux.Unlock()
 	}
-	se.mux.Lock()
-	se.listeners[ns] = append(se.listeners[ns], el)
-	se.mux.Unlock()
 	return nil
 }
 
@@ -98,11 +105,13 @@ func (se *Events) DeliveryRequest(connID string, sub *core.Subscription, event *
 			}
 		}
 	}
-	se.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
-		ID:           event.ID,
-		Rejected:     false,
-		Subscription: event.Subscription,
-		Reply:        nil,
-	})
+	if cb, ok := se.callbacks[sub.Namespace]; ok {
+		cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+			ID:           event.ID,
+			Rejected:     false,
+			Subscription: event.Subscription,
+			Reply:        nil,
+		})
+	}
 	return nil
 }

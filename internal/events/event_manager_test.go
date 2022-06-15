@@ -42,6 +42,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -80,6 +81,8 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mni := &sysmessagingmocks.LocalNodeInfo{}
 	mdd := &shareddownloadmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
+	mev := &eventsmocks.Plugin{}
+	events := map[string]events.Plugin{"websockets": mev}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	if metrics {
@@ -89,7 +92,9 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
-	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper)
+	mev.On("RegisterListener", "ns1", mock.Anything).Return(nil).Maybe()
+	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
+	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper, events)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -124,31 +129,9 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
-}
-
-func TestStartStopBadTransports(t *testing.T) {
-	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
-	defer coreconfig.Reset()
-	mdi := &databasemocks.Plugin{}
-	mbi := &blockchainmocks.Plugin{}
-	mim := &identitymanagermocks.Manager{}
-	mpi := &sharedstoragemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
-	mni := &sysmessagingmocks.LocalNodeInfo{}
-	mam := &assetmocks.Manager{}
-	msd := &shareddownloadmocks.Manager{}
-	mm := &metricsmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
-	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false}).Maybe()
-	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
-	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper)
-	assert.Regexp(t, "FF10172", err)
 }
 
 func TestEmitSubscriptionEventsNoops(t *testing.T) {
@@ -398,7 +381,8 @@ func TestAddInternalListener(t *testing.T) {
 
 	conf := config.RootSection("ut.events")
 	ie.InitConfig(conf)
-	ie.Init(em.ctx, conf, cbs)
+	ie.Init(em.ctx, conf)
+	ie.RegisterListener("ns1", cbs)
 	em.internalEvents = ie
 	defer cancel()
 	err := em.AddSystemEventListener("ns1", func(event *core.EventDelivery) error { return nil })
@@ -413,12 +397,6 @@ func TestGetPlugins(t *testing.T) {
 	expectedPlugins := []*core.NodeStatusPlugin{
 		{
 			PluginType: "websockets",
-		},
-		{
-			PluginType: "webhooks",
-		},
-		{
-			PluginType: "system",
 		},
 	}
 

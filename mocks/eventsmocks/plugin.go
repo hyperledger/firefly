@@ -49,13 +49,13 @@ func (_m *Plugin) DeliveryRequest(connID string, sub *core.Subscription, event *
 	return r0
 }
 
-// Init provides a mock function with given fields: ctx, _a1, callbacks
-func (_m *Plugin) Init(ctx context.Context, _a1 config.Section, callbacks events.Callbacks) error {
-	ret := _m.Called(ctx, _a1, callbacks)
+// Init provides a mock function with given fields: ctx, _a1
+func (_m *Plugin) Init(ctx context.Context, _a1 config.Section) error {
+	ret := _m.Called(ctx, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, config.Section, events.Callbacks) error); ok {
-		r0 = rf(ctx, _a1, callbacks)
+	if rf, ok := ret.Get(0).(func(context.Context, config.Section) error); ok {
+		r0 = rf(ctx, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -77,6 +77,20 @@ func (_m *Plugin) Name() string {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// RegisterListener provides a mock function with given fields: namespace, listener
+func (_m *Plugin) RegisterListener(namespace string, listener events.Callbacks) error {
+	ret := _m.Called(namespace, listener)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, events.Callbacks) error); ok {
+		r0 = rf(namespace, listener)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0

@@ -28,6 +28,8 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/events/eifactory"
+	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/orchestrator"
@@ -38,6 +40,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -90,6 +93,7 @@ type namespaceManager struct {
 		sharedstorage map[string]sharedStoragePlugin
 		dataexchange  map[string]dataExchangePlugin
 		tokens        map[string]tokensPlugin
+		events        map[string]eventsPlugin
 	}
 	metricsEnabled bool
 	metrics        metrics.Manager
@@ -125,6 +129,11 @@ type tokensPlugin struct {
 type identityPlugin struct {
 	config config.Section
 	plugin identity.Plugin
+}
+
+type eventsPlugin struct {
+	config config.Section
+	plugin events.Plugin
 }
 
 func NewNamespaceManager(withDefaults bool) Manager {
@@ -269,6 +278,13 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 	if nm.plugins.tokens == nil {
 		nm.plugins.tokens, err = nm.getTokensPlugins(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	if nm.plugins.events == nil {
+		nm.plugins.events, err = nm.getEventPlugins(ctx)
 		if err != nil {
 			return err
 		}
@@ -558,6 +574,11 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 			return err
 		}
 	}
+	for _, entry := range nm.plugins.events {
+		if err = entry.plugin.Init(nm.ctx, entry.config); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -659,6 +680,11 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	p.Events = make(map[string]events.Plugin, len(nm.plugins.events))
+	for name, entry := range nm.plugins.events {
+		p.Events[name] = entry.plugin
 	}
 
 	return &namespace{
@@ -830,4 +856,30 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 	return or.Operations().ResolveOperationByID(ctx, ns, u, op)
+}
+
+func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[string]eventsPlugin, err error) {
+	plugins = make(map[string]eventsPlugin)
+	enabledTransports := config.GetStringSlice(coreconfig.EventTransportsEnabled)
+	uniqueTransports := make(map[string]bool)
+	for _, transport := range enabledTransports {
+		uniqueTransports[transport] = true
+	}
+	// Cannot disable the internal listener
+	uniqueTransports[system.SystemEventsTransport] = true
+	for transport := range uniqueTransports {
+		plugin, err := eifactory.GetPlugin(ctx, transport)
+		if err != nil {
+			return nil, err
+		}
+
+		name := plugin.Name()
+		section := config.RootSection("events").SubSection(name)
+		plugin.InitConfig(section)
+		plugins[name] = eventsPlugin{
+			config: section,
+			plugin: plugin,
+		}
+	}
+	return plugins, err
 }

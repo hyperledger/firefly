@@ -33,7 +33,7 @@ import (
 type WebSockets struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
-	callbacks    events.Callbacks
+	callbacks    map[string]events.Callbacks
 	connections  map[string]*websocketConnection
 	connMux      sync.Mutex
 	upgrader     websocket.Upgrader
@@ -41,12 +41,12 @@ type WebSockets struct {
 
 func (ws *WebSockets) Name() string { return "websockets" }
 
-func (ws *WebSockets) Init(ctx context.Context, config config.Section, callbacks events.Callbacks) error {
+func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 	*ws = WebSockets{
 		ctx:          ctx,
 		connections:  make(map[string]*websocketConnection),
 		capabilities: &events.Capabilities{},
-		callbacks:    callbacks,
+		callbacks:    make(map[string]events.Callbacks),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  int(config.GetByteSize(ReadBufferSize)),
 			WriteBufferSize: int(config.GetByteSize(WriteBufferSize)),
@@ -56,6 +56,11 @@ func (ws *WebSockets) Init(ctx context.Context, config config.Section, callbacks
 			},
 		},
 	}
+	return nil
+}
+
+func (ws *WebSockets) RegisterListener(namespace string, listener events.Callbacks) error {
+	ws.callbacks[namespace] = listener
 	return nil
 }
 
@@ -99,20 +104,25 @@ func (ws *WebSockets) ServeHTTP(res http.ResponseWriter, req *http.Request) {
 }
 
 func (ws *WebSockets) ack(connID string, inflight *core.EventDeliveryResponse) {
-	ws.callbacks.DeliveryResponse(connID, inflight)
+	if cb, ok := ws.callbacks[inflight.Subscription.Namespace]; ok {
+		cb.DeliveryResponse(connID, inflight)
+	}
 }
 
 func (ws *WebSockets) start(wc *websocketConnection, start *core.WSStart) error {
 	if start.Namespace == "" || (!start.Ephemeral && start.Name == "") {
 		return i18n.NewError(ws.ctx, coremsgs.MsgWSInvalidStartAction)
 	}
-	if start.Ephemeral {
-		return ws.callbacks.EphemeralSubscription(wc.connID, start.Namespace, &start.Filter, &start.Options)
+	if cb, ok := ws.callbacks[start.Namespace]; ok {
+		if start.Ephemeral {
+			return cb.EphemeralSubscription(wc.connID, start.Namespace, &start.Filter, &start.Options)
+		}
+		// We can have multiple subscriptions on a single connection
+		return cb.RegisterConnection(wc.connID, func(sr core.SubscriptionRef) bool {
+			return wc.durableSubMatcher(sr)
+		})
 	}
-	// We can have multiple subscriptions on a single
-	return ws.callbacks.RegisterConnection(wc.connID, func(sr core.SubscriptionRef) bool {
-		return wc.durableSubMatcher(sr)
-	})
+	return nil
 }
 
 func (ws *WebSockets) connClosed(connID string) {
@@ -120,7 +130,9 @@ func (ws *WebSockets) connClosed(connID string) {
 	delete(ws.connections, connID)
 	ws.connMux.Unlock()
 	// Drop lock before calling back
-	ws.callbacks.ConnectionClosed(connID)
+	for _, cb := range ws.callbacks {
+		cb.ConnectionClosed(connID)
+	}
 }
 
 func (ws *WebSockets) WaitClosed() {

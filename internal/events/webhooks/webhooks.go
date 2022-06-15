@@ -40,7 +40,7 @@ import (
 type WebHooks struct {
 	ctx          context.Context
 	capabilities *events.Capabilities
-	callbacks    events.Callbacks
+	callbacks    map[string]events.Callbacks
 	client       *resty.Client
 	connID       string
 }
@@ -62,16 +62,21 @@ type whResponse struct {
 
 func (wh *WebHooks) Name() string { return "webhooks" }
 
-func (wh *WebHooks) Init(ctx context.Context, config config.Section, callbacks events.Callbacks) (err error) {
+func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error) {
 	*wh = WebHooks{
 		ctx:          ctx,
 		capabilities: &events.Capabilities{},
-		callbacks:    callbacks,
+		callbacks:    make(map[string]events.Callbacks),
 		client:       ffresty.New(ctx, config),
 		connID:       fftypes.ShortID(),
 	}
+	return nil
+}
+
+func (wh *WebHooks) RegisterListener(namespace string, listener events.Callbacks) error {
+	wh.callbacks[namespace] = listener
 	// We have a single logical connection, that matches all subscriptions
-	return callbacks.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })
+	return listener.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })
 }
 
 func (wh *WebHooks) Capabilities() *events.Capabilities {
@@ -286,26 +291,28 @@ func (wh *WebHooks) doDelivery(connID string, reply bool, sub *core.Subscription
 		if req != nil && req.replyTx != "" {
 			txType = fftypes.FFEnum(strings.ToLower(req.replyTx))
 		}
-		wh.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
-			ID:           event.ID,
-			Rejected:     false,
-			Subscription: event.Subscription,
-			Reply: &core.MessageInOut{
-				Message: core.Message{
-					Header: core.MessageHeader{
-						CID:    event.Message.Header.ID,
-						Group:  event.Message.Header.Group,
-						Type:   event.Message.Header.Type,
-						Topics: event.Message.Header.Topics,
-						Tag:    sub.Options.TransportOptions().GetString("replytag"),
-						TxType: txType,
+		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+				ID:           event.ID,
+				Rejected:     false,
+				Subscription: event.Subscription,
+				Reply: &core.MessageInOut{
+					Message: core.Message{
+						Header: core.MessageHeader{
+							CID:    event.Message.Header.ID,
+							Group:  event.Message.Header.Group,
+							Type:   event.Message.Header.Type,
+							Topics: event.Message.Header.Topics,
+							Tag:    sub.Options.TransportOptions().GetString("replytag"),
+							TxType: txType,
+						},
+					},
+					InlineData: core.InlineData{
+						{Value: fftypes.JSONAnyPtrBytes(b)},
 					},
 				},
-				InlineData: core.InlineData{
-					{Value: fftypes.JSONAnyPtrBytes(b)},
-				},
-			},
-		})
+			})
+		}
 	}
 	return nil
 }
@@ -322,11 +329,13 @@ func (wh *WebHooks) DeliveryRequest(connID string, sub *core.Subscription, event
 		// avoid loops - and there's no way for us to detect here if a user has configured correctly
 		// to avoid a loop.
 		log.L(wh.ctx).Debugf("Webhook subscription with reply enabled called with reply event '%s'", event.ID)
-		wh.callbacks.DeliveryResponse(connID, &core.EventDeliveryResponse{
-			ID:           event.ID,
-			Rejected:     false,
-			Subscription: event.Subscription,
-		})
+		if cb, ok := wh.callbacks[sub.Namespace]; ok {
+			cb.DeliveryResponse(connID, &core.EventDeliveryResponse{
+				ID:           event.ID,
+				Rejected:     false,
+				Subscription: event.Subscription,
+			})
+		}
 		return nil
 	}
 

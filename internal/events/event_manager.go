@@ -46,6 +46,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
 	"github.com/karlseguin/ccache"
@@ -112,7 +113,7 @@ type eventManager struct {
 	chainListenerCacheTTL time.Duration
 }
 
-func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -150,7 +151,7 @@ func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 	em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, di, dm, newEventNotifier, bm, pm, txHelper); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -252,9 +253,9 @@ func (em *eventManager) GetPlugins() []*core.NodeStatusPlugin {
 	eventsArray := make([]*core.NodeStatusPlugin, 0)
 	plugins := em.subManager.transports
 
-	for _, plugin := range plugins {
+	for name := range plugins {
 		eventsArray = append(eventsArray, &core.NodeStatusPlugin{
-			PluginType: plugin.Name(),
+			PluginType: name,
 		})
 	}
 

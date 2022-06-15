@@ -46,7 +46,8 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	svrConfig := config.RootSection("ut.websockets")
 	ws.InitConfig(svrConfig)
-	ws.Init(ctx, svrConfig, cbs)
+	ws.Init(ctx, svrConfig)
+	ws.RegisterListener("ns1", cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil).Maybe()
@@ -181,7 +182,10 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: core.SubscriptionRef{ID: fftypes.NewUUID()},
+		Subscription: core.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+		},
 	}, nil)
 
 	b := <-wsc.Receive()
@@ -304,7 +308,10 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{ID: fftypes.NewUUID()},
 		},
-		Subscription: core.SubscriptionRef{ID: fftypes.NewUUID()},
+		Subscription: core.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+		},
 	}, nil)
 
 	b := <-wsc.Receive()
@@ -396,7 +403,7 @@ func TestHandleAckMultipleStartedNoSubSingleMatch(t *testing.T) {
 		ctx: context.Background(),
 		ws: &WebSockets{
 			ctx:       context.Background(),
-			callbacks: cbs,
+			callbacks: map[string]events.Callbacks{"ns1": cbs},
 		},
 		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},
 		sendMessages: make(chan interface{}, 1),
@@ -496,7 +503,7 @@ func TestDispatchAutoAck(t *testing.T) {
 		connID: fftypes.NewUUID().String(),
 		ws: &WebSockets{
 			ctx:         context.Background(),
-			callbacks:   cbs,
+			callbacks:   map[string]events.Callbacks{"ns1": cbs},
 			connections: make(map[string]*websocketConnection),
 		},
 		started:      []*websocketStartedSub{{ephemeral: false, name: "name1", namespace: "ns1"}},

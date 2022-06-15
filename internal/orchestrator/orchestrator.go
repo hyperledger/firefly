@@ -43,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	eventsplugin "github.com/hyperledger/firefly/pkg/events"
 	idplugin "github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -154,6 +155,7 @@ type Plugins struct {
 	DataExchange  DataExchangePlugin
 	Database      DatabasePlugin
 	Tokens        []TokensPlugin
+	Events        map[string]eventsplugin.Plugin
 }
 
 type Config struct {
@@ -462,7 +464,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events)
 		if err != nil {
 			return err
 		}
