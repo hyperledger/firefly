@@ -113,12 +113,12 @@ func (s *SQLCommon) opResult(ctx context.Context, row *sql.Rows) (*core.Operatio
 	return &op, nil
 }
 
-func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *core.Operation, err error) {
+func (s *SQLCommon) GetOperationByID(ctx context.Context, namespace string, id *fftypes.UUID) (operation *core.Operation, err error) {
 
 	rows, _, err := s.query(ctx, operationsTable,
 		sq.Select(opColumns...).
 			From(operationsTable).
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"id": id, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -138,9 +138,9 @@ func (s *SQLCommon) GetOperationByID(ctx context.Context, id *fftypes.UUID) (ope
 	return op, nil
 }
 
-func (s *SQLCommon) GetOperations(ctx context.Context, filter database.Filter) (operation []*core.Operation, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetOperations(ctx context.Context, namespace string, filter database.Filter) (operation []*core.Operation, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From(operationsTable), filter, opFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(opColumns...).From(operationsTable), filter, opFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

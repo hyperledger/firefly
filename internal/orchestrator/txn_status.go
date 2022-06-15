@@ -62,20 +62,20 @@ func txBlockchainEventStatus(event *core.BlockchainEvent) *core.TransactionStatu
 	}
 }
 
-func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*core.TransactionStatus, error) {
+func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*core.TransactionStatus, error) {
 	result := &core.TransactionStatus{
 		Status:  core.OpStatusSucceeded,
 		Details: make([]*core.TransactionStatusDetails, 0),
 	}
 
-	tx, err := or.GetTransactionByID(ctx, ns, id)
+	tx, err := or.GetTransactionByID(ctx, id)
 	if err != nil {
 		return nil, err
 	} else if tx == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 
-	ops, _, err := or.GetTransactionOperations(ctx, ns, id)
+	ops, _, err := or.GetTransactionOperations(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		}
 	}
 
-	events, _, err := or.GetTransactionBlockchainEvents(ctx, ns, id)
+	events, _, err := or.GetTransactionBlockchainEvents(ctx, id)
 	if err != nil {
 		return nil, err
 	}

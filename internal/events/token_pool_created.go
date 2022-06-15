@@ -62,7 +62,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 		}
 		em.emitBlockchainEventMetric(ev)
 	}
-	if _, err := em.txHelper.PersistTransaction(ctx, pool.Namespace, pool.TX.ID, pool.TX.Type, ev.BlockchainTXID); err != nil {
+	if _, err := em.txHelper.PersistTransaction(ctx, pool.TX.ID, pool.TX.Type, ev.BlockchainTXID); err != nil {
 		return err
 	}
 	pool.State = core.TokenPoolStateConfirmed
@@ -81,7 +81,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 		fb.Eq("tx", tx),
 		fb.Eq("type", opType),
 	)
-	if operations, _, err := em.database.GetOperations(ctx, filter); err != nil {
+	if operations, _, err := em.database.GetOperations(ctx, em.namespace, filter); err != nil {
 		return nil, err
 	} else if len(operations) > 0 {
 		return operations[0], nil

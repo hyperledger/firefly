@@ -75,11 +75,11 @@ type Orchestrator interface {
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*core.Namespace, error)
-	GetTransactionByID(ctx context.Context, ns, id string) (*core.Transaction, error)
-	GetTransactionOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error)
-	GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*core.BlockchainEvent, *database.FilterResult, error)
-	GetTransactionStatus(ctx context.Context, ns, id string) (*core.TransactionStatus, error)
-	GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error)
+	GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error)
+	GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error)
+	GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error)
+	GetTransactionStatus(ctx context.Context, id string) (*core.TransactionStatus, error)
+	GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error)
 	GetMessageByID(ctx context.Context, ns, id string) (*core.Message, error)
 	GetMessageByIDWithData(ctx context.Context, ns, id string) (*core.MessageInOut, error)
 	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
@@ -96,9 +96,7 @@ type Orchestrator interface {
 	GetDatatypeByID(ctx context.Context, ns, id string) (*core.Datatype, error)
 	GetDatatypeByName(ctx context.Context, ns, name, version string) (*core.Datatype, error)
 	GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error)
-	GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
-	GetOperationByID(ctx context.Context, ns, id string) (*core.Operation, error)
-	GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error)
+	GetOperationByID(ctx context.Context, id string) (*core.Operation, error)
 	GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error)
 	GetEventByID(ctx context.Context, ns, id string) (*core.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
@@ -434,14 +432,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.database(), or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace, or.database(), or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.database(), or.broadcast, or.identity, or.blockchain(), or.operations, or.txHelper, or.syncasync)
+		or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.broadcast, or.identity, or.blockchain(), or.operations, or.txHelper, or.syncasync)
 		if err != nil {
 			return err
 		}
@@ -455,7 +453,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.sharedDownload == nil {
-		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
+		or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
 		if err != nil {
 			return err
 		}

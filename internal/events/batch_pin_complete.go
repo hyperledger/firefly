@@ -94,7 +94,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 }
 
 func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin) error {
-	_, err := em.txHelper.PersistTransaction(ctx, batchPin.Namespace, batchPin.TransactionID, core.TransactionTypeBatchPin, batchPin.Event.BlockchainTXID)
+	_, err := em.txHelper.PersistTransaction(ctx, batchPin.TransactionID, core.TransactionTypeBatchPin, batchPin.Event.BlockchainTXID)
 	return err
 }
 

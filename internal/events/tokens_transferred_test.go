@@ -158,7 +158,7 @@ func TestPersistTransferOpFail(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
@@ -188,8 +188,8 @@ func TestPersistTransferBadOp(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
@@ -220,8 +220,8 @@ func TestPersistTransferTxFail(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
@@ -253,8 +253,8 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -287,8 +287,8 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(ops, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
+	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(nil, nil)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
@@ -326,8 +326,8 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
+	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(&core.TokenTransfer{}, nil)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {

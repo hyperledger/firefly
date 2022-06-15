@@ -108,9 +108,9 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	batchPin.BatchHash = batch.Hash
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(false, fmt.Errorf("pop")).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -180,9 +180,9 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 	batchPin.BatchHash = batch.Hash
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(false, fmt.Errorf("pop")).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -235,7 +235,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
@@ -280,7 +280,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
@@ -318,7 +318,7 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
@@ -359,7 +359,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)

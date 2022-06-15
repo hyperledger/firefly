@@ -563,7 +563,7 @@ func (bp *batchProcessor) sealBatch(state *DispatchState) (err error) {
 			}
 
 			state.Persisted.TX.Type = bp.conf.txType
-			if state.Persisted.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, state.Persisted.Namespace, bp.conf.txType); err != nil {
+			if state.Persisted.TX.ID, err = bp.txHelper.SubmitNewTransaction(ctx, bp.conf.txType); err != nil {
 				return err
 			}
 			manifest := state.Persisted.GenManifest(state.Messages, state.Data)

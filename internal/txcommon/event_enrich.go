@@ -95,7 +95,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.TokenTransfer = transfer
 	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
-		operation, err := t.database.GetOperationByID(ctx, event.Reference)
+		operation, err := t.database.GetOperationByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

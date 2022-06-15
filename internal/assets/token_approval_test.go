@@ -71,7 +71,7 @@ func TestTokenApprovalSuccess(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
@@ -110,7 +110,7 @@ func TestTokenApprovalSuccessUnknownIdentity(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
@@ -211,7 +211,7 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
@@ -358,7 +358,7 @@ func TestApprovalFail(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)
@@ -396,7 +396,7 @@ func TestApprovalTransactionFail(t *testing.T) {
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(nil, fmt.Errorf("pop"))
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
 	assert.EqualError(t, err, "pop")
@@ -429,7 +429,7 @@ func TestApprovalOperationsFail(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := am.TokenApproval(context.Background(), "ns1", approval, false)
@@ -462,7 +462,7 @@ func TestTokenApprovalConfirm(t *testing.T) {
 	mom := am.operations.(*operationmocks.Manager)
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
 	mdi.On("GetTokenPool", context.Background(), "ns1", "pool1").Return(pool, nil)
-	mth.On("SubmitNewTransaction", context.Background(), "ns1", core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
+	mth.On("SubmitNewTransaction", context.Background(), core.TransactionTypeTokenApproval).Return(fftypes.NewUUID(), nil)
 	mdi.On("InsertOperation", context.Background(), mock.Anything).Return(nil)
 	mom.On("RunOperation", context.Background(), mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(approvalData)

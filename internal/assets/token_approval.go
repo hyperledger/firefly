@@ -100,7 +100,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, core.TransactionTypeTokenApproval)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval)
 		if err != nil {
 			return err
 		}

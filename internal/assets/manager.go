@@ -72,6 +72,7 @@ type Manager interface {
 
 type assetManager struct {
 	ctx              context.Context
+	namespace        string
 	database         database.Plugin
 	txHelper         txcommon.Helper
 	identity         identity.Manager
@@ -85,12 +86,13 @@ type assetManager struct {
 	keyNormalization int
 }
 
-func NewAssetManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
+func NewAssetManager(ctx context.Context, ns string, di database.Plugin, im identity.Manager, dm data.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, ti map[string]tokens.Plugin, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "AssetManager")
 	}
 	am := &assetManager{
 		ctx:              ctx,
+		namespace:        ns,
 		database:         di,
 		txHelper:         txHelper,
 		identity:         im,

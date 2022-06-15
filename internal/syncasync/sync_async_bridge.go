@@ -238,7 +238,7 @@ func (sa *syncAsyncBridge) getApprovalFromEvent(event *core.EventDelivery) (appr
 }
 
 func (sa *syncAsyncBridge) getOperationFromEvent(event *core.EventDelivery) (op *core.Operation, err error) {
-	if op, err = sa.database.GetOperationByID(sa.ctx, event.Reference); err != nil {
+	if op, err = sa.database.GetOperationByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if op == nil {

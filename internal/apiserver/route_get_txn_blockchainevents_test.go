@@ -31,7 +31,7 @@ func TestGetTxnBlockchainEvents(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetTransactionBlockchainEvents", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetTransactionBlockchainEvents", mock.Anything, "abcd12345").
 		Return([]*core.BlockchainEvent{}, nil, nil)
 	r.ServeHTTP(res, req)
 

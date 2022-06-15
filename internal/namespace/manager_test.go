@@ -1109,7 +1109,7 @@ func TestGetOperationByNamespacedID(t *testing.T) {
 	}
 
 	opID := fftypes.NewUUID()
-	mo.On("GetOperationByID", context.Background(), "default", opID.String()).Return(nil, nil)
+	mo.On("GetOperationByID", context.Background(), opID.String()).Return(nil, nil)
 
 	op, err := nm.GetOperationByNamespacedID(context.Background(), "default:"+opID.String())
 	assert.Nil(t, err)

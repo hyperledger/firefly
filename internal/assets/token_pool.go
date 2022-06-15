@@ -74,7 +74,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 
 	var op *core.Operation
 	err = am.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		txid, err := am.txHelper.SubmitNewTransaction(ctx, pool.Namespace, core.TransactionTypeTokenPool)
+		txid, err := am.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenPool)
 		if err != nil {
 			return err
 		}
@@ -113,7 +113,7 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 			fb.Eq("tx", pool.TX.ID),
 			fb.Eq("type", core.OpTypeTokenActivatePool),
 		)
-		if existing, _, err := am.database.GetOperations(ctx, filter); err != nil {
+		if existing, _, err := am.database.GetOperations(ctx, am.namespace, filter); err != nil {
 			return err
 		} else if len(existing) > 0 {
 			log.L(ctx).Debugf("Dropping duplicate token pool activation request for pool %s", pool.ID)

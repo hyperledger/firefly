@@ -225,7 +225,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", ctx, opID).Return(op, nil)
+	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
 	mdi.On("InsertOperation", ctx, mock.MatchedBy(func(newOp *core.Operation) bool {
 		assert.NotEqual(t, opID, newOp.ID)
 		assert.Equal(t, "blockchain", newOp.Plugin)
@@ -271,7 +271,7 @@ func TestRetryOperationGetFail(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", ctx, opID).Return(op, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
 	_, err := om.RetryOperation(ctx, "ns1", op.ID)
@@ -307,8 +307,8 @@ func TestRetryTwiceOperationInsertFail(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", ctx, opID).Return(op, nil)
-	mdi.On("GetOperationByID", ctx, opID2).Return(op2, nil)
+	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
+	mdi.On("GetOperationByID", ctx, "ns1", opID2).Return(op2, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
@@ -337,7 +337,7 @@ func TestRetryOperationInsertFail(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", ctx, opID).Return(op, nil)
+	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
@@ -367,7 +367,7 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 	}
 
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", ctx, opID).Return(op, nil)
+	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, nil)
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(nil)
 	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -417,7 +417,7 @@ func TestTransferResultManifestMismatch(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{
+	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{
 		{
 			ID:        opID1,
 			Namespace: "ns1",
@@ -467,7 +467,7 @@ func TestTransferResultHashMismatch(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{
+	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{
 		{
 			ID:        opID1,
 			Namespace: "ns1",
@@ -513,7 +513,7 @@ func TestTransferResultBatchLookupFail(t *testing.T) {
 
 	opID1 := fftypes.NewUUID()
 	mdi := om.database.(*databasemocks.Plugin)
-	mdi.On("GetOperations", mock.Anything, mock.Anything).Return([]*core.Operation{
+	mdi.On("GetOperations", mock.Anything, "ns1", mock.Anything).Return([]*core.Operation{
 		{
 			ID:   opID1,
 			Type: core.OpTypeDataExchangeSendBatch,

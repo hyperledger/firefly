@@ -157,10 +157,10 @@ type iTransactionCollection interface {
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetTransactionByID - Get a transaction by ID
-	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *core.Transaction, err error)
+	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error)
 
 	// GetTransactions - Get transactions
-	GetTransactions(ctx context.Context, filter Filter) (message []*core.Transaction, res *FilterResult, err error)
+	GetTransactions(ctx context.Context, namespace string, filter Filter) (message []*core.Transaction, res *FilterResult, err error)
 }
 
 type iDatatypeCollection interface {
@@ -174,7 +174,7 @@ type iDatatypeCollection interface {
 	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *core.Datatype, err error)
 
 	// GetDatatypeByName - Get a data definition by name
-	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *core.Datatype, err error)
+	GetDatatypeByName(ctx context.Context, namespace, name, version string) (datadef *core.Datatype, err error)
 
 	// GetDatatypes - Get data definitions
 	GetDatatypes(ctx context.Context, filter Filter) (datadef []*core.Datatype, res *FilterResult, err error)
@@ -216,16 +216,16 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
+	ResolveOperation(ctx context.Context, namespace string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
 
 	// UpdateOperation - Update an operation
-	UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update Update) (err error)
+	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 
 	// GetOperationByID - Get an operation by ID
-	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *core.Operation, err error)
+	GetOperationByID(ctx context.Context, namespace string, id *fftypes.UUID) (operation *core.Operation, err error)
 
 	// GetOperations - Get operation
-	GetOperations(ctx context.Context, filter Filter) (operation []*core.Operation, res *FilterResult, err error)
+	GetOperations(ctx context.Context, namespace string, filter Filter) (operation []*core.Operation, res *FilterResult, err error)
 }
 
 type iSubscriptionCollection interface {
@@ -234,10 +234,10 @@ type iSubscriptionCollection interface {
 
 	// UpdateSubscription - Update subscription
 	// Throws IDMismatch error if updating and ids don't match
-	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
+	UpdateSubscription(ctx context.Context, namespace, name string, update Update) (err error)
 
 	// GetSubscriptionByName - Get an subscription by name
-	GetSubscriptionByName(ctx context.Context, ns, name string) (offset *core.Subscription, err error)
+	GetSubscriptionByName(ctx context.Context, namespace, name string) (offset *core.Subscription, err error)
 
 	// GetSubscriptionByID - Get an subscription by id
 	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *core.Subscription, err error)
@@ -382,7 +382,7 @@ type iTokenPoolCollection interface {
 	UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error
 
 	// GetTokenPool - Get a token pool by name
-	GetTokenPool(ctx context.Context, ns, name string) (*core.TokenPool, error)
+	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by pool ID
 	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error)
@@ -444,29 +444,29 @@ type iTokenApprovalCollection interface {
 
 type iFFICollection interface {
 	UpsertFFI(ctx context.Context, cd *core.FFI) error
-	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*core.FFI, *FilterResult, error)
+	GetFFIs(ctx context.Context, namespace string, filter Filter) ([]*core.FFI, *FilterResult, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
-	GetFFI(ctx context.Context, ns, name, version string) (*core.FFI, error)
+	GetFFI(ctx context.Context, namespace, name, version string) (*core.FFI, error)
 }
 
 type iFFIMethodCollection interface {
 	UpsertFFIMethod(ctx context.Context, method *core.FFIMethod) error
-	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error)
+	GetFFIMethod(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error)
 	GetFFIMethods(ctx context.Context, filter Filter) (methods []*core.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
 	UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error
-	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error)
+	GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error)
 	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error)
 	GetFFIEvents(ctx context.Context, filter Filter) (events []*core.FFIEvent, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {
 	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
-	GetContractAPIs(ctx context.Context, ns string, filter AndFilter) ([]*core.ContractAPI, *FilterResult, error)
+	GetContractAPIs(ctx context.Context, namespace string, filter AndFilter) ([]*core.ContractAPI, *FilterResult, error)
 	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error)
-	GetContractAPIByName(ctx context.Context, ns, name string) (*core.ContractAPI, error)
+	GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error)
 }
 
 type iContractListenerCollection interface {
@@ -474,7 +474,7 @@ type iContractListenerCollection interface {
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
 	// GetContractListener - get smart contract subscription by name
-	GetContractListener(ctx context.Context, ns, name string) (sub *core.ContractListener, err error)
+	GetContractListener(ctx context.Context, namespace, name string) (sub *core.ContractListener, err error)
 
 	// GetContractListenerByID - get smart contract subscription by ID
 	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *core.ContractListener, err error)
@@ -497,7 +497,7 @@ type iBlockchainEventCollection interface {
 	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
 
 	// GetBlockchainEventByID - get blockchain event by protocol ID
-	GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error)
+	GetBlockchainEventByProtocolID(ctx context.Context, namespace string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error)
 
 	// GetBlockchainEvents - get blockchain events
 	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*core.BlockchainEvent, *FilterResult, error)
@@ -506,7 +506,7 @@ type iBlockchainEventCollection interface {
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 type iChartCollection interface {
 	// GetChartHistogram - Get charting data for a histogram
-	GetChartHistogram(ctx context.Context, ns string, intervals []core.ChartHistogramInterval, collection CollectionName) ([]*core.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, namespace string, intervals []core.ChartHistogramInterval, collection CollectionName) ([]*core.ChartHistogram, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -677,11 +677,11 @@ type PostCompletionHook func()
 //
 type Callbacks interface {
 	// OrderedUUIDCollectionNSEvent emits the sequence on insert, but it will be -1 on update
-	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64)
-	OrderedCollectionNSEvent(resType OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64)
-	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID)
+	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID, sequence int64)
+	OrderedCollectionNSEvent(resType OrderedCollectionNS, eventType core.ChangeEventType, namespace string, sequence int64)
+	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID)
 	UUIDCollectionEvent(resType UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID)
-	HashCollectionNSEvent(resType HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32)
+	HashCollectionNSEvent(resType HashCollectionNS, eventType core.ChangeEventType, namespace string, hash *fftypes.Bytes32)
 }
 
 // Capabilities defines the capabilities a plugin can report as implementing or not

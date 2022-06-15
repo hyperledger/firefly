@@ -360,7 +360,7 @@ func TestEnrichEventsFailGetTransactions(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	_, err := ed.enrichEvents([]core.LocallySequenced{&core.Event{ID: id1, Type: core.EventTypeTransactionSubmitted}})
@@ -610,16 +610,16 @@ func TestEnrichTransactionEvents(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref1).Return(&core.Transaction{
 		ID: ref1,
 	}, nil)
-	mdi.On("GetTransactionByID", mock.Anything, ref2).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref2).Return(&core.Transaction{
 		ID: ref2,
 	}, nil)
-	mdi.On("GetTransactionByID", mock.Anything, ref3).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref3).Return(&core.Transaction{
 		ID: ref3,
 	}, nil)
-	mdi.On("GetTransactionByID", mock.Anything, ref4).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref4).Return(&core.Transaction{
 		ID: ref4,
 	}, nil)
 

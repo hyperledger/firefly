@@ -228,7 +228,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, core.TransactionTypeTokenTransfer)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenTransfer)
 		if err != nil {
 			return err
 		}

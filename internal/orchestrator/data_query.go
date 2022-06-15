@@ -53,29 +53,25 @@ func (or *orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Name
 	return or.database().GetNamespace(ctx, ns)
 }
 
-func (or *orchestrator) GetTransactionByID(ctx context.Context, ns, id string) (*core.Transaction, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	tx, err := or.database().GetTransactionByID(ctx, u)
-	if err == nil && tx != nil {
-		err = or.checkNamespace(ctx, ns, tx.Namespace)
-	}
+	tx, err := or.database().GetTransactionByID(ctx, or.namespace, u)
 	return tx, err
 }
 
-func (or *orchestrator) GetTransactionOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, nil, err
 	}
 	fb := database.OperationQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx", u),
-		fb.Eq("namespace", ns),
 	)
-	return or.database().GetOperations(ctx, filter)
+	return or.database().GetOperations(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*core.Message, error) {
@@ -171,27 +167,12 @@ func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version
 	return dt, err
 }
 
-func (or *orchestrator) GetOperationByID(ctx context.Context, ns, id string) (*core.Operation, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	o, err := or.database().GetOperationByID(ctx, u)
-	if err == nil && o != nil {
-		err = or.checkNamespace(ctx, ns, o.Namespace)
-	}
-	return o, err
-}
-
-func (or *orchestrator) GetOperationByNamespacedID(ctx context.Context, nsOpID string) (*core.Operation, error) {
-	ns, u, err := core.ParseNamespacedOpID(ctx, nsOpID)
-	if err != nil {
-		return nil, err
-	}
-	o, err := or.database().GetOperationByID(ctx, u)
-	if err == nil && o != nil {
-		err = or.checkNamespace(ctx, ns, o.Namespace)
-	}
+	o, err := or.database().GetOperationByID(ctx, or.namespace, u)
 	return o, err
 }
 
@@ -211,9 +192,8 @@ func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.A
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (or *orchestrator) GetTransactions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetTransactions(ctx, filter)
+func (or *orchestrator) GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
+	return or.database().GetTransactions(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
@@ -277,7 +257,7 @@ func (or *orchestrator) GetMessageTransaction(ctx context.Context, ns, id string
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetTransactionByID(ctx, txID)
+	return or.database().GetTransactionByID(ctx, ns, txID)
 }
 
 func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error) {
@@ -286,7 +266,7 @@ func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string)
 		return nil, nil, err
 	}
 	filter := database.OperationQueryFactory.NewFilter(ctx).Eq("tx", txID)
-	return or.database().GetOperations(ctx, filter)
+	return or.database().GetOperations(ctx, ns, filter)
 }
 
 func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
@@ -330,13 +310,8 @@ func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter data
 	return or.database().GetDatatypes(ctx, filter)
 }
 
-func (or *orchestrator) GetOperationsNamespaced(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetOperations(ctx, filter)
-}
-
 func (or *orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {
-	return or.database().GetOperations(ctx, filter)
+	return or.database().GetOperations(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
@@ -360,15 +335,15 @@ func (or *orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filt
 	return or.database().GetBlockchainEvents(ctx, or.scopeNS(ns, filter))
 }
 
-func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, ns, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, nil, err
 	}
 	fb := database.BlockchainEventQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("tx.id", u),
-		fb.Eq("namespace", ns),
+		fb.Eq("namespace", or.namespace),
 	)
 	return or.database().GetBlockchainEvents(ctx, filter)
 }

@@ -43,7 +43,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 		fb.Eq("tx", tx),
 		fb.Eq("type", core.OpTypeTokenApproval),
 	)
-	operations, _, err := em.database.GetOperations(ctx, filter)
+	operations, _, err := em.database.GetOperations(ctx, em.namespace, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		if approval.LocalID, err = em.loadApprovalID(ctx, approval.TX.ID, &approval.TokenApproval); err != nil {
 			return false, err
 		}
-		if valid, err := em.txHelper.PersistTransaction(ctx, approval.Namespace, approval.TX.ID, approval.TX.Type, approval.Event.BlockchainTXID); err != nil || !valid {
+		if valid, err := em.txHelper.PersistTransaction(ctx, approval.TX.ID, approval.TX.Type, approval.Event.BlockchainTXID); err != nil || !valid {
 			return valid, err
 		}
 	}
