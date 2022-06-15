@@ -257,7 +257,7 @@ func TestDownloadBlobOk(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, dataID, false).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, false).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob: &core.BlobRef{
@@ -292,7 +292,7 @@ func TestDownloadBlobNotFound(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, dataID, false).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, false).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob: &core.BlobRef{
@@ -315,7 +315,7 @@ func TestDownloadBlobLookupErr(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, dataID, false).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, false).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob: &core.BlobRef{
@@ -337,7 +337,7 @@ func TestDownloadBlobNoBlob(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, dataID, false).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, false).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Blob:      &core.BlobRef{},
@@ -356,7 +356,7 @@ func TestDownloadBlobNSMismatch(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, dataID, false).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, false).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns2",
 		Blob:      &core.BlobRef{},
@@ -375,7 +375,7 @@ func TestDownloadBlobDataLookupErr(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", ctx, dataID, false).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", ctx, "ns1", dataID, false).Return(nil, fmt.Errorf("pop"))
 
 	_, _, err := dm.DownloadBlob(ctx, "ns1", dataID.String())
 	assert.Regexp(t, "pop", err)

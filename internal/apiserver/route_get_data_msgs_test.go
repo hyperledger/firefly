@@ -31,7 +31,7 @@ func TestGetMessagesForData(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessagesForData", mock.Anything, "mynamespace", "abcd1234", mock.Anything).
+	o.On("GetMessagesForData", mock.Anything, "abcd1234", mock.Anything).
 		Return([]*core.Message{}, nil, nil)
 	r.ServeHTTP(res, req)
 

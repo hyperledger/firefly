@@ -271,7 +271,7 @@ func (rw *rewinder) getRewindsForBlobs(ctx context.Context, newHashes []driver.V
 	// Find any data associated with this blob
 	var data []*core.DataRef
 	filter := database.DataQueryFactory.NewFilterLimit(ctx, rw.querySafetyLimit).In("blob.hash", newHashes)
-	data, _, err := rw.database.GetDataRefs(ctx, filter)
+	data, _, err := rw.database.GetDataRefs(ctx, rw.aggregator.namespace, filter)
 	if err != nil {
 		return err
 	}

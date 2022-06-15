@@ -118,16 +118,12 @@ func (or *orchestrator) GetBatchByID(ctx context.Context, id string) (*core.Batc
 	return or.database().GetBatchByID(ctx, or.namespace, u)
 }
 
-func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*core.Data, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetDataByID(ctx context.Context, id string) (*core.Data, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	d, err := or.database().GetDataByID(ctx, u, true)
-	if err == nil && d != nil {
-		err = or.checkNamespace(ctx, ns, d.Namespace)
-	}
-	return d, err
+	return or.database().GetDataByID(ctx, or.namespace, u, true)
 }
 
 func (or *orchestrator) GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error) {
@@ -256,18 +252,16 @@ func (or *orchestrator) GetBatches(ctx context.Context, filter database.AndFilte
 	return or.database().GetBatches(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) GetData(ctx context.Context, ns string, filter database.AndFilter) (core.DataArray, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetData(ctx, filter)
+func (or *orchestrator) GetData(ctx context.Context, filter database.AndFilter) (core.DataArray, *database.FilterResult, error) {
+	return or.database().GetData(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	u, err := or.verifyIDAndNamespace(ctx, ns, dataID)
+func (or *orchestrator) GetMessagesForData(ctx context.Context, id string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
+	u, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
-	return or.database().GetMessagesForData(ctx, u, filter)
+	return or.database().GetMessagesForData(ctx, or.namespace, u, filter)
 }
 
 func (or *orchestrator) GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {

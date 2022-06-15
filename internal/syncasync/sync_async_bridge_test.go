@@ -719,7 +719,7 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 
 	mdi := sa.database.(*databasemocks.Plugin)
 	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(msg, nil)
-	mdi.On("GetDataByID", sa.ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", sa.ctx, "ns1", dataID, true).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -842,7 +842,7 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 
 	mdi := sa.database.(*databasemocks.Plugin)
 	mdi.On("GetMessageByID", sa.ctx, "ns1", msg.Header.ID).Return(msg, nil)
-	mdi.On("GetDataByID", sa.ctx, data.ID, true).Return(data, nil)
+	mdi.On("GetDataByID", sa.ctx, "ns1", data.ID, true).Return(data, nil)
 
 	_, err := sa.WaitForTokenPool(sa.ctx, pool.Pool.ID, func(ctx context.Context) error {
 		go func() {

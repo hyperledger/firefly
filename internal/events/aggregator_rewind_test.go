@@ -44,7 +44,7 @@ func TestRewinderE2E(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).
+	mdi.On("GetDataRefs", mock.Anything, "ns1", mock.Anything).
 		Return(core.DataRefs{{ID: dataID}}, nil, nil)
 	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, []*fftypes.UUID{dataID}).
 		Return([]*fftypes.UUID{batchID2}, nil)
@@ -141,7 +141,7 @@ func TestProcessStagedRewindsErrorBlobBatchIDs(t *testing.T) {
 	dataID := fftypes.NewUUID()
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).
+	mdi.On("GetDataRefs", mock.Anything, "ns1", mock.Anything).
 		Return(core.DataRefs{{ID: dataID}}, nil, nil)
 	mdi.On("GetBatchIDsForDataAttachments", mock.Anything, []*fftypes.UUID{dataID}).
 		Return(nil, fmt.Errorf("pop"))
@@ -163,7 +163,7 @@ func TestProcessStagedRewindsErrorBlobDataRefs(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetDataRefs", mock.Anything, mock.Anything).
+	mdi.On("GetDataRefs", mock.Anything, "ns1", mock.Anything).
 		Return(nil, nil, fmt.Errorf("pop"))
 
 	ag.rewinder.stagedRewinds = []*rewind{

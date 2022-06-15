@@ -104,7 +104,7 @@ type iMessageCollection interface {
 	GetMessageIDs(ctx context.Context, namespace string, filter Filter) (ids []*core.IDAndSequence, err error)
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
+	GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
 
 	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
 	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
@@ -126,13 +126,13 @@ type iDataCollection interface {
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetDataByID - Get a data record by ID
-	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *core.Data, err error)
+	GetDataByID(ctx context.Context, namespace string, id *fftypes.UUID, withValue bool) (message *core.Data, err error)
 
 	// GetData - Get data
-	GetData(ctx context.Context, filter Filter) (message core.DataArray, res *FilterResult, err error)
+	GetData(ctx context.Context, namespace string, filter Filter) (message core.DataArray, res *FilterResult, err error)
 
 	// GetDataRefs - Get data references only (no data)
-	GetDataRefs(ctx context.Context, filter Filter) (message core.DataRefs, res *FilterResult, err error)
+	GetDataRefs(ctx context.Context, namespace string, filter Filter) (message core.DataRefs, res *FilterResult, err error)
 }
 
 type iBatchCollection interface {

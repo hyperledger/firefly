@@ -38,7 +38,7 @@ var getDataByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetDataByID(cr.ctx, extractNamespace(r.PP), r.PP["dataid"])
+			output, err = cr.or.GetDataByID(cr.ctx, r.PP["dataid"])
 			return output, err
 		},
 	},

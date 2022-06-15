@@ -202,7 +202,7 @@ func (sa *syncAsyncBridge) getPoolFromEvent(event *core.EventDelivery) (pool *co
 
 func (sa *syncAsyncBridge) getPoolFromMessage(msg *core.Message) (*core.TokenPool, error) {
 	if len(msg.Data) > 0 {
-		data, err := sa.database.GetDataByID(sa.ctx, msg.Data[0].ID, true)
+		data, err := sa.database.GetDataByID(sa.ctx, sa.namespace, msg.Data[0].ID, true)
 		if err != nil || data == nil {
 			return nil, err
 		}

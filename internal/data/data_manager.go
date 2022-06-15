@@ -319,7 +319,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *core.Message) (d
 	data = make(core.DataArray, 0, len(msg.Data))
 	foundAll = true
 	for i, dataRef := range msg.Data {
-		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef)
+		d, err := dm.resolveRef(ctx, dataRef)
 		if err != nil {
 			return nil, false, err
 		}
@@ -353,18 +353,18 @@ func (dm *dataManager) ValidateAll(ctx context.Context, data core.DataArray) (va
 	return true, nil
 }
 
-func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *core.DataRef) (*core.Data, error) {
+func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*core.Data, error) {
 	if dataRef == nil || dataRef.ID == nil {
 		log.L(ctx).Warnf("data is nil")
 		return nil, nil
 	}
-	d, err := dm.database.GetDataByID(ctx, dataRef.ID, true)
+	d, err := dm.database.GetDataByID(ctx, dm.namespace, dataRef.ID, true)
 	if err != nil {
 		return nil, err
 	}
 	switch {
-	case d == nil || d.Namespace != ns:
-		log.L(ctx).Warnf("Data %s not found in namespace %s", dataRef.ID, ns)
+	case d == nil:
+		log.L(ctx).Warnf("Data %s not found", dataRef.ID)
 		return nil, nil
 	case d.Hash == nil || (dataRef.Hash != nil && *d.Hash != *dataRef.Hash):
 		log.L(ctx).Warnf("Data hash does not match. Hash=%v Expected=%v", d.Hash, dataRef.Hash)
@@ -477,7 +477,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 		switch {
 		case dataOrValue.ID != nil:
 			// If an ID is supplied, then it must be a reference to existing data
-			d, err = dm.resolveRef(ctx, msg.Header.Namespace, &dataOrValue.DataRef)
+			d, err = dm.resolveRef(ctx, &dataOrValue.DataRef)
 			if err != nil {
 				return err
 			}
@@ -524,7 +524,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 		batch.Payload.Messages[i] = m.BatchMessage()
 	}
 	for i, dr := range manifest.Data {
-		d, err := dm.database.GetDataByID(ctx, dr.ID, true)
+		d, err := dm.database.GetDataByID(ctx, dm.namespace, dr.ID, true)
 		if err != nil || d == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "data", dr.ID)
 		}

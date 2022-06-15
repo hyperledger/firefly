@@ -152,7 +152,7 @@ func (bs *blobStore) DownloadBlob(ctx context.Context, ns, dataID string) (*core
 		return nil, nil, err
 	}
 
-	data, err := bs.database.GetDataByID(ctx, id, false)
+	data, err := bs.database.GetDataByID(ctx, bs.dm.namespace, id, false)
 	if err != nil {
 		return nil, nil, err
 	}

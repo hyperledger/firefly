@@ -38,7 +38,7 @@ var getData = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.DataQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetData(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetData(cr.ctx, cr.filter))
 		},
 	},
 }

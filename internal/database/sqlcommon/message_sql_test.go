@@ -181,9 +181,9 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, *msgUpdated.BatchID, *batchIDs[0])
 
 	// Check we can get it with a filter on only messages with a particular data ref
-	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
+	msgs, _, err = s.GetMessagesForData(ctx, "ns12345", dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
-	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(false))
+	msgs, _, err = s.GetMessagesForData(ctx, "ns12345", dataID2, filter.Count(false))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	msgReadJson, _ = json.Marshal(msgs[0])
@@ -573,7 +573,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
-	_, _, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
+	_, _, err := s.GetMessagesForData(context.Background(), "ns1", fftypes.NewUUID(), f)
 	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

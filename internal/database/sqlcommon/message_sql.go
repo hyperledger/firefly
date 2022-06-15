@@ -556,14 +556,16 @@ func (s *SQLCommon) GetMessages(ctx context.Context, namespace string, filter da
 	return s.getMessagesQuery(ctx, query, fop, fi, true)
 }
 
-func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
 	cols := make([]string, len(msgColumns)+1)
 	for i, col := range msgColumns {
 		cols[i] = fmt.Sprintf("m.%s", col)
 	}
 	cols[len(msgColumns)] = "m.seq"
-	query, fop, fi, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterFieldMap, []interface{}{"sequence"},
-		sq.Eq{"md.data_id": dataID})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "m", sq.Select(cols...).From("messages_data AS md"),
+		filter, msgFilterFieldMap, []interface{}{"sequence"},
+		sq.Eq{"md.data_id": dataID, "namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

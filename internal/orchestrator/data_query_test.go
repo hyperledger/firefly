@@ -83,7 +83,7 @@ func TestGetMessageByIDNoValuesOk(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	msg := &core.Message{
 		Header: core.MessageHeader{
-			Namespace: "ns1",
+			Namespace: "ns",
 			ID:        msgID,
 		},
 		Data: core.DataRefs{
@@ -106,7 +106,7 @@ func TestGetMessageByIDWithDataOk(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	msg := &core.Message{
 		Header: core.MessageHeader{
-			Namespace: "ns1",
+			Namespace: "ns",
 			ID:        msgID,
 		},
 		Data: core.DataRefs{
@@ -144,7 +144,7 @@ func TestGetMessageByIDWithDataFail(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	msg := &core.Message{
 		Header: core.MessageHeader{
-			Namespace: "ns1",
+			Namespace: "ns",
 			ID:        msgID,
 		},
 		Data: core.DataRefs{
@@ -217,17 +217,17 @@ func TestGetMessagesWithDataFail(t *testing.T) {
 func TestGetMessagesForData(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetMessagesForData", mock.Anything, u, mock.Anything).Return([]*core.Message{}, nil, nil)
+	or.mdi.On("GetMessagesForData", mock.Anything, "ns", u, mock.Anything).Return([]*core.Message{}, nil, nil)
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetMessagesForData(context.Background(), "ns1", u.String(), f)
+	_, _, err := or.GetMessagesForData(context.Background(), u.String(), f)
 	assert.NoError(t, err)
 }
 
 func TestGetMessagesForDataBadID(t *testing.T) {
 	or := newTestOrchestrator()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).And()
-	_, _, err := or.GetMessagesForData(context.Background(), "!wrong", "!bad", f)
+	_, _, err := or.GetMessagesForData(context.Background(), "!bad", f)
 	assert.Regexp(t, "FF00138", err)
 }
 
@@ -432,26 +432,26 @@ func TestGetBatches(t *testing.T) {
 func TestGetDataByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDataByID", mock.Anything, u, true).Return(&core.Data{
-		Namespace: "ns1",
+	or.mdi.On("GetDataByID", mock.Anything, "ns", u, true).Return(&core.Data{
+		Namespace: "ns",
 	}, nil)
-	_, err := or.GetDataByID(context.Background(), "ns1", u.String())
+	_, err := or.GetDataByID(context.Background(), u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetDataByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetDataByID(context.Background(), "", "")
+	_, err := or.GetDataByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetData(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetData", mock.Anything, mock.Anything).Return(core.DataArray{}, nil, nil)
+	or.mdi.On("GetData", mock.Anything, "ns", mock.Anything).Return(core.DataArray{}, nil, nil)
 	fb := database.DataQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetData(context.Background(), "ns1", f)
+	_, _, err := or.GetData(context.Background(), f)
 	assert.NoError(t, err)
 }
 

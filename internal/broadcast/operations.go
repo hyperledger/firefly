@@ -96,7 +96,7 @@ func (bm *broadcastManager) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		d, err := bm.database.GetDataByID(ctx, dataID, false)
+		d, err := bm.database.GetDataByID(ctx, bm.namespace, dataID, false)
 		if err != nil {
 			return nil, err
 		} else if d == nil || d.Blob == nil {

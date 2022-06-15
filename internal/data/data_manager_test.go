@@ -151,7 +151,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	mdi.On("GetDataByID", mock.Anything, data1.ID, true).Return(data1, nil).Once()
+	mdi.On("GetDataByID", mock.Anything, "ns1", data1.ID, true).Return(data1, nil).Once()
 
 	_, _, newMsg1 := testNewMessage()
 	newMsg1.Message.InlineData = core.InlineData{
@@ -279,7 +279,7 @@ func TestGetMessageDataDBError(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, fmt.Errorf("pop"))
 	data, foundAll, err := dm.GetMessageDataCached(ctx, &core.Message{
 		Header: core.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   core.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
@@ -295,7 +295,7 @@ func TestGetMessageDataNilEntry(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, nil)
 	data, foundAll, err := dm.GetMessageDataCached(ctx, &core.Message{
 		Header: core.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   core.DataRefs{nil},
@@ -311,7 +311,7 @@ func TestGetMessageDataNotFound(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, nil)
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, nil)
 	data, foundAll, err := dm.GetMessageDataCached(ctx, &core.Message{
 		Header: core.MessageHeader{ID: fftypes.NewUUID()},
 		Data:   core.DataRefs{{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()}},
@@ -328,7 +328,7 @@ func TestGetMessageDataHashMismatch(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	dataID := fftypes.NewUUID()
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&core.Data{
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(&core.Data{
 		ID:   dataID,
 		Hash: fftypes.NewRandB32(),
 	}, nil)
@@ -354,7 +354,7 @@ func TestGetMessageDataOk(t *testing.T) {
 		Data:   core.DataRefs{{ID: dataID, Hash: hash}},
 	}
 
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&core.Data{
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(&core.Data{
 		ID:   dataID,
 		Hash: hash,
 	}, nil).Once()
@@ -413,7 +413,7 @@ func TestResolveInlineDataRefIDOnlyOK(t *testing.T) {
 
 	dataID, dataHash, newMsg := testNewMessage()
 
-	mdi.On("GetDataByID", ctx, dataID, true).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Hash:      dataHash,
@@ -436,7 +436,7 @@ func TestResolveInlineDataDataToPublish(t *testing.T) {
 	dataID, dataHash, newMsg := testNewMessage()
 	blobHash := fftypes.NewRandB32()
 
-	mdi.On("GetDataByID", ctx, dataID, true).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Hash:      dataHash,
@@ -466,7 +466,7 @@ func TestResolveInlineDataResolveBlobFail(t *testing.T) {
 	dataID, dataHash, newMsg := testNewMessage()
 	blobHash := fftypes.NewRandB32()
 
-	mdi.On("GetDataByID", ctx, dataID, true).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(&core.Data{
 		ID:        dataID,
 		Namespace: "ns1",
 		Hash:      dataHash,
@@ -480,34 +480,17 @@ func TestResolveInlineDataResolveBlobFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestResolveInlineDataRefBadNamespace(t *testing.T) {
-	dm, ctx, cancel := newTestDataManager(t)
-	defer cancel()
-	mdi := dm.database.(*databasemocks.Plugin)
-
-	dataID, dataHash, newMsg := testNewMessage()
-
-	mdi.On("GetDataByID", ctx, dataID, true).Return(&core.Data{
-		ID:        dataID,
-		Namespace: "ns2",
-		Hash:      dataHash,
-	}, nil)
-
-	err := dm.ResolveInlineData(ctx, newMsg)
-	assert.Regexp(t, "FF10204", err)
-}
-
 func TestResolveInlineDataRefBadHash(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 
-	dataID, dataHash, newMsg := testNewMessage()
+	dataID, _, newMsg := testNewMessage()
 
-	mdi.On("GetDataByID", ctx, dataID, true).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(&core.Data{
 		ID:        dataID,
-		Namespace: "ns2",
-		Hash:      dataHash,
+		Namespace: "ns1",
+		Hash:      fftypes.NewRandB32(),
 	}, nil)
 
 	err := dm.ResolveInlineData(ctx, newMsg)
@@ -529,7 +512,7 @@ func TestResolveInlineDataRefLookkupFail(t *testing.T) {
 
 	dataID, _, newMsg := testNewMessage()
 
-	mdi.On("GetDataByID", ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(nil, fmt.Errorf("pop"))
 
 	err := dm.ResolveInlineData(ctx, newMsg)
 	assert.EqualError(t, err, "pop")
@@ -852,7 +835,7 @@ func TestHydrateBatchOK(t *testing.T) {
 		Hash:      msgHash,
 		Confirmed: fftypes.Now(),
 	}, nil)
-	mdi.On("GetDataByID", ctx, dataID, true).Return(&core.Data{
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(&core.Data{
 		ID:      dataID,
 		Hash:    dataHash,
 		Created: fftypes.Now(),
@@ -902,7 +885,7 @@ func TestHydrateBatchDataFail(t *testing.T) {
 		Hash:      msgHash,
 		Confirmed: fftypes.Now(),
 	}, nil)
-	mdi.On("GetDataByID", ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", ctx, "ns1", dataID, true).Return(nil, fmt.Errorf("pop"))
 
 	_, err := dm.HydrateBatch(ctx, bp)
 	assert.Regexp(t, "FF10372.*pop", err)
@@ -967,7 +950,7 @@ func TestGetMessageWithDataOk(t *testing.T) {
 	}
 
 	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, nil).Once()
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&core.Data{
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(&core.Data{
 		ID:   dataID,
 		Hash: hash,
 	}, nil).Once()
@@ -1002,7 +985,7 @@ func TestGetMessageWithDataCRORequirePublicBlobRefs(t *testing.T) {
 	}
 
 	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, nil).Twice()
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&core.Data{
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(&core.Data{
 		ID:   dataID,
 		Hash: hash,
 		Blob: &core.BlobRef{
@@ -1040,7 +1023,7 @@ func TestGetMessageWithDataReadDataFail(t *testing.T) {
 	}
 
 	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, nil)
-	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", mock.Anything, "ns1", mock.Anything, true).Return(nil, fmt.Errorf("pop"))
 	_, _, _, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
 	assert.Regexp(t, "pop", err)
 
