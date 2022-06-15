@@ -697,33 +697,33 @@ func TestGetBlockchainEventByID(t *testing.T) {
 	or := newTestOrchestrator()
 
 	id := fftypes.NewUUID()
-	or.mdi.On("GetBlockchainEventByID", context.Background(), id).Return(&core.BlockchainEvent{
+	or.mdi.On("GetBlockchainEventByID", context.Background(), "ns", id).Return(&core.BlockchainEvent{
 		Namespace: "ns1",
 	}, nil)
 
-	_, err := or.GetBlockchainEventByID(context.Background(), "ns1", id.String())
+	_, err := or.GetBlockchainEventByID(context.Background(), id.String())
 	assert.NoError(t, err)
 }
 
 func TestGetBlockchainEventByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetBlockchainEventByID(context.Background(), "ns1", "")
+	_, err := or.GetBlockchainEventByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetBlockchainEvents(t *testing.T) {
 	or := newTestOrchestrator()
 
-	or.mdi.On("GetBlockchainEvents", context.Background(), mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", context.Background(), "ns", mock.Anything).Return(nil, nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := or.GetBlockchainEvents(context.Background(), "ns", f.And())
+	_, _, err := or.GetBlockchainEvents(context.Background(), f.And())
 	assert.NoError(t, err)
 }
 
 func TestGetTransactionBlockchainEventsOk(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return([]*core.BlockchainEvent{}, nil, nil)
 	_, _, err := or.GetTransactionBlockchainEvents(context.Background(), fftypes.NewUUID().String())
 	assert.NoError(t, err)
 }

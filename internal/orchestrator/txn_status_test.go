@@ -77,7 +77,7 @@ func TestGetTransactionStatusBatchPinSuccess(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return(batches, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -139,7 +139,7 @@ func TestGetTransactionStatusBatchPinFail(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return(batches, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -193,7 +193,7 @@ func TestGetTransactionStatusBatchPinPending(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return(batches, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -264,7 +264,7 @@ func TestGetTransactionStatusTokenPoolSuccess(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenPools", mock.Anything, mock.Anything).Return(pools, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -326,7 +326,7 @@ func TestGetTransactionStatusTokenPoolPending(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenPools", mock.Anything, mock.Anything).Return(pools, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -384,7 +384,7 @@ func TestGetTransactionStatusTokenPoolUnconfirmed(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenPools", mock.Anything, mock.Anything).Return(pools, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -452,7 +452,7 @@ func TestGetTransactionStatusTokenTransferSuccess(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(transfers, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -528,7 +528,7 @@ func TestGetTransactionStatusTokenApprovalSuccess(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenApprovals", mock.Anything, mock.Anything).Return(approvals, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -588,7 +588,7 @@ func TestGetTransactionStatusTokenTransferPending(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(transfers, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -650,7 +650,7 @@ func TestGetTransactionStatusTokenTransferRetry(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(transfers, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -709,7 +709,7 @@ func TestGetTransactionStatusTokenApprovalPending(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 	or.mdi.On("GetTokenApprovals", mock.Anything, mock.Anything).Return(approvals, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -763,7 +763,7 @@ func TestGetTransactionStatusContractInvokeSuccess(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(ops, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(events, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(events, nil, nil)
 
 	status, err := or.GetTransactionStatus(context.Background(), txID.String())
 	assert.NoError(t, err)
@@ -834,7 +834,7 @@ func TestGetTransactionStatusBlockchainEventError(t *testing.T) {
 		Namespace: "ns1",
 	}, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := or.GetTransactionStatus(context.Background(), txID.String())
 	assert.EqualError(t, err, "pop")
@@ -853,7 +853,7 @@ func TestGetTransactionStatusBatchError(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
 	or.mdi.On("GetBatches", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -873,7 +873,7 @@ func TestGetTransactionStatusPoolError(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
 	or.mdi.On("GetTokenPools", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -893,7 +893,7 @@ func TestGetTransactionStatusTransferError(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
 	or.mdi.On("GetTokenTransfers", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -913,7 +913,7 @@ func TestGetTransactionStatusApprovalError(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
 	or.mdi.On("GetTokenApprovals", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := or.GetTransactionStatus(context.Background(), txID.String())
@@ -933,7 +933,7 @@ func TestGetTransactionStatusUnknownType(t *testing.T) {
 
 	or.mdi.On("GetTransactionByID", mock.Anything, "ns", txID).Return(tx, nil)
 	or.mdi.On("GetOperations", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
-	or.mdi.On("GetBlockchainEvents", mock.Anything, mock.Anything).Return(nil, nil, nil)
+	or.mdi.On("GetBlockchainEvents", mock.Anything, "ns", mock.Anything).Return(nil, nil, nil)
 
 	_, err := or.GetTransactionStatus(context.Background(), txID.String())
 	assert.Regexp(t, "FF10336", err)

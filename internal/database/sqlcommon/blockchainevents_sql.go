@@ -135,8 +135,8 @@ func (s *SQLCommon) getBlockchainEventPred(ctx context.Context, desc string, pre
 	return event, nil
 }
 
-func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
-	return s.getBlockchainEventPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetBlockchainEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BlockchainEvent, error) {
+	return s.getBlockchainEventPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
 func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error) {
@@ -147,11 +147,11 @@ func (s *SQLCommon) GetBlockchainEventByProtocolID(ctx context.Context, ns strin
 	})
 }
 
-func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+func (s *SQLCommon) GetBlockchainEvents(ctx context.Context, namespace string, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "",
 		sq.Select(blockchainEventColumns...).From(blockchaineventsTable),
-		filter, blockchainEventFilterFieldMap, []interface{}{"sequence"})
+		filter, blockchainEventFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

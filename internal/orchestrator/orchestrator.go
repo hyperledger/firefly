@@ -101,8 +101,8 @@ type Orchestrator interface {
 	GetEventByID(ctx context.Context, ns, id string) (*core.Event, error)
 	GetEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
 	GetEventsWithReferences(ctx context.Context, ns string, filter database.AndFilter) ([]*core.EnrichedEvent, *database.FilterResult, error)
-	GetBlockchainEventByID(ctx context.Context, ns, id string) (*core.BlockchainEvent, error)
-	GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error)
+	GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error)
+	GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error)
 	GetPins(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
 
 	// Charts

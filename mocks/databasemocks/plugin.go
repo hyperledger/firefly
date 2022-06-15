@@ -305,13 +305,13 @@ func (_m *Plugin) GetBlobs(ctx context.Context, filter database.Filter) ([]*core
 	return r0, r1, r2
 }
 
-// GetBlockchainEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error) {
-	ret := _m.Called(ctx, id)
+// GetBlockchainEventByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BlockchainEvent, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.BlockchainEvent); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.BlockchainEvent); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.BlockchainEvent)
@@ -319,8 +319,8 @@ func (_m *Plugin) GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -351,13 +351,13 @@ func (_m *Plugin) GetBlockchainEventByProtocolID(ctx context.Context, namespace 
 	return r0, r1
 }
 
-// GetBlockchainEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetBlockchainEvents provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetBlockchainEvents(ctx context.Context, namespace string, filter database.Filter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.BlockchainEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.BlockchainEvent); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.BlockchainEvent); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.BlockchainEvent)
@@ -365,8 +365,8 @@ func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filte
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -374,8 +374,8 @@ func (_m *Plugin) GetBlockchainEvents(ctx context.Context, filter database.Filte
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

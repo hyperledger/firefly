@@ -58,8 +58,7 @@ func (or *orchestrator) GetTransactionByID(ctx context.Context, id string) (*cor
 	if err != nil {
 		return nil, err
 	}
-	tx, err := or.database().GetTransactionByID(ctx, or.namespace, u)
-	return tx, err
+	return or.database().GetTransactionByID(ctx, or.namespace, u)
 }
 
 func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error) {
@@ -172,8 +171,7 @@ func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.
 	if err != nil {
 		return nil, err
 	}
-	o, err := or.database().GetOperationByID(ctx, or.namespace, u)
-	return o, err
+	return or.database().GetOperationByID(ctx, or.namespace, u)
 }
 
 func (or *orchestrator) GetEventByID(ctx context.Context, ns, id string) (*core.Event, error) {
@@ -319,20 +317,16 @@ func (or *orchestrator) GetEvents(ctx context.Context, ns string, filter databas
 	return or.database().GetEvents(ctx, filter)
 }
 
-func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, ns, id string) (*core.BlockchainEvent, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetBlockchainEventByID(ctx context.Context, id string) (*core.BlockchainEvent, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	be, err := or.database().GetBlockchainEventByID(ctx, u)
-	if err == nil && be != nil {
-		err = or.checkNamespace(ctx, ns, be.Namespace)
-	}
-	return be, err
+	return or.database().GetBlockchainEventByID(ctx, or.namespace, u)
 }
 
-func (or *orchestrator) GetBlockchainEvents(ctx context.Context, ns string, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
-	return or.database().GetBlockchainEvents(ctx, or.scopeNS(ns, filter))
+func (or *orchestrator) GetBlockchainEvents(ctx context.Context, filter database.AndFilter) ([]*core.BlockchainEvent, *database.FilterResult, error) {
+	return or.database().GetBlockchainEvents(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error) {
@@ -341,11 +335,7 @@ func (or *orchestrator) GetTransactionBlockchainEvents(ctx context.Context, id s
 		return nil, nil, err
 	}
 	fb := database.BlockchainEventQueryFactory.NewFilter(ctx)
-	filter := fb.And(
-		fb.Eq("tx.id", u),
-		fb.Eq("namespace", or.namespace),
-	)
-	return or.database().GetBlockchainEvents(ctx, filter)
+	return or.database().GetBlockchainEvents(ctx, or.namespace, fb.And(fb.Eq("tx.id", u)))
 }
 
 func (or *orchestrator) GetPins(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error) {

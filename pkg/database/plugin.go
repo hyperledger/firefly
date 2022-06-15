@@ -494,13 +494,13 @@ type iBlockchainEventCollection interface {
 	InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (err error)
 
 	// GetBlockchainEventByID - get blockchain event by ID
-	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
+	GetBlockchainEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BlockchainEvent, error)
 
 	// GetBlockchainEventByID - get blockchain event by protocol ID
 	GetBlockchainEventByProtocolID(ctx context.Context, namespace string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error)
 
 	// GetBlockchainEvents - get blockchain events
-	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*core.BlockchainEvent, *FilterResult, error)
+	GetBlockchainEvents(ctx context.Context, namespace string, filter Filter) ([]*core.BlockchainEvent, *FilterResult, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.

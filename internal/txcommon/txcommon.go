@@ -177,7 +177,7 @@ func (t *transactionHelper) GetBlockchainEventByIDCached(ctx context.Context, id
 		cached.Extend(t.blockchainEventTTL)
 		return cached.Value().(*core.BlockchainEvent), nil
 	}
-	chainEvent, err := t.database.GetBlockchainEventByID(ctx, id)
+	chainEvent, err := t.database.GetBlockchainEventByID(ctx, t.namespace, id)
 	if err != nil || chainEvent == nil {
 		return chainEvent, err
 	}

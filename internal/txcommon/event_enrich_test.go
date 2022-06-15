@@ -164,7 +164,7 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(&core.BlockchainEvent{
 		ID: ref1,
 	}, nil)
 
@@ -190,7 +190,7 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,

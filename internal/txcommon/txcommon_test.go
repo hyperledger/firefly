@@ -414,7 +414,7 @@ func TestGetBlockchainEventByIDCached(t *testing.T) {
 	ctx := context.Background()
 
 	evID := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", ctx, evID).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", ctx, "ns1", evID).Return(&core.BlockchainEvent{
 		ID:        evID,
 		Namespace: "ns1",
 	}, nil).Once()
@@ -439,7 +439,7 @@ func TestGetBlockchainEventByIDNil(t *testing.T) {
 	ctx := context.Background()
 
 	evID := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", ctx, evID).Return(nil, nil)
+	mdi.On("GetBlockchainEventByID", ctx, "ns1", evID).Return(nil, nil)
 
 	chainEvent, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
 	assert.NoError(t, err)
@@ -457,7 +457,7 @@ func TestGetBlockchainEventByIDErr(t *testing.T) {
 	ctx := context.Background()
 
 	evID := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", ctx, evID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByID", ctx, "ns1", evID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
 	assert.Regexp(t, "pop", err)
