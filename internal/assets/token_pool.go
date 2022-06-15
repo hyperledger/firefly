@@ -66,7 +66,7 @@ func (am *assetManager) createTokenPoolInternal(ctx context.Context, pool *core.
 	}
 
 	if waitConfirm {
-		return am.syncasync.WaitForTokenPool(ctx, pool.Namespace, pool.ID, func(ctx context.Context) error {
+		return am.syncasync.WaitForTokenPool(ctx, pool.ID, func(ctx context.Context) error {
 			_, err := am.createTokenPoolInternal(ctx, pool, false)
 			return err
 		})
@@ -163,11 +163,7 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 	return pool, nil
 }
 
-func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolNameOrID string) (*core.TokenPool, error) {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, err
-	}
-
+func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
 	var pool *core.TokenPool
 
 	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
@@ -175,7 +171,7 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolName
 		if err := core.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
 			return nil, err
 		}
-		if pool, err = am.database.GetTokenPool(ctx, ns, poolNameOrID); err != nil {
+		if pool, err = am.database.GetTokenPool(ctx, am.namespace, poolNameOrID); err != nil {
 			return nil, err
 		}
 	} else if pool, err = am.database.GetTokenPoolByID(ctx, poolID); err != nil {

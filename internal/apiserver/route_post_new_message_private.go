@@ -41,7 +41,7 @@ var postNewMessagePrivate = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			output, err = cr.or.PrivateMessaging().SendMessage(cr.ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut), waitConfirm)
+			output, err = cr.or.PrivateMessaging().SendMessage(cr.ctx, r.Input.(*core.MessageInOut), waitConfirm)
 			return output, err
 		},
 	},

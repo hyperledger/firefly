@@ -39,7 +39,7 @@ func TestPostTokenBurn(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("BurnTokens", mock.Anything, "ns1", mock.AnythingOfType("*core.TokenTransferInput"), false).
+	mam.On("BurnTokens", mock.Anything, mock.AnythingOfType("*core.TokenTransferInput"), false).
 		Return(&core.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 

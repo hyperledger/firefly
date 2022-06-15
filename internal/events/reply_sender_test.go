@@ -37,7 +37,7 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mbm := ed.broadcast.(*broadcastmocks.Manager)
-	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	ed.sendReply(context.Background(), &core.Event{
@@ -57,7 +57,7 @@ func TestSendReplyPrivateFail(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mpm := ed.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mpm.On("NewMessage", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	ed.sendReply(context.Background(), &core.Event{
@@ -89,7 +89,7 @@ func TestSendReplyPrivateOk(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mpm := ed.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mpm.On("NewMessage", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
 	ed.sendReply(context.Background(), &core.Event{

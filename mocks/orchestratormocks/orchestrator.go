@@ -1155,13 +1155,13 @@ func (_m *Orchestrator) PrivateMessaging() privatemessaging.Manager {
 	return r0
 }
 
-// RequestReply provides a mock function with given fields: ctx, ns, msg
-func (_m *Orchestrator) RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (*core.MessageInOut, error) {
-	ret := _m.Called(ctx, ns, msg)
+// RequestReply provides a mock function with given fields: ctx, msg
+func (_m *Orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut) (*core.MessageInOut, error) {
+	ret := _m.Called(ctx, msg)
 
 	var r0 *core.MessageInOut
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.MessageInOut) *core.MessageInOut); ok {
-		r0 = rf(ctx, ns, msg)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MessageInOut) *core.MessageInOut); ok {
+		r0 = rf(ctx, msg)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.MessageInOut)
@@ -1169,8 +1169,8 @@ func (_m *Orchestrator) RequestReply(ctx context.Context, ns string, msg *core.M
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.MessageInOut) error); ok {
-		r1 = rf(ctx, ns, msg)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut) error); ok {
+		r1 = rf(ctx, msg)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -45,7 +45,7 @@ type Manager interface {
 	ActivateTokenPool(ctx context.Context, pool *core.TokenPool) error
 	GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error)
 	GetTokenPool(ctx context.Context, ns, connector, poolName string) (*core.TokenPool, error)
-	GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNameOrID string) (*core.TokenPool, error)
+	GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error)
 
 	GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenBalance, *database.FilterResult, error)
 	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error)
@@ -54,15 +54,15 @@ type Manager interface {
 	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error)
 	GetTokenTransferByID(ctx context.Context, ns, id string) (*core.TokenTransfer, error)
 
-	NewTransfer(ns string, transfer *core.TokenTransferInput) sysmessaging.MessageSender
-	MintTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
-	BurnTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
-	TransferTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
+	NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender
+	MintTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
+	BurnTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
+	TransferTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)
 
 	GetTokenConnectors(ctx context.Context, ns string) []*core.TokenConnector
 
-	NewApproval(ns string, approve *core.TokenApprovalInput) sysmessaging.MessageSender
-	TokenApproval(ctx context.Context, ns string, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error)
+	NewApproval(approve *core.TokenApprovalInput) sysmessaging.MessageSender
+	TokenApproval(ctx context.Context, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error)
 	GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error)
 
 	// From operations.OperationHandler
@@ -164,10 +164,10 @@ func (am *assetManager) getDefaultTokenConnector(ctx context.Context, ns string)
 	return tokenConnectors[0].Name, nil
 }
 
-func (am *assetManager) getDefaultTokenPool(ctx context.Context, ns string) (*core.TokenPool, error) {
+func (am *assetManager) getDefaultTokenPool(ctx context.Context) (*core.TokenPool, error) {
 	f := database.TokenPoolQueryFactory.NewFilter(ctx).And()
 	f.Limit(1).Count(true)
-	tokenPools, fr, err := am.GetTokenPools(ctx, ns, f)
+	tokenPools, fr, err := am.GetTokenPools(ctx, am.namespace, f)
 	if err != nil {
 		return nil, err
 	}

@@ -108,7 +108,7 @@ type Orchestrator interface {
 	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
 
 	// Message Routing
-	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
+	RequestReply(ctx context.Context, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
 	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error

@@ -252,7 +252,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 			return err
 		}
 		if waitConfirm {
-			return cm.syncasync.WaitForInvokeOperation(ctx, ns, op.ID, send)
+			return cm.syncasync.WaitForInvokeOperation(ctx, op.ID, send)
 		}
 		err = send(ctx)
 		return op, err

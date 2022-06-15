@@ -1029,7 +1029,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mbm := ed.broadcast.(*broadcastmocks.Manager)
-	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", mock.Anything).Return(nil)
 
 	ed.deliveryResponse(&core.EventDeliveryResponse{

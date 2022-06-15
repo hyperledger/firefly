@@ -1326,9 +1326,9 @@ func TestInvokeContractConfirm(t *testing.T) {
 		data := op.Data.(blockchainInvokeData)
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
-	msa.On("WaitForInvokeOperation", mock.Anything, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForInvokeOperation", mock.Anything, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[3].(syncasync.RequestSender)
+			send := args[2].(syncasync.RequestSender)
 			send(context.Background())
 		}).
 		Return(&core.Operation{}, nil)
