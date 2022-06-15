@@ -38,6 +38,7 @@ import (
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -64,9 +65,9 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
+	BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
-	BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(mm multiparty.Manager, action string, event *blockchain.Event, signingKey *core.VerifierRef) error
 
 	// Bound dataexchange callbacks
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)

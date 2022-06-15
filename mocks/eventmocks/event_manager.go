@@ -15,6 +15,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	multiparty "github.com/hyperledger/firefly/internal/multiparty"
+
 	sharedstorage "github.com/hyperledger/firefly/pkg/sharedstorage"
 
 	system "github.com/hyperledger/firefly/internal/events/system"
@@ -41,13 +43,13 @@ func (_m *EventManager) AddSystemEventListener(ns string, el system.EventListene
 	return r0
 }
 
-// BatchPinComplete provides a mock function with given fields: bi, batch, signingKey
-func (_m *EventManager) BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	ret := _m.Called(bi, batch, signingKey)
+// BatchPinComplete provides a mock function with given fields: batch, signingKey
+func (_m *EventManager) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	ret := _m.Called(batch, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, *blockchain.BatchPin, *core.VerifierRef) error); ok {
-		r0 = rf(bi, batch, signingKey)
+	if rf, ok := ret.Get(0).(func(*blockchain.BatchPin, *core.VerifierRef) error); ok {
+		r0 = rf(batch, signingKey)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -69,13 +71,13 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return r0
 }
 
-// BlockchainNetworkAction provides a mock function with given fields: bi, action, event, signingKey
-func (_m *EventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	ret := _m.Called(bi, action, event, signingKey)
+// BlockchainNetworkAction provides a mock function with given fields: mm, action, event, signingKey
+func (_m *EventManager) BlockchainNetworkAction(mm multiparty.Manager, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	ret := _m.Called(mm, action, event, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(blockchain.Plugin, string, *blockchain.Event, *core.VerifierRef) error); ok {
-		r0 = rf(bi, action, event, signingKey)
+	if rf, ok := ret.Get(0).(func(multiparty.Manager, string, *blockchain.Event, *core.VerifierRef) error); ok {
+		r0 = rf(mm, action, event, signingKey)
 	} else {
 		r0 = ret.Error(0)
 	}

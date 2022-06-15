@@ -786,6 +786,20 @@ func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Name
 	return r0, r1
 }
 
+// GetNetworkVersion provides a mock function with given fields:
+func (_m *Orchestrator) GetNetworkVersion() int {
+	ret := _m.Called()
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func() int); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	return r0
+}
+
 // GetOperationByID provides a mock function with given fields: ctx, id
 func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
 	ret := _m.Called(ctx, id)

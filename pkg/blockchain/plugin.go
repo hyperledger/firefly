@@ -38,17 +38,6 @@ type Plugin interface {
 	// SetHandler registers a handler to receive callbacks
 	SetHandler(handler Callbacks)
 
-	// ConfigureContract initializes the subscription to the FireFly contract
-	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
-	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
-	ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error)
-
-	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
-	// - Validates that the event came from the currently active FireFly contract
-	// - Re-initializes the plugin against the next configured FireFly contract
-	// - Updates the provided contract info to record the point of termination and the newly active contract
-	TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *Event) (err error)
-
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
 
@@ -64,10 +53,10 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *BatchPin) error
+	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error
+	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
@@ -93,8 +82,17 @@ type Plugin interface {
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
 
-	// NetworkVersion returns the version of the network rules being used by this plugin
-	NetworkVersion() int
+	// GetNetworkVersion queries the provided contract to get the network version
+	GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error)
+
+	// GetAndConvertDeprecatedContractConfig converts the deprecated ethconnect config to a location object
+	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
+
+	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
+	AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error)
+
+	// RemoveFireFlySubscription removes the provided FireFly subscription
+	RemoveFireflySubscription(ctx context.Context, subID string) error
 }
 
 const FireFlyActionPrefix = "firefly:"

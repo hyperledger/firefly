@@ -49,7 +49,7 @@ const (
 	NamespaceMultipartyOrgDescription = "org.description"
 	// NamespaceMultipartyOrgKey is the signing key allocated to the local root org within a namespace
 	NamespaceMultipartyOrgKey = "org.key"
-	// NamespaceMultipartyContract is the ethereum contract address for this contract
+	// NamespaceMultipartyContract is a list of firefly contract configurations for this namespace
 	NamespaceMultipartyContract = "contract"
 	// NamespaceMultipartyContractFirstEvent is the first event to process for this contract
 	NamespaceMultipartyContractFirstEvent = "firstEvent"

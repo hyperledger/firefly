@@ -211,13 +211,6 @@ nav_order: 2
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 
-## blockchain.ethereum.fireflyContract[]
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|address|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
-|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`<nil>`
-
 ## blockchain.fabric.fabconnect
 
 |Key|Description|Type|Default Value|
@@ -822,13 +815,6 @@ nav_order: 2
 |enabled|Enables retries|`boolean`|`false`
 |initWaitTime|The initial retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`250ms`
 |maxWaitTime|The maximum retry delay|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
-
-## plugins.blockchain[].ethereum.fireflyContract[]
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|address|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain|Address `string`|`<nil>`
-|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream|Address `string`|`<nil>`
 
 ## plugins.blockchain[].fabric.fabconnect
 

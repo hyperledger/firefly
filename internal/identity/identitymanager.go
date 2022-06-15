@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -58,6 +59,7 @@ type identityManager struct {
 	database               database.Plugin
 	blockchain             blockchain.Plugin
 	data                   data.Manager
+	multiparty             multiparty.Manager
 	namespace              string
 	defaultKey             string
 	orgName                string
@@ -70,7 +72,7 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, ns, defaultKey, orgName, orgKey string, di database.Plugin, bi blockchain.Plugin, dm data.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, ns, defaultKey, orgName, orgKey string, di database.Plugin, bi blockchain.Plugin, dm data.Manager, mp multiparty.Manager) (Manager, error) {
 	if di == nil || bi == nil || dm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
@@ -79,6 +81,7 @@ func NewIdentityManager(ctx context.Context, ns, defaultKey, orgName, orgKey str
 		blockchain:         bi,
 		data:               dm,
 		namespace:          ns,
+		multiparty:         mp,
 		defaultKey:         defaultKey,
 		orgName:            orgName,
 		orgKey:             orgKey,
@@ -387,7 +390,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.LegacySystemNamespace && im.blockchain.NetworkVersion() == 1 {
+		if namespace != core.LegacySystemNamespace && im.multiparty.GetNetworkVersion() == 1 {
 			// For V1 networks, fall back to LegacySystemNamespace for looking up identities
 			// This assumes that the system namespace shares a database with this manager's namespace!
 			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)

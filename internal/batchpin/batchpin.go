@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -44,12 +45,12 @@ type batchPinSubmitter struct {
 	namespace  string
 	database   database.Plugin
 	identity   identity.Manager
-	blockchain blockchain.Plugin
+	multiparty multiparty.Manager
 	metrics    metrics.Manager
 	operations operations.Manager
 }
 
-func NewBatchPinSubmitter(ctx context.Context, ns string, di database.Plugin, im identity.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
+func NewBatchPinSubmitter(ctx context.Context, ns string, di database.Plugin, im identity.Manager, multiparty multiparty.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
 	if di == nil || im == nil || bi == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchPinSubmitter")
 	}
@@ -57,7 +58,7 @@ func NewBatchPinSubmitter(ctx context.Context, ns string, di database.Plugin, im
 		namespace:  ns,
 		database:   di,
 		identity:   im,
-		blockchain: bi,
+		multiparty: multiparty,
 		metrics:    mm,
 		operations: om,
 	}
@@ -74,7 +75,7 @@ func (bp *batchPinSubmitter) Name() string {
 func (bp *batchPinSubmitter) SubmitPinnedBatch(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
 	// The pending blockchain transaction
 	op := core.NewOperation(
-		bp.blockchain,
+		bp.multiparty,
 		batch.Namespace,
 		batch.TX.ID,
 		core.OpTypeBlockchainPinBatch)
