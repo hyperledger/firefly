@@ -311,7 +311,7 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(&core.Datatype{
+	mdi.On("GetDatatypeByID", mock.Anything, "ns1", ref1).Return(&core.Datatype{
 		ID: ref1,
 	}, nil)
 
@@ -337,7 +337,7 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDatatypeByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,

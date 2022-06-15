@@ -167,17 +167,14 @@ type iDatatypeCollection interface {
 	// UpsertDatatype - Upsert a data definition
 	UpsertDatatype(ctx context.Context, datadef *core.Datatype, allowExisting bool) (err error)
 
-	// UpdateDatatype - Update data definition
-	UpdateDatatype(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
 	// GetDatatypeByID - Get a data definition by ID
-	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *core.Datatype, err error)
+	GetDatatypeByID(ctx context.Context, namespace string, id *fftypes.UUID) (datadef *core.Datatype, err error)
 
 	// GetDatatypeByName - Get a data definition by name
 	GetDatatypeByName(ctx context.Context, namespace, name, version string) (datadef *core.Datatype, err error)
 
 	// GetDatatypes - Get data definitions
-	GetDatatypes(ctx context.Context, filter Filter) (datadef []*core.Datatype, res *FilterResult, err error)
+	GetDatatypes(ctx context.Context, namespace string, filter Filter) (datadef []*core.Datatype, res *FilterResult, err error)
 }
 
 type iOffsetCollection interface {

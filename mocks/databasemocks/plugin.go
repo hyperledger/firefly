@@ -727,13 +727,13 @@ func (_m *Plugin) GetDataRefs(ctx context.Context, filter database.Filter) (core
 	return r0, r1, r2
 }
 
-// GetDatatypeByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*core.Datatype, error) {
-	ret := _m.Called(ctx, id)
+// GetDatatypeByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetDatatypeByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.Datatype, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Datatype); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.Datatype); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Datatype)
@@ -741,8 +741,8 @@ func (_m *Plugin) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (*core.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -773,13 +773,13 @@ func (_m *Plugin) GetDatatypeByName(ctx context.Context, namespace string, name 
 	return r0, r1
 }
 
-// GetDatatypes provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*core.Datatype, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetDatatypes provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetDatatypes(ctx context.Context, namespace string, filter database.Filter) ([]*core.Datatype, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Datatype); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.Datatype); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Datatype)
@@ -787,8 +787,8 @@ func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -796,8 +796,8 @@ func (_m *Plugin) GetDatatypes(ctx context.Context, filter database.Filter) ([]*
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -2523,20 +2523,6 @@ func (_m *Plugin) UpdateBatch(ctx context.Context, id *fftypes.UUID, update data
 
 // UpdateData provides a mock function with given fields: ctx, id, update
 func (_m *Plugin) UpdateData(ctx context.Context, id *fftypes.UUID, update database.Update) error {
-	ret := _m.Called(ctx, id, update)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, database.Update) error); ok {
-		r0 = rf(ctx, id, update)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// UpdateDatatype provides a mock function with given fields: ctx, id, update
-func (_m *Plugin) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update database.Update) error {
 	ret := _m.Called(ctx, id, update)
 
 	var r0 error

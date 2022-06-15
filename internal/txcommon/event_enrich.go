@@ -59,7 +59,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.ContractInterface = contractInterface
 	case core.EventTypeDatatypeConfirmed:
-		dt, err := t.database.GetDatatypeByID(ctx, event.Reference)
+		dt, err := t.database.GetDatatypeByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

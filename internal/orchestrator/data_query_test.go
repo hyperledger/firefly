@@ -508,37 +508,37 @@ func TestGetData(t *testing.T) {
 func TestGetDatatypeByID(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDatatypeByID", mock.Anything, u).Return(&core.Datatype{
+	or.mdi.On("GetDatatypeByID", mock.Anything, "ns", u).Return(&core.Datatype{
 		Namespace: "ns1",
 	}, nil)
-	_, err := or.GetDatatypeByID(context.Background(), "ns1", u.String())
+	_, err := or.GetDatatypeByID(context.Background(), u.String())
 	assert.NoError(t, err)
 }
 
 func TestGetDatatypeByIDBadID(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetDatatypeByID(context.Background(), "", "")
+	_, err := or.GetDatatypeByID(context.Background(), "")
 	assert.Regexp(t, "FF00138", err)
 }
 
 func TestGetDatatypeByName(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mdi.On("GetDatatypeByName", context.Background(), "ns1", "dt", "1").Return(&core.Datatype{
+	or.mdi.On("GetDatatypeByName", context.Background(), "ns", "dt", "1").Return(&core.Datatype{
 		Namespace: "ns1",
 	}, nil)
-	_, err := or.GetDatatypeByName(context.Background(), "ns1", "dt", "1")
+	_, err := or.GetDatatypeByName(context.Background(), "dt", "1")
 	assert.NoError(t, err)
 }
 
 func TestGetDatatypeByNameBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetDatatypeByName(context.Background(), "", "", "")
+	_, err := or.GetDatatypeByName(context.Background(), "", "")
 	assert.Regexp(t, "FF00140", err)
 }
 
 func TestGetDatatypeByNameBadName(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetDatatypeByName(context.Background(), "ns1", "", "")
+	_, err := or.GetDatatypeByName(context.Background(), "", "")
 	assert.Regexp(t, "FF00140", err)
 }
 
@@ -577,10 +577,10 @@ func TestGetEventIDBadID(t *testing.T) {
 func TestGetDatatypes(t *testing.T) {
 	or := newTestOrchestrator()
 	u := fftypes.NewUUID()
-	or.mdi.On("GetDatatypes", mock.Anything, mock.Anything).Return([]*core.Datatype{}, nil, nil)
+	or.mdi.On("GetDatatypes", mock.Anything, "ns", mock.Anything).Return([]*core.Datatype{}, nil, nil)
 	fb := database.DatatypeQueryFactory.NewFilter(context.Background())
 	f := fb.And(fb.Eq("id", u))
-	_, _, err := or.GetDatatypes(context.Background(), "ns1", f)
+	_, _, err := or.GetDatatypes(context.Background(), f)
 	assert.NoError(t, err)
 }
 

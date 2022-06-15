@@ -136,30 +136,19 @@ func (or *orchestrator) GetDataByID(ctx context.Context, ns, id string) (*core.D
 	return d, err
 }
 
-func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*core.Datatype, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	dt, err := or.database().GetDatatypeByID(ctx, u)
-	if err == nil && dt != nil {
-		err = or.checkNamespace(ctx, ns, dt.Namespace)
-	}
-	return dt, err
+	return or.database().GetDatatypeByID(ctx, or.namespace, u)
 }
 
-func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version string) (*core.Datatype, error) {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, err
-	}
+func (or *orchestrator) GetDatatypeByName(ctx context.Context, name, version string) (*core.Datatype, error) {
 	if err := core.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
 		return nil, err
 	}
-	dt, err := or.database().GetDatatypeByName(ctx, ns, name, version)
-	if err == nil && dt != nil {
-		err = or.checkNamespace(ctx, ns, dt.Namespace)
-	}
-	return dt, err
+	return or.database().GetDatatypeByName(ctx, or.namespace, name, version)
 }
 
 func (or *orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
@@ -298,9 +287,8 @@ func (or *orchestrator) GetMessagesForData(ctx context.Context, ns, dataID strin
 	return or.database().GetMessagesForData(ctx, u, filter)
 }
 
-func (or *orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetDatatypes(ctx, filter)
+func (or *orchestrator) GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
+	return or.database().GetDatatypes(ctx, or.namespace, filter)
 }
 
 func (or *orchestrator) GetOperations(ctx context.Context, filter database.AndFilter) ([]*core.Operation, *database.FilterResult, error) {

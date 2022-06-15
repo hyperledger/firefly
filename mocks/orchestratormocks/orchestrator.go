@@ -378,13 +378,36 @@ func (_m *Orchestrator) GetDataByID(ctx context.Context, ns string, id string) (
 	return r0, r1
 }
 
-// GetDatatypeByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, ns string, id string) (*core.Datatype, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetDatatypeByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, id string) (*core.Datatype, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *core.Datatype
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Datatype); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Datatype)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetDatatypeByName provides a mock function with given fields: ctx, name, version
+func (_m *Orchestrator) GetDatatypeByName(ctx context.Context, name string, version string) (*core.Datatype, error) {
+	ret := _m.Called(ctx, name, version)
 
 	var r0 *core.Datatype
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Datatype); ok {
-		r0 = rf(ctx, ns, id)
+		r0 = rf(ctx, name, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Datatype)
@@ -393,7 +416,7 @@ func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, ns string, id strin
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+		r1 = rf(ctx, name, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -401,36 +424,13 @@ func (_m *Orchestrator) GetDatatypeByID(ctx context.Context, ns string, id strin
 	return r0, r1
 }
 
-// GetDatatypeByName provides a mock function with given fields: ctx, ns, name, version
-func (_m *Orchestrator) GetDatatypeByName(ctx context.Context, ns string, name string, version string) (*core.Datatype, error) {
-	ret := _m.Called(ctx, ns, name, version)
-
-	var r0 *core.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.Datatype); ok {
-		r0 = rf(ctx, ns, name, version)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Datatype)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, name, version)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetDatatypes provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetDatatypes provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetDatatypes(ctx context.Context, filter database.AndFilter) ([]*core.Datatype, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Datatype
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Datatype); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Datatype); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Datatype)
@@ -438,8 +438,8 @@ func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter data
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -447,8 +447,8 @@ func (_m *Orchestrator) GetDatatypes(ctx context.Context, ns string, filter data
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

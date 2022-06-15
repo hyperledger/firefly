@@ -161,17 +161,19 @@ func (s *SQLCommon) getDatatypeEq(ctx context.Context, eq sq.Eq, textName string
 	return datatype, nil
 }
 
-func (s *SQLCommon) GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (message *core.Datatype, err error) {
-	return s.getDatatypeEq(ctx, sq.Eq{"id": id}, id.String())
+func (s *SQLCommon) GetDatatypeByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Datatype, err error) {
+	return s.getDatatypeEq(ctx, sq.Eq{"id": id, "namespace": namespace}, id.String())
 }
 
 func (s *SQLCommon) GetDatatypeByName(ctx context.Context, ns, name, version string) (message *core.Datatype, err error) {
 	return s.getDatatypeEq(ctx, sq.Eq{"namespace": ns, "name": name, "version": version}, fmt.Sprintf("%s:%s", ns, name))
 }
 
-func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (message []*core.Datatype, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetDatatypes(ctx context.Context, namespace string, filter database.Filter) (message []*core.Datatype, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(datatypeColumns...).From(datatypesTable), filter, datatypeFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "", sq.Select(datatypeColumns...).From(datatypesTable),
+		filter, datatypeFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -193,26 +195,4 @@ func (s *SQLCommon) GetDatatypes(ctx context.Context, filter database.Filter) (m
 
 	return datatypes, s.queryRes(ctx, datatypesTable, tx, fop, fi), err
 
-}
-
-func (s *SQLCommon) UpdateDatatype(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update(datatypesTable), update, datatypeFilterFieldMap)
-	if err != nil {
-		return err
-	}
-	query = query.Where(sq.Eq{"id": id})
-
-	_, err = s.updateTx(ctx, datatypesTable, tx, query, nil /* no change events for filter based updates */)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
 }

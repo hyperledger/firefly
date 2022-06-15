@@ -31,7 +31,7 @@ func TestGetDatatypeByName(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetDatatypeByName", mock.Anything, "mynamespace", "abcd", "123").
+	o.On("GetDatatypeByName", mock.Anything, "abcd", "123").
 		Return(&core.Datatype{}, nil)
 	r.ServeHTTP(res, req)
 

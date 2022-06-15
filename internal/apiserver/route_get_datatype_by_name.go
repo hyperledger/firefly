@@ -39,7 +39,7 @@ var getDatatypeByName = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetDatatypeByName(cr.ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+			output, err = cr.or.GetDatatypeByName(cr.ctx, r.PP["name"], r.PP["version"])
 			return output, err
 		},
 	},
