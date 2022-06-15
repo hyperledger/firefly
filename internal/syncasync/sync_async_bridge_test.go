@@ -54,7 +54,7 @@ func TestRequestReplyOk(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		gmid.ReturnArguments = mock.Arguments{
 			&core.Message{
@@ -108,7 +108,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		msgSent := &core.Message{}
 		msgSent.Header.ID = requestID
@@ -156,7 +156,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		msgSent := &core.Message{}
 		msgSent.Header.ID = requestID
@@ -310,7 +310,7 @@ func TestEventCallbackMsgLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -495,7 +495,7 @@ func TestEventCallbackMsgNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -531,7 +531,7 @@ func TestEventCallbackRejectedMsgNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -669,7 +669,7 @@ func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(msg, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -718,7 +718,7 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(msg, nil)
 	mdi.On("GetDataByID", sa.ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
@@ -841,7 +841,7 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, msg.Header.ID).Return(msg, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", msg.Header.ID).Return(msg, nil)
 	mdi.On("GetDataByID", sa.ctx, data.ID, true).Return(data, nil)
 
 	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", pool.Pool.ID, func(ctx context.Context) error {

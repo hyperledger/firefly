@@ -73,23 +73,20 @@ func (or *orchestrator) GetTransactionOperations(ctx context.Context, id string)
 	return or.database().GetOperations(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) getMessageByID(ctx context.Context, ns, id string) (*core.Message, error) {
-	u, err := or.verifyIDAndNamespace(ctx, ns, id)
+func (or *orchestrator) getMessageByID(ctx context.Context, id string) (*core.Message, error) {
+	u, err := or.verifyIDAndNamespace(ctx, or.namespace, id)
 	if err != nil {
 		return nil, err
 	}
-	msg, err := or.database().GetMessageByID(ctx, u)
+	msg, err := or.database().GetMessageByID(ctx, or.namespace, u)
 	if err == nil && msg == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
-	}
-	if err == nil && msg != nil {
-		err = or.checkNamespace(ctx, ns, msg.Header.Namespace)
 	}
 	return msg, err
 }
 
-func (or *orchestrator) GetMessageByID(ctx context.Context, ns, id string) (*core.Message, error) {
-	return or.getMessageByID(ctx, ns, id)
+func (or *orchestrator) GetMessageByID(ctx context.Context, id string) (*core.Message, error) {
+	return or.getMessageByID(ctx, id)
 }
 
 func (or *orchestrator) fetchMessageData(ctx context.Context, msg *core.Message) (*core.MessageInOut, error) {
@@ -105,11 +102,8 @@ func (or *orchestrator) fetchMessageData(ctx context.Context, msg *core.Message)
 	return msgI, err
 }
 
-func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, ns, id string) (*core.MessageInOut, error) {
-	msg, err := or.getMessageByID(ctx, ns, id)
-	if err == nil && msg != nil {
-		err = or.checkNamespace(ctx, ns, msg.Header.Namespace)
-	}
+func (or *orchestrator) GetMessageByIDWithData(ctx context.Context, id string) (*core.MessageInOut, error) {
+	msg, err := or.getMessageByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -179,14 +173,12 @@ func (or *orchestrator) GetTransactions(ctx context.Context, filter database.And
 	return or.database().GetTransactions(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	return or.database().GetMessages(ctx, filter)
+func (or *orchestrator) GetMessages(ctx context.Context, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error) {
+	return or.database().GetMessages(ctx, or.namespace, filter)
 }
 
-func (or *orchestrator) GetMessagesWithData(ctx context.Context, ns string, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error) {
-	filter = or.scopeNS(ns, filter)
-	msgs, fr, err := or.database().GetMessages(ctx, filter)
+func (or *orchestrator) GetMessagesWithData(ctx context.Context, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error) {
+	msgs, fr, err := or.database().GetMessages(ctx, or.namespace, filter)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -199,8 +191,8 @@ func (or *orchestrator) GetMessagesWithData(ctx context.Context, ns string, filt
 	return msgsData, fr, err
 }
 
-func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) (core.DataArray, error) {
-	msg, err := or.getMessageByID(ctx, ns, id)
+func (or *orchestrator) GetMessageData(ctx context.Context, id string) (core.DataArray, error) {
+	msg, err := or.getMessageByID(ctx, id)
 	if err != nil || msg == nil {
 		return nil, err
 	}
@@ -208,8 +200,8 @@ func (or *orchestrator) GetMessageData(ctx context.Context, ns, id string) (core
 	return data, err
 }
 
-func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id string) (*fftypes.UUID, error) {
-	msg, err := or.getMessageByID(ctx, ns, id)
+func (or *orchestrator) getMessageTransactionID(ctx context.Context, id string) (*fftypes.UUID, error) {
+	msg, err := or.getMessageByID(ctx, id)
 	if err != nil || msg == nil {
 		return nil, err
 	}
@@ -218,7 +210,7 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 		if msg.BatchID == nil {
 			return nil, i18n.NewError(ctx, coremsgs.MsgBatchNotSet)
 		}
-		batch, err := or.database().GetBatchByID(ctx, ns, msg.BatchID)
+		batch, err := or.database().GetBatchByID(ctx, or.namespace, msg.BatchID)
 		if err != nil {
 			return nil, err
 		}
@@ -235,25 +227,16 @@ func (or *orchestrator) getMessageTransactionID(ctx context.Context, ns, id stri
 	return txID, nil
 }
 
-func (or *orchestrator) GetMessageTransaction(ctx context.Context, ns, id string) (*core.Transaction, error) {
-	txID, err := or.getMessageTransactionID(ctx, ns, id)
+func (or *orchestrator) GetMessageTransaction(ctx context.Context, id string) (*core.Transaction, error) {
+	txID, err := or.getMessageTransactionID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return or.database().GetTransactionByID(ctx, ns, txID)
+	return or.database().GetTransactionByID(ctx, or.namespace, txID)
 }
 
-func (or *orchestrator) GetMessageOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error) {
-	txID, err := or.getMessageTransactionID(ctx, ns, id)
-	if err != nil {
-		return nil, nil, err
-	}
-	filter := database.OperationQueryFactory.NewFilter(ctx).Eq("tx", txID)
-	return or.database().GetOperations(ctx, ns, filter)
-}
-
-func (or *orchestrator) GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
-	msg, err := or.getMessageByID(ctx, ns, id)
+func (or *orchestrator) GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error) {
+	msg, err := or.getMessageByID(ctx, id)
 	if err != nil || msg == nil {
 		return nil, nil, err
 	}

@@ -80,14 +80,13 @@ type Orchestrator interface {
 	GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error)
 	GetTransactionStatus(ctx context.Context, id string) (*core.TransactionStatus, error)
 	GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error)
-	GetMessageByID(ctx context.Context, ns, id string) (*core.Message, error)
-	GetMessageByIDWithData(ctx context.Context, ns, id string) (*core.MessageInOut, error)
-	GetMessages(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
-	GetMessagesWithData(ctx context.Context, ns string, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error)
-	GetMessageTransaction(ctx context.Context, ns, id string) (*core.Transaction, error)
-	GetMessageOperations(ctx context.Context, ns, id string) ([]*core.Operation, *database.FilterResult, error)
-	GetMessageEvents(ctx context.Context, ns, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
-	GetMessageData(ctx context.Context, ns, id string) (core.DataArray, error)
+	GetMessageByID(ctx context.Context, id string) (*core.Message, error)
+	GetMessageByIDWithData(ctx context.Context, id string) (*core.MessageInOut, error)
+	GetMessages(ctx context.Context, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
+	GetMessagesWithData(ctx context.Context, filter database.AndFilter) ([]*core.MessageInOut, *database.FilterResult, error)
+	GetMessageTransaction(ctx context.Context, id string) (*core.Transaction, error)
+	GetMessageEvents(ctx context.Context, id string, filter database.AndFilter) ([]*core.Event, *database.FilterResult, error)
+	GetMessageData(ctx context.Context, id string) (core.DataArray, error)
 	GetMessagesForData(ctx context.Context, ns, dataID string, filter database.AndFilter) ([]*core.Message, *database.FilterResult, error)
 	GetBatchByID(ctx context.Context, id string) (*core.BatchPersisted, error)
 	GetBatches(ctx context.Context, filter database.AndFilter) ([]*core.BatchPersisted, *database.FilterResult, error)
@@ -381,7 +380,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.database(), or.sharedstorage(), or.dataexchange())
+		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange())
 		if err != nil {
 			return err
 		}
@@ -399,7 +398,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or, or.database(), or.data, or.txHelper)
+		or.batch, err = batch.NewBatchManager(ctx, or.namespace, or, or.database(), or.data, or.txHelper)
 		if err != nil {
 			return err
 		}

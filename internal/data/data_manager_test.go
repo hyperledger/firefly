@@ -43,7 +43,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 	})
 	mdx := &dataexchangemocks.Plugin{}
 	mps := &sharedstoragemocks.Plugin{}
-	dm, err := NewDataManager(ctx, mdi, mps, mdx)
+	dm, err := NewDataManager(ctx, "ns1", mdi, mps, mdx)
 	assert.NoError(t, err)
 	return dm.(*dataManager), ctx, func() {
 		cancel()
@@ -213,7 +213,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), nil, nil, nil)
+	_, err := NewDataManager(context.Background(), "", nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -847,7 +847,7 @@ func TestHydrateBatchOK(t *testing.T) {
 	}
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, msgID).Return(&core.Message{
+	mdi.On("GetMessageByID", ctx, "ns1", msgID).Return(&core.Message{
 		Header:    core.MessageHeader{ID: msgID},
 		Hash:      msgHash,
 		Confirmed: fftypes.Now(),
@@ -897,7 +897,7 @@ func TestHydrateBatchDataFail(t *testing.T) {
 	}
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, msgID).Return(&core.Message{
+	mdi.On("GetMessageByID", ctx, "ns1", msgID).Return(&core.Message{
 		Header:    core.MessageHeader{ID: msgID},
 		Hash:      msgHash,
 		Confirmed: fftypes.Now(),
@@ -934,7 +934,7 @@ func TestHydrateBatchMsgNotFound(t *testing.T) {
 	}
 
 	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, msgID).Return(nil, nil)
+	mdi.On("GetMessageByID", ctx, "ns1", msgID).Return(nil, nil)
 
 	_, err := dm.HydrateBatch(ctx, bp)
 	assert.Regexp(t, "FF10372", err)
@@ -966,7 +966,7 @@ func TestGetMessageWithDataOk(t *testing.T) {
 		Data:   core.DataRefs{{ID: dataID, Hash: hash}},
 	}
 
-	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil).Once()
+	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, nil).Once()
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&core.Data{
 		ID:   dataID,
 		Hash: hash,
@@ -1001,7 +1001,7 @@ func TestGetMessageWithDataCRORequirePublicBlobRefs(t *testing.T) {
 		Data:   core.DataRefs{{ID: dataID, Hash: hash}},
 	}
 
-	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil).Twice()
+	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, nil).Twice()
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(&core.Data{
 		ID:   dataID,
 		Hash: hash,
@@ -1039,7 +1039,7 @@ func TestGetMessageWithDataReadDataFail(t *testing.T) {
 		Data:   core.DataRefs{{ID: dataID, Hash: hash}},
 	}
 
-	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, nil)
+	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, nil)
 	mdi.On("GetDataByID", mock.Anything, mock.Anything, true).Return(nil, fmt.Errorf("pop"))
 	_, _, _, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
 	assert.Regexp(t, "pop", err)
@@ -1059,7 +1059,7 @@ func TestGetMessageWithDataReadMessageFail(t *testing.T) {
 		Data:   core.DataRefs{{ID: dataID, Hash: hash}},
 	}
 
-	mdi.On("GetMessageByID", mock.Anything, mock.Anything).Return(msg, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", mock.Anything, "ns1", mock.Anything).Return(msg, fmt.Errorf("pop"))
 	_, _, _, err := dm.GetMessageWithDataCached(ctx, msg.Header.ID)
 	assert.Regexp(t, "pop", err)
 

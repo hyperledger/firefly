@@ -43,7 +43,7 @@ func TestHandleDefinitionIdentityVerificationWithExistingClaimOk(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(custom1, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, nil) // Simulate pending confirm in same pin batch
+	mdi.On("GetMessageByID", ctx, "ns1", claimMsg.Header.ID).Return(nil, nil) // Simulate pending confirm in same pin batch
 	mdi.On("GetIdentityByName", ctx, custom1.Type, custom1.Namespace, custom1.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, "ns1", custom1.ID).Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "0x12345").Return(nil, nil)
@@ -91,7 +91,7 @@ func TestHandleDefinitionIdentityVerificationIncompleteClaimData(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(claimMsg, nil)
+	mdi.On("GetMessageByID", ctx, "ns1", claimMsg.Header.ID).Return(claimMsg, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(core.DataArray{}, false, nil)
@@ -117,7 +117,7 @@ func TestHandleDefinitionIdentityVerificationClaimDataFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(claimMsg, nil)
+	mdi.On("GetMessageByID", ctx, "ns1", claimMsg.Header.ID).Return(claimMsg, nil)
 
 	mdm := dh.data.(*datamocks.Manager)
 	mdm.On("GetMessageDataCached", ctx, mock.Anything).Return(nil, false, fmt.Errorf("pop"))
@@ -144,7 +144,7 @@ func TestHandleDefinitionIdentityVerificationClaimHashMismatchl(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(claimMsg, nil)
+	mdi.On("GetMessageByID", ctx, "ns1", claimMsg.Header.ID).Return(claimMsg, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionReject}, action)
@@ -165,7 +165,7 @@ func TestHandleDefinitionIdentityVerificationBeforeClaim(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, nil)
+	mdi.On("GetMessageByID", ctx, "ns1", claimMsg.Header.ID).Return(nil, nil)
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm}, action)
@@ -186,7 +186,7 @@ func TestHandleDefinitionIdentityVerificationClaimLookupFail(t *testing.T) {
 	mim.On("CachedIdentityLookupByID", ctx, org1.ID).Return(org1, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", ctx, claimMsg.Header.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", ctx, "ns1", claimMsg.Header.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := dh.HandleDefinitionBroadcast(ctx, bs, verifyMsg, core.DataArray{verifyData}, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)

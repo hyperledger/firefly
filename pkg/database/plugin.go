@@ -95,13 +95,13 @@ type iMessageCollection interface {
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
 	// GetMessageByID - Get a message by ID
-	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *core.Message, err error)
+	GetMessageByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Message, err error)
 
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, filter Filter) (message []*core.Message, res *FilterResult, err error)
+	GetMessages(ctx context.Context, namespace string, filter Filter) (message []*core.Message, res *FilterResult, err error)
 
 	// GetMessageIDs - Retrieves messages, but only querying the messages ID (no other fields)
-	GetMessageIDs(ctx context.Context, filter Filter) (ids []*core.IDAndSequence, err error)
+	GetMessageIDs(ctx context.Context, namespace string, filter Filter) (ids []*core.IDAndSequence, err error)
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
 	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
@@ -440,7 +440,6 @@ type iFFIMethodCollection interface {
 type iFFIEventCollection interface {
 	UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error
 	GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error)
-	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error)
 	GetFFIEvents(ctx context.Context, filter Filter) (events []*core.FFIEvent, res *FilterResult, err error)
 }
 

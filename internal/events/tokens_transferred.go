@@ -142,7 +142,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 			}
 
 			if transfer.Message != nil {
-				msg, err := em.database.GetMessageByID(ctx, transfer.Message)
+				msg, err := em.database.GetMessageByID(ctx, em.namespace, transfer.Message)
 				switch {
 				case err != nil:
 					return err

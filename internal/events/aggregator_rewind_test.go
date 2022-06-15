@@ -51,7 +51,7 @@ func TestRewinderE2E(t *testing.T) {
 	mdm.On("PeekMessageCache", mock.Anything, mock.Anything, data.CRORequireBatchID).Return(nil, nil)
 	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
 		Return([]*fftypes.UUID{batchID3}, nil).Once()
-	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).
+	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).
 		Return([]*core.IDAndSequence{{ID: *fftypes.NewUUID()}}, nil).Once()
 	mdi.On("GetBatchIDsForMessages", mock.Anything, mock.Anything).
 		Return([]*fftypes.UUID{batchID4}, nil).Once()
@@ -183,7 +183,7 @@ func TestProcessStagedRewindsErrorDIDs(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).
+	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).
 		Return(nil, fmt.Errorf("pop"))
 
 	ag.rewinder.stagedRewinds = []*rewind{
@@ -203,7 +203,7 @@ func TestProcessStagedRewindsNoDIDs(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 
 	mockRunAsGroupPassthrough(mdi)
-	mdi.On("GetMessageIDs", mock.Anything, mock.Anything).
+	mdi.On("GetMessageIDs", mock.Anything, "ns1", mock.Anything).
 		Return([]*core.IDAndSequence{}, nil)
 
 	ag.rewinder.stagedRewinds = []*rewind{

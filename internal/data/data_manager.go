@@ -58,6 +58,7 @@ type Manager interface {
 
 type dataManager struct {
 	blobStore
+	namespace         string
 	database          database.Plugin
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
@@ -97,11 +98,12 @@ const (
 	CRORequireBatchID
 )
 
-func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
+func NewDataManager(ctx context.Context, ns string, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
 	if di == nil || pi == nil || dx == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DataManager")
 	}
 	dm := &dataManager{
+		namespace:         ns,
 		database:          di,
 		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(coreconfig.ValidatorCacheTTL),
@@ -210,7 +212,7 @@ func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *ffty
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil
 	}
-	msg, err = dm.database.GetMessageByID(ctx, msgID)
+	msg, err = dm.database.GetMessageByID(ctx, dm.namespace, msgID)
 	if err != nil || msg == nil {
 		return nil, nil, false, err
 	}
@@ -514,7 +516,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 	batch := persistedBatch.GenInflight(make([]*core.Message, len(manifest.Messages)), make(core.DataArray, len(manifest.Data)))
 
 	for i, mr := range manifest.Messages {
-		m, err := dm.database.GetMessageByID(ctx, mr.ID)
+		m, err := dm.database.GetMessageByID(ctx, dm.namespace, mr.ID)
 		if err != nil || m == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "message", mr.ID)
 		}

@@ -860,29 +860,6 @@ func (_m *Plugin) GetFFIEvent(ctx context.Context, namespace string, interfaceID
 	return r0, r1
 }
 
-// GetFFIEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *core.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFIEvent); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFIEvent)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetFFIEvents provides a mock function with given fields: ctx, filter
 func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*core.FFIEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
@@ -1158,13 +1135,13 @@ func (_m *Plugin) GetIdentityByName(ctx context.Context, iType fftypes.FFEnum, n
 	return r0, r1
 }
 
-// GetMessageByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*core.Message, error) {
-	ret := _m.Called(ctx, id)
+// GetMessageByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetMessageByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.Message, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Message); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.Message); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Message)
@@ -1172,8 +1149,8 @@ func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*core.M
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1181,13 +1158,13 @@ func (_m *Plugin) GetMessageByID(ctx context.Context, id *fftypes.UUID) (*core.M
 	return r0, r1
 }
 
-// GetMessageIDs provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]*core.IDAndSequence, error) {
-	ret := _m.Called(ctx, filter)
+// GetMessageIDs provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetMessageIDs(ctx context.Context, namespace string, filter database.Filter) ([]*core.IDAndSequence, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.IDAndSequence
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.IDAndSequence); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.IDAndSequence); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.IDAndSequence)
@@ -1195,8 +1172,8 @@ func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) error); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) error); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1204,13 +1181,13 @@ func (_m *Plugin) GetMessageIDs(ctx context.Context, filter database.Filter) ([]
 	return r0, r1
 }
 
-// GetMessages provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*core.Message, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetMessages provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetMessages(ctx context.Context, namespace string, filter database.Filter) ([]*core.Message, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Message); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.Message); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Message)
@@ -1218,8 +1195,8 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*c
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -1227,8 +1204,8 @@ func (_m *Plugin) GetMessages(ctx context.Context, filter database.Filter) ([]*c
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

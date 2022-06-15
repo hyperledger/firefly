@@ -31,7 +31,7 @@ func TestGetMessageData(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageData", mock.Anything, "mynamespace", "uuid1").
+	o.On("GetMessageData", mock.Anything, "uuid1").
 		Return(core.DataArray{}, nil)
 	r.ServeHTTP(res, req)
 

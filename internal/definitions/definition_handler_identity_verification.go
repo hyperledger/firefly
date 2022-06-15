@@ -51,7 +51,7 @@ func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Co
 	// It might be being processed in the same pin batch as us - so we can't
 
 	// See if the message has already arrived, if so we need to queue a rewind to it
-	claimMsg, err := dh.database.GetMessageByID(ctx, verification.Claim.ID)
+	claimMsg, err := dh.database.GetMessageByID(ctx, dh.namespace, verification.Claim.ID)
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	}

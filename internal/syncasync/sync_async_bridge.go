@@ -168,7 +168,7 @@ func (inflight *inflightRequest) msInflight() float64 {
 }
 
 func (sa *syncAsyncBridge) getMessageFromEvent(event *core.EventDelivery) (msg *core.Message, err error) {
-	if msg, err = sa.database.GetMessageByID(sa.ctx, event.Reference); err != nil {
+	if msg, err = sa.database.GetMessageByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if msg == nil {

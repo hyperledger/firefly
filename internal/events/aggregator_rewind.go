@@ -305,7 +305,7 @@ func (rw *rewinder) getRewindsForDIDs(ctx context.Context, dids []driver.Value, 
 		fb.Eq("state", core.MessageStatePending),
 		fb.In("author", dids),
 	)
-	records, err := rw.database.GetMessageIDs(ctx, filter)
+	records, err := rw.database.GetMessageIDs(ctx, rw.aggregator.namespace, filter)
 	if err != nil {
 		return err
 	}

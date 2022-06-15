@@ -416,8 +416,8 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	})).Return(nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
-	mdi.On("GetMessageByID", em.ctx, transfer.Message).Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetMessageByID", em.ctx, transfer.Message).Return(message, nil).Once()
+	mdi.On("GetMessageByID", em.ctx, "ns1", transfer.Message).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetMessageByID", em.ctx, "ns1", transfer.Message).Return(message, nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(ev *core.Event) bool {
 		return ev.Type == core.EventTypeTransferConfirmed && ev.Reference == transfer.LocalID && ev.Namespace == pool.Namespace
 	})).Return(nil).Once()
@@ -480,7 +480,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	})).Return(nil).Times(2)
 	mdi.On("UpsertTokenTransfer", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
 	mdi.On("UpdateTokenBalances", em.ctx, &transfer.TokenTransfer).Return(nil).Times(2)
-	mdi.On("GetMessageByID", em.ctx, mock.Anything).Return(message, nil).Times(2)
+	mdi.On("GetMessageByID", em.ctx, "ns1", mock.Anything).Return(message, nil).Times(2)
 	mdi.On("ReplaceMessage", em.ctx, mock.MatchedBy(func(msg *core.Message) bool {
 		return msg.State == core.MessageStateReady
 	})).Return(fmt.Errorf("pop"))

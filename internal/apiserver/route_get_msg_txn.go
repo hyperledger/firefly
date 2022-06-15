@@ -38,7 +38,7 @@ var getMsgTxn = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetMessageTransaction(cr.ctx, extractNamespace(r.PP), r.PP["msgid"])
+			output, err = cr.or.GetMessageTransaction(cr.ctx, r.PP["msgid"])
 			return output, err
 		},
 	},
