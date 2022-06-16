@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,17 +38,18 @@ func newTestIdentityManager(t *testing.T) (context.Context, *identityManager) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdm := &datamocks.Manager{}
+	mmp := &multipartymocks.Manager{}
 
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 
 	ctx := context.Background()
-	im, err := NewIdentityManager(ctx, "ns1", "", "", "", mdi, mbi, mdm)
+	im, err := NewIdentityManager(ctx, "ns1", "", "", "", mdi, mbi, mdm, mmp)
 	assert.NoError(t, err)
 	return ctx, im.(*identityManager)
 }
 
 func TestNewIdentityManagerMissingDeps(t *testing.T) {
-	_, err := NewIdentityManager(context.Background(), "", "", "", "", nil, nil, nil)
+	_, err := NewIdentityManager(context.Background(), "", "", "", "", nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -153,8 +155,9 @@ func TestResolveInputSigningIdentityAnonymousKeyWithAuthorOk(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mmp := im.multiparty.(*multipartymocks.Manager)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion").Return(1)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	idID := fftypes.NewUUID()
 
@@ -192,8 +195,9 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mmp := im.multiparty.(*multipartymocks.Manager)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion").Return(1)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").Return(nil, nil)
@@ -208,7 +212,7 @@ func TestResolveInputSigningIdentityKeyWithNoAuthorFail(t *testing.T) {
 
 	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
-
+	mmp.AssertExpectations(t)
 }
 
 func TestResolveInputSigningIdentityByKeyDIDMismatch(t *testing.T) {
@@ -258,8 +262,9 @@ func TestResolveInputSigningIdentityByKeyNotFound(t *testing.T) {
 	ctx, im := newTestIdentityManager(t)
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
+	mmp := im.multiparty.(*multipartymocks.Manager)
 	mbi.On("NormalizeSigningKey", ctx, "mykey123").Return("fullkey123", nil)
-	mbi.On("NetworkVersion").Return(1)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "fullkey123").

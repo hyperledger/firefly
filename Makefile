@@ -75,6 +75,7 @@ $(eval $(call makemock, internal/apiserver,        FFISwaggerGen,      apiserver
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
+$(eval $(call makemock, internal/multiparty,       Manager,            multipartymocks))
 
 firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=$(DATE) -X main.buildVersion=$(BUILD_VERSION) -X 'github.com/hyperledger/firefly/cmd.BuildVersionOverride=$(BUILD_VERSION)' -X 'github.com/hyperledger/firefly/cmd.BuildDate=$(DATE)' -X 'github.com/hyperledger/firefly/cmd.BuildCommit=$(GIT_REF)'" -tags=prod -tags=prod -v
