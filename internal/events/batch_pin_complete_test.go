@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
@@ -137,9 +136,8 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -207,9 +205,8 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 	})).Return(nil).Times(1)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(batchPersisted, nil)
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -246,9 +243,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -290,9 +285,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -328,9 +321,7 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
 
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -356,7 +347,6 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	}
 
 	cancel() // to avoid retry
-	mbi := &blockchainmocks.Plugin{}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
@@ -370,7 +360,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -385,9 +375,8 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{}
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &core.VerifierRef{
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -405,9 +394,8 @@ func TestBatchPinCompleteBadNamespace(t *testing.T) {
 			BlockchainTXID: "0x12345",
 		},
 	}
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &core.VerifierRef{
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -425,9 +413,8 @@ func TestBatchPinCompleteWrongNamespace(t *testing.T) {
 			BlockchainTXID: "0x12345",
 		},
 	}
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &core.VerifierRef{
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
