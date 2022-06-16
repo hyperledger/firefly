@@ -92,7 +92,6 @@ func newTestEthereum() (*Ethereum, func()) {
 		wsconn:      wsm,
 		metrics:     mm,
 	}
-	e.fireflyContract.address = "/instances/0x12345"
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -166,16 +165,6 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/eventstreams", httpURL),
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", fmt.Sprintf("%s/subscriptions", httpURL),
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/subscriptions", httpURL),
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "es12345", body["stream"])
-			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
-		})
-	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/", httpURL), mockNetworkVersion(t, 1))
 
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, httpURL)
@@ -191,12 +180,10 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 	assert.Equal(t, "ethereum", e.Name())
 	assert.Equal(t, core.VerifierTypeEthAddress, e.VerifierType())
 
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, 5, httpmock.GetTotalCallCount())
+	// assert.Equal(t, 5, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
-	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 	assert.NotNil(t, e.Capabilities())
 
 	err = e.Start()
@@ -229,68 +216,6 @@ func TestWSInitFail(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.Regexp(t, "FF00149", err)
-
-}
-
-func TestInitMissingInstance(t *testing.T) {
-
-	e, cancel := newTestEthereum()
-	defer cancel()
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "FF10138.*instance", err)
-
-}
-
-func TestInitAllExistingStreams(t *testing.T) {
-
-	e, cancel := newTestEthereum()
-	defer cancel()
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Stream: "es12345", Name: "BatchPin_3078373163373635" /* this is the subname for our combo of instance path and BatchPin */},
-		}))
-	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
-		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.NoError(t, err)
-
-	assert.Equal(t, 4, httpmock.GetTotalCallCount())
-	assert.Equal(t, "es12345", e.streamID)
-	assert.Equal(t, "sub12345", e.fireflyContract.subscription)
 
 }
 
@@ -336,10 +261,7 @@ func TestInitOldInstancePathContracts(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
-
-	assert.Equal(t, e.fireflyContract.address, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
 }
 
 func TestInitOldInstancePathInstances(t *testing.T) {
@@ -374,48 +296,7 @@ func TestInitOldInstancePathInstances(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
-
-	assert.Equal(t, e.fireflyContract.address, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
-}
-
-func TestInitOldInstancePathError(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	resetConf(e)
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			assert.Equal(t, "es12345", body["stream"])
-			return httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sub12345"})(req)
-		})
-	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
-		httpmock.NewJsonResponderOrPanic(500, "pop"),
-	)
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "FF10111.*pop", err)
 }
 
 func TestInitNewConfig(t *testing.T) {
@@ -445,37 +326,6 @@ func TestInitNewConfig(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.NoError(t, err)
-
-	assert.Equal(t, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f", e.fireflyContract.address)
-	assert.Equal(t, 2, e.fireflyContract.networkVersion)
-}
-
-func TestInitNewConfigError(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	resetConf(e)
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "FF10138", err)
 }
 
 func TestInitNewConfigBadIndex(t *testing.T) {
@@ -500,10 +350,6 @@ func TestInitNewConfigBadIndex(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 1},
-	})
-	assert.Regexp(t, "FF10396", err)
 }
 
 func TestInitNetworkVersionNotFound(t *testing.T) {
@@ -534,218 +380,10 @@ func TestInitNetworkVersionNotFound(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
 	assert.NoError(t, err)
-
-	assert.Equal(t, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f", e.fireflyContract.address)
-	assert.Equal(t, 1, e.fireflyContract.networkVersion)
-}
-
-func TestInitNetworkVersionError(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	resetConf(e)
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "Unknown"}))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "FF10111", err)
-}
-
-func TestInitNetworkVersionBadResponse(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-	resetConf(e)
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/",
-		httpmock.NewJsonResponderOrPanic(200, ""))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "json: cannot unmarshal", err)
-}
-
-func TestInitTerminateContract(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	contracts := &core.FireFlyContracts{}
-	event := &blockchain.Event{
-		ProtocolID: "000000000011/000000/000050",
-		Info: fftypes.JSONObject{
-			"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
-		},
-	}
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sb-1"}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x1C197604587F046FD40684A8f21f4609FB811A7b")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".1."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, contracts)
-	assert.NoError(t, err)
-
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{ID: "sb-2"}))
-
-	err = e.TerminateContract(e.ctx, contracts, event)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 1, contracts.Active.Index)
-	assert.Equal(t, fftypes.JSONObject{
-		"address":      "0x71c7656ec7ab88b098defb751b7401b5f6d8976f",
-		"fromBlock":    "oldest",
-		"subscription": "sb-2",
-	}, contracts.Active.Info)
-	assert.Len(t, contracts.Terminated, 1)
-	assert.Equal(t, 0, contracts.Terminated[0].Index)
-	assert.Equal(t, fftypes.JSONObject{
-		"address":      "0x1c197604587f046fd40684a8f21f4609fb811a7b",
-		"fromBlock":    "oldest",
-		"subscription": "sb-1",
-	}, contracts.Terminated[0].Info)
-	assert.Equal(t, event.ProtocolID, contracts.Terminated[0].FinalEvent)
-}
-
-func TestInitTerminateContractIgnore(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	contracts := &core.FireFlyContracts{}
-	event := &blockchain.Event{
-		ProtocolID: "000000000011/000000/000050",
-		Info: fftypes.JSONObject{
-			"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
-		},
-	}
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, contracts)
-	assert.NoError(t, err)
-
-	err = e.TerminateContract(e.ctx, contracts, event)
-	assert.NoError(t, err)
-}
-
-func TestInitTerminateContractBadEvent(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	contracts := &core.FireFlyContracts{}
-	event := &blockchain.Event{
-		ProtocolID: "000000000011/000000/000050",
-		Info: fftypes.JSONObject{
-			"address": "bad",
-		},
-	}
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
-		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
-
-	err := e.Init(e.ctx, utConfig, e.metrics)
-	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, contracts)
-	assert.NoError(t, err)
-
-	err = e.TerminateContract(e.ctx, contracts, event)
-	assert.Regexp(t, "FF10141", err)
 }
 
 func TestStreamQueryError(t *testing.T) {
-
 	e, cancel := newTestEthereum()
 	defer cancel()
 
@@ -817,7 +455,46 @@ func TestStreamUpdateError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.Regexp(t, "FF10111.*pop", err)
+}
 
+func TestInitAllExistingStreams(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{
+			{ID: "sub12345", Stream: "es12345", Name: "ns1_BatchPin_3078373143373635" /* this is the subname for our combo of instance path and BatchPin */},
+		}))
+	httpmock.RegisterResponder("PATCH", "http://localhost:12345/eventstreams/es12345",
+		httpmock.NewJsonResponderOrPanic(200, &eventStream{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 1))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+	}.String())
+
+	err := e.Init(e.ctx, utConfig, e.metrics)
+	assert.NoError(t, err)
+	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	assert.NoError(t, err)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 3, httpmock.GetTotalCallCount())
+	assert.Equal(t, "es12345", e.streamID)
 }
 
 func TestSubQueryError(t *testing.T) {
@@ -845,9 +522,6 @@ func TestSubQueryError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "FF10111.*pop", err)
-
 }
 
 func TestSubQueryCreateError(t *testing.T) {
@@ -877,13 +551,9 @@ func TestSubQueryCreateError(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
-	err = e.ConfigureContract(e.ctx, &core.FireFlyContracts{})
-	assert.Regexp(t, "FF10111.*pop", err)
-
 }
 
 func TestSubmitBatchPinOK(t *testing.T) {
-
 	e, cancel := newTestEthereum()
 	defer cancel()
 	httpmock.ActivateNonDefault(e.client.GetClient())
@@ -914,10 +584,51 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
 	assert.NoError(t, err)
+}
 
+func TestSubmitBatchPinBadLocation(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(fftypes.NewRandB32())
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		BatchID:         fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"bad": "bad",
+	}.String())
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+
+	assert.Regexp(t, "FF10310", err)
 }
 
 func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
@@ -951,7 +662,11 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
 	assert.NoError(t, err)
 
@@ -975,11 +690,14 @@ func TestSubmitBatchPinFail(t *testing.T) {
 			fftypes.NewRandB32(),
 		},
 	}
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		httpmock.NewStringResponder(500, "pop"))
 
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
 	assert.Regexp(t, "FF10111.*pop", err)
 
@@ -1004,15 +722,17 @@ func TestSubmitBatchPinError(t *testing.T) {
 		},
 	}
 
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
 			"error": "Unknown error",
 		}))
-
-	err := e.SubmitBatchPin(context.Background(), "", addr, batch)
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
 	assert.Regexp(t, "FF10111.*Unknown error", err)
-
 }
 
 func TestVerifyEthAddress(t *testing.T) {
@@ -1098,8 +818,9 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
-	e.fireflyContract.networkVersion = 1
+
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -1181,7 +902,8 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 ]`)
 
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -1221,8 +943,9 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
-	e.fireflyContract.networkVersion = 1
+
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -1283,9 +1006,8 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
-	e.fireflyContract.networkVersion = 1
-
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
@@ -1299,7 +1021,8 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
@@ -1316,7 +1039,8 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 
 func TestHandleMessageBatchMissingData(t *testing.T) {
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
@@ -1334,7 +1058,8 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1364,7 +1089,8 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1394,7 +1120,8 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1424,7 +1151,8 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	e := &Ethereum{}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1823,8 +1551,8 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
-
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
 		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
@@ -1885,8 +1613,8 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
-
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
@@ -2280,6 +2008,30 @@ func TestGetContractAddressBadJSON(t *testing.T) {
 	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
 
 	assert.Regexp(t, "invalid character 'n' looking for beginning of object key string", err)
+}
+
+func TestGetContractAddressBadResponse(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	e.client = ffresty.New(e.ctx, utEthconnectConf)
+
+	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
+
+	assert.Regexp(t, "FF10111", err)
 }
 
 func TestFFIMethodToABI(t *testing.T) {
@@ -3046,8 +2798,37 @@ func TestSubmitNetworkAction(t *testing.T) {
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
-	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate)
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate, location)
 	assert.NoError(t, err)
+}
+
+func TestSubmitNetworkActionBadLocation(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", params[1])
+			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", params[2])
+			assert.Equal(t, "", params[3])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"bad": "pop",
+	}.String())
+
+	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate, location)
+	assert.Regexp(t, "FF10310", err)
 }
 
 func TestHandleNetworkAction(t *testing.T) {
@@ -3077,7 +2858,8 @@ func TestHandleNetworkAction(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -3123,7 +2905,8 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
-	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
+	e.subs = map[string]string{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -3249,8 +3032,324 @@ func TestConvertABIEventFFIEvent(t *testing.T) {
 	assert.JSONEq(t, string(expectedABIEventJSON), string(actualABIEventJSON))
 }
 
-func TestNetworkVersion(t *testing.T) {
+func TestGetNetworkVersion(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: "1"})(req)
+		})
+
+	version, err := e.GetNetworkVersion(context.Background(), location)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, version)
+}
+
+func TestGetNetworkVersionMethodNotFound(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	httpmock.RegisterResponder("POST", "http://localhost:12345/",
+		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
+
+	version, err := e.GetNetworkVersion(context.Background(), location)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, version)
+}
+
+func TestGetNetworkVersionQueryFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	httpmock.RegisterResponder("POST", "http://localhost:12345/",
+		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "pop"}))
+
+	version, err := e.GetNetworkVersion(context.Background(), location)
+
+	assert.Regexp(t, "pop", err)
+	assert.Equal(t, 0, version)
+}
+
+func TestGetNetworkVersionBadLocation(t *testing.T) {
 	e, _ := newTestEthereum()
-	e.fireflyContract.networkVersion = 2
-	assert.Equal(t, 2, e.NetworkVersion())
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"bad": "pop",
+	}.String())
+
+	version, err := e.GetNetworkVersion(context.Background(), location)
+
+	assert.Regexp(t, "FF10310", err)
+	assert.Equal(t, 0, version)
+}
+
+func TestGetNetworkVersionUnmarshalFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	version, err := e.GetNetworkVersion(context.Background(), location)
+
+	assert.Regexp(t, "cannot unmarshal", err)
+	assert.Equal(t, 0, version)
+}
+
+func TestConvertDeprecatedContractConfig(t *testing.T) {
+	e, _ := newTestEthereum()
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/0x71c7656ec7ab88b098defb751b7401b5f6d8976f")
+
+	locationBytes, fromBlock, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	assert.Equal(t, "0", fromBlock)
+	assert.NoError(t, err)
+
+	location, err := parseContractLocation(e.ctx, locationBytes)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f", location.Address)
+}
+
+func TestConvertDeprecatedContractConfigNoInstance(t *testing.T) {
+	e, _ := newTestEthereum()
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	_, _, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	assert.Regexp(t, "10138", err)
+}
+
+func TestConvertDeprecatedContractConfigContractURL(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewJsonResponderOrPanic(200, map[string]string{
+			"created":      "2022-02-08T22:10:10Z",
+			"address":      "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+			"path":         "/contracts/firefly",
+			"abi":          "fc49dec3-0660-4dc7-61af-65af4c3ac456",
+			"openapi":      "/contracts/firefly?swagger",
+			"registeredAs": "firefly",
+		}),
+	)
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	e.client = ffresty.New(e.ctx, utEthconnectConf)
+
+	locationBytes, fromBlock, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, "0", fromBlock)
+
+	location, err := parseContractLocation(e.ctx, locationBytes)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "0x71c7656ec7ab88b098defb751b7401b5f6d8976f", location.Address)
+}
+
+func TestConvertDeprecatedContractConfigContractURLBadQuery(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
+		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/contracts/firefly")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+
+	e.client = ffresty.New(e.ctx, utEthconnectConf)
+
+	_, _, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	assert.Regexp(t, "FFEC100148", err)
+}
+
+func TestConvertDeprecatedContractConfigBadAddress(t *testing.T) {
+	e, _ := newTestEthereum()
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "/instances/bad")
+
+	_, _, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
+	assert.Regexp(t, "FF10141", err)
+}
+
+func TestAddSubBadLocation(t *testing.T) {
+	e, _ := newTestEthereum()
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"bad": "bad",
+	}.String())
+
+	_, err := e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	assert.Regexp(t, "FF10310", err)
+}
+
+func TestAddAndRemoveFireflySubscription(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+
+	err := e.Init(e.ctx, utConfig, e.metrics)
+	assert.NoError(t, err)
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	subID, err := e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	assert.NoError(t, err)
+
+	err = e.RemoveFireflySubscription(e.ctx, subID)
+	assert.NoError(t, err)
+}
+
+func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewStringResponder(500, `pop`))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+
+	err := e.Init(e.ctx, utConfig, e.metrics)
+	assert.NoError(t, err)
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestAddFireflySubscriptionCreateError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(500, `pop`))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+
+	err := e.Init(e.ctx, utConfig, e.metrics)
+	assert.NoError(t, err)
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestRemoveInvalidSubscription(t *testing.T) {
+	e, _ := newTestEthereum()
+
+	err := e.RemoveFireflySubscription(e.ctx, "bad")
+	assert.Regexp(t, "FF10412", err)
 }

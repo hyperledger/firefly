@@ -272,7 +272,7 @@ func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) 
 		return nil
 	}
 
-	return i18n.NewError(ctx, coremsgs.MsgInvalidSubscription, subID)
+	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
