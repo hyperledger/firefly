@@ -24,10 +24,10 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 
 	mdi := &databasemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mbi := &blockchainmocks.Plugin{}
+	mmp := &multipartymocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(enableMetrics)
@@ -49,8 +49,8 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 	if enableMetrics {
 		mmi.On("CountBatchPin").Return()
 	}
-	mbi.On("Name").Return("ut").Maybe()
-	bps, err := NewBatchPinSubmitter(context.Background(), "ns1", mdi, mim, mbi, mmi, mom)
+	mmp.On("Name").Return("ut").Maybe()
+	bps, err := NewBatchPinSubmitter(context.Background(), "ns1", mdi, mim, mmp, mmi, mom)
 	assert.NoError(t, err)
 	return bps.(*batchPinSubmitter)
 }

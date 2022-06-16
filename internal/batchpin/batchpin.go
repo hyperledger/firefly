@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
-	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -50,8 +49,8 @@ type batchPinSubmitter struct {
 	operations operations.Manager
 }
 
-func NewBatchPinSubmitter(ctx context.Context, ns string, di database.Plugin, im identity.Manager, multiparty multiparty.Manager, bi blockchain.Plugin, mm metrics.Manager, om operations.Manager) (Submitter, error) {
-	if di == nil || im == nil || bi == nil || mm == nil || om == nil {
+func NewBatchPinSubmitter(ctx context.Context, ns string, di database.Plugin, im identity.Manager, multiparty multiparty.Manager, mm metrics.Manager, om operations.Manager) (Submitter, error) {
+	if di == nil || im == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchPinSubmitter")
 	}
 	bp := &batchPinSubmitter{

@@ -427,7 +427,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace, or.database(), or.data)
 
 	if or.batchpin == nil {
-		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.namespace, or.database(), or.identity, or.multiparty, or.blockchain(), or.metrics, or.operations); err != nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.namespace, or.database(), or.identity, or.multiparty, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
