@@ -861,15 +861,15 @@ func (_m *Plugin) GetEvents(ctx context.Context, filter database.Filter) ([]*cor
 }
 
 // GetFFI provides a mock function with given fields: ctx, ns, name, version
-func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version string) (*core.FFI, error) {
+func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version string) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, ns, name, version)
 
-	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.FFI); ok {
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *fftypes.FFI); ok {
 		r0 = rf(ctx, ns, name, version)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFI)
+			r0 = ret.Get(0).(*fftypes.FFI)
 		}
 	}
 
@@ -884,15 +884,15 @@ func (_m *Plugin) GetFFI(ctx context.Context, ns string, name string, version st
 }
 
 // GetFFIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
+func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFI); ok {
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFI); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFI)
+			r0 = ret.Get(0).(*fftypes.FFI)
 		}
 	}
 
@@ -907,15 +907,15 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, 
 }
 
 // GetFFIEvent provides a mock function with given fields: ctx, ns, interfaceID, pathName
-func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error) {
+func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error) {
 	ret := _m.Called(ctx, ns, interfaceID, pathName)
 
-	var r0 *core.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.FFIEvent); ok {
+	var r0 *fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIEvent); ok {
 		r0 = rf(ctx, ns, interfaceID, pathName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFIEvent)
+			r0 = ret.Get(0).(*fftypes.FFIEvent)
 		}
 	}
 
@@ -930,15 +930,15 @@ func (_m *Plugin) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftyp
 }
 
 // GetFFIEventByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error) {
+func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *core.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFIEvent); ok {
+	var r0 *fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *fftypes.FFIEvent); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFIEvent)
+			r0 = ret.Get(0).(*fftypes.FFIEvent)
 		}
 	}
 
@@ -953,15 +953,15 @@ func (_m *Plugin) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.
 }
 
 // GetFFIEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*core.FFIEvent, *database.FilterResult, error) {
+func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*fftypes.FFIEvent, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*core.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.FFIEvent); ok {
+	var r0 []*fftypes.FFIEvent
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIEvent); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.FFIEvent)
+			r0 = ret.Get(0).([]*fftypes.FFIEvent)
 		}
 	}
 
@@ -985,15 +985,15 @@ func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*
 }
 
 // GetFFIMethod provides a mock function with given fields: ctx, ns, interfaceID, pathName
-func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error) {
+func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error) {
 	ret := _m.Called(ctx, ns, interfaceID, pathName)
 
-	var r0 *core.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *core.FFIMethod); ok {
+	var r0 *fftypes.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, string) *fftypes.FFIMethod); ok {
 		r0 = rf(ctx, ns, interfaceID, pathName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFIMethod)
+			r0 = ret.Get(0).(*fftypes.FFIMethod)
 		}
 	}
 
@@ -1008,15 +1008,15 @@ func (_m *Plugin) GetFFIMethod(ctx context.Context, ns string, interfaceID *ffty
 }
 
 // GetFFIMethods provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]*core.FFIMethod, *database.FilterResult, error) {
+func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]*fftypes.FFIMethod, *database.FilterResult, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []*core.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.FFIMethod); ok {
+	var r0 []*fftypes.FFIMethod
+	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*fftypes.FFIMethod); ok {
 		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.FFIMethod)
+			r0 = ret.Get(0).([]*fftypes.FFIMethod)
 		}
 	}
 
@@ -1040,15 +1040,15 @@ func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]
 }
 
 // GetFFIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Plugin) GetFFIs(ctx context.Context, ns string, filter database.Filter) ([]*core.FFI, *database.FilterResult, error) {
+func (_m *Plugin) GetFFIs(ctx context.Context, ns string, filter database.Filter) ([]*fftypes.FFI, *database.FilterResult, error) {
 	ret := _m.Called(ctx, ns, filter)
 
-	var r0 []*core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.FFI); ok {
+	var r0 []*fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*fftypes.FFI); ok {
 		r0 = rf(ctx, ns, filter)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.FFI)
+			r0 = ret.Get(0).([]*fftypes.FFI)
 		}
 	}
 
@@ -2830,11 +2830,11 @@ func (_m *Plugin) UpsertDatatype(ctx context.Context, datadef *core.Datatype, al
 }
 
 // UpsertFFI provides a mock function with given fields: ctx, cd
-func (_m *Plugin) UpsertFFI(ctx context.Context, cd *core.FFI) error {
+func (_m *Plugin) UpsertFFI(ctx context.Context, cd *fftypes.FFI) error {
 	ret := _m.Called(ctx, cd)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI) error); ok {
 		r0 = rf(ctx, cd)
 	} else {
 		r0 = ret.Error(0)
@@ -2844,11 +2844,11 @@ func (_m *Plugin) UpsertFFI(ctx context.Context, cd *core.FFI) error {
 }
 
 // UpsertFFIEvent provides a mock function with given fields: ctx, method
-func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error {
+func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error {
 	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIEvent) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEvent) error); ok {
 		r0 = rf(ctx, method)
 	} else {
 		r0 = ret.Error(0)
@@ -2858,11 +2858,11 @@ func (_m *Plugin) UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) err
 }
 
 // UpsertFFIMethod provides a mock function with given fields: ctx, method
-func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *core.FFIMethod) error {
+func (_m *Plugin) UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error {
 	ret := _m.Called(ctx, method)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIMethod) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIMethod) error); ok {
 		r0 = rf(ctx, method)
 	} else {
 		r0 = ret.Error(0)

@@ -144,7 +144,7 @@ func (bs *blobStore) UploadBlob(ctx context.Context, ns string, inData *core.Dat
 
 func (bs *blobStore) DownloadBlob(ctx context.Context, ns, dataID string) (*core.Blob, io.ReadCloser, error) {
 
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}
 	id, err := fftypes.ParseUUID(ctx, dataID)

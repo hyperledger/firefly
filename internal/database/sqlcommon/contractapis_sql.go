@@ -114,7 +114,7 @@ func (s *SQLCommon) UpsertContractAPI(ctx context.Context, api *core.ContractAPI
 
 func (s *SQLCommon) contractAPIResult(ctx context.Context, row *sql.Rows) (*core.ContractAPI, error) {
 	api := core.ContractAPI{
-		Interface: &core.FFIReference{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := row.Scan(
 		&api.ID,

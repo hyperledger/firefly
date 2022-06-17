@@ -32,7 +32,7 @@ func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *co
 	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
 		return nil, err
 	}
-	if err := core.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
 	if existing, err := am.database.GetTokenPool(ctx, ns, pool.Name); err != nil {
@@ -137,7 +137,7 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 }
 
 func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error) {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, nil, err
 	}
 	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
@@ -147,10 +147,10 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
-	if err := core.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
 		return nil, err
 	}
 	pool, err := am.database.GetTokenPool(ctx, ns, poolName)
@@ -164,7 +164,7 @@ func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolNam
 }
 
 func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolNameOrID string) (*core.TokenPool, error) {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
 
@@ -172,7 +172,7 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, ns, poolName
 
 	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
 	if err != nil {
-		if err := core.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
 			return nil, err
 		}
 		if pool, err = am.database.GetTokenPool(ctx, ns, poolNameOrID); err != nil {

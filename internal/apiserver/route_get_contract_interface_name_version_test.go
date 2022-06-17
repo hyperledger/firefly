@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestGetContractInterfaceNameVersion(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFI", mock.Anything, "ns1", "banana", "v1.0.0").
-		Return(&core.FFI{}, nil)
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -58,7 +59,7 @@ func TestGetContractInterfaceNameVersionWithChildren(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFIWithChildren", mock.Anything, "ns1", "banana", "v1.0.0").
-		Return(&core.FFI{}, nil)
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

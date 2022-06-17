@@ -38,20 +38,20 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	// Create a new method entry
 	interfaceID := fftypes.NewUUID()
 	methodID := fftypes.NewUUID()
-	method := &core.FFIMethod{
+	method := &fftypes.FFIMethod{
 		ID:          methodID,
 		Interface:   interfaceID,
 		Name:        "Set",
 		Namespace:   "ns",
 		Pathname:    "Set_1",
 		Description: "Sets things",
-		Params: core.FFIParams{
+		Params: fftypes.FFIParams{
 			{
 				Name:   "value",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 			},
 		},
-		Returns: core.FFIParams{
+		Returns: fftypes.FFIParams{
 			{
 				Name:   "value",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -87,7 +87,7 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(methodJson), string(methodReadJson))
 
 	// Update method
-	method.Params = core.FFIParams{}
+	method.Params = fftypes.FFIParams{}
 	err = s.UpsertFFIMethod(ctx, method)
 	assert.NoError(t, err)
 
@@ -105,7 +105,7 @@ func TestFFIMethodsE2EWithDB(t *testing.T) {
 func TestFFIMethodDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIMethod(context.Background(), &core.FFIMethod{})
+	err := s.UpsertFFIMethod(context.Background(), &fftypes.FFIMethod{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -114,7 +114,7 @@ func TestFFIMethodDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIMethod(context.Background(), &core.FFIMethod{})
+	err := s.UpsertFFIMethod(context.Background(), &fftypes.FFIMethod{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -124,7 +124,7 @@ func TestFFIMethodDBFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	event := &core.FFIMethod{
+	event := &fftypes.FFIMethod{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIMethod(context.Background(), event)
@@ -139,7 +139,7 @@ func TestFFIMethodDBFailUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	event := &core.FFIMethod{
+	event := &fftypes.FFIMethod{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIMethod(context.Background(), event)

@@ -189,7 +189,6 @@ var (
 	APIHistogramStartTimeParam = ffm("api.histogramStartTime", "Start time of the data to be fetched")
 	APIHistogramEndTimeParam   = ffm("api.histogramEndTime", "End time of the data to be fetched")
 	APIHistogramBucketsParam   = ffm("api.histogramBuckets", "Number of buckets between start time and end time")
-	APIIntegerDescription      = ffm("api.integer", "An integer. You are recommended to use a JSON string. A JSON number can be used for values up to the safe maximum.")
 
 	APISmartContractDetails      = ffm("api.smartContractDetails", "Additional smart contract details")
 	APISmartContractDetailsKey   = ffm("api.smartContractDetailsKey", "Key")

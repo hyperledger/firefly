@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (err error) {
+func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
 	if err = dh.contracts.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
 		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
 		return nil
@@ -77,7 +77,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.
 
 func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state DefinitionBatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	var ffi core.FFI
+	var ffi fftypes.FFI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}

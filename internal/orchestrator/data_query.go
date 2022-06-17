@@ -29,7 +29,7 @@ import (
 )
 
 func (or *orchestrator) verifyNamespaceSyntax(ctx context.Context, ns string) error {
-	return core.ValidateFFNameField(ctx, ns, "namespace")
+	return fftypes.ValidateFFNameField(ctx, ns, "namespace")
 }
 
 func (or *orchestrator) checkNamespace(ctx context.Context, requiredNS, objectNS string) error {
@@ -158,10 +158,10 @@ func (or *orchestrator) GetDatatypeByID(ctx context.Context, ns, id string) (*co
 }
 
 func (or *orchestrator) GetDatatypeByName(ctx context.Context, ns, name, version string) (*core.Datatype, error) {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
-	if err := core.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
 		return nil, err
 	}
 	dt, err := or.database().GetDatatypeByName(ctx, ns, name, version)

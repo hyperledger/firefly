@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestPostContractInterfaceGenerate(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GenerateFFI", mock.Anything, "ns1", mock.Anything).
-		Return(&core.FFI{}, nil)
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

@@ -63,12 +63,12 @@ func (man *GroupIdentity) Hash() *fftypes.Bytes32 {
 }
 
 func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, group.Namespace, "namespace"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, group.Namespace, "namespace"); err != nil {
 		return err
 	}
 	// We allow a blank name for a group (for auto creation)
 	if group.Name != "" {
-		if err = ValidateFFNameFieldNoUUID(ctx, group.Name, "name"); err != nil {
+		if err = fftypes.ValidateFFNameFieldNoUUID(ctx, group.Name, "name"); err != nil {
 			return err
 		}
 	}
@@ -80,7 +80,7 @@ func (group *Group) Validate(ctx context.Context, existing bool) (err error) {
 		if r.Identity == "" {
 			return i18n.NewError(ctx, i18n.MsgEmptyMemberIdentity, i)
 		}
-		if err = ValidateLength(ctx, r.Identity, "identity", 1024); err != nil {
+		if err = fftypes.ValidateLength(ctx, r.Identity, "identity", 1024); err != nil {
 			return err
 		}
 		if r.Node == nil {

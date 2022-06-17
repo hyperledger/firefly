@@ -79,7 +79,7 @@ type EnrichedEvent struct {
 	Event
 	BlockchainEvent   *BlockchainEvent `ffstruct:"EnrichedEvent" json:"blockchainEvent,omitempty"`
 	ContractAPI       *ContractAPI     `ffstruct:"EnrichedEvent" json:"contractAPI,omitempty"`
-	ContractInterface *FFI             `ffstruct:"EnrichedEvent" json:"contractInterface,omitempty"`
+	ContractInterface *fftypes.FFI     `ffstruct:"EnrichedEvent" json:"contractInterface,omitempty"`
 	Datatype          *Datatype        `ffstruct:"EnrichedEvent" json:"datatype,omitempty"`
 	Identity          *Identity        `ffstruct:"EnrichedEvent" json:"identity,omitempty"`
 	Message           *Message         `ffstruct:"EnrichedEvent" json:"message,omitempty"`

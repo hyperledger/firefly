@@ -51,13 +51,13 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 	if dt.Validator != ValidatorTypeJSON {
 		return i18n.NewError(ctx, i18n.MsgUnknownFieldValue, "validator", dt.Validator)
 	}
-	if err = ValidateFFNameField(ctx, dt.Namespace, "namespace"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, dt.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameFieldNoUUID(ctx, dt.Name, "name"); err != nil {
+	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, dt.Name, "name"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameField(ctx, dt.Version, "version"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, dt.Version, "version"); err != nil {
 		return err
 	}
 	if dt.Value == nil || len(*dt.Value) == 0 {
@@ -76,7 +76,7 @@ func (dt *Datatype) Validate(ctx context.Context, existing bool) (err error) {
 }
 
 func (dt *Datatype) Topic() string {
-	return typeNamespaceNameTopicHash("datatype", dt.Namespace, dt.Name)
+	return fftypes.TypeNamespaceNameTopicHash("datatype", dt.Namespace, dt.Name)
 }
 
 func (dt *Datatype) SetBroadcastMessage(msgID *fftypes.UUID) {

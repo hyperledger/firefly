@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/internal/blockchain/ethereum"
+	"github.com/hyperledger/firefly-signer/pkg/ffi"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -99,7 +99,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	msa := &syncasyncmocks.Bridge{}
-	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ffi.ParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	_, err := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper, msa)
 	assert.NoError(t, err)
@@ -119,19 +119,19 @@ func TestBroadcastFFI(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
-	ffi := &core.FFI{
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
+	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
 		ID:      fftypes.NewUUID(),
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "changed",
 				},
 			},
@@ -153,15 +153,15 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
-	ffi := &core.FFI{
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
+	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
 		ID:      fftypes.NewUUID(),
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
-				Params: []*core.FFIParam{
+				Params: []*fftypes.FFIParam{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
@@ -179,15 +179,15 @@ func TestBroadcastFFIExists(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	mbm := cm.broadcast.(*broadcastmocks.Manager)
 
-	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(&core.FFI{}, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(&fftypes.FFI{}, nil)
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
-	ffi := &core.FFI{
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
+	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
 		ID:      fftypes.NewUUID(),
@@ -205,12 +205,12 @@ func TestBroadcastFFIFail(t *testing.T) {
 	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
-	ffi := &core.FFI{
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), core.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
+	ffi := &fftypes.FFI{
 		Name:    "test",
 		Version: "1.0.0",
 		ID:      fftypes.NewUUID(),
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
 			},
@@ -224,9 +224,9 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 	cm := newTestContractManager()
 	req := &core.ContractCallRequest{
 		Type: core.CallTypeInvoke,
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name: "sum",
-			Params: []*core.FFIParam{
+			Params: []*fftypes.FFIParam{
 				{
 					Name:   "x",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -236,7 +236,7 @@ func TestValidateInvokeContractRequest(t *testing.T) {
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
-			Returns: []*core.FFIParam{
+			Returns: []*fftypes.FFIParam{
 				{
 					Name:   "z",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -256,9 +256,9 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 	cm := newTestContractManager()
 	req := &core.ContractCallRequest{
 		Type: core.CallTypeInvoke,
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name: "sum",
-			Params: []*core.FFIParam{
+			Params: []*fftypes.FFIParam{
 				{
 					Name:   "x",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -268,7 +268,7 @@ func TestValidateInvokeContractRequestMissingInput(t *testing.T) {
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
-			Returns: []*core.FFIParam{
+			Returns: []*fftypes.FFIParam{
 				{
 					Name:   "z",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -287,9 +287,9 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 	cm := newTestContractManager()
 	req := &core.ContractCallRequest{
 		Type: core.CallTypeInvoke,
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name: "sum",
-			Params: []*core.FFIParam{
+			Params: []*fftypes.FFIParam{
 				{
 					Name:   "x",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -299,7 +299,7 @@ func TestValidateInvokeContractRequestInputWrongType(t *testing.T) {
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
-			Returns: []*core.FFIParam{
+			Returns: []*fftypes.FFIParam{
 				{
 					Name:   "z",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -319,9 +319,9 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 	cm := newTestContractManager()
 	req := &core.ContractCallRequest{
 		Type: core.CallTypeInvoke,
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name: "sum",
-			Params: []*core.FFIParam{
+			Params: []*fftypes.FFIParam{
 				{
 					Name:   "x",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -331,7 +331,7 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
-			Returns: []*core.FFIParam{
+			Returns: []*fftypes.FFIParam{
 				{
 					Name:   "z",
 					Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
@@ -350,14 +350,14 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 
 func TestValidateFFI(t *testing.T) {
 	cm := newTestContractManager()
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		Name:      "math",
 		Version:   "1.0.0",
 		Namespace: "default",
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
-				Params: []*core.FFIParam{
+				Params: []*fftypes.FFIParam{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -367,7 +367,7 @@ func TestValidateFFI(t *testing.T) {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
-				Returns: []*core.FFIParam{
+				Returns: []*fftypes.FFIParam{
 					{
 						Name:   "z",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -377,15 +377,15 @@ func TestValidateFFI(t *testing.T) {
 			{
 				Name:        "sum",
 				Description: "Override of sum method with different args",
-				Params:      []*core.FFIParam{},
-				Returns:     []*core.FFIParam{},
+				Params:      []*fftypes.FFIParam{},
+				Returns:     []*fftypes.FFIParam{},
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "sum",
-					Params: []*core.FFIParam{
+					Params: []*fftypes.FFIParam{
 						{
 							Name:   "z",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -394,10 +394,10 @@ func TestValidateFFI(t *testing.T) {
 				},
 			},
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name:        "sum",
 					Description: "Override of event with different params",
-					Params:      []*core.FFIParam{},
+					Params:      []*fftypes.FFIParam{},
 				},
 			},
 		},
@@ -414,12 +414,12 @@ func TestValidateFFI(t *testing.T) {
 
 func TestValidateFFIFail(t *testing.T) {
 	cm := newTestContractManager()
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		Namespace: "default",
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
-				Params: []*core.FFIParam{
+				Params: []*fftypes.FFIParam{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -429,7 +429,7 @@ func TestValidateFFIFail(t *testing.T) {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
-				Returns: []*core.FFIParam{
+				Returns: []*fftypes.FFIParam{
 					{
 						Name:   "z",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -439,15 +439,15 @@ func TestValidateFFIFail(t *testing.T) {
 			{
 				Name:        "sum",
 				Description: "Override of sum method with different args",
-				Params:      []*core.FFIParam{},
-				Returns:     []*core.FFIParam{},
+				Params:      []*fftypes.FFIParam{},
+				Returns:     []*fftypes.FFIParam{},
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "sum",
-					Params: []*core.FFIParam{
+					Params: []*fftypes.FFIParam{
 						{
 							Name:   "z",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -456,10 +456,10 @@ func TestValidateFFIFail(t *testing.T) {
 				},
 			},
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name:        "sum",
 					Description: "Override of event with different params",
-					Params:      []*core.FFIParam{},
+					Params:      []*fftypes.FFIParam{},
 				},
 			},
 		},
@@ -471,14 +471,14 @@ func TestValidateFFIFail(t *testing.T) {
 
 func TestValidateFFIBadMethod(t *testing.T) {
 	cm := newTestContractManager()
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		Name:      "math",
 		Version:   "1.0.0",
 		Namespace: "default",
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "",
-				Params: []*core.FFIParam{
+				Params: []*fftypes.FFIParam{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -488,7 +488,7 @@ func TestValidateFFIBadMethod(t *testing.T) {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
-				Returns: []*core.FFIParam{
+				Returns: []*fftypes.FFIParam{
 					{
 						Name:   "z",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -496,11 +496,11 @@ func TestValidateFFIBadMethod(t *testing.T) {
 				},
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "sum",
-					Params: []*core.FFIParam{
+					Params: []*fftypes.FFIParam{
 						{
 							Name:   "z",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -517,14 +517,14 @@ func TestValidateFFIBadMethod(t *testing.T) {
 
 func TestValidateFFIBadEventParam(t *testing.T) {
 	cm := newTestContractManager()
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		Name:      "math",
 		Version:   "1.0.0",
 		Namespace: "default",
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
-				Params: []*core.FFIParam{
+				Params: []*fftypes.FFIParam{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -534,7 +534,7 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 					},
 				},
-				Returns: []*core.FFIParam{
+				Returns: []*fftypes.FFIParam{
 					{
 						Name:   "z",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -542,11 +542,11 @@ func TestValidateFFIBadEventParam(t *testing.T) {
 				},
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "",
-					Params: []*core.FFIParam{
+					Params: []*fftypes.FFIParam{
 						{
 							Name:   "z",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -572,9 +572,9 @@ func TestAddContractListenerInline(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -609,12 +609,12 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 
 	interfaceID := fftypes.NewUUID()
 
-	event := &core.FFIEvent{
+	event := &fftypes.FFIEvent{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
-		FFIEventDefinition: core.FFIEventDefinition{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name: "changed",
-			Params: core.FFIParams{
+			Params: fftypes.FFIParams{
 				{
 					Name:   "value",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -625,7 +625,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: interfaceID,
 			},
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -640,7 +640,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(event, nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
@@ -659,7 +659,7 @@ func TestAddContractListenerBadLocation(t *testing.T) {
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: fftypes.NewUUID(),
 			},
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -687,7 +687,7 @@ func TestAddContractListenerFFILookupFail(t *testing.T) {
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: interfaceID,
 			},
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -717,7 +717,7 @@ func TestAddContractListenerEventLookupFail(t *testing.T) {
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: interfaceID,
 			},
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -729,7 +729,7 @@ func TestAddContractListenerEventLookupFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
@@ -748,7 +748,7 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 
 	sub := &core.ContractListenerInput{
 		ContractListener: core.ContractListener{
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: interfaceID,
 			},
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -760,7 +760,7 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, nil)
 
 	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
@@ -936,9 +936,9 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
@@ -972,9 +972,9 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -1009,9 +1009,9 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -1043,7 +1043,7 @@ func TestAddContractAPIListener(t *testing.T) {
 
 	interfaceID := fftypes.NewUUID()
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: interfaceID,
 		},
 		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -1053,15 +1053,15 @@ func TestAddContractAPIListener(t *testing.T) {
 	listener := &core.ContractListener{
 		Topic: "test-topic",
 	}
-	event := &core.FFIEvent{
-		FFIEventDefinition: core.FFIEventDefinition{
+	event := &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name: "changed",
 		},
 	}
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(listener.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
@@ -1120,7 +1120,7 @@ func TestAddContractAPIListenerFail(t *testing.T) {
 func TestGetFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
-	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&core.FFI{}, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{}, nil)
 	_, err := cm.GetFFI(context.Background(), "ns1", "ffi", "v1.0.0")
 	assert.NoError(t, err)
 }
@@ -1131,14 +1131,14 @@ func TestGetFFIWithChildren(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&core.FFI{ID: cid}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&fftypes.FFI{ID: cid}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*core.FFIEvent{
-		{ID: fftypes.NewUUID(), FFIEventDefinition: core.FFIEventDefinition{Name: "event1"}},
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
-	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *core.FFIEventDefinition) bool {
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
 
@@ -1153,7 +1153,7 @@ func TestGetFFIByID(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{}, nil)
 	_, err := cm.GetFFIByID(context.Background(), cid)
 	assert.NoError(t, err)
 }
@@ -1164,16 +1164,16 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*core.FFIEvent{
-		{ID: fftypes.NewUUID(), FFIEventDefinition: core.FFIEventDefinition{Name: "event1"}},
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
-	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *core.FFIEventDefinition) bool {
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
 
@@ -1192,10 +1192,10 @@ func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
 	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -1211,7 +1211,7 @@ func TestGetFFIByIDWithChildrenMethodsFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{
+	mdb.On("GetFFIByID", mock.Anything, cid).Return(&fftypes.FFI{
 		ID: cid,
 	}, nil)
 	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -1253,7 +1253,7 @@ func TestGetFFIs(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	filter := database.FFIQueryFactory.NewFilter(context.Background()).And()
-	mdb.On("GetFFIs", mock.Anything, "ns1", filter).Return([]*core.FFI{}, &database.FilterResult{}, nil)
+	mdb.On("GetFFIs", mock.Anything, "ns1", filter).Return([]*fftypes.FFI{}, &database.FilterResult{}, nil)
 	_, _, err := cm.GetFFIs(context.Background(), "ns1", filter)
 	assert.NoError(t, err)
 }
@@ -1269,11 +1269,11 @@ func TestInvokeContract(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
-			Params:  core.FFIParams{},
-			Returns: core.FFIParams{},
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1309,11 +1309,11 @@ func TestInvokeContractConfirm(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
-			Params:  core.FFIParams{},
-			Returns: core.FFIParams{},
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1355,11 +1355,11 @@ func TestInvokeContractFail(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
-			Params:  core.FFIParams{},
-			Returns: core.FFIParams{},
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1428,11 +1428,11 @@ func TestInvokeContractTXFail(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
-			Params:  core.FFIParams{},
-			Returns: core.FFIParams{},
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1472,9 +1472,9 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name: "sum",
-			Params: core.FFIParams{
+			Params: fftypes.FFIParams{
 				{
 					Name:   "x",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -1484,7 +1484,7 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 			},
-			Returns: core.FFIParams{
+			Returns: fftypes.FFIParams{
 
 				{
 					Name:   "sum",
@@ -1510,11 +1510,11 @@ func TestQueryContract(t *testing.T) {
 		Type:      core.CallTypeQuery,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
-			Params:  core.FFIParams{},
-			Returns: core.FFIParams{},
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1539,11 +1539,11 @@ func TestCallContractInvalidType(t *testing.T) {
 	req := &core.ContractCallRequest{
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name:    "doStuff",
 			ID:      fftypes.NewUUID(),
-			Params:  core.FFIParams{},
-			Returns: core.FFIParams{},
+			Params:  fftypes.FFIParams{},
+			Returns: fftypes.FFIParams{},
 		},
 	}
 
@@ -1635,21 +1635,21 @@ func TestGetContractAPIListeners(t *testing.T) {
 
 	interfaceID := fftypes.NewUUID()
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: interfaceID,
 		},
 		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 			"address": "0x123",
 		}.String()),
 	}
-	event := &core.FFIEvent{
-		FFIEventDefinition: core.FFIEventDefinition{
+	event := &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name: "changed",
 		},
 	}
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
@@ -1694,7 +1694,7 @@ func TestGetContractAPIListenersEventNotFound(t *testing.T) {
 
 	interfaceID := fftypes.NewUUID()
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: interfaceID,
 		},
 		Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -1703,7 +1703,7 @@ func TestGetContractAPIListenersEventNotFound(t *testing.T) {
 	}
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&fftypes.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
@@ -1769,14 +1769,14 @@ func TestInvokeContractAPI(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			ID:   fftypes.NewUUID(),
 			Name: "peel",
 		},
 	}
 
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 		Location: fftypes.JSONAnyPtr(""),
@@ -1812,7 +1812,7 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -1833,7 +1833,7 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 		Type:      core.CallTypeInvoke,
 		Interface: fftypes.NewUUID(),
 		Location:  fftypes.JSONAnyPtr(""),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -1893,18 +1893,18 @@ func TestGetContractAPIInterface(t *testing.T) {
 	api := &core.ContractAPI{
 		Namespace: "ns1",
 		Name:      "banana",
-		Interface: &core.FFIReference{ID: interfaceID},
+		Interface: &fftypes.FFIReference{ID: interfaceID},
 	}
 
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mdb.On("GetFFIByID", mock.Anything, interfaceID).Return(&core.FFI{}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIByID", mock.Anything, interfaceID).Return(&fftypes.FFI{}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*fftypes.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*core.FFIEvent{
-		{ID: fftypes.NewUUID(), FFIEventDefinition: core.FFIEventDefinition{Name: "event1"}},
+	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*fftypes.FFIEvent{
+		{ID: fftypes.NewUUID(), FFIEventDefinition: fftypes.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
-	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *core.FFIEventDefinition) bool {
+	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *fftypes.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
 
@@ -1946,14 +1946,14 @@ func TestBroadcastContractAPI(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -1977,7 +1977,7 @@ func TestBroadcastContractAPIBadLocation(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -2008,7 +2008,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -2017,14 +2017,14 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -2047,7 +2047,7 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(`"old"`),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -2056,7 +2056,7 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(`"new"`),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -2088,7 +2088,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			Name:    "my-ffi",
 			Version: "1",
 		},
@@ -2097,7 +2097,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&core.FFI{ID: interfaceID}, nil)
+	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&fftypes.FFI{ID: interfaceID}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -2121,14 +2121,14 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&fftypes.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -2173,7 +2173,7 @@ func TestBroadcastContractAPIInterfaceIDFail(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -2200,7 +2200,7 @@ func TestBroadcastContractAPIInterfaceIDNotFound(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -2227,7 +2227,7 @@ func TestBroadcastContractAPIInterfaceNameFail(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			Name:    "my-ffi",
 			Version: "1",
 		},
@@ -2255,7 +2255,7 @@ func TestBroadcastContractAPIInterfaceNameNotFound(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			Name:    "my-ffi",
 			Version: "1",
 		},
@@ -2283,7 +2283,7 @@ func TestBroadcastContractAPIInterfaceNoVersion(t *testing.T) {
 		Namespace: "ns1",
 		Location:  fftypes.JSONAnyPtr(""),
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			Name: "my-ffi",
 		},
 	}
@@ -2301,7 +2301,7 @@ func TestBroadcastContractAPIInterfaceNoVersion(t *testing.T) {
 
 func TestValidateFFIParamBadSchemaJSON(t *testing.T) {
 	cm := newTestContractManager()
-	param := &core.FFIParam{
+	param := &fftypes.FFIParam{
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
 	}
@@ -2311,7 +2311,7 @@ func TestValidateFFIParamBadSchemaJSON(t *testing.T) {
 
 func TestCheckParamSchemaBadSchema(t *testing.T) {
 	cm := newTestContractManager()
-	param := &core.FFIParam{
+	param := &fftypes.FFIParam{
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(`{"type": "integer"`),
 	}
@@ -2321,7 +2321,7 @@ func TestCheckParamSchemaBadSchema(t *testing.T) {
 
 func TestCheckParamSchemaCompileFail(t *testing.T) {
 	cm := newTestContractManager()
-	param := &core.FFIParam{
+	param := &fftypes.FFIParam{
 		Name:   "x",
 		Schema: fftypes.JSONAnyPtr(``),
 	}
@@ -2344,10 +2344,10 @@ func TestAddJSONSchemaExtension(t *testing.T) {
 func TestGenerateFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("GenerateFFI", mock.Anything, mock.Anything).Return(&core.FFI{
+	mbi.On("GenerateFFI", mock.Anything, mock.Anything).Return(&fftypes.FFI{
 		Name: "generated",
 	}, nil)
-	ffi, err := cm.GenerateFFI(context.Background(), "default", &core.FFIGenerationRequest{})
+	ffi, err := cm.GenerateFFI(context.Background(), "default", &fftypes.FFIGenerationRequest{})
 	assert.NoError(t, err)
 	assert.NotNil(t, ffi)
 	assert.Equal(t, "generated", ffi.Name)

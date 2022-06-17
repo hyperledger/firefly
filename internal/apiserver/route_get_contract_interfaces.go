@@ -20,8 +20,8 @@ import (
 	"net/http"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
@@ -33,7 +33,7 @@ var getContractInterfaces = &ffapi.Route{
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsGetContractInterfaces,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return []*core.FFI{} },
+	JSONOutputValue: func() interface{} { return []*fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		FilterFactory: database.FFIQueryFactory,

@@ -262,7 +262,7 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetFFIByID", mock.Anything, ref1).Return(&core.FFI{
+	mdi.On("GetFFIByID", mock.Anything, ref1).Return(&fftypes.FFI{
 		ID: ref1,
 	}, nil)
 

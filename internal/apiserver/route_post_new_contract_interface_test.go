@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -39,8 +40,8 @@ func TestPostNewContractInterface(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastFFI", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), false).
-		Return(&core.FFI{}, nil)
+	mcm.On("BroadcastFFI", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), false).
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
@@ -57,8 +58,8 @@ func TestPostNewContractInterfaceSync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastFFI", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), true).
-		Return(&core.FFI{}, nil)
+	mcm.On("BroadcastFFI", mock.Anything, "ns1", mock.AnythingOfType("*fftypes.FFI"), true).
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

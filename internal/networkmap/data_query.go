@@ -31,7 +31,7 @@ import (
 func (nm *networkMap) GetOrganizationByNameOrID(ctx context.Context, ns, nameOrID string) (org *core.Identity, err error) {
 	u, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
-		if err := core.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
 			return nil, err
 		}
 		if org, err = nm.database.GetIdentityByName(ctx, core.IdentityTypeOrg, ns, nameOrID); err != nil {
@@ -63,7 +63,7 @@ func (nm *networkMap) GetOrganizationsWithVerifiers(ctx context.Context, ns stri
 func (nm *networkMap) GetNodeByNameOrID(ctx context.Context, ns, nameOrID string) (node *core.Identity, err error) {
 	u, err := fftypes.ParseUUID(ctx, nameOrID)
 	if err != nil {
-		if err := core.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, nameOrID, "name"); err != nil {
 			return nil, err
 		}
 		if node, err = nm.database.GetIdentityByName(ctx, core.IdentityTypeNode, ns, nameOrID); err != nil {

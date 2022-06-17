@@ -158,7 +158,7 @@ func (dm *dataManager) namespaceExistsCached(ctx context.Context, ns string) (bo
 }
 
 func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) error {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return err
 	}
 	if exists, err := dm.namespaceExistsCached(ctx, ns); err != nil {

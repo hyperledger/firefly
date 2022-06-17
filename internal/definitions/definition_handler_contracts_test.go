@@ -31,16 +31,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func testFFI() *core.FFI {
-	return &core.FFI{
+func testFFI() *fftypes.FFI {
+	return &fftypes.FFI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
 		Version:   "v1.0.0",
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
-				Params: core.FFIParams{
+				Params: fftypes.FFIParams{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -50,7 +50,7 @@ func testFFI() *core.FFI {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
 					},
 				},
-				Returns: core.FFIParams{
+				Returns: fftypes.FFIParams{
 					{
 						Name:   "result",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -58,12 +58,12 @@ func testFFI() *core.FFI {
 				},
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
 				ID: fftypes.NewUUID(),
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "event1",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "result",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -80,7 +80,7 @@ func testContractAPI() *core.ContractAPI {
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 		Location: fftypes.JSONAnyPtr(""),

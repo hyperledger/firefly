@@ -39,17 +39,17 @@ func TestFFIE2EWithDB(t *testing.T) {
 	// Create a new FFI
 	id := fftypes.NewUUID()
 
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		ID:          id,
 		Namespace:   "ns1",
 		Name:        "math",
 		Version:     "v1.0.0",
 		Description: "Does things and stuff",
 		Message:     fftypes.NewUUID(),
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name: "sum",
-				Params: core.FFIParams{
+				Params: fftypes.FFIParams{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
@@ -59,7 +59,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
 					},
 				},
-				Returns: core.FFIParams{
+				Returns: fftypes.FFIParams{
 					{
 						Name:   "result",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer""}`),
@@ -104,7 +104,7 @@ func TestFFIE2EWithDB(t *testing.T) {
 func TestFFIDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFI(context.Background(), &core.FFI{})
+	err := s.UpsertFFI(context.Background(), &fftypes.FFI{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -113,7 +113,7 @@ func TestFFIDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFI(context.Background(), &core.FFI{})
+	err := s.UpsertFFI(context.Background(), &fftypes.FFI{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -123,7 +123,7 @@ func TestFFIDBFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFI(context.Background(), ffi)
@@ -138,7 +138,7 @@ func TestFFIDBFailUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	ffi := &core.FFI{
+	ffi := &fftypes.FFI{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFI(context.Background(), ffi)

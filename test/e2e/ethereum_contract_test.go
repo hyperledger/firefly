@@ -47,11 +47,11 @@ type simpleStorageBody struct {
 	NewValue string `json:"newValue"`
 }
 
-func simpleStorageFFIChanged() *core.FFIEvent {
-	return &core.FFIEvent{
-		FFIEventDefinition: core.FFIEventDefinition{
+func simpleStorageFFIChanged() *fftypes.FFIEvent {
+	return &fftypes.FFIEvent{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name: "Changed",
-			Params: core.FFIParams{
+			Params: fftypes.FFIParams{
 				{
 					Name:   "_from",
 					Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "address", "indexed": true}}`),
@@ -65,38 +65,38 @@ func simpleStorageFFIChanged() *core.FFIEvent {
 	}
 }
 
-func simpleStorageFFI() *core.FFI {
-	return &core.FFI{
+func simpleStorageFFI() *fftypes.FFI {
+	return &fftypes.FFI{
 		Name:    "SimpleStorage",
 		Version: contractVersion,
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			simpleStorageFFISet(),
 			simpleStorageFFIGet(),
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			simpleStorageFFIChanged(),
 		},
 	}
 }
 
-func simpleStorageFFISet() *core.FFIMethod {
-	return &core.FFIMethod{
+func simpleStorageFFISet() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
 		Name: "set",
-		Params: core.FFIParams{
+		Params: fftypes.FFIParams{
 			{
 				Name:   "newValue",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 			},
 		},
-		Returns: core.FFIParams{},
+		Returns: fftypes.FFIParams{},
 	}
 }
 
-func simpleStorageFFIGet() *core.FFIMethod {
-	return &core.FFIMethod{
+func simpleStorageFFIGet() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
 		Name:   "get",
-		Params: core.FFIParams{},
-		Returns: core.FFIParams{
+		Params: fftypes.FFIParams{},
+		Returns: fftypes.FFIParams{
 			{
 				Name:   "output",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -195,7 +195,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 
 	received1 := wsReader(suite.testState.ws1, true)
 
-	ffiReference := &core.FFIReference{
+	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
 	}
 	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
@@ -255,7 +255,7 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	received1 := wsReader(suite.testState.ws1, true)
 	APIName := fftypes.NewUUID().String()
 
-	ffiReference := &core.FFIReference{
+	ffiReference := &fftypes.FFIReference{
 		ID: suite.interfaceID,
 	}
 

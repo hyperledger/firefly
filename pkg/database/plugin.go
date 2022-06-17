@@ -452,23 +452,23 @@ type iTokenApprovalCollection interface {
 }
 
 type iFFICollection interface {
-	UpsertFFI(ctx context.Context, cd *core.FFI) error
-	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*core.FFI, *FilterResult, error)
-	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
-	GetFFI(ctx context.Context, ns, name, version string) (*core.FFI, error)
+	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
+	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
+	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
+	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
 }
 
 type iFFIMethodCollection interface {
-	UpsertFFIMethod(ctx context.Context, method *core.FFIMethod) error
-	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error)
-	GetFFIMethods(ctx context.Context, filter Filter) (methods []*core.FFIMethod, res *FilterResult, err error)
+	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
+	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
+	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
-	UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error
-	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error)
-	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error)
-	GetFFIEvents(ctx context.Context, filter Filter) (events []*core.FFIEvent, res *FilterResult, err error)
+	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
+	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
+	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error)
+	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {

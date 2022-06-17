@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
@@ -313,7 +314,7 @@ func (nm *namespaceManager) getTokensPlugins(ctx context.Context) (plugins map[s
 			if name == "" || pluginType == "" {
 				return nil, i18n.NewError(ctx, coremsgs.MsgMissingTokensPluginConfig)
 			}
-			if err = core.ValidateFFNameField(ctx, name, "name"); err != nil {
+			if err = fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
 				return nil, err
 			}
 
@@ -378,7 +379,7 @@ func (nm *namespaceManager) validatePluginConfig(ctx context.Context, config con
 		return "", "", i18n.NewError(ctx, coremsgs.MsgInvalidPluginConfiguration, sectionName)
 	}
 
-	if err := core.ValidateFFNameField(ctx, name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, name, "name"); err != nil {
 		return "", "", err
 	}
 
@@ -589,7 +590,7 @@ func (nm *namespaceManager) loadNamespaces(ctx context.Context) (err error) {
 }
 
 func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, index int, conf config.Section) (*namespace, error) {
-	if err := core.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
 	}
 	if name == core.LegacySystemNamespace || conf.GetString(coreconfig.NamespaceRemoteName) == core.LegacySystemNamespace {

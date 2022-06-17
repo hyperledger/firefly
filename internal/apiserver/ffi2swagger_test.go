@@ -28,17 +28,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testFFI() *core.FFI {
-	return &core.FFI{
+func testFFI() *fftypes.FFI {
+	return &fftypes.FFI{
 		ID:        fftypes.NewUUID(),
 		Namespace: "ns1",
 		Name:      "math",
 		Version:   "v1.0.0",
-		Methods: []*core.FFIMethod{
+		Methods: []*fftypes.FFIMethod{
 			{
 				Name:     "method1",
 				Pathname: "method1",
-				Params: core.FFIParams{
+				Params: fftypes.FFIParams{
 					{
 						Name:   "x",
 						Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -59,7 +59,7 @@ func testFFI() *core.FFI {
 }`),
 					},
 				},
-				Returns: core.FFIParams{
+				Returns: fftypes.FFIParams{
 					{
 						Name:   "success",
 						Schema: fftypes.JSONAnyPtr(`{"type": "boolean"}`),
@@ -76,13 +76,13 @@ func testFFI() *core.FFI {
 				/* no params */
 			},
 		},
-		Events: []*core.FFIEvent{
+		Events: []*fftypes.FFIEvent{
 			{
 				ID:       fftypes.NewUUID(),
 				Pathname: "event1",
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "event1",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "result",
 							Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -186,7 +186,7 @@ func TestGenerateWithLocation(t *testing.T) {
 }
 
 func TestFFIParamBadSchema(t *testing.T) {
-	param := &core.FFIParam{
+	param := &fftypes.FFIParam{
 		Name:   "test",
 		Schema: fftypes.JSONAnyPtr(`{`),
 	}
