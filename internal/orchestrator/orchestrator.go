@@ -374,7 +374,9 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.SharedStorage.Plugin.RegisterListener(&or.bc)
 
 	for _, token := range or.plugins.Tokens {
-		token.Plugin.RegisterListener(&or.bc)
+		if err := token.Plugin.RegisterListener(or.namespace, &or.bc); err != nil {
+			return err
+		}
 	}
 
 	return nil

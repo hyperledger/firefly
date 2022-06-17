@@ -138,9 +138,18 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// RegisterListener provides a mock function with given fields: listener
-func (_m *Plugin) RegisterListener(listener tokens.Callbacks) {
-	_m.Called(listener)
+// RegisterListener provides a mock function with given fields: namespace, listener
+func (_m *Plugin) RegisterListener(namespace string, listener tokens.Callbacks) error {
+	ret := _m.Called(namespace, listener)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, tokens.Callbacks) error); ok {
+		r0 = rf(namespace, listener)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Start provides a mock function with given fields:
