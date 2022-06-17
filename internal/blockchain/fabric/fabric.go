@@ -435,7 +435,7 @@ func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) er
 		return nil
 	}
 
-	return i18n.NewError(ctx, coremsgs.MsgInvalidSubscription, subID)
+	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -843,7 +843,6 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 	}
 	fromBlock = string(core.SubOptsFirstEventOldest)
 
-	// which channel do I use here?
 	fabricOnChainLocation := &Location{
 		Chaincode: chaincode,
 		Channel:   f.defaultChannel,

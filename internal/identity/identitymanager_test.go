@@ -552,7 +552,8 @@ func TestResolveDefaultSigningIdentityNotFound(t *testing.T) {
 	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion").Return(1)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)
@@ -591,7 +592,8 @@ func TestResolveDefaultSigningIdentitySystemFallback(t *testing.T) {
 	}
 
 	mbi := im.blockchain.(*blockchainmocks.Plugin)
-	mbi.On("NetworkVersion").Return(1)
+	mmp := im.multiparty.(*multipartymocks.Manager)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	mdi := im.database.(*databasemocks.Plugin)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeEthAddress, "ns1", "key12345").Return(nil, nil)

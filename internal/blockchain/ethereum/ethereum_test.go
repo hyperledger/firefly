@@ -182,7 +182,7 @@ func TestInitAndStartWithFFTM(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	// assert.Equal(t, 5, httpmock.GetTotalCallCount())
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
 	assert.NotNil(t, e.Capabilities())
 
@@ -312,11 +312,6 @@ func TestInitNewConfig(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
 		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
-	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
-		httpmock.NewJsonResponderOrPanic(200, subscription{}))
-	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 
 	resetConf(e)
 	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
@@ -325,6 +320,7 @@ func TestInitNewConfig(t *testing.T) {
 	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
 
 	err := e.Init(e.ctx, utConfig, e.metrics)
+	assert.Equal(t, 2, httpmock.GetTotalCallCount())
 	assert.NoError(t, err)
 }
 
@@ -490,7 +486,6 @@ func TestInitAllExistingStreams(t *testing.T) {
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
 	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
-	assert.NoError(t, err)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
@@ -3152,7 +3147,7 @@ func TestConvertDeprecatedContractConfigNoInstance(t *testing.T) {
 	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
 
 	_, _, err := e.GetAndConvertDeprecatedContractConfig(e.ctx)
-	assert.Regexp(t, "10138", err)
+	assert.Regexp(t, "F10138", err)
 }
 
 func TestConvertDeprecatedContractConfigContractURL(t *testing.T) {

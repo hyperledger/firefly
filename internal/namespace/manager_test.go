@@ -129,6 +129,7 @@ func TestInit(t *testing.T) {
 
 	mo := &orchestratormocks.Orchestrator{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -138,7 +139,6 @@ func TestInit(t *testing.T) {
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mbi.On("NetworkVersion").Return(2)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
@@ -274,6 +274,7 @@ func TestInitVersion1(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
+	mo.On("GetNetworkVersion").Return(1)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -283,7 +284,6 @@ func TestInitVersion1(t *testing.T) {
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mbi.On("NetworkVersion").Return(1)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
@@ -303,6 +303,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	mo := &orchestratormocks.Orchestrator{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
+	mo.On("GetNetworkVersion").Return(1)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -312,7 +313,6 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mbi.On("NetworkVersion").Return(1)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
@@ -930,6 +930,40 @@ func TestLoadNamespacesMultipartyMultipleDB(t *testing.T) {
 
 	err = nm.loadNamespaces(context.Background())
 	assert.Regexp(t, "FF10394.*database", err)
+}
+
+func TestLoadNamespacesMultipartyContract(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	viper.SetConfigType("yaml")
+	err := viper.ReadConfig(strings.NewReader(`
+  namespaces:
+    default: ns1
+    predefined:
+    - name: ns1
+      multiparty:
+        enabled: true
+        contract:
+        - location:
+            address: 0x4ae50189462b0e5d52285f59929d037f790771a6 
+          firstEvent: oldest
+  `))
+	assert.NoError(t, err)
+
+	err = nm.loadNamespaces(context.Background())
+	assert.NoError(t, err)
+}
+
+func TestLoadNamespacesMultipartyContractBadLocation(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	fail := make(chan string)
+	namespaceConfig.AddKnownKey("predefined.0.multiparty.contract.0.location.address", fail)
+
+	err := nm.loadNamespaces(context.Background())
+	assert.Regexp(t, "json:", err)
 }
 
 func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
