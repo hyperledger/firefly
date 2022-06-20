@@ -113,13 +113,6 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 		active := mm.contracts[contractIndex]
 		location = active.Location
 		firstEvent = active.FirstEvent
-
-		switch firstEvent {
-		case string(core.SubOptsFirstEventOldest):
-			firstEvent = "0"
-		case string(core.SubOptsFirstEventNewest):
-			firstEvent = "latest"
-		}
 	} else {
 		// handle deprecated config here
 		location, firstEvent, err = mm.blockchain.GetAndConvertDeprecatedContractConfig(ctx)

@@ -418,6 +418,13 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		return "", err
 	}
 
+	switch firstEvent {
+	case string(core.SubOptsFirstEventOldest):
+		firstEvent = "0"
+	case string(core.SubOptsFirstEventNewest):
+		firstEvent = "latest"
+	}
+
 	sub, err := f.streams.ensureFireFlySubscription(ctx, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err

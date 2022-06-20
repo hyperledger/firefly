@@ -257,6 +257,13 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 		return "", err
 	}
 
+	switch firstEvent {
+	case string(core.SubOptsFirstEventOldest):
+		firstEvent = "0"
+	case string(core.SubOptsFirstEventNewest):
+		firstEvent = "latest"
+	}
+
 	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
 	if err != nil {
 		return "", err

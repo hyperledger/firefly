@@ -62,7 +62,7 @@ func TestConfigureContract(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -86,7 +86,7 @@ func TestConfigureContractOldestBlock(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -112,7 +112,7 @@ func TestConfigureContractNewestBlock(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "newest",
+		FirstEvent: "latest",
 		Location:   location,
 	}
 
@@ -178,7 +178,7 @@ func TestConfigureContractBadIndex(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -202,7 +202,7 @@ func TestConfigureContractNetworkVersionFail(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -232,7 +232,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -258,7 +258,7 @@ func TestSubmitBatchPin(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -286,7 +286,7 @@ func TestGetNetworkVersion(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
@@ -313,11 +313,11 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 		"address": "0x123",
 	}.String())
 	contract := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 	contract2 := Contract{
-		FirstEvent: "oldest",
+		FirstEvent: "0",
 		Location:   location,
 	}
 
