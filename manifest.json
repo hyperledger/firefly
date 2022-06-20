@@ -26,10 +26,10 @@
   },
   "build": {
     "firefly-builder": {
-      "image": "golang:1.16-alpine3.15"
+      "image": "golang:1.17-alpine3.16"
     },
     "fabric-builder": {
-      "image": "golang:1.16-alpine3.15",
+      "image": "golang:1.17-alpine3.16",
       "platform": "linux/x86_64"
     },
     "solidity-builder": {
