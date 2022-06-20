@@ -211,7 +211,7 @@ func TestInitTokenListenerFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdi.On("RegisterListener", mock.Anything).Return()
 	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("RegisterListener", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("RegisterListener", mock.Anything).Return()
