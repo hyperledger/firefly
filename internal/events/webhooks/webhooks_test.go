@@ -455,6 +455,8 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
 	assert.True(t, called)
+
+	mcb.AssertExpectations(t)
 }
 
 func TestRequestReplyBadJSON(t *testing.T) {
@@ -471,7 +473,11 @@ func TestRequestReplyBadJSON(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	sub := &core.Subscription{}
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
@@ -502,7 +508,10 @@ func TestRequestReplyBadJSON(t *testing.T) {
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
 }
+
 func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
@@ -723,6 +732,9 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 
 	yes := true
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -755,4 +767,6 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
 }

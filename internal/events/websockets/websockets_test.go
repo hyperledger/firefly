@@ -339,6 +339,19 @@ func TestAutoStartBadOptions(t *testing.T) {
 	cbs.AssertExpectations(t)
 }
 
+func TestAutoStartBadNamespace(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	_, wsc, cancel := newTestWebsockets(t, cbs, "ephemeral", "namespace=ns2")
+	defer cancel()
+
+	b := <-wsc.Receive()
+	var res core.WSError
+	err := json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+	assert.Regexp(t, "FF10187", res.Error)
+	cbs.AssertExpectations(t)
+}
+
 func TestHandleAckWithAutoAck(t *testing.T) {
 	eventUUID := fftypes.NewUUID()
 	wsc := &websocketConnection{

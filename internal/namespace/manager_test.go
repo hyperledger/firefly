@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
@@ -57,6 +58,7 @@ type testNamespaceManager struct {
 	mdx *dataexchangemocks.Plugin
 	mps *sharedstoragemocks.Plugin
 	mti *tokenmocks.Plugin
+	mev *eventsmocks.Plugin
 }
 
 func (nm *testNamespaceManager) cleanup(t *testing.T) {
@@ -83,6 +85,7 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 		mdx: &dataexchangemocks.Plugin{},
 		mps: &sharedstoragemocks.Plugin{},
 		mti: &tokenmocks.Plugin{},
+		mev: &eventsmocks.Plugin{},
 		namespaceManager: namespaceManager{
 			ctx:         context.Background(),
 			namespaces:  make(map[string]*namespace),
@@ -106,6 +109,9 @@ func newTestNamespaceManager(resetConfig bool) *testNamespaceManager {
 	}
 	nm.plugins.tokens = map[string]tokensPlugin{
 		"erc721": {plugin: nm.mti},
+	}
+	nm.plugins.events = map[string]eventsPlugin{
+		"websockets": {plugin: nm.mev},
 	}
 	nm.namespaceManager.metrics = nm.mmi
 	nm.namespaceManager.adminEvents = nm.mae
@@ -131,6 +137,7 @@ func TestInit(t *testing.T) {
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mbi.On("NetworkVersion").Return(2)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -222,6 +229,25 @@ func TestInitTokensFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
+func TestInitEventsFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
+
+	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
+	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
+	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.EqualError(t, err, "pop")
+}
+
 func TestInitOrchestratorFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
@@ -234,6 +260,7 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	err := nm.Init(ctx, cancelCtx)
@@ -255,6 +282,7 @@ func TestInitVersion1(t *testing.T) {
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mbi.On("NetworkVersion").Return(1)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -283,6 +311,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mbi.On("NetworkVersion").Return(1)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -646,6 +675,25 @@ func TestTokensPluginDuplicate(t *testing.T) {
 	assert.Regexp(t, "FF10395", err)
 }
 
+func TestEventsPluginDefaults(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.events = nil
+	plugins, err := nm.getEventPlugins(context.Background())
+	assert.Equal(t, 3, len(plugins))
+	assert.NoError(t, err)
+}
+
+func TestEventsPluginBadType(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+	nm.plugins.events = nil
+	config.Set(coreconfig.EventTransportsEnabled, []string{"!unknown!"})
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	err := nm.Init(ctx, cancelCtx)
+	assert.Error(t, err)
+}
+
 func TestInitBadNamespace(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
@@ -658,6 +706,7 @@ func TestInitBadNamespace(t *testing.T) {
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 
 	viper.SetConfigType("yaml")
 	err := viper.ReadConfig(strings.NewReader(`
