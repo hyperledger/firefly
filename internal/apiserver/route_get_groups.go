@@ -38,7 +38,7 @@ var getGroups = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.GroupQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.PrivateMessaging().GetGroupsNS(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.PrivateMessaging().GetGroups(cr.ctx, cr.filter))
 		},
 	},
 }

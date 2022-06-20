@@ -63,6 +63,7 @@ type privateMessaging struct {
 	groupManager
 
 	ctx                   context.Context
+	namespace             string
 	database              database.Plugin
 	identity              identity.Manager
 	exchange              dataexchange.Plugin
@@ -86,13 +87,14 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewPrivateMessaging(ctx context.Context, ns string, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
 
 	pm := &privateMessaging{
 		ctx:           ctx,
+		namespace:     ns,
 		database:      di,
 		identity:      im,
 		exchange:      dx,
@@ -103,7 +105,9 @@ func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Ma
 		batchpin:      bp,
 		localNodeName: config.GetString(coreconfig.NodeName),
 		groupManager: groupManager{
+			namespace:     ns,
 			database:      di,
+			identity:      im,
 			data:          dm,
 			groupCacheTTL: config.GetDuration(coreconfig.GroupCacheTTL),
 		},
@@ -269,7 +273,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 	batch := tw.Batch
 
 	// Lookup the local org
-	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx, batch.Namespace)
+	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		return err
 	}

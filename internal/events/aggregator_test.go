@@ -158,7 +158,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	mpm := ag.messaging.(*privatemessagingmocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: member2key,
 	}).Return(member2org, nil)
@@ -299,7 +299,7 @@ func TestAggregationMaskedNextSequenceMatch(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: member2key,
 	}).Return(member2org, nil)
@@ -409,7 +409,7 @@ func TestAggregationBroadcast(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
@@ -498,7 +498,7 @@ func TestAggregationMigratedBroadcast(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
@@ -592,7 +592,7 @@ func TestAggregationMigratedBroadcastNilMessageID(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
@@ -660,7 +660,7 @@ func TestAggregationMigratedBroadcastInvalid(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: member1key,
 	}).Return(member1org, nil)
@@ -1049,7 +1049,7 @@ func TestProcessMsgFailDispatch(t *testing.T) {
 	mdm.On("GetMessageWithDataCached", ag.ctx, mock.Anything, data.CRORequirePublicBlobRefs).Return(msg, nil, true, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := ag.processMessage(ag.ctx, &core.BatchManifest{}, &core.Pin{Sequence: 12345, Signer: "0x12345"}, 10, &core.MessageManifestEntry{
 		MessageRef: core.MessageRef{
@@ -1090,7 +1090,7 @@ func TestProcessMsgFailPinUpdate(t *testing.T) {
 		Pins: core.FFStringArray{pin.String()},
 	}
 
-	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, "ns1", &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ag.ctx, []core.IdentityType{core.IdentityTypeOrg, core.IdentityTypeCustom}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	}).Return(org1, nil)
@@ -1374,7 +1374,7 @@ func TestAttemptMessageDispatchFailValidateData(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	org1 := newTestOrg("org1")
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(false, fmt.Errorf("pop"))
 
@@ -1397,7 +1397,7 @@ func TestAttemptMessageDispatchMissingBlobs(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	org1 := newTestOrg("org1")
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", ag.ctx, blobHash).Return(nil, nil)
@@ -1422,7 +1422,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	org1 := newTestOrg("org1")
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return([]*core.TokenTransfer{}, nil, nil)
 
@@ -1451,7 +1451,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
 	org1 := newTestOrg("org1")
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
@@ -1492,7 +1492,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	}}
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
@@ -1513,7 +1513,7 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	org1 := newTestOrg("org1")
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	customCorrelator := fftypes.NewUUID()
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
@@ -1571,7 +1571,7 @@ func TestDefinitionBroadcastInvalidSigner(t *testing.T) {
 	org1 := newTestOrg("org1")
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
@@ -1618,7 +1618,7 @@ func TestDispatchBroadcastQueuesLaterDispatch(t *testing.T) {
 	msg1, msg2, org1, manifest := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePublicBlobRefs).Return(msg1, core.DataArray{}, true, nil).Once()
@@ -1648,7 +1648,7 @@ func TestDispatchPrivateQueuesLaterDispatch(t *testing.T) {
 	msg1, msg2, org1, manifest := newTestManifest(core.MessageTypePrivate, groupID)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, core.DataArray{}, true, nil).Once()
@@ -1690,7 +1690,7 @@ func TestDispatchPrivateNextPinIncremented(t *testing.T) {
 	msg1, msg2, org1, manifest := newTestManifest(core.MessageTypePrivate, groupID)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("GetMessageWithDataCached", ag.ctx, msg1.Header.ID, data.CRORequirePins).Return(msg1, core.DataArray{}, true, nil).Once()
@@ -1731,7 +1731,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	msg1, _, org1, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionRetry}, fmt.Errorf("pop"))
@@ -1751,7 +1751,7 @@ func TestDefinitionBroadcastRejectSignerLookupFail(t *testing.T) {
 	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.Regexp(t, "pop", err)
@@ -1767,7 +1767,7 @@ func TestDefinitionBroadcastRejectSignerLookupWrongOrg(t *testing.T) {
 	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(newTestOrg("org2"), nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(newTestOrg("org2"), nil)
 
 	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
@@ -1797,7 +1797,7 @@ func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	msg1.Header.Tag = core.SystemTagIdentityClaim
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
@@ -1818,7 +1818,7 @@ func TestDefinitionBroadcastRootUnregisteredOk(t *testing.T) {
 	msg1, _, _, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
 	_, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)
@@ -1834,7 +1834,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 	msg1, _, org1, _ := newTestManifest(core.MessageTypeDefinition, nil)
 
 	mim := ag.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
@@ -1857,7 +1857,7 @@ func TestAttemptMessageDispatchEventFail(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -1885,7 +1885,7 @@ func TestAttemptMessageDispatchGroupInit(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mim := ag.identity.(*identitymanagermocks.Manager)
 
-	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything, mock.Anything).Return(org1, nil)
+	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 	mdm.On("GetMessageData", ag.ctx, mock.Anything, true).Return(core.DataArray{}, true, nil)
 	mdm.On("ValidateAll", ag.ctx, mock.Anything).Return(true, nil)
 	mdi.On("InsertEvent", ag.ctx, mock.Anything).Return(nil)

@@ -65,7 +65,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.Datatype = dt
 	case core.EventTypeIdentityConfirmed, core.EventTypeIdentityUpdated:
-		identity, err := t.database.GetIdentityByID(ctx, event.Reference)
+		identity, err := t.database.GetIdentityByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

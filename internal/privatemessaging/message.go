@@ -138,7 +138,7 @@ func (s *messageSender) resolve(ctx context.Context) error {
 	}
 
 	// Resolve the sending identity
-	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
+	if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, &msg.Header.SignerRef); err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 	}
 

@@ -38,7 +38,7 @@ var getVerifierByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.NetworkMap().GetVerifierByHash(cr.ctx, extractNamespace(r.PP), r.PP["hash"])
+			return cr.or.NetworkMap().GetVerifierByHash(cr.ctx, r.PP["hash"])
 		},
 	},
 }

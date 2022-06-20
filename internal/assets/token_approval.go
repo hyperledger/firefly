@@ -145,6 +145,6 @@ func (am *assetManager) validateApproval(ctx context.Context, ns string, approva
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	approval.Key, err = am.identity.NormalizeSigningKey(ctx, ns, approval.Key, am.keyNormalization)
+	approval.Key, err = am.identity.NormalizeSigningKey(ctx, approval.Key, am.keyNormalization)
 	return pool, err
 }

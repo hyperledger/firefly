@@ -36,7 +36,7 @@ func TestPostNetworkAction(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("SubmitNetworkAction", mock.Anything, "default", mock.AnythingOfType("*core.NetworkAction")).Return(nil)
+	o.On("SubmitNetworkAction", mock.Anything, mock.AnythingOfType("*core.NetworkAction")).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)

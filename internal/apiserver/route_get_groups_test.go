@@ -34,7 +34,7 @@ func TestGetGroups(t *testing.T) {
 
 	mpm := &privatemessagingmocks.Manager{}
 	o.On("PrivateMessaging").Return(mpm)
-	mpm.On("GetGroupsNS", mock.Anything, "mynamespace", mock.Anything).
+	mpm.On("GetGroups", mock.Anything, mock.Anything).
 		Return([]*core.Group{}, nil, nil)
 	r.ServeHTTP(res, req)
 

@@ -67,7 +67,7 @@ func newTestOperations(t *testing.T) (*operationsManager, func()) {
 		Concurrency: true,
 	})
 	mdm := &datamocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {

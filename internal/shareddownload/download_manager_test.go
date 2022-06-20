@@ -50,7 +50,7 @@ func newTestDownloadManager(t *testing.T) (*downloadManager, func()) {
 	mdx := &dataexchangemocks.Plugin{}
 	mci := &shareddownloadmocks.Callbacks{}
 	mdm := &datamocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{
 		Concurrency: false,
 	})

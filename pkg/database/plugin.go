@@ -270,51 +270,42 @@ type iIdentitiesCollection interface {
 	// UpsertIdentity - Upsert an identity
 	UpsertIdentity(ctx context.Context, data *core.Identity, optimization UpsertOptimization) (err error)
 
-	// UpdateIdentity - Update identity
-	UpdateIdentity(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
 	// GetIdentityByDID - Get a identity by DID
-	GetIdentityByDID(ctx context.Context, did string) (org *core.Identity, err error)
+	GetIdentityByDID(ctx context.Context, namespace, did string) (org *core.Identity, err error)
 
 	// GetIdentityByName - Get a identity by name
 	GetIdentityByName(ctx context.Context, iType core.IdentityType, namespace, name string) (org *core.Identity, err error)
 
 	// GetIdentityByID - Get a identity by ID
-	GetIdentityByID(ctx context.Context, id *fftypes.UUID) (org *core.Identity, err error)
+	GetIdentityByID(ctx context.Context, namespace string, id *fftypes.UUID) (org *core.Identity, err error)
 
 	// GetIdentities - Get identities
-	GetIdentities(ctx context.Context, filter Filter) (org []*core.Identity, res *FilterResult, err error)
+	GetIdentities(ctx context.Context, namespace string, filter Filter) (org []*core.Identity, res *FilterResult, err error)
 }
 
 type iVerifiersCollection interface {
 	// UpsertVerifier - Upsert an verifier
 	UpsertVerifier(ctx context.Context, data *core.Verifier, optimization UpsertOptimization) (err error)
 
-	// UpdateVerifier - Update verifier
-	UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
-
 	// GetVerifierByValue - Get a verifier by name
 	GetVerifierByValue(ctx context.Context, vType core.VerifierType, namespace, value string) (org *core.Verifier, err error)
 
 	// GetVerifierByHash - Get a verifier by its hash
-	GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (org *core.Verifier, err error)
+	GetVerifierByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (org *core.Verifier, err error)
 
 	// GetVerifiers - Get verifiers
-	GetVerifiers(ctx context.Context, filter Filter) (org []*core.Verifier, res *FilterResult, err error)
+	GetVerifiers(ctx context.Context, namespace string, filter Filter) (org []*core.Verifier, res *FilterResult, err error)
 }
 
 type iGroupCollection interface {
 	// UpsertGroup - Upsert a group, with a hint to whether to optmize for existing or new
 	UpsertGroup(ctx context.Context, data *core.Group, optimization UpsertOptimization) (err error)
 
-	// UpdateGroup - Update group
-	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
-
 	// GetGroupByHash - Get a group by ID
-	GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (node *core.Group, err error)
+	GetGroupByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (node *core.Group, err error)
 
 	// GetGroups - Get groups
-	GetGroups(ctx context.Context, filter Filter) (node []*core.Group, res *FilterResult, err error)
+	GetGroups(ctx context.Context, namespace string, filter Filter) (node []*core.Group, res *FilterResult, err error)
 }
 
 type iNonceCollection interface {

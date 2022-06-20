@@ -103,7 +103,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	parent, _, _ := testDeprecatedRootOrg(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(parent.Migrated().Identity, nil)
@@ -111,7 +111,7 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 
 	mdi := dh.database.(*databasemocks.Plugin)
 	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, core.LegacySystemNamespace, node.Name).Return(nil, nil)
-	mdi.On("GetIdentityByID", ctx, node.ID).Return(nil, nil)
+	mdi.On("GetIdentityByID", ctx, "ns1", node.ID).Return(nil, nil)
 	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, core.LegacySystemNamespace, "member_0").Return(nil, nil)
 	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
@@ -163,7 +163,7 @@ func TestHandleDeprecatedNodeDefinitionFailOrgLookup(t *testing.T) {
 	node, msg, data := testDeprecatedRootNode(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, fmt.Errorf("pop"))
@@ -184,7 +184,7 @@ func TestHandleDeprecatedNodeDefinitionOrgNotFound(t *testing.T) {
 	node, msg, data := testDeprecatedRootNode(t)
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
-	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	mim.On("FindIdentityForVerifier", ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: node.Owner,
 	}).Return(nil, nil)

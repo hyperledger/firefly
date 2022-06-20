@@ -44,7 +44,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	mei.On("Name").Return("ut")
@@ -172,7 +172,7 @@ func TestSubManagerBadPlugin(t *testing.T) {
 	mdm := &datamocks.Manager{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	coreconfig.Reset()
 	config.Set(coreconfig.EventTransportsEnabled, []string{"!unknown!"})
 	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"), mbm, mpm, txHelper)

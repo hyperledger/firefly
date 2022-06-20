@@ -64,7 +64,7 @@ type Orchestrator interface {
 	PrivateMessaging() privatemessaging.Manager
 
 	// Status
-	GetStatus(ctx context.Context, ns string) (*core.NodeStatus, error)
+	GetStatus(ctx context.Context) (*core.NodeStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
@@ -114,7 +114,7 @@ type Orchestrator interface {
 	RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// Network Operations
-	SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error
+	SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error
 }
 
 type BlockchainPlugin struct {
@@ -358,7 +358,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Blockchain.Plugin.RegisterListener(&or.bc)
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
-	nodes, _, err := or.database().GetIdentities(ctx, fb.And(
+	nodes, _, err := or.database().GetIdentities(ctx, or.namespace, fb.And(
 		fb.Eq("type", core.IdentityTypeNode),
 	))
 	if err != nil {
@@ -392,11 +392,11 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.txHelper == nil {
-		or.txHelper = txcommon.NewTransactionHelper(or.database(), or.data)
+		or.txHelper = txcommon.NewTransactionHelper(or.namespace, or.database(), or.data)
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.data)
 		if err != nil {
 			return err
 		}
@@ -415,7 +415,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		}
 	}
 
-	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.database(), or.data)
+	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace, or.database(), or.data)
 
 	if or.batchpin == nil {
 		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.database(), or.identity, or.blockchain(), or.metrics, or.operations); err != nil {
@@ -424,7 +424,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.messaging == nil {
-		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.database(), or.identity, or.dataexchange(), or.blockchain(), or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
+		if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace, or.database(), or.identity, or.dataexchange(), or.blockchain(), or.batch, or.data, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -450,7 +450,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.definitions == nil {
-		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
+		or.definitions, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
@@ -473,27 +473,27 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync.Init(or.events)
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database(), or.data, or.broadcast, or.dataexchange(), or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database(), or.data, or.broadcast, or.dataexchange(), or.identity, or.syncasync)
 	}
 	return err
 }
 
-func (or *orchestrator) SubmitNetworkAction(ctx context.Context, ns string, action *core.NetworkAction) error {
-	key, err := or.identity.NormalizeSigningKey(ctx, ns, "", identity.KeyNormalizationBlockchainPlugin)
+func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
+	key, err := or.identity.NormalizeSigningKey(ctx, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return err
 	}
 	if action.Type == core.NetworkActionTerminate {
-		if ns != core.LegacySystemNamespace {
+		if or.namespace != core.LegacySystemNamespace {
 			// For now, "terminate" only works on ff_system
-			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, ns)
+			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, or.namespace)
 		}
 	} else {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
 	// TODO: This should be a new operation type
 	po := &core.PreparedOperation{
-		Namespace: ns,
+		Namespace: or.namespace,
 		ID:        fftypes.NewUUID(),
 	}
 	return or.blockchain().SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)

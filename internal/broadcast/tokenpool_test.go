@@ -95,7 +95,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -123,7 +123,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 		},
 	}
 
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
 

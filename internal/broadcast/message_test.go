@@ -42,7 +42,7 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	msg, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
 		Message: core.Message{
@@ -74,7 +74,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	ctx := context.Background()
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	replyMsg := &core.Message{
 		Header: core.MessageHeader{
@@ -128,7 +128,7 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 			}
 		}).
 		Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
 		Message: core.Message{
@@ -157,7 +157,7 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	ctx := context.Background()
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(fmt.Errorf("pop"))
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
 		InlineData: core.InlineData{
@@ -177,7 +177,7 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
 		InlineData: core.InlineData{
@@ -199,7 +199,7 @@ func TestBroadcastPrepare(t *testing.T) {
 	ctx := context.Background()
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	msg := &core.MessageInOut{
 		Message: core.Message{

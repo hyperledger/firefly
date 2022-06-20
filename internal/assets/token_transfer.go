@@ -106,7 +106,7 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, ns, transfer.Key, am.keyNormalization); err != nil {
+	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err
 	}
 	if transfer.From == "" {

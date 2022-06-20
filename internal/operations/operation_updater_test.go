@@ -62,7 +62,7 @@ func newTestOperationUpdaterCommon(t *testing.T, dbCapabilities *database.Capabi
 	mdi := &databasemocks.Plugin{}
 	mdi.On("Capabilities").Return(dbCapabilities)
 	mdm := &datamocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	return newOperationUpdater(context.Background(), mom, mdi, txHelper)
 }
 

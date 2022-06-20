@@ -30,7 +30,7 @@ func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context,
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "node", msg.Header.ID)
 	}
 
-	owner, err := dh.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, &core.VerifierRef{
+	owner, err := dh.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeOrg}, &core.VerifierRef{
 		Type:  dh.blockchain.VerifierType(),
 		Value: nodeOld.Owner,
 	})

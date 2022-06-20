@@ -187,7 +187,7 @@ func TestInitOK(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdi.On("RegisterListener", mock.Anything).Return()
 	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{{}}, nil, nil)
+	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("RegisterListener", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("RegisterListener", mock.Anything).Return()
@@ -225,7 +225,7 @@ func TestInitDataexchangeNodesFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdi.On("RegisterListener", mock.Anything).Return()
 	or.mbi.On("RegisterListener", mock.Anything).Return()
-	or.mdi.On("GetIdentities", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ctx := context.Background()
 	err := or.initPlugins(ctx)
 	assert.EqualError(t, err, "pop")
@@ -439,29 +439,32 @@ func TestStartStopOk(t *testing.T) {
 
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	or.namespace = core.LegacySystemNamespace
+	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	or.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
-	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.NoError(t, err)
 }
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
-	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	or.namespace = core.LegacySystemNamespace
+	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.EqualError(t, err, "pop")
 }
 
 func TestNetworkActionBadType(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "ff_system", "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	err := or.SubmitNetworkAction(context.Background(), "ff_system", &core.NetworkAction{Type: "bad"})
+	or.namespace = core.LegacySystemNamespace
+	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
 	assert.Regexp(t, "FF10397", err)
 }
 
 func TestNetworkActionBadNamespace(t *testing.T) {
 	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "ns", "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	err := or.SubmitNetworkAction(context.Background(), "ns", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Regexp(t, "FF10399", err)
 }

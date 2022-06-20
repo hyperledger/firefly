@@ -89,6 +89,7 @@ type inflightRequestMap map[string]map[fftypes.UUID]*inflightRequest
 
 type syncAsyncBridge struct {
 	ctx         context.Context
+	namespace   string
 	database    database.Plugin
 	data        data.Manager
 	sysevents   sysmessaging.SystemEvents
@@ -96,12 +97,13 @@ type syncAsyncBridge struct {
 	inflight    inflightRequestMap
 }
 
-func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager) Bridge {
+func NewSyncAsyncBridge(ctx context.Context, ns string, di database.Plugin, dm data.Manager) Bridge {
 	sa := &syncAsyncBridge{
-		ctx:      log.WithLogField(ctx, "role", "sync-async-bridge"),
-		database: di,
-		data:     dm,
-		inflight: make(inflightRequestMap),
+		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
+		namespace: ns,
+		database:  di,
+		data:      dm,
+		inflight:  make(inflightRequestMap),
 	}
 	return sa
 }
@@ -177,7 +179,7 @@ func (sa *syncAsyncBridge) getMessageFromEvent(event *core.EventDelivery) (msg *
 }
 
 func (sa *syncAsyncBridge) getIdentityFromEvent(event *core.EventDelivery) (identity *core.Identity, err error) {
-	if identity, err = sa.database.GetIdentityByID(sa.ctx, event.Reference); err != nil {
+	if identity, err = sa.database.GetIdentityByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if identity == nil {

@@ -163,13 +163,13 @@ func (s *SQLCommon) GetVerifierByValue(ctx context.Context, vType core.VerifierT
 	return s.getVerifierPred(ctx, value, sq.Eq{"vtype": vType, "namespace": namespace, "value": value})
 }
 
-func (s *SQLCommon) GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (verifier *core.Verifier, err error) {
-	return s.getVerifierPred(ctx, hash.String(), sq.Eq{"hash": hash})
+func (s *SQLCommon) GetVerifierByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (verifier *core.Verifier, err error) {
+	return s.getVerifierPred(ctx, hash.String(), sq.Eq{"hash": hash, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetVerifiers(ctx context.Context, filter database.Filter) (verifiers []*core.Verifier, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetVerifiers(ctx context.Context, namespace string, filter database.Filter) (verifiers []*core.Verifier, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(verifierColumns...).From(verifiersTable), filter, verifierFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(verifierColumns...).From(verifiersTable), filter, verifierFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -191,26 +191,4 @@ func (s *SQLCommon) GetVerifiers(ctx context.Context, filter database.Filter) (v
 
 	return verifiers, s.queryRes(ctx, verifiersTable, tx, fop, fi), err
 
-}
-
-func (s *SQLCommon) UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, update database.Update) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update(verifiersTable), update, verifierFilterFieldMap)
-	if err != nil {
-		return err
-	}
-	query = query.Where(sq.Eq{"hash": hash})
-
-	_, err = s.updateTx(ctx, verifiersTable, tx, query, nil /* no change events for filter based updates */)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
 }

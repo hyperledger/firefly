@@ -38,7 +38,7 @@ var getNetworkOrg = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.NetworkMap().GetOrganizationByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			output, err = cr.or.NetworkMap().GetOrganizationByNameOrID(cr.ctx, r.PP["nameOrId"])
 			return output, err
 		},
 	},

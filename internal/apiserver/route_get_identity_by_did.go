@@ -42,9 +42,9 @@ var getIdentityByDID = &ffapi.Route{
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-				return cr.or.NetworkMap().GetIdentityByDIDWithVerifiers(cr.ctx, extractNamespace(r.PP), r.PP["did"])
+				return cr.or.NetworkMap().GetIdentityByDIDWithVerifiers(cr.ctx, r.PP["did"])
 			}
-			return cr.or.NetworkMap().GetIdentityByDID(cr.ctx, extractNamespace(r.PP), r.PP["did"])
+			return cr.or.NetworkMap().GetIdentityByDID(cr.ctx, r.PP["did"])
 		},
 	},
 }

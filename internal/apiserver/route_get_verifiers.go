@@ -38,7 +38,7 @@ var getVerifiers = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.VerifierQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.NetworkMap().GetVerifiers(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.NetworkMap().GetVerifiers(cr.ctx, cr.filter))
 		},
 	},
 }
