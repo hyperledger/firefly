@@ -94,18 +94,16 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, location, firstEvent)
 	if err == nil {
-		if err == nil {
-			mm.activeContract.mux.Lock()
-			mm.activeContract.location = location
-			mm.activeContract.firstEvent = firstEvent
-			mm.activeContract.networkVersion = version
-			mm.activeContract.subscription = subID
-			mm.activeContract.mux.Unlock()
-			contracts.Active.Info = fftypes.JSONObject{
-				"location":     location,
-				"firstEvent":   firstEvent,
-				"subscription": subID,
-			}
+		mm.activeContract.mux.Lock()
+		mm.activeContract.location = location
+		mm.activeContract.firstEvent = firstEvent
+		mm.activeContract.networkVersion = version
+		mm.activeContract.subscription = subID
+		mm.activeContract.mux.Unlock()
+		contracts.Active.Info = fftypes.JSONObject{
+			"location":     location,
+			"firstEvent":   firstEvent,
+			"subscription": subID,
 		}
 	}
 	return err
@@ -119,12 +117,6 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 		active := mm.contracts[contractIndex]
 		location = active.Location
 		firstEvent = active.FirstEvent
-	} else {
-		// handle deprecated config here
-		location, firstEvent, err = mm.blockchain.GetAndConvertDeprecatedContractConfig(ctx)
-		if err != nil {
-			return nil, "", err
-		}
 
 		switch firstEvent {
 		case string(core.SubOptsFirstEventOldest):
@@ -132,15 +124,15 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 		case string(core.SubOptsFirstEventNewest):
 			firstEvent = "latest"
 		}
+	} else {
+		// handle deprecated config here
+		location, firstEvent, err = mm.blockchain.GetAndConvertDeprecatedContractConfig(ctx)
+		if err != nil {
+			return nil, "", err
+		}
 	}
 
 	return location, firstEvent, err
-}
-
-func (mm *multipartyManager) NetworkVersion() int {
-	mm.activeContract.mux.Lock()
-	defer mm.activeContract.mux.Unlock()
-	return mm.activeContract.networkVersion
 }
 
 func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
