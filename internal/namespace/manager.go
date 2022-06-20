@@ -186,6 +186,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 			return err
 		}
 
+		// If the default namespace is a multiparty V1 namespace, insert the legacy ff_system namespace"
 		if name == defaultNS && ns.config.Multiparty.Enabled && ns.orchestrator.GetNetworkVersion() == 1 {
 			systemNS = &namespace{}
 			*systemNS = *ns

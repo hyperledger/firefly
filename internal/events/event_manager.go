@@ -67,7 +67,7 @@ type EventManager interface {
 	// Bound blockchain callbacks
 	BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
-	BlockchainNetworkAction(mm multiparty.Manager, action string, event *blockchain.Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error
 
 	// Bound dataexchange callbacks
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)
@@ -112,9 +112,10 @@ type eventManager struct {
 	metrics               metrics.Manager
 	chainListenerCache    *ccache.Cache
 	chainListenerCacheTTL time.Duration
+	multiparty            multiparty.Manager
 }
 
-func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -134,6 +135,7 @@ func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 		messaging:      pm,
 		assets:         am,
 		sharedDownload: sd,
+		multiparty:     mp,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),

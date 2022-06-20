@@ -19,7 +19,6 @@ package multiparty
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -65,7 +64,6 @@ type multipartyManager struct {
 	namespace      string
 	activeContract struct {
 		location       *fftypes.JSONAny
-		mux            sync.Mutex
 		firstEvent     string
 		networkVersion int
 		subscription   string
@@ -94,12 +92,10 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 
 	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, location, firstEvent)
 	if err == nil {
-		mm.activeContract.mux.Lock()
 		mm.activeContract.location = location
 		mm.activeContract.firstEvent = firstEvent
 		mm.activeContract.networkVersion = version
 		mm.activeContract.subscription = subID
-		mm.activeContract.mux.Unlock()
 		contracts.Active.Info = fftypes.JSONObject{
 			"location":     location,
 			"firstEvent":   firstEvent,
@@ -149,8 +145,6 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *c
 }
 
 func (mm *multipartyManager) GetNetworkVersion() int {
-	mm.activeContract.mux.Lock()
-	defer mm.activeContract.mux.Unlock()
 	return mm.activeContract.networkVersion
 }
 

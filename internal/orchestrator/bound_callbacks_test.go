@@ -60,7 +60,7 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BlockchainNetworkAction", mmp, "terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	mei.On("BlockchainNetworkAction", "terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
 	err = bc.BlockchainNetworkAction("terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 

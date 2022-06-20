@@ -61,7 +61,7 @@ func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKe
 }
 
 func (bc *boundCallbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	return bc.ei.BlockchainNetworkAction(bc.multiparty, action, event, signingKey)
+	return bc.ei.BlockchainNetworkAction(action, event, signingKey)
 }
 
 func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {

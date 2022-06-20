@@ -42,7 +42,7 @@ func (em *eventManager) actionTerminate(mm multiparty.Manager, event *blockchain
 	})
 }
 
-func (em *eventManager) BlockchainNetworkAction(mm multiparty.Manager, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+func (em *eventManager) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
 	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
 		// Verify that the action came from a registered root org
 		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, signingKey)
@@ -59,7 +59,7 @@ func (em *eventManager) BlockchainNetworkAction(mm multiparty.Manager, action st
 		}
 
 		if action == core.NetworkActionTerminate.String() {
-			err = em.actionTerminate(mm, event)
+			err = em.actionTerminate(em.multiparty, event)
 		} else {
 			log.L(em.ctx).Errorf("Ignoring unrecognized network action: %s", action)
 			return false, nil

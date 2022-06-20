@@ -41,7 +41,7 @@ func TestNetworkAction(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mmp := &multipartymocks.Manager{}
+	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mii := em.identity.(*identitymanagermocks.Manager)
@@ -56,10 +56,9 @@ func TestNetworkAction(t *testing.T) {
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
 	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainNetworkAction(mmp, "terminate", event, verifier)
+	err := em.BlockchainNetworkAction("terminate", event, verifier)
 	assert.NoError(t, err)
 
-	mmp.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mii.AssertExpectations(t)
@@ -74,17 +73,14 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	// mbi := &blockchainmocks.Plugin{}
-	mmp := &multipartymocks.Manager{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
 
-	err := em.BlockchainNetworkAction(mmp, "terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
-	mmp.AssertExpectations(t)
 	mii.AssertExpectations(t)
 }
 
@@ -97,7 +93,6 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mmp := &multipartymocks.Manager{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{
@@ -106,10 +101,9 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 		},
 	}, nil)
 
-	err := em.BlockchainNetworkAction(mmp, "terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
-	mmp.AssertExpectations(t)
 	mii.AssertExpectations(t)
 }
 
@@ -122,15 +116,13 @@ func TestNetworkActionUnknown(t *testing.T) {
 		Value: "0x1234",
 	}
 
-	mmp := &multipartymocks.Manager{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 
-	err := em.BlockchainNetworkAction(mmp, "bad", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("bad", &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
-	mmp.AssertExpectations(t)
 	mii.AssertExpectations(t)
 }
 
