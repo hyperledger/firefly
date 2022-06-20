@@ -552,7 +552,7 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
 		}
-		entry.plugin.RegisterListener(nm)
+		entry.plugin.SetHandler(nm)
 	}
 	for _, entry := range nm.plugins.blockchain {
 		if err = entry.plugin.Init(ctx, entry.config, nm.metrics); err != nil {

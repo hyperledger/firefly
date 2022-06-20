@@ -59,8 +59,8 @@ func (ws *WebSockets) Init(ctx context.Context, config config.Section) error {
 	return nil
 }
 
-func (ws *WebSockets) RegisterListener(namespace string, listener events.Callbacks) error {
-	ws.callbacks[namespace] = listener
+func (ws *WebSockets) SetHandler(namespace string, handler events.Callbacks) error {
+	ws.callbacks[namespace] = handler
 	return nil
 }
 

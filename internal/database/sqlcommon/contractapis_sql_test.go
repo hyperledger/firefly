@@ -126,7 +126,7 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 func TestUpsertContractAPIIDMismatch(t *testing.T) {
 	s, db := newMockProvider().init()
 	callbacks := &databasemocks.Callbacks{}
-	s.RegisterListener(callbacks)
+	s.SetHandler(callbacks)
 	apiID := fftypes.NewUUID()
 	api := &core.ContractAPI{
 		ID:        apiID,

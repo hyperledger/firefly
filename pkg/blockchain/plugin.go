@@ -35,8 +35,8 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section, metrics metrics.Manager) error
 
-	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(listener Callbacks)
+	// SetHandler registers a handler to receive callbacks
+	SetHandler(handler Callbacks)
 
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Checks the provided contract info against the plugin's configuration, and updates it as needed

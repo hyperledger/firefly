@@ -43,7 +43,7 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	config := config.RootSection("ut.events")
 	se.InitConfig(config)
 	se.Init(ctx, config)
-	se.RegisterListener("ns1", cbs)
+	se.SetHandler("ns1", cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
 	assert.Nil(t, se.ValidateOptions(&core.SubscriptionOptions{}))

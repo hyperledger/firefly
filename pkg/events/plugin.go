@@ -35,8 +35,8 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
-	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(namespace string, listener Callbacks) error
+	// SetHandler registers a handler to receive callbacks
+	SetHandler(namespace string, handler Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities

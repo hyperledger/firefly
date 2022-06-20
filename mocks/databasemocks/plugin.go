@@ -2368,11 +2368,6 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// RegisterListener provides a mock function with given fields: listener
-func (_m *Plugin) RegisterListener(listener database.Callbacks) {
-	_m.Called(listener)
-}
-
 // ReplaceMessage provides a mock function with given fields: ctx, message
 func (_m *Plugin) ReplaceMessage(ctx context.Context, message *core.Message) error {
 	ret := _m.Called(ctx, message)
@@ -2413,6 +2408,11 @@ func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error
 	}
 
 	return r0
+}
+
+// SetHandler provides a mock function with given fields: handler
+func (_m *Plugin) SetHandler(handler database.Callbacks) {
+	_m.Called(handler)
 }
 
 // UpdateBatch provides a mock function with given fields: ctx, id, update

@@ -262,7 +262,7 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	err := h.RegisterListener("ns1", mcb)
+	err := h.SetHandler("ns1", mcb)
 	assert.NoError(t, err)
 
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
@@ -424,7 +424,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener("ns1", mcb)
+	h.SetHandler("ns1", mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
@@ -474,7 +474,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener("ns1", mcb)
+	h.SetHandler("ns1", mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
@@ -810,7 +810,7 @@ func TestReceiptEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener("ns1", mcb)
+	h.SetHandler("ns1", mcb)
 	opID := fftypes.NewUUID()
 
 	// receipt: bad ID - passed through
@@ -854,7 +854,7 @@ func TestPoolEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener("ns1", mcb)
+	h.SetHandler("ns1", mcb)
 	txID := fftypes.NewUUID()
 
 	// token-pool: missing data
@@ -950,7 +950,7 @@ func TestTransferEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener("ns1", mcb)
+	h.SetHandler("ns1", mcb)
 	txID := fftypes.NewUUID()
 
 	// token-mint: missing data
@@ -1169,7 +1169,7 @@ func TestApprovalEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener("ns1", mcb)
+	h.SetHandler("ns1", mcb)
 	txID := fftypes.NewUUID()
 
 	// token-approval: success

@@ -48,7 +48,7 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	svrConfig := config.RootSection("ut.webhooks")
 	wh.InitConfig(svrConfig)
 	wh.Init(ctx, svrConfig)
-	wh.RegisterListener("ns1", cbs)
+	wh.SetHandler("ns1", cbs)
 	assert.Equal(t, "webhooks", wh.Name())
 	assert.NotNil(t, wh.Capabilities())
 	return wh, cancelCtx

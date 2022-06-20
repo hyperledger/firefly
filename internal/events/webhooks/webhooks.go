@@ -73,10 +73,10 @@ func (wh *WebHooks) Init(ctx context.Context, config config.Section) (err error)
 	return nil
 }
 
-func (wh *WebHooks) RegisterListener(namespace string, listener events.Callbacks) error {
-	wh.callbacks[namespace] = listener
+func (wh *WebHooks) SetHandler(namespace string, handler events.Callbacks) error {
+	wh.callbacks[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
-	return listener.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })
+	return handler.RegisterConnection(wh.connID, func(sr core.SubscriptionRef) bool { return true })
 }
 
 func (wh *WebHooks) Capabilities() *events.Capabilities {

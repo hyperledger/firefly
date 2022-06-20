@@ -92,7 +92,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	met.On("Name").Return("ut").Maybe()
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
-	mev.On("RegisterListener", "ns1", mock.Anything).Return(nil).Maybe()
+	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
 	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper, events)
 	em := emi.(*eventManager)
@@ -154,7 +154,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
-	mev.On("RegisterListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper, events)
 	assert.EqualError(t, err, "pop")
 }
@@ -407,7 +407,7 @@ func TestAddInternalListener(t *testing.T) {
 	conf := config.RootSection("ut.events")
 	ie.InitConfig(conf)
 	ie.Init(em.ctx, conf)
-	ie.RegisterListener("ns1", cbs)
+	ie.SetHandler("ns1", cbs)
 	em.internalEvents = ie
 	defer cancel()
 	err := em.AddSystemEventListener("ns1", func(event *core.EventDelivery) error { return nil })

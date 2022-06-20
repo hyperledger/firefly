@@ -64,7 +64,7 @@ func newMockProvider() *mockProvider {
 // init is a convenience to init for tests that aren't testing init itself
 func (mp *mockProvider) init() (*mockProvider, sqlmock.Sqlmock) {
 	_ = mp.Init(context.Background(), mp, mp.config, mp.capabilities)
-	mp.RegisterListener(mp.callbacks)
+	mp.SetHandler(mp.callbacks)
 	return mp, mp.mdb
 }
 

@@ -47,7 +47,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	svrConfig := config.RootSection("ut.websockets")
 	ws.InitConfig(svrConfig)
 	ws.Init(ctx, svrConfig)
-	ws.RegisterListener("ns1", cbs)
+	ws.SetHandler("ns1", cbs)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil).Maybe()

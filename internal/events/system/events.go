@@ -58,10 +58,10 @@ func (se *Events) Init(ctx context.Context, config config.Section) (err error) {
 	return nil
 }
 
-func (se *Events) RegisterListener(namespace string, listener events.Callbacks) error {
-	se.callbacks[namespace] = listener
+func (se *Events) SetHandler(namespace string, handler events.Callbacks) error {
+	se.callbacks[namespace] = handler
 	// We have a single logical connection, that matches all subscriptions
-	return listener.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
+	return handler.RegisterConnection(se.connID, func(sr core.SubscriptionRef) bool { return true })
 }
 
 func (se *Events) Capabilities() *events.Capabilities {

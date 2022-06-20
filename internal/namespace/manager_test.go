@@ -132,7 +132,7 @@ func TestInit(t *testing.T) {
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -170,7 +170,7 @@ func TestInitBlockchainFail(t *testing.T) {
 	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(fmt.Errorf("pop"))
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -185,7 +185,7 @@ func TestInitDataExchangeFail(t *testing.T) {
 	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
@@ -201,7 +201,7 @@ func TestInitSharedStorageFail(t *testing.T) {
 	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
@@ -218,7 +218,7 @@ func TestInitTokensFail(t *testing.T) {
 	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -236,7 +236,7 @@ func TestInitEventsFail(t *testing.T) {
 	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -253,10 +253,10 @@ func TestInitOrchestratorFail(t *testing.T) {
 	defer nm.cleanup(t)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mdi.On("GetIdentities", mock.Anything, "default", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mbi.On("RegisterListener", mock.Anything).Return()
+	nm.mbi.On("SetHandler", mock.Anything).Return()
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -277,7 +277,7 @@ func TestInitVersion1(t *testing.T) {
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -306,7 +306,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -701,7 +701,7 @@ func TestInitBadNamespace(t *testing.T) {
 	nm.utOrchestrator = &orchestratormocks.Orchestrator{}
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
-	nm.mdi.On("RegisterListener", mock.Anything).Return()
+	nm.mdi.On("SetHandler", mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)

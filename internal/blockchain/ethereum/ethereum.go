@@ -81,17 +81,17 @@ type Ethereum struct {
 }
 
 type callbacks struct {
-	listeners []blockchain.Callbacks
+	handlers []blockchain.Callbacks
 }
 
 func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
 	}
 }
 
 func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *co
 }
 
 func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
 			return err
 		}
@@ -109,7 +109,7 @@ func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Ev
 }
 
 func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		if err := cb.BlockchainEvent(event); err != nil {
 			return err
 		}
@@ -247,8 +247,8 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 	return nil
 }
 
-func (e *Ethereum) RegisterListener(listener blockchain.Callbacks) {
-	e.callbacks.listeners = append(e.callbacks.listeners, listener)
+func (e *Ethereum) SetHandler(handler blockchain.Callbacks) {
+	e.callbacks.handlers = append(e.callbacks.handlers, handler)
 }
 
 func (e *Ethereum) Start() (err error) {

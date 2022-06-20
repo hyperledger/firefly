@@ -117,7 +117,7 @@ func newSubscriptionManager(ctx context.Context, ns string, di database.Plugin, 
 	}
 
 	for _, ei := range sm.transports {
-		if err := ei.RegisterListener(sm.namespace, &boundCallbacks{sm: sm, ei: ei}); err != nil {
+		if err := ei.SetHandler(sm.namespace, &boundCallbacks{sm: sm, ei: ei}); err != nil {
 			return nil, err
 		}
 	}

@@ -29,7 +29,7 @@ import (
 
 func TestPostgresProvider(t *testing.T) {
 	psql := &Postgres{}
-	psql.RegisterListener(&databasemocks.Callbacks{})
+	psql.SetHandler(&databasemocks.Callbacks{})
 	config := config.RootSection("unittest")
 	psql.InitConfig(config)
 	config.Set(sqlcommon.SQLConfDatasourceURL, "!bad connection")
