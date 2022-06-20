@@ -61,6 +61,8 @@ const (
 func (f *Fabric) InitConfig(config config.Section) {
 	f.fabconnectConf = config.SubSection(FabconnectConfigKey)
 	wsclient.InitConfig(f.fabconnectConf)
+	f.fabconnectConf.AddKnownKey(FabconnectConfigDefaultChannel)
+	f.fabconnectConf.AddKnownKey(FabconnectConfigChaincodeDeprecated)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigSigner)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigTopic)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigBatchSize, defaultBatchSize)

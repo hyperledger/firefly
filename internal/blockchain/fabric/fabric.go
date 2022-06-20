@@ -43,25 +43,23 @@ const (
 )
 
 type Fabric struct {
-	ctx              context.Context
-	topic            string
-	defaultChannel   string
-	signer           string
-	prefixShort      string
-	prefixLong       string
-	capabilities     *blockchain.Capabilities
-	callbacks        callbacks
-	client           *resty.Client
-	streams          *streamManager
-	streamID         string
-	idCache          map[string]*fabIdentity
-	wsconn           wsclient.WSClient
-	closed           chan struct{}
-	metrics          metrics.Manager
-	fabconnectConf   config.Section
-	contractConf     config.ArraySection
-	contractConfSize int
-	subs             map[string]string
+	ctx            context.Context
+	topic          string
+	defaultChannel string
+	signer         string
+	prefixShort    string
+	prefixLong     string
+	capabilities   *blockchain.Capabilities
+	callbacks      callbacks
+	client         *resty.Client
+	streams        *streamManager
+	streamID       string
+	idCache        map[string]*fabIdentity
+	wsconn         wsclient.WSClient
+	closed         chan struct{}
+	metrics        metrics.Manager
+	fabconnectConf config.Section
+	subs           map[string]string
 }
 
 type callbacks struct {
@@ -430,6 +428,9 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 }
 
 func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) error {
+	// Don't actually delete the subscription from ethconnect, as this may be called while processing
+	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
+	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := f.subs[subID]; ok {
 		delete(f.subs, subID)
 		return nil
@@ -635,7 +636,7 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey s
 		"contexts":   hashes,
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, f.defaultChannel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
 
 func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -652,7 +653,7 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signing
 		"contexts":   []string{},
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, f.defaultChannel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
 
 func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
@@ -815,7 +816,7 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 		return 0, err
 	}
 
-	res, err := f.queryContractMethod(ctx, f.defaultChannel, fabricOnChainLocation.Chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
+	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Function not found" is interpreted as "default to version 1"
 		notFoundError := fmt.Sprintf("Function %s not found", networkVersionMethodName)
@@ -835,9 +836,8 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 	// Old config (attributes under "fabconnect")
 	chaincode := f.fabconnectConf.GetString(FabconnectConfigChaincodeDeprecated)
 	if chaincode != "" {
-		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-			FabconnectConfigKey, FabconnectConfigChaincodeDeprecated,
-			FireFlyContractConfigKey, FireFlyContractChaincode)
+		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use namespaces.predefined[].multiparty.contract[].location.address",
+			FabconnectConfigKey, FabconnectConfigChaincodeDeprecated)
 	} else {
 		return nil, "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fabconnect")
 	}
@@ -848,10 +848,8 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 		Channel:   f.defaultChannel,
 	}
 
-	normalized, err := json.Marshal(fabricOnChainLocation)
-	if err == nil {
-		location = fftypes.JSONAnyPtrBytes(normalized)
-	}
+	normalized, _ := json.Marshal(fabricOnChainLocation)
+	location = fftypes.JSONAnyPtrBytes(normalized)
 
 	return location, fromBlock, nil
 }

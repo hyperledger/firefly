@@ -261,12 +261,18 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 	if err != nil {
 		return "", err
 	}
+	// TODO: We will probably need to save the namespace AND network version here
+	// Ultimately there needs to be a logic branch in the event handling, where for "V1" we expect to receive a namespace in every
+	// BatchPin event, but for "V2" we infer the namespace based on which subscription ID produced it.
 	e.subs[sub.ID] = namespace
 
 	return sub.ID, nil
 }
 
 func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) error {
+	// Don't actually delete the subscription from ethconnect, as this may be called while processing
+	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
+	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := e.subs[subID]; ok {
 		delete(e.subs, subID)
 		return nil
@@ -1123,18 +1129,16 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 	// Old config (attributes under "ethconnect")
 	address := e.ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
 	if address != "" {
-		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-			EthconnectConfigKey, EthconnectConfigInstanceDeprecated,
-			FireFlyContractConfigKey, FireFlyContractAddress)
+		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use namespaces.predefined[].multiparty.contract[].location.address instead",
+			EthconnectConfigKey, EthconnectConfigInstanceDeprecated)
 	} else {
 		return nil, "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethereum.ethconnect")
 	}
 
 	fromBlock = e.ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
 	if fromBlock != "" {
-		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-			EthconnectConfigKey, EthconnectConfigFromBlockDeprecated,
-			FireFlyContractConfigKey, FireFlyContractFromBlock)
+		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use namespaces.predefined[].multiparty.contract[].location.firstEvent instead",
+			EthconnectConfigKey, EthconnectConfigFromBlockDeprecated)
 	}
 
 	// Backwards compatibility from when instance path was not a contract address
@@ -1154,10 +1158,8 @@ func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (l
 	ethLocation := &Location{
 		Address: address,
 	}
-	normalized, err := json.Marshal(ethLocation)
-	if err == nil {
-		location = fftypes.JSONAnyPtrBytes(normalized)
-	}
+	normalized, _ := json.Marshal(ethLocation)
+	location = fftypes.JSONAnyPtrBytes(normalized)
 
 	return location, fromBlock, nil
 }

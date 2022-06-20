@@ -132,10 +132,10 @@ nav_order: 2
 |batchTimeout|How long Ethconnect should wait for new events to arrive and fill a batch, before sending the batch to FireFly core. Only applies when automatically creating a new event stream|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
-|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use namespace.predefined[].multiparty.contract[].firstEvent)|Address `string`|`0`
+|fromBlock|The first event this FireFly instance should listen to from the BatchPin smart contract. Default=0. Only affects initial creation of the event stream (deprecated - use namespace.predefined[].multiparty.contract[].location.firstEvent)|Address `string`|`0`
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
 |idleTimeout|The max duration to hold a HTTP keepalive connection between calls|[`time.Duration`](https://pkg.go.dev/time#Duration)|`475ms`
-|instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespace.predefined[].multiparty.contract[].address)|Address `string`|`<nil>`
+|instance|The Ethereum address of the FireFly BatchPin smart contract that has been deployed to the blockchain (deprecated - use namespace.predefined[].multiparty.contract[].location.address)|Address `string`|`<nil>`
 |maxIdleConns|The max number of idle connections to hold pooled|`int`|`100`
 |prefixLong|The prefix that will be used for Ethconnect specific HTTP headers when FireFly makes requests to Ethconnect|`string`|`firefly`
 |prefixShort|The prefix that will be used for Ethconnect specific query parameters when FireFly makes requests to Ethconnect|`string`|`fly`
@@ -217,6 +217,8 @@ nav_order: 2
 |---|-----------|----|-------------|
 |batchSize|The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
 |batchTimeout|The maximum amount of time to wait for a batch to complete|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use namespace.predefined[].multiparty.contract[].location.chaincode)|`string`|`<nil>`
+|channel|The Fabric channel that FireFly will use for BatchPin transactions (deprecated - use namespace.predefined[].multiparty.contract[].location.channel)|`string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
@@ -607,7 +609,7 @@ nav_order: 2
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |firstEvent|The first event the contract should process. Valid options are `oldest` or `newest`|`string`|`<nil>`
-|location|Object containing namespace specific configuration for this blockchain plugin|`string`|`<nil>`
+|location|A blockchain-specific contract location. For example, an Ethereum contract address, or a Fabric chaincode name and channe|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty.org
 
@@ -813,6 +815,8 @@ nav_order: 2
 |---|-----------|----|-------------|
 |batchSize|The number of events Fabconnect should batch together for delivery to FireFly core. Only applies when automatically creating a new event stream|`int`|`50`
 |batchTimeout|The maximum amount of time to wait for a batch to complete|[`time.Duration`](https://pkg.go.dev/time#Duration)|`500`
+|chaincode|The name of the Fabric chaincode that FireFly will use for BatchPin transactions (deprecated - use fireflyContract[].chaincode)|`string`|`<nil>`
+|channel|The Fabric channel that FireFly will use for BatchPin transactions|`string`|`<nil>`
 |connectionTimeout|The maximum amount of time that a connection is allowed to remain with no data transmitted|[`time.Duration`](https://pkg.go.dev/time#Duration)|`30s`
 |expectContinueTimeout|See [ExpectContinueTimeout in the Go docs](https://pkg.go.dev/net/http#Transport)|[`time.Duration`](https://pkg.go.dev/time#Duration)|`1s`
 |headers|Adds custom headers to HTTP requests|`map[string]string`|`<nil>`
