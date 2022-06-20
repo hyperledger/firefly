@@ -353,7 +353,7 @@ func (or *orchestrator) Operations() operations.Manager {
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
-	or.plugins.Database.Plugin.SetHandler(or)
+	or.plugins.Database.Plugin.SetHandler(or.namespace, or)
 	or.plugins.Blockchain.Plugin.SetHandler(&or.bc)
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)

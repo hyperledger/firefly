@@ -17,7 +17,6 @@
 package orchestrator
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -91,28 +90,4 @@ func TestSubscriptionDeleted(t *testing.T) {
 	mem.On("DeletedSubscriptions").Return((chan<- *fftypes.UUID)(make(chan *fftypes.UUID, 1)))
 	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeDeleted, "ns1", fftypes.NewUUID())
 	mem.AssertExpectations(t)
-}
-
-func TestOrderedUUIDCollectionWrongNS(t *testing.T) {
-	o := &orchestrator{
-		ctx:       context.Background(),
-		namespace: "ns1",
-	}
-	o.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, "ns2", fftypes.NewUUID(), 1)
-}
-
-func TestOrderedCollectionWrongNS(t *testing.T) {
-	o := &orchestrator{
-		ctx:       context.Background(),
-		namespace: "ns1",
-	}
-	o.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, "ns2", 1)
-}
-
-func TestUUIDCollectionWrongNS(t *testing.T) {
-	o := &orchestrator{
-		ctx:       context.Background(),
-		namespace: "ns1",
-	}
-	o.UUIDCollectionNSEvent(database.CollectionSubscriptions, core.ChangeEventTypeCreated, "ns2", fftypes.NewUUID())
 }

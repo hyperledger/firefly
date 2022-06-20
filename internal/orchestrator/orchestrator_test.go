@@ -185,7 +185,7 @@ func TestNewOrchestrator(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("SetHandler", mock.Anything).Return()
+	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("SetHandler", mock.Anything).Return()
@@ -209,7 +209,7 @@ func TestInitOK(t *testing.T) {
 func TestInitTokenListenerFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("SetHandler", mock.Anything).Return()
+	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
 	or.mdx.On("SetHandler", mock.Anything).Return()
@@ -223,7 +223,7 @@ func TestInitTokenListenerFail(t *testing.T) {
 func TestInitDataexchangeNodesFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
-	or.mdi.On("SetHandler", mock.Anything).Return()
+	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
 	or.mbi.On("SetHandler", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ctx := context.Background()

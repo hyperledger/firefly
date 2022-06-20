@@ -43,6 +43,12 @@ const (
 	UpsertOptimizationExisting
 )
 
+const (
+	// Pseudo-namespace used to register a global callback handler
+	// It will receive all namespaced and non-namespaced events
+	GlobalHandler = "ff:global"
+)
+
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
 	PersistenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
@@ -53,8 +59,8 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
-	// SetHandler registers a handler to receive callbacks
-	SetHandler(handler Callbacks)
+	// SetHandler registers a handler to receive callbacks for a particular namespace
+	SetHandler(namespace string, handler Callbacks)
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
