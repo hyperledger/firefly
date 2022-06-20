@@ -19,6 +19,7 @@ package namespace
 import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly/internal/coreconfig"
+	"github.com/hyperledger/firefly/pkg/core"
 )
 
 const (
@@ -46,7 +47,7 @@ func InitConfig(withDefaults bool) {
 	multipartyConf.AddKnownKey(coreconfig.NamespaceMultipartyOrgKey)
 
 	contractConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
-	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, "oldest")
+	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractFirstEvent, core.SubOptsFirstEventOldest)
 	contractConf.AddKnownKey(coreconfig.NamespaceMultipartyContractLocation)
 
 	if withDefaults {

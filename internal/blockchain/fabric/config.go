@@ -61,17 +61,10 @@ const (
 func (f *Fabric) InitConfig(config config.Section) {
 	f.fabconnectConf = config.SubSection(FabconnectConfigKey)
 	wsclient.InitConfig(f.fabconnectConf)
-	f.fabconnectConf.AddKnownKey(FabconnectConfigDefaultChannel)
-	f.fabconnectConf.AddKnownKey(FabconnectConfigChaincodeDeprecated)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigSigner)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigTopic)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigBatchSize, defaultBatchSize)
 	f.fabconnectConf.AddKnownKey(FabconnectConfigBatchTimeout, defaultBatchTimeout)
 	f.fabconnectConf.AddKnownKey(FabconnectPrefixShort, defaultPrefixShort)
 	f.fabconnectConf.AddKnownKey(FabconnectPrefixLong, defaultPrefixLong)
-
-	f.contractConf = config.SubArray(FireFlyContractConfigKey)
-	f.contractConf.AddKnownKey(FireFlyContractChaincode)
-	f.contractConf.AddKnownKey(FireFlyContractFromBlock, "oldest")
-	f.contractConfSize = f.contractConf.ArraySize()
 }
