@@ -422,14 +422,14 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 	return &msg, nil
 }
 
-func (s *SQLCommon) GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *core.Message, err error) {
+func (s *SQLCommon) GetMessageByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Message, err error) {
 
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
 	rows, _, err := s.query(ctx, messagesTable,
 		sq.Select(cols...).
 			From(messagesTable).
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"id": id, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -483,12 +483,12 @@ func (s *SQLCommon) getMessagesQuery(ctx context.Context, query sq.SelectBuilder
 	return msgs, s.queryRes(ctx, messagesTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) GetMessageIDs(ctx context.Context, filter database.Filter) (ids []*core.IDAndSequence, err error) {
+func (s *SQLCommon) GetMessageIDs(ctx context.Context, namespace string, filter database.Filter) (ids []*core.IDAndSequence, err error) {
 	query, _, _, err := s.filterSelect(ctx, "", sq.Select("id", sequenceColumn).From(messagesTable), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
 			"created",
-		})
+		}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, err
 	}
@@ -542,28 +542,30 @@ func (s *SQLCommon) queryBatchIDs(ctx context.Context, query sq.SelectBuilder) (
 	return batchIDs, nil
 }
 
-func (s *SQLCommon) GetMessages(ctx context.Context, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetMessages(ctx context.Context, namespace string, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, sequenceColumn)
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(messagesTable), filter, msgFilterFieldMap,
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
 			&database.SortField{Field: "created", Descending: true},
-		})
+		}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
 	return s.getMessagesQuery(ctx, query, fop, fi, true)
 }
 
-func (s *SQLCommon) GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter database.Filter) (message []*core.Message, fr *database.FilterResult, err error) {
 	cols := make([]string, len(msgColumns)+1)
 	for i, col := range msgColumns {
 		cols[i] = fmt.Sprintf("m.%s", col)
 	}
 	cols[len(msgColumns)] = "m.seq"
-	query, fop, fi, err := s.filterSelect(ctx, "m", sq.Select(cols...).From("messages_data AS md"), filter, msgFilterFieldMap, []interface{}{"sequence"},
-		sq.Eq{"md.data_id": dataID})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "m", sq.Select(cols...).From("messages_data AS md"),
+		filter, msgFilterFieldMap, []interface{}{"sequence"},
+		sq.Eq{"md.data_id": dataID, "namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

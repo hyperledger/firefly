@@ -88,7 +88,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 		fb.Eq("state", core.MessageStateConfirmed),
 		fb.Eq("tag", core.SystemTagIdentityVerification),
 	)
-	candidates, _, err := dh.database.GetMessages(ctx, filter)
+	candidates, _, err := dh.database.GetMessages(ctx, dh.namespace, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -77,7 +77,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back
-	msgRead, err := s.GetMessageByID(ctx, msgID)
+	msgRead, err := s.GetMessageByID(ctx, "ns12345", msgID)
 	assert.NoError(t, err)
 	// The generated sequence will have been added
 	msg.Sequence = msgRead.Sequence
@@ -136,7 +136,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same message back - note the removal of one of the data elements
-	msgRead, err = s.GetMessageByID(ctx, msgID)
+	msgRead, err = s.GetMessageByID(ctx, "ns12345", msgID)
 	// The generated sequence will have been added
 	msgUpdated.Sequence = msgRead.Sequence
 	assert.NoError(t, err)
@@ -157,14 +157,14 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Gt("created", "0"),
 		fb.Gt("confirmed", "0"),
 	)
-	msgs, res, err := s.GetMessages(ctx, filter.Count(true))
+	msgs, res, err := s.GetMessages(ctx, "ns12345", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	msgReadJson, _ = json.Marshal(msgs[0])
 	assert.Equal(t, string(msgJson), string(msgReadJson))
 
-	msgIDs, err := s.GetMessageIDs(ctx, filter)
+	msgIDs, err := s.GetMessageIDs(ctx, "ns12345", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgIDs))
 	assert.Equal(t, msg.Header.ID, &msgIDs[0].ID)
@@ -181,9 +181,9 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	assert.Equal(t, *msgUpdated.BatchID, *batchIDs[0])
 
 	// Check we can get it with a filter on only messages with a particular data ref
-	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(true))
+	msgs, _, err = s.GetMessagesForData(ctx, "ns12345", dataID2, filter.Count(true))
 	assert.Regexp(t, "FF10267", err) // The left join means it will take non-trivial extra work to support this. So not supported for now
-	msgs, _, err = s.GetMessagesForData(ctx, dataID2, filter.Count(false))
+	msgs, _, err = s.GetMessagesForData(ctx, "ns12345", dataID2, filter.Count(false))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	msgReadJson, _ = json.Marshal(msgs[0])
@@ -194,7 +194,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Eq("id", msgUpdated.Header.ID.String()),
 		fb.Eq("created", "0"),
 	)
-	msgs, _, err = s.GetMessages(ctx, filter)
+	msgs, _, err = s.GetMessages(ctx, "ns12345", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(msgs))
 
@@ -212,7 +212,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 		fb.Eq("id", msgUpdated.Header.ID.String()),
 		fb.Eq("group", gid2),
 	)
-	msgs, _, err = s.GetMessages(ctx, filter)
+	msgs, _, err = s.GetMessages(ctx, "ns12345", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(msgs))
 	assert.Equal(t, *bid2, *msgs[0].BatchID)
@@ -221,7 +221,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	msgUpdated.State = core.MessageStateReady
 	err = s.ReplaceMessage(context.Background(), msgUpdated)
 	assert.NoError(t, err)
-	msgRead, err = s.GetMessageByID(ctx, msgUpdated.Header.ID)
+	msgRead, err = s.GetMessageByID(ctx, "ns12345", msgUpdated.Header.ID)
 	msgJson, _ = json.Marshal(&msgUpdated)
 	msgReadJson, _ = json.Marshal(msgRead)
 	assert.Equal(t, string(msgJson), string(msgReadJson))
@@ -516,7 +516,7 @@ func TestGetMessageByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetMessageByID(context.Background(), msgID)
+	_, err := s.GetMessageByID(context.Background(), "ns1", msgID)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -525,7 +525,7 @@ func TestGetMessageByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetMessageByID(context.Background(), msgID)
+	msg, err := s.GetMessageByID(context.Background(), "ns1", msgID)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -535,7 +535,7 @@ func TestGetMessageByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	msgID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetMessageByID(context.Background(), msgID)
+	_, err := s.GetMessageByID(context.Background(), "ns1", msgID)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -549,7 +549,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
 		AddRow(msgID.String(), nil, core.MessageTypeBroadcast, "author1", "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), "confirmed", 0, "pin", nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetMessageByID(context.Background(), msgID)
+	_, err := s.GetMessageByID(context.Background(), "ns1", msgID)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -557,7 +557,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 func TestGetMessagesBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, _, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*id", err)
 }
 
@@ -565,7 +565,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -573,7 +573,7 @@ func TestGetMessagesQueryFail(t *testing.T) {
 func TestGetMessagesForDataBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
-	_, _, err := s.GetMessagesForData(context.Background(), fftypes.NewUUID(), f)
+	_, _, err := s.GetMessagesForData(context.Background(), "ns1", fftypes.NewUUID(), f)
 	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -582,7 +582,7 @@ func TestGetMessagesReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -597,7 +597,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 		AddRow(msgID.String(), nil, core.MessageTypeBroadcast, "author1", "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), "confirmed", 0, "pin", nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
-	_, _, err := s.GetMessages(context.Background(), f)
+	_, _, err := s.GetMessages(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -614,7 +614,7 @@ func TestGetMessageIDsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetMessageIDs(context.Background(), f)
+	_, err := s.GetMessageIDs(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -623,7 +623,7 @@ func TestGetMessageIDsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("bad id"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, err := s.GetMessageIDs(context.Background(), f)
+	_, err := s.GetMessageIDs(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -631,7 +631,7 @@ func TestGetMessageIDsReadMessageFail(t *testing.T) {
 func TestGetMessageIDsBadQuery(t *testing.T) {
 	s, mock := newMockProvider().init()
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Eq("!wrong", "")
-	_, err := s.GetMessageIDs(context.Background(), f)
+	_, err := s.GetMessageIDs(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00142", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

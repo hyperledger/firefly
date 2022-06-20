@@ -40,7 +40,7 @@ var getMsgEvents = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.EventQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetMessageEvents(cr.ctx, extractNamespace(r.PP), r.PP["msgid"], cr.filter))
+			return filterResult(cr.or.GetMessageEvents(cr.ctx, r.PP["msgid"], cr.filter))
 		},
 	},
 }

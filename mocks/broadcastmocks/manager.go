@@ -110,13 +110,13 @@ func (_m *Manager) BroadcastIdentityClaim(ctx context.Context, ns string, def *c
 	return r0, r1
 }
 
-// BroadcastMessage provides a mock function with given fields: ctx, ns, in, waitConfirm
-func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, in, waitConfirm)
+// BroadcastMessage provides a mock function with given fields: ctx, in, waitConfirm
+func (_m *Manager) BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
+	ret := _m.Called(ctx, in, waitConfirm)
 
 	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.MessageInOut, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, in, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MessageInOut, bool) *core.Message); ok {
+		r0 = rf(ctx, in, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Message)
@@ -124,8 +124,8 @@ func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *core.Mes
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.MessageInOut, bool) error); ok {
-		r1 = rf(ctx, ns, in, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut, bool) error); ok {
+		r1 = rf(ctx, in, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -170,13 +170,13 @@ func (_m *Manager) Name() string {
 	return r0
 }
 
-// NewBroadcast provides a mock function with given fields: ns, in
-func (_m *Manager) NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender {
-	ret := _m.Called(ns, in)
+// NewBroadcast provides a mock function with given fields: in
+func (_m *Manager) NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender {
+	ret := _m.Called(in)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(string, *core.MessageInOut) sysmessaging.MessageSender); ok {
-		r0 = rf(ns, in)
+	if rf, ok := ret.Get(0).(func(*core.MessageInOut) sysmessaging.MessageSender); ok {
+		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(sysmessaging.MessageSender)

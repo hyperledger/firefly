@@ -39,7 +39,7 @@ var getMsgData = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: nil, // No filtering on this route - use data
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetMessageData(cr.ctx, extractNamespace(r.PP), r.PP["msgid"])
+			output, err = cr.or.GetMessageData(cr.ctx, r.PP["msgid"])
 			return output, err
 		},
 	},

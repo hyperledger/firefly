@@ -31,7 +31,7 @@ func TestGetTxnStatus(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetTransactionStatus", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetTransactionStatus", mock.Anything, "abcd12345").
 		Return(&core.TransactionStatus{}, nil, nil)
 	r.ServeHTTP(res, req)
 

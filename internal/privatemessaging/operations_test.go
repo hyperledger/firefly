@@ -116,7 +116,7 @@ func TestPrepareAndRunBatchSend(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
-	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(bp, nil)
 	mdx.On("SendMessage", context.Background(), "ns1:"+op.ID.String(), "peer1", mock.Anything).Return(nil)
 
 	po, err := pm.PrepareOperation(context.Background(), op)
@@ -174,7 +174,7 @@ func TestPrepareAndRunBatchSendHydrateFail(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
-	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(bp, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(bp, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "pop", err)
@@ -476,7 +476,7 @@ func TestPrepareOperationBatchSendBatchFail(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -511,7 +511,7 @@ func TestPrepareOperationBatchSendBatchNotFound(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mim.On("CachedIdentityLookupByID", context.Background(), node.ID).Return(node, nil)
 	mdi.On("GetGroupByHash", context.Background(), "ns1", group.Hash).Return(group, nil)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
 
 	_, err := pm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)

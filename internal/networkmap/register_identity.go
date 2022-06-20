@@ -99,7 +99,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 	}
 
 	if waitConfirm {
-		return nm.syncasync.WaitForIdentity(ctx, identity.Namespace, identity.ID, func(ctx context.Context) error {
+		return nm.syncasync.WaitForIdentity(ctx, identity.ID, func(ctx context.Context) error {
 			return nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
 		})
 	}

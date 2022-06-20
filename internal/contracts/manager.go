@@ -68,6 +68,7 @@ type Manager interface {
 }
 
 type contractManager struct {
+	namespace         string
 	database          database.Plugin
 	txHelper          txcommon.Helper
 	broadcast         broadcast.Manager
@@ -78,7 +79,7 @@ type contractManager struct {
 	syncasync         syncasync.Bridge
 }
 
-func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
+func NewContractManager(ctx context.Context, ns string, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
@@ -88,6 +89,7 @@ func NewContractManager(ctx context.Context, di database.Plugin, bm broadcast.Ma
 	}
 
 	cm := &contractManager{
+		namespace:         ns,
 		database:          di,
 		txHelper:          txHelper,
 		broadcast:         bm,
@@ -200,15 +202,15 @@ func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter databa
 	return cm.database.GetFFIs(ctx, ns, filter)
 }
 
-func (cm *contractManager) writeInvokeTransaction(ctx context.Context, ns string, req *core.ContractCallRequest) (*core.Operation, error) {
-	txid, err := cm.txHelper.SubmitNewTransaction(ctx, ns, core.TransactionTypeContractInvoke)
+func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
+	txid, err := cm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeContractInvoke)
 	if err != nil {
 		return nil, err
 	}
 
 	op := core.NewOperation(
 		cm.blockchain,
-		ns,
+		cm.namespace,
 		txid,
 		core.OpTypeBlockchainInvoke)
 	if err = addBlockchainInvokeInputs(op, req); err == nil {
@@ -232,7 +234,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 			return err
 		}
 		if req.Type == core.CallTypeInvoke {
-			op, err = cm.writeInvokeTransaction(ctx, ns, req)
+			op, err = cm.writeInvokeTransaction(ctx, req)
 			if err != nil {
 				return err
 			}
@@ -250,7 +252,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 			return err
 		}
 		if waitConfirm {
-			return cm.syncasync.WaitForInvokeOperation(ctx, ns, op.ID, send)
+			return cm.syncasync.WaitForInvokeOperation(ctx, op.ID, send)
 		}
 		err = send(ctx)
 		return op, err

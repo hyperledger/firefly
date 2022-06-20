@@ -41,7 +41,7 @@ var postTokenMint = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			return cr.or.Assets().MintTokens(cr.ctx, extractNamespace(r.PP), r.Input.(*core.TokenTransferInput), waitConfirm)
+			return cr.or.Assets().MintTokens(cr.ctx, r.Input.(*core.TokenTransferInput), waitConfirm)
 		},
 	},
 }

@@ -38,7 +38,7 @@ var getTxnOps = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetTransactionOperations(cr.ctx, extractNamespace(r.PP), r.PP["txnid"]))
+			return filterResult(cr.or.GetTransactionOperations(cr.ctx, r.PP["txnid"]))
 		},
 	},
 }

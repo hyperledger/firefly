@@ -36,7 +36,7 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	msa.On("WaitForMessage", bm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msa.On("WaitForMessage", bm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, "ns1", &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
@@ -53,7 +53,7 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	msa.On("WaitForMessage", bm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msa.On("WaitForMessage", bm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastIdentityClaim(bm.ctx, "ns1", &core.IdentityClaim{
 		Identity: &core.Identity{},
@@ -93,7 +93,7 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	ns := "customNamespace"
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	msa.On("WaitForMessage", bm.ctx, ns, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	msa.On("WaitForMessage", bm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, ns, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")

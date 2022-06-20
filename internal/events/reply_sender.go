@@ -26,9 +26,9 @@ import (
 func (ed *eventDispatcher) sendReply(ctx context.Context, event *core.Event, reply *core.MessageInOut) {
 	var err error
 	if reply.Header.Group != nil {
-		err = ed.messaging.NewMessage(event.Namespace, reply).Send(ctx)
+		err = ed.messaging.NewMessage(reply).Send(ctx)
 	} else {
-		err = ed.broadcast.NewBroadcast(event.Namespace, reply).Send(ctx)
+		err = ed.broadcast.NewBroadcast(reply).Send(ctx)
 	}
 	if err != nil {
 		log.L(ctx).Errorf("Failed to send reply: %s", err)

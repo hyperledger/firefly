@@ -55,7 +55,7 @@ func TestEventE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same event back
-	eventRead, err := s.GetEventByID(ctx, eventID)
+	eventRead, err := s.GetEventByID(ctx, "ns1", eventID)
 	// The generated sequence will have been added
 	event.Sequence = eventRead.Sequence
 	assert.NoError(t, err)
@@ -70,7 +70,7 @@ func TestEventE2EWithDB(t *testing.T) {
 		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", eventRead.Reference.String()),
 	)
-	events, res, err := s.GetEvents(ctx, filter.Count(true))
+	events, res, err := s.GetEvents(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(events))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -82,25 +82,9 @@ func TestEventE2EWithDB(t *testing.T) {
 		fb.Eq("id", eventRead.ID.String()),
 		fb.Eq("reference", fftypes.NewUUID().String()),
 	)
-	events, _, err = s.GetEvents(ctx, filter)
+	events, _, err = s.GetEvents(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(events))
-
-	// Update
-	newUUID := fftypes.NewUUID()
-	up := database.EventQueryFactory.NewUpdate(ctx).
-		Set("reference", newUUID)
-	err = s.UpdateEvent(ctx, eventRead.ID, up)
-	assert.NoError(t, err)
-
-	// Test find updated value
-	filter = fb.And(
-		fb.Eq("id", eventRead.ID.String()),
-		fb.Eq("reference", newUUID),
-	)
-	events, _, err = s.GetEvents(ctx, filter)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -210,7 +194,7 @@ func TestGetEventByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetEventByID(context.Background(), eventID)
+	_, err := s.GetEventByID(context.Background(), "ns1", eventID)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -219,7 +203,7 @@ func TestGetEventByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetEventByID(context.Background(), eventID)
+	msg, err := s.GetEventByID(context.Background(), "ns1", eventID)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -229,7 +213,7 @@ func TestGetEventByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	eventID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetEventByID(context.Background(), eventID)
+	_, err := s.GetEventByID(context.Background(), "ns1", eventID)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -238,7 +222,7 @@ func TestGetEventsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetEvents(context.Background(), f)
+	_, _, err := s.GetEvents(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -246,7 +230,7 @@ func TestGetEventsQueryFail(t *testing.T) {
 func TestGetEventsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, _, err := s.GetEvents(context.Background(), f)
+	_, _, err := s.GetEvents(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*id", err)
 }
 
@@ -254,33 +238,7 @@ func TestGettEventsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.EventQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetEvents(context.Background(), f)
+	_, _, err := s.GetEvents(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestEventUpdateBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.EventQueryFactory.NewUpdate(context.Background()).Set("id", "anything")
-	err := s.UpdateEvent(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestEventUpdateBuildQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	u := database.EventQueryFactory.NewUpdate(context.Background()).Set("id", map[bool]bool{true: false})
-	err := s.UpdateEvent(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF00143.*id", err)
-}
-
-func TestEventUpdateFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	u := database.EventQueryFactory.NewUpdate(context.Background()).Set("id", fftypes.NewUUID())
-	err := s.UpdateEvent(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err)
 }

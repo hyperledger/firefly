@@ -110,13 +110,13 @@ func (_m *Manager) Name() string {
 	return r0
 }
 
-// NewMessage provides a mock function with given fields: ns, msg
-func (_m *Manager) NewMessage(ns string, msg *core.MessageInOut) sysmessaging.MessageSender {
-	ret := _m.Called(ns, msg)
+// NewMessage provides a mock function with given fields: msg
+func (_m *Manager) NewMessage(msg *core.MessageInOut) sysmessaging.MessageSender {
+	ret := _m.Called(msg)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(string, *core.MessageInOut) sysmessaging.MessageSender); ok {
-		r0 = rf(ns, msg)
+	if rf, ok := ret.Get(0).(func(*core.MessageInOut) sysmessaging.MessageSender); ok {
+		r0 = rf(msg)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(sysmessaging.MessageSender)
@@ -149,13 +149,13 @@ func (_m *Manager) PrepareOperation(ctx context.Context, op *core.Operation) (*c
 	return r0, r1
 }
 
-// RequestReply provides a mock function with given fields: ctx, ns, request
-func (_m *Manager) RequestReply(ctx context.Context, ns string, request *core.MessageInOut) (*core.MessageInOut, error) {
-	ret := _m.Called(ctx, ns, request)
+// RequestReply provides a mock function with given fields: ctx, request
+func (_m *Manager) RequestReply(ctx context.Context, request *core.MessageInOut) (*core.MessageInOut, error) {
+	ret := _m.Called(ctx, request)
 
 	var r0 *core.MessageInOut
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.MessageInOut) *core.MessageInOut); ok {
-		r0 = rf(ctx, ns, request)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MessageInOut) *core.MessageInOut); ok {
+		r0 = rf(ctx, request)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.MessageInOut)
@@ -163,8 +163,8 @@ func (_m *Manager) RequestReply(ctx context.Context, ns string, request *core.Me
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.MessageInOut) error); ok {
-		r1 = rf(ctx, ns, request)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut) error); ok {
+		r1 = rf(ctx, request)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -225,13 +225,13 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 	return r0, r1, r2
 }
 
-// SendMessage provides a mock function with given fields: ctx, ns, in, waitConfirm
-func (_m *Manager) SendMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, in, waitConfirm)
+// SendMessage provides a mock function with given fields: ctx, in, waitConfirm
+func (_m *Manager) SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
+	ret := _m.Called(ctx, in, waitConfirm)
 
 	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.MessageInOut, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, in, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MessageInOut, bool) *core.Message); ok {
+		r0 = rf(ctx, in, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Message)
@@ -239,8 +239,8 @@ func (_m *Manager) SendMessage(ctx context.Context, ns string, in *core.MessageI
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.MessageInOut, bool) error); ok {
-		r1 = rf(ctx, ns, in, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut, bool) error); ok {
+		r1 = rf(ctx, in, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

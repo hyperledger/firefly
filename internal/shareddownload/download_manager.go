@@ -51,6 +51,7 @@ type Manager interface {
 type downloadManager struct {
 	ctx                        context.Context
 	cancelFunc                 func()
+	namespace                  string
 	database                   database.Plugin
 	sharedstorage              sharedstorage.Plugin
 	dataexchange               dataexchange.Plugin
@@ -78,7 +79,7 @@ type Callbacks interface {
 	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string)
 }
 
-func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
+func NewDownloadManager(ctx context.Context, ns string, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
 	if di == nil || dx == nil || ss == nil || cb == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DownloadManager")
 	}
@@ -87,6 +88,7 @@ func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorag
 	dm := &downloadManager{
 		ctx:                        dmCtx,
 		cancelFunc:                 cancelFunc,
+		namespace:                  ns,
 		database:                   di,
 		sharedstorage:              ss,
 		dataexchange:               dx,
@@ -170,7 +172,7 @@ func (dm *downloadManager) recoverDownloads(startupTime *fftypes.FFTime) {
 			Sort("created").
 			Skip(page * pageSize).
 			Limit(pageSize)
-		pendingOps, _, err := dm.database.GetOperations(dm.ctx, filter)
+		pendingOps, _, err := dm.database.GetOperations(dm.ctx, dm.namespace, filter)
 		if err != nil {
 			log.L(dm.ctx).Errorf("Error while recovering pending downloads (retries=%d): %s", errorAttempts, err)
 			errorAttempts++

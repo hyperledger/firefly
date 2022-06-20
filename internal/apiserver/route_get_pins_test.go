@@ -31,7 +31,7 @@ func TestGetPins(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetPins", mock.Anything, "default", mock.Anything).
+	o.On("GetPins", mock.Anything, mock.Anything).
 		Return([]*core.Pin{}, nil, nil)
 	r.ServeHTTP(res, req)
 

@@ -360,7 +360,7 @@ func TestEnrichEventsFailGetTransactions(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetTransactionByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	_, err := ed.enrichEvents([]core.LocallySequenced{&core.Event{ID: id1, Type: core.EventTypeTransactionSubmitted}})
@@ -377,7 +377,7 @@ func TestEnrichEventsFailGetBlockchainEvents(t *testing.T) {
 	defer cancel()
 
 	mdi := ed.database.(*databasemocks.Plugin)
-	mdi.On("GetBlockchainEventByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	id1 := fftypes.NewUUID()
 	_, err := ed.enrichEvents([]core.LocallySequenced{&core.Event{ID: id1, Type: core.EventTypeBlockchainEventReceived}})
@@ -610,16 +610,16 @@ func TestEnrichTransactionEvents(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref1).Return(&core.Transaction{
 		ID: ref1,
 	}, nil)
-	mdi.On("GetTransactionByID", mock.Anything, ref2).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref2).Return(&core.Transaction{
 		ID: ref2,
 	}, nil)
-	mdi.On("GetTransactionByID", mock.Anything, ref3).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref3).Return(&core.Transaction{
 		ID: ref3,
 	}, nil)
-	mdi.On("GetTransactionByID", mock.Anything, ref4).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref4).Return(&core.Transaction{
 		ID: ref4,
 	}, nil)
 
@@ -699,16 +699,16 @@ func TestEnrichBlockchainEventEvents(t *testing.T) {
 	ev4 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(&core.BlockchainEvent{
 		ID: ref1,
 	}, nil)
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref2).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref2).Return(&core.BlockchainEvent{
 		ID: ref2,
 	}, nil)
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref3).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref3).Return(&core.BlockchainEvent{
 		ID: ref3,
 	}, nil)
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref4).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref4).Return(&core.BlockchainEvent{
 		ID: ref4,
 	}, nil)
 
@@ -941,7 +941,11 @@ func TestGetEvents(t *testing.T) {
 	defer cancel()
 
 	sub := &subscription{
-		definition: &core.Subscription{},
+		definition: &core.Subscription{
+			SubscriptionRef: core.SubscriptionRef{
+				Namespace: "ns1",
+			},
+		},
 	}
 
 	ed, cancel := newTestEventDispatcher(sub)
@@ -949,7 +953,7 @@ func TestGetEvents(t *testing.T) {
 
 	mdi := ed.database.(*databasemocks.Plugin)
 
-	mdi.On("GetEvents", ag.ctx, mock.Anything).Return([]*core.Event{
+	mdi.On("GetEvents", ag.ctx, "ns1", mock.Anything).Return([]*core.Event{
 		{Sequence: 12345},
 	}, nil, nil)
 
@@ -1029,7 +1033,7 @@ func TestEventDispatcherWithReply(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mbm := ed.broadcast.(*broadcastmocks.Manager)
-	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", mock.Anything).Return(nil)
 
 	ed.deliveryResponse(&core.EventDeliveryResponse{

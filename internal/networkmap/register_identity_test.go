@@ -96,13 +96,11 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	}, nil)
 
 	msa := nm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("WaitForIdentity", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+	msa.On("WaitForIdentity", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		ctx := args[0].(context.Context)
-		ns := args[1].(string)
-		id := args[2].(*fftypes.UUID)
-		assert.Equal(t, parentIdentity.Namespace, ns)
+		id := args[1].(*fftypes.UUID)
 		assert.NotNil(t, id)
-		cb := args[3].(syncasync.RequestSender)
+		cb := args[2].(syncasync.RequestSender)
 		err := cb(ctx)
 		assert.NoError(t, err)
 	}).Return(nil, nil)

@@ -59,7 +59,7 @@ func TestTokenPoolCreatedIgnore(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)
@@ -140,7 +140,7 @@ func TestTokenPoolCreatedConfirm(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
+	mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
@@ -202,7 +202,7 @@ func TestTokenPoolCreatedConfirmWrongNS(t *testing.T) {
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Name == chainPool.Event.Name
 	})).Return(nil).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
+	mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 
 	err := em.TokenPoolCreated(mti, chainPool)
 	assert.NoError(t, err)
@@ -287,7 +287,7 @@ func TestTokenPoolCreatedConfirmFailBadSymbol(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(storedPool, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return([]*core.Operation{{
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return([]*core.Operation{{
 		ID: opID,
 	}}, nil, nil)
 
@@ -339,7 +339,7 @@ func TestTokenPoolCreatedMigrate(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
+	mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(nil).Once()
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypePoolConfirmed && *e.Reference == *storedPool.ID
@@ -420,7 +420,7 @@ func TestConfirmPoolTxFail(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(false, fmt.Errorf("pop"))
+	mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event)
 	assert.EqualError(t, err, "pop")
@@ -458,7 +458,7 @@ func TestConfirmPoolUpsertFail(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil)
-	mth.On("PersistTransaction", mock.Anything, "ns1", txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
+	mth.On("PersistTransaction", mock.Anything, txID, core.TransactionTypeTokenPool, "0xffffeeee").Return(true, nil).Once()
 	mdi.On("UpsertTokenPool", em.ctx, storedPool).Return(fmt.Errorf("pop"))
 
 	err := em.confirmPool(em.ctx, storedPool, event)
@@ -503,8 +503,8 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
 	mbm.On("BroadcastTokenPool", em.ctx, "ns1", mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
 		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
@@ -552,8 +552,8 @@ func TestTokenPoolCreatedAnnounceWrongNS(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
 
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)
@@ -593,7 +593,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputID(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)
@@ -634,7 +634,7 @@ func TestTokenPoolCreatedAnnounceBadOpInputNS(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil)
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)
@@ -679,8 +679,8 @@ func TestTokenPoolCreatedAnnounceBadSymbol(t *testing.T) {
 	}
 
 	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetOperations", em.ctx, mock.Anything).Return(operations, nil, nil).Once()
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
 
 	err := em.TokenPoolCreated(mti, pool)
 	assert.NoError(t, err)

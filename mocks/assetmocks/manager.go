@@ -34,13 +34,13 @@ func (_m *Manager) ActivateTokenPool(ctx context.Context, pool *core.TokenPool) 
 	return r0
 }
 
-// BurnTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
-func (_m *Manager) BurnTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error) {
-	ret := _m.Called(ctx, ns, transfer, waitConfirm)
+// BurnTokens provides a mock function with given fields: ctx, transfer, waitConfirm
+func (_m *Manager) BurnTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, transfer, waitConfirm)
 
 	var r0 *core.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenTransferInput, bool) *core.TokenTransfer); ok {
-		r0 = rf(ctx, ns, transfer, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransferInput, bool) *core.TokenTransfer); ok {
+		r0 = rf(ctx, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenTransfer)
@@ -48,8 +48,8 @@ func (_m *Manager) BurnTokens(ctx context.Context, ns string, transfer *core.Tok
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.TokenTransferInput, bool) error); ok {
-		r1 = rf(ctx, ns, transfer, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenTransferInput, bool) error); ok {
+		r1 = rf(ctx, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -247,13 +247,13 @@ func (_m *Manager) GetTokenPool(ctx context.Context, ns string, connector string
 	return r0, r1
 }
 
-// GetTokenPoolByNameOrID provides a mock function with given fields: ctx, ns, poolNameOrID
-func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNameOrID string) (*core.TokenPool, error) {
-	ret := _m.Called(ctx, ns, poolNameOrID)
+// GetTokenPoolByNameOrID provides a mock function with given fields: ctx, poolNameOrID
+func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, poolNameOrID)
 
 	var r0 *core.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
-		r0 = rf(ctx, ns, poolNameOrID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.TokenPool); ok {
+		r0 = rf(ctx, poolNameOrID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenPool)
@@ -261,8 +261,8 @@ func (_m *Manager) GetTokenPoolByNameOrID(ctx context.Context, ns string, poolNa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, poolNameOrID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, poolNameOrID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -357,13 +357,13 @@ func (_m *Manager) GetTokenTransfers(ctx context.Context, ns string, filter data
 	return r0, r1, r2
 }
 
-// MintTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
-func (_m *Manager) MintTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error) {
-	ret := _m.Called(ctx, ns, transfer, waitConfirm)
+// MintTokens provides a mock function with given fields: ctx, transfer, waitConfirm
+func (_m *Manager) MintTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, transfer, waitConfirm)
 
 	var r0 *core.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenTransferInput, bool) *core.TokenTransfer); ok {
-		r0 = rf(ctx, ns, transfer, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransferInput, bool) *core.TokenTransfer); ok {
+		r0 = rf(ctx, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenTransfer)
@@ -371,8 +371,8 @@ func (_m *Manager) MintTokens(ctx context.Context, ns string, transfer *core.Tok
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.TokenTransferInput, bool) error); ok {
-		r1 = rf(ctx, ns, transfer, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenTransferInput, bool) error); ok {
+		r1 = rf(ctx, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -394,13 +394,13 @@ func (_m *Manager) Name() string {
 	return r0
 }
 
-// NewApproval provides a mock function with given fields: ns, approve
-func (_m *Manager) NewApproval(ns string, approve *core.TokenApprovalInput) sysmessaging.MessageSender {
-	ret := _m.Called(ns, approve)
+// NewApproval provides a mock function with given fields: approve
+func (_m *Manager) NewApproval(approve *core.TokenApprovalInput) sysmessaging.MessageSender {
+	ret := _m.Called(approve)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(string, *core.TokenApprovalInput) sysmessaging.MessageSender); ok {
-		r0 = rf(ns, approve)
+	if rf, ok := ret.Get(0).(func(*core.TokenApprovalInput) sysmessaging.MessageSender); ok {
+		r0 = rf(approve)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(sysmessaging.MessageSender)
@@ -410,13 +410,13 @@ func (_m *Manager) NewApproval(ns string, approve *core.TokenApprovalInput) sysm
 	return r0
 }
 
-// NewTransfer provides a mock function with given fields: ns, transfer
-func (_m *Manager) NewTransfer(ns string, transfer *core.TokenTransferInput) sysmessaging.MessageSender {
-	ret := _m.Called(ns, transfer)
+// NewTransfer provides a mock function with given fields: transfer
+func (_m *Manager) NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender {
+	ret := _m.Called(transfer)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(string, *core.TokenTransferInput) sysmessaging.MessageSender); ok {
-		r0 = rf(ns, transfer)
+	if rf, ok := ret.Get(0).(func(*core.TokenTransferInput) sysmessaging.MessageSender); ok {
+		r0 = rf(transfer)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(sysmessaging.MessageSender)
@@ -479,13 +479,13 @@ func (_m *Manager) RunOperation(ctx context.Context, op *core.PreparedOperation)
 	return r0, r1, r2
 }
 
-// TokenApproval provides a mock function with given fields: ctx, ns, approval, waitConfirm
-func (_m *Manager) TokenApproval(ctx context.Context, ns string, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error) {
-	ret := _m.Called(ctx, ns, approval, waitConfirm)
+// TokenApproval provides a mock function with given fields: ctx, approval, waitConfirm
+func (_m *Manager) TokenApproval(ctx context.Context, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error) {
+	ret := _m.Called(ctx, approval, waitConfirm)
 
 	var r0 *core.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenApprovalInput, bool) *core.TokenApproval); ok {
-		r0 = rf(ctx, ns, approval, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenApprovalInput, bool) *core.TokenApproval); ok {
+		r0 = rf(ctx, approval, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenApproval)
@@ -493,8 +493,8 @@ func (_m *Manager) TokenApproval(ctx context.Context, ns string, approval *core.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.TokenApprovalInput, bool) error); ok {
-		r1 = rf(ctx, ns, approval, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenApprovalInput, bool) error); ok {
+		r1 = rf(ctx, approval, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -502,13 +502,13 @@ func (_m *Manager) TokenApproval(ctx context.Context, ns string, approval *core.
 	return r0, r1
 }
 
-// TransferTokens provides a mock function with given fields: ctx, ns, transfer, waitConfirm
-func (_m *Manager) TransferTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error) {
-	ret := _m.Called(ctx, ns, transfer, waitConfirm)
+// TransferTokens provides a mock function with given fields: ctx, transfer, waitConfirm
+func (_m *Manager) TransferTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, transfer, waitConfirm)
 
 	var r0 *core.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenTransferInput, bool) *core.TokenTransfer); ok {
-		r0 = rf(ctx, ns, transfer, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenTransferInput, bool) *core.TokenTransfer); ok {
+		r0 = rf(ctx, transfer, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenTransfer)
@@ -516,8 +516,8 @@ func (_m *Manager) TransferTokens(ctx context.Context, ns string, transfer *core
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.TokenTransferInput, bool) error); ok {
-		r1 = rf(ctx, ns, transfer, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenTransferInput, bool) error); ok {
+		r1 = rf(ctx, transfer, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

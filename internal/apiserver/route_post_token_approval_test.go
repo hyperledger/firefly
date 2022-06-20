@@ -40,7 +40,7 @@ func TestPostTokenApproval(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TokenApproval", mock.Anything, "ns1", mock.MatchedBy(func(approval *core.TokenApprovalInput) bool {
+	mam.On("TokenApproval", mock.Anything, mock.MatchedBy(func(approval *core.TokenApprovalInput) bool {
 		return approval.Approved == true
 	}), false).Return(&core.TokenApproval{}, nil)
 	r.ServeHTTP(res, req)
@@ -59,7 +59,7 @@ func TestPostTokenApprovalUnapprove(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TokenApproval", mock.Anything, "ns1", mock.MatchedBy(func(approval *core.TokenApprovalInput) bool {
+	mam.On("TokenApproval", mock.Anything, mock.MatchedBy(func(approval *core.TokenApprovalInput) bool {
 		return approval.Approved == false
 	}), false).Return(&core.TokenApproval{}, nil)
 	r.ServeHTTP(res, req)

@@ -115,7 +115,7 @@ func TestEnrichTxSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref1).Return(&core.Transaction{
 		ID: ref1,
 	}, nil)
 
@@ -141,7 +141,7 @@ func TestEnrichTxFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTransactionByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -164,7 +164,7 @@ func TestEnrichBlockchainEventSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(&core.BlockchainEvent{
 		ID: ref1,
 	}, nil)
 
@@ -190,7 +190,7 @@ func TestEnrichBlockchainEventFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetBlockchainEventByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -311,7 +311,7 @@ func TestEnrichDatatypeConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(&core.Datatype{
+	mdi.On("GetDatatypeByID", mock.Anything, "ns1", ref1).Return(&core.Datatype{
 		ID: ref1,
 	}, nil)
 
@@ -337,7 +337,7 @@ func TestEnrichDatatypeConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetDatatypeByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDatatypeByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -535,7 +535,7 @@ func TestEnrichTokenApprovalFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&core.Operation{
+	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
 
@@ -610,7 +610,7 @@ func TestEnrichTokenTransferFailed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetOperationByID", mock.Anything, ref1).Return(&core.Operation{
+	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(&core.Operation{
 		ID: ref1,
 	}, nil)
 
@@ -659,7 +659,7 @@ func TestEnrichOperationFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetOperationByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,

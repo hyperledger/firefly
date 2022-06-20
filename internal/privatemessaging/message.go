@@ -28,10 +28,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (pm *privateMessaging) NewMessage(ns string, in *core.MessageInOut) sysmessaging.MessageSender {
+func (pm *privateMessaging) NewMessage(in *core.MessageInOut) sysmessaging.MessageSender {
 	message := &messageSender{
-		mgr:       pm,
-		namespace: ns,
+		mgr: pm,
 		msg: &data.NewMessage{
 			Message: in,
 		},
@@ -40,8 +39,8 @@ func (pm *privateMessaging) NewMessage(ns string, in *core.MessageInOut) sysmess
 	return message
 }
 
-func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
-	message := pm.NewMessage(ns, in)
+func (pm *privateMessaging) SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
+	message := pm.NewMessage(in)
 	in.Header.Type = core.MessageTypePrivate
 	if pm.metrics.IsMetricsEnabled() {
 		pm.metrics.MessageSubmitted(&in.Message)
@@ -54,24 +53,23 @@ func (pm *privateMessaging) SendMessage(ctx context.Context, ns string, in *core
 	return &in.Message, err
 }
 
-func (pm *privateMessaging) RequestReply(ctx context.Context, ns string, in *core.MessageInOut) (*core.MessageInOut, error) {
+func (pm *privateMessaging) RequestReply(ctx context.Context, in *core.MessageInOut) (*core.MessageInOut, error) {
 	if in.Header.Tag == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgRequestReplyTagRequired)
 	}
 	if in.Header.CID != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgRequestCannotHaveCID)
 	}
-	message := pm.NewMessage(ns, in)
-	return pm.syncasync.WaitForReply(ctx, ns, in.Header.ID, message.Send)
+	message := pm.NewMessage(in)
+	return pm.syncasync.WaitForReply(ctx, in.Header.ID, message.Send)
 }
 
 // sendMethod is the specific operation requested of the messageSender.
 // To minimize duplication and group database operations, there is a single internal flow with subtle differences for each method.
 type messageSender struct {
-	mgr       *privateMessaging
-	namespace string
-	msg       *data.NewMessage
-	resolved  bool
+	mgr      *privateMessaging
+	msg      *data.NewMessage
+	resolved bool
 }
 
 type sendMethod int
@@ -100,7 +98,7 @@ func (s *messageSender) SendAndWait(ctx context.Context) error {
 func (s *messageSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
-	msg.Header.Namespace = s.namespace
+	msg.Header.Namespace = s.mgr.namespace
 	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
 		msg.Header.Type = core.MessageTypePrivate
@@ -158,7 +156,7 @@ func (s *messageSender) sendInternal(ctx context.Context, method sendMethod) err
 	if method == methodSendAndWait {
 		// Pass it to the sync-async handler to wait for the confirmation to come back in.
 		// NOTE: Our caller makes sure we are not in a RunAsGroup (which would be bad)
-		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, msg.Header.ID, s.Send)
+		out, err := s.mgr.syncasync.WaitForMessage(ctx, msg.Header.ID, s.Send)
 		if out != nil {
 			*msg = *out
 		}

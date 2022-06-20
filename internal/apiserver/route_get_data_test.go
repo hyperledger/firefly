@@ -31,7 +31,7 @@ func TestGetData(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetData", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetData", mock.Anything, mock.Anything).
 		Return(core.DataArray{}, nil, nil)
 	r.ServeHTTP(res, req)
 

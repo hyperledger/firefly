@@ -50,9 +50,9 @@ type Manager interface {
 	GroupManager
 
 	Start() error
-	NewMessage(ns string, msg *core.MessageInOut) sysmessaging.MessageSender
-	SendMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
-	RequestReply(ctx context.Context, ns string, request *core.MessageInOut) (reply *core.MessageInOut, err error)
+	NewMessage(msg *core.MessageInOut) sysmessaging.MessageSender
+	SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
+	RequestReply(ctx context.Context, request *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)

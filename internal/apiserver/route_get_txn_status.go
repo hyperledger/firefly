@@ -38,7 +38,7 @@ var getTxnStatus = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.GetTransactionStatus(cr.ctx, extractNamespace(r.PP), r.PP["txnid"])
+			return cr.or.GetTransactionStatus(cr.ctx, r.PP["txnid"])
 		},
 	},
 }

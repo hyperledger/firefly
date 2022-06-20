@@ -221,7 +221,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 		return nil
 	}
 	opFilter := database.OperationQueryFactory.NewFilter(ctx).In("id", opIDs)
-	ops, _, err := ou.database.GetOperations(ctx, opFilter)
+	ops, _, err := ou.database.GetOperations(ctx, ou.manager.namespace, opFilter)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (ou *operationUpdater) doBatchUpdate(ctx context.Context, updates []*Operat
 	var transactions []*core.Transaction
 	if len(txIDs) > 0 {
 		txFilter := database.TransactionQueryFactory.NewFilter(ctx).In("id", txIDs)
-		transactions, _, err = ou.database.GetTransactions(ctx, txFilter)
+		transactions, _, err = ou.database.GetTransactions(ctx, ou.manager.namespace, txFilter)
 		if err != nil {
 			return err
 		}
@@ -315,7 +315,7 @@ func (ou *operationUpdater) verifyManifest(ctx context.Context, update *Operatio
 		batchID, _ := fftypes.ParseUUID(ctx, op.Input.GetString("batch"))
 		expectedManifest := ""
 		if batchID != nil {
-			batch, err := ou.database.GetBatchByID(ctx, batchID)
+			batch, err := ou.database.GetBatchByID(ctx, ou.manager.namespace, batchID)
 			if err != nil {
 				return err
 			}

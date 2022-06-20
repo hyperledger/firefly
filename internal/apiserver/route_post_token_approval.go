@@ -47,7 +47,7 @@ var postTokenApproval = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			return cr.or.Assets().TokenApproval(cr.ctx, extractNamespace(r.PP), r.Input.(*core.TokenApprovalInput), waitConfirm)
+			return cr.or.Assets().TokenApproval(cr.ctx, r.Input.(*core.TokenApprovalInput), waitConfirm)
 		},
 	},
 }

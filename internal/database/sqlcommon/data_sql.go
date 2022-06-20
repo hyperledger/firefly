@@ -253,7 +253,7 @@ func (s *SQLCommon) dataResult(ctx context.Context, row *sql.Rows, withValue boo
 	return &data, nil
 }
 
-func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *core.Data, err error) {
+func (s *SQLCommon) GetDataByID(ctx context.Context, namespace string, id *fftypes.UUID, withValue bool) (message *core.Data, err error) {
 
 	var cols []string
 	if withValue {
@@ -264,7 +264,7 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	rows, _, err := s.query(ctx, dataTable,
 		sq.Select(cols...).
 			From(dataTable).
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"id": id, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -284,9 +284,11 @@ func (s *SQLCommon) GetDataByID(ctx context.Context, id *fftypes.UUID, withValue
 	return data, nil
 }
 
-func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (message core.DataArray, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetData(ctx context.Context, namespace string, filter database.Filter) (message core.DataArray, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(dataColumnsWithValue...).From(dataTable), filter, dataFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "", sq.Select(dataColumnsWithValue...).From(dataTable),
+		filter, dataFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -310,9 +312,11 @@ func (s *SQLCommon) GetData(ctx context.Context, filter database.Filter) (messag
 
 }
 
-func (s *SQLCommon) GetDataRefs(ctx context.Context, filter database.Filter) (message core.DataRefs, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetDataRefs(ctx context.Context, namespace string, filter database.Filter) (message core.DataRefs, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select("id", "hash").From(dataTable), filter, dataFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "", sq.Select("id", "hash").From(dataTable),
+		filter, dataFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

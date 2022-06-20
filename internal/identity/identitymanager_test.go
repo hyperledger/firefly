@@ -1235,7 +1235,7 @@ func TestResolveIdentitySignerOk(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 
 	msgID := fftypes.NewUUID()
-	mdi.On("GetMessageByID", ctx, msgID).Return(&core.Message{
+	mdi.On("GetMessageByID", ctx, "ns1", msgID).Return(&core.Message{
 		Header: core.MessageHeader{
 			SignerRef: core.SignerRef{
 				Key: "0x12345",
@@ -1266,7 +1266,7 @@ func TestResolveIdentitySignerFail(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 
 	msgID := fftypes.NewUUID()
-	mdi.On("GetMessageByID", ctx, msgID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", ctx, "ns1", msgID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := im.ResolveIdentitySigner(ctx, &core.Identity{
 		IdentityBase: core.IdentityBase{
@@ -1290,7 +1290,7 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 	mdi := im.database.(*databasemocks.Plugin)
 
 	msgID := fftypes.NewUUID()
-	mdi.On("GetMessageByID", ctx, msgID).Return(nil, nil)
+	mdi.On("GetMessageByID", ctx, "ns1", msgID).Return(nil, nil)
 
 	_, err := im.ResolveIdentitySigner(ctx, &core.Identity{
 		IdentityBase: core.IdentityBase{

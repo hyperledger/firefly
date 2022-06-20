@@ -37,8 +37,9 @@ import (
 
 func NewTestTransactionHelper(di database.Plugin, dm data.Manager) (Helper, *ccache.Cache, *ccache.Cache) {
 	t := &transactionHelper{
-		database: di,
-		data:     dm,
+		namespace: "ns1",
+		database:  di,
+		data:      dm,
 	}
 	t.transactionCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -73,7 +74,7 @@ func TestSubmitNewTransactionOK(t *testing.T) {
 		return e.Type == core.EventTypeTransactionSubmitted && e.Reference.Equals(txidInserted)
 	})).Return(nil)
 
-	txidReturned, err := txHelper.SubmitNewTransaction(ctx, "ns1", core.TransactionTypeBatchPin)
+	txidReturned, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin)
 	assert.NoError(t, err)
 	assert.Equal(t, *txidInserted, *txidReturned)
 
@@ -90,7 +91,7 @@ func TestSubmitNewTransactionFail(t *testing.T) {
 
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := txHelper.SubmitNewTransaction(ctx, "ns1", core.TransactionTypeBatchPin)
+	_, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -107,7 +108,7 @@ func TestSubmitNewTransactionEventFail(t *testing.T) {
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := txHelper.SubmitNewTransaction(ctx, "ns1", core.TransactionTypeBatchPin)
+	_, err := txHelper.SubmitNewTransaction(ctx, core.TransactionTypeBatchPin)
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -122,7 +123,7 @@ func TestPersistTransactionNew(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(nil, nil)
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, nil)
 	mdi.On("InsertTransaction", ctx, mock.MatchedBy(func(transaction *core.Transaction) bool {
 		assert.Equal(t, txid, transaction.ID)
 		assert.Equal(t, "ns1", transaction.Namespace)
@@ -131,7 +132,7 @@ func TestPersistTransactionNew(t *testing.T) {
 		return true
 	})).Return(nil)
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "0x222222")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.NoError(t, err)
 	assert.True(t, valid)
 
@@ -147,10 +148,10 @@ func TestPersistTransactionNewInserTFail(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(nil, nil)
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, nil)
 	mdi.On("InsertTransaction", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "0x222222")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 
@@ -166,7 +167,7 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
@@ -175,7 +176,7 @@ func TestPersistTransactionExistingAddBlockchainID(t *testing.T) {
 	}, nil)
 	mdi.On("UpdateTransaction", ctx, txid, mock.Anything).Return(nil)
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "0x222222")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.NoError(t, err)
 	assert.True(t, valid)
 
@@ -191,7 +192,7 @@ func TestPersistTransactionExistingUpdateFail(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
@@ -200,7 +201,7 @@ func TestPersistTransactionExistingUpdateFail(t *testing.T) {
 	}, nil)
 	mdi.On("UpdateTransaction", ctx, txid, mock.Anything).Return(fmt.Errorf("pop"))
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "0x222222")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x222222")
 	assert.Regexp(t, "pop", err)
 	assert.False(t, valid)
 
@@ -216,7 +217,7 @@ func TestPersistTransactionExistingNoChange(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
@@ -224,7 +225,7 @@ func TestPersistTransactionExistingNoChange(t *testing.T) {
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}, nil)
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "0x111111")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "0x111111")
 	assert.NoError(t, err)
 	assert.True(t, valid)
 
@@ -240,7 +241,7 @@ func TestPersistTransactionExistingNoBlockchainID(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeBatchPin,
@@ -248,7 +249,7 @@ func TestPersistTransactionExistingNoBlockchainID(t *testing.T) {
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}, nil)
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "")
 	assert.NoError(t, err)
 	assert.True(t, valid)
 
@@ -264,34 +265,10 @@ func TestPersistTransactionExistingLookupFail(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(nil, fmt.Errorf("pop"))
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "")
 	assert.Regexp(t, "pop", err)
-	assert.False(t, valid)
-
-	mdi.AssertExpectations(t)
-
-}
-
-func TestPersistTransactionExistingMismatchNS(t *testing.T) {
-
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	txHelper := NewTransactionHelper("ns1", mdi, mdm)
-	ctx := context.Background()
-
-	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
-		ID:            txid,
-		Namespace:     "ns2",
-		Type:          core.TransactionTypeBatchPin,
-		Created:       fftypes.Now(),
-		BlockchainIDs: core.FFStringArray{"0x111111"},
-	}, nil)
-
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "")
-	assert.NoError(t, err)
 	assert.False(t, valid)
 
 	mdi.AssertExpectations(t)
@@ -306,7 +283,7 @@ func TestPersistTransactionExistingMismatchType(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
@@ -314,7 +291,7 @@ func TestPersistTransactionExistingMismatchType(t *testing.T) {
 		BlockchainIDs: core.FFStringArray{"0x111111"},
 	}, nil)
 
-	valid, err := txHelper.PersistTransaction(ctx, "ns1", txid, core.TransactionTypeBatchPin, "")
+	valid, err := txHelper.PersistTransaction(ctx, txid, core.TransactionTypeBatchPin, "")
 	assert.NoError(t, err)
 	assert.False(t, valid)
 
@@ -403,7 +380,7 @@ func TestGetTransactionByIDCached(t *testing.T) {
 	ctx := context.Background()
 
 	txid := fftypes.NewUUID()
-	mdi.On("GetTransactionByID", ctx, txid).Return(&core.Transaction{
+	mdi.On("GetTransactionByID", ctx, "ns1", txid).Return(&core.Transaction{
 		ID:            txid,
 		Namespace:     "ns1",
 		Type:          core.TransactionTypeContractInvoke,
@@ -437,7 +414,7 @@ func TestGetBlockchainEventByIDCached(t *testing.T) {
 	ctx := context.Background()
 
 	evID := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", ctx, evID).Return(&core.BlockchainEvent{
+	mdi.On("GetBlockchainEventByID", ctx, "ns1", evID).Return(&core.BlockchainEvent{
 		ID:        evID,
 		Namespace: "ns1",
 	}, nil).Once()
@@ -462,7 +439,7 @@ func TestGetBlockchainEventByIDNil(t *testing.T) {
 	ctx := context.Background()
 
 	evID := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", ctx, evID).Return(nil, nil)
+	mdi.On("GetBlockchainEventByID", ctx, "ns1", evID).Return(nil, nil)
 
 	chainEvent, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
 	assert.NoError(t, err)
@@ -480,7 +457,7 @@ func TestGetBlockchainEventByIDErr(t *testing.T) {
 	ctx := context.Background()
 
 	evID := fftypes.NewUUID()
-	mdi.On("GetBlockchainEventByID", ctx, evID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBlockchainEventByID", ctx, "ns1", evID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := txHelper.GetBlockchainEventByIDCached(ctx, evID)
 	assert.Regexp(t, "pop", err)

@@ -170,7 +170,3 @@ func (s *SQLCommon) GetFFIEvents(ctx context.Context, filter database.Filter) (e
 func (s *SQLCommon) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error) {
 	return s.getFFIEventPred(ctx, ns+":"+pathName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": interfaceID}, sq.Eq{"pathname": pathName}})
 }
-
-func (s *SQLCommon) GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*core.FFIEvent, error) {
-	return s.getFFIEventPred(ctx, id.String(), sq.Eq{"id": id})
-}

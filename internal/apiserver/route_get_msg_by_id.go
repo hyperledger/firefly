@@ -42,9 +42,9 @@ var getMsgByID = &ffapi.Route{
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["data"], "true") || strings.EqualFold(r.QP["fetchdata"], "true") {
-				return cr.or.GetMessageByIDWithData(cr.ctx, extractNamespace(r.PP), r.PP["msgid"])
+				return cr.or.GetMessageByIDWithData(cr.ctx, r.PP["msgid"])
 			}
-			return cr.or.GetMessageByID(cr.ctx, extractNamespace(r.PP), r.PP["msgid"])
+			return cr.or.GetMessageByID(cr.ctx, r.PP["msgid"])
 		},
 	},
 }

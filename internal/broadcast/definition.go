@@ -95,10 +95,9 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 
 	// Broadcast the message
 	sender := broadcastSender{
-		mgr:       bm,
-		namespace: ns,
-		msg:       newMsg,
-		resolved:  true,
+		mgr:      bm,
+		msg:      newMsg,
+		resolved: true,
 	}
 	sender.setDefaults()
 	if waitConfirm {

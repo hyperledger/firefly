@@ -63,7 +63,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 		fb.Eq("batch", pin.Batch),
 		fb.Gt("created", 0),
 	)
-	pinRes, res, err := s.GetPins(ctx, filter.Count(true))
+	pinRes, res, err := s.GetPins(ctx, "ns", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pinRes))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -77,7 +77,7 @@ func TestPinsE2EWithDB(t *testing.T) {
 	pin.Sequence = 99999
 	err = s.UpsertPin(ctx, pin)
 	assert.NoError(t, err)
-	pinRes, _, err = s.GetPins(ctx, filter)
+	pinRes, _, err = s.GetPins(ctx, "ns", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(pinRes)) // we didn't add twice
 	assert.Equal(t, existingSequence, pin.Sequence)
@@ -195,7 +195,7 @@ func TestGetPinQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, _, err := s.GetPins(context.Background(), f)
+	_, _, err := s.GetPins(context.Background(), "ns", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -203,7 +203,7 @@ func TestGetPinQueryFail(t *testing.T) {
 func TestGetPinBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
-	_, _, err := s.GetPins(context.Background(), f)
+	_, _, err := s.GetPins(context.Background(), "ns", f)
 	assert.Regexp(t, "FF00143.*type", err)
 }
 
@@ -211,7 +211,7 @@ func TestGetPinReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"pin"}).AddRow("only one"))
 	f := database.PinQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, _, err := s.GetPins(context.Background(), f)
+	_, _, err := s.GetPins(context.Background(), "ns", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
