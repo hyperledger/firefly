@@ -68,7 +68,6 @@ type privateMessaging struct {
 	identity              identity.Manager
 	exchange              dataexchange.Plugin
 	blockchain            blockchain.Plugin
-	batch                 batch.Manager
 	data                  data.Manager
 	syncasync             syncasync.Bridge
 	batchpin              batchpin.Submitter
@@ -99,7 +98,6 @@ func NewPrivateMessaging(ctx context.Context, ns string, di database.Plugin, im 
 		identity:      im,
 		exchange:      dx,
 		blockchain:    bi,
-		batch:         ba,
 		data:          dm,
 		syncasync:     sa,
 		batchpin:      bp,
