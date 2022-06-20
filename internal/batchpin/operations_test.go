@@ -52,7 +52,7 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 
 	mbi := bp.blockchain.(*blockchainmocks.Plugin)
 	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batch.ID).Return(batch, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(batch, nil)
 	mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything).Return(nil)
 
 	po, err := bp.PrepareOperation(context.Background(), op)
@@ -125,7 +125,7 @@ func TestPrepareOperationBatchPinError(t *testing.T) {
 	}
 
 	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bp.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -144,7 +144,7 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 	}
 
 	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
 
 	_, err := bp.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)

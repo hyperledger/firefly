@@ -18,13 +18,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// GetDIDDocForIndentityByDID provides a mock function with given fields: ctx, ns, did
-func (_m *Manager) GetDIDDocForIndentityByDID(ctx context.Context, ns string, did string) (*networkmap.DIDDocument, error) {
-	ret := _m.Called(ctx, ns, did)
+// GetDIDDocForIndentityByDID provides a mock function with given fields: ctx, did
+func (_m *Manager) GetDIDDocForIndentityByDID(ctx context.Context, did string) (*networkmap.DIDDocument, error) {
+	ret := _m.Called(ctx, did)
 
 	var r0 *networkmap.DIDDocument
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *networkmap.DIDDocument); ok {
-		r0 = rf(ctx, ns, did)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *networkmap.DIDDocument); ok {
+		r0 = rf(ctx, did)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*networkmap.DIDDocument)
@@ -32,8 +32,8 @@ func (_m *Manager) GetDIDDocForIndentityByDID(ctx context.Context, ns string, di
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, did)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -41,13 +41,13 @@ func (_m *Manager) GetDIDDocForIndentityByDID(ctx context.Context, ns string, di
 	return r0, r1
 }
 
-// GetDIDDocForIndentityByID provides a mock function with given fields: ctx, ns, id
-func (_m *Manager) GetDIDDocForIndentityByID(ctx context.Context, ns string, id string) (*networkmap.DIDDocument, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetDIDDocForIndentityByID provides a mock function with given fields: ctx, id
+func (_m *Manager) GetDIDDocForIndentityByID(ctx context.Context, id string) (*networkmap.DIDDocument, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *networkmap.DIDDocument
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *networkmap.DIDDocument); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *networkmap.DIDDocument); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*networkmap.DIDDocument)
@@ -55,8 +55,8 @@ func (_m *Manager) GetDIDDocForIndentityByID(ctx context.Context, ns string, id 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -64,13 +64,13 @@ func (_m *Manager) GetDIDDocForIndentityByID(ctx context.Context, ns string, id 
 	return r0, r1
 }
 
-// GetIdentities provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetIdentities provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetIdentities(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Identity); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Identity); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Identity)
@@ -78,8 +78,8 @@ func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -87,8 +87,8 @@ func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -96,13 +96,13 @@ func (_m *Manager) GetIdentities(ctx context.Context, ns string, filter database
 	return r0, r1, r2
 }
 
-// GetIdentitiesWithVerifiers provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetIdentitiesWithVerifiers provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.IdentityWithVerifiers
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.IdentityWithVerifiers); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.IdentityWithVerifiers)
@@ -110,8 +110,8 @@ func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, ns string, fi
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -119,8 +119,8 @@ func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, ns string, fi
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -128,13 +128,13 @@ func (_m *Manager) GetIdentitiesWithVerifiers(ctx context.Context, ns string, fi
 	return r0, r1, r2
 }
 
-// GetIdentityByDID provides a mock function with given fields: ctx, ns, did
-func (_m *Manager) GetIdentityByDID(ctx context.Context, ns string, did string) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, did)
+// GetIdentityByDID provides a mock function with given fields: ctx, did
+func (_m *Manager) GetIdentityByDID(ctx context.Context, did string) (*core.Identity, error) {
+	ret := _m.Called(ctx, did)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Identity); ok {
-		r0 = rf(ctx, ns, did)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Identity); ok {
+		r0 = rf(ctx, did)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -142,8 +142,8 @@ func (_m *Manager) GetIdentityByDID(ctx context.Context, ns string, did string) 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, did)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -151,13 +151,13 @@ func (_m *Manager) GetIdentityByDID(ctx context.Context, ns string, did string) 
 	return r0, r1
 }
 
-// GetIdentityByDIDWithVerifiers provides a mock function with given fields: ctx, ns, did
-func (_m *Manager) GetIdentityByDIDWithVerifiers(ctx context.Context, ns string, did string) (*core.IdentityWithVerifiers, error) {
-	ret := _m.Called(ctx, ns, did)
+// GetIdentityByDIDWithVerifiers provides a mock function with given fields: ctx, did
+func (_m *Manager) GetIdentityByDIDWithVerifiers(ctx context.Context, did string) (*core.IdentityWithVerifiers, error) {
+	ret := _m.Called(ctx, did)
 
 	var r0 *core.IdentityWithVerifiers
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.IdentityWithVerifiers); ok {
-		r0 = rf(ctx, ns, did)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, did)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.IdentityWithVerifiers)
@@ -165,8 +165,8 @@ func (_m *Manager) GetIdentityByDIDWithVerifiers(ctx context.Context, ns string,
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, did)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, did)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -174,13 +174,13 @@ func (_m *Manager) GetIdentityByDIDWithVerifiers(ctx context.Context, ns string,
 	return r0, r1
 }
 
-// GetIdentityByID provides a mock function with given fields: ctx, ns, id
-func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetIdentityByID provides a mock function with given fields: ctx, id
+func (_m *Manager) GetIdentityByID(ctx context.Context, id string) (*core.Identity, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Identity); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Identity); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -188,8 +188,8 @@ func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -197,13 +197,13 @@ func (_m *Manager) GetIdentityByID(ctx context.Context, ns string, id string) (*
 	return r0, r1
 }
 
-// GetIdentityByIDWithVerifiers provides a mock function with given fields: ctx, ns, id
-func (_m *Manager) GetIdentityByIDWithVerifiers(ctx context.Context, ns string, id string) (*core.IdentityWithVerifiers, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetIdentityByIDWithVerifiers provides a mock function with given fields: ctx, id
+func (_m *Manager) GetIdentityByIDWithVerifiers(ctx context.Context, id string) (*core.IdentityWithVerifiers, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *core.IdentityWithVerifiers
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.IdentityWithVerifiers); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.IdentityWithVerifiers)
@@ -211,8 +211,8 @@ func (_m *Manager) GetIdentityByIDWithVerifiers(ctx context.Context, ns string, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -220,13 +220,13 @@ func (_m *Manager) GetIdentityByIDWithVerifiers(ctx context.Context, ns string, 
 	return r0, r1
 }
 
-// GetIdentityVerifiers provides a mock function with given fields: ctx, ns, id, filter
-func (_m *Manager) GetIdentityVerifiers(ctx context.Context, ns string, id string, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, id, filter)
+// GetIdentityVerifiers provides a mock function with given fields: ctx, id, filter
+func (_m *Manager) GetIdentityVerifiers(ctx context.Context, id string, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
+	ret := _m.Called(ctx, id, filter)
 
 	var r0 []*core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, database.AndFilter) []*core.Verifier); ok {
-		r0 = rf(ctx, ns, id, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Verifier); ok {
+		r0 = rf(ctx, id, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Verifier)
@@ -234,63 +234,8 @@ func (_m *Manager) GetIdentityVerifiers(ctx context.Context, ns string, id strin
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, id, filter)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*database.FilterResult)
-		}
-	}
-
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, id, filter)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// GetNodeByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
-func (_m *Manager) GetNodeByNameOrID(ctx context.Context, ns string, nameOrID string) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, nameOrID)
-
-	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Identity); ok {
-		r0 = rf(ctx, ns, nameOrID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Identity)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, nameOrID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetNodes provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetNodes(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
-
-	var r0 []*core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Identity); ok {
-		r0 = rf(ctx, ns, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*core.Identity)
-		}
-	}
-
-	var r1 *database.FilterResult
 	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+		r1 = rf(ctx, id, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -299,7 +244,7 @@ func (_m *Manager) GetNodes(ctx context.Context, ns string, filter database.AndF
 
 	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+		r2 = rf(ctx, id, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -307,13 +252,13 @@ func (_m *Manager) GetNodes(ctx context.Context, ns string, filter database.AndF
 	return r0, r1, r2
 }
 
-// GetOrganizationByNameOrID provides a mock function with given fields: ctx, ns, nameOrID
-func (_m *Manager) GetOrganizationByNameOrID(ctx context.Context, ns string, nameOrID string) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, nameOrID)
+// GetNodeByNameOrID provides a mock function with given fields: ctx, nameOrID
+func (_m *Manager) GetNodeByNameOrID(ctx context.Context, nameOrID string) (*core.Identity, error) {
+	ret := _m.Called(ctx, nameOrID)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Identity); ok {
-		r0 = rf(ctx, ns, nameOrID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Identity); ok {
+		r0 = rf(ctx, nameOrID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -321,8 +266,8 @@ func (_m *Manager) GetOrganizationByNameOrID(ctx context.Context, ns string, nam
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, nameOrID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nameOrID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -330,13 +275,13 @@ func (_m *Manager) GetOrganizationByNameOrID(ctx context.Context, ns string, nam
 	return r0, r1
 }
 
-// GetOrganizations provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetOrganizations(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetNodes provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetNodes(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Identity); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Identity); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Identity)
@@ -344,8 +289,8 @@ func (_m *Manager) GetOrganizations(ctx context.Context, ns string, filter datab
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -353,8 +298,8 @@ func (_m *Manager) GetOrganizations(ctx context.Context, ns string, filter datab
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -362,13 +307,68 @@ func (_m *Manager) GetOrganizations(ctx context.Context, ns string, filter datab
 	return r0, r1, r2
 }
 
-// GetOrganizationsWithVerifiers provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetOrganizationByNameOrID provides a mock function with given fields: ctx, nameOrID
+func (_m *Manager) GetOrganizationByNameOrID(ctx context.Context, nameOrID string) (*core.Identity, error) {
+	ret := _m.Called(ctx, nameOrID)
+
+	var r0 *core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Identity); ok {
+		r0 = rf(ctx, nameOrID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*core.Identity)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, nameOrID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetOrganizations provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetOrganizations(ctx context.Context, filter database.AndFilter) ([]*core.Identity, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []*core.Identity
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Identity); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*core.Identity)
+		}
+	}
+
+	var r1 *database.FilterResult
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*database.FilterResult)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// GetOrganizationsWithVerifiers provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.IdentityWithVerifiers, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.IdentityWithVerifiers
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.IdentityWithVerifiers); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.IdentityWithVerifiers); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.IdentityWithVerifiers)
@@ -376,8 +376,8 @@ func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, ns string,
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -385,8 +385,8 @@ func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, ns string,
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -394,13 +394,13 @@ func (_m *Manager) GetOrganizationsWithVerifiers(ctx context.Context, ns string,
 	return r0, r1, r2
 }
 
-// GetVerifierByHash provides a mock function with given fields: ctx, ns, hash
-func (_m *Manager) GetVerifierByHash(ctx context.Context, ns string, hash string) (*core.Verifier, error) {
-	ret := _m.Called(ctx, ns, hash)
+// GetVerifierByHash provides a mock function with given fields: ctx, hash
+func (_m *Manager) GetVerifierByHash(ctx context.Context, hash string) (*core.Verifier, error) {
+	ret := _m.Called(ctx, hash)
 
 	var r0 *core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Verifier); ok {
-		r0 = rf(ctx, ns, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Verifier); ok {
+		r0 = rf(ctx, hash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Verifier)
@@ -408,8 +408,8 @@ func (_m *Manager) GetVerifierByHash(ctx context.Context, ns string, hash string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, hash)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, hash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -417,13 +417,13 @@ func (_m *Manager) GetVerifierByHash(ctx context.Context, ns string, hash string
 	return r0, r1
 }
 
-// GetVerifiers provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetVerifiers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetVerifiers provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetVerifiers(ctx context.Context, filter database.AndFilter) ([]*core.Verifier, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Verifier
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Verifier); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Verifier); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Verifier)
@@ -431,8 +431,8 @@ func (_m *Manager) GetVerifiers(ctx context.Context, ns string, filter database.
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -440,8 +440,8 @@ func (_m *Manager) GetVerifiers(ctx context.Context, ns string, filter database.
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -449,13 +449,13 @@ func (_m *Manager) GetVerifiers(ctx context.Context, ns string, filter database.
 	return r0, r1, r2
 }
 
-// RegisterIdentity provides a mock function with given fields: ctx, ns, dto, waitConfirm
-func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, dto, waitConfirm)
+// RegisterIdentity provides a mock function with given fields: ctx, dto, waitConfirm
+func (_m *Manager) RegisterIdentity(ctx context.Context, dto *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, dto, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityCreateDTO, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, dto, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityCreateDTO, bool) *core.Identity); ok {
+		r0 = rf(ctx, dto, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -463,8 +463,8 @@ func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *core.Id
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityCreateDTO, bool) error); ok {
-		r1 = rf(ctx, ns, dto, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.IdentityCreateDTO, bool) error); ok {
+		r1 = rf(ctx, dto, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -472,13 +472,13 @@ func (_m *Manager) RegisterIdentity(ctx context.Context, ns string, dto *core.Id
 	return r0, r1
 }
 
-// RegisterNode provides a mock function with given fields: ctx, ns, waitConfirm
-func (_m *Manager) RegisterNode(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, waitConfirm)
+// RegisterNode provides a mock function with given fields: ctx, waitConfirm
+func (_m *Manager) RegisterNode(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) *core.Identity); ok {
+		r0 = rf(ctx, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -486,8 +486,8 @@ func (_m *Manager) RegisterNode(ctx context.Context, ns string, waitConfirm bool
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -495,13 +495,13 @@ func (_m *Manager) RegisterNode(ctx context.Context, ns string, waitConfirm bool
 	return r0, r1
 }
 
-// RegisterNodeOrganization provides a mock function with given fields: ctx, ns, waitConfirm
-func (_m *Manager) RegisterNodeOrganization(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, waitConfirm)
+// RegisterNodeOrganization provides a mock function with given fields: ctx, waitConfirm
+func (_m *Manager) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) *core.Identity); ok {
+		r0 = rf(ctx, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -509,8 +509,8 @@ func (_m *Manager) RegisterNodeOrganization(ctx context.Context, ns string, wait
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = rf(ctx, ns, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -518,13 +518,13 @@ func (_m *Manager) RegisterNodeOrganization(ctx context.Context, ns string, wait
 	return r0, r1
 }
 
-// RegisterOrganization provides a mock function with given fields: ctx, ns, org, waitConfirm
-func (_m *Manager) RegisterOrganization(ctx context.Context, ns string, org *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, org, waitConfirm)
+// RegisterOrganization provides a mock function with given fields: ctx, org, waitConfirm
+func (_m *Manager) RegisterOrganization(ctx context.Context, org *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, org, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityCreateDTO, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, org, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityCreateDTO, bool) *core.Identity); ok {
+		r0 = rf(ctx, org, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -532,8 +532,8 @@ func (_m *Manager) RegisterOrganization(ctx context.Context, ns string, org *cor
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityCreateDTO, bool) error); ok {
-		r1 = rf(ctx, ns, org, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.IdentityCreateDTO, bool) error); ok {
+		r1 = rf(ctx, org, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -541,13 +541,13 @@ func (_m *Manager) RegisterOrganization(ctx context.Context, ns string, org *cor
 	return r0, r1
 }
 
-// UpdateIdentity provides a mock function with given fields: ctx, ns, id, dto, waitConfirm
-func (_m *Manager) UpdateIdentity(ctx context.Context, ns string, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (*core.Identity, error) {
-	ret := _m.Called(ctx, ns, id, dto, waitConfirm)
+// UpdateIdentity provides a mock function with given fields: ctx, id, dto, waitConfirm
+func (_m *Manager) UpdateIdentity(ctx context.Context, id string, dto *core.IdentityUpdateDTO, waitConfirm bool) (*core.Identity, error) {
+	ret := _m.Called(ctx, id, dto, waitConfirm)
 
 	var r0 *core.Identity
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *core.IdentityUpdateDTO, bool) *core.Identity); ok {
-		r0 = rf(ctx, ns, id, dto, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityUpdateDTO, bool) *core.Identity); ok {
+		r0 = rf(ctx, id, dto, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Identity)
@@ -555,8 +555,8 @@ func (_m *Manager) UpdateIdentity(ctx context.Context, ns string, id string, dto
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, *core.IdentityUpdateDTO, bool) error); ok {
-		r1 = rf(ctx, ns, id, dto, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityUpdateDTO, bool) error); ok {
+		r1 = rf(ctx, id, dto, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

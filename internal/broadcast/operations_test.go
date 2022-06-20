@@ -54,7 +54,7 @@ func TestPrepareAndRunBatchBroadcast(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(batch, nil)
-	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", bp.ID).Return(bp, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 
 	po, err := bm.PrepareOperation(context.Background(), op)
@@ -89,7 +89,7 @@ func TestPrepareAndRunBatchBroadcastHydrateFail(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("HydrateBatch", context.Background(), bp).Return(nil, fmt.Errorf("pop"))
-	mdi.On("GetBatchByID", context.Background(), bp.ID).Return(bp, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", bp.ID).Return(bp, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "pop", err)
@@ -132,7 +132,7 @@ func TestPrepareOperationBatchBroadcastError(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -149,7 +149,7 @@ func TestPrepareOperationBatchBroadcastNotFound(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), batchID).Return(nil, nil)
+	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -255,7 +255,7 @@ func TestPrepareAndRunUploadBlob(t *testing.T) {
 	mdi := bm.database.(*databasemocks.Plugin)
 
 	reader := ioutil.NopCloser(strings.NewReader("some data"))
-	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
+	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(blob, nil)
 	mps.On("UploadData", context.Background(), mock.Anything).Return("123", nil)
 	mdx.On("DownloadBlob", context.Background(), mock.Anything).Return(reader, nil)
@@ -307,7 +307,7 @@ func TestPrepareUploadBlobGetBlobMissing(t *testing.T) {
 	mdx := bm.exchange.(*dataexchangemocks.Plugin)
 	mdi := bm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
+	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
@@ -339,7 +339,7 @@ func TestPrepareUploadBlobGetBlobFailg(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetDataByID", mock.Anything, data.ID, false).Return(data, nil)
+	mdi.On("GetDataByID", mock.Anything, "ns1", data.ID, false).Return(data, nil)
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.PrepareOperation(context.Background(), op)
@@ -361,7 +361,7 @@ func TestPrepareUploadBlobGetDataMissing(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetDataByID", mock.Anything, dataID, false).Return(nil, nil)
+	mdi.On("GetDataByID", mock.Anything, "ns1", dataID, false).Return(nil, nil)
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -382,7 +382,7 @@ func TestPrepareUploadBlobGetDataFail(t *testing.T) {
 
 	mdi := bm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetDataByID", mock.Anything, dataID, false).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetDataByID", mock.Anything, "ns1", dataID, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "pop", err)

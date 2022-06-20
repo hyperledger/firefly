@@ -39,7 +39,7 @@ func TestPostNewMessagePrivate(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mpm.On("SendMessage", mock.Anything, "ns1", mock.AnythingOfType("*core.MessageInOut"), false).
+	mpm.On("SendMessage", mock.Anything, mock.AnythingOfType("*core.MessageInOut"), false).
 		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -57,7 +57,7 @@ func TestPostNewMessagePrivateSync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mpm.On("SendMessage", mock.Anything, "ns1", mock.AnythingOfType("*core.MessageInOut"), true).
+	mpm.On("SendMessage", mock.Anything, mock.AnythingOfType("*core.MessageInOut"), true).
 		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 

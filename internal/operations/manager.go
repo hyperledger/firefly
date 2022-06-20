@@ -119,7 +119,7 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
-	op, err = om.database.GetOperationByID(ctx, opID)
+	op, err = om.database.GetOperationByID(ctx, om.namespace, opID)
 	if err != nil {
 		return nil, err
 	}

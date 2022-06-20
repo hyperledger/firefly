@@ -228,7 +228,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	} else {
 		// We lock in the starting sequence at creation time, rather than when the first dispatcher
 		// starts, as that's a more obvious behavior for users
-		sequence, err := calcFirstOffset(ctx, em.database, subDef.Options.FirstEvent)
+		sequence, err := calcFirstOffset(ctx, em.namespace, em.database, subDef.Options.FirstEvent)
 		if err != nil {
 			return err
 		}

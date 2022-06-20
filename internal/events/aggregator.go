@@ -104,7 +104,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 		queryFactory:     database.PinQueryFactory,
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			fb := af.Builder()
-			return af.Condition(fb.Eq("dispatched", false), fb.Eq("namespace", ns))
+			return af.Condition(fb.Eq("dispatched", false))
 		},
 		maybeRewind: ag.rewindOffchainBatches,
 	})
@@ -163,11 +163,10 @@ func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
 		pfb := database.PinQueryFactory.NewFilter(ag.ctx)
 		pinFilter := pfb.And(
-			pfb.Eq("namespace", ag.namespace),
 			pfb.In("batch", batchIDs),
 			pfb.Eq("dispatched", false),
 		).Sort("sequence").Limit(1) // only need the one oldest sequence
-		sequences, _, err := ag.database.GetPins(ag.ctx, pinFilter)
+		sequences, _, err := ag.database.GetPins(ag.ctx, ag.namespace, pinFilter)
 		if err != nil {
 			return true, err
 		}
@@ -227,7 +226,7 @@ func (ag *aggregator) processPinsEventsHandler(items []core.LocallySequenced) (r
 
 func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
-	pins, _, err := ag.database.GetPins(ctx, filter)
+	pins, _, err := ag.database.GetPins(ctx, ag.namespace, filter)
 	ls := make([]core.LocallySequenced, len(pins))
 	for i, p := range pins {
 		ls[i] = p
@@ -297,7 +296,7 @@ func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *core.Pin) (*core.
 		log.L(ag.ctx).Debugf("Batch cache hit %s", cacheKey)
 		return bce.batch, bce.manifest, nil
 	}
-	batch, err := ag.database.GetBatchByID(ctx, pin.Batch)
+	batch, err := ag.database.GetBatchByID(ctx, ag.namespace, pin.Batch)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -389,7 +388,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []core.IdentityType{
 		core.IdentityTypeOrg,
 		core.IdentityTypeCustom,
-	}, msg.Header.Namespace, verifierRef)
+	}, verifierRef)
 	if err != nil {
 		return false, err
 	}

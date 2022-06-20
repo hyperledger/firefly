@@ -34,7 +34,7 @@ func TestGetDIDDocByDID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetDIDDocForIndentityByDID", mock.Anything, "default", "did:firefly:org/org_1").
+	nmn.On("GetDIDDocForIndentityByDID", mock.Anything, "did:firefly:org/org_1").
 		Return(&networkmap.DIDDocument{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -83,7 +83,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mmi := &metricsmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	if metrics {
 		mmi.On("TransferConfirmed", mock.Anything)
@@ -119,7 +119,7 @@ func TestStartStop(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	assert.NoError(t, em.Start())
 	em.NewEvents() <- 12345
@@ -134,6 +134,31 @@ func TestStartStopBadDependencies(t *testing.T) {
 
 }
 
+func TestStartStopEventListenerFail(t *testing.T) {
+	config.Set(coreconfig.EventTransportsEnabled, []string{"wrongun"})
+	defer coreconfig.Reset()
+	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mim := &identitymanagermocks.Manager{}
+	mpi := &sharedstoragemocks.Plugin{}
+	mdm := &datamocks.Manager{}
+	msh := &definitionsmocks.DefinitionHandler{}
+	mbm := &broadcastmocks.Manager{}
+	mpm := &privatemessagingmocks.Manager{}
+	mni := &sysmessagingmocks.LocalNodeInfo{}
+	mam := &assetmocks.Manager{}
+	msd := &shareddownloadmocks.Manager{}
+	mm := &metricsmocks.Manager{}
+	mev := &eventsmocks.Plugin{}
+	events := map[string]events.Plugin{"websockets": mev}
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
+	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
+	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
+	mev.On("RegisterListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper, events)
+	assert.EqualError(t, err, "pop")
+}
+
 func TestEmitSubscriptionEventsNoops(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	mdi := em.database.(*databasemocks.Plugin)
@@ -143,7 +168,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 		Current: 12345,
 		RowID:   333333,
 	}, nil)
-	mdi.On("GetPins", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Pin{}, nil, nil)
+	mdi.On("GetPins", mock.Anything, "ns1", mock.Anything).Return([]*core.Pin{}, nil, nil)
 	mdi.On("GetSubscriptions", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
 
 	getSubCallReady := make(chan bool, 1)
@@ -289,7 +314,7 @@ func TestCreateDurableSubscriptionOk(t *testing.T) {
 		},
 	}
 	mdi.On("GetSubscriptionByName", mock.Anything, "ns1", "sub1").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{
+	mdi.On("GetEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.Event{
 		{Sequence: 12345},
 	}, nil, nil)
 	mdi.On("UpsertSubscription", mock.Anything, mock.Anything, false).Return(nil)

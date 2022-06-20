@@ -44,7 +44,7 @@ func (em *eventManager) actionTerminate(bi blockchain.Plugin, event *blockchain.
 func (em *eventManager) BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
 	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
 		// Verify that the action came from a registered root org
-		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, core.LegacySystemNamespace, signingKey)
+		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, signingKey)
 		if err != nil {
 			return true, err
 		}

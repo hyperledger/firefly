@@ -28,10 +28,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender {
+func (bm *broadcastManager) NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender {
 	broadcast := &broadcastSender{
-		mgr:       bm,
-		namespace: ns,
+		mgr: bm,
 		msg: &data.NewMessage{
 			Message: in,
 		},
@@ -40,8 +39,8 @@ func (bm *broadcastManager) NewBroadcast(ns string, in *core.MessageInOut) sysme
 	return broadcast
 }
 
-func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
-	broadcast := bm.NewBroadcast(ns, in)
+func (bm *broadcastManager) BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error) {
+	broadcast := bm.NewBroadcast(in)
 	in.Header.Type = core.MessageTypeBroadcast
 	if bm.metrics.IsMetricsEnabled() {
 		bm.metrics.MessageSubmitted(&in.Message)
@@ -55,10 +54,9 @@ func (bm *broadcastManager) BroadcastMessage(ctx context.Context, ns string, in 
 }
 
 type broadcastSender struct {
-	mgr       *broadcastManager
-	namespace string
-	msg       *data.NewMessage
-	resolved  bool
+	mgr      *broadcastManager
+	msg      *data.NewMessage
+	resolved bool
 }
 
 // sendMethod is the specific operation requested of the broadcastSender.
@@ -89,7 +87,7 @@ func (s *broadcastSender) SendAndWait(ctx context.Context) error {
 func (s *broadcastSender) setDefaults() {
 	msg := s.msg.Message
 	msg.Header.ID = fftypes.NewUUID()
-	msg.Header.Namespace = s.namespace
+	msg.Header.Namespace = s.mgr.namespace
 	msg.State = core.MessageStateReady
 	if msg.Header.Type == "" {
 		msg.Header.Type = core.MessageTypeBroadcast
@@ -122,7 +120,7 @@ func (s *broadcastSender) resolve(ctx context.Context) error {
 
 	// Resolve the sending identity
 	if msg.Header.Type != core.MessageTypeDefinition || msg.Header.Tag != core.SystemTagIdentityClaim {
-		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, msg.Header.Namespace, &msg.Header.SignerRef); err != nil {
+		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, &msg.Header.SignerRef); err != nil {
 			return i18n.WrapError(ctx, err, coremsgs.MsgAuthorInvalid)
 		}
 	}
@@ -134,7 +132,7 @@ func (s *broadcastSender) resolve(ctx context.Context) error {
 
 func (s *broadcastSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
 	if method == methodSendAndWait {
-		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.msg.Message.Header.ID, s.Send)
+		out, err := s.mgr.syncasync.WaitForMessage(ctx, s.msg.Message.Header.ID, s.Send)
 		if out != nil {
 			s.msg.Message.Message = *out
 		}

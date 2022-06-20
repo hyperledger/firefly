@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *core.SubOptsFirstEvent) (firstOffset int64, err error) {
+func calcFirstOffset(ctx context.Context, ns string, di database.Plugin, pfe *core.SubOptsFirstEvent) (firstOffset int64, err error) {
 	firstEvent := core.SubOptsFirstEventNewest
 	if pfe != nil {
 		firstEvent = *pfe
@@ -52,7 +52,7 @@ func calcFirstOffset(ctx context.Context, di database.Plugin, pfe *core.SubOptsF
 	}
 	if useNewest {
 		f := database.EventQueryFactory.NewFilter(ctx).And().Sort("sequence").Descending().Limit(1)
-		newestEvents, _, err := di.GetEvents(ctx, f)
+		newestEvents, _, err := di.GetEvents(ctx, ns, f)
 		if err != nil {
 			return firstOffset, err
 		}

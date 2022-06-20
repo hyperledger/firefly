@@ -39,13 +39,13 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	mdx := &dataexchangemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
-	nm, err := NewNetworkMap(ctx, "org0", "org0", mdi, mdm, mbm, mdx, mim, msa)
+	nm, err := NewNetworkMap(ctx, "ns1", "org0", "org0", mdi, mdm, mbm, mdx, mim, msa)
 	assert.NoError(t, err)
 	return nm.(*networkMap), cancel
 
 }
 
 func TestNewNetworkMapMissingDep(t *testing.T) {
-	_, err := NewNetworkMap(context.Background(), "", "", nil, nil, nil, nil, nil, nil)
+	_, err := NewNetworkMap(context.Background(), "", "", "", nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }

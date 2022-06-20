@@ -163,12 +163,12 @@ func (s *SQLCommon) batchResult(ctx context.Context, row *sql.Rows) (*core.Batch
 	return &batch, nil
 }
 
-func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *core.BatchPersisted, err error) {
+func (s *SQLCommon) GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.BatchPersisted, err error) {
 
 	rows, _, err := s.query(ctx, batchesTable,
 		sq.Select(batchColumns...).
 			From(batchesTable).
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"id": id, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -188,9 +188,9 @@ func (s *SQLCommon) GetBatchByID(ctx context.Context, id *fftypes.UUID) (message
 	return batch, nil
 }
 
-func (s *SQLCommon) GetBatches(ctx context.Context, filter database.Filter) (message []*core.BatchPersisted, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetBatches(ctx context.Context, namespace string, filter database.Filter) (message []*core.BatchPersisted, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From(batchesTable), filter, batchFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(batchColumns...).From(batchesTable), filter, batchFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

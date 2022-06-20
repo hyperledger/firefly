@@ -43,7 +43,7 @@ var patchUpdateIdentity = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			org, err := cr.or.NetworkMap().UpdateIdentity(cr.ctx, extractNamespace(r.PP), r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
+			org, err := cr.or.NetworkMap().UpdateIdentity(cr.ctx, r.PP["iid"], r.Input.(*core.IdentityUpdateDTO), waitConfirm)
 			return org, err
 		},
 	},

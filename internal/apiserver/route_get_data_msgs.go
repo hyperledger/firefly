@@ -40,7 +40,7 @@ var getDataMsgs = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.MessageQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetMessagesForData(cr.ctx, extractNamespace(r.PP), r.PP["dataid"], cr.filter))
+			return filterResult(cr.or.GetMessagesForData(cr.ctx, r.PP["dataid"], cr.filter))
 		},
 	},
 }

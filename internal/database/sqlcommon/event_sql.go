@@ -151,14 +151,14 @@ func (s *SQLCommon) eventResult(ctx context.Context, row *sql.Rows) (*core.Event
 	return &event, nil
 }
 
-func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message *core.Event, err error) {
+func (s *SQLCommon) GetEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Event, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
 	rows, _, err := s.query(ctx, eventsTable,
 		sq.Select(cols...).
 			From(eventsTable).
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"id": id, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -178,11 +178,13 @@ func (s *SQLCommon) GetEventByID(ctx context.Context, id *fftypes.UUID) (message
 	return event, nil
 }
 
-func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (message []*core.Event, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetEvents(ctx context.Context, namespace string, filter database.Filter) (message []*core.Event, res *database.FilterResult, err error) {
 
 	cols := append([]string{}, eventColumns...)
 	cols = append(cols, sequenceColumn)
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(cols...).From(eventsTable), filter, eventFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "", sq.Select(cols...).From(eventsTable),
+		filter, eventFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -204,26 +206,4 @@ func (s *SQLCommon) GetEvents(ctx context.Context, filter database.Filter) (mess
 
 	return events, s.queryRes(ctx, eventsTable, tx, fop, fi), err
 
-}
-
-func (s *SQLCommon) UpdateEvent(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update(eventsTable), update, eventFilterFieldMap)
-	if err != nil {
-		return err
-	}
-	query = query.Where(sq.Eq{"id": id})
-
-	_, err = s.updateTx(ctx, eventsTable, tx, query, nil /* no change events on filter based update */)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
 }

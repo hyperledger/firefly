@@ -25,22 +25,22 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) UpdateIdentity(ctx context.Context, ns, uuidStr string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
+func (nm *networkMap) UpdateIdentity(ctx context.Context, uuidStr string, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 	id, err := fftypes.ParseUUID(ctx, uuidStr)
 	if err != nil {
 		return nil, err
 	}
-	return nm.updateIdentityID(ctx, ns, id, dto, waitConfirm)
+	return nm.updateIdentityID(ctx, id, dto, waitConfirm)
 }
 
-func (nm *networkMap) updateIdentityID(ctx context.Context, ns string, id *fftypes.UUID, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
+func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dto *core.IdentityUpdateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 
 	// Get the original identity
 	identity, err = nm.identity.CachedIdentityLookupByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	if identity == nil || identity.Namespace != ns {
+	if identity == nil || identity.Namespace != nm.namespace {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 

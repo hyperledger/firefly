@@ -34,7 +34,7 @@ func TestGetIdentities(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("GetIdentities", mock.Anything, "ns1", mock.Anything).Return([]*core.Identity{}, nil, nil)
+	mnm.On("GetIdentities", mock.Anything, mock.Anything).Return([]*core.Identity{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -48,7 +48,7 @@ func TestGetIdentitiesWithVerifiers(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("GetIdentitiesWithVerifiers", mock.Anything, "ns1", mock.Anything).Return([]*core.IdentityWithVerifiers{}, nil, nil)
+	mnm.On("GetIdentitiesWithVerifiers", mock.Anything, mock.Anything).Return([]*core.IdentityWithVerifiers{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

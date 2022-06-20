@@ -41,11 +41,10 @@ func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string)
 	return am.database.GetTokenTransferByID(ctx, transferID)
 }
 
-func (am *assetManager) NewTransfer(ns string, transfer *core.TokenTransferInput) sysmessaging.MessageSender {
+func (am *assetManager) NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender {
 	sender := &transferSender{
-		mgr:       am,
-		namespace: ns,
-		transfer:  transfer,
+		mgr:      am,
+		transfer: transfer,
 	}
 	sender.setDefaults()
 	return sender
@@ -53,7 +52,6 @@ func (am *assetManager) NewTransfer(ns string, transfer *core.TokenTransferInput
 
 type transferSender struct {
 	mgr       *assetManager
-	namespace string
 	transfer  *core.TokenTransferInput
 	resolved  bool
 	msgSender sysmessaging.MessageSender
@@ -88,14 +86,14 @@ func (s *transferSender) setDefaults() {
 	s.transfer.LocalID = fftypes.NewUUID()
 }
 
-func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfer *core.TokenTransferInput) (pool *core.TokenPool, err error) {
+func (am *assetManager) validateTransfer(ctx context.Context, transfer *core.TokenTransferInput) (pool *core.TokenPool, err error) {
 	if transfer.Pool == "" {
-		pool, err = am.getDefaultTokenPool(ctx, ns)
+		pool, err = am.getDefaultTokenPool(ctx)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		pool, err = am.GetTokenPoolByNameOrID(ctx, ns, transfer.Pool)
+		pool, err = am.GetTokenPoolByNameOrID(ctx, transfer.Pool)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +104,7 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, ns, transfer.Key, am.keyNormalization); err != nil {
+	if transfer.Key, err = am.identity.NormalizeSigningKey(ctx, transfer.Key, am.keyNormalization); err != nil {
 		return nil, err
 	}
 	if transfer.From == "" {
@@ -118,10 +116,10 @@ func (am *assetManager) validateTransfer(ctx context.Context, ns string, transfe
 	return pool, nil
 }
 
-func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
+func (am *assetManager) MintTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
 	transfer.Type = core.TokenTransferTypeMint
 
-	sender := am.NewTransfer(ns, transfer)
+	sender := am.NewTransfer(transfer)
 	if am.metrics.IsMetricsEnabled() {
 		am.metrics.TransferSubmitted(&transfer.TokenTransfer)
 	}
@@ -133,10 +131,10 @@ func (am *assetManager) MintTokens(ctx context.Context, ns string, transfer *cor
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
+func (am *assetManager) BurnTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
 	transfer.Type = core.TokenTransferTypeBurn
 
-	sender := am.NewTransfer(ns, transfer)
+	sender := am.NewTransfer(transfer)
 	if am.metrics.IsMetricsEnabled() {
 		am.metrics.TransferSubmitted(&transfer.TokenTransfer)
 	}
@@ -148,10 +146,10 @@ func (am *assetManager) BurnTokens(ctx context.Context, ns string, transfer *cor
 	return &transfer.TokenTransfer, err
 }
 
-func (am *assetManager) TransferTokens(ctx context.Context, ns string, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
+func (am *assetManager) TransferTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (out *core.TokenTransfer, err error) {
 	transfer.Type = core.TokenTransferTypeTransfer
 
-	sender := am.NewTransfer(ns, transfer)
+	sender := am.NewTransfer(transfer)
 	if am.metrics.IsMetricsEnabled() {
 		am.metrics.TransferSubmitted(&transfer.TokenTransfer)
 	}
@@ -174,7 +172,7 @@ func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) 
 	if method == methodSendAndWait && s.transfer.Message != nil {
 		// Begin waiting for the message, and trigger the transfer.
 		// A successful transfer will trigger the message via the event handler, so we can wait for it all to complete.
-		_, err := s.mgr.syncasync.WaitForMessage(ctx, s.namespace, s.transfer.Message.Header.ID, func(ctx context.Context) error {
+		_, err := s.mgr.syncasync.WaitForMessage(ctx, s.transfer.Message.Header.ID, func(ctx context.Context) error {
 			return s.sendInternal(ctx, methodSendAndWait)
 		})
 		return err
@@ -186,7 +184,7 @@ func (s *transferSender) resolveAndSend(ctx context.Context, method sendMethod) 
 func (s *transferSender) resolve(ctx context.Context) (err error) {
 	// Resolve the attached message
 	if s.transfer.Message != nil {
-		s.msgSender, err = s.buildTransferMessage(ctx, s.namespace, s.transfer.Message)
+		s.msgSender, err = s.buildTransferMessage(ctx, s.transfer.Message)
 		if err != nil {
 			return err
 		}
@@ -201,7 +199,7 @@ func (s *transferSender) resolve(ctx context.Context) (err error) {
 
 func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
 	if method == methodSendAndWait {
-		out, err := s.mgr.syncasync.WaitForTokenTransfer(ctx, s.namespace, s.transfer.LocalID, s.Send)
+		out, err := s.mgr.syncasync.WaitForTokenTransfer(ctx, s.transfer.LocalID, s.Send)
 		if out != nil {
 			s.transfer.TokenTransfer = *out
 		}
@@ -211,7 +209,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 	var op *core.Operation
 	var pool *core.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.validateTransfer(ctx, s.namespace, s.transfer)
+		pool, err = s.mgr.validateTransfer(ctx, s.transfer)
 		if err != nil {
 			return err
 		}
@@ -228,7 +226,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, core.TransactionTypeTokenTransfer)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenTransfer)
 		if err != nil {
 			return err
 		}
@@ -237,7 +235,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 
 		op = core.NewOperation(
 			plugin,
-			s.namespace,
+			s.mgr.namespace,
 			txid,
 			core.OpTypeTokenTransfer)
 		if err = txcommon.AddTokenTransferInputs(op, &s.transfer.TokenTransfer); err == nil {
@@ -263,7 +261,7 @@ func (s *transferSender) sendInternal(ctx context.Context, method sendMethod) (e
 	return err
 }
 
-func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in *core.MessageInOut) (sysmessaging.MessageSender, error) {
+func (s *transferSender) buildTransferMessage(ctx context.Context, in *core.MessageInOut) (sysmessaging.MessageSender, error) {
 	allowedTypes := []fftypes.FFEnum{
 		core.MessageTypeTransferBroadcast,
 		core.MessageTypeTransferPrivate,
@@ -273,9 +271,9 @@ func (s *transferSender) buildTransferMessage(ctx context.Context, ns string, in
 	}
 	switch in.Header.Type {
 	case core.MessageTypeTransferBroadcast:
-		return s.mgr.broadcast.NewBroadcast(ns, in), nil
+		return s.mgr.broadcast.NewBroadcast(in), nil
 	case core.MessageTypeTransferPrivate:
-		return s.mgr.messaging.NewMessage(ns, in), nil
+		return s.mgr.messaging.NewMessage(in), nil
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)
 	}

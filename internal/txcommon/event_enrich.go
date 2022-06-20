@@ -59,13 +59,13 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.ContractInterface = contractInterface
 	case core.EventTypeDatatypeConfirmed:
-		dt, err := t.database.GetDatatypeByID(ctx, event.Reference)
+		dt, err := t.database.GetDatatypeByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Datatype = dt
 	case core.EventTypeIdentityConfirmed, core.EventTypeIdentityUpdated:
-		identity, err := t.database.GetIdentityByID(ctx, event.Reference)
+		identity, err := t.database.GetIdentityByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.TokenTransfer = transfer
 	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
-		operation, err := t.database.GetOperationByID(ctx, event.Reference)
+		operation, err := t.database.GetOperationByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

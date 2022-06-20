@@ -31,7 +31,7 @@ import (
 func (pm *privateMessaging) resolveRecipientList(ctx context.Context, in *core.MessageInOut) error {
 	if in.Header.Group != nil {
 		log.L(ctx).Debugf("Group '%s' specified for message", in.Header.Group)
-		group, err := pm.database.GetGroupByHash(ctx, in.Header.Group)
+		group, err := pm.database.GetGroupByHash(ctx, pm.namespace, in.Header.Group)
 		if err != nil {
 			return err
 		}
@@ -66,7 +66,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *co
 			fb.Eq("parent", identity.ID),
 			fb.Eq("type", core.IdentityTypeNode),
 		)
-		nodes, _, err := pm.database.GetIdentities(ctx, filter)
+		nodes, _, err := pm.database.GetIdentities(ctx, pm.namespace, filter)
 		if err != nil || len(nodes) == 0 {
 			return nil, err
 		}
@@ -79,7 +79,7 @@ func (pm *privateMessaging) getFirstNodeForOrg(ctx context.Context, identity *co
 func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Identity, nodeInput string) (node *core.Identity, err error) {
 	retryable := true
 	if nodeInput != "" {
-		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, identity.Namespace, nodeInput)
+		node, retryable, err = pm.identity.CachedIdentityLookupMustExist(ctx, nodeInput)
 	} else {
 		// Find any node owned by this organization
 		inputIdentityDebugInfo := fmt.Sprintf("%s (%s)", identity.DID, identity.ID)
@@ -107,7 +107,7 @@ func (pm *privateMessaging) resolveNode(ctx context.Context, identity *core.Iden
 
 func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageInOut) (gi *core.GroupIdentity, err error) {
 
-	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx, in.Header.Namespace)
+	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (pm *privateMessaging) getRecipients(ctx context.Context, in *core.MessageI
 	}
 	for i, rInput := range in.Group.Members {
 		// Resolve the identity
-		identity, _, err := pm.identity.CachedIdentityLookupMustExist(ctx, in.Header.Namespace, rInput.Identity)
+		identity, _, err := pm.identity.CachedIdentityLookupMustExist(ctx, rInput.Identity)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +161,7 @@ func (pm *privateMessaging) resolveLocalNode(ctx context.Context, localOrg *core
 		fb.Eq("type", core.IdentityTypeNode),
 		fb.Eq("name", pm.localNodeName),
 	)
-	nodes, _, err := pm.database.GetIdentities(ctx, filter)
+	nodes, _, err := pm.database.GetIdentities(ctx, pm.namespace, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,7 @@ var postNetworkAction = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusAccepted},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			err = cr.or.SubmitNetworkAction(cr.ctx, extractNamespace(r.PP), r.Input.(*core.NetworkAction))
+			err = cr.or.SubmitNetworkAction(cr.ctx, r.Input.(*core.NetworkAction))
 			return r.Input, err
 		},
 	},

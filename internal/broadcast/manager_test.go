@@ -76,7 +76,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi, mom)
+	b, err := NewBroadcastManager(ctx, "ns1", mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi, mom)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
@@ -93,7 +93,7 @@ func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), "ns1", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

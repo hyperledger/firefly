@@ -29,7 +29,7 @@ import (
 
 func TestPostNewMessageRequestReply(t *testing.T) {
 	o, r := newTestAPIServer()
-	o.On("RequestReply", mock.Anything, "ns1", mock.Anything).Return(&core.MessageInOut{}, nil)
+	o.On("RequestReply", mock.Anything, mock.Anything).Return(&core.MessageInOut{}, nil)
 	input := &core.MessageInOut{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

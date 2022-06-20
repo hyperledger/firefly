@@ -42,9 +42,9 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+	msg, err := bm.BroadcastMessage(ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				SignerRef: core.SignerRef{
@@ -74,7 +74,7 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	ctx := context.Background()
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	replyMsg := &core.Message{
 		Header: core.MessageHeader{
@@ -82,15 +82,15 @@ func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 			ID:        fftypes.NewUUID(),
 		},
 	}
-	msa.On("WaitForMessage", ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForMessage", ctx, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[3].(syncasync.RequestSender)
+			send := args[2].(syncasync.RequestSender)
 			send(ctx)
 		}).
 		Return(replyMsg, nil)
 	mdm.On("WriteNewMessage", ctx, mock.Anything, mock.Anything).Return(nil)
 
-	msg, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+	msg, err := bm.BroadcastMessage(ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				SignerRef: core.SignerRef{
@@ -128,9 +128,9 @@ func TestBroadcastMessageTooLarge(t *testing.T) {
 			}
 		}).
 		Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+	_, err := bm.BroadcastMessage(ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				SignerRef: core.SignerRef{
@@ -157,9 +157,9 @@ func TestBroadcastMessageBadInput(t *testing.T) {
 	ctx := context.Background()
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(fmt.Errorf("pop"))
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+	_, err := bm.BroadcastMessage(ctx, &core.MessageInOut{
 		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
@@ -177,9 +177,9 @@ func TestBroadcastMessageBadIdentity(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastMessage(ctx, "ns1", &core.MessageInOut{
+	_, err := bm.BroadcastMessage(ctx, &core.MessageInOut{
 		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
@@ -199,7 +199,7 @@ func TestBroadcastPrepare(t *testing.T) {
 	ctx := context.Background()
 	mdm.On("VerifyNamespaceExists", ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
-	mim.On("ResolveInputSigningIdentity", ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
 
 	msg := &core.MessageInOut{
 		Message: core.Message{
@@ -214,7 +214,7 @@ func TestBroadcastPrepare(t *testing.T) {
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}
-	sender := bm.NewBroadcast("ns1", msg)
+	sender := bm.NewBroadcast(msg)
 	err := sender.Prepare(ctx)
 
 	assert.NoError(t, err)
@@ -244,7 +244,7 @@ func TestBroadcastPrepareBadNamespace(t *testing.T) {
 			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
 		},
 	}
-	sender := bm.NewBroadcast("ns1", msg)
+	sender := bm.NewBroadcast(msg)
 	err := sender.Prepare(ctx)
 
 	assert.EqualError(t, err, "pop")

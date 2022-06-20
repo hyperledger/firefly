@@ -34,7 +34,7 @@ func TestGetNetIdentityByDID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDID", mock.Anything, "default", "did:firefly:org/org_1").
+	nmn.On("GetIdentityByDID", mock.Anything, "did:firefly:org/org_1").
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -49,7 +49,7 @@ func TestGetNetIdentityByDIDWithVerifiers(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "default", "did:firefly:org/org_1").
+	nmn.On("GetIdentityByDIDWithVerifiers", mock.Anything, "did:firefly:org/org_1").
 		Return(&core.IdentityWithVerifiers{}, nil)
 	r.ServeHTTP(res, req)
 

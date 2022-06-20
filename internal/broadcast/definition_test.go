@@ -35,8 +35,8 @@ func TestBroadcastDefinitionAsNodeConfirm(t *testing.T) {
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
-	msa.On("WaitForMessage", bm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	msa.On("WaitForMessage", bm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, "ns1", &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
@@ -52,8 +52,8 @@ func TestBroadcastIdentityClaim(t *testing.T) {
 	msa := bm.syncasync.(*syncasyncmocks.Bridge)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	msa.On("WaitForMessage", bm.ctx, "ns1", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
+	msa.On("WaitForMessage", bm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastIdentityClaim(bm.ctx, "ns1", &core.IdentityClaim{
 		Identity: &core.Identity{},
@@ -72,7 +72,7 @@ func TestBroadcastIdentityClaimFail(t *testing.T) {
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("NormalizeSigningKey", mock.Anything, "ns1", "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
+	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastIdentityClaim(bm.ctx, "ns1", &core.IdentityClaim{
 		Identity: &core.Identity{},
@@ -92,8 +92,8 @@ func TestBroadcastDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	ns := "customNamespace"
 
-	mim.On("ResolveInputSigningIdentity", mock.Anything, ns, mock.Anything).Return(nil)
-	msa.On("WaitForMessage", bm.ctx, ns, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
+	msa.On("WaitForMessage", bm.ctx, mock.Anything, mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDefinitionAsNode(bm.ctx, ns, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
@@ -107,7 +107,7 @@ func TestBroadcastDefinitionBadIdentity(t *testing.T) {
 	defer cancel()
 
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := bm.BroadcastDefinition(bm.ctx, "ns1", &core.Namespace{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",

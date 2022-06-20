@@ -60,7 +60,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same group back
-	groupRead, err := s.GetGroupByHash(ctx, group.Hash)
+	groupRead, err := s.GetGroupByHash(ctx, "ns1", group.Hash)
 	assert.NoError(t, err)
 	groupJson, _ := json.Marshal(&group)
 	groupReadJson, _ := json.Marshal(&groupRead)
@@ -83,7 +83,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same group back - note the removal of one of the data elements
-	groupRead, err = s.GetGroupByHash(ctx, group.Hash)
+	groupRead, err = s.GetGroupByHash(ctx, "ns1", group.Hash)
 	assert.NoError(t, err)
 	groupJson, _ = json.Marshal(&groupUpdated)
 	groupReadJson, _ = json.Marshal(&groupRead)
@@ -97,7 +97,7 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		fb.Eq("message", groupUpdated.Message),
 		fb.Gt("created", "0"),
 	)
-	groups, _, err := s.GetGroups(ctx, filter)
+	groups, _, err := s.GetGroups(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(groups))
 	groupReadJson, _ = json.Marshal(groups[0])
@@ -108,25 +108,9 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 		fb.Eq("hash", groupUpdated.Hash.String()),
 		fb.Eq("created", "0"),
 	)
-	groups, _, err = s.GetGroups(ctx, filter)
+	groups, _, err = s.GetGroups(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(groups))
-
-	// Update (testing what's possible at the DB layer)
-	newHash := fftypes.NewRandB32()
-	up := database.GroupQueryFactory.NewUpdate(ctx).
-		Set("hash", newHash)
-	err = s.UpdateGroup(ctx, group.Hash, up)
-	assert.NoError(t, err)
-
-	// Test find updated value
-	filter = fb.And(
-		fb.Eq("hash", newHash),
-	)
-	groups, res, err := s.GetGroups(ctx, filter.Count(true))
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(groups))
-	assert.Equal(t, int64(1), *res.TotalCount)
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -314,7 +298,7 @@ func TestGetGroupByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetGroupByHash(context.Background(), groupID)
+	_, err := s.GetGroupByHash(context.Background(), "ns1", groupID)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -323,7 +307,7 @@ func TestGetGroupByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}))
-	group, err := s.GetGroupByHash(context.Background(), groupID)
+	group, err := s.GetGroupByHash(context.Background(), "ns1", groupID)
 	assert.NoError(t, err)
 	assert.Nil(t, group)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -333,7 +317,7 @@ func TestGetGroupByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	groupID := fftypes.NewRandB32()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
-	_, err := s.GetGroupByHash(context.Background(), groupID)
+	_, err := s.GetGroupByHash(context.Background(), "ns1", groupID)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -344,7 +328,7 @@ func TestGetGroupByIDLoadMembersFail(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(groupColumns).
 		AddRow(nil, "ns1", "name1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetGroupByHash(context.Background(), groupID)
+	_, err := s.GetGroupByHash(context.Background(), "ns1", groupID)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -352,7 +336,7 @@ func TestGetGroupByIDLoadMembersFail(t *testing.T) {
 func TestGetGroupsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
-	_, _, err := s.GetGroups(context.Background(), f)
+	_, _, err := s.GetGroups(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*hash", err)
 }
 
@@ -360,7 +344,7 @@ func TestGetGroupsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, _, err := s.GetGroups(context.Background(), f)
+	_, _, err := s.GetGroups(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -369,7 +353,7 @@ func TestGetGroupsReadGroupFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"hash"}).AddRow("only one"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", "")
-	_, _, err := s.GetGroups(context.Background(), f)
+	_, _, err := s.GetGroups(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -380,42 +364,7 @@ func TestGetGroupsLoadMembersFail(t *testing.T) {
 		AddRow(nil, "ns1", "group1", fftypes.NewRandB32(), fftypes.Now()))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.GroupQueryFactory.NewFilter(context.Background()).Gt("created", "0")
-	_, _, err := s.GetGroups(context.Background(), f)
+	_, _, err := s.GetGroups(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGroupUpdateBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("hash", "anything")
-	err := s.UpdateGroup(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestGroupUpdateBuildQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("hash", map[bool]bool{true: false})
-	err := s.UpdateGroup(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF00143.*hash", err)
-}
-
-func TestGroupsUpdateBuildFilterFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	f := database.GroupQueryFactory.NewFilter(context.Background()).Eq("hash", map[bool]bool{true: false})
-	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("description", "my desc")
-	err := s.UpdateGroups(context.Background(), f, u)
-	assert.Regexp(t, "FF00143.*hash", err)
-}
-
-func TestGroupUpdateFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	u := database.GroupQueryFactory.NewUpdate(context.Background()).Set("description", fftypes.NewUUID())
-	err := s.UpdateGroup(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10117", err)
 }

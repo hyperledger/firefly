@@ -38,7 +38,7 @@ var getNetworkNodes = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.IdentityQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.NetworkMap().GetNodes(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.NetworkMap().GetNodes(cr.ctx, cr.filter))
 		},
 	},
 }

@@ -33,7 +33,7 @@ func TestGetEvents(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetEvents", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetEvents", mock.Anything, mock.Anything).
 		Return([]*core.Event{}, nil, nil)
 	r.ServeHTTP(res, req)
 
@@ -47,7 +47,7 @@ func TestGetEventsWithReferences(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	var ten int64 = 10
-	o.On("GetEventsWithReferences", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetEventsWithReferences", mock.Anything, mock.Anything).
 		Return([]*core.EnrichedEvent{}, &database.FilterResult{
 			TotalCount: &ten,
 		}, nil)

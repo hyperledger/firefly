@@ -82,7 +82,7 @@ func (ep *eventPoller) restoreOffset() error {
 		retry = ep.conf.startupOffsetRetryAttempts == 0 || attempt <= ep.conf.startupOffsetRetryAttempts
 		var offset *core.Offset
 		if ep.conf.ephemeral {
-			ep.pollingOffset, err = calcFirstOffset(ep.ctx, ep.database, ep.conf.firstEvent)
+			ep.pollingOffset, err = calcFirstOffset(ep.ctx, ep.conf.namespace, ep.database, ep.conf.firstEvent)
 			return retry, err
 		}
 		for offset == nil {
@@ -91,7 +91,7 @@ func (ep *eventPoller) restoreOffset() error {
 				return retry, err
 			}
 			if offset == nil {
-				firstOffset, err := calcFirstOffset(ep.ctx, ep.database, ep.conf.firstEvent)
+				firstOffset, err := calcFirstOffset(ep.ctx, ep.conf.namespace, ep.database, ep.conf.firstEvent)
 				if err != nil {
 					return retry, err
 				}

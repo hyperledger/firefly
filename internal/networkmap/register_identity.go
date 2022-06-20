@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error) {
+func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 
 	// The parent can be a UUID directly
 	var parent *fftypes.UUID
@@ -33,7 +33,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		parent, err = fftypes.ParseUUID(ctx, dto.Parent)
 		if err != nil {
 			// Or a DID
-			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, dto.Parent)
+			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, dto.Parent)
 			if err != nil {
 				return nil, err
 			}
@@ -45,7 +45,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 	identity = &core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
-			Namespace: ns,
+			Namespace: nm.namespace,
 			Name:      dto.Name,
 			Type:      dto.Type,
 			Parent:    parent,
@@ -56,7 +56,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		},
 	}
 
-	if err := nm.data.VerifyNamespaceExists(ctx, ns); err != nil {
+	if err := nm.data.VerifyNamespaceExists(ctx, nm.namespace); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 	}
 
 	if waitConfirm {
-		return nm.syncasync.WaitForIdentity(ctx, identity.Namespace, identity.ID, func(ctx context.Context) error {
+		return nm.syncasync.WaitForIdentity(ctx, identity.ID, func(ctx context.Context) error {
 			return nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
 		})
 	}

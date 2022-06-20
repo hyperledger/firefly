@@ -78,7 +78,7 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		node, err := pm.database.GetIdentityByID(ctx, nodeID)
+		node, err := pm.identity.CachedIdentityLookupByID(ctx, nodeID)
 		if err != nil {
 			return nil, err
 		} else if node == nil {
@@ -97,19 +97,19 @@ func (pm *privateMessaging) PrepareOperation(ctx context.Context, op *core.Opera
 		if err != nil {
 			return nil, err
 		}
-		node, err := pm.database.GetIdentityByID(ctx, nodeID)
+		node, err := pm.identity.CachedIdentityLookupByID(ctx, nodeID)
 		if err != nil {
 			return nil, err
 		} else if node == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		group, err := pm.database.GetGroupByHash(ctx, groupHash)
+		group, err := pm.database.GetGroupByHash(ctx, pm.namespace, groupHash)
 		if err != nil {
 			return nil, err
 		} else if group == nil {
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
-		bp, err := pm.database.GetBatchByID(ctx, batchID)
+		bp, err := pm.database.GetBatchByID(ctx, pm.namespace, batchID)
 		if err != nil {
 			return nil, err
 		} else if bp == nil {

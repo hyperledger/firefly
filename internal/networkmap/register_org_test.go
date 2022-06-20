@@ -58,7 +58,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootVerifier", nm.ctx, "ns1").Return(&core.VerifierRef{
+	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
@@ -76,7 +76,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 		}),
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
-	org, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
+	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
 	assert.Equal(t, *mockMsg.Header.ID, *org.Messages.Claim)
 
@@ -93,11 +93,11 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	nm.orgName = ""
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootVerifier", nm.ctx, "ns1").Return(&core.VerifierRef{
+	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
 
 	mim.AssertExpectations(t)
@@ -109,9 +109,9 @@ func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootVerifier", nm.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
+	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterNodeOrganization(nm.ctx, "ns1", false)
+	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "pop", err)
 
 }

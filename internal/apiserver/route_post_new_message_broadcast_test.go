@@ -39,7 +39,7 @@ func TestPostNewMessageBroadcast(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.AnythingOfType("*core.MessageInOut"), false).
+	mbm.On("BroadcastMessage", mock.Anything, mock.AnythingOfType("*core.MessageInOut"), false).
 		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -57,7 +57,7 @@ func TestPostNewMessageBroadcastSync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mbm.On("BroadcastMessage", mock.Anything, "ns1", mock.AnythingOfType("*core.MessageInOut"), true).
+	mbm.On("BroadcastMessage", mock.Anything, mock.AnythingOfType("*core.MessageInOut"), true).
 		Return(&core.Message{}, nil)
 	r.ServeHTTP(res, req)
 

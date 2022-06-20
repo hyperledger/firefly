@@ -843,7 +843,7 @@ func (nm *namespaceManager) GetOperationByNamespacedID(ctx context.Context, nsOp
 	if or == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
-	return or.GetOperationByID(ctx, ns, u.String())
+	return or.GetOperationByID(ctx, u.String())
 }
 
 func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {

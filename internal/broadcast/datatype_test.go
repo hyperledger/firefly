@@ -61,7 +61,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mim := bm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
@@ -77,7 +77,7 @@ func TestBroadcastUpsertFail(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
@@ -121,7 +121,7 @@ func TestBroadcastOk(t *testing.T) {
 	mdm := bm.data.(*datamocks.Manager)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
-	mim.On("ResolveInputSigningIdentity", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)

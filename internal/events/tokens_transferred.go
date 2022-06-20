@@ -43,7 +43,7 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 		fb.Eq("tx", tx),
 		fb.Eq("type", core.OpTypeTokenTransfer),
 	)
-	operations, _, err := em.database.GetOperations(ctx, filter)
+	operations, _, err := em.database.GetOperations(ctx, em.namespace, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		if transfer.LocalID, err = em.loadTransferID(ctx, transfer.TX.ID, &transfer.TokenTransfer); err != nil {
 			return false, err
 		}
-		if valid, err := em.txHelper.PersistTransaction(ctx, transfer.Namespace, transfer.TX.ID, transfer.TX.Type, transfer.Event.BlockchainTXID); err != nil || !valid {
+		if valid, err := em.txHelper.PersistTransaction(ctx, transfer.TX.ID, transfer.TX.Type, transfer.Event.BlockchainTXID); err != nil || !valid {
 			return valid, err
 		}
 	}
@@ -142,7 +142,7 @@ func (em *eventManager) TokensTransferred(ti tokens.Plugin, transfer *tokens.Tok
 			}
 
 			if transfer.Message != nil {
-				msg, err := em.database.GetMessageByID(ctx, transfer.Message)
+				msg, err := em.database.GetMessageByID(ctx, em.namespace, transfer.Message)
 				switch {
 				case err != nil:
 					return err

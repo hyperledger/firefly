@@ -41,7 +41,7 @@ var postNewMessageBroadcast = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			output, err = cr.or.Broadcast().BroadcastMessage(cr.ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut), waitConfirm)
+			output, err = cr.or.Broadcast().BroadcastMessage(cr.ctx, r.Input.(*core.MessageInOut), waitConfirm)
 			return output, err
 		},
 	},

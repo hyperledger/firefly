@@ -37,7 +37,7 @@ var getNetworkDIDDocByDID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.NetworkMap().GetDIDDocForIndentityByDID(cr.ctx, extractNamespace(r.PP), r.PP["did"])
+			return cr.or.NetworkMap().GetDIDDocForIndentityByDID(cr.ctx, r.PP["did"])
 		},
 	},
 }

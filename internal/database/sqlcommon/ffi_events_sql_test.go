@@ -87,14 +87,6 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	err = s.UpsertFFIEvent(ctx, event)
 	assert.NoError(t, err)
 
-	// Query back the event (by name)
-	eventRead, err = s.GetFFIEventByID(ctx, event.ID)
-	assert.NoError(t, err)
-	assert.NotNil(t, eventRead)
-	eventJson, _ = json.Marshal(&event)
-	eventReadJson, _ = json.Marshal(&eventRead)
-	assert.Equal(t, string(eventJson), string(eventReadJson))
-
 	s.callbacks.AssertExpectations(t)
 }
 

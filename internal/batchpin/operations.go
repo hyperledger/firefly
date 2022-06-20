@@ -69,7 +69,7 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *core.Oper
 		if err != nil {
 			return nil, err
 		}
-		batch, err := bp.database.GetBatchByID(ctx, batchID)
+		batch, err := bp.database.GetBatchByID(ctx, bp.namespace, batchID)
 		if err != nil {
 			return nil, err
 		} else if batch == nil {

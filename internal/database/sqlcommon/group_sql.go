@@ -243,12 +243,12 @@ func (s *SQLCommon) groupResult(ctx context.Context, row *sql.Rows) (*core.Group
 	return &group, nil
 }
 
-func (s *SQLCommon) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (group *core.Group, err error) {
+func (s *SQLCommon) GetGroupByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (group *core.Group, err error) {
 
 	rows, _, err := s.query(ctx, groupsTable,
 		sq.Select(groupColumns...).
 			From(groupsTable).
-			Where(sq.Eq{"hash": hash}),
+			Where(sq.Eq{"hash": hash, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -273,8 +273,8 @@ func (s *SQLCommon) GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (
 	return group, nil
 }
 
-func (s *SQLCommon) GetGroups(ctx context.Context, filter database.Filter) (group []*core.Group, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From(groupsTable), filter, groupFilterFieldMap, []interface{}{"sequence"})
+func (s *SQLCommon) GetGroups(ctx context.Context, namespace string, filter database.Filter) (group []*core.Group, res *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(groupColumns...).From(groupsTable), filter, groupFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -302,34 +302,4 @@ func (s *SQLCommon) GetGroups(ctx context.Context, filter database.Filter) (grou
 	}
 
 	return groups, s.queryRes(ctx, groupsTable, tx, fop, fi), err
-}
-
-func (s *SQLCommon) UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update database.Update) (err error) {
-	return s.UpdateGroups(ctx, database.GroupQueryFactory.NewFilter(ctx).Eq("hash", hash), update)
-}
-
-func (s *SQLCommon) UpdateGroups(ctx context.Context, filter database.Filter, update database.Update) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update(groupsTable), update, groupFilterFieldMap)
-	if err != nil {
-		return err
-	}
-
-	query, err = s.filterUpdate(ctx, query, filter, opFilterFieldMap)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.updateTx(ctx, groupsTable, tx, query, nil /* no change event for filter based update */)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
 }

@@ -46,14 +46,14 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 	}, nil)
 
 	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns").Return(nil)
+	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		"ns",
+		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -61,14 +61,14 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		core.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
 
 	mbm.On("BroadcastDefinition", nm.ctx,
-		"ns",
+		"ns1",
 		mock.AnythingOfType("*core.IdentityVerification"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
 		core.SystemTagIdentityVerification, false).Return(mockMsg2, nil)
 
-	org, err := nm.RegisterIdentity(nm.ctx, "ns", &core.IdentityCreateDTO{
+	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
 		Key:    "0x12345",
 		Parent: fftypes.NewUUID().String(),
@@ -96,13 +96,11 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	}, nil)
 
 	msa := nm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("WaitForIdentity", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+	msa.On("WaitForIdentity", mock.Anything, mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
 		ctx := args[0].(context.Context)
-		ns := args[1].(string)
-		id := args[2].(*fftypes.UUID)
-		assert.Equal(t, parentIdentity.Namespace, ns)
+		id := args[1].(*fftypes.UUID)
 		assert.NotNil(t, id)
-		cb := args[3].(syncasync.RequestSender)
+		cb := args[2].(syncasync.RequestSender)
 		err := cb(ctx)
 		assert.NoError(t, err)
 	}).Return(nil, nil)
@@ -130,7 +128,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		}),
 		core.SystemTagIdentityVerification, false).Return(mockMsg2, nil)
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
 		Key:    "0x12345",
 		Parent: fftypes.NewUUID().String(),
@@ -149,7 +147,7 @@ func TestRegisterIdentityCustomBadNS(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookupMustExist", nm.ctx, "ns1", "did:firefly:org/parent1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/parent1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:  fftypes.NewUUID(),
 			DID: "did:firefly:org/parent1",
@@ -159,7 +157,7 @@ func TestRegisterIdentityCustomBadNS(t *testing.T) {
 	mdm := nm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Key:    "0x12345",
 		Parent: "did:firefly:org/parent1",
@@ -179,7 +177,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentIdentity, false, nil)
-	mim.On("CachedIdentityLookupMustExist", nm.ctx, "ns1", "did:firefly:org/parent1").Return(&core.Identity{
+	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/parent1").Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:  fftypes.NewUUID(),
 			DID: "did:firefly:org/parent1",
@@ -211,7 +209,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		}),
 		core.SystemTagIdentityVerification, false).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Key:    "0x12345",
 		Parent: "did:firefly:org/parent1",
@@ -237,7 +235,7 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	mdm := nm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Key:    "0x12345",
 		Parent: fftypes.NewUUID().String(),
@@ -268,7 +266,7 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 		}),
 		core.SystemTagIdentityClaim, false).Return(nil, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Key:    "0x12345",
 		Parent: fftypes.NewUUID().String(),
@@ -291,7 +289,7 @@ func TestRegisterIdentityMissingKey(t *testing.T) {
 	mdm := nm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Parent: fftypes.NewUUID().String(),
 	}, false)
@@ -312,7 +310,7 @@ func TestRegisterIdentityVerifyFail(t *testing.T) {
 	mdm := nm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Parent: fftypes.NewUUID().String(),
 	}, false)
@@ -328,9 +326,9 @@ func TestRegisterIdentityBadParent(t *testing.T) {
 	defer cancel()
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookupMustExist", nm.ctx, "ns1", "did:firefly:org/1").Return(nil, false, fmt.Errorf("pop"))
+	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/1").Return(nil, false, fmt.Errorf("pop"))
 
-	_, err := nm.RegisterIdentity(nm.ctx, "ns1", &core.IdentityCreateDTO{
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Parent: "did:firefly:org/1",
 	}, false)

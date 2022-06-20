@@ -42,9 +42,9 @@ var getEvents = &ffapi.Route{
 		FilterFactory: database.EventQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchreferences"], "true") {
-				return filterResult(cr.or.GetEventsWithReferences(cr.ctx, extractNamespace(r.PP), cr.filter))
+				return filterResult(cr.or.GetEventsWithReferences(cr.ctx, cr.filter))
 			}
-			return filterResult(cr.or.GetEvents(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetEvents(cr.ctx, cr.filter))
 		},
 	},
 }

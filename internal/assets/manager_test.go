@@ -57,13 +57,13 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 	mti := &tokenmocks.Plugin{}
 	mm := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mm.On("IsMetricsEnabled").Return(metrics)
 	mm.On("TransferSubmitted", mock.Anything)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	mti.On("Name").Return("ut").Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
+	a, err := NewAssetManager(ctx, "ns1", mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -75,7 +75,7 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

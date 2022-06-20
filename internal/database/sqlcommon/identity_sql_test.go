@@ -57,13 +57,13 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 	}
 
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, core.ChangeEventTypeCreated, "ns1", identityID).Return()
-	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, core.ChangeEventTypeUpdated, "ns2", identityID).Return()
+	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionIdentities, core.ChangeEventTypeUpdated, "ns1", identityID).Return()
 
 	err := s.UpsertIdentity(ctx, identity, database.UpsertOptimizationNew)
 	assert.NoError(t, err)
 
 	// Check we get the exact same identity back
-	identityRead, err := s.GetIdentityByID(ctx, identity.ID)
+	identityRead, err := s.GetIdentityByID(ctx, "ns1", identity.ID)
 	assert.NoError(t, err)
 	assert.NotNil(t, identityRead)
 	identityJson, _ := json.Marshal(&identity)
@@ -78,7 +78,7 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 			DID:       "did:firefly:/nodes/2",
 			Parent:    fftypes.NewUUID(),
 			Type:      core.IdentityTypeNode,
-			Namespace: "ns2",
+			Namespace: "ns1",
 			Name:      "identity2",
 		},
 		IdentityProfile: core.IdentityProfile{
@@ -108,30 +108,12 @@ func TestIdentitiesE2EWithDB(t *testing.T) {
 		fb.Eq("description", string(identityUpdated.Description)),
 		fb.Eq("did", identityUpdated.DID),
 	)
-	identityRes, res, err := s.GetIdentities(ctx, filter.Count(true))
+	identityRes, res, err := s.GetIdentities(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(identityRes))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	identityReadJson, _ = json.Marshal(identityRes[0])
 	assert.Equal(t, string(identityJson), string(identityReadJson))
-
-	// Update
-	updateTime := fftypes.Now()
-	up := database.IdentityQueryFactory.NewUpdate(ctx).Set("created", updateTime)
-	err = s.UpdateIdentity(ctx, identityUpdated.ID, up)
-	assert.NoError(t, err)
-
-	// Test find updated value
-	filter = fb.And(
-		fb.Eq("did", identityUpdated.DID),
-		fb.Eq("messages.claim", identityUpdated.Messages.Claim),
-		fb.Eq("messages.verification", identityUpdated.Messages.Verification),
-		fb.Eq("messages.update", identityUpdated.Messages.Update),
-		fb.Eq("created", updateTime.String()),
-	)
-	identities, _, err := s.GetIdentities(ctx, filter)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(identities))
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -207,7 +189,7 @@ func TestUpsertIdentityFailCommit(t *testing.T) {
 func TestGetIdentityByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetIdentityByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetIdentityByID(context.Background(), "ns1", fftypes.NewUUID())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -223,7 +205,7 @@ func TestGetIdentityByNameSelectFail(t *testing.T) {
 func TestGetIdentityByIdentitySelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetIdentityByDID(context.Background(), "did:firefly:org/org1")
+	_, err := s.GetIdentityByDID(context.Background(), "ns1", "did:firefly:org/org1")
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -231,7 +213,7 @@ func TestGetIdentityByIdentitySelectFail(t *testing.T) {
 func TestGetIdentityByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity", "identity", "identity"}))
-	msg, err := s.GetIdentityByID(context.Background(), fftypes.NewUUID())
+	msg, err := s.GetIdentityByID(context.Background(), "ns1", fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -240,7 +222,7 @@ func TestGetIdentityByIDNotFound(t *testing.T) {
 func TestGetIdentityByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"identity"}).AddRow("only one"))
-	_, err := s.GetIdentityByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetIdentityByID(context.Background(), "ns1", fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -249,7 +231,7 @@ func TestGetIdentityQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", "")
-	_, _, err := s.GetIdentities(context.Background(), f)
+	_, _, err := s.GetIdentities(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -257,7 +239,7 @@ func TestGetIdentityQueryFail(t *testing.T) {
 func TestGetIdentityBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", map[bool]bool{true: false})
-	_, _, err := s.GetIdentities(context.Background(), f)
+	_, _, err := s.GetIdentities(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*type", err)
 }
 
@@ -265,33 +247,7 @@ func TestGetIdentityReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"did"}).AddRow("only one"))
 	f := database.IdentityQueryFactory.NewFilter(context.Background()).Eq("did", "")
-	_, _, err := s.GetIdentities(context.Background(), f)
+	_, _, err := s.GetIdentities(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestIdentityUpdateBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", "anything")
-	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestIdentityUpdateBuildQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", map[bool]bool{true: false})
-	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF00143.*did", err)
-}
-
-func TestIdentityUpdateFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	u := database.IdentityQueryFactory.NewUpdate(context.Background()).Set("did", fftypes.NewUUID())
-	err := s.UpdateIdentity(context.Background(), fftypes.NewUUID(), u)
-	assert.Regexp(t, "FF10117", err)
 }

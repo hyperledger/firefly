@@ -50,13 +50,13 @@ func newTestBatchPinSubmitter(t *testing.T, enableMetrics bool) *batchPinSubmitt
 		mmi.On("CountBatchPin").Return()
 	}
 	mbi.On("Name").Return("ut").Maybe()
-	bps, err := NewBatchPinSubmitter(context.Background(), mdi, mim, mbi, mmi, mom)
+	bps, err := NewBatchPinSubmitter(context.Background(), "ns1", mdi, mim, mbi, mmi, mom)
 	assert.NoError(t, err)
 	return bps.(*batchPinSubmitter)
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBatchPinSubmitter(context.Background(), nil, nil, nil, nil, nil)
+	_, err := NewBatchPinSubmitter(context.Background(), "", nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

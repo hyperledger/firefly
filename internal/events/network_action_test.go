@@ -46,7 +46,7 @@ func TestNetworkAction(t *testing.T) {
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{}, nil)
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 	mdi.On("GetBlockchainEventByProtocolID", em.ctx, "ff_system", (*fftypes.UUID)(nil), "0001").Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
 		return be.ProtocolID == "0001"
@@ -77,8 +77,8 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(nil, fmt.Errorf("pop")).Once()
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(nil, nil).Once()
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
 
 	err := em.BlockchainNetworkAction(mbi, "terminate", &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
@@ -99,7 +99,7 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			Parent: fftypes.NewUUID(),
 		},
@@ -124,7 +124,7 @@ func TestNetworkActionUnknown(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{}, nil)
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 
 	err := em.BlockchainNetworkAction(mbi, "bad", &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
