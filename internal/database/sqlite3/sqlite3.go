@@ -58,8 +58,8 @@ func (sqlite *SQLite3) Init(ctx context.Context, config config.Section) error {
 	return sqlite.SQLCommon.Init(ctx, sqlite, config, capabilities)
 }
 
-func (sqlite *SQLite3) RegisterListener(listener database.Callbacks) {
-	sqlite.SQLCommon.RegisterListener(listener)
+func (sqlite *SQLite3) SetHandler(handler database.Callbacks) {
+	sqlite.SQLCommon.SetHandler(handler)
 }
 
 func (sqlite *SQLite3) Name() string {

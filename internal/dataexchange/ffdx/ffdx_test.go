@@ -443,7 +443,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler(mcb)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.NamespacedID() == "1" &&
@@ -557,7 +557,7 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler(mcb)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.NamespacedID() == "1" &&
@@ -585,7 +585,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	h := &FFDX{
 		ctx:       context.Background(),
-		callbacks: callbacks{listeners: []dataexchange.Callbacks{dxc}},
+		callbacks: callbacks{handlers: []dataexchange.Callbacks{dxc}},
 		wsconn:    wsm,
 	}
 	r := make(chan []byte)
@@ -601,7 +601,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	h := &FFDX{
 		ctx:        ctx,
-		callbacks:  callbacks{listeners: []dataexchange.Callbacks{dxc}},
+		callbacks:  callbacks{handlers: []dataexchange.Callbacks{dxc}},
 		wsconn:     wsm,
 		ackChannel: make(chan *ack, 1),
 	}
@@ -622,7 +622,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	cancel()
 	h := &FFDX{
 		ctx:       ctx,
-		callbacks: callbacks{listeners: []dataexchange.Callbacks{dxc}},
+		callbacks: callbacks{handlers: []dataexchange.Callbacks{dxc}},
 		wsconn:    wsm,
 	}
 	r := make(chan []byte, 1)

@@ -43,11 +43,11 @@ type FFTokens struct {
 }
 
 type callbacks struct {
-	listeners map[string]tokens.Callbacks
+	handlers map[string]tokens.Callbacks
 }
 
 func (cb *callbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		cb.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
 	}
 }
@@ -56,13 +56,13 @@ func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, po
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every listener and let them filter
 		// TODO: deprecate this path
-		for _, cb := range cb.listeners {
+		for _, cb := range cb.handlers {
 			if err := cb.TokenPoolCreated(plugin, pool); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.listeners[namespace]; ok {
+		if listener, ok := cb.handlers[namespace]; ok {
 			return listener.TokenPoolCreated(plugin, pool)
 		}
 	}
@@ -73,13 +73,13 @@ func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, t
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every listener and let them filter
 		// TODO: deprecate this path
-		for _, cb := range cb.listeners {
+		for _, cb := range cb.handlers {
 			if err := cb.TokensTransferred(plugin, transfer); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.listeners[namespace]; ok {
+		if listener, ok := cb.handlers[namespace]; ok {
 			return listener.TokensTransferred(plugin, transfer)
 		}
 	}
@@ -90,13 +90,13 @@ func (cb *callbacks) TokensApproved(namespace string, plugin tokens.Plugin, appr
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every listener and let them filter
 		// TODO: deprecate this path
-		for _, cb := range cb.listeners {
+		for _, cb := range cb.handlers {
 			if err := cb.TokensApproved(plugin, approval); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.listeners[namespace]; ok {
+		if listener, ok := cb.handlers[namespace]; ok {
 			return listener.TokensApproved(plugin, approval)
 		}
 	}
@@ -203,7 +203,7 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	ft.ctx = log.WithLogField(ctx, "proto", "fftokens")
 	ft.configuredName = name
 	ft.capabilities = &tokens.Capabilities{}
-	ft.callbacks.listeners = make(map[string]tokens.Callbacks)
+	ft.callbacks.handlers = make(map[string]tokens.Callbacks)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
@@ -225,8 +225,8 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	return nil
 }
 
-func (ft *FFTokens) RegisterListener(namespace string, listener tokens.Callbacks) error {
-	ft.callbacks.listeners[namespace] = listener
+func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) error {
+	ft.callbacks.handlers[namespace] = handler
 
 	res, err := ft.client.R().SetContext(ft.ctx).
 		SetBody(&tokenInit{

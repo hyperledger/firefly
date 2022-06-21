@@ -160,11 +160,6 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// RegisterListener provides a mock function with given fields: listener
-func (_m *Plugin) RegisterListener(listener dataexchange.Callbacks) {
-	_m.Called(listener)
-}
-
 // SendMessage provides a mock function with given fields: ctx, nsOpID, peerID, data
 func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string, data []byte) error {
 	ret := _m.Called(ctx, nsOpID, peerID, data)
@@ -177,6 +172,11 @@ func (_m *Plugin) SendMessage(ctx context.Context, nsOpID string, peerID string,
 	}
 
 	return r0
+}
+
+// SetHandler provides a mock function with given fields: handler
+func (_m *Plugin) SetHandler(handler dataexchange.Callbacks) {
+	_m.Called(handler)
 }
 
 // SetNodes provides a mock function with given fields: nodes

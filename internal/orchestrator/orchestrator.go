@@ -43,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	eventsplugin "github.com/hyperledger/firefly/pkg/events"
 	idplugin "github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -151,6 +152,7 @@ type Plugins struct {
 	DataExchange  DataExchangePlugin
 	Database      DatabasePlugin
 	Tokens        []TokensPlugin
+	Events        map[string]eventsplugin.Plugin
 }
 
 type Config struct {
@@ -351,8 +353,8 @@ func (or *orchestrator) Operations() operations.Manager {
 }
 
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
-	or.plugins.Database.Plugin.RegisterListener(or)
-	or.plugins.Blockchain.Plugin.RegisterListener(&or.bc)
+	or.plugins.Database.Plugin.SetHandler(or)
+	or.plugins.Blockchain.Plugin.SetHandler(&or.bc)
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database().GetIdentities(ctx, or.namespace, fb.And(
@@ -366,12 +368,12 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 	or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
-	or.plugins.DataExchange.Plugin.RegisterListener(&or.bc)
+	or.plugins.DataExchange.Plugin.SetHandler(&or.bc)
 
-	or.plugins.SharedStorage.Plugin.RegisterListener(&or.bc)
+	or.plugins.SharedStorage.Plugin.SetHandler(&or.bc)
 
 	for _, token := range or.plugins.Tokens {
-		if err := token.Plugin.RegisterListener(or.namespace, &or.bc); err != nil {
+		if err := token.Plugin.SetHandler(or.namespace, &or.bc); err != nil {
 			return err
 		}
 	}
@@ -461,7 +463,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper)
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events)
 		if err != nil {
 			return err
 		}

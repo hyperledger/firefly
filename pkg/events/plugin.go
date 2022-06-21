@@ -33,8 +33,10 @@ type Plugin interface {
 	InitConfig(config config.Section)
 
 	// Init initializes the plugin, with configuration
-	// Returns the supported featureset of the interface
-	Init(ctx context.Context, config config.Section, callbacks Callbacks) error
+	Init(ctx context.Context, config config.Section) error
+
+	// SetHandler registers a handler to receive callbacks
+	SetHandler(namespace string, handler Callbacks) error
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities

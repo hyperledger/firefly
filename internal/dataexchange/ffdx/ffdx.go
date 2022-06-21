@@ -50,11 +50,11 @@ type FFDX struct {
 }
 
 type callbacks struct {
-	listeners []dataexchange.Callbacks
+	handlers []dataexchange.Callbacks
 }
 
 func (cb *callbacks) DXEvent(event dataexchange.DXEvent) {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		cb.DXEvent(event)
 	}
 }
@@ -148,8 +148,8 @@ func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
 	h.nodes = nodes
 }
 
-func (h *FFDX) RegisterListener(listener dataexchange.Callbacks) {
-	h.callbacks.listeners = append(h.callbacks.listeners, listener)
+func (h *FFDX) SetHandler(handler dataexchange.Callbacks) {
+	h.callbacks.handlers = append(h.callbacks.handlers, handler)
 }
 
 func (h *FFDX) Start() error {

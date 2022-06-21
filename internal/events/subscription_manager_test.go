@@ -53,7 +53,7 @@ func newTestSubManager(t *testing.T, mei *eventsmocks.Plugin) (*subscriptionMana
 	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetEvents", mock.Anything, mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil).Maybe()
 	mdi.On("GetOffset", mock.Anything, mock.Anything, mock.Anything).Return(&core.Offset{RowID: 3333333, Current: 0}, nil).Maybe()
-	sm, err := newSubscriptionManager(ctx, mdi, mdm, newEventNotifier(ctx, "ut"), mbm, mpm, txHelper)
+	sm, err := newSubscriptionManager(ctx, "ns1", mdi, mdm, newEventNotifier(ctx, "ut"), mbm, mpm, txHelper, nil)
 	assert.NoError(t, err)
 	sm.transports = map[string]events.Plugin{
 		"ut": mei,
@@ -116,6 +116,42 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 	assert.Nil(t, sm.connections["conn2"])
 }
 
+func TestReloadDurableSubscription(t *testing.T) {
+
+	sub1 := fftypes.NewUUID()
+
+	mei := &eventsmocks.Plugin{}
+	sm, cancel := newTestSubManager(t, mei)
+	defer cancel()
+
+	sm.connections["conn1"] = &connection{
+		ei:          mei,
+		id:          "conn1",
+		transport:   "ut",
+		dispatchers: make(map[fftypes.UUID]*eventDispatcher),
+		matcher: func(sr core.SubscriptionRef) bool {
+			return sr.Namespace == "ns1" && sr.Name == "sub1"
+		},
+	}
+
+	mdi := sm.database.(*databasemocks.Plugin)
+	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{
+		{SubscriptionRef: core.SubscriptionRef{
+			ID:        sub1,
+			Namespace: "ns1",
+			Name:      "sub1",
+		}, Transport: "ut"},
+	}, nil, nil)
+	mei.On("ValidateOptions", mock.Anything).Return(nil)
+	err := sm.start()
+	assert.NoError(t, err)
+
+	// Close with active conns
+	sm.close()
+	assert.Nil(t, sm.connections["conn1"])
+	assert.Nil(t, sm.connections["conn2"])
+}
+
 func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	mei := &eventsmocks.Plugin{}
 	sm, cancel := newTestSubManager(t, mei)
@@ -165,31 +201,6 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	assert.Regexp(t, "FF10171", err)
 	assert.Empty(t, sm.connections["conn1"].dispatchers)
 
-}
-
-func TestSubManagerBadPlugin(t *testing.T) {
-	mdi := &databasemocks.Plugin{}
-	mdm := &datamocks.Manager{}
-	mbm := &broadcastmocks.Manager{}
-	mpm := &privatemessagingmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
-	coreconfig.Reset()
-	config.Set(coreconfig.EventTransportsEnabled, []string{"!unknown!"})
-	_, err := newSubscriptionManager(context.Background(), mdi, mdm, newEventNotifier(context.Background(), "ut"), mbm, mpm, txHelper)
-	assert.Regexp(t, "FF10172", err)
-}
-
-func TestSubManagerTransportInitError(t *testing.T) {
-	mei := &eventsmocks.Plugin{}
-	mei.On("Name").Return("ut")
-	mei.On("InitConfig", mock.Anything).Return()
-	mei.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-
-	sm, cancel := newTestSubManager(t, mei)
-	defer cancel()
-
-	err := sm.initTransports()
-	assert.EqualError(t, err, "pop")
 }
 
 func TestStartSubRestoreFail(t *testing.T) {

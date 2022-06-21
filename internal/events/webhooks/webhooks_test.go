@@ -47,7 +47,8 @@ func newTestWebHooks(t *testing.T) (wh *WebHooks, cancel func()) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	svrConfig := config.RootSection("ut.webhooks")
 	wh.InitConfig(svrConfig)
-	wh.Init(ctx, svrConfig, cbs)
+	wh.Init(ctx, svrConfig)
+	wh.SetHandler("ns1", cbs)
 	assert.Equal(t, "webhooks", wh.Name())
 	assert.NotNil(t, wh.Capabilities())
 	return wh, cancelCtx
@@ -146,6 +147,9 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -207,7 +211,7 @@ func TestRequestWithBodyReplyEndToEnd(t *testing.T) {
 		}`),
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
@@ -253,6 +257,9 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 	msgID := fftypes.NewUUID()
 	groupHash := fftypes.NewRandB32()
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -314,7 +321,7 @@ func TestRequestWithEmptyStringBodyReplyEndToEnd(t *testing.T) {
 		}`),
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Equal(t, *groupHash, *response.Reply.Message.Header.Group)
@@ -408,6 +415,9 @@ func TestRequestReplyEmptyData(t *testing.T) {
 
 	yes := true
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -434,7 +444,7 @@ func TestRequestReplyEmptyData(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -445,6 +455,8 @@ func TestRequestReplyEmptyData(t *testing.T) {
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
 	assert.True(t, called)
+
+	mcb.AssertExpectations(t)
 }
 
 func TestRequestReplyBadJSON(t *testing.T) {
@@ -461,7 +473,11 @@ func TestRequestReplyBadJSON(t *testing.T) {
 	server := httptest.NewServer(r)
 	defer server.Close()
 
-	sub := &core.Subscription{}
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
@@ -483,7 +499,7 @@ func TestRequestReplyBadJSON(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, float64(502), response.Reply.InlineData[0].Value.JSONObject()["status"])
 		assert.Regexp(t, "FF10257", response.Reply.InlineData[0].Value.JSONObject().GetObject("body")["error"])
@@ -492,7 +508,10 @@ func TestRequestReplyBadJSON(t *testing.T) {
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, core.DataArray{})
 	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
 }
+
 func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 	wh, cancel := newTestWebHooks(t)
 	defer cancel()
@@ -517,6 +536,9 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 
 	yes := true
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -543,7 +565,7 @@ func TestRequestReplyDataArrayBadStatusB64(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -572,7 +594,11 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 	server := httptest.NewServer(r)
 	server.Close()
 
-	sub := &core.Subscription{}
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
 	to := sub.Options.TransportOptions()
 	to["url"] = fmt.Sprintf("http://%s/myapi", server.Listener.Addr())
 	to["reply"] = true
@@ -593,7 +619,7 @@ func TestRequestReplyDataArrayError(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -621,7 +647,11 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 	server := httptest.NewServer(r)
 	server.Close()
 
-	sub := &core.Subscription{}
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
 	sub.Options.TransportOptions()["reply"] = true
 	sub.Options.TransportOptions()["fastack"] = true
 	event := &core.EventDelivery{
@@ -642,7 +672,7 @@ func TestRequestReplyBuildRequestFailFastAsk(t *testing.T) {
 	}
 
 	waiter := make(chan struct{})
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	dr := mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		assert.Equal(t, *msgID, *response.Reply.Message.Header.CID)
 		assert.Nil(t, response.Reply.Message.Header.Group)
@@ -671,6 +701,9 @@ func TestDeliveryRequestNilMessage(t *testing.T) {
 
 	yes := true
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -699,6 +732,9 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 
 	yes := true
 	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
 		Options: core.SubscriptionOptions{
 			SubscriptionCoreOptions: core.SubscriptionCoreOptions{
 				WithData: &yes,
@@ -724,11 +760,13 @@ func TestDeliveryRequestReplyToReply(t *testing.T) {
 		},
 	}
 
-	mcb := wh.callbacks.(*eventsmocks.Callbacks)
+	mcb := wh.callbacks["ns1"].(*eventsmocks.Callbacks)
 	mcb.On("DeliveryResponse", mock.Anything, mock.MatchedBy(func(response *core.EventDeliveryResponse) bool {
 		return !response.Rejected // should be accepted as a no-op so we can move on to other events
 	}))
 
 	err := wh.DeliveryRequest(mock.Anything, sub, event, nil)
 	assert.NoError(t, err)
+
+	mcb.AssertExpectations(t)
 }

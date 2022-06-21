@@ -72,17 +72,17 @@ type Fabric struct {
 }
 
 type callbacks struct {
-	listeners []blockchain.Callbacks
+	handlers []blockchain.Callbacks
 }
 
 func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
 	}
 }
 
 func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *co
 }
 
 func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Ev
 }
 
 func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
 		if err := cb.BlockchainEvent(event); err != nil {
 			return err
 		}
@@ -322,8 +322,8 @@ func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyC
 	return f.ConfigureContract(ctx, contracts)
 }
 
-func (f *Fabric) RegisterListener(listener blockchain.Callbacks) {
-	f.callbacks.listeners = append(f.callbacks.listeners, listener)
+func (f *Fabric) SetHandler(handler blockchain.Callbacks) {
+	f.callbacks.handlers = append(f.callbacks.handlers, handler)
 }
 
 func (f *Fabric) Start() (err error) {

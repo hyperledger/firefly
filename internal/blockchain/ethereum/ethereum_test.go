@@ -1096,7 +1096,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	e.fireflyContract.networkVersion = 1
@@ -1219,7 +1219,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	e.fireflyContract.networkVersion = 1
@@ -1281,7 +1281,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 	e.fireflyContract.networkVersion = 1
@@ -1506,7 +1506,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	e := &Ethereum{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 		wsconn:    wsm,
 	}
 
@@ -1576,7 +1576,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	}`)
 
 	em := &blockchainmocks.Callbacks{}
-	e.RegisterListener(em)
+	e.SetHandler(em)
 	txsu := em.On("BlockchainOpUpdate",
 		e,
 		"ns1:"+operationID.String(),
@@ -1821,7 +1821,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -1883,7 +1883,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -3075,7 +3075,7 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 
@@ -3121,7 +3121,7 @@ func TestHandleNetworkActionFail(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.fireflyContract.subscription = "sb-b5b97a4e-a317-4053-6400-1474650efcb5"
 

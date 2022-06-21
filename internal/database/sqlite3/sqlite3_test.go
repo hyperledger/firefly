@@ -32,7 +32,7 @@ import (
 
 func TestSQLite3GoProvider(t *testing.T) {
 	sqlite := &SQLite3{}
-	sqlite.RegisterListener(&databasemocks.Callbacks{})
+	sqlite.SetHandler(&databasemocks.Callbacks{})
 	config := config.RootSection("unittest")
 	sqlite.InitConfig(config)
 	config.Set(sqlcommon.SQLConfDatasourceURL, "!wrong://")

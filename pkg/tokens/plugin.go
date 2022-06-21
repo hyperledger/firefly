@@ -35,8 +35,8 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, name string, config config.Section) error
 
-	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(namespace string, listener Callbacks) error
+	// SetHandler registers a handler to receive callbacks
+	SetHandler(namespace string, handler Callbacks) error
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error

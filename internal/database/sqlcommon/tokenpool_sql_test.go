@@ -176,7 +176,7 @@ func TestUpsertTokenPoolFailCommit(t *testing.T) {
 func TestUpsertTokenPoolUpdateIDMismatch(t *testing.T) {
 	s, db := newMockProvider().init()
 	callbacks := &databasemocks.Callbacks{}
-	s.RegisterListener(callbacks)
+	s.SetHandler(callbacks)
 	poolID := fftypes.NewUUID()
 	pool := &core.TokenPool{
 		ID:        poolID,
