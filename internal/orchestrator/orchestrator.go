@@ -59,6 +59,7 @@ type Orchestrator interface {
 	BatchManager() batch.Manager
 	Broadcast() broadcast.Manager
 	Contracts() contracts.Manager
+	MultiParty() multiparty.Manager
 	Data() data.Manager
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
@@ -74,9 +75,6 @@ type Orchestrator interface {
 	CreateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
 	CreateUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
 	DeleteSubscription(ctx context.Context, ns, id string) error
-
-	// Contract Queries
-	GetNetworkVersion() int
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*core.Namespace, error)
@@ -358,6 +356,10 @@ func (or *orchestrator) Operations() operations.Manager {
 	return or.operations
 }
 
+func (or *orchestrator) MultiParty() multiparty.Manager {
+	return or.multiparty
+}
+
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or)
 	or.plugins.Blockchain.Plugin.SetHandler(&or.bc)
@@ -506,8 +508,4 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 		ID:        fftypes.NewUUID(),
 	}
 	return or.multiparty.SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
-}
-
-func (or *orchestrator) GetNetworkVersion() int {
-	return or.multiparty.GetNetworkVersion()
 }

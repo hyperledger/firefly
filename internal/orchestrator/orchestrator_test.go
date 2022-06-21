@@ -210,6 +210,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mom, or.Operations())
 	assert.Equal(t, or.mcm, or.Contracts())
 	assert.Equal(t, or.mnm, or.NetworkMap())
+	assert.Equal(t, or.mmp, or.MultiParty())
 }
 
 func TestInitTokenListenerFail(t *testing.T) {
@@ -474,11 +475,4 @@ func TestNetworkActionBadNamespace(t *testing.T) {
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
 	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Regexp(t, "FF10399", err)
-}
-
-func TestGetNetworkVersion(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mmp.On("GetNetworkVersion").Return(1)
-	version := or.GetNetworkVersion()
-	assert.Equal(t, 1, version)
 }

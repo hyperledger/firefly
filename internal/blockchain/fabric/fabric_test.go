@@ -268,7 +268,7 @@ func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
 
 	err := e.Init(e.ctx, utConfig, &metricsmocks.Manager{})
 	assert.NoError(t, err)
-	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "newest")
 	assert.Regexp(t, "pop", err)
 }
 

@@ -37,6 +37,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/orchestratormocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
@@ -128,8 +129,10 @@ func TestInit(t *testing.T) {
 	defer nm.cleanup(t)
 
 	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
-	mo.On("GetNetworkVersion").Return(2)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(2)
 	nm.utOrchestrator = mo
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
@@ -271,11 +274,15 @@ func TestInitVersion1(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mmp := &multipartymocks.Manager{}
 	mo := &orchestratormocks.Orchestrator{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
-	mo.On("GetNetworkVersion").Return(1)
 	nm.utOrchestrator = mo
+
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", mock.Anything).Return()
@@ -301,10 +308,14 @@ func TestInitVersion1Fail(t *testing.T) {
 	defer nm.cleanup(t)
 
 	mo := &orchestratormocks.Orchestrator{}
+	mmp := &multipartymocks.Manager{}
 	mo.On("Init", mock.Anything, mock.Anything).Return(nil).Once()
 	mo.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
-	mo.On("GetNetworkVersion").Return(1)
 	nm.utOrchestrator = mo
+
+	mo.On("Init", mock.Anything, mock.Anything).Return(nil)
+	mo.On("MultiParty").Return(mmp)
+	mmp.On("GetNetworkVersion").Return(1)
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mdi.On("SetHandler", mock.Anything).Return()

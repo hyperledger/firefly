@@ -3263,7 +3263,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 		"address": "0x123",
 	}.String())
 
-	subID, err := e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	subID, err := e.AddFireflySubscription(e.ctx, "ns1", location, "newest")
 	assert.NoError(t, err)
 
 	err = e.RemoveFireflySubscription(e.ctx, subID)

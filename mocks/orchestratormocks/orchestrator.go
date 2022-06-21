@@ -22,6 +22,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	multiparty "github.com/hyperledger/firefly/internal/multiparty"
+
 	networkmap "github.com/hyperledger/firefly/internal/networkmap"
 
 	operations "github.com/hyperledger/firefly/internal/operations"
@@ -786,20 +788,6 @@ func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Name
 	return r0, r1
 }
 
-// GetNetworkVersion provides a mock function with given fields:
-func (_m *Orchestrator) GetNetworkVersion() int {
-	ret := _m.Called()
-
-	var r0 int
-	if rf, ok := ret.Get(0).(func() int); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(int)
-	}
-
-	return r0
-}
-
 // GetOperationByID provides a mock function with given fields: ctx, id
 func (_m *Orchestrator) GetOperationByID(ctx context.Context, id string) (*core.Operation, error) {
 	ret := _m.Called(ctx, id)
@@ -1116,6 +1104,22 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MultiParty provides a mock function with given fields:
+func (_m *Orchestrator) MultiParty() multiparty.Manager {
+	ret := _m.Called()
+
+	var r0 multiparty.Manager
+	if rf, ok := ret.Get(0).(func() multiparty.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(multiparty.Manager)
+		}
 	}
 
 	return r0
