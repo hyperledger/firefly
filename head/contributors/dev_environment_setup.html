@@ -252,7 +252,8 @@
 <ol id="markdown-toc">
   <li><a href="#setting-up-a-firefly-core-development-environment" id="markdown-toc-setting-up-a-firefly-core-development-environment">Setting up a FireFly Core Development Environment</a>    <ol>
       <li><a href="#dependencies" id="markdown-toc-dependencies">Dependencies</a>        <ol>
-          <li><a href="#installing-go-and-setting-up-your-gopath" id="markdown-toc-installing-go-and-setting-up-your-gopath">Installing GO and setting up your <code class="language-plaintext highlighter-rouge">GOPATH</code></a></li>
+          <li><a href="#install-the-firefly-cli" id="markdown-toc-install-the-firefly-cli">Install the FireFly CLI</a></li>
+          <li><a href="#installing-go-and-setting-up-your-gopath" id="markdown-toc-installing-go-and-setting-up-your-gopath">Installing Go and setting up your <code class="language-plaintext highlighter-rouge">GOPATH</code></a></li>
         </ol>
       </li>
       <li><a href="#building-firefly" id="markdown-toc-building-firefly">Building FireFly</a></li>
@@ -280,15 +281,25 @@
 <p>You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.</p>
 
 <ul>
-  <li><a href="https://golang.org/dl/">Go (1.16 or newer)</a></li>
+  <li><a href="https://golang.org/dl/">Go (1.17 or newer)</a></li>
   <li>make</li>
   <li>GCC</li>
   <li>openssl</li>
 </ul>
+      <h3 id="install-the-firefly-cli">
+        
+        
+          <a href="#install-the-firefly-cli" class="anchor-heading" aria-labelledby="install-the-firefly-cli"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Install the FireFly CLI
+        
+        
+      </h3>
+    
+
+<p>The first step to setting up a local development environment is to install the FireFly CLI. Please section of the <a href="/firefly/head/gettingstarted/firefly_cli.html">Getting Started Guide to install The FireFly CLI</a>.</p>
       <h3 id="installing-go-and-setting-up-your-gopath">
         
         
-          <a href="#installing-go-and-setting-up-your-gopath" class="anchor-heading" aria-labelledby="installing-go-and-setting-up-your-gopath"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Installing GO and setting up your <code class="language-plaintext highlighter-rouge">GOPATH</code>
+          <a href="#installing-go-and-setting-up-your-gopath" class="anchor-heading" aria-labelledby="installing-go-and-setting-up-your-gopath"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Installing Go and setting up your <code class="language-plaintext highlighter-rouge">GOPATH</code>
         
         
       </h3>
@@ -303,8 +314,6 @@
 export GOROOT="/usr/local/go"
 export PATH="$PATH:${GOPATH}/bin:${GOROOT}/bin"
 </code></pre></div></div>
-
-<p>The <a href="https://github.com/hyperledger/firefly-cli">FireFly CLI</a> is the recommended path for running a local development stack. It has its <a href="https://github.com/hyperledger/firefly-cli#prerequisites">own set of prerequisites</a> as well.</p>
       <h2 id="building-firefly">
         
         
@@ -372,7 +381,7 @@ https://github.com/hyperledger/firefly-cli#install-the-cli</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ff start dev
 </code></pre></div></div>
 
-<p>At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. There are two different ways you can run the extenral FireFly core process.</p>
+<p>At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. There are two different ways you can run the external FireFly core process.</p>
       <h3 id="1-from-another-terminal">
         
         
@@ -383,7 +392,7 @@ https://github.com/hyperledger/firefly-cli#install-the-cli</p>
     
 <p>The CLI will print out the command line which can be copied and pasted into another terminal window to run FireFly. <em>This command should be run from the <code class="language-plaintext highlighter-rouge">firefly</code> core project directory.</em> Here is an example of the command that the CLI will tell you to run:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./firefly -f ~/.stacks/firefly/dev/configs/firefly_core_0.yml
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./firefly -f ~/.stacks/firefly/dev/init/config/firefly_core_0.yml
 </code></pre></div></div>
 
 <blockquote>
