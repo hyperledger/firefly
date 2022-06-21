@@ -21,6 +21,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -41,6 +42,10 @@ func (suite *TokensTestSuite) SetupSuite() {
 
 func (suite *TokensTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
+}
+
+func (suite *TokensTestSuite) AfterTest(suiteName, testName string) {
+	verifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *TokensTestSuite) TestE2EFungibleTokensAsync() {

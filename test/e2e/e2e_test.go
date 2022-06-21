@@ -437,3 +437,11 @@ func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 	}
 	return match
 }
+
+func verifyAllOperationsSucceeded(t *testing.T, clients []*resty.Client, startTime time.Time) {
+	for _, client := range clients {
+		for _, op := range GetOperations(t, client, startTime) {
+			assert.Equal(t, core.OpStatusSucceeded, op.Status, "Client: %s, Operation %s (%s)", client.BaseURL, op.ID, op.Type)
+		}
+	}
+}

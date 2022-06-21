@@ -51,6 +51,10 @@ type dxEvent struct {
 	transferResult      *dataexchange.TransferResult
 }
 
+func (e *dxEvent) EventID() string {
+	return e.id
+}
+
 func (e *dxEvent) NamespacedID() string {
 	return e.id
 }
