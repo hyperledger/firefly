@@ -96,10 +96,10 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 		mm.activeContract.firstEvent = firstEvent
 		mm.activeContract.networkVersion = version
 		mm.activeContract.subscription = subID
-		contracts.Active.Info = fftypes.JSONObject{
-			"location":     location,
-			"firstEvent":   firstEvent,
-			"subscription": subID,
+		contracts.Active = core.FireFlyContractInfo{
+			Location:     location,
+			FirstEvent:   firstEvent,
+			Subscription: subID,
 		}
 	}
 	return err

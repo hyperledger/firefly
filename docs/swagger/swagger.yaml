@@ -8729,17 +8729,24 @@ paths:
                               description: The identifier for the final blockchain
                                 event received from this contract before termination
                               type: string
+                            firstEvent:
+                              description: A blockchain specific string, such as a
+                                block number, to start listening from. The special
+                                strings 'oldest' and 'newest' are supported by all
+                                blockchain connectors
+                              type: string
                             index:
                               description: The index of this contract in the config
                                 file
                               type: integer
-                            info:
-                              additionalProperties:
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                              type: object
+                            location:
+                              description: A blockchain specific contract identifier.
+                                For example an Ethereum contract address, or a Fabric
+                                chaincode name and channel
+                            subscription:
+                              description: The UUID of the subscription for the FireFly
+                                BatchPin contract
+                              type: string
                           type: object
                         terminated:
                           description: Previously-terminated FireFly smart contracts
@@ -8750,17 +8757,24 @@ paths:
                                 description: The identifier for the final blockchain
                                   event received from this contract before termination
                                 type: string
+                              firstEvent:
+                                description: A blockchain specific string, such as
+                                  a block number, to start listening from. The special
+                                  strings 'oldest' and 'newest' are supported by all
+                                  blockchain connectors
+                                type: string
                               index:
                                 description: The index of this contract in the config
                                   file
                                 type: integer
-                              info:
-                                additionalProperties:
-                                  description: Blockchain-specific info on the contract,
-                                    such as its location on chain
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                                type: object
+                              location:
+                                description: A blockchain specific contract identifier.
+                                  For example an Ethereum contract address, or a Fabric
+                                  chaincode name and channel
+                              subscription:
+                                description: The UUID of the subscription for the
+                                  FireFly BatchPin contract
+                                type: string
                             type: object
                           type: array
                       type: object
@@ -8835,17 +8849,24 @@ paths:
                             description: The identifier for the final blockchain event
                               received from this contract before termination
                             type: string
+                          firstEvent:
+                            description: A blockchain specific string, such as a block
+                              number, to start listening from. The special strings
+                              'oldest' and 'newest' are supported by all blockchain
+                              connectors
+                            type: string
                           index:
                             description: The index of this contract in the config
                               file
                             type: integer
-                          info:
-                            additionalProperties:
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                            description: Blockchain-specific info on the contract,
-                              such as its location on chain
-                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          subscription:
+                            description: The UUID of the subscription for the FireFly
+                              BatchPin contract
+                            type: string
                         type: object
                       terminated:
                         description: Previously-terminated FireFly smart contracts
@@ -8856,17 +8877,24 @@ paths:
                               description: The identifier for the final blockchain
                                 event received from this contract before termination
                               type: string
+                            firstEvent:
+                              description: A blockchain specific string, such as a
+                                block number, to start listening from. The special
+                                strings 'oldest' and 'newest' are supported by all
+                                blockchain connectors
+                              type: string
                             index:
                               description: The index of this contract in the config
                                 file
                               type: integer
-                            info:
-                              additionalProperties:
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                              type: object
+                            location:
+                              description: A blockchain specific contract identifier.
+                                For example an Ethereum contract address, or a Fabric
+                                chaincode name and channel
+                            subscription:
+                              description: The UUID of the subscription for the FireFly
+                                BatchPin contract
+                              type: string
                           type: object
                         type: array
                     type: object
