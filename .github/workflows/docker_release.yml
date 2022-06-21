@@ -12,6 +12,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Build
         run: |
           make DOCKER_ARGS="\
@@ -22,7 +26,7 @@ jobs:
             --label tag=${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly:${GITHUB_REF##*/} \
             --tag ghcr.io/hyperledger/firefly:head" \
-            docker
+            docker-multiarch
 
       - name: Push docker image
         run: |
