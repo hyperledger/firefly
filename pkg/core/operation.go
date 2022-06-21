@@ -129,7 +129,7 @@ func (po *PreparedOperation) NamespacedIDString() string {
 func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.UUID, error) {
 	nsIDSplit := strings.Split(nsIDStr, ":")
 	if len(nsIDSplit) != 2 {
-		return "", nil, i18n.NewError(context.Background(), coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
+		return "", nil, i18n.NewError(ctx, coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
 	}
 	ns := nsIDSplit[0]
 	uuidStr := nsIDSplit[1]

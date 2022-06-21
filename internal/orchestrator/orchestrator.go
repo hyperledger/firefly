@@ -368,7 +368,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		nodeInfo[i] = node.Profile
 	}
 	or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
-	or.plugins.DataExchange.Plugin.SetHandler(&or.bc)
+	or.plugins.DataExchange.Plugin.SetHandler(or.namespace, &or.bc)
 
 	or.plugins.SharedStorage.Plugin.SetHandler(&or.bc)
 

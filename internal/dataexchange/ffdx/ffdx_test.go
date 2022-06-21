@@ -443,83 +443,84 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler(mcb)
+	h.SetHandler("ns1", mcb)
 
-	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.EventID() == "1" &&
-			ev.NamespacedID() == "tx12345" &&
-			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == "tx12345" &&
-			ev.TransferResult().Status == core.OpStatusFailed &&
-			ev.TransferResult().Error == "pop"
-	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"1","type":"message-failed","requestID":"tx12345","error":"pop"}`
+	namespacedID := fmt.Sprintf("ns2:%s", fftypes.NewUUID())
+	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
+	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
+	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
+		return ev.EventID() == "1" &&
+			ev.NamespacedID() == namespacedID1 &&
+			ev.Type() == dataexchange.DXEventTypeTransferResult &&
+			ev.TransferResult().TrackingID == namespacedID1 &&
+			ev.TransferResult().Status == core.OpStatusFailed &&
+			ev.TransferResult().Error == "pop"
+	})).Run(acker()).Return(nil)
+	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID1 + `","error":"pop"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
+
+	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().TrackingID == namespacedID2 &&
 			ev.TransferResult().Status == core.OpStatusSucceeded
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"2","type":"message-delivered","requestID":"tx12345"}`
+	fromServer <- `{"id":"2","type":"message-delivered","requestID":"` + namespacedID2 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
+	namespacedID3 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "3" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().TrackingID == namespacedID3 &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
 			ev.TransferResult().Manifest == `{"manifest":true}` &&
 			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"3","type":"message-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
+	fromServer <- `{"id":"3","type":"message-acknowledged","requestID":"` + namespacedID3 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
-			ev.MessageReceived().PeerID == "peer1" &&
-			string(ev.MessageReceived().Data) == "message1"
+			ev.MessageReceived().PeerID == "peer1"
 	})).Run(manifestAcker(`{"manifest":true}`)).Return(nil)
-	fromServer <- `{"id":"4","type":"message-received","sender":"peer1","message":"message1"}`
+	fromServer <- `{"id":"4","type":"message-received","sender":"peer1","message":"{\"batch\":{\"namespace\":\"ns1\"}}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
+	namespacedID5 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "5" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().TrackingID == namespacedID5 &&
 			ev.TransferResult().Status == core.OpStatusFailed &&
 			ev.TransferResult().Error == "pop"
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"5","type":"blob-failed","requestID":"tx12345","error":"pop"}`
+	fromServer <- `{"id":"5","type":"blob-failed","requestID":"` + namespacedID5 + `","error":"pop"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
+	namespacedID6 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "6" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().TrackingID == namespacedID6 &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
 			ev.TransferResult().Info.String() == `{"some":"details"}`
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"6","type":"blob-delivered","requestID":"tx12345","info":{"some":"details"}}`
+	fromServer <- `{"id":"6","type":"blob-delivered","requestID":"` + namespacedID6 + `","info":{"some":"details"}}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"6"}`, string(msg))
 
-	fromServer <- `{"id":"7","type":"blob-received","sender":"peer1","path":"ns1/! not a UUID"}`
-	msg = <-toServer
-	assert.Equal(t, `{"action":"ack","id":"7"}`, string(msg))
-
 	u := fftypes.NewUUID()
-	fromServer <- fmt.Sprintf(`{"id":"8","type":"blob-received","sender":"peer1","path":"ns1/%s","hash":"!wrong","size":-1}`, u.String())
-	msg = <-toServer
-	assert.Equal(t, `{"action":"ack","id":"8"}`, string(msg))
-
 	hash := fftypes.NewRandB32()
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "9" &&
@@ -530,14 +531,15 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
+	namespacedID10 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "10" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
-			ev.TransferResult().TrackingID == "tx12345" &&
+			ev.TransferResult().TrackingID == namespacedID10 &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
 			ev.TransferResult().Info.String() == `{"signatures":"and stuff"}`
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"10","type":"blob-acknowledged","requestID":"tx12345","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
+	fromServer <- `{"id":"10","type":"blob-acknowledged","requestID":"` + namespacedID10 + `","info":{"signatures":"and stuff"},"manifest":"{\"manifest\":true}"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"10"}`, string(msg))
 
@@ -558,23 +560,25 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
 	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler(mcb)
+	h.SetHandler("ns1", mcb)
 
+	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"1","type":"message-delivered","requestID":"tx12345"}`
+	fromServer <- `{"id":"1","type":"message-delivered","requestID":"` + namespacedID1 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
+	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
-	fromServer <- `{"id":"2","type":"blob-delivered","requestID":"tx12345"}`
+	fromServer <- `{"id":"2","type":"blob-delivered","requestID":"` + namespacedID2 + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
@@ -586,7 +590,7 @@ func TestEventLoopReceiveClosed(t *testing.T) {
 	wsm := &wsmocks.WSClient{}
 	h := &FFDX{
 		ctx:       context.Background(),
-		callbacks: callbacks{handlers: []dataexchange.Callbacks{dxc}},
+		callbacks: callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}},
 		wsconn:    wsm,
 	}
 	r := make(chan []byte)
@@ -602,7 +606,7 @@ func TestEventLoopSendClosed(t *testing.T) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	h := &FFDX{
 		ctx:        ctx,
-		callbacks:  callbacks{handlers: []dataexchange.Callbacks{dxc}},
+		callbacks:  callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}},
 		wsconn:     wsm,
 		ackChannel: make(chan *ack, 1),
 	}
@@ -623,7 +627,7 @@ func TestEventLoopClosedContext(t *testing.T) {
 	cancel()
 	h := &FFDX{
 		ctx:       ctx,
-		callbacks: callbacks{handlers: []dataexchange.Callbacks{dxc}},
+		callbacks: callbacks{handlers: map[string]dataexchange.Callbacks{"ns1": dxc}},
 		wsconn:    wsm,
 	}
 	r := make(chan []byte, 1)

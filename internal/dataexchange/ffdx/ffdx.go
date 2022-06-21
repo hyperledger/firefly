@@ -50,13 +50,15 @@ type FFDX struct {
 }
 
 type callbacks struct {
-	handlers []dataexchange.Callbacks
+	handlers map[string]dataexchange.Callbacks
 }
 
-func (cb *callbacks) DXEvent(event dataexchange.DXEvent) {
-	for _, cb := range cb.handlers {
-		cb.DXEvent(event)
+func (cb *callbacks) DXEvent(namespace string, event dataexchange.DXEvent) error {
+	if handler, ok := cb.handlers[namespace]; ok {
+		handler.DXEvent(event)
+		return nil
 	}
+	return fmt.Errorf("unknown namespace on event '%s'", event.EventID())
 }
 
 const (
@@ -121,7 +123,7 @@ func (h *FFDX) Name() string {
 func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.ackChannel = make(chan *ack)
-
+	h.callbacks.handlers = make(map[string]dataexchange.Callbacks)
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
@@ -148,8 +150,8 @@ func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
 	h.nodes = nodes
 }
 
-func (h *FFDX) SetHandler(handler dataexchange.Callbacks) {
-	h.callbacks.handlers = append(h.callbacks.handlers, handler)
+func (h *FFDX) SetHandler(namespace string, handler dataexchange.Callbacks) {
+	h.callbacks.handlers[namespace] = handler
 }
 
 func (h *FFDX) Start() error {

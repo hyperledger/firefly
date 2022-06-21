@@ -17,6 +17,7 @@
 package ffdx
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
@@ -92,6 +93,7 @@ func (e *dxEvent) TransferResult() *dataexchange.TransferResult {
 }
 
 func (h *FFDX) dispatchEvent(msg *wsEvent) {
+	var namespace string
 	var err error
 	e := &dxEvent{ffdx: h, id: msg.EventID, requestID: msg.RequestID}
 	switch msg.Type {
@@ -129,6 +131,11 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			},
 		}
 	case messageReceived:
+		var wrapper core.TransportWrapper
+		if err := json.Unmarshal([]byte(msg.Message), &wrapper); err == nil {
+			// Special handling - parse the namespace out of the message body
+			namespace = wrapper.Batch.Namespace
+		}
 		e.dxType = dataexchange.DXEventTypeMessageReceived
 		e.messageReceived = &dataexchange.MessageReceived{
 			PeerID: msg.Sender,
@@ -161,14 +168,14 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
-			var ns string
 			pathParts := strings.Split(msg.Path, "/")
 			if len(pathParts) >= 2 {
-				ns = pathParts[len(pathParts)-2]
+				// Special handling - parse the namespace out of the blob path
+				namespace = pathParts[len(pathParts)-2]
 			}
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
-				Namespace:  ns,
+				Namespace:  namespace,
 				PeerID:     msg.Sender,
 				Hash:       *hash,
 				Size:       msg.Size,
@@ -188,11 +195,17 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 	default:
 		err = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
 	}
+
+	if err == nil {
+		if namespace == "" && msg.RequestID != "" {
+			namespace, _, _ = core.ParseNamespacedOpID(h.ctx, msg.RequestID)
+		}
+		err = h.callbacks.DXEvent(namespace, e)
+	}
+
 	// If we couldn't dispatch the event we received, we still ack it
 	if err != nil {
 		log.L(h.ctx).Warnf("Failed to dispatch DX event: %s", err)
 		e.Ack()
-	} else {
-		h.callbacks.DXEvent(e)
 	}
 }
