@@ -23,13 +23,16 @@ This guide will walk you through setting up your machine for contributing to Fir
 
 You will need a few prerequisites set up on your machine before you can build FireFly from source. We recommend doing development on macOS, Linux, or WSL 2.0.
 
-- [Go (1.16 or newer)](https://golang.org/dl/)
+- [Go (1.17 or newer)](https://golang.org/dl/)
 - make
 - GCC
 - openssl
 
+### Install the FireFly CLI
 
-### Installing GO and setting up your `GOPATH`
+The first step to setting up a local development environment is to install the FireFly CLI. Please section of the [Getting Started Guide to install The FireFly CLI](../gettingstarted/firefly_cli.md).
+
+### Installing Go and setting up your `GOPATH`
 
 We recommend following the [instructions on golang.org](https://golang.org/doc/install) to install Go, rather than installing Go from another package magager such as `brew`. Although it is possible to install Go any way you'd like, setting up your `GOPATH` may differ from the following instructions.
 
@@ -42,9 +45,6 @@ export GOPATH=$HOME/go
 export GOROOT="/usr/local/go"
 export PATH="$PATH:${GOPATH}/bin:${GOROOT}/bin"
 ```
-
-
-The [FireFly CLI](https://github.com/hyperledger/firefly-cli) is the recommended path for running a local development stack. It has its [own set of prerequisites](https://github.com/hyperledger/firefly-cli#prerequisites) as well.
 
 ## Building FireFly
 
@@ -93,13 +93,13 @@ To start your new stack simply run:
 ff start dev
 ```
 
-At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. There are two different ways you can run the extenral FireFly core process.
+At a certain point in the startup process, the CLI will pause and wait for up to two minutes for you to start the other FireFly node. There are two different ways you can run the external FireFly core process.
 
 ### 1) From another terminal
 The CLI will print out the command line which can be copied and pasted into another terminal window to run FireFly. *This command should be run from the `firefly` core project directory.* Here is an example of the command that the CLI will tell you to run:
 
 ```
-./firefly -f ~/.stacks/firefly/dev/configs/firefly_core_0.yml
+./firefly -f ~/.stacks/firefly/dev/init/config/firefly_core_0.yml
 ```
 
 > **NOTE**: The first time you run FireFly with a fresh database, it will need a directory of database migrations to apply to the empty database. If you run FireFly from the `firefly` project directory you cloned from GitHub, it will automatically find these and apply them. If you run it from some other directory, you will have to point FireFly to the migrations on your own.

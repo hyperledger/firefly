@@ -24,7 +24,9 @@ We welcome anyone to contribute to the FireFly project! If you're interested, th
 
 ## 🚀 Connect with us on Discord
 You can chat with maintainers and other contributors on Discord in the `firefly` channel:
-[https://discord.gg/hyperledger](https://discord.gg/hyperledger)
+[https://discord.gg/hyperledger](https://discord.gg/nnQw2aGhX6)
+
+[Join Discord Server](https://discord.gg/nnQw2aGhX6){: .btn .btn-purple .mb-5}
 
 ## 📅 Join our Community Calls
 Community calls are a place to talk to other contributors, maintainers, and other people interested in FireFly. Maintainers often discuss upcoming changes and proposed new features on these calls. These calls are a great way for the community to give feedback on new ideas, ask questions about FireFly, and hear how others are using FireFly to solve real world problems.
@@ -32,7 +34,11 @@ Community calls are a place to talk to other contributors, maintainers, and othe
 Please see the [FireFly Calendar](https://lists.hyperledger.org/g/firefly/calendar) for the current meeting schedule, and the link to join. Everyone is welcome to join, regardless of background or experience level.
 
 ## 🔍 Find your first issue
-If you're looking for somewhere to get started in the FireFly project and want something small and relatively easy, take a look at [issues tagged with "Good first issue"](https://github.com/search?q=repo%3Ahyperledger%2Ffirefly+repo%3Ahyperledger%2Ffirefly-fabconnect+repo%3Ahyperledger%2Ffirefly-cli+repo%3Ahyperledger%2Ffirefly-samples+repo%3Ahyperledger%2Ffirefly-ethconnect+repo%3Ahyperledger%2Ffirefly-dataexchange-https+repo%3Ahyperledger%2Ffirefly-ui+repo%3Ahyperledger%2Ffirefly-cordaconnect+label%3A%22Good+first+issue%22+state%3Aopen&type=Issues&ref=advsearch&l=&l=). You can definitely work on other things if you want to. These are only suggestions for easy places to get started.
+If you're looking for somewhere to get started in the FireFly project and want something small and relatively easy, take a look at [issues tagged with "Good first issue"](https://github.com/search?q=repo%3Ahyperledger%2Ffirefly+repo%3Ahyperledger%2Ffirefly-common+repo%3Ahyperledger%2Ffirefly-cli+repo%3Ahyperledger%2Ffirefly-samples+repo%3Ahyperledger%2Ffirefly-ui+repo%3Ahyperledger%2Ffirefly-ethconnect+repo%3Ahyperledger%2Ffirefly-fabconnect+repo%3Ahyperledger%2Ffirefly-cordaconnect+repo%3Ahyperledger%2Ffirefly-dataexchange-https+repo%3Ahyperledger%2Ffirefly-transaction-manager+repo%3Ahyperledger%2Ffirefly-tokens-erc1155+repo%3Ahyperledger%2Ffirefly-tokens-erc20-erc721+repo%3Ahyperledger%2Ffirefly-signer+repo%3Ahyperledger%2Ffirefly-sdk-nodejs+repo%3Ahyperledger%2Ffirefly-sandbox+repo%3Ahyperledger%2Ffirefly-evmconnect+repo%3Ahyperledger%2Ffirefly-helm-charts+repo%3Ahyperledger%2Ffirefly-perf-cli+label%3A%22Good+first+issue%22+state%3Aopen&type=Issue). You can definitely work on other things if you want to. These are only suggestions for easy places to get started.
+
+[See "Good First Issues"](https://github.com/search?q=repo%3Ahyperledger%2Ffirefly+repo%3Ahyperledger%2Ffirefly-common+repo%3Ahyperledger%2Ffirefly-cli+repo%3Ahyperledger%2Ffirefly-samples+repo%3Ahyperledger%2Ffirefly-ui+repo%3Ahyperledger%2Ffirefly-ethconnect+repo%3Ahyperledger%2Ffirefly-fabconnect+repo%3Ahyperledger%2Ffirefly-cordaconnect+repo%3Ahyperledger%2Ffirefly-dataexchange-https+repo%3Ahyperledger%2Ffirefly-transaction-manager+repo%3Ahyperledger%2Ffirefly-tokens-erc1155+repo%3Ahyperledger%2Ffirefly-tokens-erc20-erc721+repo%3Ahyperledger%2Ffirefly-signer+repo%3Ahyperledger%2Ffirefly-sdk-nodejs+repo%3Ahyperledger%2Ffirefly-sandbox+repo%3Ahyperledger%2Ffirefly-evmconnect+repo%3Ahyperledger%2Ffirefly-helm-charts+repo%3Ahyperledger%2Ffirefly-perf-cli+label%3A%22Good+first+issue%22+state%3Aopen&type=Issue){: .btn .btn-purple .mb-5}
+
+> **NOTE** Hyperledger FireFly has a microservice architecture so it has many different GitHub repos. Use the link or the button above to look for "Good First Issues" across all the repos at once.
 
 Here are some other suggestions of places to get started, based on experience you may already have:
 
@@ -50,7 +56,7 @@ Here are some detailed instructions on [Setting up a FireFly Core Development En
 If you don't have a lot of experience with Go, but are interested in learning, the [FireFly CLI](https://github.com/hyperledger/firefly-cli/issues) might be a good place to start. The FireFly CLI is a tool to set up local instances of FireFly for building apps that use FireFly, and for doing development on FireFly itself.
 
 ### TypeScript experience
-If you have some experience in TypeScript, there are several FireFly microservices that are written in TypeScript. The [Data Exchange](https://github.com/hyperledger/firefly-dataexchange-https/issues) is used for private messaging between FireFly nodes, and the [Tokens Connector](https://github.com/hyperledger/firefly-tokens-erc1155/issues) is used to abstract token contract specifics from the FireFly Core.
+If you have some experience in TypeScript, there are several FireFly microservices that are written in TypeScript. The [Data Exchange](https://github.com/hyperledger/firefly-dataexchange-https/issues) is used for private messaging between FireFly nodes. The [ERC-20/ERC-271 Tokens Connector](https://github.com/hyperledger/firefly-tokens-erc20-erc721/issues) and [ERC-1155 Tokens Connector](https://github.com/hyperledger/firefly-tokens-erc1155/issues) are used to abstract token contract specifics from the FireFly Core.
 
 ### React/TypeScript experience
 If you want to do some frontend development, the [FireFly UI](https://github.com/hyperledger/firefly-ui/issues) is written in TypeScript and React.
