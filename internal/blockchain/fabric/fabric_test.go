@@ -217,7 +217,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
+			{ID: "sub12345", Stream: "es12345", Name: "ns1_BatchPin"},
 		}))
 
 	resetConf(e)
@@ -284,7 +284,7 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(200, []eventStream{{ID: "es12345", WebSocket: eventStreamWebsocket{Topic: "topic1"}}}))
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{
-			{ID: "sub12345", Stream: "es12345", Name: "BatchPin"},
+			{ID: "sub12345", Stream: "es12345", Name: "ns1_BatchPin"},
 		}))
 
 	resetConf(e)
@@ -1405,7 +1405,7 @@ func TestHandleMessageContractEventNoPayload(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Fabric{
-		callbacks: callbacks{listeners: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
 	}
 	e.subs = map[string]string{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"

@@ -186,11 +186,14 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 
 	for _, s := range existingSubs {
 		if s.Stream == stream && (s.Name == subName ||
-			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
-			   If one of these very early environments needed a new subscription, the existing one would need to
+			/* Check for the deprecates names, before adding namespace uniqueness qualifier.
+			   NOTE: If one of these very early environments needed a new subscription, the existing one would need to
 				 be deleted manually. */
-			s.Name == abi.Name) {
+			s.Name == abi.Name || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)) {
 			sub = s
+			if s.Name == subName || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash) {
+				log.L(ctx).Warnf("Subscription %s uses deprecated functionality, please upgrade to utilize multiple namespaces.", s.Name)
+			}
 		}
 	}
 

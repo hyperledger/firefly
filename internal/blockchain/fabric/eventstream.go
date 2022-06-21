@@ -18,6 +18,7 @@ package fabric
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
@@ -150,13 +151,13 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, location *Location, fromBlock, stream, event string) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, location *Location, fromBlock, stream, event string) (sub *subscription, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	subName := event
+	subName := fmt.Sprintf("%s_%s", namespace, event)
 	for _, s := range existingSubs {
 		if s.Stream == stream && s.Name == subName {
 			sub = s

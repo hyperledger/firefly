@@ -125,7 +125,7 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 }
 
 func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
-	// possibly have DB transactions here instead of somewhere else
+	// TODO: Investigate if it better to consolidate DB termination here
 	log.L(ctx).Infof("Processing termination of contract at index %d", contracts.Active.Index)
 	contracts.Active.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)

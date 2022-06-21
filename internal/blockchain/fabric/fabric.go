@@ -425,7 +425,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		firstEvent = "latest"
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
