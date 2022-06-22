@@ -46,9 +46,9 @@ type Manager interface {
 	GetTokenPool(ctx context.Context, connector, poolName string) (*core.TokenPool, error)
 	GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID string) (*core.TokenPool, error)
 
-	GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenBalance, *database.FilterResult, error)
-	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error)
-	GetTokenAccountPools(ctx context.Context, ns, key string, filter database.AndFilter) ([]*core.TokenAccountPool, *database.FilterResult, error)
+	GetTokenBalances(ctx context.Context, filter database.AndFilter) ([]*core.TokenBalance, *database.FilterResult, error)
+	GetTokenAccounts(ctx context.Context, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error)
+	GetTokenAccountPools(ctx context.Context, key string, filter database.AndFilter) ([]*core.TokenAccountPool, *database.FilterResult, error)
 
 	GetTokenTransfers(ctx context.Context, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error)
 	GetTokenTransferByID(ctx context.Context, id string) (*core.TokenTransfer, error)
@@ -124,20 +124,16 @@ func (am *assetManager) selectTokenPlugin(ctx context.Context, name string) (tok
 	return nil, i18n.NewError(ctx, coremsgs.MsgUnknownTokensPlugin, name)
 }
 
-func (am *assetManager) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
-	return filter.Condition(filter.Builder().Eq("namespace", ns))
+func (am *assetManager) GetTokenBalances(ctx context.Context, filter database.AndFilter) ([]*core.TokenBalance, *database.FilterResult, error) {
+	return am.database.GetTokenBalances(ctx, am.namespace, filter)
 }
 
-func (am *assetManager) GetTokenBalances(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenBalance, *database.FilterResult, error) {
-	return am.database.GetTokenBalances(ctx, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenAccounts(ctx context.Context, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error) {
+	return am.database.GetTokenAccounts(ctx, am.namespace, filter)
 }
 
-func (am *assetManager) GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error) {
-	return am.database.GetTokenAccounts(ctx, am.scopeNS(ns, filter))
-}
-
-func (am *assetManager) GetTokenAccountPools(ctx context.Context, ns, key string, filter database.AndFilter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
-	return am.database.GetTokenAccountPools(ctx, key, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenAccountPools(ctx context.Context, key string, filter database.AndFilter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
+	return am.database.GetTokenAccountPools(ctx, am.namespace, key, filter)
 }
 
 func (am *assetManager) GetTokenConnectors(ctx context.Context) []*core.TokenConnector {

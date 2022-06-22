@@ -92,8 +92,8 @@ func TestGetTokenBalances(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenBalances", context.Background(), f).Return([]*core.TokenBalance{}, nil, nil)
-	_, _, err := am.GetTokenBalances(context.Background(), "ns1", f)
+	mdi.On("GetTokenBalances", context.Background(), "ns1", f).Return([]*core.TokenBalance{}, nil, nil)
+	_, _, err := am.GetTokenBalances(context.Background(), f)
 	assert.NoError(t, err)
 }
 
@@ -104,8 +104,8 @@ func TestGetTokenAccounts(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*core.TokenAccount{}, nil, nil)
-	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
+	mdi.On("GetTokenAccounts", context.Background(), "ns1", f).Return([]*core.TokenAccount{}, nil, nil)
+	_, _, err := am.GetTokenAccounts(context.Background(), f)
 	assert.NoError(t, err)
 }
 
@@ -116,8 +116,8 @@ func TestGetTokenAccountPools(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccountPools", context.Background(), "0x1", f).Return([]*core.TokenAccountPool{}, nil, nil)
-	_, _, err := am.GetTokenAccountPools(context.Background(), "ns1", "0x1", f)
+	mdi.On("GetTokenAccountPools", context.Background(), "ns1", "0x1", f).Return([]*core.TokenAccountPool{}, nil, nil)
+	_, _, err := am.GetTokenAccountPools(context.Background(), "0x1", f)
 	assert.NoError(t, err)
 }
 
