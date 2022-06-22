@@ -135,10 +135,6 @@ func (or *orchestrator) GetEventByID(ctx context.Context, id string) (*core.Even
 	return or.database().GetEventByID(ctx, or.namespace, u)
 }
 
-func (or *orchestrator) scopeNS(ns string, filter database.AndFilter) database.AndFilter {
-	return filter.Condition(filter.Builder().Eq("namespace", ns))
-}
-
 func (or *orchestrator) GetTransactions(ctx context.Context, filter database.AndFilter) ([]*core.Transaction, *database.FilterResult, error) {
 	return or.database().GetTransactions(ctx, or.namespace, filter)
 }

@@ -36,7 +36,7 @@ func TestPutSubscription(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("CreateUpdateSubscription", mock.Anything, "ns1", mock.AnythingOfType("*core.Subscription")).
+	o.On("CreateUpdateSubscription", mock.Anything, mock.AnythingOfType("*core.Subscription")).
 		Return(&core.Subscription{}, nil)
 	r.ServeHTTP(res, req)
 

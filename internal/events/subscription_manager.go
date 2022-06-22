@@ -128,7 +128,7 @@ func newSubscriptionManager(ctx context.Context, ns string, di database.Plugin, 
 func (sm *subscriptionManager) start() error {
 	fb := database.SubscriptionQueryFactory.NewFilter(sm.ctx)
 	filter := fb.And().Limit(sm.maxSubs)
-	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, filter)
+	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, sm.namespace, filter)
 	if err != nil {
 		return err
 	}
@@ -167,7 +167,7 @@ func (sm *subscriptionManager) subscriptionEventListener() {
 func (sm *subscriptionManager) newOrUpdatedDurableSubscription(id *fftypes.UUID) {
 	var subDef *core.Subscription
 	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
-		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, id)
+		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, sm.namespace, id)
 		return err != nil, err // indefinite retry
 	})
 	if err != nil || subDef == nil {

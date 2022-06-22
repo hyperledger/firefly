@@ -121,13 +121,13 @@ func (_m *Plugin) DeleteOffset(ctx context.Context, t fftypes.FFEnum, name strin
 	return r0
 }
 
-// DeleteSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) error {
-	ret := _m.Called(ctx, id)
+// DeleteSubscriptionByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -1566,13 +1566,13 @@ func (_m *Plugin) GetPins(ctx context.Context, namespace string, filter database
 	return r0, r1, r2
 }
 
-// GetSubscriptionByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*core.Subscription, error) {
-	ret := _m.Called(ctx, id)
+// GetSubscriptionByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.Subscription, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Subscription); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.Subscription); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Subscription)
@@ -1580,8 +1580,8 @@ func (_m *Plugin) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (*c
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1612,13 +1612,13 @@ func (_m *Plugin) GetSubscriptionByName(ctx context.Context, namespace string, n
 	return r0, r1
 }
 
-// GetSubscriptions provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) ([]*core.Subscription, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetSubscriptions provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetSubscriptions(ctx context.Context, namespace string, filter database.Filter) ([]*core.Subscription, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.Subscription); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.Subscription); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Subscription)
@@ -1626,8 +1626,8 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -1635,8 +1635,8 @@ func (_m *Plugin) GetSubscriptions(ctx context.Context, filter database.Filter) 
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

@@ -245,7 +245,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
-	return em.database.DeleteSubscriptionByID(ctx, subDef.ID)
+	return em.database.DeleteSubscriptionByID(ctx, em.namespace, subDef.ID)
 }
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {

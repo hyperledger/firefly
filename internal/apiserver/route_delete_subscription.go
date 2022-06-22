@@ -37,7 +37,7 @@ var deleteSubscription = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			err = cr.or.DeleteSubscription(cr.ctx, extractNamespace(r.PP), r.PP["subid"])
+			err = cr.or.DeleteSubscription(cr.ctx, r.PP["subid"])
 			return nil, err
 		},
 	},

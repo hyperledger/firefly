@@ -76,7 +76,7 @@ func TestRegisterDurableSubscriptions(t *testing.T) {
 	defer cancel()
 
 	mdi := sm.database.(*databasemocks.Plugin)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{
 		{SubscriptionRef: core.SubscriptionRef{
 			ID: sub1,
 		}, Transport: "ut"},
@@ -135,7 +135,7 @@ func TestReloadDurableSubscription(t *testing.T) {
 	}
 
 	mdi := sm.database.(*databasemocks.Plugin)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{
 		{SubscriptionRef: core.SubscriptionRef{
 			ID:        sub1,
 			Namespace: "ns1",
@@ -158,7 +158,7 @@ func TestRegisterEphemeralSubscriptions(t *testing.T) {
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 
 	err := sm.start()
@@ -187,7 +187,7 @@ func TestRegisterEphemeralSubscriptionsFail(t *testing.T) {
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	err := sm.start()
 	assert.NoError(t, err)
@@ -209,7 +209,7 @@ func TestStartSubRestoreFail(t *testing.T) {
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	err := sm.start()
 	assert.EqualError(t, err, "pop")
 }
@@ -220,7 +220,7 @@ func TestStartSubRestoreOkSubsFail(t *testing.T) {
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{
 		{SubscriptionRef: core.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
@@ -238,7 +238,7 @@ func TestStartSubRestoreOkSubsOK(t *testing.T) {
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{
 		{SubscriptionRef: core.SubscriptionRef{
 			ID: fftypes.NewUUID(),
 		},
@@ -538,7 +538,7 @@ func TestDispatchDeliveryResponseOK(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	mei.On("ValidateOptions", mock.Anything).Return(nil)
 	err := sm.start()
 	assert.NoError(t, err)
@@ -568,7 +568,7 @@ func TestDispatchDeliveryResponseInvalidSubscription(t *testing.T) {
 	sm, cancel := newTestSubManager(t, mei)
 	defer cancel()
 	mdi := sm.database.(*databasemocks.Plugin)
-	mdi.On("GetSubscriptions", mock.Anything, mock.Anything).Return([]*core.Subscription{}, nil, nil)
+	mdi.On("GetSubscriptions", mock.Anything, "ns1", mock.Anything).Return([]*core.Subscription{}, nil, nil)
 	err := sm.start()
 	assert.NoError(t, err)
 	be := &boundCallbacks{sm: sm, ei: mei}
@@ -618,7 +618,7 @@ func TestNewDurableSubscriptionBadSub(t *testing.T) {
 	mdi := sm.database.(*databasemocks.Plugin)
 
 	subID := fftypes.NewUUID()
-	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(&core.Subscription{
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subID).Return(&core.Subscription{
 		Filter: core.SubscriptionFilter{
 			Events: "![[[[badness",
 		},
@@ -645,7 +645,7 @@ func TestNewDurableSubscriptionUnknownTransport(t *testing.T) {
 	}
 
 	subID := fftypes.NewUUID()
-	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(&core.Subscription{
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subID).Return(&core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        subID,
 			Namespace: "ns1",
@@ -677,7 +677,7 @@ func TestNewDurableSubscriptionOK(t *testing.T) {
 	}
 
 	subID := fftypes.NewUUID()
-	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(&core.Subscription{
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subID).Return(&core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
 			ID:        subID,
 			Namespace: "ns1",
@@ -726,7 +726,7 @@ func TestUpdatedDurableSubscriptionNoOp(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(sub, nil)
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subID).Return(sub, nil)
 	sm.newOrUpdatedDurableSubscription(subID)
 
 	assert.Equal(t, ed, sm.connections["conn1"].dispatchers[*subID])
@@ -771,7 +771,7 @@ func TestUpdatedDurableSubscriptionOK(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(&sub2, nil)
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subID).Return(&sub2, nil)
 	sm.newOrUpdatedDurableSubscription(subID)
 
 	assert.NotEqual(t, ed, sm.connections["conn1"].dispatchers[*subID])
@@ -838,7 +838,7 @@ func TestDeleteDurableSubscriptionOk(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetSubscriptionByID", mock.Anything, subID).Return(subDef, nil)
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subID).Return(subDef, nil)
 	mdi.On("DeleteOffset", mock.Anything, fftypes.FFEnum("subscription"), subID.String()).Return(fmt.Errorf("this error is logged and swallowed"))
 	sm.deletedDurableSubscription(subID)
 

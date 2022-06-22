@@ -70,11 +70,11 @@ type Orchestrator interface {
 	GetStatus(ctx context.Context) (*core.NodeStatus, error)
 
 	// Subscription management
-	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
-	GetSubscriptionByID(ctx context.Context, ns, id string) (*core.Subscription, error)
-	CreateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
-	CreateUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
-	DeleteSubscription(ctx context.Context, ns, id string) error
+	GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
+	GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error)
+	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
+	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
+	DeleteSubscription(ctx context.Context, id string) error
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*core.Namespace, error)

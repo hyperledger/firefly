@@ -176,7 +176,7 @@ func TestEmitSubscriptionEventsNoops(t *testing.T) {
 
 	getSubCallReady := make(chan bool, 1)
 	getSubCalled := make(chan bool)
-	getSub := mdi.On("GetSubscriptionByID", mock.Anything, mock.Anything).Return(nil, nil)
+	getSub := mdi.On("GetSubscriptionByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	getSub.RunFn = func(a mock.Arguments) {
 		<-getSubCallReady
 		getSubCalled <- true
@@ -393,8 +393,8 @@ func TestCreateDeleteDurableSubscriptionOk(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	subId := fftypes.NewUUID()
 	sub := &core.Subscription{SubscriptionRef: core.SubscriptionRef{ID: subId, Namespace: "ns1"}}
-	mdi.On("GetSubscriptionByID", mock.Anything, subId).Return(sub, nil)
-	mdi.On("DeleteSubscriptionByID", mock.Anything, subId).Return(nil)
+	mdi.On("GetSubscriptionByID", mock.Anything, "ns1", subId).Return(sub, nil)
+	mdi.On("DeleteSubscriptionByID", mock.Anything, "ns1", subId).Return(nil)
 	err := em.DeleteDurableSubscription(em.ctx, sub)
 	assert.NoError(t, err)
 }

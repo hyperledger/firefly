@@ -237,13 +237,13 @@ type iSubscriptionCollection interface {
 	GetSubscriptionByName(ctx context.Context, namespace, name string) (offset *core.Subscription, err error)
 
 	// GetSubscriptionByID - Get an subscription by id
-	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *core.Subscription, err error)
+	GetSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (offset *core.Subscription, err error)
 
 	// GetSubscriptions - Get subscriptions
-	GetSubscriptions(ctx context.Context, filter Filter) (offset []*core.Subscription, res *FilterResult, err error)
+	GetSubscriptions(ctx context.Context, namespace string, filter Filter) (offset []*core.Subscription, res *FilterResult, err error)
 
 	// DeleteSubscriptionByID - Delete a subscription
-	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+	DeleteSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iEventCollection interface {
