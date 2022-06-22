@@ -17,10 +17,12 @@
 package apiserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,7 +52,9 @@ func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, 
 	InitConfig()
 	mgr := &namespacemocks.Manager{}
 	o := &orchestratormocks.Orchestrator{}
-	mgr.On("Orchestrator", mock.Anything).Return(o)
+	mgr.On("Orchestrator", "default").Return(o).Maybe()
+	mgr.On("Orchestrator", "mynamespace").Return(o).Maybe()
+	mgr.On("Orchestrator", "ns1").Return(o).Maybe()
 	as := &apiServer{
 		apiTimeout:     5 * time.Second,
 		maxFilterLimit: 100,
@@ -322,6 +326,21 @@ func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 	assert.Equal(t, 500, res.StatusCode)
 }
 
+func TestContractAPISwaggerJSONBadNamespace(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mgr.On("Orchestrator", "BAD").Return(nil)
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/BAD/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 404, res.StatusCode)
+}
+
 func TestContractAPISwaggerUI(t *testing.T) {
 	_, r := newTestAPIServer()
 	s := httptest.NewServer(r)
@@ -332,4 +351,45 @@ func TestContractAPISwaggerUI(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	b, _ := ioutil.ReadAll(res.Body)
 	assert.Regexp(t, "html", string(b))
+}
+
+func TestJSONBadNamespace(t *testing.T) {
+	mgr, _, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mgr.On("Orchestrator", "BAD").Return(nil)
+
+	var b bytes.Buffer
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/BAD/apis", &b)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 404, res.Result().StatusCode)
+}
+
+func TestFormDataBadNamespace(t *testing.T) {
+	mgr, _, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mgr.On("Orchestrator", "BAD").Return(nil)
+
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	writer, err := w.CreateFormFile("file", "filename.ext")
+	assert.NoError(t, err)
+	writer.Write([]byte(`some data`))
+	w.Close()
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/BAD/data", &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 404, res.Result().StatusCode)
 }

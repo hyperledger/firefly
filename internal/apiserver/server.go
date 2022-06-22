@@ -200,7 +200,11 @@ func (as *apiServer) swaggerGenerator(routes []*ffapi.Route, apiBaseURL string) 
 func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
 		vars := mux.Vars(req)
-		cm := mgr.Orchestrator(vars["ns"]).Contracts()
+		or := mgr.Orchestrator(vars["ns"])
+		if or == nil {
+			return nil, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
+		}
+		cm := or.Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["apiName"])
 		if err != nil {
 			return nil, err
@@ -218,17 +222,22 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 	}
 }
 
-func getOrchestrator(mgr namespace.Manager, tag string, r *ffapi.APIRequest) orchestrator.Orchestrator {
-	if tag == routeTagDefaultNamespace {
-		return mgr.Orchestrator(config.GetString(coreconfig.NamespacesDefault))
-	}
-	if tag == routeTagNonDefaultNamespace {
+func getOrchestrator(ctx context.Context, mgr namespace.Manager, tag string, r *ffapi.APIRequest) (or orchestrator.Orchestrator, err error) {
+	switch {
+	case tag == routeTagDefaultNamespace:
+		or = mgr.Orchestrator(config.GetString(coreconfig.NamespacesDefault))
+	case tag == routeTagNonDefaultNamespace:
 		vars := mux.Vars(r.Req)
 		if ns, ok := vars["ns"]; ok {
-			return mgr.Orchestrator(ns)
+			or = mgr.Orchestrator(ns)
 		}
+	default:
+		return nil, nil
 	}
-	return nil
+	if or == nil {
+		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+	}
+	return or, nil
 }
 
 func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
@@ -244,9 +253,14 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 			}
 		}
 
+		or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
+		if err != nil {
+			return nil, err
+		}
+
 		cr := &coreRequest{
 			mgr:        mgr,
-			or:         getOrchestrator(mgr, route.Tag, r),
+			or:         or,
 			ctx:        r.Req.Context(),
 			filter:     filter,
 			apiBaseURL: apiBaseURL,
@@ -255,9 +269,14 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 	}
 	if ce.CoreFormUploadHandler != nil {
 		route.FormUploadHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
+			or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
+			if err != nil {
+				return nil, err
+			}
+
 			cr := &coreRequest{
 				mgr:        mgr,
-				or:         getOrchestrator(mgr, route.Tag, r),
+				or:         or,
 				ctx:        r.Req.Context(),
 				apiBaseURL: apiBaseURL,
 			}
