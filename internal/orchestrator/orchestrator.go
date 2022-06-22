@@ -355,6 +355,7 @@ func (or *orchestrator) Operations() operations.Manager {
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace, or)
 	or.plugins.Blockchain.Plugin.SetHandler(&or.bc)
+	or.plugins.SharedStorage.Plugin.SetHandler(or.namespace, &or.bc)
 
 	fb := database.IdentityQueryFactory.NewFilter(ctx)
 	nodes, _, err := or.database().GetIdentities(ctx, or.namespace, fb.And(
@@ -369,8 +370,6 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 	or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
 	or.plugins.DataExchange.Plugin.SetHandler(or.namespace, &or.bc)
-
-	or.plugins.SharedStorage.Plugin.SetHandler(&or.bc)
 
 	for _, token := range or.plugins.Tokens {
 		if err := token.Plugin.SetHandler(or.namespace, &or.bc); err != nil {
