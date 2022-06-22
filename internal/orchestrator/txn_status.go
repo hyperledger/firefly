@@ -150,7 +150,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenTransferQueryFactory.NewFilter(ctx)
-		switch transfers, _, err := or.database().GetTokenTransfers(ctx, f.Eq("tx.id", id)); {
+		switch transfers, _, err := or.database().GetTokenTransfers(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(transfers) == 0:

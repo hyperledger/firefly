@@ -48,7 +48,7 @@ var getTokenTransfers = &ffapi.Route{
 						Condition(fb.Eq("from", fromOrTo)).
 						Condition(fb.Eq("to", fromOrTo)))
 			}
-			return filterResult(cr.or.Assets().GetTokenTransfers(cr.ctx, extractNamespace(r.PP), filter))
+			return filterResult(cr.or.Assets().GetTokenTransfers(cr.ctx, filter))
 		},
 	},
 }

@@ -200,19 +200,21 @@ func (s *SQLCommon) getTokenTransferPred(ctx context.Context, desc string, pred 
 	return transfer, nil
 }
 
-func (s *SQLCommon) GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenTransfer, error) {
-	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID})
+func (s *SQLCommon) GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error) {
+	return s.getTokenTransferPred(ctx, localID.String(), sq.Eq{"local_id": localID, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenTransfer, error) {
+func (s *SQLCommon) GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error) {
 	return s.getTokenTransferPred(ctx, protocolID, sq.And{
+		sq.Eq{"namespace": namespace},
 		sq.Eq{"connector": connector},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }
 
-func (s *SQLCommon) GetTokenTransfers(ctx context.Context, filter database.Filter) (message []*core.TokenTransfer, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From(tokentransferTable), filter, tokenTransferFilterFieldMap, []interface{}{"seq"})
+func (s *SQLCommon) GetTokenTransfers(ctx context.Context, namespace string, filter database.Filter) (message []*core.TokenTransfer, fr *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenTransferColumns...).From(tokentransferTable),
+		filter, tokenTransferFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

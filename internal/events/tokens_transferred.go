@@ -55,7 +55,7 @@ func (em *eventManager) loadTransferID(ctx context.Context, tx *fftypes.UUID, tr
 			log.L(ctx).Warnf("Failed to read operation inputs for token transfer '%s': %s", transfer.ProtocolID, err)
 		} else if input != nil && input.Connector == transfer.Connector && input.Pool.Equals(transfer.Pool) {
 			// Check if the LocalID has already been used
-			if existing, err := em.database.GetTokenTransferByID(ctx, input.LocalID); err != nil {
+			if existing, err := em.database.GetTokenTransferByID(ctx, em.namespace, input.LocalID); err != nil {
 				return nil, err
 			} else if existing == nil {
 				// Everything matches - use the LocalID that was assigned up-front when the operation was submitted
@@ -86,7 +86,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 	transfer.Pool = pool.ID
 
 	// Check that transfer has not already been recorded
-	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, transfer.Connector, transfer.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenTransferByProtocolID(ctx, em.namespace, transfer.Connector, transfer.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token transfer '%s' has already been recorded - ignoring", transfer.ProtocolID)

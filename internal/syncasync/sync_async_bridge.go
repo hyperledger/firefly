@@ -215,7 +215,7 @@ func (sa *syncAsyncBridge) getPoolFromMessage(msg *core.Message) (*core.TokenPoo
 }
 
 func (sa *syncAsyncBridge) getTransferFromEvent(event *core.EventDelivery) (transfer *core.TokenTransfer, err error) {
-	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, event.Reference); err != nil {
+	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if transfer == nil {

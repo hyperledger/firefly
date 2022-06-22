@@ -50,8 +50,8 @@ type Manager interface {
 	GetTokenAccounts(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenAccount, *database.FilterResult, error)
 	GetTokenAccountPools(ctx context.Context, ns, key string, filter database.AndFilter) ([]*core.TokenAccountPool, *database.FilterResult, error)
 
-	GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error)
-	GetTokenTransferByID(ctx context.Context, ns, id string) (*core.TokenTransfer, error)
+	GetTokenTransfers(ctx context.Context, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error)
+	GetTokenTransferByID(ctx context.Context, id string) (*core.TokenTransfer, error)
 
 	NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender
 	MintTokens(ctx context.Context, transfer *core.TokenTransferInput, waitConfirm bool) (*core.TokenTransfer, error)

@@ -395,13 +395,13 @@ type iTokenTransferCollection interface {
 	UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error
 
 	// GetTokenTransferByID - Get a token transfer by ID
-	GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenTransfer, error)
+	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
-	GetTokenTransfers(ctx context.Context, filter Filter) ([]*core.TokenTransfer, *FilterResult, error)
+	GetTokenTransfers(ctx context.Context, namespace string, filter Filter) ([]*core.TokenTransfer, *FilterResult, error)
 }
 
 type iTokenApprovalCollection interface {

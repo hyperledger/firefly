@@ -43,8 +43,8 @@ func TestGetTokenTransfers(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*core.TokenTransfer{}, nil, nil)
-	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", f)
+	mdi.On("GetTokenTransfers", context.Background(), "ns1", f).Return([]*core.TokenTransfer{}, nil, nil)
+	_, _, err := am.GetTokenTransfers(context.Background(), f)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -56,8 +56,8 @@ func TestGetTokenTransferByID(t *testing.T) {
 
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", context.Background(), u).Return(&core.TokenTransfer{}, nil)
-	_, err := am.GetTokenTransferByID(context.Background(), "ns1", u.String())
+	mdi.On("GetTokenTransferByID", context.Background(), "ns1", u).Return(&core.TokenTransfer{}, nil)
+	_, err := am.GetTokenTransferByID(context.Background(), u.String())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -67,7 +67,7 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	_, err := am.GetTokenTransferByID(context.Background(), "ns1", "badUUID")
+	_, err := am.GetTokenTransferByID(context.Background(), "badUUID")
 	assert.Regexp(t, "FF00138", err)
 }
 

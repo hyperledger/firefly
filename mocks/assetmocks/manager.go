@@ -302,13 +302,13 @@ func (_m *Manager) GetTokenPools(ctx context.Context, filter database.AndFilter)
 	return r0, r1, r2
 }
 
-// GetTokenTransferByID provides a mock function with given fields: ctx, ns, id
-func (_m *Manager) GetTokenTransferByID(ctx context.Context, ns string, id string) (*core.TokenTransfer, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetTokenTransferByID provides a mock function with given fields: ctx, id
+func (_m *Manager) GetTokenTransferByID(ctx context.Context, id string) (*core.TokenTransfer, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *core.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenTransfer); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.TokenTransfer); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenTransfer)
@@ -316,8 +316,8 @@ func (_m *Manager) GetTokenTransferByID(ctx context.Context, ns string, id strin
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -325,13 +325,13 @@ func (_m *Manager) GetTokenTransferByID(ctx context.Context, ns string, id strin
 	return r0, r1
 }
 
-// GetTokenTransfers provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetTokenTransfers provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetTokenTransfers(ctx context.Context, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.TokenTransfer
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.TokenTransfer); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.TokenTransfer); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.TokenTransfer)
@@ -339,8 +339,8 @@ func (_m *Manager) GetTokenTransfers(ctx context.Context, ns string, filter data
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -348,8 +348,8 @@ func (_m *Manager) GetTokenTransfers(ctx context.Context, ns string, filter data
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

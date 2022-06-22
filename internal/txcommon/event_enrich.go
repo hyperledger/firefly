@@ -89,7 +89,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.TokenApproval = approval
 	case core.EventTypeTransferConfirmed:
-		transfer, err := t.database.GetTokenTransferByID(ctx, event.Reference)
+		transfer, err := t.database.GetTokenTransferByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

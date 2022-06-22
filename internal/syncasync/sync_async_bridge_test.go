@@ -434,7 +434,7 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -596,7 +596,7 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -874,7 +874,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		transfer := &core.TokenTransfer{
 			LocalID:    requestID,

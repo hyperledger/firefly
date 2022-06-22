@@ -518,7 +518,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		filter := fb.And(
 			fb.Eq("message", msg.Header.ID),
 		)
-		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
+		if transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter); err != nil || len(transfers) == 0 {
 			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
 			return "", false, err
 		} else if !msg.Hash.Equals(transfers[0].MessageHash) {

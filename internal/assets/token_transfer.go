@@ -28,17 +28,16 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (am *assetManager) GetTokenTransfers(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error) {
-	return am.database.GetTokenTransfers(ctx, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenTransfers(ctx context.Context, filter database.AndFilter) ([]*core.TokenTransfer, *database.FilterResult, error) {
+	return am.database.GetTokenTransfers(ctx, am.namespace, filter)
 }
 
-func (am *assetManager) GetTokenTransferByID(ctx context.Context, ns, id string) (*core.TokenTransfer, error) {
+func (am *assetManager) GetTokenTransferByID(ctx context.Context, id string) (*core.TokenTransfer, error) {
 	transferID, err := fftypes.ParseUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
-	return am.database.GetTokenTransferByID(ctx, transferID)
+	return am.database.GetTokenTransferByID(ctx, am.namespace, transferID)
 }
 
 func (am *assetManager) NewTransfer(transfer *core.TokenTransferInput) sysmessaging.MessageSender {

@@ -34,7 +34,7 @@ func TestGetTokenTransferByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenTransferByID", mock.Anything, "ns1", "id1").
+	mam.On("GetTokenTransferByID", mock.Anything, "id1").
 		Return(&core.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 
