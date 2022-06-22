@@ -29,7 +29,7 @@ import (
 func TestBuildMessageFilter(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
 	f, err := fb.And().
-		Condition(fb.Eq("namespace", "ns1")).
+		Condition(fb.Eq("tag", "tag1")).
 		Condition(fb.Or().
 			Condition(fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8")).
 			Condition(fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7")),
@@ -39,11 +39,11 @@ func TestBuildMessageFilter(t *testing.T) {
 		Skip(50).
 		Limit(25).
 		Count(true).
-		Sort("namespace").
+		Sort("tag").
 		Descending().
 		Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace == 'ns1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence >> 12345 ) && ( confirmed == null ) sort=-namespace skip=50 limit=25 count=true", f.String())
+	assert.Equal(t, "( tag == 'tag1' ) && ( ( id == '35c11cba-adff-4a4d-970a-02e3a0858dc8' ) || ( id == 'caefb9d1-9fc9-4d6a-a155-514d3139adf7' ) ) && ( sequence >> 12345 ) && ( confirmed == null ) sort=-tag skip=50 limit=25 count=true", f.String())
 }
 
 func TestBuildMessageFilter2(t *testing.T) {
@@ -183,19 +183,19 @@ func TestBuildMessageStringConvert(t *testing.T) {
 	u := fftypes.MustParseUUID("3f96e0d5-a10e-47c6-87a0-f2e7604af179")
 	b32 := fftypes.UUIDBytes(u)
 	f, err := fb.And(
-		fb.Lt("namespace", int(111)),
-		fb.Lt("namespace", int32(222)),
-		fb.Lt("namespace", int64(333)),
-		fb.Lt("namespace", uint(444)),
-		fb.Lt("namespace", uint32(555)),
-		fb.Lt("namespace", uint64(666)),
-		fb.Lt("namespace", *u),
-		fb.Lt("namespace", u),
-		fb.Lt("namespace", *b32),
-		fb.Lt("namespace", b32),
+		fb.Lt("tag", int(111)),
+		fb.Lt("tag", int32(222)),
+		fb.Lt("tag", int64(333)),
+		fb.Lt("tag", uint(444)),
+		fb.Lt("tag", uint32(555)),
+		fb.Lt("tag", uint64(666)),
+		fb.Lt("tag", *u),
+		fb.Lt("tag", u),
+		fb.Lt("tag", *b32),
+		fb.Lt("tag", b32),
 	).Finalize()
 	assert.NoError(t, err)
-	assert.Equal(t, "( namespace << '111' ) && ( namespace << '222' ) && ( namespace << '333' ) && ( namespace << '444' ) && ( namespace << '555' ) && ( namespace << '666' ) && ( namespace << '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace << '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( namespace << '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( namespace << '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
+	assert.Equal(t, "( tag << '111' ) && ( tag << '222' ) && ( tag << '333' ) && ( tag << '444' ) && ( tag << '555' ) && ( tag << '666' ) && ( tag << '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( tag << '3f96e0d5-a10e-47c6-87a0-f2e7604af179' ) && ( tag << '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' ) && ( tag << '3f96e0d5a10e47c687a0f2e7604af17900000000000000000000000000000000' )", f.String())
 }
 
 func TestBuildMessageBoolConvert(t *testing.T) {
@@ -244,8 +244,8 @@ func TestBuildFFStringArrayConvert(t *testing.T) {
 
 func TestBuildMessageFailStringConvert(t *testing.T) {
 	fb := MessageQueryFactory.NewFilter(context.Background())
-	_, err := fb.Lt("namespace", map[bool]bool{true: false}).Finalize()
-	assert.Regexp(t, "FF00143.*namespace", err)
+	_, err := fb.Lt("tag", map[bool]bool{true: false}).Finalize()
+	assert.Regexp(t, "FF00143.*tag", err)
 }
 
 func TestBuildMessageFailBoolConvert(t *testing.T) {

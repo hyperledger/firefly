@@ -88,7 +88,6 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	fb := database.VerifierQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("value", string(verifierUpdated.Value)),
-		fb.Eq("namespace", verifierUpdated.Namespace),
 	)
 	verifierRes, res, err := s.GetVerifiers(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)

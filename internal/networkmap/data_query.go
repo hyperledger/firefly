@@ -105,7 +105,6 @@ func (nm *networkMap) GetIdentityByID(ctx context.Context, id string) (*core.Ide
 func (nm *networkMap) withVerifiers(ctx context.Context, identity *core.Identity) (*core.IdentityWithVerifiers, error) {
 	fb := database.VerifierQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("namespace", identity.Namespace),
 		fb.Eq("identity", identity.ID),
 	)
 	verifiers, _, err := nm.database.GetVerifiers(ctx, nm.namespace, filter)
