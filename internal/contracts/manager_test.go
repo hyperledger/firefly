@@ -119,7 +119,7 @@ func TestBroadcastFFI(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &core.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -153,7 +153,7 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &core.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -186,7 +186,7 @@ func TestBroadcastFFIExists(t *testing.T) {
 			ID: fftypes.NewUUID(),
 		},
 	}
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(msg, nil)
 	ffi := &core.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -205,7 +205,7 @@ func TestBroadcastFFIFail(t *testing.T) {
 	mdb.On("GetFFI", mock.Anything, "ns1", "test", "1.0.0").Return(nil, nil)
 	mim.On("GetOrgKey", mock.Anything).Return("key", nil)
 
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.FFI"), core.SystemTagDefineFFI, false).Return(nil, fmt.Errorf("pop"))
 	ffi := &core.FFI{
 		Name:    "test",
 		Version: "1.0.0",
@@ -1946,7 +1946,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
@@ -2017,7 +2017,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
@@ -2090,7 +2090,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&core.FFI{ID: interfaceID}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
@@ -2121,7 +2121,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
-	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
+	mbm.On("BroadcastDefinitionAsNode", mock.Anything, mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 

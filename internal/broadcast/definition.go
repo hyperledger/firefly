@@ -28,39 +28,39 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	return bm.BroadcastDefinition(ctx, ns, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
+func (bm *broadcastManager) BroadcastDefinitionAsNode(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+	return bm.BroadcastDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *broadcastManager) BroadcastDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
 	if err != nil {
 		return nil, err
 	}
 
-	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
+	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
 }
 
 // BroadcastIdentityClaim is a special form of BroadcastDefinitionAsNode where the signing identity does not need to have been pre-registered
 // The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, ns string, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *broadcastManager) BroadcastIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
 	}
 
-	return bm.broadcastDefinitionCommon(ctx, ns, def, signingIdentity, tag, waitConfirm)
+	return bm.broadcastDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
+func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
 
 	// Serialize it into a data object, as a piece of data we can write to a message
 	d := &core.Data{
 		Validator: core.ValidatorTypeSystemDefinition,
 		ID:        fftypes.NewUUID(),
-		Namespace: ns,
+		Namespace: bm.namespace,
 		Created:   fftypes.Now(),
 	}
 	b, err := json.Marshal(&def)
@@ -77,7 +77,7 @@ func (bm *broadcastManager) broadcastDefinitionCommon(ctx context.Context, ns st
 		Message: &core.MessageInOut{
 			Message: core.Message{
 				Header: core.MessageHeader{
-					Namespace: ns,
+					Namespace: bm.namespace,
 					Type:      core.MessageTypeDefinition,
 					SignerRef: *signingIdentity,
 					Topics:    core.FFStringArray{def.Topic()},

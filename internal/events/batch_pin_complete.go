@@ -83,7 +83,7 @@ func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingK
 			}
 			// Kick off a download for broadcast batches if the batch isn't already persisted
 			if !private && batch == nil {
-				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
+				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
 					return err
 				}
 			}

@@ -37,7 +37,7 @@ import (
 )
 
 type Manager interface {
-	CheckDatatype(ctx context.Context, ns string, datatype *core.Datatype) error
+	CheckDatatype(ctx context.Context, datatype *core.Datatype) error
 	ValidateAll(ctx context.Context, data core.DataArray) (valid bool, err error)
 	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *core.Message, data core.DataArray, foundAllData bool, err error)
 	GetMessageDataCached(ctx context.Context, msg *core.Message, options ...CacheReadOption) (data core.DataArray, foundAll bool, err error)
@@ -49,9 +49,9 @@ type Manager interface {
 	WriteNewMessage(ctx context.Context, newMsg *NewMessage) error
 	VerifyNamespaceExists(ctx context.Context, ns string) error
 
-	UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error)
-	UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
-	DownloadBlob(ctx context.Context, ns, dataID string) (*core.Blob, io.ReadCloser, error)
+	UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error)
+	UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
+	DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *core.BatchPersisted) (*core.Batch, error)
 	WaitStop()
 }
@@ -139,8 +139,8 @@ func NewDataManager(ctx context.Context, ns string, di database.Plugin, pi share
 	return dm, nil
 }
 
-func (dm *dataManager) CheckDatatype(ctx context.Context, ns string, datatype *core.Datatype) error {
-	_, err := newJSONValidator(ctx, ns, datatype)
+func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
+	_, err := newJSONValidator(ctx, dm.namespace, datatype)
 	return err
 }
 
@@ -172,32 +172,32 @@ func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) err
 }
 
 // getValidatorForDatatype only returns database errors - not found (of all kinds) is a nil
-func (dm *dataManager) getValidatorForDatatype(ctx context.Context, ns string, validator core.ValidatorType, datatypeRef *core.DatatypeRef) (Validator, error) {
+func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator core.ValidatorType, datatypeRef *core.DatatypeRef) (Validator, error) {
 	if validator == "" {
 		validator = core.ValidatorTypeJSON
 	}
 
-	if ns == "" || datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
-		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, ns, datatypeRef)
+	if datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
+		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, dm.namespace, datatypeRef)
 		return nil, nil
 	}
 
-	key := fmt.Sprintf("%s:%s:%s", validator, ns, datatypeRef)
+	key := fmt.Sprintf("%s:%s:%s", validator, dm.namespace, datatypeRef)
 	if cached := dm.validatorCache.Get(key); cached != nil {
 		cached.Extend(dm.validatorCacheTTL)
 		return cached.Value().(Validator), nil
 	}
 
-	datatype, err := dm.database.GetDatatypeByName(ctx, ns, datatypeRef.Name, datatypeRef.Version)
+	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace, datatypeRef.Name, datatypeRef.Version)
 	if err != nil {
 		return nil, err
 	}
 	if datatype == nil {
 		return nil, nil
 	}
-	v, err := newJSONValidator(ctx, ns, datatype)
+	v, err := newJSONValidator(ctx, dm.namespace, datatype)
 	if err != nil {
-		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, ns, datatypeRef, err)
+		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, dm.namespace, datatypeRef, err)
 		return nil, nil
 	}
 
@@ -336,7 +336,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *core.Message) (d
 func (dm *dataManager) ValidateAll(ctx context.Context, data core.DataArray) (valid bool, err error) {
 	for _, d := range data {
 		if d.Datatype != nil && d.Validator != core.ValidatorTypeNone {
-			v, err := dm.getValidatorForDatatype(ctx, d.Namespace, d.Validator, d.Datatype)
+			v, err := dm.getValidatorForDatatype(ctx, d.Validator, d.Datatype)
 			if err != nil {
 				return false, err
 			}
@@ -388,7 +388,7 @@ func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *core.BlobRef) (
 	return nil, nil
 }
 
-func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator core.ValidatorType, datatype *core.DatatypeRef, value *fftypes.JSONAny) error {
+func (dm *dataManager) checkValidation(ctx context.Context, validator core.ValidatorType, datatype *core.DatatypeRef, value *fftypes.JSONAny) error {
 	if validator == "" {
 		validator = core.ValidatorTypeJSON
 	}
@@ -401,7 +401,7 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 			return i18n.NewError(ctx, coremsgs.MsgDatatypeNotFound, datatype)
 		}
 		if validator != core.ValidatorTypeNone {
-			v, err := dm.getValidatorForDatatype(ctx, ns, validator, datatype)
+			v, err := dm.getValidatorForDatatype(ctx, validator, datatype)
 			if err != nil {
 				return err
 			}
@@ -417,14 +417,14 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 	return nil
 }
 
-func (dm *dataManager) validateInputData(ctx context.Context, ns string, inData *core.DataRefOrValue) (data *core.Data, err error) {
+func (dm *dataManager) validateInputData(ctx context.Context, inData *core.DataRefOrValue) (data *core.Data, err error) {
 
 	validator := inData.Validator
 	datatype := inData.Datatype
 	value := inData.Value
 	blobRef := inData.Blob
 
-	if err := dm.checkValidation(ctx, ns, validator, datatype, value); err != nil {
+	if err := dm.checkValidation(ctx, validator, datatype, value); err != nil {
 		return nil, err
 	}
 
@@ -437,7 +437,7 @@ func (dm *dataManager) validateInputData(ctx context.Context, ns string, inData 
 	data = &core.Data{
 		Validator: validator,
 		Datatype:  datatype,
-		Namespace: ns,
+		Namespace: dm.namespace,
 		Value:     value,
 		Blob:      blobRef,
 	}
@@ -448,8 +448,8 @@ func (dm *dataManager) validateInputData(ctx context.Context, ns string, inData 
 	return data, nil
 }
 
-func (dm *dataManager) UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error) {
-	data, err := dm.validateInputData(ctx, ns, inData)
+func (dm *dataManager) UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error) {
+	data, err := dm.validateInputData(ctx, inData)
 	if err != nil {
 		return nil, err
 	}
@@ -470,7 +470,6 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 	}
 
 	inData := newMessage.Message.InlineData
-	msg := newMessage.Message
 	newMessage.AllData = make(core.DataArray, len(newMessage.Message.InlineData))
 	for i, dataOrValue := range inData {
 		var d *core.Data
@@ -489,7 +488,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 			}
 		case dataOrValue.Value != nil || dataOrValue.Blob != nil:
 			// We've got a Value, so we can validate + store it
-			if d, err = dm.validateInputData(ctx, msg.Header.Namespace, dataOrValue); err != nil {
+			if d, err = dm.validateInputData(ctx, dataOrValue); err != nil {
 				return err
 			}
 			newMessage.NewData = append(newMessage.NewData, d)

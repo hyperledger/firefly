@@ -23,12 +23,12 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
+func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
 
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
 	datatype.Created = fftypes.Now()
-	datatype.Namespace = ns
+	datatype.Namespace = bm.namespace
 	if datatype.Validator == "" {
 		datatype.Validator = core.ValidatorTypeJSON
 	}
@@ -41,10 +41,10 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, ns string, da
 	datatype.Hash = datatype.Value.Hash()
 
 	// Verify the data type is now all valid, before we broadcast it
-	if err := bm.data.CheckDatatype(ctx, ns, datatype); err != nil {
+	if err := bm.data.CheckDatatype(ctx, datatype); err != nil {
 		return nil, err
 	}
-	msg, err := bm.BroadcastDefinitionAsNode(ctx, ns, datatype, core.SystemTagDefineDatatype, waitConfirm)
+	msg, err := bm.BroadcastDefinitionAsNode(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
 	if msg != nil {
 		datatype.Message = msg.Header.ID
 	}

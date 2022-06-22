@@ -73,7 +73,7 @@ type EventManager interface {
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)
 
 	// Bound sharedstorage callbacks
-	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns, payloadRef string, data []byte) (*fftypes.UUID, error)
+	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, payloadRef string, data []byte) (*fftypes.UUID, error)
 	SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string)
 
 	// Bound token callbacks

@@ -103,8 +103,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("SharedStorageBatchDownloaded", mss, "ns1", "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
-	_, err = bc.SharedStorageBatchDownloaded("ns1", "payload1", []byte(`{}`))
+	mei.On("SharedStorageBatchDownloaded", mss, "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
+	_, err = bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
 	assert.EqualError(t, err, "pop")
 
 	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1").Return()

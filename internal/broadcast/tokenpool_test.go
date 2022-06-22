@@ -48,7 +48,7 @@ func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
 
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -71,7 +71,7 @@ func TestBroadcastTokenPoolInvalid(t *testing.T) {
 		},
 	}
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)
 	assert.Regexp(t, "FF00140", err)
 
 	mdi.AssertExpectations(t)
@@ -99,7 +99,7 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)
 	assert.EqualError(t, err, "pop")
 
 	mdm.AssertExpectations(t)
@@ -127,7 +127,7 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastTokenPool(context.Background(), "ns1", pool, false)
+	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)
 	assert.NoError(t, err)
 
 	mdm.AssertExpectations(t)

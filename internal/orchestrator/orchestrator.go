@@ -108,7 +108,7 @@ type Orchestrator interface {
 	GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
 
 	// Charts
-	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
 
 	// Message Routing
 	RequestReply(ctx context.Context, msg *core.MessageInOut) (reply *core.MessageInOut, err error)

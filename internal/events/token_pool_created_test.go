@@ -505,7 +505,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "123").Return(nil, nil).Times(2)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil).Once()
-	mbm.On("BroadcastTokenPool", em.ctx, "ns1", mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
+	mbm.On("BroadcastTokenPool", em.ctx, mock.MatchedBy(func(pool *core.TokenPoolAnnouncement) bool {
 		return pool.Pool.Namespace == "ns1" && pool.Pool.Name == "my-pool" && *pool.Pool.ID == *poolID
 	}), false).Return(nil, nil)
 

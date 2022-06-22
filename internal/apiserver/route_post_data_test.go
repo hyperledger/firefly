@@ -42,7 +42,7 @@ func TestPostDataJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadJSON", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue")).
+	mdm.On("UploadJSON", mock.Anything, mock.AnythingOfType("*core.DataRefOrValue")).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -60,7 +60,7 @@ func TestPostDataJSONDefaultNS(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadJSON", mock.Anything, "default", mock.AnythingOfType("*core.DataRefOrValue")).
+	mdm.On("UploadJSON", mock.Anything, mock.AnythingOfType("*core.DataRefOrValue")).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -85,7 +85,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -125,7 +125,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.MatchedBy(func(d *core.DataRefOrValue) bool {
+	mdm.On("UploadBlob", mock.Anything, mock.MatchedBy(func(d *core.DataRefOrValue) bool {
 		assert.Equal(t, `{"filename":"anything"}`, string(*d.Value))
 		assert.Equal(t, core.ValidatorTypeJSON, d.Validator)
 		assert.Equal(t, "fileinfo", d.Datatype.Name)
@@ -159,7 +159,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.MatchedBy(func(d *core.DataRefOrValue) bool {
+	mdm.On("UploadBlob", mock.Anything, mock.MatchedBy(func(d *core.DataRefOrValue) bool {
 		assert.Equal(t, `"string metadata"`, string(*d.Value))
 		assert.Equal(t, "", string(d.Validator))
 		assert.Nil(t, d.Datatype)
@@ -192,7 +192,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.Anything, mock.AnythingOfType("*ffapi.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, mock.Anything, mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 

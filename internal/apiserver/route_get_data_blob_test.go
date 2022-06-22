@@ -38,7 +38,7 @@ func TestGetDataBlob(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	blobHash := fftypes.NewRandB32()
-	mdm.On("DownloadBlob", mock.Anything, "mynamespace", "abcd1234").
+	mdm.On("DownloadBlob", mock.Anything, "abcd1234").
 		Return(&core.Blob{
 			Hash: blobHash,
 			Size: 12345,

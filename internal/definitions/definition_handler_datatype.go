@@ -34,7 +34,7 @@ func (dh *definitionHandlers) handleDatatypeBroadcast(ctx context.Context, state
 	if err := dt.Validate(ctx, true); err != nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "datatype", dt.ID, err)
 	}
-	if err := dh.data.CheckDatatype(ctx, dt.Namespace, &dt); err != nil {
+	if err := dh.data.CheckDatatype(ctx, &dt); err != nil {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedSchemaFail, "datatype", dt.ID, err)
 	}
 

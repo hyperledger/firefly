@@ -69,7 +69,7 @@ func TestGetChartHistogramSuccess(t *testing.T) {
 	startTime, _ := fftypes.ParseTimeString("1234567890")
 	endtime, _ := fftypes.ParseTimeString("1234567891")
 
-	o.On("GetChartHistogram", mock.Anything, "mynamespace", startTime.UnixNano(), endtime.UnixNano(), int64(30), database.CollectionName("test")).
+	o.On("GetChartHistogram", mock.Anything, startTime.UnixNano(), endtime.UnixNano(), int64(30), database.CollectionName("test")).
 		Return([]*core.ChartHistogram{}, nil)
 	r.ServeHTTP(res, req)
 

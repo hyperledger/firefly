@@ -879,7 +879,7 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 	if or == nil {
 		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
-	return or.Operations().ResolveOperationByID(ctx, ns, u, op)
+	return or.Operations().ResolveOperationByID(ctx, u, op)
 }
 
 func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[string]eventsPlugin, err error) {

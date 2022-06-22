@@ -312,11 +312,6 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// SetHandler provides a mock function with given fields: handler
-func (_m *Plugin) SetHandler(handler blockchain.Callbacks) {
-	_m.Called(handler)
-}
-
 // RemoveFireflySubscription provides a mock function with given fields: ctx, subID
 func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) error {
 	ret := _m.Called(ctx, subID)
@@ -329,6 +324,11 @@ func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) e
 	}
 
 	return r0
+}
+
+// SetHandler provides a mock function with given fields: handler
+func (_m *Plugin) SetHandler(handler blockchain.Callbacks) {
+	_m.Called(handler)
 }
 
 // Start provides a mock function with given fields:

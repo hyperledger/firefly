@@ -47,7 +47,7 @@ var postData = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusCreated},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.Data().UploadJSON(cr.ctx, extractNamespace(r.PP), r.Input.(*core.DataRefOrValue))
+			output, err = cr.or.Data().UploadJSON(cr.ctx, r.Input.(*core.DataRefOrValue))
 			return output, err
 		},
 		CoreFormUploadHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
@@ -71,7 +71,7 @@ var postData = &ffapi.Route{
 				}
 				data.Value = fftypes.JSONAnyPtr(metadata)
 			}
-			output, err = cr.or.Data().UploadBlob(cr.ctx, extractNamespace(r.PP), data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
+			output, err = cr.or.Data().UploadBlob(cr.ctx, data, r.Part, strings.EqualFold(r.FP["autometa"], "true"))
 			return output, err
 		},
 	},

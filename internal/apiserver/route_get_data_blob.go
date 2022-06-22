@@ -41,7 +41,7 @@ var getDataBlob = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.MessageQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			blob, reader, err := cr.or.Data().DownloadBlob(cr.ctx, extractNamespace(r.PP), r.PP["dataid"])
+			blob, reader, err := cr.or.Data().DownloadBlob(cr.ctx, r.PP["dataid"])
 			if err == nil {
 				r.ResponseHeaders.Set(core.HTTPHeadersBlobHashSHA256, blob.Hash.String())
 				if blob.Size > 0 {

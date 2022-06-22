@@ -89,8 +89,8 @@ func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.
 	return bc.ei.TokensApproved(plugin, approval)
 }
 
-func (bc *boundCallbacks) SharedStorageBatchDownloaded(ns, payloadRef string, data []byte) (*fftypes.UUID, error) {
-	return bc.ei.SharedStorageBatchDownloaded(bc.ss, ns, payloadRef, data)
+func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {
+	return bc.ei.SharedStorageBatchDownloaded(bc.ss, payloadRef, data)
 }
 
 func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) {

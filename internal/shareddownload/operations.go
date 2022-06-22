@@ -31,19 +31,16 @@ import (
 )
 
 type downloadBatchData struct {
-	Namespace  string `json:"namespace"`
 	PayloadRef string `json:"payloadRef"`
 }
 
 type downloadBlobData struct {
-	Namespace  string        `json:"namespace"`
 	DataID     *fftypes.UUID `json:"dataId"`
 	PayloadRef string        `json:"payloadRef"`
 }
 
-func addDownloadBatchInputs(op *core.Operation, ns, payloadRef string) {
+func addDownloadBatchInputs(op *core.Operation, payloadRef string) {
 	op.Input = fftypes.JSONObject{
-		"namespace":  ns,
 		"payloadRef": payloadRef,
 	}
 }
@@ -54,9 +51,8 @@ func getDownloadBatchOutputs(batchID *fftypes.UUID) fftypes.JSONObject {
 	}
 }
 
-func addDownloadBlobInputs(op *core.Operation, ns string, dataID *fftypes.UUID, payloadRef string) {
+func addDownloadBlobInputs(op *core.Operation, dataID *fftypes.UUID, payloadRef string) {
 	op.Input = fftypes.JSONObject{
-		"namespace":  ns,
 		"dataId":     dataID.String(),
 		"payloadRef": payloadRef,
 	}
@@ -70,16 +66,14 @@ func getDownloadBlobOutputs(hash *fftypes.Bytes32, size int64, dxPayloadRef stri
 	}
 }
 
-func retrieveDownloadBatchInputs(op *core.Operation) (string, string) {
-	return op.Input.GetString("namespace"),
-		op.Input.GetString("payloadRef")
+func retrieveDownloadBatchInputs(op *core.Operation) (payloadRef string) {
+	return op.Input.GetString("payloadRef")
 }
 
-func retrieveDownloadBlobInputs(ctx context.Context, op *core.Operation) (namespace string, dataID *fftypes.UUID, payloadRef string, err error) {
-	namespace = op.Input.GetString("namespace")
+func retrieveDownloadBlobInputs(ctx context.Context, op *core.Operation) (dataID *fftypes.UUID, payloadRef string, err error) {
 	dataID, err = fftypes.ParseUUID(ctx, op.Input.GetString("dataId"))
 	if err != nil {
-		return "", nil, "", err
+		return nil, "", err
 	}
 	payloadRef = op.Input.GetString("payloadRef")
 	return
@@ -89,15 +83,15 @@ func (dm *downloadManager) PrepareOperation(ctx context.Context, op *core.Operat
 	switch op.Type {
 
 	case core.OpTypeSharedStorageDownloadBatch:
-		namespace, payloadRef := retrieveDownloadBatchInputs(op)
-		return opDownloadBatch(op, namespace, payloadRef), nil
+		payloadRef := retrieveDownloadBatchInputs(op)
+		return opDownloadBatch(op, payloadRef), nil
 
 	case core.OpTypeSharedStorageDownloadBlob:
-		namespace, dataID, payloadRef, err := retrieveDownloadBlobInputs(ctx, op)
+		dataID, payloadRef, err := retrieveDownloadBlobInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
-		return opDownloadBlob(op, namespace, dataID, payloadRef), nil
+		return opDownloadBlob(op, dataID, payloadRef), nil
 
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
@@ -138,7 +132,7 @@ func (dm *downloadManager) downloadBatch(ctx context.Context, data downloadBatch
 	}
 
 	// Parse and store the batch
-	batchID, err := dm.callbacks.SharedStorageBatchDownloaded(data.Namespace, data.PayloadRef, batchBytes)
+	batchID, err := dm.callbacks.SharedStorageBatchDownloaded(data.PayloadRef, batchBytes)
 	if err != nil {
 		return nil, false, err
 	}
@@ -155,7 +149,7 @@ func (dm *downloadManager) downloadBlob(ctx context.Context, data downloadBlobDa
 	defer reader.Close()
 
 	// ... to data exchange
-	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, data.Namespace, *data.DataID, reader)
+	dxPayloadRef, hash, blobSize, err := dm.dataexchange.UploadBlob(ctx, dm.namespace, *data.DataID, reader)
 	if err != nil {
 		return nil, false, i18n.WrapError(ctx, err, coremsgs.MsgDownloadSharedFailed, data.PayloadRef)
 	}
@@ -171,25 +165,23 @@ func (dm *downloadManager) OnOperationUpdate(ctx context.Context, op *core.Opera
 	return nil
 }
 
-func opDownloadBatch(op *core.Operation, ns string, payloadRef string) *core.PreparedOperation {
+func opDownloadBatch(op *core.Operation, payloadRef string) *core.PreparedOperation {
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
 		Data: downloadBatchData{
-			Namespace:  ns,
 			PayloadRef: payloadRef,
 		},
 	}
 }
 
-func opDownloadBlob(op *core.Operation, ns string, dataID *fftypes.UUID, payloadRef string) *core.PreparedOperation {
+func opDownloadBlob(op *core.Operation, dataID *fftypes.UUID, payloadRef string) *core.PreparedOperation {
 	return &core.PreparedOperation{
 		ID:        op.ID,
 		Namespace: op.Namespace,
 		Type:      op.Type,
 		Data: downloadBlobData{
-			Namespace:  ns,
 			DataID:     dataID,
 			PayloadRef: payloadRef,
 		},

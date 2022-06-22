@@ -173,7 +173,7 @@ func (em *eventManager) checkAndInitiateBlobDownloads(ctx context.Context, batch
 				log.L(ctx).Errorf("Invalid data entry %d id=%s in batch '%s' - missing public blob reference", i, data.ID, batch.ID)
 				return false, nil
 			}
-			if err = em.sharedDownload.InitiateDownloadBlob(ctx, data.Namespace, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
+			if err = em.sharedDownload.InitiateDownloadBlob(ctx, batch.Payload.TX.ID, data.ID, data.Blob.Public); err != nil {
 				return false, err
 			}
 		}

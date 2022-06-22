@@ -19,7 +19,6 @@ package apiserver
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
@@ -175,11 +174,4 @@ func namespacedRoutes(routes []*ffapi.Route) []*ffapi.Route {
 		newRoutes[i] = &routeCopy
 	}
 	return append(routes, newRoutes...)
-}
-
-func extractNamespace(pathParams map[string]string) string {
-	if ns, ok := pathParams["ns"]; ok {
-		return ns
-	}
-	return config.GetString(coreconfig.NamespacesDefault)
 }

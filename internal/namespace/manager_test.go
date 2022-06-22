@@ -1256,7 +1256,7 @@ func TestResolveOperationByNamespacedID(t *testing.T) {
 
 	opID := fftypes.NewUUID()
 	mo.On("Operations").Return(mom)
-	mom.On("ResolveOperationByID", context.Background(), "default", opID, mock.Anything).Return(nil)
+	mom.On("ResolveOperationByID", context.Background(), opID, mock.Anything).Return(nil)
 
 	err := nm.ResolveOperationByNamespacedID(context.Background(), "default:"+opID.String(), &core.OperationUpdateDTO{})
 	assert.Nil(t, err)

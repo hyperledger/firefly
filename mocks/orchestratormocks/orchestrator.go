@@ -302,13 +302,13 @@ func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, filter database
 	return r0, r1, r2
 }
 
-// GetChartHistogram provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
-func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error) {
-	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
+// GetChartHistogram provides a mock function with given fields: ctx, startTime, endTime, buckets, tableName
+func (_m *Orchestrator) GetChartHistogram(ctx context.Context, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error) {
+	ret := _m.Called(ctx, startTime, endTime, buckets, tableName)
 
 	var r0 []*core.ChartHistogram
-	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, int64, database.CollectionName) []*core.ChartHistogram); ok {
-		r0 = rf(ctx, ns, startTime, endTime, buckets, tableName)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, int64, int64, database.CollectionName) []*core.ChartHistogram); ok {
+		r0 = rf(ctx, startTime, endTime, buckets, tableName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.ChartHistogram)
@@ -316,8 +316,8 @@ func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startT
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, int64, int64, int64, database.CollectionName) error); ok {
-		r1 = rf(ctx, ns, startTime, endTime, buckets, tableName)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, int64, int64, database.CollectionName) error); ok {
+		r1 = rf(ctx, startTime, endTime, buckets, tableName)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -49,7 +49,7 @@ func TestHandleDefinitionBroadcastDatatypeOk(t *testing.T) {
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
@@ -87,7 +87,7 @@ func TestHandleDefinitionBroadcastDatatypeEventFail(t *testing.T) {
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(nil)
@@ -152,7 +152,7 @@ func TestHandleDefinitionBroadcastBadSchema(t *testing.T) {
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineDatatype,
@@ -207,7 +207,7 @@ func TestHandleDefinitionBroadcastDatatypeLookupFail(t *testing.T) {
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, fmt.Errorf("pop"))
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{
@@ -243,7 +243,7 @@ func TestHandleDefinitionBroadcastUpsertFail(t *testing.T) {
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(nil, nil)
 	mbi.On("UpsertDatatype", mock.Anything, mock.Anything, false).Return(fmt.Errorf("pop"))
@@ -279,7 +279,7 @@ func TestHandleDefinitionBroadcastDatatypeDuplicate(t *testing.T) {
 	}
 
 	mdm := dh.data.(*datamocks.Manager)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("GetDatatypeByName", mock.Anything, "ns1", "name1", "ver1").Return(dt, nil)
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), bs, &core.Message{

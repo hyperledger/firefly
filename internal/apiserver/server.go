@@ -218,6 +218,19 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 	}
 }
 
+func getOrchestrator(mgr namespace.Manager, tag string, r *ffapi.APIRequest) orchestrator.Orchestrator {
+	if tag == routeTagDefaultNamespace {
+		return mgr.Orchestrator(config.GetString(coreconfig.NamespacesDefault))
+	}
+	if tag == routeTagNonDefaultNamespace {
+		vars := mux.Vars(r.Req)
+		if ns, ok := vars["ns"]; ok {
+			return mgr.Orchestrator(ns)
+		}
+	}
+	return nil
+}
+
 func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
 	// We extend the base ffapi functionality, with standardized DB filter support for all core resources.
 	// We also pass the Orchestrator context through
@@ -231,15 +244,9 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 			}
 		}
 
-		var or orchestrator.Orchestrator
-		if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
-			vars := mux.Vars(r.Req)
-			or = mgr.Orchestrator(extractNamespace(vars))
-		}
-
 		cr := &coreRequest{
 			mgr:        mgr,
-			or:         or,
+			or:         getOrchestrator(mgr, route.Tag, r),
 			ctx:        r.Req.Context(),
 			filter:     filter,
 			apiBaseURL: apiBaseURL,
@@ -248,15 +255,9 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 	}
 	if ce.CoreFormUploadHandler != nil {
 		route.FormUploadHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
-			var or orchestrator.Orchestrator
-			if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
-				vars := mux.Vars(r.Req)
-				or = mgr.Orchestrator(extractNamespace(vars))
-			}
-
 			cr := &coreRequest{
 				mgr:        mgr,
-				or:         or,
+				or:         getOrchestrator(mgr, route.Tag, r),
 				ctx:        r.Req.Context(),
 				apiBaseURL: apiBaseURL,
 			}
