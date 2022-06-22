@@ -137,7 +137,7 @@ func TestBroadcastFFI(t *testing.T) {
 			},
 		},
 	}
-	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
+	_, err := cm.BroadcastFFI(context.Background(), ffi, false)
 	assert.NoError(t, err)
 }
 
@@ -170,7 +170,7 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 			},
 		},
 	}
-	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
+	_, err := cm.BroadcastFFI(context.Background(), ffi, false)
 	assert.Regexp(t, "does not validate", err)
 }
 
@@ -192,7 +192,7 @@ func TestBroadcastFFIExists(t *testing.T) {
 		Version: "1.0.0",
 		ID:      fftypes.NewUUID(),
 	}
-	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
+	_, err := cm.BroadcastFFI(context.Background(), ffi, false)
 	assert.Regexp(t, "FF10302", err)
 }
 
@@ -216,7 +216,7 @@ func TestBroadcastFFIFail(t *testing.T) {
 			},
 		},
 	}
-	_, err := cm.BroadcastFFI(context.Background(), "ns1", ffi, false)
+	_, err := cm.BroadcastFFI(context.Background(), ffi, false)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -640,7 +640,7 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(event, nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
@@ -699,7 +699,7 @@ func TestAddContractListenerFFILookupFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
 	assert.EqualError(t, err, "pop")
@@ -729,7 +729,7 @@ func TestAddContractListenerEventLookupFail(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
@@ -760,7 +760,7 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, nil)
 
 	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
@@ -1061,7 +1061,7 @@ func TestAddContractAPIListener(t *testing.T) {
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(listener.Location, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
@@ -1121,7 +1121,7 @@ func TestGetFFI(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&core.FFI{}, nil)
-	_, err := cm.GetFFI(context.Background(), "ns1", "ffi", "v1.0.0")
+	_, err := cm.GetFFI(context.Background(), "ffi", "v1.0.0")
 	assert.NoError(t, err)
 }
 
@@ -1132,17 +1132,17 @@ func TestGetFFIWithChildren(t *testing.T) {
 
 	cid := fftypes.NewUUID()
 	mdb.On("GetFFI", mock.Anything, "ns1", "ffi", "v1.0.0").Return(&core.FFI{ID: cid}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*core.FFIEvent{
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: core.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *core.FFIEventDefinition) bool {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
 
-	_, err := cm.GetFFIWithChildren(context.Background(), "ns1", "ffi", "v1.0.0")
+	_, err := cm.GetFFIWithChildren(context.Background(), "ffi", "v1.0.0")
 	assert.NoError(t, err)
 
 	mdb.AssertExpectations(t)
@@ -1153,7 +1153,7 @@ func TestGetFFIByID(t *testing.T) {
 	cm := newTestContractManager()
 	mdb := cm.database.(*databasemocks.Plugin)
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(&core.FFI{}, nil)
 	_, err := cm.GetFFIByID(context.Background(), cid)
 	assert.NoError(t, err)
 }
@@ -1164,13 +1164,13 @@ func TestGetFFIByIDWithChildren(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(&core.FFI{
 		ID: cid,
 	}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*core.FFIEvent{
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: core.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *core.FFIEventDefinition) bool {
@@ -1192,13 +1192,13 @@ func TestGetFFIByIDWithChildrenEventsFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(&core.FFI{
 		ID: cid,
 	}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -1211,10 +1211,10 @@ func TestGetFFIByIDWithChildrenMethodsFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(&core.FFI{
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(&core.FFI{
 		ID: cid,
 	}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -1227,7 +1227,7 @@ func TestGetFFIByIDWithChildrenFFILookupFail(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -1240,7 +1240,7 @@ func TestGetFFIByIDWithChildrenFFINotFound(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 
 	cid := fftypes.NewUUID()
-	mdb.On("GetFFIByID", mock.Anything, cid).Return(nil, nil)
+	mdb.On("GetFFIByID", mock.Anything, "ns1", cid).Return(nil, nil)
 
 	ffi, err := cm.GetFFIByIDWithChildren(context.Background(), cid)
 
@@ -1254,7 +1254,7 @@ func TestGetFFIs(t *testing.T) {
 	mdb := cm.database.(*databasemocks.Plugin)
 	filter := database.FFIQueryFactory.NewFilter(context.Background()).And()
 	mdb.On("GetFFIs", mock.Anything, "ns1", filter).Return([]*core.FFI{}, &database.FilterResult{}, nil)
-	_, _, err := cm.GetFFIs(context.Background(), "ns1", filter)
+	_, _, err := cm.GetFFIs(context.Background(), filter)
 	assert.NoError(t, err)
 }
 
@@ -1649,7 +1649,7 @@ func TestGetContractAPIListeners(t *testing.T) {
 	}
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
 	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
@@ -1703,7 +1703,7 @@ func TestGetContractAPIListenersEventNotFound(t *testing.T) {
 	}
 
 	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
-	mdi.On("GetFFIByID", context.Background(), interfaceID).Return(&core.FFI{}, nil)
+	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
@@ -1897,11 +1897,11 @@ func TestGetContractAPIInterface(t *testing.T) {
 	}
 
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
-	mdb.On("GetFFIByID", mock.Anything, interfaceID).Return(&core.FFI{}, nil)
-	mdb.On("GetFFIMethods", mock.Anything, mock.Anything).Return([]*core.FFIMethod{
+	mdb.On("GetFFIByID", mock.Anything, "ns1", interfaceID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIMethods", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIMethod{
 		{ID: fftypes.NewUUID(), Name: "method1"},
 	}, nil, nil)
-	mdb.On("GetFFIEvents", mock.Anything, mock.Anything).Return([]*core.FFIEvent{
+	mdb.On("GetFFIEvents", mock.Anything, "ns1", mock.Anything).Return([]*core.FFIEvent{
 		{ID: fftypes.NewUUID(), FFIEventDefinition: core.FFIEventDefinition{Name: "event1"}},
 	}, nil, nil)
 	mbi.On("GenerateEventSignature", mock.Anything, mock.MatchedBy(func(ev *core.FFIEventDefinition) bool {
@@ -1953,7 +1953,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -2024,7 +2024,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -2128,7 +2128,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(&core.FFI{}, nil)
+	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
@@ -2180,7 +2180,7 @@ func TestBroadcastContractAPIInterfaceIDFail(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(nil, fmt.Errorf("pop"))
+	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 
@@ -2207,7 +2207,7 @@ func TestBroadcastContractAPIInterfaceIDNotFound(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
-	mdb.On("GetFFIByID", mock.Anything, api.Interface.ID).Return(nil, nil)
+	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(nil, nil)
 
 	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
 

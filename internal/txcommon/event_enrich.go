@@ -53,7 +53,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.ContractAPI = contractAPI
 	case core.EventTypeContractInterfaceConfirmed:
-		contractInterface, err := t.database.GetFFIByID(ctx, event.Reference)
+		contractInterface, err := t.database.GetFFIByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

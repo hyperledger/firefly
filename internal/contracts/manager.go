@@ -38,12 +38,12 @@ import (
 type Manager interface {
 	core.Named
 
-	BroadcastFFI(ctx context.Context, ns string, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error)
-	GetFFI(ctx context.Context, ns, name, version string) (*core.FFI, error)
-	GetFFIWithChildren(ctx context.Context, ns, name, version string) (*core.FFI, error)
+	BroadcastFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error)
+	GetFFI(ctx context.Context, name, version string) (*core.FFI, error)
+	GetFFIWithChildren(ctx context.Context, name, version string) (*core.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
-	GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error)
+	GetFFIs(ctx context.Context, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error)
 
 	InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
@@ -119,11 +119,11 @@ func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
 	return c
 }
 
-func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error) {
+func (cm *contractManager) BroadcastFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error) {
 	ffi.ID = fftypes.NewUUID()
-	ffi.Namespace = ns
+	ffi.Namespace = cm.namespace
 
-	existing, err := cm.database.GetFFI(ctx, ffi.Namespace, ffi.Name, ffi.Version)
+	existing, err := cm.database.GetFFI(ctx, cm.namespace, ffi.Name, ffi.Version)
 	if existing != nil && err == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
 	}
@@ -139,7 +139,7 @@ func (cm *contractManager) BroadcastFFI(ctx context.Context, ns string, ffi *cor
 	}
 
 	output = ffi
-	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, ns, ffi, core.SystemTagDefineFFI, waitConfirm)
+	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, cm.namespace, ffi, core.SystemTagDefineFFI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
@@ -151,12 +151,12 @@ func (cm *contractManager) scopeNS(ns string, filter database.AndFilter) databas
 	return filter.Condition(filter.Builder().Eq("namespace", ns))
 }
 
-func (cm *contractManager) GetFFI(ctx context.Context, ns, name, version string) (*core.FFI, error) {
-	return cm.database.GetFFI(ctx, ns, name, version)
+func (cm *contractManager) GetFFI(ctx context.Context, name, version string) (*core.FFI, error) {
+	return cm.database.GetFFI(ctx, cm.namespace, name, version)
 }
 
-func (cm *contractManager) GetFFIWithChildren(ctx context.Context, ns, name, version string) (*core.FFI, error) {
-	ffi, err := cm.GetFFI(ctx, ns, name, version)
+func (cm *contractManager) GetFFIWithChildren(ctx context.Context, name, version string) (*core.FFI, error) {
+	ffi, err := cm.GetFFI(ctx, name, version)
 	if err == nil {
 		err = cm.getFFIChildren(ctx, ffi)
 	}
@@ -164,18 +164,18 @@ func (cm *contractManager) GetFFIWithChildren(ctx context.Context, ns, name, ver
 }
 
 func (cm *contractManager) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
-	return cm.database.GetFFIByID(ctx, id)
+	return cm.database.GetFFIByID(ctx, cm.namespace, id)
 }
 
 func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *core.FFI) (err error) {
 	mfb := database.FFIMethodQueryFactory.NewFilter(ctx)
-	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, mfb.Eq("interface", ffi.ID))
+	ffi.Methods, _, err = cm.database.GetFFIMethods(ctx, cm.namespace, mfb.Eq("interface", ffi.ID))
 	if err != nil {
 		return err
 	}
 
 	efb := database.FFIEventQueryFactory.NewFilter(ctx)
-	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, efb.Eq("interface", ffi.ID))
+	ffi.Events, _, err = cm.database.GetFFIEvents(ctx, cm.namespace, efb.Eq("interface", ffi.ID))
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (cm *contractManager) getFFIChildren(ctx context.Context, ffi *core.FFI) (e
 
 func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (ffi *core.FFI, err error) {
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		ffi, err = cm.database.GetFFIByID(ctx, id)
+		ffi, err = cm.database.GetFFIByID(ctx, cm.namespace, id)
 		if err != nil || ffi == nil {
 			return err
 		}
@@ -197,9 +197,8 @@ func (cm *contractManager) GetFFIByIDWithChildren(ctx context.Context, id *fftyp
 	return ffi, err
 }
 
-func (cm *contractManager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error) {
-	filter = cm.scopeNS(ns, filter)
-	return cm.database.GetFFIs(ctx, ns, filter)
+func (cm *contractManager) GetFFIs(ctx context.Context, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error) {
+	return cm.database.GetFFIs(ctx, cm.namespace, filter)
 }
 
 func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core.ContractCallRequest) (*core.Operation, error) {
@@ -323,13 +322,13 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, n
 	return apis, fr, err
 }
 
-func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, ref *core.FFIReference) error {
+func (cm *contractManager) resolveFFIReference(ctx context.Context, ref *core.FFIReference) error {
 	switch {
 	case ref == nil:
 		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceNotFound, "")
 
 	case ref.ID != nil:
-		ffi, err := cm.database.GetFFIByID(ctx, ref.ID)
+		ffi, err := cm.database.GetFFIByID(ctx, cm.namespace, ref.ID)
 		if err != nil {
 			return err
 		} else if ffi == nil {
@@ -338,7 +337,7 @@ func (cm *contractManager) resolveFFIReference(ctx context.Context, ns string, r
 		return nil
 
 	case ref.Name != "" && ref.Version != "":
-		ffi, err := cm.database.GetFFI(ctx, ns, ref.Name, ref.Version)
+		ffi, err := cm.database.GetFFI(ctx, cm.namespace, ref.Name, ref.Version)
 		if err != nil {
 			return err
 		} else if ffi == nil {
@@ -370,7 +369,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerU
 			}
 		}
 
-		if err := cm.resolveFFIReference(ctx, ns, api.Interface); err != nil {
+		if err := cm.resolveFFIReference(ctx, api.Interface); err != nil {
 			return err
 		}
 		return nil
@@ -486,7 +485,7 @@ func (cm *contractManager) validateInvokeContractRequest(ctx context.Context, re
 }
 
 func (cm *contractManager) resolveEvent(ctx context.Context, ns string, ffi *core.FFIReference, eventPath string) (*core.FFISerializedEvent, error) {
-	if err := cm.resolveFFIReference(ctx, ns, ffi); err != nil {
+	if err := cm.resolveFFIReference(ctx, ffi); err != nil {
 		return nil, err
 	}
 	event, err := cm.database.GetFFIEvent(ctx, ns, ffi.ID, eventPath)

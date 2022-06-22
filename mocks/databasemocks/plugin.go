@@ -814,13 +814,13 @@ func (_m *Plugin) GetFFI(ctx context.Context, namespace string, name string, ver
 	return r0, r1
 }
 
-// GetFFIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error) {
-	ret := _m.Called(ctx, id)
+// GetFFIByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.FFI, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.FFI); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.FFI); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.FFI)
@@ -828,8 +828,8 @@ func (_m *Plugin) GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -860,13 +860,13 @@ func (_m *Plugin) GetFFIEvent(ctx context.Context, namespace string, interfaceID
 	return r0, r1
 }
 
-// GetFFIEvents provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*core.FFIEvent, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetFFIEvents provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetFFIEvents(ctx context.Context, namespace string, filter database.Filter) ([]*core.FFIEvent, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.FFIEvent
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.FFIEvent); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.FFIEvent); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.FFIEvent)
@@ -874,8 +874,8 @@ func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -883,8 +883,8 @@ func (_m *Plugin) GetFFIEvents(ctx context.Context, filter database.Filter) ([]*
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -915,13 +915,13 @@ func (_m *Plugin) GetFFIMethod(ctx context.Context, namespace string, interfaceI
 	return r0, r1
 }
 
-// GetFFIMethods provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]*core.FFIMethod, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetFFIMethods provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetFFIMethods(ctx context.Context, namespace string, filter database.Filter) ([]*core.FFIMethod, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.FFIMethod
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.FFIMethod); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.FFIMethod); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.FFIMethod)
@@ -929,8 +929,8 @@ func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -938,8 +938,8 @@ func (_m *Plugin) GetFFIMethods(ctx context.Context, filter database.Filter) ([]
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

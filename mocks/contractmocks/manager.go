@@ -88,13 +88,13 @@ func (_m *Manager) BroadcastContractAPI(ctx context.Context, httpServerURL strin
 	return r0, r1
 }
 
-// BroadcastFFI provides a mock function with given fields: ctx, ns, ffi, waitConfirm
-func (_m *Manager) BroadcastFFI(ctx context.Context, ns string, ffi *core.FFI, waitConfirm bool) (*core.FFI, error) {
-	ret := _m.Called(ctx, ns, ffi, waitConfirm)
+// BroadcastFFI provides a mock function with given fields: ctx, ffi, waitConfirm
+func (_m *Manager) BroadcastFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (*core.FFI, error) {
+	ret := _m.Called(ctx, ffi, waitConfirm)
 
 	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.FFI, bool) *core.FFI); ok {
-		r0 = rf(ctx, ns, ffi, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI, bool) *core.FFI); ok {
+		r0 = rf(ctx, ffi, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.FFI)
@@ -102,8 +102,8 @@ func (_m *Manager) BroadcastFFI(ctx context.Context, ns string, ffi *core.FFI, w
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.FFI, bool) error); ok {
-		r1 = rf(ctx, ns, ffi, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.FFI, bool) error); ok {
+		r1 = rf(ctx, ffi, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -313,13 +313,13 @@ func (_m *Manager) GetContractListeners(ctx context.Context, ns string, filter d
 	return r0, r1, r2
 }
 
-// GetFFI provides a mock function with given fields: ctx, ns, name, version
-func (_m *Manager) GetFFI(ctx context.Context, ns string, name string, version string) (*core.FFI, error) {
-	ret := _m.Called(ctx, ns, name, version)
+// GetFFI provides a mock function with given fields: ctx, name, version
+func (_m *Manager) GetFFI(ctx context.Context, name string, version string) (*core.FFI, error) {
+	ret := _m.Called(ctx, name, version)
 
 	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.FFI); ok {
-		r0 = rf(ctx, ns, name, version)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.FFI); ok {
+		r0 = rf(ctx, name, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.FFI)
@@ -327,8 +327,8 @@ func (_m *Manager) GetFFI(ctx context.Context, ns string, name string, version s
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, name, version)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -382,13 +382,13 @@ func (_m *Manager) GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID)
 	return r0, r1
 }
 
-// GetFFIWithChildren provides a mock function with given fields: ctx, ns, name, version
-func (_m *Manager) GetFFIWithChildren(ctx context.Context, ns string, name string, version string) (*core.FFI, error) {
-	ret := _m.Called(ctx, ns, name, version)
+// GetFFIWithChildren provides a mock function with given fields: ctx, name, version
+func (_m *Manager) GetFFIWithChildren(ctx context.Context, name string, version string) (*core.FFI, error) {
+	ret := _m.Called(ctx, name, version)
 
 	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.FFI); ok {
-		r0 = rf(ctx, ns, name, version)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.FFI); ok {
+		r0 = rf(ctx, name, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.FFI)
@@ -396,8 +396,8 @@ func (_m *Manager) GetFFIWithChildren(ctx context.Context, ns string, name strin
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, ns, name, version)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -405,13 +405,13 @@ func (_m *Manager) GetFFIWithChildren(ctx context.Context, ns string, name strin
 	return r0, r1
 }
 
-// GetFFIs provides a mock function with given fields: ctx, ns, filter
-func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetFFIs provides a mock function with given fields: ctx, filter
+func (_m *Manager) GetFFIs(ctx context.Context, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.FFI); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.FFI); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.FFI)
@@ -419,8 +419,8 @@ func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFi
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -428,8 +428,8 @@ func (_m *Manager) GetFFIs(ctx context.Context, ns string, filter database.AndFi
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}
