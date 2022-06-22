@@ -45,14 +45,19 @@ type wsEvent struct {
 type dxEvent struct {
 	ffdx                *FFDX
 	id                  string
+	requestID           string
 	dxType              dataexchange.DXEventType
 	messageReceived     *dataexchange.MessageReceived
 	privateBlobReceived *dataexchange.PrivateBlobReceived
 	transferResult      *dataexchange.TransferResult
 }
 
-func (e *dxEvent) NamespacedID() string {
+func (e *dxEvent) EventID() string {
 	return e.id
+}
+
+func (e *dxEvent) NamespacedID() string {
+	return e.requestID
 }
 
 func (e *dxEvent) Type() dataexchange.DXEventType {
@@ -88,7 +93,7 @@ func (e *dxEvent) TransferResult() *dataexchange.TransferResult {
 
 func (h *FFDX) dispatchEvent(msg *wsEvent) {
 	var err error
-	e := &dxEvent{ffdx: h, id: msg.EventID}
+	e := &dxEvent{ffdx: h, id: msg.EventID, requestID: msg.RequestID}
 	switch msg.Type {
 	case messageFailed:
 		e.dxType = dataexchange.DXEventTypeTransferResult

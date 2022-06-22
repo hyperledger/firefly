@@ -446,7 +446,8 @@ func TestEvents(t *testing.T) {
 	h.SetHandler(mcb)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "1" &&
+		return ev.EventID() == "1" &&
+			ev.NamespacedID() == "tx12345" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusFailed &&
@@ -457,7 +458,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "2" &&
+		return ev.EventID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded
@@ -467,7 +468,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "3" &&
+		return ev.EventID() == "3" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
@@ -479,7 +480,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "4" &&
+		return ev.EventID() == "4" &&
 			ev.Type() == dataexchange.DXEventTypeMessageReceived &&
 			ev.MessageReceived().PeerID == "peer1" &&
 			string(ev.MessageReceived().Data) == "message1"
@@ -489,7 +490,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "5" &&
+		return ev.EventID() == "5" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusFailed &&
@@ -500,7 +501,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "6" &&
+		return ev.EventID() == "6" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
@@ -521,7 +522,7 @@ func TestEvents(t *testing.T) {
 
 	hash := fftypes.NewRandB32()
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "9" &&
+		return ev.EventID() == "9" &&
 			ev.Type() == dataexchange.DXEventTypePrivateBlobReceived &&
 			ev.PrivateBlobReceived().Hash.Equals(hash)
 	})).Run(acker()).Return(nil)
@@ -530,7 +531,7 @@ func TestEvents(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"9"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "10" &&
+		return ev.EventID() == "10" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().TrackingID == "tx12345" &&
 			ev.TransferResult().Status == core.OpStatusSucceeded &&
@@ -560,7 +561,7 @@ func TestEventsWithManifest(t *testing.T) {
 	h.SetHandler(mcb)
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "1" &&
+		return ev.EventID() == "1" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)
@@ -569,7 +570,7 @@ func TestEventsWithManifest(t *testing.T) {
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
-		return ev.NamespacedID() == "2" &&
+		return ev.EventID() == "2" &&
 			ev.Type() == dataexchange.DXEventTypeTransferResult &&
 			ev.TransferResult().Status == core.OpStatusPending
 	})).Run(acker()).Return(nil)

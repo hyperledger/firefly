@@ -437,3 +437,26 @@ func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
 	}
 	return match
 }
+
+func verifyAllOperationsSucceeded(t *testing.T, clients []*resty.Client, startTime time.Time) {
+	tries := 3
+	delay := 2 * time.Second
+
+	var pending string
+	for i := 0; i < tries; i++ {
+		pending = ""
+		for _, client := range clients {
+			for _, op := range GetOperations(t, client, startTime) {
+				if op.Status != core.OpStatusSucceeded {
+					pending += fmt.Sprintf("Operation '%s' (%s) on '%s' is not successful\n", op.ID, op.Type, client.BaseURL)
+				}
+			}
+		}
+		if pending == "" {
+			return
+		}
+		time.Sleep(delay)
+	}
+
+	assert.Fail(t, pending)
+}

@@ -138,6 +138,10 @@ func (suite *FabricContractTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
+func (suite *FabricContractTestSuite) AfterTest(suiteName, testName string) {
+	verifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+}
+
 func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 

@@ -44,6 +44,10 @@ func (suite *OnChainOffChainTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testState = beforeE2ETest(suite.T())
 }
 
+func (suite *OnChainOffChainTestSuite) AfterTest(suiteName, testName string) {
+	verifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+}
+
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	defer suite.testState.done()
 

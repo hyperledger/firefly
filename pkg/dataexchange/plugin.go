@@ -108,6 +108,7 @@ type DXEventType int
 
 // DXEvent is a single interface that can be passed to all events
 type DXEvent interface {
+	EventID() string
 	NamespacedID() string
 	Ack()
 	AckWithManifest(manifest string)
