@@ -80,7 +80,7 @@ func TestPrepareAndRunActivatePool(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
 	mti.On("ActivateTokenPool", context.Background(), "ns1:"+op.ID.String(), pool).Return(true, nil)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestPrepareAndRunTransfer(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
 	mti.On("TransferTokens", context.Background(), "ns1:"+op.ID.String(), "F1", transfer).Return(nil)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -157,7 +157,7 @@ func TestPrepareAndRunApproval(t *testing.T) {
 	mti := am.tokens["magic-tokens"].(*tokenmocks.Plugin)
 	mdi := am.database.(*databasemocks.Plugin)
 	mti.On("TokensApproval", context.Background(), "ns1:"+op.ID.String(), "F1", approval).Return(nil)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(pool, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(pool, nil)
 
 	po, err := am.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
@@ -220,7 +220,7 @@ func TestPrepareOperationActivatePoolError(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", poolID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -239,7 +239,7 @@ func TestPrepareOperationActivatePoolNotFound(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", poolID).Return(nil, nil)
 
 	_, err := am.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -271,7 +271,7 @@ func TestPrepareOperationTransferError(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", poolID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -290,7 +290,7 @@ func TestPrepareOperationTransferNotFound(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", poolID).Return(nil, nil)
 
 	_, err := am.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
@@ -322,7 +322,7 @@ func TestPrepareOperationApprovalError(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", poolID).Return(nil, fmt.Errorf("pop"))
 
 	_, err := am.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
@@ -341,7 +341,7 @@ func TestPrepareOperationApprovalNotFound(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), poolID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", poolID).Return(nil, nil)
 
 	_, err := am.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)

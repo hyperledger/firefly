@@ -34,7 +34,7 @@ func TestGetTokenPools(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenPools", mock.Anything, "ns1", mock.Anything).
+	mam.On("GetTokenPools", mock.Anything, mock.Anything).
 		Return([]*core.TokenPool{}, nil, nil)
 	r.ServeHTTP(res, req)
 

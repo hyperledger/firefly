@@ -76,7 +76,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateOK(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
@@ -101,7 +101,7 @@ func TestHandleDefinitionBroadcastTokenPoolGetPoolFail(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, fmt.Errorf("pop"))
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionRetry}, action)
@@ -121,7 +121,7 @@ func TestHandleDefinitionBroadcastTokenPoolExisting(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(&core.TokenPool{}, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(&core.TokenPool{}, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)
@@ -148,7 +148,7 @@ func TestHandleDefinitionBroadcastTokenPoolExistingConfirmed(t *testing.T) {
 	}
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(existing, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(existing, nil)
 
 	action, err := sh.HandleDefinitionBroadcast(context.Background(), bs, msg, data, fftypes.NewUUID())
 	assert.Equal(t, HandlerResult{Action: ActionConfirm, CustomCorrelator: pool.ID}, action)
@@ -166,7 +166,7 @@ func TestHandleDefinitionBroadcastTokenPoolIDMismatch(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(database.IDMismatch)
@@ -188,7 +188,7 @@ func TestHandleDefinitionBroadcastTokenPoolFailUpsert(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi := sh.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(fmt.Errorf("pop"))
@@ -211,7 +211,7 @@ func TestHandleDefinitionBroadcastTokenPoolActivateFail(t *testing.T) {
 
 	mdi := sh.database.(*databasemocks.Plugin)
 	mam := sh.assets.(*assetmocks.Manager)
-	mdi.On("GetTokenPoolByID", context.Background(), pool.ID).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", context.Background(), "ns1", pool.ID).Return(nil, nil)
 	mdi.On("UpsertTokenPool", context.Background(), mock.MatchedBy(func(p *core.TokenPool) bool {
 		return *p.ID == *pool.ID && p.Message == msg.Header.ID
 	})).Return(nil)

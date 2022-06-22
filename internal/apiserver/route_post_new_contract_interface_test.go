@@ -39,7 +39,7 @@ func TestPostNewContractInterface(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastFFI", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), false).
+	mcm.On("BroadcastFFI", mock.Anything, mock.AnythingOfType("*core.FFI"), false).
 		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -57,7 +57,7 @@ func TestPostNewContractInterfaceSync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastFFI", mock.Anything, "ns1", mock.AnythingOfType("*core.FFI"), true).
+	mcm.On("BroadcastFFI", mock.Anything, mock.AnythingOfType("*core.FFI"), true).
 		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 

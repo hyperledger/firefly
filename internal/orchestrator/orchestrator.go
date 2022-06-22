@@ -70,11 +70,11 @@ type Orchestrator interface {
 	GetStatus(ctx context.Context) (*core.NodeStatus, error)
 
 	// Subscription management
-	GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
-	GetSubscriptionByID(ctx context.Context, ns, id string) (*core.Subscription, error)
-	CreateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
-	CreateUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error)
-	DeleteSubscription(ctx context.Context, ns, id string) error
+	GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)
+	GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error)
+	CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
+	CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error)
+	DeleteSubscription(ctx context.Context, id string) error
 
 	// Data Query
 	GetNamespace(ctx context.Context, ns string) (*core.Namespace, error)
@@ -108,7 +108,7 @@ type Orchestrator interface {
 	GetPins(ctx context.Context, filter database.AndFilter) ([]*core.Pin, *database.FilterResult, error)
 
 	// Charts
-	GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error)
 
 	// Message Routing
 	RequestReply(ctx context.Context, msg *core.MessageInOut) (reply *core.MessageInOut, err error)
@@ -447,7 +447,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.namespace, or.database(), or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace, or.database(), or.identity, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}

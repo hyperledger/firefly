@@ -147,8 +147,9 @@ func (s *SQLCommon) getFFIMethodPred(ctx context.Context, desc string, pred inte
 	return ci, nil
 }
 
-func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (methods []*core.FFIMethod, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiMethodsColumns...).From(ffimethodsTable), filter, ffiMethodFilterFieldMap, []interface{}{"sequence"})
+func (s *SQLCommon) GetFFIMethods(ctx context.Context, namespace string, filter database.Filter) (methods []*core.FFIMethod, res *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiMethodsColumns...).From(ffimethodsTable),
+		filter, ffiMethodFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -172,5 +173,5 @@ func (s *SQLCommon) GetFFIMethods(ctx context.Context, filter database.Filter) (
 }
 
 func (s *SQLCommon) GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error) {
-	return s.getFFIMethodPred(ctx, ns+":"+pathName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": interfaceID}, sq.Eq{"pathname": pathName}})
+	return s.getFFIMethodPred(ctx, ns+":"+pathName, sq.Eq{"namespace": ns, "interface_id": interfaceID, "pathname": pathName})
 }

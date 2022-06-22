@@ -135,7 +135,7 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
-	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
+	msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
 
 	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -358,7 +358,7 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
+	msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
 	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -753,7 +753,7 @@ func TestPersistBatchDataWithPublicInitiateDownload(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
+	msd.On("InitiateDownloadBlob", mock.Anything, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
 
 	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Nil(t, err)
@@ -780,7 +780,7 @@ func TestPersistBatchDataWithPublicInitiateDownloadFail(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
+	msd.On("InitiateDownloadBlob", mock.Anything, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
 
 	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Regexp(t, "pop", err)

@@ -41,7 +41,7 @@ var postNewDatatype = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			_, err = cr.or.Broadcast().BroadcastDatatype(cr.ctx, extractNamespace(r.PP), r.Input.(*core.Datatype), waitConfirm)
+			_, err = cr.or.Broadcast().BroadcastDatatype(cr.ctx, r.Input.(*core.Datatype), waitConfirm)
 			return r.Input, err
 		},
 	},

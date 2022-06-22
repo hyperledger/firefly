@@ -47,13 +47,13 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.BlockchainEvent = be
 	case core.EventTypeContractAPIConfirmed:
-		contractAPI, err := t.database.GetContractAPIByID(ctx, event.Reference)
+		contractAPI, err := t.database.GetContractAPIByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractAPI = contractAPI
 	case core.EventTypeContractInterfaceConfirmed:
-		contractInterface, err := t.database.GetFFIByID(ctx, event.Reference)
+		contractInterface, err := t.database.GetFFIByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
@@ -77,19 +77,19 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.NamespaceDetails = ns
 	case core.EventTypePoolConfirmed:
-		tokenPool, err := t.database.GetTokenPoolByID(ctx, event.Reference)
+		tokenPool, err := t.database.GetTokenPoolByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenPool = tokenPool
 	case core.EventTypeApprovalConfirmed:
-		approval, err := t.database.GetTokenApprovalByID(ctx, event.Reference)
+		approval, err := t.database.GetTokenApprovalByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenApproval = approval
 	case core.EventTypeTransferConfirmed:
-		transfer, err := t.database.GetTokenTransferByID(ctx, event.Reference)
+		transfer, err := t.database.GetTokenTransferByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

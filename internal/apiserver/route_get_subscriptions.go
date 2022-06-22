@@ -38,7 +38,7 @@ var getSubscriptions = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.SubscriptionQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetSubscriptions(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetSubscriptions(cr.ctx, cr.filter))
 		},
 	},
 }

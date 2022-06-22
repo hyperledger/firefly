@@ -1424,7 +1424,7 @@ func TestAttemptMessageDispatchMissingTransfers(t *testing.T) {
 	org1 := newTestOrg("org1")
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return([]*core.TokenTransfer{}, nil, nil)
+	mdi.On("GetTokenTransfers", ag.ctx, "ns1", mock.Anything).Return([]*core.TokenTransfer{}, nil, nil)
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
@@ -1454,7 +1454,7 @@ func TestAttemptMessageDispatchGetTransfersFail(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransfers", ag.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	msg := &core.Message{
 		Header: core.MessageHeader{
@@ -1495,7 +1495,7 @@ func TestAttemptMessageDispatchTransferMismatch(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	mdi := ag.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransfers", ag.ctx, mock.Anything).Return(transfers, nil, nil)
+	mdi.On("GetTokenTransfers", ag.ctx, "ns1", mock.Anything).Return(transfers, nil, nil)
 
 	_, dispatched, err := ag.attemptMessageDispatch(ag.ctx, msg, core.DataArray{}, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
 	assert.NoError(t, err)

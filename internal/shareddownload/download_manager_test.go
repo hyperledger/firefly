@@ -97,9 +97,9 @@ func TestDownloadBatchE2EOk(t *testing.T) {
 	}).Return(nil)
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
-	mci.On("SharedStorageBatchDownloaded", "ns1", "ref1", []byte("some batch data")).Return(batchID, nil)
+	mci.On("SharedStorageBatchDownloaded", "ref1", []byte("some batch data")).Return(batchID, nil)
 
-	err := dm.InitiateDownloadBatch(dm.ctx, "ns1", txID, "ref1")
+	err := dm.InitiateDownloadBatch(dm.ctx, txID, "ref1")
 	assert.NoError(t, err)
 
 	<-called
@@ -151,7 +151,7 @@ func TestDownloadBlobWithRetryOk(t *testing.T) {
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
 	mci.On("SharedStorageBlobDownloaded", *blobHash, int64(12345), "privateRef1").Return()
 
-	err := dm.InitiateDownloadBlob(dm.ctx, "ns1", txID, dataID, "ref1")
+	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1")
 	assert.NoError(t, err)
 
 	<-called
@@ -177,7 +177,7 @@ func TestDownloadBlobInsertOpFail(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("InsertOperation", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	err := dm.InitiateDownloadBlob(dm.ctx, "ns1", txID, dataID, "ref1")
+	err := dm.InitiateDownloadBlob(dm.ctx, txID, dataID, "ref1")
 	assert.Regexp(t, "pop", err)
 
 	mdi.AssertExpectations(t)
@@ -253,7 +253,7 @@ func TestDownloadManagerStartupRecoveryCombinations(t *testing.T) {
 	}).Return(nil)
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
-	mci.On("SharedStorageBatchDownloaded", "ns1", "ref2", []byte("some batch data")).Return(batchID, nil)
+	mci.On("SharedStorageBatchDownloaded", "ref2", []byte("some batch data")).Return(batchID, nil)
 
 	err := dm.Start()
 	assert.NoError(t, err)

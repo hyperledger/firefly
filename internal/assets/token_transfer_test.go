@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
@@ -44,8 +43,8 @@ func TestGetTokenTransfers(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenTransferQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenTransfers", context.Background(), f).Return([]*core.TokenTransfer{}, nil, nil)
-	_, _, err := am.GetTokenTransfers(context.Background(), "ns1", f)
+	mdi.On("GetTokenTransfers", context.Background(), "ns1", f).Return([]*core.TokenTransfer{}, nil, nil)
+	_, _, err := am.GetTokenTransfers(context.Background(), f)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -57,8 +56,8 @@ func TestGetTokenTransferByID(t *testing.T) {
 
 	u := fftypes.NewUUID()
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", context.Background(), u).Return(&core.TokenTransfer{}, nil)
-	_, err := am.GetTokenTransferByID(context.Background(), "ns1", u.String())
+	mdi.On("GetTokenTransferByID", context.Background(), "ns1", u).Return(&core.TokenTransfer{}, nil)
+	_, err := am.GetTokenTransferByID(context.Background(), u.String())
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -68,7 +67,7 @@ func TestGetTokenTransferByIDBadID(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	_, err := am.GetTokenTransferByID(context.Background(), "ns1", "badUUID")
+	_, err := am.GetTokenTransferByID(context.Background(), "badUUID")
 	assert.Regexp(t, "FF00138", err)
 }
 
@@ -165,7 +164,7 @@ func TestMintTokenDefaultPoolSuccess(t *testing.T) {
 		TotalCount: &totalCount,
 	}
 	mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -204,7 +203,7 @@ func TestMintTokenDefaultPoolNoPools(t *testing.T) {
 	filterResult := &database.FilterResult{
 		TotalCount: &totalCount,
 	}
-	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -241,7 +240,7 @@ func TestMintTokenDefaultPoolMultiplePools(t *testing.T) {
 	filterResult := &database.FilterResult{
 		TotalCount: &totalCount,
 	}
-	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -263,7 +262,7 @@ func TestMintTokensGetPoolsError(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPools", context.Background(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	_, err := am.MintTokens(context.Background(), mint, false)
 	assert.EqualError(t, err, "pop")
@@ -403,7 +402,6 @@ func TestMintTokensConfirm(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdm := am.data.(*datamocks.Manager)
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
@@ -427,7 +425,6 @@ func TestMintTokensConfirm(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
@@ -512,7 +509,6 @@ func TestBurnTokensConfirm(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdm := am.data.(*datamocks.Manager)
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
@@ -536,7 +532,6 @@ func TestBurnTokensConfirm(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
@@ -959,7 +954,6 @@ func TestTransferTokensConfirm(t *testing.T) {
 	}
 
 	mdi := am.database.(*databasemocks.Plugin)
-	mdm := am.data.(*datamocks.Manager)
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mim := am.identity.(*identitymanagermocks.Manager)
 	mth := am.txHelper.(*txcommonmocks.Helper)
@@ -983,7 +977,6 @@ func TestTransferTokensConfirm(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mth.AssertExpectations(t)

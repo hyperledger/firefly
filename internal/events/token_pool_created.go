@@ -57,7 +57,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 			Type:         pool.TX.Type,
 			BlockchainID: ev.BlockchainTXID,
 		})
-		if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+		if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 			return err
 		}
 		em.emitBlockchainEventMetric(ev)
@@ -90,7 +90,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 }
 
 func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		return existingPool, err
 	}
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {
@@ -195,7 +195,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				Pool: announcePool,
 			}
 			log.L(em.ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
-			_, err = em.broadcast.BroadcastTokenPool(em.ctx, announcePool.Namespace, broadcast, false)
+			_, err = em.broadcast.BroadcastTokenPool(em.ctx, broadcast, false)
 		}
 	}
 

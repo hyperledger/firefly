@@ -120,7 +120,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 	case core.TransactionTypeTokenPool:
 		// Note: no assumptions about blockchain events here (may or may not contain one)
 		f := database.TokenPoolQueryFactory.NewFilter(ctx)
-		switch pools, _, err := or.database().GetTokenPools(ctx, f.Eq("tx.id", id)); {
+		switch pools, _, err := or.database().GetTokenPools(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(pools) == 0:
@@ -150,7 +150,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenTransferQueryFactory.NewFilter(ctx)
-		switch transfers, _, err := or.database().GetTokenTransfers(ctx, f.Eq("tx.id", id)); {
+		switch transfers, _, err := or.database().GetTokenTransfers(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(transfers) == 0:
@@ -172,7 +172,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenApprovalQueryFactory.NewFilter(ctx)
-		switch approvals, _, err := or.database().GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
+		switch approvals, _, err := or.database().GetTokenApprovals(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(approvals) == 0:

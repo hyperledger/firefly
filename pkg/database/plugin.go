@@ -237,13 +237,13 @@ type iSubscriptionCollection interface {
 	GetSubscriptionByName(ctx context.Context, namespace, name string) (offset *core.Subscription, err error)
 
 	// GetSubscriptionByID - Get an subscription by id
-	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *core.Subscription, err error)
+	GetSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (offset *core.Subscription, err error)
 
 	// GetSubscriptions - Get subscriptions
-	GetSubscriptions(ctx context.Context, filter Filter) (offset []*core.Subscription, res *FilterResult, err error)
+	GetSubscriptions(ctx context.Context, namespace string, filter Filter) (offset []*core.Subscription, res *FilterResult, err error)
 
 	// DeleteSubscriptionByID - Delete a subscription
-	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+	DeleteSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iEventCollection interface {
@@ -364,13 +364,13 @@ type iTokenPoolCollection interface {
 	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by pool ID
-	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error)
+	GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.TokenPool, error)
 
-	// GetTokenPoolByID - Get a token pool by locator
-	GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*core.TokenPool, error)
+	// GetTokenPoolByLocator - Get a token pool by locator
+	GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error)
 
 	// GetTokenPools - Get token pools
-	GetTokenPools(ctx context.Context, filter Filter) ([]*core.TokenPool, *FilterResult, error)
+	GetTokenPools(ctx context.Context, namespace string, filter Filter) ([]*core.TokenPool, *FilterResult, error)
 }
 
 type iTokenBalanceCollection interface {
@@ -378,16 +378,16 @@ type iTokenBalanceCollection interface {
 	UpdateTokenBalances(ctx context.Context, transfer *core.TokenTransfer) error
 
 	// GetTokenBalance - Get a token balance by pool and account identity
-	GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex, identity string) (*core.TokenBalance, error)
+	GetTokenBalance(ctx context.Context, namespace string, poolID *fftypes.UUID, tokenIndex, identity string) (*core.TokenBalance, error)
 
 	// GetTokenBalances - Get token balances
-	GetTokenBalances(ctx context.Context, filter Filter) ([]*core.TokenBalance, *FilterResult, error)
+	GetTokenBalances(ctx context.Context, namespace string, filter Filter) ([]*core.TokenBalance, *FilterResult, error)
 
 	// GetTokenAccounts - Get token accounts (all distinct addresses that have a balance)
-	GetTokenAccounts(ctx context.Context, filter Filter) ([]*core.TokenAccount, *FilterResult, error)
+	GetTokenAccounts(ctx context.Context, namespace string, filter Filter) ([]*core.TokenAccount, *FilterResult, error)
 
 	// GetTokenAccountPools - Get the list of pools referenced by a given account
-	GetTokenAccountPools(ctx context.Context, key string, filter Filter) ([]*core.TokenAccountPool, *FilterResult, error)
+	GetTokenAccountPools(ctx context.Context, namespace, key string, filter Filter) ([]*core.TokenAccountPool, *FilterResult, error)
 }
 
 type iTokenTransferCollection interface {
@@ -395,13 +395,13 @@ type iTokenTransferCollection interface {
 	UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error
 
 	// GetTokenTransferByID - Get a token transfer by ID
-	GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenTransfer, error)
+	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
-	GetTokenTransfers(ctx context.Context, filter Filter) ([]*core.TokenTransfer, *FilterResult, error)
+	GetTokenTransfers(ctx context.Context, namespace string, filter Filter) ([]*core.TokenTransfer, *FilterResult, error)
 }
 
 type iTokenApprovalCollection interface {
@@ -412,59 +412,83 @@ type iTokenApprovalCollection interface {
 	UpdateTokenApprovals(ctx context.Context, filter Filter, update Update) (err error)
 
 	// GetTokenApprovalByID - Get a token approval by ID
-	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error)
+	GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error)
 
 	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenApproval, error)
+	GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
-	GetTokenApprovals(ctx context.Context, filter Filter) ([]*core.TokenApproval, *FilterResult, error)
+	GetTokenApprovals(ctx context.Context, namespace string, filter Filter) ([]*core.TokenApproval, *FilterResult, error)
 }
 
 type iFFICollection interface {
+	// UpsertFFI - Upsert an FFI
 	UpsertFFI(ctx context.Context, cd *core.FFI) error
+
+	// GetFFIs - Get FFIs
 	GetFFIs(ctx context.Context, namespace string, filter Filter) ([]*core.FFI, *FilterResult, error)
-	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
+
+	// GetFFIByID - Get an FFI by ID
+	GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.FFI, error)
+
+	// GetFFI - Get an FFI by name and version
 	GetFFI(ctx context.Context, namespace, name, version string) (*core.FFI, error)
 }
 
 type iFFIMethodCollection interface {
+	// UpsertFFIMethod - Upsert an FFI method
 	UpsertFFIMethod(ctx context.Context, method *core.FFIMethod) error
+
+	// GetFFIMethod - Get an FFI method by path
 	GetFFIMethod(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error)
-	GetFFIMethods(ctx context.Context, filter Filter) (methods []*core.FFIMethod, res *FilterResult, err error)
+
+	// GetFFIMethods - Get FFI methods
+	GetFFIMethods(ctx context.Context, namespace string, filter Filter) (methods []*core.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
+	// UpsertFFIEvent - Upsert an FFI event
 	UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error
+
+	// GetFFIEvent - Get an FFI event by path
 	GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error)
-	GetFFIEvents(ctx context.Context, filter Filter) (events []*core.FFIEvent, res *FilterResult, err error)
+
+	// GetFFIEvents - Get FFI events
+	GetFFIEvents(ctx context.Context, namespace string, filter Filter) (events []*core.FFIEvent, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {
+	// UpsertFFIEvent - Upsert a contract API
 	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
+
+	// GetContractAPIs - Get contract APIs
 	GetContractAPIs(ctx context.Context, namespace string, filter AndFilter) ([]*core.ContractAPI, *FilterResult, error)
-	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error)
+
+	// GetContractAPIByID - Get a contract API by ID
+	GetContractAPIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.ContractAPI, error)
+
+	// GetContractAPIByName - Get a contract API by name
 	GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error)
 }
 
 type iContractListenerCollection interface {
-	// InsertContractListener - upsert a subscription to an external smart contract
+	// InsertContractListener - upsert a listener to an external smart contract
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
-	// GetContractListener - get smart contract subscription by name
+	// GetContractListener - get contract listener by name
 	GetContractListener(ctx context.Context, namespace, name string) (sub *core.ContractListener, err error)
 
-	// GetContractListenerByID - get smart contract subscription by ID
-	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *core.ContractListener, err error)
+	// GetContractListenerByID - get contract listener by ID
+	GetContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (sub *core.ContractListener, err error)
 
-	// GetContractListenerByBackendID - get smart contract subscription by backend ID
-	GetContractListenerByBackendID(ctx context.Context, id string) (sub *core.ContractListener, err error)
+	// GetContractListenerByBackendID - get contract listener by backend ID
+	GetContractListenerByBackendID(ctx context.Context, namespace, id string) (sub *core.ContractListener, err error)
 
-	// GetContractListeners - get smart contract subscriptions
-	GetContractListeners(ctx context.Context, filter Filter) ([]*core.ContractListener, *FilterResult, error)
+	// GetContractListeners - get contract listeners
+	GetContractListeners(ctx context.Context, namespace string, filter Filter) ([]*core.ContractListener, *FilterResult, error)
 
-	// DeleteContractListener - delete a subscription to an external smart contract
-	DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error)
+	// DeleteContractListener - delete a contract listener
+	DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iBlockchainEventCollection interface {

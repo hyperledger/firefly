@@ -23,7 +23,6 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
@@ -41,8 +40,8 @@ func TestGetTokenApprovals(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenApprovalQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenApprovals", context.Background(), f).Return([]*core.TokenApproval{}, nil, nil)
-	_, _, err := am.GetTokenApprovals(context.Background(), "ns1", f)
+	mdi.On("GetTokenApprovals", context.Background(), "ns1", f).Return([]*core.TokenApproval{}, nil, nil)
+	_, _, err := am.GetTokenApprovals(context.Background(), f)
 	assert.NoError(t, err)
 }
 
@@ -187,7 +186,7 @@ func TestApprovalDefaultPoolSuccess(t *testing.T) {
 		TotalCount: &totalCount,
 	}
 	mim.On("NormalizeSigningKey", context.Background(), "key", identity.KeyNormalizationBlockchainPlugin).Return("0x12345", nil)
-	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -228,7 +227,7 @@ func TestApprovalDefaultPoolNoPool(t *testing.T) {
 	filterResult := &database.FilterResult{
 		TotalCount: &totalCount,
 	}
-	mdi.On("GetTokenPools", context.Background(), mock.MatchedBy((func(f database.AndFilter) bool {
+	mdi.On("GetTokenPools", context.Background(), "ns1", mock.MatchedBy((func(f database.AndFilter) bool {
 		info, _ := f.Finalize()
 		return info.Count && info.Limit == 1
 	}))).Return(tokenPools, filterResult, nil)
@@ -436,7 +435,6 @@ func TestTokenApprovalConfirm(t *testing.T) {
 
 	mdi := am.database.(*databasemocks.Plugin)
 	mim := am.identity.(*identitymanagermocks.Manager)
-	mdm := am.data.(*datamocks.Manager)
 	msa := am.syncasync.(*syncasyncmocks.Bridge)
 	mth := am.txHelper.(*txcommonmocks.Helper)
 	mom := am.operations.(*operationmocks.Manager)
@@ -461,7 +459,6 @@ func TestTokenApprovalConfirm(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 	msa.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }

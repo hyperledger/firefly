@@ -105,7 +105,7 @@ func TestValidateE2E(t *testing.T) {
 	assert.Regexp(t, "FF10198", err)
 	assert.False(t, isValid)
 
-	v, err := dm.getValidatorForDatatype(ctx, data.Namespace, data.Validator, data.Datatype)
+	v, err := dm.getValidatorForDatatype(ctx, data.Validator, data.Datatype)
 	err = v.Validate(ctx, data)
 	assert.Regexp(t, "FF10198", err)
 
@@ -141,7 +141,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 	}).Return(nil)
 	mdi.On("InsertDataArray", mock.Anything, mock.Anything).Return(nil).Once()
 
-	data1, err := dm.UploadJSON(ctx, "ns1", &core.DataRefOrValue{
+	data1, err := dm.UploadJSON(ctx, &core.DataRefOrValue{
 		Value:     fftypes.JSONAnyPtr(`"message 1 - data A"`),
 		Validator: core.ValidatorTypeJSON,
 		Datatype: &core.DatatypeRef{
@@ -235,11 +235,11 @@ func TestValidatorLookupCached(t *testing.T) {
 		Namespace: "0.0.1",
 	}
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(dt, nil).Once()
-	lookup1, err := dm.getValidatorForDatatype(ctx, "ns1", core.ValidatorTypeJSON, ref)
+	lookup1, err := dm.getValidatorForDatatype(ctx, core.ValidatorTypeJSON, ref)
 	assert.NoError(t, err)
 	assert.Equal(t, "customer", lookup1.(*jsonValidator).datatype.Name)
 
-	lookup2, err := dm.getValidatorForDatatype(ctx, "ns1", core.ValidatorTypeJSON, ref)
+	lookup2, err := dm.getValidatorForDatatype(ctx, core.ValidatorTypeJSON, ref)
 	assert.NoError(t, err)
 	assert.Equal(t, lookup1, lookup2)
 
@@ -378,7 +378,7 @@ func TestCheckDatatypeVerifiesTheSchema(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
-	err := dm.CheckDatatype(ctx, "ns1", &core.Datatype{})
+	err := dm.CheckDatatype(ctx, &core.Datatype{})
 	assert.Regexp(t, "FF10196", err)
 }
 
@@ -611,7 +611,7 @@ func TestUploadJSONLoadDatatypeFail(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 
 	mdi.On("GetDatatypeByName", ctx, "ns1", "customer", "0.0.1").Return(nil, fmt.Errorf("pop"))
-	_, err := dm.UploadJSON(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.UploadJSON(ctx, &core.DataRefOrValue{
 		Datatype: &core.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",
@@ -624,7 +624,7 @@ func TestUploadJSONLoadInsertDataFail(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 	dm.messageWriter.close()
-	_, err := dm.UploadJSON(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.UploadJSON(ctx, &core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{}`),
 	})
 	assert.Regexp(t, "FF00154", err)
@@ -634,7 +634,7 @@ func TestValidateAndStoreLoadNilRef(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
 
-	_, err := dm.validateInputData(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Validator: core.ValidatorTypeJSON,
 		Datatype:  nil,
 	})
@@ -647,7 +647,7 @@ func TestValidateAndStoreLoadValidatorUnknown(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.validateInputData(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Validator: "wrong!",
 		Datatype: &core.DatatypeRef{
 			Name:    "customer",
@@ -664,7 +664,7 @@ func TestValidateAndStoreLoadBadRef(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.validateInputData(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Datatype: &core.DatatypeRef{
 			// Missing name
 		},
@@ -678,7 +678,7 @@ func TestValidateAndStoreNotFound(t *testing.T) {
 	defer cancel()
 	mdi := dm.database.(*databasemocks.Plugin)
 	mdi.On("GetDatatypeByName", mock.Anything, "ns1", "customer", "0.0.1").Return(nil, nil)
-	_, err := dm.validateInputData(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Datatype: &core.DatatypeRef{
 			Name:    "customer",
 			Version: "0.0.1",
@@ -694,7 +694,7 @@ func TestValidateAndStoreBlobError(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	blobHash := fftypes.NewRandB32()
 	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash).Return(nil, fmt.Errorf("pop"))
-	_, err := dm.validateInputData(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Blob: &core.BlobRef{
 			Hash: blobHash,
 		},
@@ -709,7 +709,7 @@ func TestValidateAndStoreBlobNotFound(t *testing.T) {
 	mdi := dm.database.(*databasemocks.Plugin)
 	blobHash := fftypes.NewRandB32()
 	mdi.On("GetBlobMatchingHash", mock.Anything, blobHash).Return(nil, nil)
-	_, err := dm.validateInputData(ctx, "ns1", &core.DataRefOrValue{
+	_, err := dm.validateInputData(ctx, &core.DataRefOrValue{
 		Blob: &core.BlobRef{
 			Hash: blobHash,
 		},
@@ -742,7 +742,7 @@ func TestGetValidatorForDatatypeNilRef(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()
-	v, err := dm.getValidatorForDatatype(ctx, "", "", nil)
+	v, err := dm.getValidatorForDatatype(ctx, "", nil)
 	assert.Nil(t, v)
 	assert.NoError(t, err)
 

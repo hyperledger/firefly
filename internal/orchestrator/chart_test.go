@@ -40,27 +40,27 @@ func makeTestIntervals(start int, numIntervals int) (intervals []core.ChartHisto
 
 func TestGetHistogramBadIntervalMin(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, core.ChartHistogramMinBuckets-1, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), 1234567890, 9876543210, core.ChartHistogramMinBuckets-1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
 func TestGetHistogramBadIntervalMax(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 1234567890, 9876543210, core.ChartHistogramMaxBuckets+1, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), 1234567890, 9876543210, core.ChartHistogramMaxBuckets+1, database.CollectionName("test"))
 	assert.Regexp(t, "FF10298", err)
 }
 
 func TestGetHistogramBadStartEndTimes(t *testing.T) {
 	or := newTestOrchestrator()
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 9876543210, 1234567890, 10, database.CollectionName("test"))
+	_, err := or.GetChartHistogram(context.Background(), 9876543210, 1234567890, 10, database.CollectionName("test"))
 	assert.Regexp(t, "FF10300", err)
 }
 
 func TestGetHistogramFailDB(t *testing.T) {
 	or := newTestOrchestrator()
 	intervals := makeTestIntervals(1000000000, 10)
-	or.mdi.On("GetChartHistogram", mock.Anything, "ns1", intervals, database.CollectionName("test")).Return(nil, fmt.Errorf("pop"))
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
+	or.mdi.On("GetChartHistogram", mock.Anything, "ns", intervals, database.CollectionName("test")).Return(nil, fmt.Errorf("pop"))
+	_, err := or.GetChartHistogram(context.Background(), 1000000000, 1000000010, 10, database.CollectionName("test"))
 	assert.EqualError(t, err, "pop")
 }
 
@@ -69,7 +69,7 @@ func TestGetHistogramSuccess(t *testing.T) {
 	intervals := makeTestIntervals(1000000000, 10)
 	mockHistogram := []*core.ChartHistogram{}
 
-	or.mdi.On("GetChartHistogram", mock.Anything, "ns1", intervals, database.CollectionName("test")).Return(mockHistogram, nil)
-	_, err := or.GetChartHistogram(context.Background(), "ns1", 1000000000, 1000000010, 10, database.CollectionName("test"))
+	or.mdi.On("GetChartHistogram", mock.Anything, "ns", intervals, database.CollectionName("test")).Return(mockHistogram, nil)
+	_, err := or.GetChartHistogram(context.Background(), 1000000000, 1000000010, 10, database.CollectionName("test"))
 	assert.NoError(t, err)
 }

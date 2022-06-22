@@ -22,7 +22,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error) {
 	if err := pool.Pool.Validate(ctx); err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, ns string, p
 		return nil, err
 	}
 
-	msg, err = bm.BroadcastDefinitionAsNode(ctx, ns, pool, core.SystemTagDefinePool, waitConfirm)
+	msg, err = bm.BroadcastDefinitionAsNode(ctx, pool, core.SystemTagDefinePool, waitConfirm)
 	if msg != nil {
 		pool.Pool.Message = msg.Header.ID
 	}

@@ -42,7 +42,6 @@ func TestDownloadBatchDownloadDataFail(t *testing.T) {
 	mss.On("DownloadData", mock.Anything, "ref1").Return(nil, fmt.Errorf("pop"))
 
 	_, _, err := dm.downloadBatch(dm.ctx, downloadBatchData{
-		Namespace:  "ns1",
 		PayloadRef: "ref1",
 	})
 	assert.Regexp(t, "FF10376", err)
@@ -61,7 +60,6 @@ func TestDownloadBatchDownloadDataReadFail(t *testing.T) {
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
 	_, _, err := dm.downloadBatch(dm.ctx, downloadBatchData{
-		Namespace:  "ns1",
 		PayloadRef: "ref1",
 	})
 	assert.Regexp(t, "FF10376", err)
@@ -81,7 +79,6 @@ func TestDownloadBatchDownloadDataReadMaxedOut(t *testing.T) {
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
 	_, _, err := dm.downloadBatch(dm.ctx, downloadBatchData{
-		Namespace:  "ns1",
 		PayloadRef: "ref1",
 	})
 	assert.Regexp(t, "FF10377", err)
@@ -100,10 +97,9 @@ func TestDownloadBatchDownloadCallbackFailed(t *testing.T) {
 	mss.On("DownloadData", mock.Anything, "ref1").Return(reader, nil)
 
 	mci := dm.callbacks.(*shareddownloadmocks.Callbacks)
-	mci.On("SharedStorageBatchDownloaded", "ns1", "ref1", []byte("some batch data")).Return(nil, fmt.Errorf("pop"))
+	mci.On("SharedStorageBatchDownloaded", "ref1", []byte("some batch data")).Return(nil, fmt.Errorf("pop"))
 
 	_, _, err := dm.downloadBatch(dm.ctx, downloadBatchData{
-		Namespace:  "ns1",
 		PayloadRef: "ref1",
 	})
 	assert.Regexp(t, "pop", err)
@@ -126,7 +122,6 @@ func TestDownloadBlobDownloadDataReadFail(t *testing.T) {
 	mdx.On("UploadBlob", mock.Anything, "ns1", mock.Anything, reader).Return("", nil, int64(-1), fmt.Errorf("pop"))
 
 	_, _, err := dm.downloadBlob(dm.ctx, downloadBlobData{
-		Namespace:  "ns1",
 		PayloadRef: "ref1",
 		DataID:     fftypes.NewUUID(),
 	})

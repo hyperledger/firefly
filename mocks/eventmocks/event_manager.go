@@ -196,13 +196,13 @@ func (_m *EventManager) NewSubscriptions() chan<- *fftypes.UUID {
 	return r0
 }
 
-// SharedStorageBatchDownloaded provides a mock function with given fields: ss, ns, payloadRef, data
-func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns string, payloadRef string, data []byte) (*fftypes.UUID, error) {
-	ret := _m.Called(ss, ns, payloadRef, data)
+// SharedStorageBatchDownloaded provides a mock function with given fields: ss, payloadRef, data
+func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, payloadRef string, data []byte) (*fftypes.UUID, error) {
+	ret := _m.Called(ss, payloadRef, data)
 
 	var r0 *fftypes.UUID
-	if rf, ok := ret.Get(0).(func(sharedstorage.Plugin, string, string, []byte) *fftypes.UUID); ok {
-		r0 = rf(ss, ns, payloadRef, data)
+	if rf, ok := ret.Get(0).(func(sharedstorage.Plugin, string, []byte) *fftypes.UUID); ok {
+		r0 = rf(ss, payloadRef, data)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*fftypes.UUID)
@@ -210,8 +210,8 @@ func (_m *EventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(sharedstorage.Plugin, string, string, []byte) error); ok {
-		r1 = rf(ss, ns, payloadRef, data)
+	if rf, ok := ret.Get(1).(func(sharedstorage.Plugin, string, []byte) error); ok {
+		r1 = rf(ss, payloadRef, data)
 	} else {
 		r1 = ret.Error(1)
 	}

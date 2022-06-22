@@ -34,7 +34,7 @@ func TestGetTokenConnectors(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenConnectors", mock.Anything, "ns1", mock.Anything).
+	mam.On("GetTokenConnectors", mock.Anything, mock.Anything).
 		Return([]*core.TokenConnector{}, nil)
 	r.ServeHTTP(res, req)
 

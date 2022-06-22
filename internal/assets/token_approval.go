@@ -28,8 +28,8 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (am *assetManager) GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error) {
-	return am.database.GetTokenApprovals(ctx, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenApprovals(ctx context.Context, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error) {
+	return am.database.GetTokenApprovals(ctx, am.namespace, filter)
 }
 
 type approveSender struct {

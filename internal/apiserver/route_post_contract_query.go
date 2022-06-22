@@ -38,7 +38,7 @@ var postContractQuery = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			req := r.Input.(*core.ContractCallRequest)
 			req.Type = core.CallTypeQuery
-			return cr.or.Contracts().InvokeContract(cr.ctx, extractNamespace(r.PP), req, true)
+			return cr.or.Contracts().InvokeContract(cr.ctx, req, true)
 		},
 	},
 }

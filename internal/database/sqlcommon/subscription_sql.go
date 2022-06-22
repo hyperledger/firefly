@@ -178,17 +178,19 @@ func (s *SQLCommon) getSubscriptionEq(ctx context.Context, eq sq.Eq, textName st
 	return subscription, nil
 }
 
-func (s *SQLCommon) GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (message *core.Subscription, err error) {
-	return s.getSubscriptionEq(ctx, sq.Eq{"id": id}, id.String())
+func (s *SQLCommon) GetSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Subscription, err error) {
+	return s.getSubscriptionEq(ctx, sq.Eq{"id": id, "namespace": namespace}, id.String())
 }
 
-func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, ns, name string) (message *core.Subscription, err error) {
-	return s.getSubscriptionEq(ctx, sq.Eq{"namespace": ns, "name": name}, fmt.Sprintf("%s:%s", ns, name))
+func (s *SQLCommon) GetSubscriptionByName(ctx context.Context, namespace, name string) (message *core.Subscription, err error) {
+	return s.getSubscriptionEq(ctx, sq.Eq{"namespace": namespace, "name": name}, fmt.Sprintf("%s:%s", namespace, name))
 }
 
-func (s *SQLCommon) GetSubscriptions(ctx context.Context, filter database.Filter) (message []*core.Subscription, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetSubscriptions(ctx context.Context, namespace string, filter database.Filter) (message []*core.Subscription, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(subscriptionColumns...).From(subscriptionsTable), filter, subscriptionFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(
+		ctx, "", sq.Select(subscriptionColumns...).From(subscriptionsTable),
+		filter, subscriptionFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -245,7 +247,7 @@ func (s *SQLCommon) UpdateSubscription(ctx context.Context, namespace, name stri
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error) {
+func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error) {
 
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
@@ -253,7 +255,7 @@ func (s *SQLCommon) DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID
 	}
 	defer s.rollbackTx(ctx, tx, autoCommit)
 
-	subscription, err := s.GetSubscriptionByID(ctx, id)
+	subscription, err := s.GetSubscriptionByID(ctx, namespace, id)
 	if err == nil && subscription != nil {
 		err = s.deleteTx(ctx, subscriptionsTable, tx, sq.Delete(subscriptionsTable).Where(sq.Eq{
 			"id": id,

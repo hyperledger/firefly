@@ -245,7 +245,7 @@ func TestRetryOperationSuccess(t *testing.T) {
 	})).Return(nil)
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	newOp, err := om.RetryOperation(ctx, "ns1", op.ID)
+	newOp, err := om.RetryOperation(ctx, op.ID)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, newOp)
@@ -274,7 +274,7 @@ func TestRetryOperationGetFail(t *testing.T) {
 	mdi.On("GetOperationByID", ctx, "ns1", opID).Return(op, fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RetryOperation(ctx, "ns1", op.ID)
+	_, err := om.RetryOperation(ctx, op.ID)
 
 	assert.EqualError(t, err, "pop")
 
@@ -312,7 +312,7 @@ func TestRetryTwiceOperationInsertFail(t *testing.T) {
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RetryOperation(ctx, "ns1", op.ID)
+	_, err := om.RetryOperation(ctx, op.ID)
 
 	assert.EqualError(t, err, "pop")
 
@@ -341,7 +341,7 @@ func TestRetryOperationInsertFail(t *testing.T) {
 	mdi.On("InsertOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RetryOperation(ctx, "ns1", op.ID)
+	_, err := om.RetryOperation(ctx, op.ID)
 
 	assert.EqualError(t, err, "pop")
 
@@ -372,7 +372,7 @@ func TestRetryOperationUpdateFail(t *testing.T) {
 	mdi.On("UpdateOperation", ctx, "ns1", op.ID, mock.Anything).Return(fmt.Errorf("pop"))
 
 	om.RegisterHandler(ctx, &mockHandler{Prepared: po}, []core.OpType{core.OpTypeBlockchainPinBatch})
-	_, err := om.RetryOperation(ctx, "ns1", op.ID)
+	_, err := om.RetryOperation(ctx, op.ID)
 
 	assert.EqualError(t, err, "pop")
 
@@ -389,7 +389,7 @@ func TestWriteOperationSuccess(t *testing.T) {
 	mdi := om.database.(*databasemocks.Plugin)
 	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusSucceeded, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	om.writeOperationSuccess(ctx, "ns1", opID, nil)
+	om.writeOperationSuccess(ctx, opID, nil)
 
 	mdi.AssertExpectations(t)
 }
@@ -405,7 +405,7 @@ func TestWriteOperationFailure(t *testing.T) {
 	errStr := "pop"
 	mdi.On("ResolveOperation", ctx, "ns1", opID, core.OpStatusFailed, &errStr, mock.Anything).Return(fmt.Errorf("pop"))
 
-	om.writeOperationFailure(ctx, "ns1", opID, nil, fmt.Errorf("pop"), core.OpStatusFailed)
+	om.writeOperationFailure(ctx, opID, nil, fmt.Errorf("pop"), core.OpStatusFailed)
 
 	mdi.AssertExpectations(t)
 }
@@ -565,7 +565,7 @@ func TestResolveOperationByNamespacedIDOk(t *testing.T) {
 		"my": "data",
 	}).Return(nil)
 
-	err := om.ResolveOperationByID(ctx, "ns1", opID, opUpdate)
+	err := om.ResolveOperationByID(ctx, opID, opUpdate)
 
 	assert.NoError(t, err)
 

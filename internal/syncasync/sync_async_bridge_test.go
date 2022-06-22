@@ -341,7 +341,7 @@ func TestEventCallbackTokenPoolLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -434,7 +434,7 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -464,7 +464,7 @@ func TestEventCallbackTokenApprovalLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -564,7 +564,7 @@ func TestEventCallbackTokenPoolNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -596,7 +596,7 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -628,7 +628,7 @@ func TestEventCallbackTokenApprovalNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenApprovalByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -766,7 +766,7 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenPoolByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		pool := &core.TokenPool{
 			ID:   requestID,
@@ -874,7 +874,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		transfer := &core.TokenTransfer{
 			LocalID:    requestID,
@@ -916,7 +916,7 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenApprovalByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		approval := &core.TokenApproval{
 			LocalID: requestID,

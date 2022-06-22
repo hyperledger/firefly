@@ -185,19 +185,21 @@ func (s *SQLCommon) getTokenApprovalPred(ctx context.Context, desc string, pred 
 	return approval, nil
 }
 
-func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error) {
-	return s.getTokenApprovalPred(ctx, localID.String(), sq.Eq{"local_id": localID})
+func (s *SQLCommon) GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error) {
+	return s.getTokenApprovalPred(ctx, localID.String(), sq.Eq{"local_id": localID, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenApproval, error) {
+func (s *SQLCommon) GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error) {
 	return s.getTokenApprovalPred(ctx, protocolID, sq.And{
+		sq.Eq{"namespace": namespace},
 		sq.Eq{"connector": connector},
 		sq.Eq{"protocol_id": protocolID},
 	})
 }
 
-func (s *SQLCommon) GetTokenApprovals(ctx context.Context, filter database.Filter) (approvals []*core.TokenApproval, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenApprovalColumns...).From(tokenapprovalTable), filter, tokenApprovalFilterFieldMap, []interface{}{"seq"})
+func (s *SQLCommon) GetTokenApprovals(ctx context.Context, namespace string, filter database.Filter) (approvals []*core.TokenApproval, fr *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenApprovalColumns...).From(tokenapprovalTable),
+		filter, tokenApprovalFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

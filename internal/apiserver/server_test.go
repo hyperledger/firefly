@@ -261,7 +261,7 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 		},
 	}
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(api, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(ffi, nil)
 	mffi.On("Generate", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my-api", api, ffi).Return(&openapi3.T{})
 
@@ -278,7 +278,7 @@ func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(nil, fmt.Errorf("pop"))
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -293,7 +293,7 @@ func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(nil, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(nil, nil)
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -314,7 +314,7 @@ func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 		},
 	}
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(api, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))

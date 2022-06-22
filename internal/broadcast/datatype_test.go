@@ -34,7 +34,7 @@ import (
 func TestBroadcastDatatypeBadType(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
+	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
 	}, false)
 	assert.Regexp(t, "FF00111.*validator", err)
@@ -45,7 +45,7 @@ func TestBroadcastDatatypeNSGetFail(t *testing.T) {
 	defer cancel()
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(fmt.Errorf("pop"))
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
+	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
 		Name:      "name1",
 		Namespace: "ns1",
 		Version:   "0.0.1",
@@ -59,10 +59,10 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	defer cancel()
 	mdm := bm.data.(*datamocks.Manager)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
+	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -80,9 +80,9 @@ func TestBroadcastUpsertFail(t *testing.T) {
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
+	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -104,9 +104,9 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
+	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -123,10 +123,10 @@ func TestBroadcastOk(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
-	mdm.On("CheckDatatype", mock.Anything, "ns1", mock.Anything).Return(nil)
+	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	_, err := bm.BroadcastDatatype(context.Background(), "ns1", &core.Datatype{
+	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",

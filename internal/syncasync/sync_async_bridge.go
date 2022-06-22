@@ -190,7 +190,7 @@ func (sa *syncAsyncBridge) getIdentityFromEvent(event *core.EventDelivery) (iden
 }
 
 func (sa *syncAsyncBridge) getPoolFromEvent(event *core.EventDelivery) (pool *core.TokenPool, err error) {
-	if pool, err = sa.database.GetTokenPoolByID(sa.ctx, event.Reference); err != nil {
+	if pool, err = sa.database.GetTokenPoolByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if pool == nil {
@@ -215,7 +215,7 @@ func (sa *syncAsyncBridge) getPoolFromMessage(msg *core.Message) (*core.TokenPoo
 }
 
 func (sa *syncAsyncBridge) getTransferFromEvent(event *core.EventDelivery) (transfer *core.TokenTransfer, err error) {
-	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, event.Reference); err != nil {
+	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if transfer == nil {
@@ -226,7 +226,7 @@ func (sa *syncAsyncBridge) getTransferFromEvent(event *core.EventDelivery) (tran
 }
 
 func (sa *syncAsyncBridge) getApprovalFromEvent(event *core.EventDelivery) (approval *core.TokenApproval, err error) {
-	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, event.Reference); err != nil {
+	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 

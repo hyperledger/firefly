@@ -61,7 +61,6 @@ func TestRegisterNodeOk(t *testing.T) {
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)

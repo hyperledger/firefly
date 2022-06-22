@@ -39,7 +39,7 @@ func TestDeleteSubscription(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("DeleteSubscription", mock.Anything, "ns1", u.String()).
+	o.On("DeleteSubscription", mock.Anything, u.String()).
 		Return(nil)
 	r.ServeHTTP(res, req)
 

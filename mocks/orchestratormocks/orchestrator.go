@@ -100,13 +100,13 @@ func (_m *Orchestrator) Contracts() contracts.Manager {
 	return r0
 }
 
-// CreateSubscription provides a mock function with given fields: ctx, ns, subDef
-func (_m *Orchestrator) CreateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error) {
-	ret := _m.Called(ctx, ns, subDef)
+// CreateSubscription provides a mock function with given fields: ctx, subDef
+func (_m *Orchestrator) CreateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error) {
+	ret := _m.Called(ctx, subDef)
 
 	var r0 *core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Subscription) *core.Subscription); ok {
-		r0 = rf(ctx, ns, subDef)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription) *core.Subscription); ok {
+		r0 = rf(ctx, subDef)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Subscription)
@@ -114,8 +114,8 @@ func (_m *Orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.Subscription) error); ok {
-		r1 = rf(ctx, ns, subDef)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Subscription) error); ok {
+		r1 = rf(ctx, subDef)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -123,13 +123,13 @@ func (_m *Orchestrator) CreateSubscription(ctx context.Context, ns string, subDe
 	return r0, r1
 }
 
-// CreateUpdateSubscription provides a mock function with given fields: ctx, ns, subDef
-func (_m *Orchestrator) CreateUpdateSubscription(ctx context.Context, ns string, subDef *core.Subscription) (*core.Subscription, error) {
-	ret := _m.Called(ctx, ns, subDef)
+// CreateUpdateSubscription provides a mock function with given fields: ctx, subDef
+func (_m *Orchestrator) CreateUpdateSubscription(ctx context.Context, subDef *core.Subscription) (*core.Subscription, error) {
+	ret := _m.Called(ctx, subDef)
 
 	var r0 *core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Subscription) *core.Subscription); ok {
-		r0 = rf(ctx, ns, subDef)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Subscription) *core.Subscription); ok {
+		r0 = rf(ctx, subDef)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Subscription)
@@ -137,8 +137,8 @@ func (_m *Orchestrator) CreateUpdateSubscription(ctx context.Context, ns string,
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.Subscription) error); ok {
-		r1 = rf(ctx, ns, subDef)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.Subscription) error); ok {
+		r1 = rf(ctx, subDef)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -162,13 +162,13 @@ func (_m *Orchestrator) Data() data.Manager {
 	return r0
 }
 
-// DeleteSubscription provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) DeleteSubscription(ctx context.Context, ns string, id string) error {
-	ret := _m.Called(ctx, ns, id)
+// DeleteSubscription provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) DeleteSubscription(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -302,13 +302,13 @@ func (_m *Orchestrator) GetBlockchainEvents(ctx context.Context, filter database
 	return r0, r1, r2
 }
 
-// GetChartHistogram provides a mock function with given fields: ctx, ns, startTime, endTime, buckets, tableName
-func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error) {
-	ret := _m.Called(ctx, ns, startTime, endTime, buckets, tableName)
+// GetChartHistogram provides a mock function with given fields: ctx, startTime, endTime, buckets, tableName
+func (_m *Orchestrator) GetChartHistogram(ctx context.Context, startTime int64, endTime int64, buckets int64, tableName database.CollectionName) ([]*core.ChartHistogram, error) {
+	ret := _m.Called(ctx, startTime, endTime, buckets, tableName)
 
 	var r0 []*core.ChartHistogram
-	if rf, ok := ret.Get(0).(func(context.Context, string, int64, int64, int64, database.CollectionName) []*core.ChartHistogram); ok {
-		r0 = rf(ctx, ns, startTime, endTime, buckets, tableName)
+	if rf, ok := ret.Get(0).(func(context.Context, int64, int64, int64, database.CollectionName) []*core.ChartHistogram); ok {
+		r0 = rf(ctx, startTime, endTime, buckets, tableName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.ChartHistogram)
@@ -316,8 +316,8 @@ func (_m *Orchestrator) GetChartHistogram(ctx context.Context, ns string, startT
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, int64, int64, int64, database.CollectionName) error); ok {
-		r1 = rf(ctx, ns, startTime, endTime, buckets, tableName)
+	if rf, ok := ret.Get(1).(func(context.Context, int64, int64, int64, database.CollectionName) error); ok {
+		r1 = rf(ctx, startTime, endTime, buckets, tableName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -898,13 +898,13 @@ func (_m *Orchestrator) GetStatus(ctx context.Context) (*core.NodeStatus, error)
 	return r0, r1
 }
 
-// GetSubscriptionByID provides a mock function with given fields: ctx, ns, id
-func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, ns string, id string) (*core.Subscription, error) {
-	ret := _m.Called(ctx, ns, id)
+// GetSubscriptionByID provides a mock function with given fields: ctx, id
+func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, id string) (*core.Subscription, error) {
+	ret := _m.Called(ctx, id)
 
 	var r0 *core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Subscription); ok {
-		r0 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Subscription); ok {
+		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Subscription)
@@ -912,8 +912,8 @@ func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, ns string, id s
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, ns, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -921,13 +921,13 @@ func (_m *Orchestrator) GetSubscriptionByID(ctx context.Context, ns string, id s
 	return r0, r1
 }
 
-// GetSubscriptions provides a mock function with given fields: ctx, ns, filter
-func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
-	ret := _m.Called(ctx, ns, filter)
+// GetSubscriptions provides a mock function with given fields: ctx, filter
+func (_m *Orchestrator) GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error) {
+	ret := _m.Called(ctx, filter)
 
 	var r0 []*core.Subscription
-	if rf, ok := ret.Get(0).(func(context.Context, string, database.AndFilter) []*core.Subscription); ok {
-		r0 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, database.AndFilter) []*core.Subscription); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.Subscription)
@@ -935,8 +935,8 @@ func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter 
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, string, database.AndFilter) *database.FilterResult); ok {
-		r1 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, database.AndFilter) *database.FilterResult); ok {
+		r1 = rf(ctx, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -944,8 +944,8 @@ func (_m *Orchestrator) GetSubscriptions(ctx context.Context, ns string, filter 
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, database.AndFilter) error); ok {
-		r2 = rf(ctx, ns, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, database.AndFilter) error); ok {
+		r2 = rf(ctx, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

@@ -49,7 +49,7 @@ var (
 )
 
 func (s *SQLCommon) addTokenBalance(ctx context.Context, tx *txWrapper, transfer *core.TokenTransfer, key string, negate bool) error {
-	account, err := s.GetTokenBalance(ctx, transfer.Pool, transfer.TokenIndex, key)
+	account, err := s.GetTokenBalance(ctx, transfer.Namespace, transfer.Pool, transfer.TokenIndex, key)
 	if err != nil {
 		return err
 	}
@@ -167,17 +167,19 @@ func (s *SQLCommon) getTokenBalancePred(ctx context.Context, desc string, pred i
 	return account, nil
 }
 
-func (s *SQLCommon) GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex, key string) (message *core.TokenBalance, err error) {
+func (s *SQLCommon) GetTokenBalance(ctx context.Context, namespace string, poolID *fftypes.UUID, tokenIndex, key string) (message *core.TokenBalance, err error) {
 	desc := core.TokenBalanceIdentifier(poolID, tokenIndex, key)
 	return s.getTokenBalancePred(ctx, desc, sq.And{
+		sq.Eq{"namespace": namespace},
 		sq.Eq{"pool_id": poolID},
 		sq.Eq{"token_index": tokenIndex},
 		sq.Eq{"key": key},
 	})
 }
 
-func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter) ([]*core.TokenBalance, *database.FilterResult, error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenBalanceColumns...).From(tokenbalanceTable), filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+func (s *SQLCommon) GetTokenBalances(ctx context.Context, namespace string, filter database.Filter) ([]*core.TokenBalance, *database.FilterResult, error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenBalanceColumns...).From(tokenbalanceTable),
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -200,10 +202,10 @@ func (s *SQLCommon) GetTokenBalances(ctx context.Context, filter database.Filter
 	return accounts, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter) ([]*core.TokenAccount, *database.FilterResult, error) {
+func (s *SQLCommon) GetTokenAccounts(ctx context.Context, namespace string, filter database.Filter) ([]*core.TokenAccount, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
 		sq.Select("key", "MAX(updated) AS updated", "MAX(seq) AS seq").From(tokenbalanceTable).GroupBy("key"),
-		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"})
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -228,11 +230,10 @@ func (s *SQLCommon) GetTokenAccounts(ctx context.Context, filter database.Filter
 	return accounts, s.queryRes(ctx, tokenbalanceTable, tx, fop, fi), err
 }
 
-func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, key string, filter database.Filter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
+func (s *SQLCommon) GetTokenAccountPools(ctx context.Context, namespace, key string, filter database.Filter) ([]*core.TokenAccountPool, *database.FilterResult, error) {
 	query, fop, fi, err := s.filterSelect(ctx, "",
 		sq.Select("pool_id", "MAX(updated) AS updated", "MAX(seq) AS seq").From(tokenbalanceTable).GroupBy("pool_id"),
-		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"},
-		sq.Eq{"key": key})
+		filter, tokenBalanceFilterFieldMap, []interface{}{"seq"}, sq.Eq{"key": key, "namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

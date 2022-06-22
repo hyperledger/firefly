@@ -53,7 +53,6 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -61,7 +60,6 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		core.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
 
 	mbm.On("BroadcastDefinition", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityVerification"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
@@ -113,7 +111,6 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -121,7 +118,6 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		core.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
 
 	mbm.On("BroadcastDefinition", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityVerification"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
@@ -194,7 +190,6 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -202,7 +197,6 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
 
 	mbm.On("BroadcastDefinition", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityVerification"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
@@ -259,7 +253,6 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		"ns1",
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"

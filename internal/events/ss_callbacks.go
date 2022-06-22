@@ -26,7 +26,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
-func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns, payloadRef string, data []byte) (*fftypes.UUID, error) {
+func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, payloadRef string, data []byte) (*fftypes.UUID, error) {
 
 	l := log.L(em.ctx)
 
@@ -39,8 +39,8 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns
 	}
 	l.Infof("Shared storage batch downloaded from %s '%s' id=%s (len=%d)", ss.Name(), payloadRef, batch.ID, len(data))
 
-	if batch.Namespace != ns {
-		l.Errorf("Invalid batch '%s'. Namespace in batch '%s' does not match pin namespace '%s'", batch.ID, batch.Namespace, ns)
+	if batch.Namespace != em.namespace {
+		l.Errorf("Invalid batch '%s'. Namespace in batch '%s' does not match pin namespace '%s'", batch.ID, batch.Namespace, em.namespace)
 		return nil, nil // This is not retryable. skip this batch
 	}
 

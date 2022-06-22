@@ -36,7 +36,7 @@ var postNewSubscription = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusCreated}, // Sync operation
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.CreateSubscription(cr.ctx, extractNamespace(r.PP), r.Input.(*core.Subscription))
+			output, err = cr.or.CreateSubscription(cr.ctx, r.Input.(*core.Subscription))
 			return output, err
 		},
 	},

@@ -213,7 +213,7 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(&core.ContractAPI{
+	mdi.On("GetContractAPIByID", mock.Anything, "ns1", ref1).Return(&core.ContractAPI{
 		ID: ref1,
 	}, nil)
 
@@ -239,7 +239,7 @@ func TestEnrichContractAPItFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractAPIByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -262,7 +262,7 @@ func TestEnrichContractInterfaceSubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetFFIByID", mock.Anything, ref1).Return(&core.FFI{
+	mdi.On("GetFFIByID", mock.Anything, "ns1", ref1).Return(&core.FFI{
 		ID: ref1,
 	}, nil)
 
@@ -288,7 +288,7 @@ func TestEnrichContractInterfacetFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetFFIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetFFIByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -460,7 +460,7 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(&core.TokenPool{
+	mdi.On("GetTokenPoolByID", mock.Anything, "ns1", ref1).Return(&core.TokenPool{
 		ID: ref1,
 	}, nil)
 
@@ -486,7 +486,7 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -509,7 +509,7 @@ func TestEnrichTokenApprovalConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenApprovalByID", mock.Anything, ref1).Return(&core.TokenApproval{
+	mdi.On("GetTokenApprovalByID", mock.Anything, "ns1", ref1).Return(&core.TokenApproval{
 		LocalID: ref1,
 	}, nil)
 
@@ -561,7 +561,7 @@ func TestEnrichTokenApprovalConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenApprovalByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,
@@ -584,7 +584,7 @@ func TestEnrichTokenTransferConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(&core.TokenTransfer{
+	mdi.On("GetTokenTransferByID", mock.Anything, "ns1", ref1).Return(&core.TokenTransfer{
 		LocalID: ref1,
 	}, nil)
 
@@ -636,7 +636,7 @@ func TestEnrichTokenTransferConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenTransferByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,

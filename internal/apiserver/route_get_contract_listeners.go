@@ -38,7 +38,7 @@ var getContractListeners = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.ContractListenerQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Contracts().GetContractListeners(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.Contracts().GetContractListeners(cr.ctx, cr.filter))
 		},
 	},
 }

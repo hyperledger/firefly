@@ -143,8 +143,9 @@ func (s *SQLCommon) getFFIEventPred(ctx context.Context, desc string, pred inter
 	return ci, nil
 }
 
-func (s *SQLCommon) GetFFIEvents(ctx context.Context, filter database.Filter) (events []*core.FFIEvent, res *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiEventsColumns...).From(ffieventsTable), filter, ffiEventFilterFieldMap, []interface{}{"sequence"})
+func (s *SQLCommon) GetFFIEvents(ctx context.Context, namespace string, filter database.Filter) (events []*core.FFIEvent, res *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiEventsColumns...).From(ffieventsTable),
+		filter, ffiEventFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -167,6 +168,6 @@ func (s *SQLCommon) GetFFIEvents(ctx context.Context, filter database.Filter) (e
 
 }
 
-func (s *SQLCommon) GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error) {
-	return s.getFFIEventPred(ctx, ns+":"+pathName, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"interface_id": interfaceID}, sq.Eq{"pathname": pathName}})
+func (s *SQLCommon) GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error) {
+	return s.getFFIEventPred(ctx, namespace+":"+pathName, sq.Eq{"namespace": namespace, "interface_id": interfaceID, "pathname": pathName})
 }

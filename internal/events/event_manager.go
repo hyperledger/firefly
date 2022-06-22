@@ -73,7 +73,7 @@ type EventManager interface {
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)
 
 	// Bound sharedstorage callbacks
-	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, ns, payloadRef string, data []byte) (*fftypes.UUID, error)
+	SharedStorageBatchDownloaded(ss sharedstorage.Plugin, payloadRef string, data []byte) (*fftypes.UUID, error)
 	SharedStorageBlobDownloaded(ss sharedstorage.Plugin, hash fftypes.Bytes32, size int64, payloadRef string)
 
 	// Bound token callbacks
@@ -245,7 +245,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
-	return em.database.DeleteSubscriptionByID(ctx, subDef.ID)
+	return em.database.DeleteSubscriptionByID(ctx, em.namespace, subDef.ID)
 }
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {
