@@ -39,7 +39,7 @@ func TestPutContractAPI(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), false).
+	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), false).
 		Return(&core.ContractAPI{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -57,7 +57,7 @@ func TestPutContractAPISync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), true).
+	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), true).
 		Return(&core.ContractAPI{}, nil)
 	r.ServeHTTP(res, req)
 

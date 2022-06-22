@@ -392,13 +392,13 @@ func (_m *Plugin) GetChartHistogram(ctx context.Context, namespace string, inter
 	return r0, r1
 }
 
-// GetContractAPIByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error) {
-	ret := _m.Called(ctx, id)
+// GetContractAPIByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetContractAPIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.ContractAPI, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.ContractAPI); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.ContractAPI); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.ContractAPI)
@@ -406,8 +406,8 @@ func (_m *Plugin) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*co
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}

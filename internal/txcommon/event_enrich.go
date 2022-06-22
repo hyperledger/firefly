@@ -47,7 +47,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.BlockchainEvent = be
 	case core.EventTypeContractAPIConfirmed:
-		contractAPI, err := t.database.GetContractAPIByID(ctx, event.Reference)
+		contractAPI, err := t.database.GetContractAPIByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

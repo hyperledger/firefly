@@ -1287,7 +1287,7 @@ func TestInvokeContract(t *testing.T) {
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.NoError(t, err)
 
@@ -1333,7 +1333,7 @@ func TestInvokeContractConfirm(t *testing.T) {
 		}).
 		Return(&core.Operation{}, nil)
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, true)
+	_, err := cm.InvokeContract(context.Background(), req, true)
 
 	assert.NoError(t, err)
 
@@ -1373,7 +1373,7 @@ func TestInvokeContractFail(t *testing.T) {
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.EqualError(t, err, "pop")
 
@@ -1395,7 +1395,7 @@ func TestInvokeContractFailNormalizeSigningKey(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.Regexp(t, "pop", err)
 }
@@ -1414,7 +1414,7 @@ func TestInvokeContractFailResolve(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mbi.On("InvokeContract", mock.Anything, mock.AnythingOfType("*fftypes.UUID"), "key-resolved", req.Location, req.Method, req.Input).Return(nil)
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.Regexp(t, "FF10313", err)
 }
@@ -1439,7 +1439,7 @@ func TestInvokeContractTXFail(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeContractInvoke).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.EqualError(t, err, "pop")
 }
@@ -1459,7 +1459,7 @@ func TestInvokeContractMethodNotFound(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetFFIMethod", mock.Anything, "ns1", req.Interface, req.MethodPath).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.Regexp(t, "FF10315", err)
 }
@@ -1495,7 +1495,7 @@ func TestInvokeContractMethodBadInput(t *testing.T) {
 	}
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 	assert.Regexp(t, "FF10304", err)
 }
 
@@ -1525,7 +1525,7 @@ func TestQueryContract(t *testing.T) {
 	})).Return(nil)
 	mbi.On("QueryContract", mock.Anything, req.Location, req.Method, req.Input, req.Options).Return(struct{}{}, nil)
 
-	_, err := cm.InvokeContract(context.Background(), "ns1", req, false)
+	_, err := cm.InvokeContract(context.Background(), req, false)
 
 	assert.NoError(t, err)
 }
@@ -1554,7 +1554,7 @@ func TestCallContractInvalidType(t *testing.T) {
 	})).Return(nil)
 
 	assert.PanicsWithValue(t, "unknown call type: ", func() {
-		cm.InvokeContract(context.Background(), "ns1", req, false)
+		cm.InvokeContract(context.Background(), req, false)
 	})
 }
 
@@ -1793,7 +1793,7 @@ func TestInvokeContractAPI(t *testing.T) {
 		return op.Type == core.OpTypeBlockchainInvoke && data.Request == req
 	})).Return(nil, nil)
 
-	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req, false)
+	_, err := cm.InvokeContractAPI(context.Background(), "banana", "peel", req, false)
 
 	assert.NoError(t, err)
 
@@ -1820,7 +1820,7 @@ func TestInvokeContractAPIFailContractLookup(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req, false)
+	_, err := cm.InvokeContractAPI(context.Background(), "banana", "peel", req, false)
 
 	assert.Regexp(t, "pop", err)
 }
@@ -1841,7 +1841,7 @@ func TestInvokeContractAPIContractNotFound(t *testing.T) {
 	mim.On("NormalizeSigningKey", mock.Anything, "", identity.KeyNormalizationBlockchainPlugin).Return("key-resolved", nil)
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, nil)
 
-	_, err := cm.InvokeContractAPI(context.Background(), "ns1", "banana", "peel", req, false)
+	_, err := cm.InvokeContractAPI(context.Background(), "banana", "peel", req, false)
 
 	assert.Regexp(t, "FF10109", err)
 }
@@ -1856,7 +1856,7 @@ func TestGetContractAPI(t *testing.T) {
 	}
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(api, nil)
 
-	result, err := cm.GetContractAPI(context.Background(), "http://localhost/api", "ns1", "banana")
+	result, err := cm.GetContractAPI(context.Background(), "http://localhost/api", "banana")
 
 	assert.NoError(t, err)
 	assert.Equal(t, "http://localhost/api/namespaces/ns1/apis/banana/api/swagger.json", result.URLs.OpenAPI)
@@ -1876,7 +1876,7 @@ func TestGetContractAPIs(t *testing.T) {
 	filter := database.ContractAPIQueryFactory.NewFilter(context.Background()).And()
 	mdb.On("GetContractAPIs", mock.Anything, "ns1", filter).Return(apis, &database.FilterResult{}, nil)
 
-	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api", "ns1", filter)
+	results, _, err := cm.GetContractAPIs(context.Background(), "http://localhost/api", filter)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
@@ -1908,7 +1908,7 @@ func TestGetContractAPIInterface(t *testing.T) {
 		return ev.Name == "event1"
 	})).Return("event1Sig")
 
-	result, err := cm.GetContractAPIInterface(context.Background(), "ns1", "banana")
+	result, err := cm.GetContractAPIInterface(context.Background(), "banana")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -1923,7 +1923,7 @@ func TestGetContractAPIInterfaceFail(t *testing.T) {
 
 	mdb.On("GetContractAPIByName", mock.Anything, "ns1", "banana").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractAPIInterface(context.Background(), "ns1", "banana")
+	_, err := cm.GetContractAPIInterface(context.Background(), "banana")
 
 	assert.EqualError(t, err, "pop")
 
@@ -1956,7 +1956,7 @@ func TestBroadcastContractAPI(t *testing.T) {
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
-	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	api, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, api)
@@ -1984,7 +1984,7 @@ func TestBroadcastContractAPIBadLocation(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.EqualError(t, err, "pop")
 
@@ -2027,7 +2027,7 @@ func TestBroadcastContractAPIExisting(t *testing.T) {
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.NoError(t, err)
 
@@ -2064,7 +2064,7 @@ func TestBroadcastContractAPICannotChangeLocation(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(existing, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.Regexp(t, "FF10316", err)
 
@@ -2100,7 +2100,7 @@ func TestBroadcastContractAPIInterfaceName(t *testing.T) {
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(&core.FFI{ID: interfaceID}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(msg, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.NoError(t, err)
 	assert.Equal(t, *interfaceID, *api.Interface.ID)
@@ -2131,7 +2131,7 @@ func TestBroadcastContractAPIFail(t *testing.T) {
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(&core.FFI{}, nil)
 	mbm.On("BroadcastDefinitionAsNode", mock.Anything, "ns1", mock.AnythingOfType("*core.ContractAPI"), core.SystemTagDefineContractAPI, false).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.Regexp(t, "pop", err)
 
@@ -2155,7 +2155,7 @@ func TestBroadcastContractAPINoInterface(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.Regexp(t, "FF10303", err)
 
@@ -2182,7 +2182,7 @@ func TestBroadcastContractAPIInterfaceIDFail(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.EqualError(t, err, "pop")
 
@@ -2209,7 +2209,7 @@ func TestBroadcastContractAPIInterfaceIDNotFound(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFIByID", mock.Anything, "ns1", api.Interface.ID).Return(nil, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.Regexp(t, "FF10303.*"+api.Interface.ID.String(), err)
 
@@ -2237,7 +2237,7 @@ func TestBroadcastContractAPIInterfaceNameFail(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.EqualError(t, err, "pop")
 
@@ -2265,7 +2265,7 @@ func TestBroadcastContractAPIInterfaceNameNotFound(t *testing.T) {
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 	mdb.On("GetFFI", mock.Anything, "ns1", "my-ffi", "1").Return(nil, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.Regexp(t, "FF10303.*my-ffi", err)
 
@@ -2291,7 +2291,7 @@ func TestBroadcastContractAPIInterfaceNoVersion(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(api.Location, nil)
 	mdb.On("GetContractAPIByName", mock.Anything, api.Namespace, api.Name).Return(nil, nil)
 
-	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", "ns1", api, false)
+	_, err := cm.BroadcastContractAPI(context.Background(), "http://localhost/api", api, false)
 
 	assert.Regexp(t, "FF10303.*my-ffi", err)
 

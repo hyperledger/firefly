@@ -38,7 +38,7 @@ var getContractAPIByName = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Contracts().GetContractAPI(cr.ctx, cr.apiBaseURL, extractNamespace(r.PP), r.PP["apiName"])
+			return cr.or.Contracts().GetContractAPI(cr.ctx, cr.apiBaseURL, r.PP["apiName"])
 		},
 	},
 }

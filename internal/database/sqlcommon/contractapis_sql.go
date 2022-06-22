@@ -154,9 +154,10 @@ func (s *SQLCommon) getContractAPIPred(ctx context.Context, desc string, pred in
 	return api, nil
 }
 
-func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter database.AndFilter) (contractAPIs []*core.ContractAPI, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetContractAPIs(ctx context.Context, namespace string, filter database.AndFilter) (contractAPIs []*core.ContractAPI, res *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractAPIsColumns...).From(contractapisTable).Where(sq.Eq{"namespace": ns}), filter, contractAPIsFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(contractAPIsColumns...).From(contractapisTable),
+		filter, contractAPIsFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,10 +181,10 @@ func (s *SQLCommon) GetContractAPIs(ctx context.Context, ns string, filter datab
 
 }
 
-func (s *SQLCommon) GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error) {
-	return s.getContractAPIPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetContractAPIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.ContractAPI, error) {
+	return s.getContractAPIPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetContractAPIByName(ctx context.Context, ns, name string) (*core.ContractAPI, error) {
-	return s.getContractAPIPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"name": name}})
+func (s *SQLCommon) GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error) {
+	return s.getContractAPIPred(ctx, namespace+":"+name, sq.Eq{"namespace": namespace, "name": name})
 }

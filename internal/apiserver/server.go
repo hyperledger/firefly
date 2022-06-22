@@ -201,7 +201,7 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 	return func(req *http.Request) (*openapi3.T, error) {
 		vars := mux.Vars(req)
 		cm := mgr.Orchestrator(vars["ns"]).Contracts()
-		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
+		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["apiName"])
 		if err != nil {
 			return nil, err
 		} else if api == nil || api.Interface == nil {

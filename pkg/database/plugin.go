@@ -458,9 +458,16 @@ type iFFIEventCollection interface {
 }
 
 type iContractAPICollection interface {
+	// UpsertFFIEvent - Upsert a contract API
 	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
+
+	// GetContractAPIs - Get contract APIs
 	GetContractAPIs(ctx context.Context, namespace string, filter AndFilter) ([]*core.ContractAPI, *FilterResult, error)
-	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error)
+
+	// GetContractAPIByID - Get a contract API by ID
+	GetContractAPIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.ContractAPI, error)
+
+	// GetContractAPIByName - Get a contract API by name
 	GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error)
 }
 

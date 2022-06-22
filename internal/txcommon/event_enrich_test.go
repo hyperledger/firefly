@@ -213,7 +213,7 @@ func TestEnrichContractAPISubmitted(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(&core.ContractAPI{
+	mdi.On("GetContractAPIByID", mock.Anything, "ns1", ref1).Return(&core.ContractAPI{
 		ID: ref1,
 	}, nil)
 
@@ -239,7 +239,7 @@ func TestEnrichContractAPItFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetContractAPIByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractAPIByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,

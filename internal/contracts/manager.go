@@ -45,12 +45,12 @@ type Manager interface {
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
 	GetFFIs(ctx context.Context, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error)
 
-	InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
-	InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
-	GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*core.ContractAPI, error)
-	GetContractAPIInterface(ctx context.Context, ns, apiName string) (*core.FFI, error)
-	GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error)
-	BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error)
+	InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
+	InvokeContractAPI(ctx context.Context, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
+	GetContractAPI(ctx context.Context, httpServerURL, apiName string) (*core.ContractAPI, error)
+	GetContractAPIInterface(ctx context.Context, apiName string) (*core.FFI, error)
+	GetContractAPIs(ctx context.Context, httpServerURL string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error)
+	BroadcastContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error)
 
 	ValidateFFIAndSetPathnames(ctx context.Context, ffi *core.FFI) error
 
@@ -218,7 +218,7 @@ func (cm *contractManager) writeInvokeTransaction(ctx context.Context, req *core
 	return op, err
 }
 
-func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
+func (cm *contractManager) InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (res interface{}, err error) {
 	req.Key, err = cm.identity.NormalizeSigningKey(ctx, req.Key, identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {
 		return nil, err
@@ -226,7 +226,7 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 
 	var op *core.Operation
 	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		if err = cm.resolveInvokeContractRequest(ctx, ns, req); err != nil {
+		if err = cm.resolveInvokeContractRequest(ctx, req); err != nil {
 			return err
 		}
 		if err := cm.validateInvokeContractRequest(ctx, req); err != nil {
@@ -262,8 +262,8 @@ func (cm *contractManager) InvokeContract(ctx context.Context, ns string, req *c
 	}
 }
 
-func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error) {
-	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+func (cm *contractManager) InvokeContractAPI(ctx context.Context, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error) {
+	api, err := cm.database.GetContractAPIByName(ctx, cm.namespace, apiName)
 	if err != nil {
 		return nil, err
 	} else if api == nil || api.Interface == nil {
@@ -274,15 +274,15 @@ func (cm *contractManager) InvokeContractAPI(ctx context.Context, ns, apiName, m
 	if api.Location != nil {
 		req.Location = api.Location
 	}
-	return cm.InvokeContract(ctx, ns, req, waitConfirm)
+	return cm.InvokeContract(ctx, req, waitConfirm)
 }
 
-func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, ns string, req *core.ContractCallRequest) (err error) {
+func (cm *contractManager) resolveInvokeContractRequest(ctx context.Context, req *core.ContractCallRequest) (err error) {
 	if req.Method == nil {
 		if req.MethodPath == "" || req.Interface == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodNotSet)
 		}
-		req.Method, err = cm.database.GetFFIMethod(ctx, ns, req.Interface, req.MethodPath)
+		req.Method, err = cm.database.GetFFIMethod(ctx, cm.namespace, req.Interface, req.MethodPath)
 		if err != nil || req.Method == nil {
 			return i18n.NewError(ctx, coremsgs.MsgContractMethodResolveError, err)
 		}
@@ -299,23 +299,22 @@ func (cm *contractManager) addContractURLs(httpServerURL string, api *core.Contr
 	}
 }
 
-func (cm *contractManager) GetContractAPI(ctx context.Context, httpServerURL, ns, apiName string) (*core.ContractAPI, error) {
-	api, err := cm.database.GetContractAPIByName(ctx, ns, apiName)
+func (cm *contractManager) GetContractAPI(ctx context.Context, httpServerURL, apiName string) (*core.ContractAPI, error) {
+	api, err := cm.database.GetContractAPIByName(ctx, cm.namespace, apiName)
 	cm.addContractURLs(httpServerURL, api)
 	return api, err
 }
 
-func (cm *contractManager) GetContractAPIInterface(ctx context.Context, ns, apiName string) (*core.FFI, error) {
-	api, err := cm.GetContractAPI(ctx, "", ns, apiName)
+func (cm *contractManager) GetContractAPIInterface(ctx context.Context, apiName string) (*core.FFI, error) {
+	api, err := cm.GetContractAPI(ctx, "", apiName)
 	if err != nil || api == nil {
 		return nil, err
 	}
 	return cm.GetFFIByIDWithChildren(ctx, api.Interface.ID)
 }
 
-func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL, ns string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error) {
-	filter = cm.scopeNS(ns, filter)
-	apis, fr, err := cm.database.GetContractAPIs(ctx, ns, filter)
+func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error) {
+	apis, fr, err := cm.database.GetContractAPIs(ctx, cm.namespace, filter)
 	for _, api := range apis {
 		cm.addContractURLs(httpServerURL, api)
 	}
@@ -351,9 +350,9 @@ func (cm *contractManager) resolveFFIReference(ctx context.Context, ref *core.FF
 	}
 }
 
-func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerURL, ns string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error) {
+func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error) {
 	api.ID = fftypes.NewUUID()
-	api.Namespace = ns
+	api.Namespace = cm.namespace
 
 	if api.Location != nil {
 		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, api.Location); err != nil {
@@ -378,7 +377,7 @@ func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerU
 		return nil, err
 	}
 
-	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, ns, api, core.SystemTagDefineContractAPI, waitConfirm)
+	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, cm.namespace, api, core.SystemTagDefineContractAPI, waitConfirm)
 	if err != nil {
 		return nil, err
 	}
