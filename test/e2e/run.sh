@@ -88,7 +88,7 @@ if [ "$CREATE_STACK" == "true" ]; then
 fi
 
 if [ "$BUILD_FIREFLY" == "true" ]; then
-  make -C ../.. docker
+  make -C ../.. DOCKER_ARGS="--load" docker
   checkOk $?
 fi
 
