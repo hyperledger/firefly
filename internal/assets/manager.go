@@ -62,7 +62,7 @@ type Manager interface {
 
 	NewApproval(approve *core.TokenApprovalInput) sysmessaging.MessageSender
 	TokenApproval(ctx context.Context, approval *core.TokenApprovalInput, waitConfirm bool) (*core.TokenApproval, error)
-	GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error)
+	GetTokenApprovals(ctx context.Context, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error)
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)

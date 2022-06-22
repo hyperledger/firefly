@@ -34,7 +34,7 @@ func TestGetTokenApprovals(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenApprovals", mock.Anything, "ns1", mock.Anything).
+	mam.On("GetTokenApprovals", mock.Anything, mock.Anything).
 		Return([]*core.TokenApproval{}, nil, nil)
 	r.ServeHTTP(res, req)
 

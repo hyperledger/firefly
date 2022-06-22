@@ -83,7 +83,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.TokenPool = tokenPool
 	case core.EventTypeApprovalConfirmed:
-		approval, err := t.database.GetTokenApprovalByID(ctx, event.Reference)
+		approval, err := t.database.GetTokenApprovalByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

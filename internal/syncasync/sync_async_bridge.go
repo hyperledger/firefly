@@ -226,7 +226,7 @@ func (sa *syncAsyncBridge) getTransferFromEvent(event *core.EventDelivery) (tran
 }
 
 func (sa *syncAsyncBridge) getApprovalFromEvent(event *core.EventDelivery) (approval *core.TokenApproval, err error) {
-	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, event.Reference); err != nil {
+	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 

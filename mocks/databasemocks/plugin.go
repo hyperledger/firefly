@@ -1708,13 +1708,13 @@ func (_m *Plugin) GetTokenAccounts(ctx context.Context, filter database.Filter) 
 	return r0, r1, r2
 }
 
-// GetTokenApprovalByID provides a mock function with given fields: ctx, localID
-func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error) {
-	ret := _m.Called(ctx, localID)
+// GetTokenApprovalByID provides a mock function with given fields: ctx, namespace, localID
+func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error) {
+	ret := _m.Called(ctx, namespace, localID)
 
 	var r0 *core.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.TokenApproval); ok {
-		r0 = rf(ctx, localID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.TokenApproval); ok {
+		r0 = rf(ctx, namespace, localID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenApproval)
@@ -1722,8 +1722,8 @@ func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUI
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, localID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, localID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1731,13 +1731,13 @@ func (_m *Plugin) GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUI
 	return r0, r1
 }
 
-// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, connector, protocolID
-func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector string, protocolID string) (*core.TokenApproval, error) {
-	ret := _m.Called(ctx, connector, protocolID)
+// GetTokenApprovalByProtocolID provides a mock function with given fields: ctx, namespace, connector, protocolID
+func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, namespace string, connector string, protocolID string) (*core.TokenApproval, error) {
+	ret := _m.Called(ctx, namespace, connector, protocolID)
 
 	var r0 *core.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenApproval); ok {
-		r0 = rf(ctx, connector, protocolID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenApproval); ok {
+		r0 = rf(ctx, namespace, connector, protocolID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenApproval)
@@ -1745,8 +1745,8 @@ func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector st
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, protocolID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, namespace, connector, protocolID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1754,13 +1754,13 @@ func (_m *Plugin) GetTokenApprovalByProtocolID(ctx context.Context, connector st
 	return r0, r1
 }
 
-// GetTokenApprovals provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter) ([]*core.TokenApproval, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetTokenApprovals provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetTokenApprovals(ctx context.Context, namespace string, filter database.Filter) ([]*core.TokenApproval, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.TokenApproval
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenApproval); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.TokenApproval); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.TokenApproval)
@@ -1768,8 +1768,8 @@ func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter)
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -1777,8 +1777,8 @@ func (_m *Plugin) GetTokenApprovals(ctx context.Context, filter database.Filter)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

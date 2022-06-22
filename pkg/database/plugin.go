@@ -412,13 +412,13 @@ type iTokenApprovalCollection interface {
 	UpdateTokenApprovals(ctx context.Context, filter Filter, update Update) (err error)
 
 	// GetTokenApprovalByID - Get a token approval by ID
-	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error)
+	GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error)
 
 	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenApproval, error)
+	GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
-	GetTokenApprovals(ctx context.Context, filter Filter) ([]*core.TokenApproval, *FilterResult, error)
+	GetTokenApprovals(ctx context.Context, namespace string, filter Filter) ([]*core.TokenApproval, *FilterResult, error)
 }
 
 type iFFICollection interface {

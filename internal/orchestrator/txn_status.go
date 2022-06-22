@@ -172,7 +172,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenApprovalQueryFactory.NewFilter(ctx)
-		switch approvals, _, err := or.database().GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
+		switch approvals, _, err := or.database().GetTokenApprovals(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(approvals) == 0:

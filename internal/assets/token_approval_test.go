@@ -40,8 +40,8 @@ func TestGetTokenApprovals(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenApprovalQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenApprovals", context.Background(), f).Return([]*core.TokenApproval{}, nil, nil)
-	_, _, err := am.GetTokenApprovals(context.Background(), "ns1", f)
+	mdi.On("GetTokenApprovals", context.Background(), "ns1", f).Return([]*core.TokenApproval{}, nil, nil)
+	_, _, err := am.GetTokenApprovals(context.Background(), f)
 	assert.NoError(t, err)
 }
 
