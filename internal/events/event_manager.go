@@ -38,6 +38,7 @@ import (
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/shareddownload"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -64,9 +65,9 @@ type EventManager interface {
 	WaitStop()
 
 	// Bound blockchain callbacks
-	BatchPinComplete(bi blockchain.Plugin, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
+	BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
-	BlockchainNetworkAction(bi blockchain.Plugin, action string, event *blockchain.Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error
 
 	// Bound dataexchange callbacks
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)
@@ -111,9 +112,10 @@ type eventManager struct {
 	metrics               metrics.Manager
 	chainListenerCache    *ccache.Cache
 	chainListenerCacheTTL time.Duration
+	multiparty            multiparty.Manager
 }
 
-func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
 	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -133,6 +135,7 @@ func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 		messaging:      pm,
 		assets:         am,
 		sharedDownload: sd,
+		multiparty:     mp,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.EventAggregatorRetryInitDelay),
 			MaximumDelay: config.GetDuration(coreconfig.EventAggregatorRetryMaxDelay),

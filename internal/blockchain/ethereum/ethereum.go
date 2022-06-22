@@ -24,7 +24,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -64,20 +63,12 @@ type Ethereum struct {
 	fftmClient      *resty.Client
 	streams         *streamManager
 	streamID        string
-	fireflyContract struct {
-		mux            sync.Mutex
-		address        string
-		fromBlock      string
-		networkVersion int
-		subscription   string
-	}
-	wsconn           wsclient.WSClient
-	closed           chan struct{}
-	addressResolver  *addressResolver
-	metrics          metrics.Manager
-	ethconnectConf   config.Section
-	contractConf     config.ArraySection
-	contractConfSize int
+	wsconn          wsclient.WSClient
+	closed          chan struct{}
+	addressResolver *addressResolver
+	metrics         metrics.Manager
+	ethconnectConf  config.Section
+	subs            map[string]string
 }
 
 type callbacks struct {
@@ -239,6 +230,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 		return err
 	}
 	e.streamID = stream.ID
+	e.subs = make(map[string]string)
 	log.L(e.ctx).Infof("Event stream: %s (topic=%s)", e.streamID, e.topic)
 
 	e.closed = make(chan struct{})
@@ -255,103 +247,45 @@ func (e *Ethereum) Start() (err error) {
 	return e.wsconn.Connect()
 }
 
-func (e *Ethereum) resolveFireFlyContract(ctx context.Context, contractIndex int) (address, fromBlock string, err error) {
-
-	if e.contractConfSize > 0 || contractIndex > 0 {
-		// New config (array of objects under "fireflyContract")
-		if contractIndex >= e.contractConfSize {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.ethereum.fireflyContract[%d]", contractIndex))
-		}
-		entry := e.contractConf.ArrayEntry(contractIndex)
-		address = entry.GetString(FireFlyContractAddress)
-		if address == "" {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "address", "blockchain.ethereum.fireflyContract")
-		}
-		fromBlock = entry.GetString(FireFlyContractFromBlock)
-	} else {
-		// Old config (attributes under "ethconnect")
-		address = e.ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
-		if address != "" {
-			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-				EthconnectConfigKey, EthconnectConfigInstanceDeprecated,
-				FireFlyContractConfigKey, FireFlyContractAddress)
-		} else {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethereum.ethconnect")
-		}
-		fromBlock = e.ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
-		if fromBlock != "" {
-			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-				EthconnectConfigKey, EthconnectConfigFromBlockDeprecated,
-				FireFlyContractConfigKey, FireFlyContractFromBlock)
-		}
-	}
-
-	// Backwards compatibility from when instance path was not a contract address
-	if strings.HasPrefix(strings.ToLower(address), "/contracts/") {
-		address, err = e.getContractAddress(ctx, address)
-		if err != nil {
-			return "", "", err
-		}
-	} else if strings.HasPrefix(address, "/instances/") {
-		address = strings.Replace(address, "/instances/", "", 1)
-	}
-
-	address, err = validateEthAddress(ctx, address)
-	return address, fromBlock, err
+func (e *Ethereum) Capabilities() *blockchain.Capabilities {
+	return e.capabilities
 }
 
-func (e *Ethereum) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
-
-	log.L(ctx).Infof("Resolving FireFly contract at index %d", contracts.Active.Index)
-	address, fromBlock, err := e.resolveFireFlyContract(ctx, contracts.Active.Index)
+func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {
+	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	sub, err := e.streams.ensureFireFlySubscription(ctx, address, fromBlock, e.streamID, batchPinEventABI)
-	if err == nil {
-		var version int
-		version, err = e.getNetworkVersion(ctx, address)
-		if err == nil {
-			e.fireflyContract.mux.Lock()
-			e.fireflyContract.address = address
-			e.fireflyContract.fromBlock = fromBlock
-			e.fireflyContract.networkVersion = version
-			e.fireflyContract.subscription = sub.ID
-			e.fireflyContract.mux.Unlock()
-			contracts.Active.Info = fftypes.JSONObject{
-				"address":      address,
-				"fromBlock":    fromBlock,
-				"subscription": sub.ID,
-			}
-		}
+	switch firstEvent {
+	case string(core.SubOptsFirstEventOldest):
+		firstEvent = "0"
+	case string(core.SubOptsFirstEventNewest):
+		firstEvent = "latest"
 	}
-	return err
+
+	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
+	if err != nil {
+		return "", err
+	}
+	// TODO: We will probably need to save the namespace AND network version here
+	// Ultimately there needs to be a logic branch in the event handling, where for "V1" we expect to receive a namespace in every
+	// BatchPin event, but for "V2" we infer the namespace based on which subscription ID produced it.
+	e.subs[sub.ID] = namespace
+
+	return sub.ID, nil
 }
 
-func (e *Ethereum) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
-
-	address, err := validateEthAddress(ctx, termination.Info.GetString("address"))
-	if err != nil {
-		return err
-	}
-	e.fireflyContract.mux.Lock()
-	fireflyAddress := e.fireflyContract.address
-	e.fireflyContract.mux.Unlock()
-	if address != fireflyAddress {
-		log.L(ctx).Warnf("Ignoring termination request from address %s, which differs from active address %s", address, fireflyAddress)
+func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) error {
+	// Don't actually delete the subscription from ethconnect, as this may be called while processing
+	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
+	// TODO: can old subscriptions be somehow cleaned up later?
+	if _, ok := e.subs[subID]; ok {
+		delete(e.subs, subID)
 		return nil
 	}
 
-	log.L(ctx).Infof("Processing termination request from address %s", address)
-	contracts.Active.FinalEvent = termination.ProtocolID
-	contracts.Terminated = append(contracts.Terminated, contracts.Active)
-	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
-	return e.ConfigureContract(ctx, contracts)
-}
-
-func (e *Ethereum) Capabilities() *blockchain.Capabilities {
-	return e.capabilities
+	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {
@@ -541,12 +475,8 @@ func (e *Ethereum) handleMessageBatch(ctx context.Context, messages []interface{
 		l1.Infof("Received '%s' message", signature)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		e.fireflyContract.mux.Lock()
-		fireflySub := e.fireflyContract.subscription
-		e.fireflyContract.mux.Unlock()
-
-		if sub == fireflySub {
-			// Matches the active FireFly BatchPin subscription
+		// Matches one of the active FireFly BatchPin subscriptions
+		if _, ok := e.subs[sub]; ok {
 			switch signature {
 			case broadcastBatchEventSignature:
 				if err := e.handleBatchPinEvent(ctx1, msgJSON); err != nil {
@@ -713,7 +643,7 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 	return res, nil
 }
 
-func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
+func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -728,13 +658,16 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
-	e.fireflyContract.mux.Lock()
-	address := e.fireflyContract.address
-	e.fireflyContract.mux.Unlock()
-	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, nsOpID, input, nil)
+
+	ethLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
 }
 
-func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error {
+func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
 	input := []interface{}{
 		blockchain.FireFlyActionPrefix + action,
 		ethHexFormatB32(nil),
@@ -742,10 +675,11 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 		"",
 		[]string{},
 	}
-	e.fireflyContract.mux.Lock()
-	address := e.fireflyContract.address
-	e.fireflyContract.mux.Unlock()
-	return e.invokeContractMethod(ctx, address, signingKey, batchPinMethodABI, nsOpID, input, nil)
+	ethLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
@@ -1177,8 +1111,13 @@ func (e *Ethereum) getFFIType(solidityType string) core.FFIInputType {
 	return ""
 }
 
-func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, error) {
-	res, err := e.queryContractMethod(ctx, address, networkVersionMethodABI, []interface{}{}, nil)
+func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+	ethLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := e.queryContractMethod(ctx, ethLocation.Address, networkVersionMethodABI, []interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Call failed" is interpreted as "method does not exist, default to version 1"
 		if strings.Contains(err.Error(), "FFEC100148") {
@@ -1193,8 +1132,41 @@ func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, 
 	return strconv.Atoi(output.Output.(string))
 }
 
-func (e *Ethereum) NetworkVersion() int {
-	e.fireflyContract.mux.Lock()
-	defer e.fireflyContract.mux.Unlock()
-	return e.fireflyContract.networkVersion
+func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {
+	// Old config (attributes under "ethconnect")
+	address := e.ethconnectConf.GetString(EthconnectConfigInstanceDeprecated)
+	if address != "" {
+		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use namespaces.predefined[].multiparty.contract[].location.address instead",
+			EthconnectConfigKey, EthconnectConfigInstanceDeprecated)
+	} else {
+		return nil, "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "instance", "blockchain.ethereum.ethconnect")
+	}
+
+	fromBlock = e.ethconnectConf.GetString(EthconnectConfigFromBlockDeprecated)
+	if fromBlock != "" {
+		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use namespaces.predefined[].multiparty.contract[].location.firstEvent instead",
+			EthconnectConfigKey, EthconnectConfigFromBlockDeprecated)
+	}
+
+	// Backwards compatibility from when instance path was not a contract address
+	if strings.HasPrefix(strings.ToLower(address), "/contracts/") {
+		address, err = e.getContractAddress(ctx, address)
+		if err != nil {
+			return nil, "", err
+		}
+	} else if strings.HasPrefix(address, "/instances/") {
+		address = strings.Replace(address, "/instances/", "", 1)
+	}
+	address, err = validateEthAddress(ctx, address)
+	if err != nil {
+		return nil, "", err
+	}
+
+	ethLocation := &Location{
+		Address: address,
+	}
+	normalized, _ := json.Marshal(ethLocation)
+	location = fftypes.JSONAnyPtrBytes(normalized)
+
+	return location, fromBlock, nil
 }

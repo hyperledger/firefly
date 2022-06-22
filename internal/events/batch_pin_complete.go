@@ -31,7 +31,7 @@ import (
 //
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
 	if batchPin.TransactionID == nil {
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on

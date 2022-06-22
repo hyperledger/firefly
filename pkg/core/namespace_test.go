@@ -55,14 +55,22 @@ func TestNamespaceValidation(t *testing.T) {
 func TestFireFlyContractsDatabaseSerialization(t *testing.T) {
 	contracts1 := &FireFlyContracts{
 		Active: FireFlyContractInfo{
-			Index: 1,
-			Info:  fftypes.JSONObject{"address": "0x1234"},
+			Index:        1,
+			FirstEvent:   "oldest",
+			Subscription: "1234",
+			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+				"address": "0x123",
+			}.String()),
 		},
 		Terminated: []FireFlyContractInfo{
 			{
-				Index:      0,
-				Info:       fftypes.JSONObject{"address": "0x0000"},
-				FinalEvent: "50",
+				Index:        0,
+				FinalEvent:   "50",
+				Subscription: "12345",
+				FirstEvent:   "oldest",
+				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
+					"address": "0x1234",
+				}.String()),
 			},
 		},
 	}
@@ -70,14 +78,16 @@ func TestFireFlyContractsDatabaseSerialization(t *testing.T) {
 	// Verify it serializes as bytes to the database
 	val1, err := contracts1.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"active":{"index":1,"info":{"address":"0x1234"}},"terminated":[{"index":0,"finalEvent":"50","info":{"address":"0x0000"}}]}`, string(val1.([]byte)))
+	assert.Equal(t, `{"active":{"index":1,"location":{"address":"0x123"},"firstEvent":"oldest","subscription":"1234"},"terminated":[{"index":0,"finalEvent":"50","location":{"address":"0x1234"},"firstEvent":"oldest","subscription":"12345"}]}`, string(val1.([]byte)))
 
 	// Verify it restores ok
 	contracts2 := &FireFlyContracts{}
 	err = contracts2.Scan(val1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, contracts2.Active.Index)
-	assert.Equal(t, fftypes.JSONObject{"address": "0x1234"}, contracts2.Active.Info)
+	assert.Equal(t, *fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String()), *contracts2.Active.Location)
 	assert.Len(t, contracts2.Terminated, 1)
 
 	// Verify it ignores a blank string

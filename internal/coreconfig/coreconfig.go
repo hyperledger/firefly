@@ -39,14 +39,22 @@ const (
 	NamespacePlugins = "plugins"
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
 	NamespaceDefaultKey = "defaultKey"
+	// NamespaceMultiparty contains the multiparty configuration for a namespace
+	NamespaceMultiparty = "multiparty"
 	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace
-	NamespaceMultipartyEnabled = "multiparty.enabled"
+	NamespaceMultipartyEnabled = "enabled"
 	// NamespaceMultipartyOrgName is a short name for the local root org within a namespace
-	NamespaceMultipartyOrgName = "multiparty.org.name"
+	NamespaceMultipartyOrgName = "org.name"
 	// NamespaceMultipartyOrgDescription is a description for the local root org within a namespace
-	NamespaceMultipartyOrgDescription = "multiparty.org.description"
+	NamespaceMultipartyOrgDescription = "org.description"
 	// NamespaceMultipartyOrgKey is the signing key allocated to the local root org within a namespace
-	NamespaceMultipartyOrgKey = "multiparty.org.key"
+	NamespaceMultipartyOrgKey = "org.key"
+	// NamespaceMultipartyContract is a list of firefly contract configurations for this namespace
+	NamespaceMultipartyContract = "contract"
+	// NamespaceMultipartyContractFirstEvent is the first event to process for this contract
+	NamespaceMultipartyContractFirstEvent = "firstEvent"
+	// NamespaceMultipartyContractLocation is an object containing blockchain specific configuration
+	NamespaceMultipartyContractLocation = "location"
 )
 
 // The following keys can be access from the root configuration.

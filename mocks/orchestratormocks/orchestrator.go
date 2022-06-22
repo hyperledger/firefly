@@ -22,6 +22,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	multiparty "github.com/hyperledger/firefly/internal/multiparty"
+
 	networkmap "github.com/hyperledger/firefly/internal/networkmap"
 
 	operations "github.com/hyperledger/firefly/internal/operations"
@@ -1102,6 +1104,22 @@ func (_m *Orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		r0 = rf(ctx, cancelCtx)
 	} else {
 		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MultiParty provides a mock function with given fields:
+func (_m *Orchestrator) MultiParty() multiparty.Manager {
+	ret := _m.Called()
+
+	var r0 multiparty.Manager
+	if rf, ok := ret.Get(0).(func() multiparty.Manager); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(multiparty.Manager)
+		}
 	}
 
 	return r0

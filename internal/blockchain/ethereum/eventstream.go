@@ -171,7 +171,7 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, instancePath, fromBlock, stream string, abi *abi.Entry) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, instancePath, fromBlock, stream string, abi *abi.Entry) (sub *subscription, err error) {
 	// Include a hash of the instance path in the subscription, so if we ever point at a different
 	// contract configuration, we re-subscribe from block 0.
 	// We don't need full strength hashing, so just use the first 16 chars for readability.
@@ -182,15 +182,18 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, instanceP
 		return nil, err
 	}
 
-	subName := fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)
+	subName := fmt.Sprintf("%s_%s_%s", namespace, abi.Name, instanceUniqueHash)
 
 	for _, s := range existingSubs {
 		if s.Stream == stream && (s.Name == subName ||
-			/* Check for the plain name we used to use originally, before adding uniqueness qualifier.
-			   If one of these very early environments needed a new subscription, the existing one would need to
+			/* Check for the deprecates names, before adding namespace uniqueness qualifier.
+			   NOTE: If one of these very early environments needed a new subscription, the existing one would need to
 				 be deleted manually. */
-			s.Name == abi.Name) {
+			s.Name == abi.Name || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)) {
 			sub = s
+			if s.Name == abi.Name || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash) {
+				log.L(ctx).Warnf("Subscription %s uses deprecated functionality, please upgrade to utilize multiple namespaces.", s.Name)
+			}
 		}
 	}
 

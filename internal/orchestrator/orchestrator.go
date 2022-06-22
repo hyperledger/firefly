@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/networkmap"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
@@ -58,6 +59,7 @@ type Orchestrator interface {
 	BatchManager() batch.Manager
 	Broadcast() broadcast.Manager
 	Contracts() contracts.Manager
+	MultiParty() multiparty.Manager
 	Data() data.Manager
 	Events() events.EventManager
 	NetworkMap() networkmap.Manager
@@ -158,10 +160,11 @@ type Plugins struct {
 type Config struct {
 	DefaultKey string
 	Multiparty struct {
-		Enabled bool
-		OrgName string
-		OrgDesc string
-		OrgKey  string
+		Enabled   bool
+		OrgName   string
+		OrgDesc   string
+		OrgKey    string
+		Contracts []multiparty.Contract
 	}
 }
 
@@ -190,6 +193,7 @@ type orchestrator struct {
 	operations     operations.Manager
 	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
+	multiparty     multiparty.Manager
 }
 
 func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
@@ -210,7 +214,7 @@ func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) 
 		err = or.initComponents(or.ctx)
 	}
 	// Bind together the blockchain interface callbacks, with the events manager
-	or.bc.bi = or.plugins.Blockchain.Plugin
+	or.bc.multiparty = or.multiparty
 	or.bc.ei = or.events
 	or.bc.dx = or.plugins.DataExchange.Plugin
 	or.bc.ss = or.plugins.SharedStorage.Plugin
@@ -252,7 +256,7 @@ func (or *orchestrator) Start() (err error) {
 				Created: fftypes.Now(),
 			}
 		}
-		err = or.blockchain().ConfigureContract(or.ctx, &ns.Contracts)
+		err = or.multiparty.ConfigureContract(or.ctx, &ns.Contracts)
 	}
 	if err == nil {
 		err = or.blockchain().Start()
@@ -352,6 +356,10 @@ func (or *orchestrator) Operations() operations.Manager {
 	return or.operations
 }
 
+func (or *orchestrator) MultiParty() multiparty.Manager {
+	return or.multiparty
+}
+
 func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or)
 	or.plugins.Blockchain.Plugin.SetHandler(&or.bc)
@@ -383,6 +391,10 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
+	if or.multiparty == nil {
+		or.multiparty = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty.Contracts, or.blockchain())
+	}
+
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange())
 		if err != nil {
@@ -395,7 +407,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.data)
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.data, or.multiparty)
 		if err != nil {
 			return err
 		}
@@ -417,7 +429,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace, or.database(), or.data)
 
 	if or.batchpin == nil {
-		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.namespace, or.database(), or.identity, or.blockchain(), or.metrics, or.operations); err != nil {
+		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.namespace, or.database(), or.identity, or.multiparty, or.metrics, or.operations); err != nil {
 			return err
 		}
 	}
@@ -463,7 +475,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events)
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.sharedstorage(), or.database(), or.blockchain(), or.identity, or.definitions, or.data, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
 		if err != nil {
 			return err
 		}
@@ -495,5 +507,5 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 		Namespace: or.namespace,
 		ID:        fftypes.NewUUID(),
 	}
-	return or.blockchain().SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
+	return or.multiparty.SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
 }

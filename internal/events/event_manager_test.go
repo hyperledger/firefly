@@ -35,6 +35,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/eventsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
@@ -83,6 +84,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mmi := &metricsmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
+	mmp := &multipartymocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mmi.On("IsMetricsEnabled").Return(metrics)
 	if metrics {
@@ -94,7 +96,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
-	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper, events)
+	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -129,7 +131,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -151,11 +153,12 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mm := &metricsmocks.Manager{}
 	mev := &eventsmocks.Plugin{}
 	events := map[string]events.Plugin{"websockets": mev}
+	mmp := &multipartymocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper, events)
+	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
 	assert.EqualError(t, err, "pop")
 }
 

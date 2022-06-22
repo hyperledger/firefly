@@ -21,8 +21,8 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,10 +50,10 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	}
 	addBatchPinInputs(op, batch.ID, contexts, "payload1")
 
-	mbi := bp.blockchain.(*blockchainmocks.Plugin)
+	mmp := bp.multiparty.(*multipartymocks.Manager)
 	mdi := bp.database.(*databasemocks.Plugin)
 	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(batch, nil)
-	mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything).Return(nil)
+	mmp.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything).Return(nil)
 
 	po, err := bp.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)

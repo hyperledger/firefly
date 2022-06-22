@@ -18,9 +18,11 @@ package namespace
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/blockchain/bifactory"
@@ -32,6 +34,7 @@ import (
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
+	multipartyManager "github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/spievents"
@@ -184,7 +187,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		}
 
 		// If the default namespace is a multiparty V1 namespace, insert the legacy ff_system namespace
-		if name == defaultNS && ns.config.Multiparty.Enabled && ns.plugins.Blockchain.Plugin.NetworkVersion() == 1 {
+		if name == defaultNS && ns.config.Multiparty.Enabled && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
 			systemNS = &namespace{}
 			*systemNS = *ns
 			if err := nm.initNamespace(core.LegacySystemNamespace, systemNS); err != nil {
@@ -617,20 +620,21 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
 	}
 
+	multipartyConf := conf.SubSection(coreconfig.NamespaceMultiparty)
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
-	orgName := conf.GetString(coreconfig.NamespaceMultipartyOrgName)
+	orgName := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgName)
 	if orgName == "" {
 		orgName = config.GetString(coreconfig.OrgName)
 	}
-	orgKey := conf.GetString(coreconfig.NamespaceMultipartyOrgKey)
+	orgKey := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgKey)
 	if orgKey == "" {
 		orgKey = config.GetString(coreconfig.OrgKey)
 	}
-	orgDesc := conf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
+	orgDesc := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
 	if orgDesc == "" {
 		orgDesc = config.GetString(coreconfig.OrgDescription)
 	}
-	multiparty := conf.Get(coreconfig.NamespaceMultipartyEnabled)
+	multiparty := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
 	if multiparty == nil {
 		multiparty = orgName != "" || orgKey != ""
 	}
@@ -670,10 +674,30 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	var p *orchestrator.Plugins
 	var err error
 	if multiparty.(bool) {
+		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
+		contractConfArraySize := contractsConf.ArraySize()
+		contracts := make([]multipartyManager.Contract, contractConfArraySize)
+
+		for i := 0; i < contractConfArraySize; i++ {
+			conf := contractsConf.ArrayEntry(i)
+			locationObject := conf.GetObject(coreconfig.NamespaceMultipartyContractLocation)
+			b, err := json.Marshal(locationObject)
+			if err != nil {
+				return nil, err
+			}
+			location := fftypes.JSONAnyPtrBytes(b)
+			contract := multipartyManager.Contract{
+				Location:   location,
+				FirstEvent: conf.GetString(coreconfig.NamespaceMultipartyContractFirstEvent),
+			}
+			contracts[i] = contract
+		}
+
 		config.Multiparty.Enabled = true
 		config.Multiparty.OrgName = orgName
 		config.Multiparty.OrgKey = orgKey
 		config.Multiparty.OrgDesc = orgDesc
+		config.Multiparty.Contracts = contracts
 		p, err = nm.validateMultiPartyConfig(ctx, name, plugins)
 	} else {
 		p, err = nm.validateGatewayConfig(ctx, name, plugins)
