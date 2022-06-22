@@ -18,7 +18,6 @@ package events
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -36,15 +35,15 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func sampleBatchTransfer(t *testing.T, txType core.TransactionType) (*core.Batch, []byte) {
+func sampleBatchTransfer(t *testing.T, txType core.TransactionType) (*core.Batch, *core.TransportWrapper) {
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypePrivate, txType, core.DataArray{data})
-	b, _ := json.Marshal(&core.TransportWrapper{
+	b := &core.TransportWrapper{
 		Batch: batch,
 		Group: &core.Group{
 			Hash: fftypes.NewRandB32(),
 		},
-	})
+	}
 	return batch, b
 }
 
@@ -82,18 +81,18 @@ func newTestNode(name string, owner *core.Identity) *core.Identity {
 	return identity
 }
 
-func newMessageReceivedNoAck(peerID string, data []byte) *dataexchangemocks.DXEvent {
+func newMessageReceivedNoAck(peerID string, transport *core.TransportWrapper) *dataexchangemocks.DXEvent {
 	mde := &dataexchangemocks.DXEvent{}
 	mde.On("MessageReceived").Return(&dataexchange.MessageReceived{
-		PeerID: peerID,
-		Data:   data,
+		PeerID:    peerID,
+		Transport: transport,
 	})
 	mde.On("Type").Return(dataexchange.DXEventTypeMessageReceived).Maybe()
 	return mde
 }
 
-func newMessageReceived(peerID string, data []byte, expectedManifest string) *dataexchangemocks.DXEvent {
-	mde := newMessageReceivedNoAck(peerID, data)
+func newMessageReceived(peerID string, transport *core.TransportWrapper, expectedManifest string) *dataexchangemocks.DXEvent {
+	mde := newMessageReceivedNoAck(peerID, transport)
 	mde.On("AckWithManifest", expectedManifest).Return()
 	return mde
 }
@@ -183,12 +182,12 @@ func TestMessageReceiveOkBadBatchIgnored(t *testing.T) {
 	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
 	batch := sampleBatch(t, core.BatchTypePrivate, core.TransactionTypeBatchPin, core.DataArray{data})
 	batch.Payload.TX.Type = core.TransactionTypeTokenPool
-	b, _ := json.Marshal(&core.TransportWrapper{
+	b := &core.TransportWrapper{
 		Batch: batch,
 		Group: &core.Group{
 			Hash: fftypes.NewRandB32(),
 		},
-	})
+	}
 
 	org1 := newTestOrg("org1")
 	node1 := newTestNode("node1", org1)
@@ -238,81 +237,6 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestMessageReceivedBadData(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mde := newMessageReceived("peer1", []byte(`!{}`), "")
-	em.messageReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-
-}
-
-func TestMessageReceivedUnknownType(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mde := newMessageReceived("peer1", []byte(`{
-		"type": "unknown"
-	}`), "")
-	em.messageReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-}
-
-func TestMessageReceivedNilBatch(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mde := newMessageReceived("peer1", []byte(`{
-		"type": "batch"
-	}`), "")
-	em.messageReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-}
-
-func TestMessageReceivedNilMessage(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mde := newMessageReceived("peer1", []byte(`{
-		"type": "message"
-	}`), "")
-	em.messageReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-}
-
-func TestMessageReceivedNilGroup(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	mdx := &dataexchangemocks.Plugin{}
-	mdx.On("Name").Return("utdx")
-
-	mde := newMessageReceived("peer1", []byte(`{
-		"type": "message",
-		"message": {}
-	}`), "")
-	em.messageReceived(mdx, mde)
-
-	mde.AssertExpectations(t)
-}
-
 func TestMessageReceiveNodeLookupError(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to stop retry
@@ -322,9 +246,9 @@ func TestMessageReceiveNodeLookupError(t *testing.T) {
 			Namespace: "ns1",
 		},
 	}
-	b, _ := json.Marshal(&core.TransportWrapper{
+	b := &core.TransportWrapper{
 		Batch: batch,
-	})
+	}
 
 	mim := em.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{

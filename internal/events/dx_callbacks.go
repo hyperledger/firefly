@@ -19,7 +19,6 @@ package events
 import (
 	"context"
 	"database/sql/driver"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -184,23 +183,9 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 	l := log.L(em.ctx)
 
 	mr := event.MessageReceived()
+	l.Infof("Private batch received from %s peer '%s'", dx.Name(), mr.PeerID)
 
-	// De-serialize the transport wrapper
-	var wrapper *core.TransportWrapper
-	err := json.Unmarshal(mr.Data, &wrapper)
-	if err != nil {
-		l.Errorf("Invalid transmission from %s peer '%s': %s", dx.Name(), mr.PeerID, err)
-		event.AckWithManifest("")
-		return
-	}
-	if wrapper.Batch == nil {
-		l.Errorf("Invalid transmission: nil batch")
-		event.AckWithManifest("")
-		return
-	}
-	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), mr.PeerID, len(mr.Data))
-
-	manifestString, err := em.privateBatchReceived(mr.PeerID, wrapper.Batch, wrapper.Group)
+	manifestString, err := em.privateBatchReceived(mr.PeerID, mr.Transport.Batch, mr.Transport.Group)
 	if err != nil {
 		l.Warnf("Exited while persisting batch: %s", err)
 		// We do NOT ack here as we broke out of the retry

@@ -125,8 +125,8 @@ const (
 )
 
 type MessageReceived struct {
-	PeerID string
-	Data   []byte
+	PeerID    string
+	Transport *core.TransportWrapper
 }
 
 type PrivateBlobReceived struct {

@@ -18,7 +18,7 @@ package ffdx
 
 import (
 	"encoding/json"
-	"strings"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -131,15 +131,21 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			},
 		}
 	case messageReceived:
-		var wrapper core.TransportWrapper
-		if err := json.Unmarshal([]byte(msg.Message), &wrapper); err == nil {
-			// Special handling - parse the namespace out of the message body
+		// De-serialize the transport wrapper
+		var wrapper *core.TransportWrapper
+		err = json.Unmarshal([]byte(msg.Message), &wrapper)
+		switch {
+		case err != nil:
+			err = fmt.Errorf("invalid transmission from peer '%s': %s", msg.Sender, err)
+		case wrapper.Batch == nil:
+			err = fmt.Errorf("invalid transmission from peer '%s': nil batch", msg.Sender)
+		default:
 			namespace = wrapper.Batch.Namespace
-		}
-		e.dxType = dataexchange.DXEventTypeMessageReceived
-		e.messageReceived = &dataexchange.MessageReceived{
-			PeerID: msg.Sender,
-			Data:   []byte(msg.Message),
+			e.dxType = dataexchange.DXEventTypeMessageReceived
+			e.messageReceived = &dataexchange.MessageReceived{
+				PeerID:    msg.Sender,
+				Transport: wrapper,
+			}
 		}
 	case blobFailed:
 		e.dxType = dataexchange.DXEventTypeTransferResult
@@ -168,11 +174,7 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
-			pathParts := strings.Split(msg.Path, "/")
-			if len(pathParts) >= 2 {
-				// Special handling - parse the namespace out of the blob path
-				namespace = pathParts[len(pathParts)-2]
-			}
+			_, namespace, _ = splitBlobPath(msg.Path)
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
 				Namespace:  namespace,

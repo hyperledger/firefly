@@ -73,6 +73,38 @@ func newTestFFDX(t *testing.T, manifestEnabled bool) (h *FFDX, toServer, fromSer
 	}
 }
 
+func TestSplitBlobPath(t *testing.T) {
+	prefix, namespace, id := splitBlobPath("")
+	assert.Equal(t, "", prefix)
+	assert.Equal(t, "", namespace)
+	assert.Equal(t, "", id)
+
+	prefix, namespace, id = splitBlobPath("123")
+	assert.Equal(t, "", prefix)
+	assert.Equal(t, "", namespace)
+	assert.Equal(t, "123", id)
+
+	prefix, namespace, id = splitBlobPath("ns1/123")
+	assert.Equal(t, "", prefix)
+	assert.Equal(t, "ns1", namespace)
+	assert.Equal(t, "123", id)
+
+	prefix, namespace, id = splitBlobPath("/ns1/123")
+	assert.Equal(t, "", prefix)
+	assert.Equal(t, "ns1", namespace)
+	assert.Equal(t, "123", id)
+
+	prefix, namespace, id = splitBlobPath("/root/test/ns1/123")
+	assert.Equal(t, "/root/test", prefix)
+	assert.Equal(t, "ns1", namespace)
+	assert.Equal(t, "123", id)
+}
+
+func TestJoinBlobPath(t *testing.T) {
+	path := joinBlobPath("ns1", "123")
+	assert.Equal(t, "ns1/123", path)
+}
+
 func TestInitBadURL(t *testing.T) {
 	coreconfig.Reset()
 	h := &FFDX{}
@@ -429,10 +461,13 @@ func TestTransferBlobError(t *testing.T) {
 	assert.Regexp(t, "FF10229", err)
 }
 
-func TestEvents(t *testing.T) {
+func TestBadEvents(t *testing.T) {
 
 	h, toServer, fromServer, _, done := newTestFFDX(t, false)
 	defer done()
+
+	mcb := &dataexchangemocks.Callbacks{}
+	h.SetHandler("ns1", mcb)
 
 	err := h.Start()
 	assert.NoError(t, err)
@@ -442,13 +477,32 @@ func TestEvents(t *testing.T) {
 	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"0"}`, string(msg))
 
-	mcb := &dataexchangemocks.Callbacks{}
-	h.SetHandler("ns1", mcb)
-
 	namespacedID := fmt.Sprintf("ns2:%s", fftypes.NewUUID())
 	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID + `"}`
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
+
+	fromServer <- `{"id":"2","type":"message-received","sender":"peer1","message":"bad!"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"2"}`, string(msg))
+
+	fromServer <- `{"id":"3","type":"message-received","sender":"peer1","message":"{}"}`
+	msg = <-toServer
+	assert.Equal(t, `{"action":"ack","id":"3"}`, string(msg))
+
+	mcb.AssertExpectations(t)
+}
+
+func TestMessageEvents(t *testing.T) {
+
+	h, toServer, fromServer, _, done := newTestFFDX(t, false)
+	defer done()
+
+	mcb := &dataexchangemocks.Callbacks{}
+	h.SetHandler("ns1", mcb)
+
+	err := h.Start()
+	assert.NoError(t, err)
 
 	namespacedID1 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
@@ -460,7 +514,7 @@ func TestEvents(t *testing.T) {
 			ev.TransferResult().Error == "pop"
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"1","type":"message-failed","requestID":"` + namespacedID1 + `","error":"pop"}`
-	msg = <-toServer
+	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"1"}`, string(msg))
 
 	namespacedID2 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
@@ -496,6 +550,20 @@ func TestEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"action":"ack","id":"4","manifest":"{\"manifest\":true}"}`, string(msg))
 
+	mcb.AssertExpectations(t)
+}
+
+func TestBlobEvents(t *testing.T) {
+
+	h, toServer, fromServer, _, done := newTestFFDX(t, false)
+	defer done()
+
+	mcb := &dataexchangemocks.Callbacks{}
+	h.SetHandler("ns1", mcb)
+
+	err := h.Start()
+	assert.NoError(t, err)
+
 	namespacedID5 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
 	mcb.On("DXEvent", mock.MatchedBy(func(ev dataexchange.DXEvent) bool {
 		return ev.EventID() == "5" &&
@@ -505,7 +573,7 @@ func TestEvents(t *testing.T) {
 			ev.TransferResult().Error == "pop"
 	})).Run(acker()).Return(nil)
 	fromServer <- `{"id":"5","type":"blob-failed","requestID":"` + namespacedID5 + `","error":"pop"}`
-	msg = <-toServer
+	msg := <-toServer
 	assert.Equal(t, `{"action":"ack","id":"5"}`, string(msg))
 
 	namespacedID6 := fmt.Sprintf("ns1:%s", fftypes.NewUUID())
