@@ -159,8 +159,11 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 
 	subName := fmt.Sprintf("%s_%s", namespace, event)
 	for _, s := range existingSubs {
-		if s.Stream == stream && s.Name == subName {
+		if s.Stream == stream && (s.Name == subName || s.Name == event) {
 			sub = s
+			if s.Name == event {
+				log.L(ctx).Warnf("Subscription %s uses deprecated functionality, please upgrade to utilize multiple namespaces.", s.Name)
+			}
 		}
 	}
 

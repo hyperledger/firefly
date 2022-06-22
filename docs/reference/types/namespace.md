@@ -64,7 +64,7 @@ nav_order: 20
 | `finalEvent` | The identifier for the final blockchain event received from this contract before termination | `string` |
 | `location` | A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel | [`JSONAny`](simpletypes#jsonany) |
 | `firstEvent` | A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors | `string` |
-| `subscription` | The UUID of the subscription for the FireFly BatchPin contract | `string` |
+| `subscription` | The backend identifier of the subscription for the FireFly BatchPin contract | `string` |
 
 
 

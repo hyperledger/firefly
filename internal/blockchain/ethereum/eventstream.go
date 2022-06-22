@@ -191,7 +191,7 @@ func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace
 				 be deleted manually. */
 			s.Name == abi.Name || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash)) {
 			sub = s
-			if s.Name == subName || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash) {
+			if s.Name == abi.Name || s.Name == fmt.Sprintf("%s_%s", abi.Name, instanceUniqueHash) {
 				log.L(ctx).Warnf("Subscription %s uses deprecated functionality, please upgrade to utilize multiple namespaces.", s.Name)
 			}
 		}

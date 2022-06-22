@@ -418,13 +418,6 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		return "", err
 	}
 
-	switch firstEvent {
-	case string(core.SubOptsFirstEventOldest):
-		firstEvent = "0"
-	case string(core.SubOptsFirstEventNewest):
-		firstEvent = "latest"
-	}
-
 	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
@@ -435,8 +428,8 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 }
 
 func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) error {
-	// Don't actually delete the subscription from ethconnect, as this may be called while processing
-	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
+	// Don't actually delete the subscription from fabconnect, as this may be called while processing
+	// events from the subscription (and handling that scenario cleanly could be difficult for fabconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := f.subs[subID]; ok {
 		delete(f.subs, subID)

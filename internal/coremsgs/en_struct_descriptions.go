@@ -387,7 +387,7 @@ var (
 	FireFlyContractFinalEvent   = ffm("FireFlyContractInfo.finalEvent", "The identifier for the final blockchain event received from this contract before termination")
 	FireFlyContractFirstEvent   = ffm("FireFlyContractInfo.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
 	FireFlyContractLocation     = ffm("FireFlyContractInfo.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
-	FireFlyContractSubscription = ffm("FireFlyContractInfo.subscription", "The UUID of the subscription for the FireFly BatchPin contract")
+	FireFlyContractSubscription = ffm("FireFlyContractInfo.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
 	NetworkActionType           = ffm("NetworkAction.type", "The action to be performed")
 
 	// NodeStatus field descriptions

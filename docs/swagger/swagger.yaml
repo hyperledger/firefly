@@ -8744,8 +8744,8 @@ paths:
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
                             subscription:
-                              description: The UUID of the subscription for the FireFly
-                                BatchPin contract
+                              description: The backend identifier of the subscription
+                                for the FireFly BatchPin contract
                               type: string
                           type: object
                         terminated:
@@ -8772,8 +8772,8 @@ paths:
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
                               subscription:
-                                description: The UUID of the subscription for the
-                                  FireFly BatchPin contract
+                                description: The backend identifier of the subscription
+                                  for the FireFly BatchPin contract
                                 type: string
                             type: object
                           type: array
@@ -8864,8 +8864,8 @@ paths:
                               For example an Ethereum contract address, or a Fabric
                               chaincode name and channel
                           subscription:
-                            description: The UUID of the subscription for the FireFly
-                              BatchPin contract
+                            description: The backend identifier of the subscription
+                              for the FireFly BatchPin contract
                             type: string
                         type: object
                       terminated:
@@ -8892,8 +8892,8 @@ paths:
                                 For example an Ethereum contract address, or a Fabric
                                 chaincode name and channel
                             subscription:
-                              description: The UUID of the subscription for the FireFly
-                                BatchPin contract
+                              description: The backend identifier of the subscription
+                                for the FireFly BatchPin contract
                               type: string
                           type: object
                         type: array
