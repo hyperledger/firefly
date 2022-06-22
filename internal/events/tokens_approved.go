@@ -70,7 +70,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
-	pool, err := em.database.GetTokenPoolByLocator(ctx, approval.Connector, approval.PoolLocator)
+	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
 	}

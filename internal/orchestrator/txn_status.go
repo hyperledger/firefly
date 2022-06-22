@@ -120,7 +120,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*c
 	case core.TransactionTypeTokenPool:
 		// Note: no assumptions about blockchain events here (may or may not contain one)
 		f := database.TokenPoolQueryFactory.NewFilter(ctx)
-		switch pools, _, err := or.database().GetTokenPools(ctx, f.Eq("tx.id", id)); {
+		switch pools, _, err := or.database().GetTokenPools(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(pools) == 0:

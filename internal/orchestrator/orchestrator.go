@@ -447,7 +447,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.assets == nil {
-		or.assets, err = assets.NewAssetManager(ctx, or.namespace, or.database(), or.identity, or.data, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
+		or.assets, err = assets.NewAssetManager(ctx, or.namespace, or.database(), or.identity, or.syncasync, or.broadcast, or.messaging, or.tokens(), or.metrics, or.operations, or.txHelper)
 		if err != nil {
 			return err
 		}

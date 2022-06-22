@@ -1864,13 +1864,13 @@ func (_m *Plugin) GetTokenPool(ctx context.Context, namespace string, name strin
 	return r0, r1
 }
 
-// GetTokenPoolByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error) {
-	ret := _m.Called(ctx, id)
+// GetTokenPoolByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.TokenPool); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.TokenPool); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenPool)
@@ -1878,8 +1878,8 @@ func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1887,13 +1887,13 @@ func (_m *Plugin) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core
 	return r0, r1
 }
 
-// GetTokenPoolByLocator provides a mock function with given fields: ctx, connector, locator
-func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, locator string) (*core.TokenPool, error) {
-	ret := _m.Called(ctx, connector, locator)
+// GetTokenPoolByLocator provides a mock function with given fields: ctx, namespace, connector, locator
+func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, namespace string, connector string, locator string) (*core.TokenPool, error) {
+	ret := _m.Called(ctx, namespace, connector, locator)
 
 	var r0 *core.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.TokenPool); ok {
-		r0 = rf(ctx, connector, locator)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *core.TokenPool); ok {
+		r0 = rf(ctx, namespace, connector, locator)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.TokenPool)
@@ -1901,8 +1901,8 @@ func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, l
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, connector, locator)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, namespace, connector, locator)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1910,13 +1910,13 @@ func (_m *Plugin) GetTokenPoolByLocator(ctx context.Context, connector string, l
 	return r0, r1
 }
 
-// GetTokenPools provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]*core.TokenPool, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetTokenPools provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetTokenPools(ctx context.Context, namespace string, filter database.Filter) ([]*core.TokenPool, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.TokenPool
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.TokenPool); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.TokenPool); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.TokenPool)
@@ -1924,8 +1924,8 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -1933,8 +1933,8 @@ func (_m *Plugin) GetTokenPools(ctx context.Context, filter database.Filter) ([]
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

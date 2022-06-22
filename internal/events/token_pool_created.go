@@ -90,7 +90,7 @@ func (em *eventManager) findTXOperation(ctx context.Context, tx *fftypes.UUID, o
 }
 
 func (em *eventManager) shouldConfirm(ctx context.Context, pool *tokens.TokenPool) (existingPool *core.TokenPool, err error) {
-	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
+	if existingPool, err = em.database.GetTokenPoolByLocator(ctx, em.namespace, pool.Connector, pool.PoolLocator); err != nil || existingPool == nil {
 		return existingPool, err
 	}
 	if err = addPoolDetailsFromPlugin(existingPool, pool); err != nil {

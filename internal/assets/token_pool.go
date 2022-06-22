@@ -28,23 +28,20 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (am *assetManager) CreateTokenPool(ctx context.Context, ns string, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
-	if err := am.data.VerifyNamespaceExists(ctx, ns); err != nil {
-		return nil, err
-	}
+func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
 	if err := core.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
-	if existing, err := am.database.GetTokenPool(ctx, ns, pool.Name); err != nil {
+	if existing, err := am.database.GetTokenPool(ctx, am.namespace, pool.Name); err != nil {
 		return nil, err
 	} else if existing != nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolDuplicate, pool.Name)
 	}
 	pool.ID = fftypes.NewUUID()
-	pool.Namespace = ns
+	pool.Namespace = am.namespace
 
 	if pool.Connector == "" {
-		connector, err := am.getDefaultTokenConnector(ctx, ns)
+		connector, err := am.getDefaultTokenConnector(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -136,24 +133,18 @@ func (am *assetManager) ActivateTokenPool(ctx context.Context, pool *core.TokenP
 	return err
 }
 
-func (am *assetManager) GetTokenPools(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error) {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return nil, nil, err
-	}
-	return am.database.GetTokenPools(ctx, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenPools(ctx context.Context, filter database.AndFilter) ([]*core.TokenPool, *database.FilterResult, error) {
+	return am.database.GetTokenPools(ctx, am.namespace, filter)
 }
 
-func (am *assetManager) GetTokenPool(ctx context.Context, ns, connector, poolName string) (*core.TokenPool, error) {
+func (am *assetManager) GetTokenPool(ctx context.Context, connector, poolName string) (*core.TokenPool, error) {
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
-		return nil, err
-	}
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return nil, err
 	}
 	if err := core.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
 		return nil, err
 	}
-	pool, err := am.database.GetTokenPool(ctx, ns, poolName)
+	pool, err := am.database.GetTokenPool(ctx, am.namespace, poolName)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +165,7 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 		if pool, err = am.database.GetTokenPool(ctx, am.namespace, poolNameOrID); err != nil {
 			return nil, err
 		}
-	} else if pool, err = am.database.GetTokenPoolByID(ctx, poolID); err != nil {
+	} else if pool, err = am.database.GetTokenPoolByID(ctx, am.namespace, poolID); err != nil {
 		return nil, err
 	}
 	if pool == nil {

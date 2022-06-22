@@ -189,23 +189,25 @@ func (s *SQLCommon) getTokenPoolPred(ctx context.Context, desc string, pred inte
 	return pool, nil
 }
 
-func (s *SQLCommon) GetTokenPool(ctx context.Context, ns string, name string) (message *core.TokenPool, err error) {
-	return s.getTokenPoolPred(ctx, ns+":"+name, sq.And{sq.Eq{"namespace": ns}, sq.Eq{"name": name}})
+func (s *SQLCommon) GetTokenPool(ctx context.Context, namespace string, name string) (message *core.TokenPool, err error) {
+	return s.getTokenPoolPred(ctx, namespace+":"+name, sq.Eq{"namespace": namespace, "name": name})
 }
 
-func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (message *core.TokenPool, err error) {
-	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.TokenPool, err error) {
+	return s.getTokenPoolPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*core.TokenPool, error) {
+func (s *SQLCommon) GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error) {
 	return s.getTokenPoolPred(ctx, locator, sq.And{
+		sq.Eq{"namespace": namespace},
 		sq.Eq{"connector": connector},
 		sq.Eq{"locator": locator},
 	})
 }
 
-func (s *SQLCommon) GetTokenPools(ctx context.Context, filter database.Filter) (message []*core.TokenPool, fr *database.FilterResult, err error) {
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"), filter, tokenPoolFilterFieldMap, []interface{}{"seq"})
+func (s *SQLCommon) GetTokenPools(ctx context.Context, namespace string, filter database.Filter) (message []*core.TokenPool, fr *database.FilterResult, err error) {
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(tokenPoolColumns...).From("tokenpool"),
+		filter, tokenPoolFilterFieldMap, []interface{}{"seq"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

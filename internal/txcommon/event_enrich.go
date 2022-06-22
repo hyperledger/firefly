@@ -77,7 +77,7 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.NamespaceDetails = ns
 	case core.EventTypePoolConfirmed:
-		tokenPool, err := t.database.GetTokenPoolByID(ctx, event.Reference)
+		tokenPool, err := t.database.GetTokenPoolByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

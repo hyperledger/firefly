@@ -39,7 +39,7 @@ func TestPostTokenPool(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("CreateTokenPool", mock.Anything, "ns1", mock.AnythingOfType("*core.TokenPool"), false).
+	mam.On("CreateTokenPool", mock.Anything, mock.AnythingOfType("*core.TokenPool"), false).
 		Return(&core.TokenPool{}, nil)
 	r.ServeHTTP(res, req)
 

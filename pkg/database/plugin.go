@@ -364,13 +364,13 @@ type iTokenPoolCollection interface {
 	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by pool ID
-	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error)
+	GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.TokenPool, error)
 
-	// GetTokenPoolByID - Get a token pool by locator
-	GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*core.TokenPool, error)
+	// GetTokenPoolByLocator - Get a token pool by locator
+	GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error)
 
 	// GetTokenPools - Get token pools
-	GetTokenPools(ctx context.Context, filter Filter) ([]*core.TokenPool, *FilterResult, error)
+	GetTokenPools(ctx context.Context, namespace string, filter Filter) ([]*core.TokenPool, *FilterResult, error)
 }
 
 type iTokenBalanceCollection interface {

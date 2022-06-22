@@ -460,7 +460,7 @@ func TestEnrichTokenPoolConfirmed(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(&core.TokenPool{
+	mdi.On("GetTokenPoolByID", mock.Anything, "ns1", ref1).Return(&core.TokenPool{
 		ID: ref1,
 	}, nil)
 
@@ -486,7 +486,7 @@ func TestEnrichTokenPoolConfirmedFail(t *testing.T) {
 	ev1 := fftypes.NewUUID()
 
 	// Setup enrichment
-	mdi.On("GetTokenPoolByID", mock.Anything, ref1).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", mock.Anything, "ns1", ref1).Return(nil, fmt.Errorf("pop"))
 
 	event := &core.Event{
 		ID:        ev1,

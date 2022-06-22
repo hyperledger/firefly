@@ -73,8 +73,8 @@ func TestTokensTransferredSucceedWithRetries(t *testing.T) {
 		Namespace: "ns1",
 	}
 
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(4)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(4)
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, fmt.Errorf("pop")).Once()
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(3)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
@@ -114,7 +114,7 @@ func TestTokensTransferredIgnoreExisting(t *testing.T) {
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(&core.TokenTransfer{}, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 
 	err := em.TokensTransferred(mti, transfer)
 	assert.NoError(t, err)
@@ -135,7 +135,7 @@ func TestPersistTransferWrongNS(t *testing.T) {
 		Namespace: "ns2",
 	}
 
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
 	assert.False(t, valid)
@@ -157,7 +157,7 @@ func TestPersistTransferOpFail(t *testing.T) {
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
 	valid, err := em.persistTokenTransfer(em.ctx, transfer)
@@ -187,7 +187,7 @@ func TestPersistTransferBadOp(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
@@ -219,7 +219,7 @@ func TestPersistTransferTxFail(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(false, fmt.Errorf("pop"))
 
@@ -252,7 +252,7 @@ func TestPersistTransferGetTransferFail(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(nil, fmt.Errorf("pop"))
@@ -286,7 +286,7 @@ func TestPersistTransferBlockchainEventFail(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(ops, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(nil, nil)
@@ -325,7 +325,7 @@ func TestTokensTransferredWithTransactionRegenerateLocalID(t *testing.T) {
 	}}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil)
 	mdi.On("GetOperations", em.ctx, "ns1", mock.Anything).Return(operations, nil, nil)
 	mth.On("PersistTransaction", mock.Anything, transfer.TX.ID, core.TransactionTypeTokenTransfer, "0xffffeeee").Return(true, nil)
 	mdi.On("GetTokenTransferByID", em.ctx, localID).Return(&core.TokenTransfer{}, nil)
@@ -358,7 +358,7 @@ func TestTokensTransferredBadPool(t *testing.T) {
 
 	transfer := newTransfer()
 
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(nil, nil)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(nil, nil)
 
 	err := em.TokensTransferred(mti, transfer)
 	assert.NoError(t, err)
@@ -406,7 +406,7 @@ func TestTokensTransferredWithMessageReceived(t *testing.T) {
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name
@@ -470,7 +470,7 @@ func TestTokensTransferredWithMessageSend(t *testing.T) {
 	}
 
 	mdi.On("GetTokenTransferByProtocolID", em.ctx, "erc1155", "123").Return(nil, nil).Times(2)
-	mdi.On("GetTokenPoolByLocator", em.ctx, "erc1155", "F1").Return(pool, nil).Times(2)
+	mdi.On("GetTokenPoolByLocator", em.ctx, "ns1", "erc1155", "F1").Return(pool, nil).Times(2)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), transfer.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(e *core.BlockchainEvent) bool {
 		return e.Namespace == pool.Namespace && e.Name == transfer.Event.Name

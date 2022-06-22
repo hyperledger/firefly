@@ -190,7 +190,7 @@ func (sa *syncAsyncBridge) getIdentityFromEvent(event *core.EventDelivery) (iden
 }
 
 func (sa *syncAsyncBridge) getPoolFromEvent(event *core.EventDelivery) (pool *core.TokenPool, err error) {
-	if pool, err = sa.database.GetTokenPoolByID(sa.ctx, event.Reference); err != nil {
+	if pool, err = sa.database.GetTokenPoolByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if pool == nil {

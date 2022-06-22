@@ -61,7 +61,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, poolID)
+		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, poolID)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -74,7 +74,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, transfer.Pool)
+		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, transfer.Pool)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
@@ -87,7 +87,7 @@ func (am *assetManager) PrepareOperation(ctx context.Context, op *core.Operation
 		if err != nil {
 			return nil, err
 		}
-		pool, err := am.database.GetTokenPoolByID(ctx, approval.Pool)
+		pool, err := am.database.GetTokenPoolByID(ctx, am.namespace, approval.Pool)
 		if err != nil {
 			return nil, err
 		} else if pool == nil {
