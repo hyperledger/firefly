@@ -39,7 +39,7 @@ func TestGetContractAPIListeners(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractAPIListeners", mock.Anything, "ns1", "banana", "peeled", mock.Anything).
+	mcm.On("GetContractAPIListeners", mock.Anything, "banana", "peeled", mock.Anything).
 		Return([]*core.ContractListener{}, nil, nil)
 	r.ServeHTTP(res, req)
 

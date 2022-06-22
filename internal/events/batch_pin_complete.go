@@ -65,7 +65,7 @@ func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingK
 				ID:           batchPin.TransactionID,
 				BlockchainID: batchPin.Event.BlockchainTXID,
 			})
-			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+			if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 				return err
 			}
 			em.emitBlockchainEventMetric(&batchPin.Event)

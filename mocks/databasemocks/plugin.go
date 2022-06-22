@@ -51,13 +51,13 @@ func (_m *Plugin) DeleteBlob(ctx context.Context, sequence int64) error {
 	return r0
 }
 
-// DeleteContractListenerByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) error {
-	ret := _m.Called(ctx, id)
+// DeleteContractListenerByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) error {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -493,13 +493,13 @@ func (_m *Plugin) GetContractListener(ctx context.Context, namespace string, nam
 	return r0, r1
 }
 
-// GetContractListenerByBackendID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string) (*core.ContractListener, error) {
-	ret := _m.Called(ctx, id)
+// GetContractListenerByBackendID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, namespace string, id string) (*core.ContractListener, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.ContractListener); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.ContractListener); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.ContractListener)
@@ -507,8 +507,8 @@ func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -516,13 +516,13 @@ func (_m *Plugin) GetContractListenerByBackendID(ctx context.Context, id string)
 	return r0, r1
 }
 
-// GetContractListenerByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (*core.ContractListener, error) {
-	ret := _m.Called(ctx, id)
+// GetContractListenerByID provides a mock function with given fields: ctx, namespace, id
+func (_m *Plugin) GetContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.ContractListener, error) {
+	ret := _m.Called(ctx, namespace, id)
 
 	var r0 *core.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.ContractListener); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.ContractListener); ok {
+		r0 = rf(ctx, namespace, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.ContractListener)
@@ -530,8 +530,8 @@ func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, namespace, id)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -539,13 +539,13 @@ func (_m *Plugin) GetContractListenerByID(ctx context.Context, id *fftypes.UUID)
 	return r0, r1
 }
 
-// GetContractListeners provides a mock function with given fields: ctx, filter
-func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filter) ([]*core.ContractListener, *database.FilterResult, error) {
-	ret := _m.Called(ctx, filter)
+// GetContractListeners provides a mock function with given fields: ctx, namespace, filter
+func (_m *Plugin) GetContractListeners(ctx context.Context, namespace string, filter database.Filter) ([]*core.ContractListener, *database.FilterResult, error) {
+	ret := _m.Called(ctx, namespace, filter)
 
 	var r0 []*core.ContractListener
-	if rf, ok := ret.Get(0).(func(context.Context, database.Filter) []*core.ContractListener); ok {
-		r0 = rf(ctx, filter)
+	if rf, ok := ret.Get(0).(func(context.Context, string, database.Filter) []*core.ContractListener); ok {
+		r0 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*core.ContractListener)
@@ -553,8 +553,8 @@ func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filt
 	}
 
 	var r1 *database.FilterResult
-	if rf, ok := ret.Get(1).(func(context.Context, database.Filter) *database.FilterResult); ok {
-		r1 = rf(ctx, filter)
+	if rf, ok := ret.Get(1).(func(context.Context, string, database.Filter) *database.FilterResult); ok {
+		r1 = rf(ctx, namespace, filter)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*database.FilterResult)
@@ -562,8 +562,8 @@ func (_m *Plugin) GetContractListeners(ctx context.Context, filter database.Filt
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, database.Filter) error); ok {
-		r2 = rf(ctx, filter)
+	if rf, ok := ret.Get(2).(func(context.Context, string, database.Filter) error); ok {
+		r2 = rf(ctx, namespace, filter)
 	} else {
 		r2 = ret.Error(2)
 	}

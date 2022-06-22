@@ -69,7 +69,7 @@ func (em *eventManager) BlockchainNetworkAction(action string, event *blockchain
 			chainEvent := buildBlockchainEvent(core.LegacySystemNamespace, nil, event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,
 			})
-			err = em.maybePersistBlockchainEvent(em.ctx, chainEvent)
+			err = em.maybePersistBlockchainEvent(em.ctx, chainEvent, nil)
 		}
 		return true, err
 	})

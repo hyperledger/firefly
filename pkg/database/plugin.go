@@ -472,23 +472,23 @@ type iContractAPICollection interface {
 }
 
 type iContractListenerCollection interface {
-	// InsertContractListener - upsert a subscription to an external smart contract
+	// InsertContractListener - upsert a listener to an external smart contract
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
-	// GetContractListener - get smart contract subscription by name
+	// GetContractListener - get contract listener by name
 	GetContractListener(ctx context.Context, namespace, name string) (sub *core.ContractListener, err error)
 
-	// GetContractListenerByID - get smart contract subscription by ID
-	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *core.ContractListener, err error)
+	// GetContractListenerByID - get contract listener by ID
+	GetContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (sub *core.ContractListener, err error)
 
-	// GetContractListenerByBackendID - get smart contract subscription by backend ID
-	GetContractListenerByBackendID(ctx context.Context, id string) (sub *core.ContractListener, err error)
+	// GetContractListenerByBackendID - get contract listener by backend ID
+	GetContractListenerByBackendID(ctx context.Context, namespace, id string) (sub *core.ContractListener, err error)
 
-	// GetContractListeners - get smart contract subscriptions
-	GetContractListeners(ctx context.Context, filter Filter) ([]*core.ContractListener, *FilterResult, error)
+	// GetContractListeners - get contract listeners
+	GetContractListeners(ctx context.Context, namespace string, filter Filter) ([]*core.ContractListener, *FilterResult, error)
 
-	// DeleteContractListener - delete a subscription to an external smart contract
-	DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error)
+	// DeleteContractListener - delete a contract listener
+	DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iBlockchainEventCollection interface {

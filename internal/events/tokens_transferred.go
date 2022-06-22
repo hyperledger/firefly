@@ -109,7 +109,7 @@ func (em *eventManager) persistTokenTransfer(ctx context.Context, transfer *toke
 		Type:         transfer.TX.Type,
 		BlockchainID: transfer.Event.BlockchainTXID,
 	})
-	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&transfer.Event)

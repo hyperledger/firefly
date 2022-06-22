@@ -109,7 +109,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		Type:         approval.TX.Type,
 		BlockchainID: approval.Event.BlockchainTXID,
 	})
-	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&approval.Event)

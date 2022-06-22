@@ -36,7 +36,7 @@ func TestGetContractListenerByNameOrID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractListenerByNameOrID", mock.Anything, "mynamespace", id.String()).
+	mcm.On("GetContractListenerByNameOrID", mock.Anything, id.String()).
 		Return(&core.ContractListener{}, nil)
 	r.ServeHTTP(res, req)
 

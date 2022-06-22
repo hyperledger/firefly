@@ -35,7 +35,7 @@ func TestDeleteContractListenerByID(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("DeleteContractListenerByNameOrID", mock.Anything, "mynamespace", id.String()).
+	mcm.On("DeleteContractListenerByNameOrID", mock.Anything, id.String()).
 		Return(nil, nil)
 	r.ServeHTTP(res, req)
 

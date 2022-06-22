@@ -589,11 +589,11 @@ func TestAddContractListenerInline(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
-	result, err := cm.AddContractListener(context.Background(), "ns", sub)
+	result, err := cm.AddContractListener(context.Background(), sub)
 	assert.NoError(t, err)
 	assert.NotNil(t, result.ID)
 	assert.NotNil(t, result.Event)
@@ -638,13 +638,13 @@ func TestAddContractListenerByEventPath(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(event, nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(nil)
 
-	result, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	result, err := cm.AddContractListener(context.Background(), sub)
 	assert.NoError(t, err)
 	assert.NotNil(t, result.ID)
 	assert.NotNil(t, result.Event)
@@ -672,7 +672,7 @@ func TestAddContractListenerBadLocation(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -701,7 +701,7 @@ func TestAddContractListenerFFILookupFail(t *testing.T) {
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -732,7 +732,7 @@ func TestAddContractListenerEventLookupFail(t *testing.T) {
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -763,7 +763,7 @@ func TestAddContractListenerEventLookupNotFound(t *testing.T) {
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
 	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, sub.EventPath).Return(nil, nil)
 
-	_, err := cm.AddContractListener(context.Background(), "ns1", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF10370", err)
 
 	mbi.AssertExpectations(t)
@@ -785,18 +785,10 @@ func TestAddContractListenerMissingEventOrID(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 
-	_, err := cm.AddContractListener(context.Background(), "ns2", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF10317", err)
 
 	mbi.AssertExpectations(t)
-}
-
-func TestAddContractListenerBadNamespace(t *testing.T) {
-	cm := newTestContractManager()
-	sub := &core.ContractListenerInput{}
-
-	_, err := cm.AddContractListener(context.Background(), "!bad", sub)
-	assert.Regexp(t, "FF00140.*'namespace'", err)
 }
 
 func TestAddContractListenerBadName(t *testing.T) {
@@ -807,7 +799,7 @@ func TestAddContractListenerBadName(t *testing.T) {
 		},
 	}
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF00140.*'name'", err)
 }
 
@@ -817,7 +809,7 @@ func TestAddContractListenerMissingTopic(t *testing.T) {
 		ContractListener: core.ContractListener{},
 	}
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF00140.*'topic'", err)
 }
 
@@ -838,9 +830,9 @@ func TestAddContractListenerNameConflict(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(&core.ContractListener{}, nil)
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(&core.ContractListener{}, nil)
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF10312", err)
 
 	mbi.AssertExpectations(t)
@@ -864,9 +856,9 @@ func TestAddContractListenerNameError(t *testing.T) {
 	}
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -890,9 +882,9 @@ func TestAddContractListenerTopicConflict(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return([]*core.ContractListener{{}}, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return([]*core.ContractListener{{}}, nil, nil)
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "FF10383", err)
 
 	mbi.AssertExpectations(t)
@@ -916,9 +908,9 @@ func TestAddContractListenerTopicError(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -952,9 +944,9 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.Regexp(t, "does not validate", err)
 
 	mbi.AssertExpectations(t)
@@ -988,10 +980,10 @@ func TestAddContractListenerBlockchainFail(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -1025,11 +1017,11 @@ func TestAddContractListenerUpsertSubFail(t *testing.T) {
 
 	mbi.On("NormalizeContractLocation", context.Background(), sub.Location).Return(sub.Location, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), sub).Return(nil)
 	mdi.On("InsertContractListener", context.Background(), &sub.ContractListener).Return(fmt.Errorf("pop"))
 
-	_, err := cm.AddContractListener(context.Background(), "ns", sub)
+	_, err := cm.AddContractListener(context.Background(), sub)
 	assert.EqualError(t, err, "pop")
 
 	mbi.AssertExpectations(t)
@@ -1059,12 +1051,12 @@ func TestAddContractAPIListener(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
 	mbi.On("NormalizeContractLocation", context.Background(), api.Location).Return(listener.Location, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(event, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 	mbi.On("AddContractListener", context.Background(), mock.MatchedBy(func(l *core.ContractListenerInput) bool {
 		return *l.Interface.ID == *interfaceID && l.EventPath == "changed" && l.Topic == "test-topic"
 	})).Return(nil)
@@ -1072,7 +1064,7 @@ func TestAddContractAPIListener(t *testing.T) {
 		return *l.Interface.ID == *interfaceID && l.Event.Name == "changed" && l.Topic == "test-topic"
 	})).Return(nil)
 
-	_, err := cm.AddContractAPIListener(context.Background(), "ns", "simple", "changed", listener)
+	_, err := cm.AddContractAPIListener(context.Background(), "simple", "changed", listener)
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -1090,9 +1082,9 @@ func TestAddContractAPIListenerNotFound(t *testing.T) {
 		Topic: "test-topic",
 	}
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(nil, nil)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(nil, nil)
 
-	_, err := cm.AddContractAPIListener(context.Background(), "ns", "simple", "changed", listener)
+	_, err := cm.AddContractAPIListener(context.Background(), "simple", "changed", listener)
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
@@ -1109,9 +1101,9 @@ func TestAddContractAPIListenerFail(t *testing.T) {
 		Topic: "test-topic",
 	}
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.AddContractAPIListener(context.Background(), "ns", "simple", "changed", listener)
+	_, err := cm.AddContractAPIListener(context.Background(), "simple", "changed", listener)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -1563,9 +1555,9 @@ func TestGetContractListenerByNameOrID(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 
 	id := fftypes.NewUUID()
-	mdi.On("GetContractListenerByID", context.Background(), id).Return(&core.ContractListener{}, nil)
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(&core.ContractListener{}, nil)
 
-	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", id.String())
+	_, err := cm.GetContractListenerByNameOrID(context.Background(), id.String())
 	assert.NoError(t, err)
 }
 
@@ -1574,9 +1566,9 @@ func TestGetContractListenerByNameOrIDFail(t *testing.T) {
 	mdi := cm.database.(*databasemocks.Plugin)
 
 	id := fftypes.NewUUID()
-	mdi.On("GetContractListenerByID", context.Background(), id).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractListenerByID", context.Background(), "ns1", id).Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", id.String())
+	_, err := cm.GetContractListenerByNameOrID(context.Background(), id.String())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1584,16 +1576,16 @@ func TestGetContractListenerByName(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(&core.ContractListener{}, nil)
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(&core.ContractListener{}, nil)
 
-	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", "sub1")
+	_, err := cm.GetContractListenerByNameOrID(context.Background(), "sub1")
 	assert.NoError(t, err)
 }
 
 func TestGetContractListenerBadName(t *testing.T) {
 	cm := newTestContractManager()
 
-	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", "!bad")
+	_, err := cm.GetContractListenerByNameOrID(context.Background(), "!bad")
 	assert.Regexp(t, "FF00140", err)
 }
 
@@ -1601,9 +1593,9 @@ func TestGetContractListenerByNameFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, fmt.Errorf("pop"))
 
-	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", "sub1")
+	_, err := cm.GetContractListenerByNameOrID(context.Background(), "sub1")
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1611,9 +1603,9 @@ func TestGetContractListenerNotFound(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(nil, nil)
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, nil)
 
-	_, err := cm.GetContractListenerByNameOrID(context.Background(), "ns", "sub1")
+	_, err := cm.GetContractListenerByNameOrID(context.Background(), "sub1")
 	assert.Regexp(t, "FF10109", err)
 }
 
@@ -1621,10 +1613,10 @@ func TestGetContractListeners(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractListeners(context.Background(), "ns", f.And())
+	_, _, err := cm.GetContractListeners(context.Background(), f.And())
 	assert.NoError(t, err)
 }
 
@@ -1648,14 +1640,14 @@ func TestGetContractAPIListeners(t *testing.T) {
 		},
 	}
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(event, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(event, nil)
 	mbi.On("GenerateEventSignature", context.Background(), mock.Anything).Return("changed")
-	mdi.On("GetContractListeners", context.Background(), mock.Anything).Return(nil, nil, nil)
+	mdi.On("GetContractListeners", context.Background(), "ns1", mock.Anything).Return(nil, nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractAPIListeners(context.Background(), "ns", "simple", "changed", f.And())
+	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
 	assert.NoError(t, err)
 
 	mbi.AssertExpectations(t)
@@ -1666,10 +1658,10 @@ func TestGetContractAPIListenersNotFound(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(nil, nil)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractAPIListeners(context.Background(), "ns", "simple", "changed", f.And())
+	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
 	assert.Regexp(t, "FF10109", err)
 
 	mdi.AssertExpectations(t)
@@ -1679,10 +1671,10 @@ func TestGetContractAPIListenersFail(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(nil, fmt.Errorf("pop"))
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractAPIListeners(context.Background(), "ns", "simple", "changed", f.And())
+	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
@@ -1702,12 +1694,12 @@ func TestGetContractAPIListenersEventNotFound(t *testing.T) {
 		}.String()),
 	}
 
-	mdi.On("GetContractAPIByName", context.Background(), "ns", "simple").Return(api, nil)
+	mdi.On("GetContractAPIByName", context.Background(), "ns1", "simple").Return(api, nil)
 	mdi.On("GetFFIByID", context.Background(), "ns1", interfaceID).Return(&core.FFI{}, nil)
-	mdi.On("GetFFIEvent", context.Background(), "ns", interfaceID, "changed").Return(nil, nil)
+	mdi.On("GetFFIEvent", context.Background(), "ns1", interfaceID, "changed").Return(nil, nil)
 
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background())
-	_, _, err := cm.GetContractAPIListeners(context.Background(), "ns", "simple", "changed", f.And())
+	_, _, err := cm.GetContractAPIListeners(context.Background(), "simple", "changed", f.And())
 	assert.Regexp(t, "FF10370", err)
 
 	mdi.AssertExpectations(t)
@@ -1722,11 +1714,11 @@ func TestDeleteContractListener(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(sub, nil)
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(sub, nil)
 	mbi.On("DeleteContractListener", context.Background(), sub).Return(nil)
-	mdi.On("DeleteContractListenerByID", context.Background(), sub.ID).Return(nil)
+	mdi.On("DeleteContractListenerByID", context.Background(), "ns1", sub.ID).Return(nil)
 
-	err := cm.DeleteContractListenerByNameOrID(context.Background(), "ns", "sub1")
+	err := cm.DeleteContractListenerByNameOrID(context.Background(), "sub1")
 	assert.NoError(t, err)
 }
 
@@ -1739,11 +1731,11 @@ func TestDeleteContractListenerBlockchainFail(t *testing.T) {
 		ID: fftypes.NewUUID(),
 	}
 
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(sub, nil)
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(sub, nil)
 	mbi.On("DeleteContractListener", context.Background(), sub).Return(fmt.Errorf("pop"))
-	mdi.On("DeleteContractListenerByID", context.Background(), sub.ID).Return(nil)
+	mdi.On("DeleteContractListenerByID", context.Background(), "ns1", sub.ID).Return(nil)
 
-	err := cm.DeleteContractListenerByNameOrID(context.Background(), "ns", "sub1")
+	err := cm.DeleteContractListenerByNameOrID(context.Background(), "sub1")
 	assert.EqualError(t, err, "pop")
 }
 
@@ -1751,9 +1743,9 @@ func TestDeleteContractListenerNotFound(t *testing.T) {
 	cm := newTestContractManager()
 	mdi := cm.database.(*databasemocks.Plugin)
 
-	mdi.On("GetContractListener", context.Background(), "ns", "sub1").Return(nil, nil)
+	mdi.On("GetContractListener", context.Background(), "ns1", "sub1").Return(nil, nil)
 
-	err := cm.DeleteContractListenerByNameOrID(context.Background(), "ns", "sub1")
+	err := cm.DeleteContractListenerByNameOrID(context.Background(), "sub1")
 	assert.Regexp(t, "FF10109", err)
 }
 
@@ -2347,7 +2339,7 @@ func TestGenerateFFI(t *testing.T) {
 	mbi.On("GenerateFFI", mock.Anything, mock.Anything).Return(&core.FFI{
 		Name: "generated",
 	}, nil)
-	ffi, err := cm.GenerateFFI(context.Background(), "default", &core.FFIGenerationRequest{})
+	ffi, err := cm.GenerateFFI(context.Background(), &core.FFIGenerationRequest{})
 	assert.NoError(t, err)
 	assert.NotNil(t, ffi)
 	assert.Equal(t, "generated", ffi.Name)

@@ -39,7 +39,7 @@ func TestPostContractInterfaceGenerate(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GenerateFFI", mock.Anything, "ns1", mock.Anything).
+	mcm.On("GenerateFFI", mock.Anything, mock.Anything).
 		Return(&core.FFI{}, nil)
 	r.ServeHTTP(res, req)
 

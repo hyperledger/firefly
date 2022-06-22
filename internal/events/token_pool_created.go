@@ -57,7 +57,7 @@ func (em *eventManager) confirmPool(ctx context.Context, pool *core.TokenPool, e
 			Type:         pool.TX.Type,
 			BlockchainID: ev.BlockchainTXID,
 		})
-		if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+		if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 			return err
 		}
 		em.emitBlockchainEventMetric(ev)
