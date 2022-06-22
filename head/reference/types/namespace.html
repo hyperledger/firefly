@@ -411,9 +411,19 @@ FireFly node.</p>
       <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
     <tr>
-      <td><code class="language-plaintext highlighter-rouge">info</code></td>
-      <td>Blockchain-specific info on the contract, such as its location on chain</td>
-      <td><a href="simpletypes#jsonobject"><code class="language-plaintext highlighter-rouge">JSONObject</code></a></td>
+      <td><code class="language-plaintext highlighter-rouge">location</code></td>
+      <td>A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel</td>
+      <td><a href="simpletypes#jsonany"><code class="language-plaintext highlighter-rouge">JSONAny</code></a></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">firstEvent</code></td>
+      <td>A blockchain specific string, such as a block number, to start listening from. The special strings ‘oldest’ and ‘newest’ are supported by all blockchain connectors</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">subscription</code></td>
+      <td>The backend identifier of the subscription for the FireFly BatchPin contract</td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
     </tr>
   </tbody>
 </table>
