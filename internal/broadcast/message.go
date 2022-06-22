@@ -114,10 +114,6 @@ func (s *broadcastSender) resolveAndSend(ctx context.Context, method sendMethod)
 func (s *broadcastSender) resolve(ctx context.Context) error {
 	msg := s.msg.Message
 
-	if err := s.mgr.data.VerifyNamespaceExists(ctx, msg.Header.Namespace); err != nil {
-		return err
-	}
-
 	// Resolve the sending identity
 	if msg.Header.Type != core.MessageTypeDefinition || msg.Header.Tag != core.SystemTagIdentityClaim {
 		if err := s.mgr.identity.ResolveInputSigningIdentity(ctx, &msg.Header.SignerRef); err != nil {

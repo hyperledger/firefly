@@ -40,25 +40,10 @@ func TestBroadcastDatatypeBadType(t *testing.T) {
 	assert.Regexp(t, "FF00111.*validator", err)
 }
 
-func TestBroadcastDatatypeNSGetFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(fmt.Errorf("pop"))
-	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
-		Name:      "name1",
-		Namespace: "ns1",
-		Version:   "0.0.1",
-		Value:     fftypes.JSONAnyPtr(`{}`),
-	}, false)
-	assert.EqualError(t, err, "pop")
-}
-
 func TestBroadcastDatatypeBadValue(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
 	mdm := bm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mim := bm.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
@@ -79,7 +64,6 @@ func TestBroadcastUpsertFail(t *testing.T) {
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
@@ -103,7 +87,6 @@ func TestBroadcastDatatypeInvalid(t *testing.T) {
 
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("UpsertData", mock.Anything, mock.Anything, database.UpsertOptimizationNew).Return(nil)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastDatatype(context.Background(), &core.Datatype{
@@ -122,7 +105,6 @@ func TestBroadcastOk(t *testing.T) {
 	mim := bm.identity.(*identitymanagermocks.Manager)
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 

@@ -581,13 +581,6 @@ nav_order: 2
 |default|The default namespace - must be in the predefined list|`string`|`<nil>`
 |predefined|A list of namespaces to ensure exists, without requiring a broadcast from the network|List `string`|`<nil>`
 
-## namespaces.cache
-
-|Key|Description|Type|Default Value|
-|---|-----------|----|-------------|
-|size|The size of the cache|[`BytesSize`](https://pkg.go.dev/github.com/docker/go-units#BytesSize)|`<nil>`
-|ttl|The time to live (TTL) for the cache|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
-
 ## namespaces.predefined[]
 
 |Key|Description|Type|Default Value|
