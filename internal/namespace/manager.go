@@ -379,6 +379,7 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 		if err != nil {
 			return nil, err
 		}
+		log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
 		name := "database_0"
 		plugins[name] = databasePlugin{
 			config: deprecatedDatabaseConfig.SubSection(pluginType),
@@ -431,13 +432,12 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 	}
 
 	if len(plugins) == 0 {
-		log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
 		pluginType := deprecatedDataexchangeConfig.GetString(coreconfig.PluginConfigType)
 		plugin, err := dxfactory.GetPlugin(ctx, pluginType)
 		if err != nil {
 			return nil, err
 		}
-
+		log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
 		name := "dataexchange_0"
 		plugins[name] = dataExchangePlugin{
 			config: deprecatedDataexchangeConfig.SubSection(pluginType),
@@ -500,7 +500,7 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins m
 		if err != nil {
 			return nil, err
 		}
-
+		log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
 		name := "blockchain_0"
 		plugins[name] = blockchainPlugin{
 			config: deprecatedBlockchainConfig.SubSection(pluginType),
@@ -539,7 +539,7 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 		if err != nil {
 			return nil, err
 		}
-
+		log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
 		name := "sharedstorage_0"
 		plugins[name] = sharedStoragePlugin{
 			config: deprecatedSharedStorageConfig.SubSection(pluginType),
@@ -623,16 +623,22 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	multipartyConf := conf.SubSection(coreconfig.NamespaceMultiparty)
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
 	orgName := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgName)
-	if orgName == "" {
-		orgName = config.GetString(coreconfig.OrgName)
-	}
 	orgKey := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgKey)
-	if orgKey == "" {
-		orgKey = config.GetString(coreconfig.OrgKey)
-	}
 	orgDesc := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
+	deprecatedOrgName := config.GetString(coreconfig.OrgName)
+	deprecatedOrgKey := config.GetString(coreconfig.OrgKey)
+	deprecatedOrgDesc := config.GetString(coreconfig.OrgDescription)
+	if deprecatedOrgName != "" || deprecatedOrgKey != "" || deprecatedOrgDesc != "" {
+		log.L(ctx).Warnf("Your org config uses a deprecated configuration structure - the org configuration has been moved under the 'namespaces.predefined[].multiparty' section")
+	}
+	if orgName == "" {
+		orgName = deprecatedOrgName
+	}
+	if orgKey == "" {
+		orgKey = deprecatedOrgKey
+	}
 	if orgDesc == "" {
-		orgDesc = config.GetString(coreconfig.OrgDescription)
+		orgDesc = deprecatedOrgDesc
 	}
 	multiparty := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
 	if multiparty == nil {
