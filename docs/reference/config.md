@@ -585,11 +585,11 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|defaultKey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
+|defaultkey|A default signing key for blockchain transactions within this namespace|`string`|`<nil>`
 |description|A description for the namespace|`string`|`<nil>`
 |name|The name of the namespace (must be unique)|`string`|`<nil>`
 |plugins|The list of plugins for this namespace|`string`|`<nil>`
-|remoteName|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
+|remotename|The namespace name to be sent in plugin calls, if it differs from namespace name|`string`|`<nil>`
 
 ## namespaces.predefined[].multiparty
 
