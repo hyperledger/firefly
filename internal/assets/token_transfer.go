@@ -270,8 +270,14 @@ func (s *transferSender) buildTransferMessage(ctx context.Context, in *core.Mess
 	}
 	switch in.Header.Type {
 	case core.MessageTypeTransferBroadcast:
+		if s.mgr.broadcast == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+		}
 		return s.mgr.broadcast.NewBroadcast(in), nil
 	case core.MessageTypeTransferPrivate:
+		if s.mgr.messaging == nil {
+			return nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+		}
 		return s.mgr.messaging.NewMessage(in), nil
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidMessageType, allowedTypes)

@@ -30,6 +30,11 @@ func (em *eventManager) SharedStorageBatchDownloaded(ss sharedstorage.Plugin, pa
 
 	l := log.L(em.ctx)
 
+	if em.multiparty == nil {
+		l.Errorf("Ignoring private batch from non-multiparty network!")
+		return nil, nil
+	}
+
 	// De-serialize the batch
 	var batch *core.Batch
 	err := json.Unmarshal(data, &batch)

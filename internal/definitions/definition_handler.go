@@ -80,7 +80,7 @@ type definitionHandlers struct {
 	namespace  string
 	database   database.Plugin
 	blockchain blockchain.Plugin
-	exchange   dataexchange.Plugin
+	exchange   dataexchange.Plugin // optional
 	data       data.Manager
 	identity   identity.Manager
 	assets     assets.Manager
@@ -88,7 +88,7 @@ type definitionHandlers struct {
 }
 
 func NewDefinitionHandler(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
-	if di == nil || bi == nil || dx == nil || dm == nil || im == nil || am == nil || cm == nil {
+	if di == nil || bi == nil || dm == nil || im == nil || am == nil || cm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionHandler")
 	}
 	return &definitionHandlers{

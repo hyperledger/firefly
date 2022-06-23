@@ -42,13 +42,13 @@ type Sender interface {
 type definitionSender struct {
 	ctx       context.Context
 	namespace string
-	broadcast broadcast.Manager
+	broadcast broadcast.Manager // optional
 	identity  identity.Manager
 	data      data.Manager
 }
 
 func NewDefinitionSender(ctx context.Context, ns string, bm broadcast.Manager, im identity.Manager, dm data.Manager) (Sender, error) {
-	if bm == nil || im == nil || dm == nil {
+	if im == nil || dm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	return &definitionSender{
@@ -91,6 +91,10 @@ func (bm *definitionSender) CreateIdentityClaim(ctx context.Context, def *core.I
 }
 
 func (bm *definitionSender) broadcastDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
+
+	if bm.broadcast == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+	}
 
 	b, err := json.Marshal(&def)
 	if err != nil {

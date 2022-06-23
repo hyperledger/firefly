@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
@@ -38,8 +39,11 @@ var getGroupByHash = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.PrivateMessaging().GetGroupByID(cr.ctx, r.PP["hash"])
-			return output, err
+			pm := cr.or.PrivateMessaging()
+			if pm == nil {
+				return nil, i18n.NewError(cr.ctx, coremsgs.MsgActionOnlyValidMultiparty)
+			}
+			return pm.GetGroupByID(cr.ctx, r.PP["hash"])
 		},
 	},
 }

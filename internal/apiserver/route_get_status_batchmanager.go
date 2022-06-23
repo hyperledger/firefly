@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 )
@@ -36,8 +37,11 @@ var getStatusBatchManager = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output = cr.or.BatchManager().Status()
-			return output, nil
+			bm := cr.or.BatchManager()
+			if bm == nil {
+				return nil, i18n.NewError(cr.ctx, coremsgs.MsgActionOnlyValidMultiparty)
+			}
+			return bm.Status(), nil
 		},
 	},
 }

@@ -106,8 +106,8 @@ func newSubscriptionManager(ctx context.Context, ns string, di database.Plugin, 
 		maxSubs:                   uint64(config.GetUint(coreconfig.SubscriptionMax)),
 		cancelCtx:                 cancelCtx,
 		eventNotifier:             en,
-		broadcast:                 bm,
-		messaging:                 pm,
+		broadcast:                 bm, // optional
+		messaging:                 pm, // optional
 		txHelper:                  txHelper,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.SubscriptionsRetryInitialDelay),

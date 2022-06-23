@@ -155,6 +155,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.txHelper = tor.mth
 	tor.orchestrator.defhandler = tor.mdh
 	tor.orchestrator.defsender = tor.mds
+	tor.orchestrator.config.Multiparty.Enabled = true
 	tor.orchestrator.plugins.Blockchain.Plugin = tor.mbi
 	tor.orchestrator.plugins.SharedStorage.Plugin = tor.mps
 	tor.orchestrator.plugins.DataExchange.Plugin = tor.mdx
@@ -373,7 +374,6 @@ func TestStartBatchFail(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -403,7 +403,12 @@ func TestStartBlockchainsFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
+	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
+	or.mbm.On("Start").Return(nil)
+	or.mpm.On("Start").Return(nil)
+	or.mba.On("Start").Return(nil)
+	or.msd.On("Start").Return(nil)
 	or.mbi.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
@@ -462,4 +467,11 @@ func TestNetworkActionBadKey(t *testing.T) {
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestNetworkActionNonMultiparty(t *testing.T) {
+	or := newTestOrchestrator()
+	or.multiparty = nil
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.Regexp(t, "FF10413", err)
 }

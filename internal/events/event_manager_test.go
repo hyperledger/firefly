@@ -39,7 +39,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
-	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -73,7 +72,6 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mpi := &sharedstoragemocks.Plugin{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandler{}
@@ -98,7 +96,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: dbconcurrency}).Maybe()
 	mev.On("SetHandler", "ns1", mock.Anything).Return(nil).Maybe()
 	mev.On("ValidateOptions", mock.Anything).Return(nil).Maybe()
-	emi, err := NewEventManager(ctx, "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
+	emi, err := NewEventManager(ctx, "ns1", mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, mdd, mmi, txHelper, events, mmp)
 	em := emi.(*eventManager)
 	em.txHelper = &txcommonmocks.Helper{}
 	mockRunAsGroupPassthrough(mdi)
@@ -133,7 +131,7 @@ func TestStartStop(t *testing.T) {
 }
 
 func TestStartStopBadDependencies(t *testing.T) {
-	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewEventManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 
 }
@@ -144,7 +142,6 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
-	mpi := &sharedstoragemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	msh := &definitionsmocks.DefinitionHandler{}
 	mds := &defsendermocks.Sender{}
@@ -161,7 +158,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mdi.On("Capabilities").Return(&database.Capabilities{Concurrency: false})
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress)
 	mev.On("SetHandler", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := NewEventManager(context.Background(), "ns1", mni, mpi, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
+	_, err := NewEventManager(context.Background(), "ns1", mni, mdi, mbi, mim, msh, mdm, mds, mbm, mpm, mam, msd, mm, txHelper, events, mmp)
 	assert.EqualError(t, err, "pop")
 }
 

@@ -60,14 +60,14 @@ type networkMap struct {
 	namespace  string
 	database   database.Plugin
 	defsender  defsender.Sender
-	exchange   dataexchange.Plugin
+	exchange   dataexchange.Plugin // optional
 	identity   identity.Manager
 	syncasync  syncasync.Bridge
-	multiparty multiparty.Manager
+	multiparty multiparty.Manager // optional
 }
 
 func NewNetworkMap(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, ds defsender.Sender, im identity.Manager, sa syncasync.Bridge, mm multiparty.Manager) (Manager, error) {
-	if di == nil || ds == nil || dx == nil || im == nil || mm == nil {
+	if di == nil || ds == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "NetworkMap")
 	}
 

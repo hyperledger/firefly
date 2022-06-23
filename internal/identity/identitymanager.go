@@ -57,7 +57,7 @@ type Manager interface {
 type identityManager struct {
 	database               database.Plugin
 	blockchain             blockchain.Plugin
-	multiparty             multiparty.Manager
+	multiparty             multiparty.Manager // optional
 	namespace              string
 	defaultKey             string
 	multipartyRootVerifier *core.VerifierRef
@@ -385,7 +385,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.LegacySystemNamespace && im.multiparty.GetNetworkVersion() == 1 {
+		if namespace != core.LegacySystemNamespace && im.multiparty != nil && im.multiparty.GetNetworkVersion() == 1 {
 			// For V1 networks, fall back to LegacySystemNamespace for looking up identities
 			// This assumes that the system namespace shares a database with this manager's namespace!
 			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)

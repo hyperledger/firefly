@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -38,7 +39,11 @@ var getGroups = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.GroupQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.PrivateMessaging().GetGroups(cr.ctx, cr.filter))
+			pm := cr.or.PrivateMessaging()
+			if pm == nil {
+				return nil, i18n.NewError(cr.ctx, coremsgs.MsgActionOnlyValidMultiparty)
+			}
+			return filterResult(pm.GetGroups(cr.ctx, cr.filter))
 		},
 	},
 }

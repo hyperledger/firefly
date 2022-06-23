@@ -43,6 +43,11 @@ func (em *eventManager) actionTerminate(mm multiparty.Manager, event *blockchain
 }
 
 func (em *eventManager) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	if em.multiparty == nil {
+		log.L(em.ctx).Errorf("Ignoring network action from non-multiparty network!")
+		return nil
+	}
+
 	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
 		// Verify that the action came from a registered root org
 		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, signingKey)
