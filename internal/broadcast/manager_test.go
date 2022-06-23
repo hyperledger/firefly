@@ -76,7 +76,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, "ns1", mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi, mom)
+	b, err := NewBroadcastManager(ctx, "ns1", mdi, mbi, mdx, mpi, mim, mdm, mba, msa, mbp, mmi, mom)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }

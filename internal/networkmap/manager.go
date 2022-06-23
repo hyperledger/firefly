@@ -66,7 +66,7 @@ type networkMap struct {
 	syncasync syncasync.Bridge
 }
 
-func NewNetworkMap(ctx context.Context, ns, orgName, orgDesc string, di database.Plugin, bm broadcast.Manager, dx dataexchange.Plugin, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
+func NewNetworkMap(ctx context.Context, ns, orgName, orgDesc string, di database.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || bm == nil || dx == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "NetworkMap")
 	}

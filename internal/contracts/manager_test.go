@@ -61,7 +61,7 @@ func newTestContractManager() *contractManager {
 			a[1].(func(context.Context) error)(a[0].(context.Context)),
 		}
 	}
-	cm, _ := NewContractManager(context.Background(), "ns1", mdi, mbm, mim, mbi, mom, txHelper, msa)
+	cm, _ := NewContractManager(context.Background(), "ns1", mdi, mbi, mbm, mim, mom, txHelper, msa)
 	cm.(*contractManager).txHelper = &txcommonmocks.Helper{}
 	return cm.(*contractManager)
 }
@@ -86,7 +86,7 @@ func TestNewContractManagerFFISchemaLoaderFail(t *testing.T) {
 	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(nil, fmt.Errorf("pop"))
-	_, err := NewContractManager(context.Background(), "ns1", mdi, mbm, mim, mbi, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mbm, mim, mom, txHelper, msa)
 	assert.Regexp(t, "pop", err)
 }
 
@@ -101,7 +101,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	msa := &syncasyncmocks.Bridge{}
 	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ethereum.FFIParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
-	_, err := NewContractManager(context.Background(), "ns1", mdi, mbm, mim, mbi, mom, txHelper, msa)
+	_, err := NewContractManager(context.Background(), "ns1", mdi, mbi, mbm, mim, mom, txHelper, msa)
 	assert.NoError(t, err)
 }
 

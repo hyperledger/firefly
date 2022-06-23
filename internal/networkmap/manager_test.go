@@ -37,7 +37,7 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	mdx := &dataexchangemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
-	nm, err := NewNetworkMap(ctx, "ns1", "org0", "org0", mdi, mbm, mdx, mim, msa)
+	nm, err := NewNetworkMap(ctx, "ns1", "org0", "org0", mdi, mdx, mbm, mim, msa)
 	assert.NoError(t, err)
 	return nm.(*networkMap), cancel
 

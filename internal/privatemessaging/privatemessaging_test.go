@@ -77,7 +77,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, "ns1", mdi, mim, mdx, mbi, mba, mdm, msa, mbp, mmi, mom)
+	pm, err := NewPrivateMessaging(ctx, "ns1", mdi, mdx, mbi, mim, mba, mdm, msa, mbp, mmi, mom)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
