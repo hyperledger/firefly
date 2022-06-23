@@ -315,7 +315,6 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.identity = nil
-	or.txHelper = nil
 	or.multiparty = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
@@ -362,6 +361,7 @@ func TestInitOperationsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.operations = nil
+	or.txHelper = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

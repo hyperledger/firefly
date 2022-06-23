@@ -395,6 +395,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		or.multiparty = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty.Contracts, or.blockchain())
 	}
 
+	if or.identity == nil {
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.multiparty)
+		if err != nil {
+			return err
+		}
+	}
+
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange())
 		if err != nil {
@@ -406,20 +413,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		or.txHelper = txcommon.NewTransactionHelper(or.namespace, or.database(), or.data)
 	}
 
-	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.data, or.multiparty)
-		if err != nil {
-			return err
-		}
-	}
-
-	if or.batch == nil {
-		or.batch, err = batch.NewBatchManager(ctx, or.namespace, or, or.database(), or.data, or.txHelper)
-		if err != nil {
-			return err
-		}
-	}
-
 	if or.operations == nil {
 		if or.operations, err = operations.NewOperationsManager(ctx, or.namespace, or.database(), or.txHelper); err != nil {
 			return err
@@ -427,6 +420,13 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync = syncasync.NewSyncAsyncBridge(ctx, or.namespace, or.database(), or.data)
+
+	if or.batch == nil {
+		or.batch, err = batch.NewBatchManager(ctx, or.namespace, or, or.database(), or.data, or.txHelper)
+		if err != nil {
+			return err
+		}
+	}
 
 	if or.batchpin == nil {
 		if or.batchpin, err = batchpin.NewBatchPinSubmitter(ctx, or.namespace, or.database(), or.identity, or.multiparty, or.metrics, or.operations); err != nil {
@@ -444,6 +444,10 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace, or.database(), or.identity, or.data, or.blockchain(), or.dataexchange(), or.sharedstorage(), or.batch, or.syncasync, or.batchpin, or.metrics, or.operations); err != nil {
 			return err
 		}
+	}
+
+	if or.networkmap == nil {
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database(), or.broadcast, or.dataexchange(), or.identity, or.syncasync)
 	}
 
 	if or.assets == nil {
@@ -482,10 +486,6 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	or.syncasync.Init(or.events)
-
-	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database(), or.data, or.broadcast, or.dataexchange(), or.identity, or.syncasync)
-	}
 	return err
 }
 
