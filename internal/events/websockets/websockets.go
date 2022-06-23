@@ -122,7 +122,7 @@ func (ws *WebSockets) start(wc *websocketConnection, start *core.WSStart) error 
 			return wc.durableSubMatcher(sr)
 		})
 	}
-	return i18n.NewError(ws.ctx, coremsgs.MsgNamespaceNotExist)
+	return i18n.NewError(ws.ctx, coremsgs.MsgNamespaceDoesNotExist)
 }
 
 func (ws *WebSockets) connClosed(connID string) {

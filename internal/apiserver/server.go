@@ -202,7 +202,7 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 		vars := mux.Vars(req)
 		or := mgr.Orchestrator(vars["ns"])
 		if or == nil {
-			return nil, i18n.NewError(req.Context(), coremsgs.Msg404NotFound)
+			return nil, i18n.NewError(req.Context(), coremsgs.MsgNamespaceDoesNotExist)
 		}
 		cm := or.Contracts()
 		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["apiName"])
@@ -235,7 +235,7 @@ func getOrchestrator(ctx context.Context, mgr namespace.Manager, tag string, r *
 		return nil, nil
 	}
 	if or == nil {
-		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceDoesNotExist)
 	}
 	return or, nil
 }

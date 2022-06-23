@@ -86,7 +86,7 @@ var (
 	MsgMaxFilterLimit                     = ffe("FF10184", "Your query exceeds the maximum filter limit (%d)", 400)
 	MsgAPIServerStaticFail                = ffe("FF10185", "An error occurred loading static content", 500)
 	MsgEventListenerClosing               = ffe("FF10186", "Event listener closing")
-	MsgNamespaceNotExist                  = ffe("FF10187", "Namespace does not exist")
+	MsgNamespaceDoesNotExist              = ffe("FF10187", "Namespace does not exist", 404)
 	MsgInvalidSubscription                = ffe("FF10189", "Invalid subscription", 400)
 	MsgMismatchedTransport                = ffe("FF10190", "Connection ID '%s' appears not to be unique between transport '%s' and '%s'", 400)
 	MsgInvalidFirstEvent                  = ffe("FF10191", "Invalid firstEvent definition - must be 'newest','oldest' or a sequence number", 400)
