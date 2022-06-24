@@ -66,7 +66,8 @@ type Plugin interface {
 	// SetNodes initializes the known nodes from the database
 	SetNodes(nodes []fftypes.JSONObject)
 
-	// SetHandler registers a handler to receive callbacks for a particular namespace
+	// SetHandler registers a handler to receive callbacks
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetHandler(namespace string, handler Callbacks)
 
 	// Data exchange interface must not deliver any events until start is called

@@ -33,7 +33,8 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
-	// SetHandler registers a handler to receive callbacks for a particular namespace
+	// SetHandler registers a handler to receive callbacks
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetHandler(namespace string, handler Callbacks)
 
 	// Blockchain interface must not deliver any events until start is called
