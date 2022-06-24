@@ -26,6 +26,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,6 +35,7 @@ import (
 func TestPostDataJSON(t *testing.T) {
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 	input := core.Data{}
 	var buf bytes.Buffer
@@ -52,6 +54,7 @@ func TestPostDataJSON(t *testing.T) {
 func TestPostDataJSONDefaultNS(t *testing.T) {
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 	input := core.Data{}
 	var buf bytes.Buffer
@@ -72,6 +75,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -97,6 +101,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -143,6 +148,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -176,6 +182,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -207,6 +214,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -231,6 +239,7 @@ func TestPostDataBadForm(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer

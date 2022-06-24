@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
-	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -39,14 +39,13 @@ var postNewMessagePrivate = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.PrivateMessaging() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			pm := cr.or.PrivateMessaging()
-			if pm == nil {
-				return nil, i18n.NewError(cr.ctx, coremsgs.MsgActionOnlyValidMultiparty)
-			}
-			return pm.SendMessage(cr.ctx, r.Input.(*core.MessageInOut), waitConfirm)
+			return cr.or.PrivateMessaging().SendMessage(cr.ctx, r.Input.(*core.MessageInOut), waitConfirm)
 		},
 	},
 }

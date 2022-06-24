@@ -245,17 +245,20 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 	// We also pass the Orchestrator context through
 	ce := route.Extensions.(*coreExtensions)
 	route.JSONHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
+		or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
+		if err != nil {
+			return nil, err
+		}
+		if ce.EnabledIf != nil && !ce.EnabledIf(or) {
+			return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
+		}
+
 		var filter database.AndFilter
 		if ce.FilterFactory != nil {
 			filter, err = as.buildFilter(r.Req, ce.FilterFactory)
 			if err != nil {
 				return nil, err
 			}
-		}
-
-		or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
-		if err != nil {
-			return nil, err
 		}
 
 		cr := &coreRequest{
@@ -272,6 +275,9 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 			or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
 			if err != nil {
 				return nil, err
+			}
+			if ce.EnabledIf != nil && !ce.EnabledIf(or) {
+				return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
 			}
 
 			cr := &coreRequest{

@@ -31,13 +31,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestCreateDatatypeGatewayMode(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{}, false)
-	assert.Regexp(t, "FF10413", err)
-}
-
 func TestCreateDatatypeBadType(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()

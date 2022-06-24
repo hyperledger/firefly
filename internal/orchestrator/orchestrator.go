@@ -171,12 +171,14 @@ type orchestrator struct {
 	namespace      string
 	config         Config
 	plugins        Plugins
+	multiparty     multiparty.Manager       // only for multiparty
+	batch          batch.Manager            // only for multiparty
+	broadcast      broadcast.Manager        // only for multiparty
+	messaging      privatemessaging.Manager // only for multiparty
+	sharedDownload shareddownload.Manager   // only for multiparty
 	identity       identity.Manager
 	events         events.EventManager
 	networkmap     networkmap.Manager
-	batch          batch.Manager
-	broadcast      broadcast.Manager
-	messaging      privatemessaging.Manager
 	defhandler     definitions.DefinitionHandler
 	defsender      defsender.Sender
 	data           data.Manager
@@ -187,9 +189,7 @@ type orchestrator struct {
 	node           *fftypes.UUID
 	metrics        metrics.Manager
 	operations     operations.Manager
-	sharedDownload shareddownload.Manager
 	txHelper       txcommon.Helper
-	multiparty     multiparty.Manager
 }
 
 func NewOrchestrator(ns string, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
@@ -528,7 +528,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.NetworkAction) error {
 	if or.multiparty == nil {
-		return i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+		return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 	}
 	key, err := or.identity.NormalizeSigningKey(ctx, "", identity.KeyNormalizationBlockchainPlugin)
 	if err != nil {

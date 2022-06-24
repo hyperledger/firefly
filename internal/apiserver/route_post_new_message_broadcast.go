@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
-	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -39,14 +39,13 @@ var postNewMessageBroadcast = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.Message{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.Broadcast() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			bm := cr.or.Broadcast()
-			if bm == nil {
-				return nil, i18n.NewError(cr.ctx, coremsgs.MsgActionOnlyValidMultiparty)
-			}
-			output, err = bm.BroadcastMessage(cr.ctx, r.Input.(*core.MessageInOut), waitConfirm)
+			output, err = cr.or.Broadcast().BroadcastMessage(cr.ctx, r.Input.(*core.MessageInOut), waitConfirm)
 			return output, err
 		},
 	},

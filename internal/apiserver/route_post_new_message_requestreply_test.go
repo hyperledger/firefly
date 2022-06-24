@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/privatemessagingmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -29,6 +30,7 @@ import (
 
 func TestPostNewMessageRequestReply(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("PrivateMessaging").Return(&privatemessagingmocks.Manager{})
 	o.On("RequestReply", mock.Anything, mock.Anything).Return(&core.MessageInOut{}, nil)
 	input := &core.MessageInOut{}
 	var buf bytes.Buffer

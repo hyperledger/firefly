@@ -21,17 +21,11 @@ import (
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
-	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
 func (nm *networkMap) RegisterNode(ctx context.Context, waitConfirm bool) (identity *core.Identity, err error) {
-
-	if nm.exchange == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
-	}
 
 	nodeOwningOrg, err := nm.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {

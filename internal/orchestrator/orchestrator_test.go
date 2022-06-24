@@ -474,5 +474,5 @@ func TestNetworkActionNonMultiparty(t *testing.T) {
 	or := newTestOrchestrator()
 	or.multiparty = nil
 	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
-	assert.Regexp(t, "FF10413", err)
+	assert.Regexp(t, "FF10414", err)
 }

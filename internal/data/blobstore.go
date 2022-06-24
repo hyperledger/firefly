@@ -80,7 +80,7 @@ func (bs *blobStore) uploadVerifyBlob(ctx context.Context, id *fftypes.UUID, rea
 func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue, mpart *ffapi.Multipart, autoMeta bool) (*core.Data, error) {
 
 	if bs.exchange == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 	}
 
 	data := &core.Data{
@@ -147,7 +147,7 @@ func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue
 func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error) {
 
 	if bs.exchange == nil {
-		return nil, nil, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 	}
 
 	id, err := fftypes.ParseUUID(ctx, dataID)

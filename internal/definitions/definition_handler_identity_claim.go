@@ -129,10 +129,6 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identityClaim *core.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
-	if identityClaim.Identity.Type == core.IdentityTypeNode && dh.exchange == nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgActionOnlyValidMultiparty)
-	}
-
 	identity := identityClaim.Identity
 	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
 	if err != nil && retryable {

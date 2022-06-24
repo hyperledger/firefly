@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/mocks/defsendermocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,6 +33,7 @@ func TestPostNewDatatypes(t *testing.T) {
 	o, r := newTestAPIServer()
 	mds := &defsendermocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -50,6 +52,7 @@ func TestPostNewDatatypesSync(t *testing.T) {
 	o, r := newTestAPIServer()
 	mds := &defsendermocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
