@@ -72,9 +72,13 @@ func TestNewMultipartyManager(t *testing.T) {
 	mom := &operationmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	contracts := make([]Contract, 0)
+	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
+		core.OpTypeBlockchainPinBatch,
+	}).Return()
 	nm, err := NewMultipartyManager(context.Background(), "namespace", contracts, mdi, mbi, mom, mmi)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
+	assert.Equal(t, "MultipartyManager", nm.Name())
 }
 
 func TestInitFail(t *testing.T) {

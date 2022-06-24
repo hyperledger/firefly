@@ -32,6 +32,8 @@ import (
 )
 
 type Manager interface {
+	core.Named
+
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
 	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
@@ -82,7 +84,7 @@ func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, 
 	if di == nil || bi == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
-	return &multipartyManager{
+	mp := &multipartyManager{
 		ctx:        ctx,
 		namespace:  ns,
 		contracts:  contracts,
@@ -90,7 +92,15 @@ func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, 
 		blockchain: bi,
 		operations: om,
 		metrics:    mm,
-	}, nil
+	}
+	om.RegisterHandler(ctx, mp, []core.OpType{
+		core.OpTypeBlockchainPinBatch,
+	})
+	return mp, nil
+}
+
+func (mm *multipartyManager) Name() string {
+	return "MultipartyManager"
 }
 
 func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
