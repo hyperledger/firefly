@@ -13,7 +13,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package batchpin
+
+package multiparty
 
 import (
 	"context"
@@ -21,15 +22,14 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/databasemocks"
-	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func TestPrepareAndRunBatchPin(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	op := &core.Operation{
 		Type:      core.OpTypeBlockchainPinBatch,
@@ -50,46 +50,45 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	}
 	addBatchPinInputs(op, batch.ID, contexts, "payload1")
 
-	mmp := bp.multiparty.(*multipartymocks.Manager)
-	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(batch, nil)
-	mmp.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything).Return(nil)
+	mp.mdi.On("GetBatchByID", context.Background(), "ns1", batch.ID).Return(batch, nil)
+	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything, mock.Anything).Return(nil)
 
-	po, err := bp.PrepareOperation(context.Background(), op)
+	po, err := mp.PrepareOperation(context.Background(), op)
 	assert.NoError(t, err)
 	assert.Equal(t, batch, po.Data.(batchPinData).Batch)
 
-	_, complete, err := bp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
+	_, complete, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
 
 	assert.False(t, complete)
 	assert.NoError(t, err)
-
-	mdi.AssertExpectations(t)
 }
 
 func TestPrepareOperationNotSupported(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
-	po, err := bp.PrepareOperation(context.Background(), &core.Operation{})
+	po, err := mp.PrepareOperation(context.Background(), &core.Operation{})
 
 	assert.Nil(t, po)
 	assert.Regexp(t, "FF10371", err)
 }
 
 func TestPrepareOperationBatchPinBadBatch(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	op := &core.Operation{
 		Type:  core.OpTypeBlockchainPinBatch,
 		Input: fftypes.JSONObject{"batch": "bad"},
 	}
 
-	_, err := bp.PrepareOperation(context.Background(), op)
+	_, err := mp.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF00138", err)
 }
 
 func TestPrepareOperationBatchPinBadContext(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	op := &core.Operation{
 		Type: core.OpTypeBlockchainPinBatch,
@@ -99,21 +98,23 @@ func TestPrepareOperationBatchPinBadContext(t *testing.T) {
 		},
 	}
 
-	_, err := bp.PrepareOperation(context.Background(), op)
+	_, err := mp.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF00107", err)
 }
 
 func TestRunOperationNotSupported(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
-	_, complete, err := bp.RunOperation(context.Background(), &core.PreparedOperation{})
+	_, complete, err := mp.RunOperation(context.Background(), &core.PreparedOperation{})
 
 	assert.False(t, complete)
 	assert.Regexp(t, "FF10378", err)
 }
 
 func TestPrepareOperationBatchPinError(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	batchID := fftypes.NewUUID()
 	op := &core.Operation{
@@ -124,15 +125,15 @@ func TestPrepareOperationBatchPinError(t *testing.T) {
 		},
 	}
 
-	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
+	mp.mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, fmt.Errorf("pop"))
 
-	_, err := bp.PrepareOperation(context.Background(), op)
+	_, err := mp.PrepareOperation(context.Background(), op)
 	assert.EqualError(t, err, "pop")
 }
 
 func TestPrepareOperationBatchPinNotFound(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	batchID := fftypes.NewUUID()
 	op := &core.Operation{
@@ -143,14 +144,14 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 		},
 	}
 
-	mdi := bp.database.(*databasemocks.Plugin)
-	mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
+	mp.mdi.On("GetBatchByID", context.Background(), "ns1", batchID).Return(nil, nil)
 
-	_, err := bp.PrepareOperation(context.Background(), op)
+	_, err := mp.PrepareOperation(context.Background(), op)
 	assert.Regexp(t, "FF10109", err)
 }
 
 func TestOperationUpdate(t *testing.T) {
-	bp := newTestBatchPinSubmitter(t, false)
-	assert.NoError(t, bp.OnOperationUpdate(context.Background(), nil, nil))
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	assert.NoError(t, mp.OnOperationUpdate(context.Background(), nil, nil))
 }

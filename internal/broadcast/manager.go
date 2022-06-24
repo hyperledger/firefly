@@ -24,12 +24,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/batchpin"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -70,13 +70,13 @@ type broadcastManager struct {
 	exchange              dataexchange.Plugin
 	sharedstorage         sharedstorage.Plugin
 	syncasync             syncasync.Bridge
-	batchpin              batchpin.Submitter
+	multiparty            multiparty.Manager
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
+func NewBroadcastManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
 	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
@@ -90,7 +90,7 @@ func NewBroadcastManager(ctx context.Context, ns string, di database.Plugin, bi 
 		exchange:              dx,
 		sharedstorage:         si,
 		syncasync:             sa,
-		batchpin:              bp,
+		multiparty:            mult,
 		maxBatchPayloadLength: config.GetByteSize(coreconfig.BroadcastBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,
@@ -152,7 +152,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	}
 	payloadRef := outputs.GetString("payloadRef")
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
-	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, payloadRef)
+	return bm.multiparty.SubmitBatchPin(ctx, &state.Persisted, state.Pins, payloadRef)
 }
 
 func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray) error {

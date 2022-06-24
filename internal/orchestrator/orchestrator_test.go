@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
-	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
@@ -73,7 +72,6 @@ type testOrchestrator struct {
 	mcm *contractmocks.Manager
 	mmi *metricsmocks.Manager
 	mom *operationmocks.Manager
-	mbp *batchpinmocks.Submitter
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
 	mae *spieventsmocks.Manager
@@ -99,7 +97,6 @@ func (tor *testOrchestrator) cleanup(t *testing.T) {
 	tor.mcm.AssertExpectations(t)
 	tor.mmi.AssertExpectations(t)
 	tor.mom.AssertExpectations(t)
-	tor.mbp.AssertExpectations(t)
 	tor.mth.AssertExpectations(t)
 	tor.msd.AssertExpectations(t)
 	tor.mae.AssertExpectations(t)
@@ -133,7 +130,6 @@ func newTestOrchestrator() *testOrchestrator {
 		mcm: &contractmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
 		mom: &operationmocks.Manager{},
-		mbp: &batchpinmocks.Submitter{},
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
 		mae: &spieventsmocks.Manager{},
@@ -152,7 +148,6 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.contracts = tor.mcm
 	tor.orchestrator.metrics = tor.mmi
 	tor.orchestrator.operations = tor.mom
-	tor.orchestrator.batchpin = tor.mbp
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
 	tor.orchestrator.definitions = tor.mdh
@@ -343,15 +338,6 @@ func TestInitDefinitionsComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.definitions = nil
-	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err)
-}
-
-func TestInitBatchPinComponentFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.plugins.Database.Plugin = nil
-	or.batchpin = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

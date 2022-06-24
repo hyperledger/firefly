@@ -26,13 +26,13 @@ import (
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
-	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -53,7 +53,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mba := &batchmocks.Manager{}
 	mdm := &datamocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
-	mbp := &batchpinmocks.Submitter{}
+	mmp := &multipartymocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	mockRunAsGroupPassthrough(mdi)
@@ -77,7 +77,7 @@ func newTestPrivateMessagingCommon(t *testing.T, metricsEnabled bool) (*privateM
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	pm, err := NewPrivateMessaging(ctx, "ns1", mdi, mdx, mbi, mim, mba, mdm, msa, mbp, mmi, mom)
+	pm, err := NewPrivateMessaging(ctx, "ns1", mdi, mdx, mbi, mim, mba, mdm, msa, mmp, mmi, mom)
 	assert.NoError(t, err)
 
 	// Default mocks to save boilerplate in the tests
@@ -130,7 +130,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	blob1 := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mbp := pm.batchpin.(*batchpinmocks.Submitter)
+	mmp := pm.multiparty.(*multipartymocks.Manager)
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	mom := pm.operations.(*operationmocks.Manager)
@@ -179,7 +179,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 		return *data.Node.ID == *node2.ID
 	})).Return(nil, nil)
 
-	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(nil)
+	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(nil)
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
@@ -205,7 +205,7 @@ func TestDispatchBatchWithBlobs(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mbp.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mim.AssertExpectations(t)
 	mom.AssertExpectations(t)
@@ -233,9 +233,6 @@ func TestSendAndSubmitBatchBadID(t *testing.T) {
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
-
-	mbp := pm.batchpin.(*batchpinmocks.Submitter)
-	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
@@ -468,8 +465,8 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 		PayloadRef: "/blob/1",
 	}, nil)
 
-	mbp := pm.batchpin.(*batchpinmocks.Submitter)
-	mbp.On("SubmitPinnedBatch", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
+	mmp := pm.multiparty.(*multipartymocks.Manager)
+	mmp.On("SubmitBatchPin", pm.ctx, mock.Anything, mock.Anything, "").Return(fmt.Errorf("pop"))
 
 	err := pm.dispatchPinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
@@ -489,7 +486,7 @@ func TestWriteTransactionSubmitBatchPinFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
-	mbp.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 

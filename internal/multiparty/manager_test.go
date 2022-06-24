@@ -23,6 +23,9 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -31,28 +34,45 @@ import (
 
 type testMultipartyManager struct {
 	multipartyManager
+	mdi *databasemocks.Plugin
 	mbi *blockchainmocks.Plugin
+	mom *operationmocks.Manager
+	mmi *metricsmocks.Manager
+}
+
+func (mp *testMultipartyManager) cleanup(t *testing.T) {
+	mp.mdi.AssertExpectations(t)
+	mp.mbi.AssertExpectations(t)
+	mp.mom.AssertExpectations(t)
+	mp.mmi.AssertExpectations(t)
 }
 
 func newTestMultipartyManager() *testMultipartyManager {
 	nm := &testMultipartyManager{
+		mdi: &databasemocks.Plugin{},
 		mbi: &blockchainmocks.Plugin{},
+		mom: &operationmocks.Manager{},
+		mmi: &metricsmocks.Manager{},
 		multipartyManager: multipartyManager{
-			ctx: context.Background(),
+			ctx:       context.Background(),
+			namespace: "ns1",
 		},
 	}
 
+	nm.multipartyManager.database = nm.mdi
 	nm.multipartyManager.blockchain = nm.mbi
-	nm.mbi.On("Name").Return("ethereum")
-	nm.mbi.On("SubmitBatchPin", context.Background(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	nm.mbi.On("SubmitNetworkAction", context.Background(), mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	nm.multipartyManager.operations = nm.mom
+	nm.multipartyManager.metrics = nm.mmi
 	return nm
 }
 
 func TestNewMultipartyManager(t *testing.T) {
+	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
+	mom := &operationmocks.Manager{}
+	mmi := &metricsmocks.Manager{}
 	contracts := make([]Contract, 0)
-	nm := NewMultipartyManager(context.Background(), "namespace", contracts, mbi)
+	nm := NewMultipartyManager(context.Background(), "namespace", contracts, mdi, mbi, mom, mmi)
 	assert.NotNil(t, nm)
 }
 
@@ -220,12 +240,6 @@ func TestConfigureContractNetworkVersionFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 }
 
-func TestGetBlockchainName(t *testing.T) {
-	mp := newTestMultipartyManager()
-	name := mp.Name()
-	assert.Equal(t, "ethereum", name)
-}
-
 func TestSubmitNetworkAction(t *testing.T) {
 	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -240,6 +254,7 @@ func TestSubmitNetworkAction(t *testing.T) {
 	mp := newTestMultipartyManager()
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mbi.On("SubmitNetworkAction", mock.Anything, "test", "0x123", core.NetworkActionTerminate, mock.Anything).Return(nil)
 	mp.multipartyManager.contracts = contracts
 
 	cf := &core.FireFlyContracts{
@@ -252,32 +267,104 @@ func TestSubmitNetworkAction(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestSubmitBatchPin(t *testing.T) {
-	contracts := make([]Contract, 1)
-	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
-		"address": "0x123",
-	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
-
-	contracts[0] = contract
+func TestSubmitBatchPinOk(t *testing.T) {
 	mp := newTestMultipartyManager()
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.multipartyManager.contracts = contracts
+	defer mp.cleanup(t)
+	ctx := context.Background()
 
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
 	}
+	contexts := []*fftypes.Bytes32{}
 
-	batchPin := &blockchain.BatchPin{}
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainPinBatch, op.Type)
+		assert.Equal(t, "ut", op.Plugin)
+		assert.Equal(t, *batch.TX.ID, *op.Transaction)
+		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
+		return true
+	})).Return(nil)
+	mp.mmi.On("IsMetricsEnabled").Return(false)
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(batchPinData)
+		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
+	})).Return(nil, nil)
 
-	err := mp.ConfigureContract(context.Background(), cf)
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
 	assert.NoError(t, err)
-	err = mp.SubmitBatchPin(context.Background(), "ns1", "0x123", batchPin)
-	assert.Nil(t, err)
+}
+
+func TestSubmitPinnedBatchWithMetricsOk(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	contexts := []*fftypes.Bytes32{}
+
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", ctx, mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainPinBatch, op.Type)
+		assert.Equal(t, "ut", op.Plugin)
+		assert.Equal(t, *batch.TX.ID, *op.Transaction)
+		assert.Equal(t, "payload1", op.Input.GetString("payloadRef"))
+		return true
+	})).Return(nil)
+	mp.mmi.On("IsMetricsEnabled").Return(true)
+	mp.mmi.On("CountBatchPin").Return()
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(batchPinData)
+		return op.Type == core.OpTypeBlockchainPinBatch && data.Batch == batch
+	})).Return(nil, nil)
+
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.NoError(t, err)
+}
+
+func TestSubmitPinnedBatchOpFail(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	ctx := context.Background()
+
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Author: "id1",
+				Key:    "0x12345",
+			},
+		},
+		TX: core.TransactionRef{
+			ID: fftypes.NewUUID(),
+		},
+	}
+	contexts := []*fftypes.Bytes32{}
+
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", ctx, mock.Anything).Return(fmt.Errorf("pop"))
+	err := mp.SubmitBatchPin(ctx, batch, contexts, "payload1")
+	assert.Regexp(t, "pop", err)
 }
 
 func TestGetNetworkVersion(t *testing.T) {
