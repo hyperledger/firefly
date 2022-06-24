@@ -37,7 +37,7 @@ func (tbd *TBD) Init(ctx context.Context, config config.Section) (err error) {
 	return nil
 }
 
-func (tbd *TBD) SetHandler(handler identity.Callbacks) {
+func (tbd *TBD) SetHandler(namespace string, handler identity.Callbacks) {
 }
 
 func (tbd *TBD) Start() error {

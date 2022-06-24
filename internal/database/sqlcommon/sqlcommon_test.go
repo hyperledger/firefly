@@ -26,7 +26,9 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/hyperledger/firefly-common/pkg/config"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
 )
@@ -360,4 +362,27 @@ func TestInsertTxRowsIncompleteReturn(t *testing.T) {
 	sb := sq.Insert("table").Columns("col1").Values(("val1"))
 	err = s.insertTxRows(ctx, "table1", tx, sb, nil, []int64{1, 2}, false)
 	assert.Regexp(t, "FF10116", err)
+}
+
+func TestNamespaceCallbacks(t *testing.T) {
+	tcb := &databasemocks.Callbacks{}
+	cb := callbacks{
+		handlers: map[string]database.Callbacks{
+			"ns1": tcb,
+		},
+	}
+	id := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+
+	tcb.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", id, int64(1)).Return()
+	tcb.On("OrderedCollectionNSEvent", database.CollectionPins, core.ChangeEventTypeCreated, "ns1", int64(1)).Return()
+	tcb.On("UUIDCollectionNSEvent", database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", id).Return()
+	tcb.On("UUIDCollectionEvent", database.CollectionNamespaces, core.ChangeEventTypeCreated, id).Return()
+	tcb.On("HashCollectionNSEvent", database.CollectionGroups, core.ChangeEventTypeUpdated, "ns1", hash).Return()
+
+	cb.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", id, 1)
+	cb.OrderedCollectionNSEvent(database.CollectionPins, core.ChangeEventTypeCreated, "ns1", 1)
+	cb.UUIDCollectionNSEvent(database.CollectionOperations, core.ChangeEventTypeCreated, "ns1", id)
+	cb.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeCreated, id)
+	cb.HashCollectionNSEvent(database.CollectionGroups, core.ChangeEventTypeUpdated, "ns1", hash)
 }

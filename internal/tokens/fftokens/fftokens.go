@@ -54,8 +54,7 @@ func (cb *callbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState 
 
 func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener and let them filter
-		// TODO: deprecate this path
+		// Older token subscriptions don't populate namespace, so deliver the event to every listener
 		for _, cb := range cb.handlers {
 			if err := cb.TokenPoolCreated(plugin, pool); err != nil {
 				return err
@@ -71,8 +70,7 @@ func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, po
 
 func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener and let them filter
-		// TODO: deprecate this path
+		// Older token subscriptions don't populate namespace, so deliver the event to every listener
 		for _, cb := range cb.handlers {
 			if err := cb.TokensTransferred(plugin, transfer); err != nil {
 				return err
@@ -88,8 +86,7 @@ func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, t
 
 func (cb *callbacks) TokensApproved(namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener and let them filter
-		// TODO: deprecate this path
+		// Older token subscriptions don't populate namespace, so deliver the event to every listener
 		for _, cb := range cb.handlers {
 			if err := cb.TokensApproved(plugin, approval); err != nil {
 				return err

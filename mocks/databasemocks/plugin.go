@@ -2410,9 +2410,9 @@ func (_m *Plugin) RunAsGroup(ctx context.Context, fn func(context.Context) error
 	return r0
 }
 
-// SetHandler provides a mock function with given fields: handler
-func (_m *Plugin) SetHandler(handler database.Callbacks) {
-	_m.Called(handler)
+// SetHandler provides a mock function with given fields: namespace, handler
+func (_m *Plugin) SetHandler(namespace string, handler database.Callbacks) {
+	_m.Called(namespace, handler)
 }
 
 // UpdateBatch provides a mock function with given fields: ctx, id, update
