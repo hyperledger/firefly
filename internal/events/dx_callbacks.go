@@ -185,6 +185,12 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 	mr := event.MessageReceived()
 	l.Infof("Private batch received from %s peer '%s'", dx.Name(), mr.PeerID)
 
+	if mr.Transport.Batch.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring batch from different namespace '%s'", mr.Transport.Batch.Namespace)
+		event.AckWithManifest("")
+		return
+	}
+
 	manifestString, err := em.privateBatchReceived(mr.PeerID, mr.Transport.Batch, mr.Transport.Group)
 	if err != nil {
 		l.Warnf("Exited while persisting batch: %s", err)
@@ -200,6 +206,11 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 
 	if br.PeerID == "" || len(br.PeerID) > 256 || br.PayloadRef == "" || len(br.PayloadRef) > 1024 {
 		log.L(em.ctx).Errorf("Invalid blob received event from data exhange: Peer='%s' Hash='%v' PayloadRef='%s'", br.PeerID, &br.Hash, br.PayloadRef)
+		event.Ack() // Still confirm the event
+		return
+	}
+	if br.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring blob from different namespace '%s'", br.Namespace)
 		event.Ack() // Still confirm the event
 		return
 	}

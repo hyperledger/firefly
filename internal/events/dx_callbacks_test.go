@@ -237,6 +237,23 @@ func TestMessageReceivePersistBatchError(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
+func TestMessageReceivedWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.namespace = "ns2"
+
+	_, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
+
+}
+
 func TestMessageReceiveNodeLookupError(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to stop retry
@@ -419,6 +436,21 @@ func TestPrivateBlobReceivedGetBlobsFails(t *testing.T) {
 
 	mde.AssertExpectations(t)
 	mdi.AssertExpectations(t)
+}
+
+func TestPrivateBlobReceivedWrongNS(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	cancel() // retryable error
+	em.namespace = "ns2"
+	hash := fftypes.NewRandB32()
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newPrivateBlobReceived("peer1", hash, 12345, "ns1/path1")
+	em.privateBlobReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
 }
 
 func TestMessageReceiveMessageIdentityFail(t *testing.T) {
