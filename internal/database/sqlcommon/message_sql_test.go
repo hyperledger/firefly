@@ -148,7 +148,6 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	fb := database.MessageQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", msgUpdated.Header.ID.String()),
-		fb.Eq("namespace", msgUpdated.Header.Namespace),
 		fb.Eq("type", string(msgUpdated.Header.Type)),
 		fb.Eq("author", msgUpdated.Header.Author),
 		fb.Eq("topics", msgUpdated.Header.Topics),

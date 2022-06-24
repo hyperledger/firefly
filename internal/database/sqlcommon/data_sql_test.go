@@ -129,7 +129,6 @@ func TestDataE2EWithDB(t *testing.T) {
 	fb := database.DataQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", dataUpdated.ID.String()),
-		fb.Eq("namespace", dataUpdated.Namespace),
 		fb.Eq("validator", string(dataUpdated.Validator)),
 		fb.Eq("datatype.name", dataUpdated.Datatype.Name),
 		fb.Eq("datatype.version", dataUpdated.Datatype.Version),

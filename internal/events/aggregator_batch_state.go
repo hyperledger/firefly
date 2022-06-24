@@ -308,7 +308,6 @@ func (bs *batchState) flushPins(ctx context.Context) error {
 		filter := fb.Or()
 		for batchID, indexes := range pinsDispatched {
 			filter.Condition(fb.And(
-				fb.Eq("namespace", bs.namespace),
 				fb.Eq("batch", batchID),
 				fb.In("index", indexes),
 			))

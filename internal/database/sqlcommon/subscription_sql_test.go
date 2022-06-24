@@ -111,7 +111,6 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	// Query back the subscription
 	fb := database.SubscriptionQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("namespace", subscriptionUpdated.Namespace),
 		fb.Eq("name", subscriptionUpdated.Name),
 	)
 	subscriptionRes, res, err := s.GetSubscriptions(ctx, "ns1", filter.Count(true))

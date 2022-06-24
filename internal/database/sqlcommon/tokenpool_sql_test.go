@@ -95,7 +95,6 @@ func TestTokenPoolE2EWithDB(t *testing.T) {
 	fb := database.TokenPoolQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("id", pool.ID.String()),
-		fb.Eq("namespace", pool.Namespace),
 		fb.Eq("name", pool.Name),
 		fb.Eq("locator", pool.Locator),
 		fb.Eq("message", pool.Message),

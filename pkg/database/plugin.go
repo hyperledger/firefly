@@ -693,7 +693,6 @@ type Capabilities struct {
 var MessageQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"cid":       &UUIDField{},
-	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"key":       &StringField{},
@@ -713,7 +712,6 @@ var MessageQueryFactory = &queryFields{
 // BatchQueryFactory filter fields for batches
 var BatchQueryFactory = &queryFields{
 	"id":         &UUIDField{},
-	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
 	"key":        &StringField{},
@@ -732,14 +730,12 @@ var TransactionQueryFactory = &queryFields{
 	"id":            &UUIDField{},
 	"type":          &StringField{},
 	"created":       &TimeField{},
-	"namespace":     &StringField{},
 	"blockchainids": &FFStringArrayField{},
 }
 
 // DataQueryFactory filter fields for data
 var DataQueryFactory = &queryFields{
 	"id":               &UUIDField{},
-	"namespace":        &StringField{},
 	"validator":        &StringField{},
 	"datatype.name":    &StringField{},
 	"datatype.version": &StringField{},
@@ -756,7 +752,6 @@ var DataQueryFactory = &queryFields{
 var DatatypeQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"message":   &UUIDField{},
-	"namespace": &StringField{},
 	"validator": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
@@ -772,24 +767,22 @@ var OffsetQueryFactory = &queryFields{
 
 // OperationQueryFactory filter fields for data operations
 var OperationQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"tx":        &UUIDField{},
-	"type":      &StringField{},
-	"namespace": &StringField{},
-	"status":    &StringField{},
-	"error":     &StringField{},
-	"plugin":    &StringField{},
-	"input":     &JSONField{},
-	"output":    &JSONField{},
-	"created":   &TimeField{},
-	"updated":   &TimeField{},
-	"retry":     &UUIDField{},
+	"id":      &UUIDField{},
+	"tx":      &UUIDField{},
+	"type":    &StringField{},
+	"status":  &StringField{},
+	"error":   &StringField{},
+	"plugin":  &StringField{},
+	"input":   &JSONField{},
+	"output":  &JSONField{},
+	"created": &TimeField{},
+	"updated": &TimeField{},
+	"retry":   &UUIDField{},
 }
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
 	"id":        &UUIDField{},
-	"namespace": &StringField{},
 	"name":      &StringField{},
 	"transport": &StringField{},
 	"events":    &StringField{},
@@ -802,7 +795,6 @@ var SubscriptionQueryFactory = &queryFields{
 var EventQueryFactory = &queryFields{
 	"id":         &UUIDField{},
 	"type":       &StringField{},
-	"namespace":  &StringField{},
 	"reference":  &UUIDField{},
 	"correlator": &UUIDField{},
 	"tx":         &UUIDField{},
@@ -813,7 +805,6 @@ var EventQueryFactory = &queryFields{
 
 // PinQueryFactory filter fields for parked contexts
 var PinQueryFactory = &queryFields{
-	"namespace":  &StringField{},
 	"sequence":   &Int64Field{},
 	"masked":     &BoolField{},
 	"hash":       &Bytes32Field{},
@@ -832,7 +823,6 @@ var IdentityQueryFactory = &queryFields{
 	"messages.verification": &UUIDField{},
 	"messages.update":       &UUIDField{},
 	"type":                  &StringField{},
-	"namespace":             &StringField{},
 	"name":                  &StringField{},
 	"description":           &StringField{},
 	"profile":               &JSONField{},
@@ -842,19 +832,17 @@ var IdentityQueryFactory = &queryFields{
 
 // VerifierQueryFactory filter fields for identities
 var VerifierQueryFactory = &queryFields{
-	"hash":      &Bytes32Field{},
-	"identity":  &UUIDField{},
-	"type":      &StringField{},
-	"namespace": &StringField{},
-	"value":     &StringField{},
-	"created":   &TimeField{},
+	"hash":     &Bytes32Field{},
+	"identity": &UUIDField{},
+	"type":     &StringField{},
+	"value":    &StringField{},
+	"created":  &TimeField{},
 }
 
 // GroupQueryFactory filter fields for nodes
 var GroupQueryFactory = &queryFields{
 	"hash":        &Bytes32Field{},
 	"message":     &UUIDField{},
-	"namespace":   &StringField{},
 	"description": &StringField{},
 	"ledger":      &UUIDField{},
 	"created":     &TimeField{},
@@ -886,7 +874,6 @@ var BlobQueryFactory = &queryFields{
 var TokenPoolQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"type":      &StringField{},
-	"namespace": &StringField{},
 	"name":      &StringField{},
 	"standard":  &StringField{},
 	"locator":   &StringField{},
@@ -906,7 +893,6 @@ var TokenBalanceQueryFactory = &queryFields{
 	"tokenindex": &StringField{},
 	"uri":        &StringField{},
 	"connector":  &StringField{},
-	"namespace":  &StringField{},
 	"key":        &StringField{},
 	"balance":    &Int64Field{},
 	"updated":    &TimeField{},
@@ -914,16 +900,14 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"key":       &StringField{},
-	"namespace": &StringField{},
-	"updated":   &TimeField{},
+	"key":     &StringField{},
+	"updated": &TimeField{},
 }
 
 // TokenAccountPoolQueryFactory filter fields for token account pools
 var TokenAccountPoolQueryFactory = &queryFields{
-	"pool":      &UUIDField{},
-	"namespace": &StringField{},
-	"updated":   &TimeField{},
+	"pool":    &UUIDField{},
+	"updated": &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
@@ -933,7 +917,6 @@ var TokenTransferQueryFactory = &queryFields{
 	"tokenindex":      &StringField{},
 	"uri":             &StringField{},
 	"connector":       &StringField{},
-	"namespace":       &StringField{},
 	"key":             &StringField{},
 	"from":            &StringField{},
 	"to":              &StringField{},
@@ -952,7 +935,6 @@ var TokenApprovalQueryFactory = &queryFields{
 	"localid":         &StringField{},
 	"pool":            &UUIDField{},
 	"connector":       &StringField{},
-	"namespace":       &StringField{},
 	"key":             &StringField{},
 	"operator":        &StringField{},
 	"approved":        &BoolField{},
@@ -967,16 +949,14 @@ var TokenApprovalQueryFactory = &queryFields{
 
 // FFIQueryFactory filter fields for contract definitions
 var FFIQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"name":      &StringField{},
-	"version":   &StringField{},
+	"id":      &UUIDField{},
+	"name":    &StringField{},
+	"version": &StringField{},
 }
 
 // FFIMethodQueryFactory filter fields for contract methods
 var FFIMethodQueryFactory = &queryFields{
 	"id":          &UUIDField{},
-	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"pathname":    &StringField{},
 	"interface":   &UUIDField{},
@@ -986,7 +966,6 @@ var FFIMethodQueryFactory = &queryFields{
 // FFIEventQueryFactory filter fields for contract events
 var FFIEventQueryFactory = &queryFields{
 	"id":          &UUIDField{},
-	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"pathname":    &StringField{},
 	"interface":   &UUIDField{},
@@ -997,7 +976,6 @@ var FFIEventQueryFactory = &queryFields{
 var ContractListenerQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"interface": &UUIDField{},
-	"namespace": &StringField{},
 	"location":  &JSONField{},
 	"topic":     &StringField{},
 	"signature": &StringField{},
@@ -1011,7 +989,6 @@ var ContractListenerQueryFactory = &queryFields{
 var BlockchainEventQueryFactory = &queryFields{
 	"id":              &UUIDField{},
 	"source":          &StringField{},
-	"namespace":       &StringField{},
 	"name":            &StringField{},
 	"protocolid":      &StringField{},
 	"listener":        &StringField{},
@@ -1025,6 +1002,5 @@ var BlockchainEventQueryFactory = &queryFields{
 var ContractAPIQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"name":      &StringField{},
-	"namespace": &StringField{},
 	"interface": &UUIDField{},
 }

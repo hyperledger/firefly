@@ -109,12 +109,10 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			MaximumDelay: config.GetDuration(coreconfig.EventDispatcherRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.EventDispatcherRetryFactor),
 		},
-		namespace:  sub.definition.Namespace,
-		offsetType: core.OffsetTypeSubscription,
-		offsetName: sub.definition.ID.String(),
-		addCriteria: func(af database.AndFilter) database.AndFilter {
-			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
-		},
+		namespace:        sub.definition.Namespace,
+		offsetType:       core.OffsetTypeSubscription,
+		offsetName:       sub.definition.ID.String(),
+		addCriteria:      func(af database.AndFilter) database.AndFilter { return af },
 		queryFactory:     database.EventQueryFactory,
 		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,

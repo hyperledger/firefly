@@ -93,7 +93,6 @@ func TestUpsertGroupE2EWithDB(t *testing.T) {
 	fb := database.GroupQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("hash", groupUpdated.Hash),
-		fb.Eq("namespace", groupUpdated.Namespace),
 		fb.Eq("message", groupUpdated.Message),
 		fb.Gt("created", "0"),
 	)

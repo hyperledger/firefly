@@ -48,7 +48,6 @@ func (nm *networkMap) generateDIDDocument(ctx context.Context, identity *core.Id
 	fb := database.VerifierQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("identity", identity.ID),
-		fb.Eq("namespace", identity.Namespace),
 	)
 	verifiers, _, err := nm.database.GetVerifiers(ctx, nm.namespace, filter)
 	if err != nil {
