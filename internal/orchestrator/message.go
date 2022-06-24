@@ -25,12 +25,8 @@ import (
 )
 
 func (or *orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut) (reply *core.MessageInOut, err error) {
-	pm := or.PrivateMessaging()
-	if pm == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgMessagesNotSupported)
-	}
 	if msg.Header.Group == nil && (msg.Group == nil || len(msg.Group.Members) == 0) {
 		return nil, i18n.NewError(ctx, coremsgs.MsgRequestMustBePrivate)
 	}
-	return pm.RequestReply(ctx, msg)
+	return or.PrivateMessaging().RequestReply(ctx, msg)
 }

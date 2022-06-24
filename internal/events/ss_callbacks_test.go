@@ -106,6 +106,24 @@ func TestSharedStorageBatchDownloadedNSMismatch(t *testing.T) {
 
 }
 
+func TestSharedStorageBatchDownloadedNonMultiparty(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
+	b, _ := json.Marshal(&batch)
+
+	mss := &sharedstoragemocks.Plugin{}
+	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
+	assert.NoError(t, err)
+
+	mss.AssertExpectations(t)
+
+}
+
 func TestSharedStorageBatchDownloadedBadData(t *testing.T) {
 
 	em, cancel := newTestEventManager(t)

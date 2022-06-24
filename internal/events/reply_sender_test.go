@@ -102,3 +102,37 @@ func TestSendReplyPrivateOk(t *testing.T) {
 	mpm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
+
+func TestSendReplyBroadcastDisabled(t *testing.T) {
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &core.Subscription{},
+	})
+	defer cancel()
+	ed.broadcast = nil
+
+	ed.sendReply(context.Background(), &core.Event{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}, &core.MessageInOut{})
+}
+
+func TestSendReplyPrivateDisabled(t *testing.T) {
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &core.Subscription{},
+	})
+	defer cancel()
+	ed.messaging = nil
+
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			Group: fftypes.NewRandB32(),
+		},
+	}
+
+	ed.sendReply(context.Background(), &core.Event{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}, &core.MessageInOut{
+		Message: *msg,
+	})
+}

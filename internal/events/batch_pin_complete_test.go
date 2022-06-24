@@ -421,6 +421,26 @@ func TestBatchPinCompleteWrongNamespace(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestBatchPinCompleteNonMultiparty(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	batch := &blockchain.BatchPin{
+		Namespace:     "ns1",
+		TransactionID: fftypes.NewUUID(),
+		Event: blockchain.Event{
+			BlockchainTXID: "0x12345",
+		},
+	}
+
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
+	assert.NoError(t, err)
+}
+
 func TestPersistBatchMissingID(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
