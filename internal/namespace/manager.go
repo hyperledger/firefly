@@ -375,15 +375,17 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 	// check for deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := difactory.GetPlugin(ctx, deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType))
-		if err != nil {
-			return nil, err
-		}
-		log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
-		name := "database_0"
-		plugins[name] = databasePlugin{
-			config: deprecatedDatabaseConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := difactory.GetPlugin(ctx, deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType))
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
+			name := "database_0"
+			plugins[name] = databasePlugin{
+				config: deprecatedDatabaseConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -431,17 +433,20 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 		}
 	}
 
+	// check deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedDataexchangeConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := dxfactory.GetPlugin(ctx, pluginType)
-		if err != nil {
-			return nil, err
-		}
-		log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
-		name := "dataexchange_0"
-		plugins[name] = dataExchangePlugin{
-			config: deprecatedDataexchangeConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := dxfactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
+			name := "dataexchange_0"
+			plugins[name] = dataExchangePlugin{
+				config: deprecatedDataexchangeConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -496,15 +501,17 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins m
 	// check deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedBlockchainConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := bifactory.GetPlugin(ctx, pluginType)
-		if err != nil {
-			return nil, err
-		}
-		log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
-		name := "blockchain_0"
-		plugins[name] = blockchainPlugin{
-			config: deprecatedBlockchainConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := bifactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
+			name := "blockchain_0"
+			plugins[name] = blockchainPlugin{
+				config: deprecatedBlockchainConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -535,15 +542,17 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	// check deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedSharedStorageConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := ssfactory.GetPlugin(ctx, pluginType)
-		if err != nil {
-			return nil, err
-		}
-		log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
-		name := "sharedstorage_0"
-		plugins[name] = sharedStoragePlugin{
-			config: deprecatedSharedStorageConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
+			name := "sharedstorage_0"
+			plugins[name] = sharedStoragePlugin{
+				config: deprecatedSharedStorageConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
