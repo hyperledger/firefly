@@ -63,6 +63,31 @@ func TestPrepareAndRunBatchPin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestPrepareAndRunNetworkAction(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainNetworkAction,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	addNetworkActionInputs(op, core.NetworkActionTerminate, "0x123")
+
+	mp.mbi.On("SubmitNetworkAction", context.Background(), "ns1:"+op.ID.String(), "0x123", core.NetworkActionTerminate, mock.Anything).Return(nil)
+
+	po, err := mp.PrepareOperation(context.Background(), op)
+	assert.NoError(t, err)
+	assert.Equal(t, core.NetworkActionTerminate, po.Data.(networkActionData).Type)
+
+	_, complete, err := mp.RunOperation(context.Background(), opNetworkAction(op, core.NetworkActionTerminate, "0x123"))
+
+	assert.False(t, complete)
+	assert.NoError(t, err)
+
+	mp.mbi.AssertExpectations(t)
+}
+
 func TestPrepareOperationNotSupported(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)

@@ -47,7 +47,7 @@ nav_order: 7
 | `id` | The UUID of the operation | [`UUID`](simpletypes#uuid) |
 | `namespace` | The namespace of the operation | `string` |
 | `tx` | The UUID of the FireFly transaction the operation is part of | [`UUID`](simpletypes#uuid) |
-| `type` | The type of the operation | `FFEnum`:<br/>`"blockchain_pin_batch"`<br/>`"blockchain_invoke"`<br/>`"sharedstorage_upload_batch"`<br/>`"sharedstorage_upload_blob"`<br/>`"sharedstorage_download_batch"`<br/>`"sharedstorage_download_blob"`<br/>`"dataexchange_send_batch"`<br/>`"dataexchange_send_blob"`<br/>`"token_create_pool"`<br/>`"token_activate_pool"`<br/>`"token_transfer"`<br/>`"token_approval"` |
+| `type` | The type of the operation | `FFEnum`:<br/>`"blockchain_pin_batch"`<br/>`"blockchain_network_action"`<br/>`"blockchain_invoke"`<br/>`"sharedstorage_upload_batch"`<br/>`"sharedstorage_upload_blob"`<br/>`"sharedstorage_download_batch"`<br/>`"sharedstorage_download_blob"`<br/>`"dataexchange_send_batch"`<br/>`"dataexchange_send_blob"`<br/>`"token_create_pool"`<br/>`"token_activate_pool"`<br/>`"token_transfer"`<br/>`"token_approval"` |
 | `status` | The current status of the operation | `OpStatus` |
 | `plugin` | The plugin responsible for performing the operation | `string` |
 | `input` | The input to this operation | [`JSONObject`](simpletypes#jsonobject) |

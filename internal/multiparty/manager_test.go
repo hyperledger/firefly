@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
+	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +39,7 @@ type testMultipartyManager struct {
 	mbi *blockchainmocks.Plugin
 	mom *operationmocks.Manager
 	mmi *metricsmocks.Manager
+	mth *txcommonmocks.Helper
 }
 
 func (mp *testMultipartyManager) cleanup(t *testing.T) {
@@ -53,6 +55,7 @@ func newTestMultipartyManager() *testMultipartyManager {
 		mbi: &blockchainmocks.Plugin{},
 		mom: &operationmocks.Manager{},
 		mmi: &metricsmocks.Manager{},
+		mth: &txcommonmocks.Helper{},
 		multipartyManager: multipartyManager{
 			ctx:       context.Background(),
 			namespace: "ns1",
@@ -63,6 +66,7 @@ func newTestMultipartyManager() *testMultipartyManager {
 	nm.multipartyManager.blockchain = nm.mbi
 	nm.multipartyManager.operations = nm.mom
 	nm.multipartyManager.metrics = nm.mmi
+	nm.multipartyManager.txHelper = nm.mth
 	return nm
 }
 
@@ -71,11 +75,12 @@ func TestNewMultipartyManager(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mom := &operationmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
+	mth := &txcommonmocks.Helper{}
 	config := Config{Contracts: []Contract{}}
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
 	}).Return()
-	nm, err := NewMultipartyManager(context.Background(), "namespace", config, mdi, mbi, mom, mmi)
+	nm, err := NewMultipartyManager(context.Background(), "namespace", config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
 	assert.Equal(t, "MultipartyManager", nm.Name())
@@ -84,7 +89,7 @@ func TestNewMultipartyManager(t *testing.T) {
 
 func TestInitFail(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
-	_, err := NewMultipartyManager(context.Background(), "namespace", config, nil, nil, nil, nil)
+	_, err := NewMultipartyManager(context.Background(), "namespace", config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -258,13 +263,27 @@ func TestSubmitNetworkAction(t *testing.T) {
 		FirstEvent: "0",
 		Location:   location,
 	}
+	txid := fftypes.NewUUID()
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	mp.multipartyManager.config.Contracts = contracts
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.mbi.On("SubmitNetworkAction", mock.Anything, mock.Anything, "0x123", core.NetworkActionTerminate, mock.Anything).Return(nil)
-	mp.multipartyManager.config.Contracts = contracts
+	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(txid, nil)
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", context.Background(), mock.MatchedBy(func(op *core.Operation) bool {
+		assert.Equal(t, core.OpTypeBlockchainNetworkAction, op.Type)
+		assert.Equal(t, "ut", op.Plugin)
+		assert.Equal(t, *txid, *op.Transaction)
+		assert.Equal(t, "terminate", op.Input.GetString("type"))
+		return true
+	})).Return(nil)
+	mp.mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
+		data := op.Data.(networkActionData)
+		return op.Type == core.OpTypeBlockchainNetworkAction && data.Type == core.NetworkActionTerminate
+	})).Return(nil, nil)
 
 	cf := &core.FireFlyContracts{
 		Active: core.FireFlyContractInfo{Index: 0},
@@ -276,6 +295,80 @@ func TestSubmitNetworkAction(t *testing.T) {
 	assert.NoError(t, err)
 	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
 	assert.Nil(t, err)
+
+	mp.mbi.AssertExpectations(t)
+	mp.mth.AssertExpectations(t)
+	mp.mom.AssertExpectations(t)
+}
+
+func TestSubmitNetworkActionTXFail(t *testing.T) {
+	contracts := make([]Contract, 1)
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	contract := Contract{
+		FirstEvent: "0",
+		Location:   location,
+	}
+
+	contracts[0] = contract
+	mp := newTestMultipartyManager()
+	mp.multipartyManager.config.Contracts = contracts
+
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(nil, fmt.Errorf("pop"))
+
+	cf := &core.FireFlyContracts{
+		Active: core.FireFlyContractInfo{Index: 0},
+	}
+
+	mp.namespace = core.LegacySystemNamespace
+
+	err := mp.ConfigureContract(context.Background(), cf)
+	assert.NoError(t, err)
+	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.EqualError(t, err, "pop")
+
+	mp.mbi.AssertExpectations(t)
+	mp.mth.AssertExpectations(t)
+}
+
+func TestSubmitNetworkActionOpFail(t *testing.T) {
+	contracts := make([]Contract, 1)
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	contract := Contract{
+		FirstEvent: "0",
+		Location:   location,
+	}
+	txid := fftypes.NewUUID()
+
+	contracts[0] = contract
+	mp := newTestMultipartyManager()
+	mp.multipartyManager.config.Contracts = contracts
+
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mth.On("SubmitNewTransaction", mock.Anything, core.TransactionTypeNetworkAction).Return(txid, nil)
+	mp.mbi.On("Name").Return("ut")
+	mp.mom.On("AddOrReuseOperation", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
+
+	cf := &core.FireFlyContracts{
+		Active: core.FireFlyContractInfo{Index: 0},
+	}
+
+	mp.namespace = core.LegacySystemNamespace
+
+	err := mp.ConfigureContract(context.Background(), cf)
+	assert.NoError(t, err)
+	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.EqualError(t, err, "pop")
+
+	mp.mbi.AssertExpectations(t)
+	mp.mth.AssertExpectations(t)
+	mp.mom.AssertExpectations(t)
 }
 
 func TestSubmitNetworkActionBadType(t *testing.T) {
