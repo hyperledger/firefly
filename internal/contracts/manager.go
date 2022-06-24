@@ -79,7 +79,7 @@ type contractManager struct {
 	syncasync         syncasync.Bridge
 }
 
-func NewContractManager(ctx context.Context, ns string, di database.Plugin, bm broadcast.Manager, im identity.Manager, bi blockchain.Plugin, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
+func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, bm broadcast.Manager, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
 	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}

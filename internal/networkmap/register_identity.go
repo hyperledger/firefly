@@ -56,10 +56,6 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 		},
 	}
 
-	if err := nm.data.VerifyNamespaceExists(ctx, nm.namespace); err != nil {
-		return nil, err
-	}
-
 	// Set defaults
 	if identity.Type == "" {
 		identity.Type = core.IdentityTypeCustom

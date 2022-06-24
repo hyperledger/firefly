@@ -26,9 +26,6 @@ func (bm *broadcastManager) BroadcastTokenPool(ctx context.Context, pool *core.T
 	if err := pool.Pool.Validate(ctx); err != nil {
 		return nil, err
 	}
-	if err := bm.data.VerifyNamespaceExists(ctx, pool.Pool.Namespace); err != nil {
-		return nil, err
-	}
 
 	msg, err = bm.BroadcastDefinitionAsNode(ctx, pool, core.SystemTagDefinePool, waitConfirm)
 	if msg != nil {

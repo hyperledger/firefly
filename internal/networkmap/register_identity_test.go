@@ -24,7 +24,6 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -44,9 +43,6 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&core.SignerRef{
 		Key: "0x23456",
 	}, nil)
-
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
@@ -77,7 +73,6 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
@@ -102,9 +97,6 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		err := cb(ctx)
 		assert.NoError(t, err)
 	}).Return(nil, nil)
-
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
@@ -134,34 +126,6 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 	msa.AssertExpectations(t)
-	mdm.AssertExpectations(t)
-}
-
-func TestRegisterIdentityCustomBadNS(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/parent1").Return(&core.Identity{
-		IdentityBase: core.IdentityBase{
-			ID:  fftypes.NewUUID(),
-			DID: "did:firefly:org/parent1",
-		},
-	}, false, nil)
-
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(fmt.Errorf("pop"))
-
-	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
-		Name:   "custom1",
-		Key:    "0x12345",
-		Parent: "did:firefly:org/parent1",
-	}, false)
-	assert.Regexp(t, "pop", err)
-
-	mim.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
@@ -182,9 +146,6 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&core.SignerRef{
 		Key: "0x23456",
 	}, nil)
-
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
@@ -212,7 +173,6 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
@@ -226,9 +186,6 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentIdentity, false, nil)
 	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(nil, fmt.Errorf("pop"))
 
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
-
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Key:    "0x12345",
@@ -237,7 +194,6 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
@@ -247,9 +203,6 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
-
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
 
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
@@ -268,7 +221,6 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityMissingKey(t *testing.T) {
@@ -279,9 +231,6 @@ func TestRegisterIdentityMissingKey(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
-
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Parent: fftypes.NewUUID().String(),
@@ -289,7 +238,6 @@ func TestRegisterIdentityMissingKey(t *testing.T) {
 	assert.Regexp(t, "FF10352", err)
 
 	mim.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityVerifyFail(t *testing.T) {
@@ -300,9 +248,6 @@ func TestRegisterIdentityVerifyFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, fmt.Errorf("pop"))
 
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
-
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
 		Parent: fftypes.NewUUID().String(),
@@ -310,7 +255,6 @@ func TestRegisterIdentityVerifyFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityBadParent(t *testing.T) {

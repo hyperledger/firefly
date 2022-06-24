@@ -63,7 +63,7 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	mti.On("Name").Return("ut").Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, "ns1", mdi, mim, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
+	a, err := NewAssetManager(ctx, "ns1", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}

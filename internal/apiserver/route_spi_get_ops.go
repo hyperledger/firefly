@@ -34,11 +34,11 @@ var spiGetOps = &ffapi.Route{
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return []*core.Operation{} },
 	JSONOutputCodes: []int{http.StatusOK},
+	Tag:             routeTagNonDefaultNamespace,
 	Extensions: &coreExtensions{
 		FilterFactory: database.OperationQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			or := cr.mgr.Orchestrator(r.PP["ns"])
-			return filterResult(or.GetOperations(cr.ctx, cr.filter))
+			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
 		},
 	},
 }

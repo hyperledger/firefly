@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -49,9 +48,6 @@ func TestRegisterNodeOk(t *testing.T) {
 	signerRef := &core.SignerRef{Key: "0x23456"}
 	mim.On("ResolveIdentitySigner", nm.ctx, parentOrg).Return(signerRef, nil)
 
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
-
 	mdx := nm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("GetEndpointInfo", nm.ctx).Return(fftypes.JSONObject{
 		"id":       "peer1",
@@ -72,7 +68,6 @@ func TestRegisterNodeOk(t *testing.T) {
 	mim.AssertExpectations(t)
 	mdx.AssertExpectations(t)
 	mbm.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterNodePeerInfoFail(t *testing.T) {

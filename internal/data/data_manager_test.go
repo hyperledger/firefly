@@ -769,43 +769,6 @@ func TestValidateAllStoredValidatorInvalid(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestVerifyNamespaceExistsInvalidFFName(t *testing.T) {
-	dm, ctx, cancel := newTestDataManager(t)
-	defer cancel()
-	err := dm.VerifyNamespaceExists(ctx, "!wrong")
-	assert.Regexp(t, "FF00140", err)
-}
-
-func TestVerifyNamespaceExistsLookupErr(t *testing.T) {
-	dm, ctx, cancel := newTestDataManager(t)
-	defer cancel()
-	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, fmt.Errorf("pop"))
-	err := dm.VerifyNamespaceExists(ctx, "ns1")
-	assert.Regexp(t, "pop", err)
-}
-
-func TestVerifyNamespaceExistsNotFound(t *testing.T) {
-	dm, ctx, cancel := newTestDataManager(t)
-	defer cancel()
-	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetNamespace", mock.Anything, "ns1").Return(nil, nil)
-	err := dm.VerifyNamespaceExists(ctx, "ns1")
-	assert.Regexp(t, "FF10187", err)
-}
-
-func TestVerifyNamespaceExistsOk(t *testing.T) {
-	dm, ctx, cancel := newTestDataManager(t)
-	defer cancel()
-	mdi := dm.database.(*databasemocks.Plugin)
-	mdi.On("GetNamespace", mock.Anything, "ns1").Return(&core.Namespace{}, nil).Once()
-	err := dm.VerifyNamespaceExists(ctx, "ns1")
-	assert.NoError(t, err)
-	// second lookup is from cache
-	err = dm.VerifyNamespaceExists(ctx, "ns1")
-	assert.NoError(t, err)
-}
-
 func TestHydrateBatchOK(t *testing.T) {
 	dm, ctx, cancel := newTestDataManager(t)
 	defer cancel()

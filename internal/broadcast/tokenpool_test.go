@@ -30,30 +30,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestBroadcastTokenPoolNSGetFail(t *testing.T) {
-	bm, cancel := newTestBroadcast(t)
-	defer cancel()
-	mdm := bm.data.(*datamocks.Manager)
-
-	pool := &core.TokenPoolAnnouncement{
-		Pool: &core.TokenPool{
-			ID:        fftypes.NewUUID(),
-			Namespace: "ns1",
-			Name:      "mypool",
-			Type:      core.TokenTypeNonFungible,
-			Locator:   "N1",
-			Symbol:    "COIN",
-		},
-	}
-
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(fmt.Errorf("pop"))
-
-	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)
-	assert.EqualError(t, err, "pop")
-
-	mdm.AssertExpectations(t)
-}
-
 func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()
@@ -96,7 +72,6 @@ func TestBroadcastTokenPoolBroadcastFail(t *testing.T) {
 	}
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)
@@ -124,7 +99,6 @@ func TestBroadcastTokenPoolOk(t *testing.T) {
 	}
 
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	mdm.On("VerifyNamespaceExists", mock.Anything, "ns1").Return(nil)
 	mdm.On("WriteNewMessage", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := bm.BroadcastTokenPool(context.Background(), pool, false)

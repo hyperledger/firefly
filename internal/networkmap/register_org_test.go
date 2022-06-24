@@ -23,7 +23,6 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
-	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -63,9 +62,6 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
-	mdm := nm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", nm.ctx, "ns1").Return(nil)
-
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
@@ -81,7 +77,6 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
-	mdm.AssertExpectations(t)
 }
 
 func TestRegisterNodeOrgNoName(t *testing.T) {

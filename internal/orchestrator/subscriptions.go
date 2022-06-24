@@ -40,9 +40,6 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 	subDef.Created = fftypes.Now()
 	subDef.Namespace = or.namespace
 	subDef.Ephemeral = false
-	if err := or.data.VerifyNamespaceExists(ctx, subDef.Namespace); err != nil {
-		return nil, err
-	}
 	if err := core.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
 		return nil, err
 	}

@@ -47,7 +47,6 @@ type Manager interface {
 	UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime)
 	ResolveInlineData(ctx context.Context, msg *NewMessage) error
 	WriteNewMessage(ctx context.Context, newMsg *NewMessage) error
-	VerifyNamespaceExists(ctx context.Context, ns string) error
 
 	UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error)
 	UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
@@ -63,8 +62,6 @@ type dataManager struct {
 	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
-	namespaceCache    *ccache.Cache
-	namespaceCacheTTL time.Duration
 	messageCache      *ccache.Cache
 	messageCacheTTL   time.Duration
 	messageWriter     *messageWriter
@@ -120,11 +117,6 @@ func NewDataManager(ctx context.Context, ns string, di database.Plugin, pi share
 		ccache.Configure().
 			MaxSize(config.GetByteSize(coreconfig.ValidatorCacheSize)),
 	)
-	dm.namespaceCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.NamespaceCacheSize)),
-	)
 	dm.messageCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
@@ -142,33 +134,6 @@ func NewDataManager(ctx context.Context, ns string, di database.Plugin, pi share
 func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
 	_, err := newJSONValidator(ctx, dm.namespace, datatype)
 	return err
-}
-
-func (dm *dataManager) namespaceExistsCached(ctx context.Context, ns string) (bool, error) {
-	cached := dm.namespaceCache.Get(ns)
-	if cached != nil {
-		cached.Extend(dm.namespaceCacheTTL)
-		return true, nil
-	}
-	log.L(context.Background()).Debugf("Cache miss for namespace %s", ns)
-	namespace, err := dm.database.GetNamespace(ctx, ns)
-	if err != nil || namespace == nil {
-		return false, err
-	}
-	dm.namespaceCache.Set(ns, namespace, dm.namespaceCacheTTL)
-	return true, nil
-}
-
-func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) error {
-	if err := core.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return err
-	}
-	if exists, err := dm.namespaceExistsCached(ctx, ns); err != nil {
-		return err
-	} else if !exists {
-		return i18n.NewError(ctx, coremsgs.MsgNamespaceNotExist)
-	}
-	return nil
 }
 
 // getValidatorForDatatype only returns database errors - not found (of all kinds) is a nil

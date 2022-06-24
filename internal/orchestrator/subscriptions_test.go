@@ -29,24 +29,10 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestCreateSubscriptionBadNamespace(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-
-	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns").Return(fmt.Errorf("pop"))
-	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
-		SubscriptionRef: core.SubscriptionRef{
-			Name: "!sub1",
-		},
-	})
-	assert.EqualError(t, err, "pop")
-}
-
 func TestCreateSubscriptionBadName(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns").Return(nil)
 	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
 		SubscriptionRef: core.SubscriptionRef{
 			Name: "!sub1",
@@ -59,7 +45,6 @@ func TestCreateSubscriptionSystemTransport(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 
-	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns").Return(nil)
 	_, err := or.CreateSubscription(or.ctx, &core.Subscription{
 		Transport: system.SystemEventsTransport,
 		SubscriptionRef: core.SubscriptionRef{
@@ -78,7 +63,6 @@ func TestCreateSubscriptionOk(t *testing.T) {
 			Name: "sub1",
 		},
 	}
-	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns").Return(nil)
 	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, true).Return(nil)
 	s1, err := or.CreateSubscription(or.ctx, sub)
 	assert.NoError(t, err)
@@ -95,7 +79,6 @@ func TestCreateUpdateSubscriptionOk(t *testing.T) {
 			Name: "sub1",
 		},
 	}
-	or.mdm.On("VerifyNamespaceExists", mock.Anything, "ns").Return(nil)
 	or.mem.On("CreateUpdateDurableSubscription", mock.Anything, mock.Anything, false).Return(nil)
 	s1, err := or.CreateUpdateSubscription(or.ctx, sub)
 	assert.NoError(t, err)

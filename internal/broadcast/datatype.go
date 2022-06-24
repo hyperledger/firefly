@@ -35,9 +35,6 @@ func (bm *broadcastManager) BroadcastDatatype(ctx context.Context, datatype *cor
 	if err := datatype.Validate(ctx, false); err != nil {
 		return nil, err
 	}
-	if err := bm.data.VerifyNamespaceExists(ctx, datatype.Namespace); err != nil {
-		return nil, err
-	}
 	datatype.Hash = datatype.Value.Hash()
 
 	// Verify the data type is now all valid, before we broadcast it
