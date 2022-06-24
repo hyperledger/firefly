@@ -198,16 +198,14 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		err = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
 	}
 
-	if err == nil {
-		if namespace == "" && msg.RequestID != "" {
-			namespace, _, _ = core.ParseNamespacedOpID(h.ctx, msg.RequestID)
-		}
-		err = h.callbacks.DXEvent(namespace, e)
-	}
-
 	// If we couldn't dispatch the event we received, we still ack it
 	if err != nil {
 		log.L(h.ctx).Warnf("Failed to dispatch DX event: %s", err)
 		e.Ack()
+	} else {
+		if namespace == "" && msg.RequestID != "" {
+			namespace, _, _ = core.ParseNamespacedOpID(h.ctx, msg.RequestID)
+		}
+		h.callbacks.DXEvent(h.ctx, namespace, e)
 	}
 }

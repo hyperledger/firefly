@@ -54,12 +54,13 @@ type callbacks struct {
 	handlers map[string]dataexchange.Callbacks
 }
 
-func (cb *callbacks) DXEvent(namespace string, event dataexchange.DXEvent) error {
+func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
 	if handler, ok := cb.handlers[namespace]; ok {
 		handler.DXEvent(event)
-		return nil
+	} else {
+		log.L(ctx).Errorf("unknown namespace on event '%s'", event.EventID())
+		event.Ack()
 	}
-	return fmt.Errorf("unknown namespace on event '%s'", event.EventID())
 }
 
 func splitLast(s string, sep string) (string, string) {
