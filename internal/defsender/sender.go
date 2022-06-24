@@ -82,9 +82,11 @@ func (bm *definitionSender) CreateDefinition(ctx context.Context, def core.Defin
 
 func (bm *definitionSender) CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
-	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
-	if err != nil {
-		return nil, err
+	if bm.multiparty {
+		err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return bm.createDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)

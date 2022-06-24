@@ -152,6 +152,8 @@ func TestCreateDefinitionBadIdentity(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
+	ds.multiparty = true
+
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	_, err := ds.CreateDefinitionWithIdentity(ds.ctx, &core.Namespace{}, &core.SignerRef{
@@ -165,38 +167,22 @@ func TestCreateDefinitionLocal(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
 	mdh := &mockDefinitionHandler{}
 	ds.Init(mdh)
-
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
 	assert.NoError(t, err)
 
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
-	mms.AssertExpectations(t)
 }
 
 func TestCreateDefinitionLocalError(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
 	mdh := &mockDefinitionHandler{err: fmt.Errorf("pop")}
 	ds.Init(mdh)
-
-	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
 
 	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
 	assert.EqualError(t, err, "pop")
 
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
-	mms.AssertExpectations(t)
 }

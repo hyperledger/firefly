@@ -215,10 +215,6 @@ func (im *identityManager) resolveDefaultSigningIdentity(ctx context.Context, si
 	if err != nil {
 		return err
 	}
-	if im.multiparty == nil {
-		signerRef.Key = verifierRef.Value
-		return nil
-	}
 	identity, err := im.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		return err
