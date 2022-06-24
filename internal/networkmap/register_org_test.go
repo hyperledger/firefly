@@ -22,8 +22,10 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -62,6 +64,9 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	}, nil)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
+	mmp := nm.multiparty.(*multipartymocks.Manager)
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org0"})
+
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mbm := nm.broadcast.(*broadcastmocks.Manager)
 	mbm.On("BroadcastIdentityClaim", nm.ctx,
@@ -77,6 +82,7 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestRegisterNodeOrgNoName(t *testing.T) {
@@ -84,17 +90,19 @@ func TestRegisterNodeOrgNoName(t *testing.T) {
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
 
-	nm.orgName = ""
-
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("GetMultipartyRootVerifier", nm.ctx).Return(&core.VerifierRef{
 		Value: "0x12345",
 	}, nil)
 
+	mmp := nm.multiparty.(*multipartymocks.Manager)
+	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: ""})
+
 	_, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.Regexp(t, "FF10216", err)
 
 	mim.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 }
 
 func TestRegisterNodeGetOwnerBlockchainKeyFail(t *testing.T) {

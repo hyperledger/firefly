@@ -694,9 +694,9 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		}
 
 		config.Multiparty.Enabled = true
-		config.Multiparty.OrgName = orgName
-		config.Multiparty.OrgKey = orgKey
-		config.Multiparty.OrgDesc = orgDesc
+		config.Multiparty.Org.Name = orgName
+		config.Multiparty.Org.Key = orgKey
+		config.Multiparty.Org.Description = orgDesc
 		config.Multiparty.Contracts = contracts
 		p, err = nm.validateMultiPartyConfig(ctx, name, plugins)
 	} else {
