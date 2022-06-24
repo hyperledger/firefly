@@ -31,7 +31,7 @@ type TokenTransfer struct {
 	LocalID         *fftypes.UUID     `ffstruct:"TokenTransfer" json:"localId,omitempty" ffexcludeinput:"true"`
 	Pool            *fftypes.UUID     `ffstruct:"TokenTransfer" json:"pool,omitempty"`
 	TokenIndex      string            `ffstruct:"TokenTransfer" json:"tokenIndex,omitempty"`
-	URI             string            `ffstruct:"TokenTransfer" json:"uri,omitempty" ffexcludeinput:"true"`
+	URI             string            `ffstruct:"TokenTransfer" json:"uri,omitempty"`
 	Connector       string            `ffstruct:"TokenTransfer" json:"connector,omitempty" ffexcludeinput:"true"`
 	Namespace       string            `ffstruct:"TokenTransfer" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Key             string            `ffstruct:"TokenTransfer" json:"key,omitempty"`

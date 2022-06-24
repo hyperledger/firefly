@@ -535,6 +535,7 @@ func TestMintTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		URI: "FLAPFLIP",
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -554,6 +555,7 @@ func TestMintTokens(t *testing.T) {
 					"tx":     mint.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
 				}.String(),
+				"uri": "FLAPFLIP",
 			}, body)
 
 			res := &http.Response{
