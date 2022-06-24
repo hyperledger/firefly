@@ -223,10 +223,10 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 }
 
 func getOrchestrator(ctx context.Context, mgr namespace.Manager, tag string, r *ffapi.APIRequest) (or orchestrator.Orchestrator, err error) {
-	switch {
-	case tag == routeTagDefaultNamespace:
+	switch tag {
+	case routeTagDefaultNamespace:
 		or = mgr.Orchestrator(config.GetString(coreconfig.NamespacesDefault))
-	case tag == routeTagNonDefaultNamespace:
+	case routeTagNonDefaultNamespace:
 		vars := mux.Vars(r.Req)
 		if ns, ok := vars["ns"]; ok {
 			or = mgr.Orchestrator(ns)
