@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package batchpin
+package multiparty
 
 import (
 	"context"
@@ -62,14 +62,14 @@ func retrieveBatchPinInputs(ctx context.Context, op *core.Operation) (batchID *f
 	return batchID, contexts, payloadRef, nil
 }
 
-func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
+func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
 	case core.OpTypeBlockchainPinBatch:
 		batchID, contexts, payloadRef, err := retrieveBatchPinInputs(ctx, op)
 		if err != nil {
 			return nil, err
 		}
-		batch, err := bp.database.GetBatchByID(ctx, bp.namespace, batchID)
+		batch, err := mm.database.GetBatchByID(ctx, mm.namespace, batchID)
 		if err != nil {
 			return nil, err
 		} else if batch == nil {
@@ -82,25 +82,25 @@ func (bp *batchPinSubmitter) PrepareOperation(ctx context.Context, op *core.Oper
 	}
 }
 
-func (bp *batchPinSubmitter) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
+func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error) {
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
-		return nil, false, bp.multiparty.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
+		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
 			Namespace:       batch.Namespace,
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
 			BatchHash:       batch.Hash,
 			BatchPayloadRef: data.PayloadRef,
 			Contexts:        data.Contexts,
-		})
+		}, mm.activeContract.location)
 
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
 }
 
-func (bp *batchPinSubmitter) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
+func (mm *multipartyManager) OnOperationUpdate(ctx context.Context, op *core.Operation, update *operations.OperationUpdate) error {
 	return nil
 }
 

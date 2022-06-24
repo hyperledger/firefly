@@ -24,11 +24,16 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type Manager interface {
+	core.Named
+
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
 	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
@@ -44,12 +49,14 @@ type Manager interface {
 	GetNetworkVersion() int
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error
+	SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
 	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error
 
-	core.Named
+	// From operations.OperationHandler
+	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
+	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
 }
 
 type Contract struct {
@@ -59,9 +66,12 @@ type Contract struct {
 
 type multipartyManager struct {
 	ctx            context.Context
-	blockchain     blockchain.Plugin
-	contracts      []Contract
 	namespace      string
+	database       database.Plugin
+	blockchain     blockchain.Plugin
+	operations     operations.Manager
+	metrics        metrics.Manager
+	contracts      []Contract
 	activeContract struct {
 		location       *fftypes.JSONAny
 		firstEvent     string
@@ -70,13 +80,27 @@ type multipartyManager struct {
 	}
 }
 
-func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, bi blockchain.Plugin) Manager {
-	return &multipartyManager{
+func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager) (Manager, error) {
+	if di == nil || bi == nil || mm == nil || om == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
+	}
+	mp := &multipartyManager{
 		ctx:        ctx,
 		namespace:  ns,
 		contracts:  contracts,
+		database:   di,
 		blockchain: bi,
+		operations: om,
+		metrics:    mm,
 	}
+	om.RegisterHandler(ctx, mp, []core.OpType{
+		core.OpTypeBlockchainPinBatch,
+	})
+	return mp, nil
+}
+
+func (mm *multipartyManager) Name() string {
+	return "MultipartyManager"
 }
 
 func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
@@ -145,10 +169,21 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, nsOpID str
 	return mm.blockchain.SubmitNetworkAction(ctx, nsOpID, signingKey, action, mm.activeContract.location)
 }
 
-func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
-	return mm.blockchain.SubmitBatchPin(ctx, nsOpID, signingKey, batch, mm.activeContract.location)
-}
+func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
+	// The pending blockchain transaction
+	op := core.NewOperation(
+		mm.blockchain,
+		batch.Namespace,
+		batch.TX.ID,
+		core.OpTypeBlockchainPinBatch)
+	addBatchPinInputs(op, batch.ID, contexts, payloadRef)
+	if err := mm.operations.AddOrReuseOperation(ctx, op); err != nil {
+		return err
+	}
 
-func (mm *multipartyManager) Name() string {
-	return mm.blockchain.Name()
+	if mm.metrics.IsMetricsEnabled() {
+		mm.metrics.CountBatchPin()
+	}
+	_, err := mm.operations.RunOperation(ctx, opBatchPin(op, batch, contexts, payloadRef))
+	return err
 }
