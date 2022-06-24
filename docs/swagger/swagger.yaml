@@ -10937,6 +10937,9 @@ paths:
                   description: The index of the token within the pool that this transfer
                     applies to
                   type: string
+                uri:
+                  description: The URI of the token this transfer applies to
+                  type: string
               type: object
       responses:
         "200":
@@ -11355,6 +11358,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -12560,6 +12566,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:

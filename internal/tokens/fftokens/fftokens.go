@@ -89,6 +89,7 @@ type mintTokens struct {
 	RequestID   string `json:"requestId,omitempty"`
 	Signer      string `json:"signer"`
 	Data        string `json:"data,omitempty"`
+	URI         string `json:"uri"`
 }
 
 type burnTokens struct {
@@ -576,6 +577,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, opID *fftypes.UUID, poolLoca
 			RequestID:   opID.String(),
 			Signer:      mint.Key,
 			Data:        string(data),
+			URI:         mint.URI,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/mint")
