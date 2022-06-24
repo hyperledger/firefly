@@ -78,7 +78,10 @@ type multipartyManager struct {
 	}
 }
 
-func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager) Manager {
+func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager) (Manager, error) {
+	if di == nil || bi == nil || mm == nil || om == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
+	}
 	return &multipartyManager{
 		ctx:        ctx,
 		namespace:  ns,
@@ -87,7 +90,7 @@ func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, 
 		blockchain: bi,
 		operations: om,
 		metrics:    mm,
-	}
+	}, nil
 }
 
 func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {

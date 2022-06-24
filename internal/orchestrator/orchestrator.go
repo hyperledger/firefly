@@ -389,17 +389,6 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
-	if or.multiparty == nil {
-		or.multiparty = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty.Contracts, or.database(), or.blockchain(), or.operations, or.metrics)
-	}
-
-	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.multiparty)
-		if err != nil {
-			return err
-		}
-	}
-
 	if or.data == nil {
 		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange())
 		if err != nil {
@@ -413,6 +402,20 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 
 	if or.operations == nil {
 		if or.operations, err = operations.NewOperationsManager(ctx, or.namespace, or.database(), or.txHelper); err != nil {
+			return err
+		}
+	}
+
+	if or.multiparty == nil {
+		or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty.Contracts, or.database(), or.blockchain(), or.operations, or.metrics)
+		if err != nil {
+			return err
+		}
+	}
+
+	if or.identity == nil {
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.multiparty)
+		if err != nil {
 			return err
 		}
 	}

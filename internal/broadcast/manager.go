@@ -77,7 +77,7 @@ type broadcastManager struct {
 }
 
 func NewBroadcastManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
-	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil {
+	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
 	bm := &broadcastManager{

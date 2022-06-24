@@ -72,8 +72,15 @@ func TestNewMultipartyManager(t *testing.T) {
 	mom := &operationmocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	contracts := make([]Contract, 0)
-	nm := NewMultipartyManager(context.Background(), "namespace", contracts, mdi, mbi, mom, mmi)
+	nm, err := NewMultipartyManager(context.Background(), "namespace", contracts, mdi, mbi, mom, mmi)
 	assert.NotNil(t, nm)
+	assert.NoError(t, err)
+}
+
+func TestInitFail(t *testing.T) {
+	contracts := make([]Contract, 0)
+	_, err := NewMultipartyManager(context.Background(), "namespace", contracts, nil, nil, nil, nil)
+	assert.Regexp(t, "FF10128", err)
 }
 
 func TestConfigureContract(t *testing.T) {

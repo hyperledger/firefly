@@ -260,11 +260,11 @@ func TestInitNetworkMapComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitOperationComponentFail(t *testing.T) {
+func TestInitMultipartyComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
-	or.operations = nil
+	or.multiparty = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }
@@ -310,7 +310,6 @@ func TestInitIdentityComponentFail(t *testing.T) {
 	defer or.cleanup(t)
 	or.plugins.Database.Plugin = nil
 	or.identity = nil
-	or.multiparty = nil
 	err := or.initComponents(context.Background())
 	assert.Regexp(t, "FF10128", err)
 }

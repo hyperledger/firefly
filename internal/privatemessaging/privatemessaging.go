@@ -87,7 +87,7 @@ type blobTransferTracker struct {
 }
 
 func NewPrivateMessaging(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
-	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil {
+	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
 
