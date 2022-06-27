@@ -23,10 +23,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/broadcast"
+	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/pkg/database"
 )
 
 type DefinitionHandler interface {
@@ -42,29 +44,35 @@ type Sender interface {
 	CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
 	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
+	CreateFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error)
+	CreateContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error)
 }
 
 type definitionSender struct {
 	ctx        context.Context
 	namespace  string
 	multiparty bool
+	database   database.Plugin
 	broadcast  broadcast.Manager // optional
 	identity   identity.Manager
 	data       data.Manager
+	contracts  contracts.Manager
 	handler    DefinitionHandler
 }
 
-func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, bm broadcast.Manager, im identity.Manager, dm data.Manager) (Sender, error) {
-	if im == nil || dm == nil {
+func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, cm contracts.Manager) (Sender, error) {
+	if di == nil || im == nil || dm == nil || cm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
 	return &definitionSender{
 		ctx:        ctx,
 		namespace:  ns,
 		multiparty: multiparty,
+		database:   di,
 		broadcast:  bm,
 		identity:   im,
 		data:       dm,
+		contracts:  cm,
 	}, nil
 }
 

@@ -102,7 +102,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 	mbi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
@@ -119,7 +119,7 @@ func TestHandleFFIBroadcastOk(t *testing.T) {
 func TestPersistFFIValidateFFIFail(t *testing.T) {
 	dh, _ := newTestDefinitionHandler(t)
 	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	err := dh.persistFFI(context.Background(), testFFI())
 	assert.NoError(t, err)
 	mcm.AssertExpectations(t)
@@ -130,7 +130,7 @@ func TestHandleFFIBroadcastReject(t *testing.T) {
 	mbi := dh.database.(*databasemocks.Plugin)
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mbi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	action, err := dh.handleFFIBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineFFI,
@@ -146,7 +146,7 @@ func TestPersistFFIUpsertFFIFail(t *testing.T) {
 	mbi := dh.database.(*databasemocks.Plugin)
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 	err := dh.persistFFI(context.Background(), testFFI())
 	assert.Regexp(t, "pop", err)
 	mbi.AssertExpectations(t)
@@ -159,7 +159,7 @@ func TestPersistFFIUpsertFFIMethodFail(t *testing.T) {
 	mbi.On("UpsertFFI", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 	err := dh.persistFFI(context.Background(), testFFI())
 	assert.Regexp(t, "pop", err)
 	mbi.AssertExpectations(t)
@@ -173,7 +173,7 @@ func TestPersistFFIUpsertFFIEventFail(t *testing.T) {
 	mbi.On("UpsertFFIMethod", mock.Anything, mock.Anything).Return(nil)
 	mbi.On("UpsertFFIEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 	err := dh.persistFFI(context.Background(), testFFI())
 	assert.Regexp(t, "pop", err)
 	mbi.AssertExpectations(t)
@@ -213,7 +213,7 @@ func TestHandleFFIBroadcastPersistFail(t *testing.T) {
 	mdi.On("UpsertFFI", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mcm := dh.contracts.(*contractmocks.Manager)
-	mcm.On("ValidateFFIAndSetPathnames", mock.Anything, mock.Anything).Return(nil)
+	mcm.On("ResolveFFI", mock.Anything, mock.Anything).Return(nil)
 	action, err := dh.HandleDefinitionBroadcast(context.Background(), &bs.BatchState, &core.Message{
 		Header: core.MessageHeader{
 			Tag: core.SystemTagDefineFFI,

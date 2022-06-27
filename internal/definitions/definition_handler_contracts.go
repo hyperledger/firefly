@@ -28,7 +28,7 @@ import (
 )
 
 func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (err error) {
-	if err = dh.contracts.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
+	if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
 		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
 		return nil
 	}

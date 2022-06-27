@@ -22,7 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hyperledger/firefly/mocks/contractmocks"
+	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,8 +30,8 @@ import (
 
 func TestPutContractAPI(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
+	mds := &defsendermocks.Sender{}
+	o.On("DefinitionSender").Return(mds)
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -39,7 +39,7 @@ func TestPutContractAPI(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), false).
+	mds.On("CreateContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), false).
 		Return(&core.ContractAPI{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -48,8 +48,8 @@ func TestPutContractAPI(t *testing.T) {
 
 func TestPutContractAPISync(t *testing.T) {
 	o, r := newTestAPIServer()
-	mcm := &contractmocks.Manager{}
-	o.On("Contracts").Return(mcm)
+	mds := &defsendermocks.Sender{}
+	o.On("DefinitionSender").Return(mds)
 	input := core.Datatype{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -57,7 +57,7 @@ func TestPutContractAPISync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("BroadcastContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), true).
+	mds.On("CreateContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), true).
 		Return(&core.ContractAPI{}, nil)
 	r.ServeHTTP(res, req)
 

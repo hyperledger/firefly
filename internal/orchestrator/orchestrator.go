@@ -455,20 +455,6 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.defsender == nil {
-		or.defsender, err = defsender.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.broadcast, or.identity, or.data)
-		if err != nil {
-			return err
-		}
-	}
-
-	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
-		if err != nil {
-			return err
-		}
-	}
-
 	if or.assets == nil {
 		or.assets, err = assets.NewAssetManager(ctx, or.namespace, or.database(), or.tokens(), or.identity, or.syncasync, or.broadcast, or.messaging, or.metrics, or.operations, or.txHelper)
 		if err != nil {
@@ -477,7 +463,21 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.blockchain(), or.defsender, or.identity, or.operations, or.txHelper, or.syncasync)
+		or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
+		if err != nil {
+			return err
+		}
+	}
+
+	if or.defsender == nil {
+		or.defsender, err = defsender.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.broadcast, or.identity, or.data, or.contracts)
+		if err != nil {
+			return err
+		}
+	}
+
+	if or.networkmap == nil {
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
 		if err != nil {
 			return err
 		}

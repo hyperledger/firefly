@@ -48,7 +48,7 @@ var putContractAPI = &ffapi.Route{
 			api.ID, err = fftypes.ParseUUID(cr.ctx, r.PP["id"])
 			var res interface{}
 			if err == nil {
-				res, err = cr.or.Contracts().BroadcastContractAPI(cr.ctx, cr.apiBaseURL, api, waitConfirm)
+				res, err = cr.or.DefinitionSender().CreateContractAPI(cr.ctx, cr.apiBaseURL, api, waitConfirm)
 			}
 			return res, err
 		},

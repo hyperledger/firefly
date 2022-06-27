@@ -23,6 +23,8 @@ import (
 
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/contractmocks"
+	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -40,18 +42,20 @@ func (dh *mockDefinitionHandler) HandleDefinition(ctx context.Context, state *co
 }
 
 func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
+	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
+	mcm := &contractmocks.Manager{}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewDefinitionSender(ctx, "ns1", false, mbm, mim, mdm)
+	b, err := NewDefinitionSender(ctx, "ns1", false, mdi, mbm, mim, mdm, mcm)
 	assert.NoError(t, err)
 	return b.(*definitionSender), cancel
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil)
+	_, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
