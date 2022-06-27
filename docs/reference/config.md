@@ -336,7 +336,7 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|type|The Data Exchange plugin to use|`string`|`ffdx`
+|type|The Data Exchange plugin to use|`string`|`<nil>`
 
 ## dataexchange.ffdx
 
