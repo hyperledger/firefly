@@ -672,6 +672,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -743,6 +744,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -3300,6 +3302,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -3371,6 +3374,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -4840,6 +4844,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -6972,6 +6977,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -7161,6 +7167,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -7524,6 +7531,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -7628,6 +7636,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -7732,6 +7741,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -7854,6 +7864,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8025,6 +8036,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -8135,6 +8147,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8263,6 +8276,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8430,6 +8444,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -8572,6 +8587,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -9615,6 +9631,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -9686,6 +9703,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -12468,6 +12486,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -12539,6 +12558,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -14078,6 +14098,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -16315,6 +16336,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -16511,6 +16533,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -16895,6 +16918,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -17044,6 +17068,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -17154,6 +17179,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17282,6 +17308,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17460,6 +17487,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -17570,6 +17598,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17698,6 +17727,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17872,6 +17902,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -18014,6 +18045,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -19877,6 +19909,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -19979,6 +20012,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -20084,6 +20118,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -22876,6 +22911,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -23301,6 +23337,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -24504,6 +24541,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -24968,6 +25006,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -25096,6 +25135,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -25288,6 +25328,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -27321,6 +27362,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -27416,6 +27458,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -27514,6 +27557,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -30208,6 +30252,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -30611,6 +30656,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -31779,6 +31825,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -32229,6 +32276,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -32350,6 +32398,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -32528,6 +32577,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob

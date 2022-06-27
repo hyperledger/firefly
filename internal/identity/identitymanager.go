@@ -60,8 +60,6 @@ type identityManager struct {
 	multiparty             multiparty.Manager
 	namespace              string
 	defaultKey             string
-	orgName                string
-	orgKey                 string
 	multipartyRootVerifier *core.VerifierRef
 	multipartyRootOrg      *core.Identity
 	identityCacheTTL       time.Duration
@@ -70,7 +68,7 @@ type identityManager struct {
 	signingKeyCache        *ccache.Cache
 }
 
-func NewIdentityManager(ctx context.Context, ns, defaultKey, orgName, orgKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
+func NewIdentityManager(ctx context.Context, ns, defaultKey string, di database.Plugin, bi blockchain.Plugin, mp multiparty.Manager) (Manager, error) {
 	if di == nil || bi == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "IdentityManager")
 	}
@@ -80,8 +78,6 @@ func NewIdentityManager(ctx context.Context, ns, defaultKey, orgName, orgKey str
 		namespace:          ns,
 		multiparty:         mp,
 		defaultKey:         defaultKey,
-		orgName:            orgName,
-		orgKey:             orgKey,
 		identityCacheTTL:   config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 		signingKeyCacheTTL: config.GetDuration(coreconfig.IdentityManagerCacheTTL),
 	}
@@ -242,11 +238,12 @@ func (im *identityManager) GetMultipartyRootVerifier(ctx context.Context) (*core
 		return im.multipartyRootVerifier, nil
 	}
 
-	if im.orgKey == "" {
+	orgKey := im.multiparty.RootOrg().Key
+	if orgKey == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 	}
 
-	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, im.orgKey)
+	verifier, err := im.normalizeKeyViaBlockchainPlugin(ctx, orgKey)
 	if err != nil {
 		return nil, err
 	}
@@ -294,13 +291,14 @@ func (im *identityManager) GetMultipartyRootOrg(ctx context.Context) (*core.Iden
 		return nil, err
 	}
 
+	orgName := im.multiparty.RootOrg().Name
 	identity, err := im.cachedIdentityLookupByVerifierRef(ctx, im.namespace, verifierRef)
 	if err != nil || identity == nil {
-		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, im.orgName, verifierRef.Value)
+		return nil, i18n.WrapError(ctx, err, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
 	// Confirm that the specified blockchain key is associated with the correct org
-	if identity.Type != core.IdentityTypeOrg || identity.Name != im.orgName {
-		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, im.orgName, verifierRef.Value)
+	if identity.Type != core.IdentityTypeOrg || identity.Name != orgName {
+		return nil, i18n.NewError(ctx, coremsgs.MsgLocalOrgLookupFailed, orgName, verifierRef.Value)
 	}
 	im.multipartyRootOrg = identity
 	return identity, nil

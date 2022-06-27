@@ -29,6 +29,8 @@ var (
 	TransactionTypeUnpinned = fftypes.FFEnumValue("txtype", "unpinned")
 	// TransactionTypeBatchPin represents a pinning transaction, that verifies the originator of the data, and sequences the event deterministically between parties
 	TransactionTypeBatchPin = fftypes.FFEnumValue("txtype", "batch_pin")
+	// TransactionTypeNetworkAction represents an administrative action on a multiparty network
+	TransactionTypeNetworkAction = fftypes.FFEnumValue("txtype", "network_action")
 	// TransactionTypeTokenPool represents a token pool creation
 	TransactionTypeTokenPool = fftypes.FFEnumValue("txtype", "token_pool")
 	// TransactionTypeTokenTransfer represents a token transfer

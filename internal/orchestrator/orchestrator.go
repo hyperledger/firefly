@@ -20,13 +20,11 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/contracts"
-	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/events"
@@ -158,13 +156,7 @@ type Plugins struct {
 
 type Config struct {
 	DefaultKey string
-	Multiparty struct {
-		Enabled   bool
-		OrgName   string
-		OrgDesc   string
-		OrgKey    string
-		Contracts []multiparty.Contract
-	}
+	Multiparty multiparty.Config
 }
 
 type orchestrator struct {
@@ -406,14 +398,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.multiparty == nil {
-		or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty.Contracts, or.database(), or.blockchain(), or.operations, or.metrics)
+		or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 		if err != nil {
 			return err
 		}
 	}
 
 	if or.identity == nil {
-		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.config.Multiparty.OrgName, or.config.Multiparty.OrgKey, or.database(), or.blockchain(), or.multiparty)
+		or.identity, err = identity.NewIdentityManager(ctx, or.namespace, or.config.DefaultKey, or.database(), or.blockchain(), or.multiparty)
 		if err != nil {
 			return err
 		}
@@ -441,7 +433,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.networkmap == nil {
-		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.config.Multiparty.OrgName, or.config.Multiparty.OrgDesc, or.database(), or.dataexchange(), or.broadcast, or.identity, or.syncasync)
+		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.database(), or.dataexchange(), or.broadcast, or.identity, or.syncasync, or.multiparty)
 	}
 
 	if or.assets == nil {
@@ -488,18 +480,5 @@ func (or *orchestrator) SubmitNetworkAction(ctx context.Context, action *core.Ne
 	if err != nil {
 		return err
 	}
-	if action.Type == core.NetworkActionTerminate {
-		if or.namespace != core.LegacySystemNamespace {
-			// For now, "terminate" only works on ff_system
-			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, or.namespace)
-		}
-	} else {
-		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
-	}
-	// TODO: This should be a new operation type
-	po := &core.PreparedOperation{
-		Namespace: or.namespace,
-		ID:        fftypes.NewUUID(),
-	}
-	return or.multiparty.SubmitNetworkAction(ctx, po.NamespacedIDString(), key, action.Type)
+	return or.multiparty.SubmitNetworkAction(ctx, key, action)
 }

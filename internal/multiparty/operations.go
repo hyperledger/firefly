@@ -33,6 +33,11 @@ type batchPinData struct {
 	PayloadRef string               `json:"payloadRef"`
 }
 
+type networkActionData struct {
+	Type core.NetworkActionType `json:"type"`
+	Key  string                 `json:"key"`
+}
+
 func addBatchPinInputs(op *core.Operation, batchID *fftypes.UUID, contexts []*fftypes.Bytes32, payloadRef string) {
 	contextStr := make([]string, len(contexts))
 	for i, c := range contexts {
@@ -42,6 +47,13 @@ func addBatchPinInputs(op *core.Operation, batchID *fftypes.UUID, contexts []*ff
 		"batch":      batchID.String(),
 		"contexts":   contextStr,
 		"payloadRef": payloadRef,
+	}
+}
+
+func addNetworkActionInputs(op *core.Operation, actionType core.NetworkActionType, signingKey string) {
+	op.Input = fftypes.JSONObject{
+		"type": actionType.String(),
+		"key":  signingKey,
 	}
 }
 
@@ -62,6 +74,12 @@ func retrieveBatchPinInputs(ctx context.Context, op *core.Operation) (batchID *f
 	return batchID, contexts, payloadRef, nil
 }
 
+func retrieveNetworkActionInputs(op *core.Operation) (actionType core.NetworkActionType, signingKey string) {
+	actionType = fftypes.FFEnum(op.Input.GetString("type"))
+	signingKey = op.Input.GetString("key")
+	return actionType, signingKey
+}
+
 func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error) {
 	switch op.Type {
 	case core.OpTypeBlockchainPinBatch:
@@ -76,6 +94,10 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 			return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 		}
 		return opBatchPin(op, batch, contexts, payloadRef), nil
+
+	case core.OpTypeBlockchainNetworkAction:
+		actionType, signingKey := retrieveNetworkActionInputs(op)
+		return opNetworkAction(op, actionType, signingKey), nil
 
 	default:
 		return nil, i18n.NewError(ctx, coremsgs.MsgOperationNotSupported, op.Type)
@@ -95,6 +117,9 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 			Contexts:        data.Contexts,
 		}, mm.activeContract.location)
 
+	case networkActionData:
+		return nil, false, mm.blockchain.SubmitNetworkAction(ctx, op.NamespacedIDString(), data.Key, data.Type, mm.activeContract.location)
+
 	default:
 		return nil, false, i18n.NewError(ctx, coremsgs.MsgOperationDataIncorrect, op.Data)
 	}
@@ -110,5 +135,17 @@ func opBatchPin(op *core.Operation, batch *core.BatchPersisted, contexts []*ffty
 		Namespace: op.Namespace,
 		Type:      op.Type,
 		Data:      batchPinData{Batch: batch, Contexts: contexts, PayloadRef: payloadRef},
+	}
+}
+
+func opNetworkAction(op *core.Operation, actionType core.NetworkActionType, key string) *core.PreparedOperation {
+	return &core.PreparedOperation{
+		ID:        op.ID,
+		Namespace: op.Namespace,
+		Type:      op.Type,
+		Data: networkActionData{
+			Type: actionType,
+			Key:  key,
+		},
 	}
 }

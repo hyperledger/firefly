@@ -102,7 +102,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus,
 			Name: config.GetString(coreconfig.NodeName),
 		},
 		Org: core.NodeStatusOrg{
-			Name: or.config.Multiparty.OrgName,
+			Name: or.config.Multiparty.Org.Name,
 		},
 		Plugins: or.getPlugins(),
 	}

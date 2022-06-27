@@ -434,31 +434,18 @@ func TestStartStopOk(t *testing.T) {
 func TestNetworkAction(t *testing.T) {
 	or := newTestOrchestrator()
 	or.namespace = core.LegacySystemNamespace
+	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	or.mmp.On("SubmitNetworkAction", context.Background(), mock.Anything, "0x123", core.NetworkActionTerminate).Return(nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	or.mmp.On("SubmitNetworkAction", context.Background(), "0x123", action).Return(nil)
+	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.NoError(t, err)
 }
 
 func TestNetworkActionBadKey(t *testing.T) {
 	or := newTestOrchestrator()
 	or.namespace = core.LegacySystemNamespace
+	action := &core.NetworkAction{Type: core.NetworkActionTerminate}
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.EqualError(t, err, "pop")
-}
-
-func TestNetworkActionBadType(t *testing.T) {
-	or := newTestOrchestrator()
-	or.namespace = core.LegacySystemNamespace
-	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: "bad"})
-	assert.Regexp(t, "FF10397", err)
-}
-
-func TestNetworkActionBadNamespace(t *testing.T) {
-	or := newTestOrchestrator()
-	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("0x123", nil)
-	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
-	assert.Regexp(t, "FF10399", err)
 }

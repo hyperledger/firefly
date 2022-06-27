@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/internal/operations"
+	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
@@ -33,6 +34,9 @@ import (
 
 type Manager interface {
 	core.Named
+
+	// RootOrg returns configuration details for the root organization identity
+	RootOrg() RootOrg
 
 	// ConfigureContract initializes the subscription to the FireFly contract
 	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
@@ -52,11 +56,23 @@ type Manager interface {
 	SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error
+	SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation) (outputs fftypes.JSONObject, complete bool, err error)
+}
+
+type Config struct {
+	Enabled   bool
+	Org       RootOrg
+	Contracts []Contract
+}
+
+type RootOrg struct {
+	Name        string
+	Description string
+	Key         string
 }
 
 type Contract struct {
@@ -71,7 +87,8 @@ type multipartyManager struct {
 	blockchain     blockchain.Plugin
 	operations     operations.Manager
 	metrics        metrics.Manager
-	contracts      []Contract
+	txHelper       txcommon.Helper
+	config         Config
 	activeContract struct {
 		location       *fftypes.JSONAny
 		firstEvent     string
@@ -80,18 +97,19 @@ type multipartyManager struct {
 	}
 }
 
-func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager) (Manager, error) {
-	if di == nil || bi == nil || mm == nil || om == nil {
+func NewMultipartyManager(ctx context.Context, ns string, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
+	if di == nil || bi == nil || mm == nil || om == nil || th == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
 	mp := &multipartyManager{
 		ctx:        ctx,
 		namespace:  ns,
-		contracts:  contracts,
+		config:     config,
 		database:   di,
 		blockchain: bi,
 		operations: om,
 		metrics:    mm,
+		txHelper:   th,
 	}
 	om.RegisterHandler(ctx, mp, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
@@ -101,6 +119,10 @@ func NewMultipartyManager(ctx context.Context, ns string, contracts []Contract, 
 
 func (mm *multipartyManager) Name() string {
 	return "MultipartyManager"
+}
+
+func (mm *multipartyManager) RootOrg() RootOrg {
+	return mm.config.Org
 }
 
 func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
@@ -130,11 +152,11 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 }
 
 func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contractIndex int) (location *fftypes.JSONAny, firstEvent string, err error) {
-	if len(mm.contracts) > 0 {
-		if contractIndex >= len(mm.contracts) {
+	if len(mm.config.Contracts) > 0 {
+		if contractIndex >= len(mm.config.Contracts) {
 			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace, contractIndex))
 		}
-		active := mm.contracts[contractIndex]
+		active := mm.config.Contracts[contractIndex]
 		location = active.Location
 		firstEvent = active.FirstEvent
 	} else {
@@ -165,12 +187,36 @@ func (mm *multipartyManager) GetNetworkVersion() int {
 	return mm.activeContract.networkVersion
 }
 
-func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error {
-	return mm.blockchain.SubmitNetworkAction(ctx, nsOpID, signingKey, action, mm.activeContract.location)
+func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error {
+	if action.Type == core.NetworkActionTerminate {
+		if mm.namespace != core.LegacySystemNamespace {
+			// For now, "terminate" only works on ff_system
+			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, mm.namespace)
+		}
+	} else {
+		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
+	}
+
+	txid, err := mm.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeNetworkAction)
+	if err != nil {
+		return err
+	}
+
+	op := core.NewOperation(
+		mm.blockchain,
+		mm.namespace,
+		txid,
+		core.OpTypeBlockchainNetworkAction)
+	addNetworkActionInputs(op, action.Type, signingKey)
+	if err := mm.operations.AddOrReuseOperation(ctx, op); err != nil {
+		return err
+	}
+
+	_, err = mm.operations.RunOperation(ctx, opNetworkAction(op, action.Type, signingKey))
+	return err
 }
 
 func (mm *multipartyManager) SubmitBatchPin(ctx context.Context, batch *core.BatchPersisted, contexts []*fftypes.Bytes32, payloadRef string) error {
-	// The pending blockchain transaction
 	op := core.NewOperation(
 		mm.blockchain,
 		batch.Namespace,
