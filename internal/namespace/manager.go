@@ -730,7 +730,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		config.Multiparty.Contracts = contracts
 		p, err = nm.validateMultiPartyConfig(ctx, name, plugins)
 	} else {
-		p, err = nm.validateGatewayConfig(ctx, name, plugins)
+		p, err = nm.validateNonMultipartyConfig(ctx, name, plugins)
 	}
 	if err != nil {
 		return nil, err
@@ -753,7 +753,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	for _, pluginName := range plugins {
 		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
 			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
 			}
 			result.Blockchain = orchestrator.BlockchainPlugin{
 				Name:   pluginName,
@@ -763,7 +763,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		}
 		if instance, ok := nm.plugins.dataexchange[pluginName]; ok {
 			if result.DataExchange.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "dataexchange")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "dataexchange")
 			}
 			result.DataExchange = orchestrator.DataExchangePlugin{
 				Name:   pluginName,
@@ -773,7 +773,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		}
 		if instance, ok := nm.plugins.sharedstorage[pluginName]; ok {
 			if result.SharedStorage.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "sharedstorage")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "sharedstorage")
 			}
 			result.SharedStorage = orchestrator.SharedStoragePlugin{
 				Name:   pluginName,
@@ -783,7 +783,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		}
 		if instance, ok := nm.plugins.database[pluginName]; ok {
 			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
 			}
 			result.Database = orchestrator.DatabasePlugin{
 				Name:   pluginName,
@@ -813,18 +813,18 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		result.SharedStorage.Plugin == nil ||
 		result.DataExchange.Plugin == nil ||
 		result.Blockchain.Plugin == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsMultiparty, name)
 	}
 
 	return &result, nil
 }
 
-func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
 	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
 		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
 			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
 			}
 			result.Blockchain = orchestrator.BlockchainPlugin{
 				Name:   pluginName,
@@ -833,14 +833,14 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 			continue
 		}
 		if _, ok := nm.plugins.dataexchange[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
 		}
 		if _, ok := nm.plugins.sharedstorage[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
 		}
 		if instance, ok := nm.plugins.database[pluginName]; ok {
 			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
 			}
 			result.Database = orchestrator.DatabasePlugin{
 				Name:   pluginName,
@@ -860,7 +860,7 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 	}
 
 	if result.Database.Plugin == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayNoDB, name)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceNoDatabase, name)
 	}
 
 	return &result, nil

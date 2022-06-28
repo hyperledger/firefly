@@ -829,7 +829,7 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	assert.Len(t, nm.namespaces, 1)
 }
 
-func TestLoadNamespacesGatewayNoDatabase(t *testing.T) {
+func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -981,7 +981,7 @@ func TestLoadNamespacesMultipartyContractBadLocation(t *testing.T) {
 	assert.Regexp(t, "json:", err)
 }
 
-func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
+func TestLoadNamespacesNonMultipartyMultipleDB(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -999,7 +999,7 @@ func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
-func TestLoadNamespacesGatewayMultipleBlockchains(t *testing.T) {
+func TestLoadNamespacesNonMultipartyMultipleBlockchains(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1037,7 +1037,7 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
 	assert.Regexp(t, "FF10391", err)
 }
 
-func TestLoadNamespacesGatewayWithDX(t *testing.T) {
+func TestLoadNamespacesNonMultipartyWithDX(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1055,7 +1055,7 @@ func TestLoadNamespacesGatewayWithDX(t *testing.T) {
 	assert.Regexp(t, "FF10393", err)
 }
 
-func TestLoadNamespacesGatewayWithSharedStorage(t *testing.T) {
+func TestLoadNamespacesNonMultipartyWithSharedStorage(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1073,7 +1073,7 @@ func TestLoadNamespacesGatewayWithSharedStorage(t *testing.T) {
 	assert.Regexp(t, "FF10393", err)
 }
 
-func TestLoadNamespacesGatewayUnknownPlugin(t *testing.T) {
+func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1091,7 +1091,7 @@ func TestLoadNamespacesGatewayUnknownPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
-func TestLoadNamespacesGatewayTokens(t *testing.T) {
+func TestLoadNamespacesNonMultipartyTokens(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
