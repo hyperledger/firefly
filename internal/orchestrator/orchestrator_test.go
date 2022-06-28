@@ -379,41 +379,6 @@ func TestStartBatchFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 }
 
-func TestStartTokensFail(t *testing.T) {
-	coreconfig.Reset()
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
-	or.mbi.On("Start").Return(nil)
-	or.mba.On("Start").Return(nil)
-	or.mem.On("Start").Return(nil)
-	or.mbm.On("Start").Return(nil)
-	or.mpm.On("Start").Return(nil)
-	or.msd.On("Start").Return(nil)
-	or.mom.On("Start").Return(nil)
-	or.mti.On("Start").Return(fmt.Errorf("pop"))
-	err := or.Start()
-	assert.EqualError(t, err, "pop")
-}
-
-func TestStartBlockchainsFail(t *testing.T) {
-	coreconfig.Reset()
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
-	or.mbm.On("Start").Return(nil)
-	or.mpm.On("Start").Return(nil)
-	or.mba.On("Start").Return(nil)
-	or.msd.On("Start").Return(nil)
-	or.mbi.On("Start").Return(fmt.Errorf("pop"))
-	err := or.Start()
-	assert.EqualError(t, err, "pop")
-}
-
 func TestStartBlockchainsConfigureFail(t *testing.T) {
 	coreconfig.Reset()
 	or := newTestOrchestrator()
@@ -431,12 +396,9 @@ func TestStartStopOk(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
-	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
-	or.mpm.On("Start").Return(nil)
-	or.mti.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mba.On("WaitStop").Return(nil)

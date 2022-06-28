@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -1126,7 +1127,70 @@ func TestStart(t *testing.T) {
 	mo.AssertExpectations(t)
 }
 
-func TestStartFail(t *testing.T) {
+func TestStartBlockchainFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"ns": {
+			plugins: orchestrator.Plugins{
+				Blockchain: orchestrator.BlockchainPlugin{
+					Plugin: nm.mbi,
+				},
+			},
+		},
+	}
+
+	nm.mbi.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestStartDataExchangeFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"ns": {
+			plugins: orchestrator.Plugins{
+				DataExchange: orchestrator.DataExchangePlugin{
+					Plugin: nm.mdx,
+				},
+			},
+		},
+	}
+
+	nm.mdx.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestStartTokensFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"ns": {
+			plugins: orchestrator.Plugins{
+				Tokens: []orchestrator.TokensPlugin{{
+					Plugin: nm.mti,
+				}},
+			},
+		},
+	}
+
+	nm.mti.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestStartOrchestratorFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 

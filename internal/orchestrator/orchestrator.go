@@ -263,27 +263,14 @@ func (or *orchestrator) Start() (err error) {
 			err = or.broadcast.Start()
 		}
 		if err == nil {
-			err = or.messaging.Start()
-		}
-		if err == nil {
 			err = or.sharedDownload.Start()
 		}
-	}
-	if err == nil {
-		err = or.blockchain().Start()
 	}
 	if err == nil {
 		err = or.events.Start()
 	}
 	if err == nil {
 		err = or.operations.Start()
-	}
-	if err == nil {
-		for _, el := range or.tokens() {
-			if err = el.Start(); err != nil {
-				break
-			}
-		}
 	}
 	or.started = true
 	return err
