@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/definitionsmocks"
-	"github.com/hyperledger/firefly/mocks/defsendermocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/identitymocks"
@@ -78,7 +77,7 @@ type testOrchestrator struct {
 	mae *spieventsmocks.Manager
 	mdh *definitionsmocks.DefinitionHandler
 	mmp *multipartymocks.Manager
-	mds *defsendermocks.Sender
+	mds *definitionsmocks.Sender
 }
 
 func (tor *testOrchestrator) cleanup(t *testing.T) {
@@ -137,7 +136,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mae: &spieventsmocks.Manager{},
 		mdh: &definitionsmocks.DefinitionHandler{},
 		mmp: &multipartymocks.Manager{},
-		mds: &defsendermocks.Sender{},
+		mds: &definitionsmocks.Sender{},
 	}
 	tor.orchestrator.multiparty = tor.mmp
 	tor.orchestrator.data = tor.mdm

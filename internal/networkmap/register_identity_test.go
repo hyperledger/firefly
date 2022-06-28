@@ -23,7 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/mocks/defsendermocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -46,7 +46,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 
 	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
@@ -100,7 +100,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 
 	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
@@ -148,7 +148,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	}, nil)
 
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 
 	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
@@ -204,7 +204,7 @@ func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
 	mim := nm.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
 
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {

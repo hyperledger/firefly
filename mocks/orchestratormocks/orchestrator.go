@@ -18,7 +18,7 @@ import (
 
 	database "github.com/hyperledger/firefly/pkg/database"
 
-	defsender "github.com/hyperledger/firefly/internal/defsender"
+	definitions "github.com/hyperledger/firefly/internal/definitions"
 
 	events "github.com/hyperledger/firefly/internal/events"
 
@@ -165,15 +165,15 @@ func (_m *Orchestrator) Data() data.Manager {
 }
 
 // DefinitionSender provides a mock function with given fields:
-func (_m *Orchestrator) DefinitionSender() defsender.Sender {
+func (_m *Orchestrator) DefinitionSender() definitions.Sender {
 	ret := _m.Called()
 
-	var r0 defsender.Sender
-	if rf, ok := ret.Get(0).(func() defsender.Sender); ok {
+	var r0 definitions.Sender
+	if rf, ok := ret.Get(0).(func() definitions.Sender); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(defsender.Sender)
+			r0 = ret.Get(0).(definitions.Sender)
 		}
 	}
 

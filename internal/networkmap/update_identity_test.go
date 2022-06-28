@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/defsendermocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 
 	mds.On("CreateDefinitionWithIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityUpdate"),
@@ -75,7 +75,7 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 	signerRef := &core.SignerRef{Key: "0x12345"}
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 	mds.On("CreateDefinitionWithIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityUpdate"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {

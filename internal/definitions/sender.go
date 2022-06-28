@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defsender
+package definitions
 
 import (
 	"context"
@@ -30,10 +30,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
-
-type DefinitionHandler interface {
-	HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error
-}
 
 type Sender interface {
 	core.Named

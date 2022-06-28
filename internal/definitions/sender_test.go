@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package defsender
+package definitions
 
 import (
 	"context"
@@ -33,14 +33,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockDefinitionHandler struct {
-	err error
-}
-
-func (dh *mockDefinitionHandler) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
-	return dh.err
-}
-
 func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	mdi := &databasemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
@@ -54,7 +46,7 @@ func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	return b.(*definitionSender), cancel
 }
 
-func TestInitFail(t *testing.T) {
+func TestInitSenderFail(t *testing.T) {
 	_, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
@@ -165,28 +157,4 @@ func TestCreateDefinitionBadIdentity(t *testing.T) {
 		Key:    "wrong",
 	}, core.SystemTagDefineNamespace, false)
 	assert.Regexp(t, "pop", err)
-}
-
-func TestCreateDefinitionLocal(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-
-	mdh := &mockDefinitionHandler{}
-	ds.Init(mdh)
-
-	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
-	assert.NoError(t, err)
-
-}
-
-func TestCreateDefinitionLocalError(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-
-	mdh := &mockDefinitionHandler{err: fmt.Errorf("pop")}
-	ds.Init(mdh)
-
-	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineDatatype, true)
-	assert.EqualError(t, err, "pop")
-
 }

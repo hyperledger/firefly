@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/mocks/assetmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
-	"github.com/hyperledger/firefly/mocks/defsendermocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -472,7 +472,7 @@ func TestTokenPoolCreatedAnnounce(t *testing.T) {
 	defer cancel()
 	mdi := em.database.(*databasemocks.Plugin)
 	mti := &tokenmocks.Plugin{}
-	mds := em.defsender.(*defsendermocks.Sender)
+	mds := em.defsender.(*definitionsmocks.Sender)
 
 	poolID := fftypes.NewUUID()
 	txID := fftypes.NewUUID()

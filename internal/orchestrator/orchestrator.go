@@ -29,7 +29,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/definitions"
-	"github.com/hyperledger/firefly/internal/defsender"
 	"github.com/hyperledger/firefly/internal/events"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
@@ -61,7 +60,7 @@ type Orchestrator interface {
 	Broadcast() broadcast.Manager               // only for multiparty
 	PrivateMessaging() privatemessaging.Manager // only for multiparty
 	Assets() assets.Manager
-	DefinitionSender() defsender.Sender
+	DefinitionSender() definitions.Sender
 	Contracts() contracts.Manager
 	Data() data.Manager
 	Events() events.EventManager
@@ -180,7 +179,7 @@ type orchestrator struct {
 	events         events.EventManager
 	networkmap     networkmap.Manager
 	defhandler     definitions.DefinitionHandler
-	defsender      defsender.Sender
+	defsender      definitions.Sender
 	data           data.Manager
 	syncasync      syncasync.Bridge
 	assets         assets.Manager
@@ -325,7 +324,7 @@ func (or *orchestrator) PrivateMessaging() privatemessaging.Manager {
 	return or.messaging
 }
 
-func (or *orchestrator) DefinitionSender() defsender.Sender {
+func (or *orchestrator) DefinitionSender() definitions.Sender {
 	return or.defsender
 }
 
@@ -470,7 +469,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.defsender == nil {
-		or.defsender, err = defsender.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.broadcast, or.identity, or.data, or.contracts)
+		or.defsender, err = definitions.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.broadcast, or.identity, or.data, or.contracts)
 		if err != nil {
 			return err
 		}

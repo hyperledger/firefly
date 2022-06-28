@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/defsendermocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +55,7 @@ func TestRegisterNodeOk(t *testing.T) {
 	}, nil)
 
 	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mds := nm.defsender.(*defsendermocks.Sender)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 	mds.On("CreateIdentityClaim", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,

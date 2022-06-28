@@ -21,7 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/internal/defsender"
+	"github.com/hyperledger/firefly/internal/definitions"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/syncasync"
@@ -59,14 +59,14 @@ type networkMap struct {
 	ctx        context.Context
 	namespace  string
 	database   database.Plugin
-	defsender  defsender.Sender
+	defsender  definitions.Sender
 	exchange   dataexchange.Plugin // optional
 	identity   identity.Manager
 	syncasync  syncasync.Bridge
 	multiparty multiparty.Manager // optional
 }
 
-func NewNetworkMap(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, ds defsender.Sender, im identity.Manager, sa syncasync.Bridge, mm multiparty.Manager) (Manager, error) {
+func NewNetworkMap(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, ds definitions.Sender, im identity.Manager, sa syncasync.Bridge, mm multiparty.Manager) (Manager, error) {
 	if di == nil || ds == nil || im == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "NetworkMap")
 	}
