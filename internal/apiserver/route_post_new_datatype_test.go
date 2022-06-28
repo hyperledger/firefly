@@ -41,8 +41,7 @@ func TestPostNewDatatypes(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mds.On("CreateDatatype", mock.Anything, mock.AnythingOfType("*core.Datatype"), false).
-		Return(&core.Message{}, nil)
+	mds.On("DefineDatatype", mock.Anything, mock.AnythingOfType("*core.Datatype"), false).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
@@ -60,8 +59,7 @@ func TestPostNewDatatypesSync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mds.On("CreateDatatype", mock.Anything, mock.AnythingOfType("*core.Datatype"), true).
-		Return(&core.Message{}, nil)
+	mds.On("DefineDatatype", mock.Anything, mock.AnythingOfType("*core.Datatype"), true).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

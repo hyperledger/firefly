@@ -20,11 +20,12 @@ import (
 	"context"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *definitionSender) CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
-
+func (bm *definitionSender) DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error {
 	// Validate the input data definition data
 	datatype.ID = fftypes.NewUUID()
 	datatype.Created = fftypes.Now()
@@ -33,17 +34,22 @@ func (bm *definitionSender) CreateDatatype(ctx context.Context, datatype *core.D
 		datatype.Validator = core.ValidatorTypeJSON
 	}
 	if err := datatype.Validate(ctx, false); err != nil {
-		return nil, err
+		return err
 	}
 	datatype.Hash = datatype.Value.Hash()
 
 	// Verify the data type is now all valid, before we broadcast it
 	if err := bm.data.CheckDatatype(ctx, datatype); err != nil {
-		return nil, err
+		return err
 	}
-	msg, err := bm.CreateDefinition(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
-	if msg != nil {
-		datatype.Message = msg.Header.ID
+
+	if bm.multiparty {
+		msg, err := bm.CreateDefinition(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
+		if msg != nil {
+			datatype.Message = msg.Header.ID
+		}
+		return err
 	}
-	return msg, err
+
+	return i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
 }

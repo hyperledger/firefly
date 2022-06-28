@@ -31,11 +31,11 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestCreateDatatypeBadType(t *testing.T) {
+func TestDefineDatatypeBadType(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
-	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
+	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Validator: core.ValidatorType("wrong"),
 	}, false)
 	assert.Regexp(t, "FF00111.*validator", err)
@@ -49,7 +49,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(nil)
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(nil)
-	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
+	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -61,7 +61,7 @@ func TestBroadcastDatatypeBadValue(t *testing.T) {
 	mim.AssertExpectations(t)
 }
 
-func TestCreateDatatypeInvalid(t *testing.T) {
+func TestDefineDatatypeInvalid(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -71,7 +71,7 @@ func TestCreateDatatypeInvalid(t *testing.T) {
 	mim.On("ResolveInputIdentity", mock.Anything, mock.Anything).Return(nil)
 	mdm.On("CheckDatatype", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
+	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",
@@ -96,7 +96,7 @@ func TestBroadcastOk(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := ds.CreateDatatype(context.Background(), &core.Datatype{
+	err := ds.DefineDatatype(context.Background(), &core.Datatype{
 		Namespace: "ns1",
 		Name:      "ent1",
 		Version:   "0.0.1",

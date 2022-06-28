@@ -37,7 +37,7 @@ type Sender interface {
 	Init(handler Handler)
 	CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
 	CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
+	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
 	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
 	DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error
