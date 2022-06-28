@@ -359,6 +359,10 @@ func (or *orchestrator) initDatabaseCheckPreinit(ctx context.Context) (err error
 
 func (or *orchestrator) initDataExchange(ctx context.Context) (err error) {
 	dxPlugin := config.GetString(coreconfig.DataexchangeType)
+	if dxPlugin == "" {
+		dxPlugin = "ffdx"
+		log.L(ctx).Warnf("The default value for %s has been deprecated - please explicitly set it to \"ffdx\"", coreconfig.DataexchangeType)
+	}
 	if or.dataexchange == nil {
 		pluginName := dxPlugin
 		if or.dataexchange, err = dxfactory.GetPlugin(ctx, pluginName); err != nil {

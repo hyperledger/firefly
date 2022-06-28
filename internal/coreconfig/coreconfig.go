@@ -312,7 +312,6 @@ func setDefaults() {
 	viper.SetDefault(string(CorsAllowedOrigins), []string{"*"})
 	viper.SetDefault(string(CorsEnabled), true)
 	viper.SetDefault(string(CorsMaxAge), 600)
-	viper.SetDefault(string(DataexchangeType), "ffdx")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
