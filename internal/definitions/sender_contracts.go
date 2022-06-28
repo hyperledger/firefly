@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *definitionSender) CreateFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error) {
+func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error {
 	ffi.ID = fftypes.NewUUID()
 	ffi.Namespace = bm.namespace
 	for _, method := range ffi.Methods {
@@ -34,29 +34,39 @@ func (bm *definitionSender) CreateFFI(ctx context.Context, ffi *core.FFI, waitCo
 	}
 
 	if err := bm.contracts.ResolveFFI(ctx, ffi); err != nil {
-		return nil, err
+		return err
 	}
 
-	msg, err := bm.CreateDefinition(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
-	if err != nil {
-		return nil, err
+	if bm.multiparty {
+		msg, err := bm.CreateDefinition(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
+		if msg != nil {
+			ffi.Message = msg.Header.ID
+		}
+		return err
 	}
-	ffi.Message = msg.Header.ID
-	return ffi, nil
+
+	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
+		return bm.handler.handleFFIDefinition(ctx, state, ffi, nil)
+	})
 }
 
-func (bm *definitionSender) CreateContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error) {
+func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error {
 	api.ID = fftypes.NewUUID()
 	api.Namespace = bm.namespace
 
 	if err := bm.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
-		return nil, err
+		return err
 	}
 
-	msg, err := bm.CreateDefinition(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
-	if err != nil {
-		return nil, err
+	if bm.multiparty {
+		msg, err := bm.CreateDefinition(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
+		if msg != nil {
+			api.Message = msg.Header.ID
+		}
+		return err
 	}
-	api.Message = msg.Header.ID
-	return api, nil
+
+	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
+		return bm.handler.handleContractAPIDefinition(ctx, state, api, nil)
+	})
 }

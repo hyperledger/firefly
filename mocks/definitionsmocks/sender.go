@@ -16,29 +16,6 @@ type Sender struct {
 	mock.Mock
 }
 
-// CreateContractAPI provides a mock function with given fields: ctx, httpServerURL, api, waitConfirm
-func (_m *Sender) CreateContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (*core.ContractAPI, error) {
-	ret := _m.Called(ctx, httpServerURL, api, waitConfirm)
-
-	var r0 *core.ContractAPI
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.ContractAPI, bool) *core.ContractAPI); ok {
-		r0 = rf(ctx, httpServerURL, api, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.ContractAPI)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.ContractAPI, bool) error); ok {
-		r1 = rf(ctx, httpServerURL, api, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CreateDatatype provides a mock function with given fields: ctx, datatype, waitConfirm
 func (_m *Sender) CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
 	ret := _m.Called(ctx, datatype, waitConfirm)
@@ -108,29 +85,6 @@ func (_m *Sender) CreateDefinitionWithIdentity(ctx context.Context, def core.Def
 	return r0, r1
 }
 
-// CreateFFI provides a mock function with given fields: ctx, ffi, waitConfirm
-func (_m *Sender) CreateFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (*core.FFI, error) {
-	ret := _m.Called(ctx, ffi, waitConfirm)
-
-	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI, bool) *core.FFI); ok {
-		r0 = rf(ctx, ffi, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFI)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.FFI, bool) error); ok {
-		r1 = rf(ctx, ffi, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CreateIdentityClaim provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
 func (_m *Sender) CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
 	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
@@ -152,6 +106,34 @@ func (_m *Sender) CreateIdentityClaim(ctx context.Context, def *core.IdentityCla
 	}
 
 	return r0, r1
+}
+
+// DefineContractAPI provides a mock function with given fields: ctx, httpServerURL, api, waitConfirm
+func (_m *Sender) DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error {
+	ret := _m.Called(ctx, httpServerURL, api, waitConfirm)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *core.ContractAPI, bool) error); ok {
+		r0 = rf(ctx, httpServerURL, api, waitConfirm)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DefineFFI provides a mock function with given fields: ctx, ffi, waitConfirm
+func (_m *Sender) DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error {
+	ret := _m.Called(ctx, ffi, waitConfirm)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI, bool) error); ok {
+		r0 = rf(ctx, ffi, waitConfirm)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // DefineTokenPool provides a mock function with given fields: ctx, pool, waitConfirm

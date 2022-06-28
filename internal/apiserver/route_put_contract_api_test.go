@@ -39,8 +39,7 @@ func TestPutContractAPI(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mds.On("CreateContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), false).
-		Return(&core.ContractAPI{}, nil)
+	mds.On("DefineContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), false).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 202, res.Result().StatusCode)
@@ -57,8 +56,7 @@ func TestPutContractAPISync(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mds.On("CreateContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), true).
-		Return(&core.ContractAPI{}, nil)
+	mds.On("DefineContractAPI", mock.Anything, mock.Anything, mock.AnythingOfType("*core.ContractAPI"), true).Return(nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

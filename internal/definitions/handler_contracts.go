@@ -76,7 +76,6 @@ func (dh *definitionHandler) persistContractAPI(ctx context.Context, api *core.C
 }
 
 func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
-	l := log.L(ctx)
 	var ffi core.FFI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
@@ -86,11 +85,16 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 	}
 
 	ffi.Message = msg.Header.ID
-	if err := dh.persistFFI(ctx, &ffi); err != nil {
+	return dh.handleFFIDefinition(ctx, state, &ffi, tx)
+}
+
+func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *core.FFI, tx *fftypes.UUID) (HandlerResult, error) {
+	l := log.L(ctx)
+	if err := dh.persistFFI(ctx, ffi); err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	}
 
-	l.Infof("Contract interface created id=%s author=%s", ffi.ID, msg.Header.Author)
+	l.Infof("Contract interface created id=%s", ffi.ID)
 	state.AddFinalize(func(ctx context.Context) error {
 		event := core.NewEvent(core.EventTypeContractInterfaceConfirmed, ffi.Namespace, ffi.ID, tx, ffi.Topic())
 		return dh.database.InsertEvent(ctx, event)
@@ -99,7 +103,6 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 }
 
 func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
-	l := log.L(ctx)
 	var api core.ContractAPI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
@@ -109,14 +112,19 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 	}
 
 	api.Message = msg.Header.ID
-	if retry, err := dh.persistContractAPI(ctx, &api); err != nil {
+	return dh.handleContractAPIDefinition(ctx, state, &api, tx)
+}
+
+func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, api *core.ContractAPI, tx *fftypes.UUID) (HandlerResult, error) {
+	l := log.L(ctx)
+	if retry, err := dh.persistContractAPI(ctx, api); err != nil {
 		if retry {
 			return HandlerResult{Action: ActionRetry}, err
 		}
 		return HandlerResult{Action: ActionReject}, err
 	}
 
-	l.Infof("Contract API created id=%s author=%s", api.ID, msg.Header.Author)
+	l.Infof("Contract API created id=%s", api.ID)
 	state.AddFinalize(func(ctx context.Context) error {
 		event := core.NewEvent(core.EventTypeContractAPIConfirmed, api.Namespace, api.ID, tx, core.SystemTopicDefinitions)
 		return dh.database.InsertEvent(ctx, event)

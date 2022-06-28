@@ -40,8 +40,8 @@ type Sender interface {
 	CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
 	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
-	CreateFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error)
-	CreateContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error)
+	DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error
+	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
 }
 
 type definitionSender struct {

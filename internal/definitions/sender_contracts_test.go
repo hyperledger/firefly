@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestCreateFFIResolveFail(t *testing.T) {
+func TestDefineFFIResolveFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -43,13 +43,13 @@ func TestCreateFFIResolveFail(t *testing.T) {
 	mcm := ds.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))
 
-	_, err := ds.CreateFFI(context.Background(), ffi, false)
+	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.EqualError(t, err, "pop")
 
 	mcm.AssertExpectations(t)
 }
 
-func TestCreateFFIFail(t *testing.T) {
+func TestDefineFFIFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -62,14 +62,14 @@ func TestCreateFFIFail(t *testing.T) {
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := ds.CreateFFI(context.Background(), ffi, false)
+	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.EqualError(t, err, "pop")
 
 	mcm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
-func TestCreateFFIOk(t *testing.T) {
+func TestDefineFFIOk(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -87,7 +87,7 @@ func TestCreateFFIOk(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := ds.CreateFFI(context.Background(), ffi, false)
+	err := ds.DefineFFI(context.Background(), ffi, false)
 	assert.NoError(t, err)
 
 	mcm.AssertExpectations(t)
@@ -96,7 +96,7 @@ func TestCreateFFIOk(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
-func TestCreateContractAPIResolveFail(t *testing.T) {
+func TestDefineContractAPIResolveFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -107,13 +107,13 @@ func TestCreateContractAPIResolveFail(t *testing.T) {
 	mcm := ds.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveContractAPI", context.Background(), url, api).Return(fmt.Errorf("pop"))
 
-	_, err := ds.CreateContractAPI(context.Background(), url, api, false)
+	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.EqualError(t, err, "pop")
 
 	mcm.AssertExpectations(t)
 }
 
-func TestCreateContractAPIFail(t *testing.T) {
+func TestDefineContractAPIFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -127,14 +127,14 @@ func TestCreateContractAPIFail(t *testing.T) {
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", context.Background(), mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := ds.CreateContractAPI(context.Background(), url, api, false)
+	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.EqualError(t, err, "pop")
 
 	mcm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 }
 
-func TestCreateContractAPIOk(t *testing.T) {
+func TestDefineContractAPIOk(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	ds.multiparty = true
@@ -153,7 +153,7 @@ func TestCreateContractAPIOk(t *testing.T) {
 	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
-	_, err := ds.CreateContractAPI(context.Background(), url, api, false)
+	err := ds.DefineContractAPI(context.Background(), url, api, false)
 	assert.NoError(t, err)
 
 	mcm.AssertExpectations(t)
