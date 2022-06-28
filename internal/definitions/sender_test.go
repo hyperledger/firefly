@@ -92,11 +92,11 @@ func TestCreateIdentityClaim(t *testing.T) {
 
 	ds.multiparty = true
 
-	_, err := ds.CreateIdentityClaim(ds.ctx, &core.IdentityClaim{
+	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, core.SystemTagDefineNamespace, true)
+	}, nil, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -112,11 +112,13 @@ func TestCreateIdentityClaimFail(t *testing.T) {
 
 	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 
-	_, err := ds.CreateIdentityClaim(ds.ctx, &core.IdentityClaim{
+	ds.multiparty = true
+
+	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, core.SystemTagDefineNamespace, true)
+	}, nil, core.SystemTagDefineNamespace, true)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -152,7 +154,7 @@ func TestCreateDefinitionBadIdentity(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := ds.CreateDefinitionWithIdentity(ds.ctx, &core.Namespace{}, &core.SignerRef{
+	_, err := ds.CreateDefinition(ds.ctx, &core.Namespace{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
 	}, core.SystemTagDefineNamespace, false)

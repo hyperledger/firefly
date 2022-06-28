@@ -1341,23 +1341,6 @@ func TestResolveIdentitySignerNotFound(t *testing.T) {
 	mdi.AssertExpectations(t)
 }
 
-func TestResolveIdentitySignerGateway(t *testing.T) {
-	ctx, im := newTestIdentityManager(t)
-	im.multiparty = nil
-
-	signer, err := im.ResolveIdentitySigner(ctx, &core.Identity{
-		IdentityBase: core.IdentityBase{
-			ID:        fftypes.NewUUID(),
-			DID:       "did:firefly:org/org1",
-			Namespace: "ns1",
-			Name:      "org1",
-			Type:      core.IdentityTypeOrg,
-		},
-	})
-	assert.NoError(t, err)
-	assert.Nil(t, signer)
-}
-
 func TestParseKeyNormalizationConfig(t *testing.T) {
 	assert.Equal(t, KeyNormalizationBlockchainPlugin, ParseKeyNormalizationConfig("blockchain_Plugin"))
 	assert.Equal(t, KeyNormalizationNone, ParseKeyNormalizationConfig("none"))

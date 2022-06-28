@@ -54,16 +54,16 @@ func TestRegisterNodeOk(t *testing.T) {
 		"endpoint": "details",
 	}, nil)
 
-	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mds := nm.defsender.(*definitionsmocks.Sender)
-	mds.On("CreateIdentityClaim", nm.ctx,
+	mds.On("DefineIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
-		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
+		(*core.SignerRef)(nil),
+		core.SystemTagIdentityClaim, false).Return(nil)
 
 	node, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *mockMsg.Header.ID, *node.Messages.Claim)
+	assert.NotNil(t, node)
 
 	mim.AssertExpectations(t)
 	mdx.AssertExpectations(t)

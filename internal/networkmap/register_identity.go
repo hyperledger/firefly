@@ -68,25 +68,33 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 		return nil, err
 	}
 
-	// Resolve if we need to perform a validation
-	var parentSigner *core.SignerRef
-	if immediateParent != nil {
-		parentSigner, err = nm.identity.ResolveIdentitySigner(ctx, immediateParent)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Determine claim signer
 	var claimSigner *core.SignerRef
-	if dto.Type == core.IdentityTypeNode {
-		// Nodes are special - as they need the claim to be signed directly by the parent
-		claimSigner = parentSigner
-		parentSigner = nil
-	} else {
-		if dto.Key == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
+	var parentSigner *core.SignerRef
+
+	if nm.multiparty != nil {
+		// Resolve if we need to perform a validation
+		if immediateParent != nil {
+			parentSigner, err = nm.identity.ResolveIdentitySigner(ctx, immediateParent)
+			if err != nil {
+				return nil, err
+			}
 		}
+
+		// Determine claim signer
+		if dto.Type == core.IdentityTypeNode {
+			// Nodes are special - as they need the claim to be signed directly by the parent
+			claimSigner = parentSigner
+			parentSigner = nil
+		} else {
+			if dto.Key == "" {
+				return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
+			}
+			claimSigner = &core.SignerRef{
+				Key:    dto.Key,
+				Author: identity.DID,
+			}
+		}
+	} else {
 		claimSigner = &core.SignerRef{
 			Key:    dto.Key,
 			Author: identity.DID,
@@ -99,36 +107,9 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 		})
 	}
 	err = nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
-	if err != nil {
-		return nil, err
-	}
-	return identity, nil
+	return identity, err
 }
 
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Identity, claimSigner *core.SignerRef, parentSigner *core.SignerRef) error {
-
-	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
-	claimMsg, err := nm.defsender.CreateIdentityClaim(ctx, &core.IdentityClaim{
-		Identity: identity,
-	}, claimSigner, core.SystemTagIdentityClaim, false)
-	if err != nil {
-		return err
-	}
-	identity.Messages.Claim = claimMsg.Header.ID
-
-	// Send the verification if one is required.
-	if parentSigner != nil {
-		verifyMsg, err := nm.defsender.CreateDefinitionWithIdentity(ctx, &core.IdentityVerification{
-			Claim: core.MessageRef{
-				ID:   claimMsg.Header.ID,
-				Hash: claimMsg.Hash,
-			},
-			Identity: identity.IdentityBase,
-		}, parentSigner, core.SystemTagIdentityVerification, false)
-		if err != nil {
-			return err
-		}
-		identity.Messages.Verification = verifyMsg.Header.ID
-	}
-	return nil
+	return nm.defsender.DefineIdentity(ctx, &core.IdentityClaim{Identity: identity}, claimSigner, parentSigner, core.SystemTagIdentityClaim, false)
 }

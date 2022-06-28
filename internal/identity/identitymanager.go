@@ -344,9 +344,6 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 }
 
 func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (signer *core.SignerRef, err error) {
-	if im.multiparty == nil {
-		return nil, nil
-	}
 
 	// Find the message that registered the identity
 	msg, err := im.database.GetMessageByID(ctx, im.namespace, identity.Messages.Claim)

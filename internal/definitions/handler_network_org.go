@@ -32,6 +32,6 @@ func (dh *definitionHandler) handleDeprecatedOrganizationBroadcast(ctx context.C
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "org", msg.Header.ID)
 	}
 
-	return dh.handleIdentityClaim(ctx, state, msg, orgOld.Migrated(), nil)
+	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, nil), orgOld.Migrated())
 
 }

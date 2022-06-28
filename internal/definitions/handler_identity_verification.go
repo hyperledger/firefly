@@ -48,13 +48,12 @@ func (dh *definitionHandler) handleIdentityVerificationBroadcast(ctx context.Con
 	}
 
 	// At this point, this is a valid verification, but we don't know if the claim has arrived.
-	// It might be being processed in the same pin batch as us - so we can't
-
 	// See if the message has already arrived, if so we need to queue a rewind to it
 	claimMsg, err := dh.database.GetMessageByID(ctx, dh.namespace, verification.Claim.ID)
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err
 	}
+	// See if the message was processed earlier in this same batch
 	if claimMsg == nil || claimMsg.State != core.MessageStateConfirmed {
 		claimMsg = state.PendingConfirms[*verification.Claim.ID]
 	}

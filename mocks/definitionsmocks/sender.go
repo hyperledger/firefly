@@ -16,8 +16,8 @@ type Sender struct {
 	mock.Mock
 }
 
-// CreateDefinitionWithIdentity provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Sender) CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
+// CreateDefinition provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
+func (_m *Sender) CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
 	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
 
 	var r0 *core.Message
@@ -31,29 +31,6 @@ func (_m *Sender) CreateDefinitionWithIdentity(ctx context.Context, def core.Def
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, core.Definition, *core.SignerRef, string, bool) error); ok {
-		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CreateIdentityClaim provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Sender) CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, string, bool) *core.Message); ok {
-		r0 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.IdentityClaim, *core.SignerRef, string, bool) error); ok {
 		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
@@ -97,6 +74,20 @@ func (_m *Sender) DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI, bool) error); ok {
 		r0 = rf(ctx, ffi, waitConfirm)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DefineIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner, tag, waitConfirm
+func (_m *Sender) DefineIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, tag string, waitConfirm bool) error {
+	ret := _m.Called(ctx, def, signingIdentity, parentSigner, tag, waitConfirm)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef, string, bool) error); ok {
+		r0 = rf(ctx, def, signingIdentity, parentSigner, tag, waitConfirm)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -43,7 +43,7 @@ func TestUpdateIdentityProfileOk(t *testing.T) {
 	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mds := nm.defsender.(*definitionsmocks.Sender)
 
-	mds.On("CreateDefinitionWithIdentity", nm.ctx,
+	mds.On("CreateDefinition", nm.ctx,
 		mock.AnythingOfType("*core.IdentityUpdate"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -76,7 +76,7 @@ func TestUpdateIdentityProfileBroadcastFail(t *testing.T) {
 	mim.On("ResolveIdentitySigner", nm.ctx, identity).Return(signerRef, nil)
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
-	mds.On("CreateDefinitionWithIdentity", nm.ctx,
+	mds.On("CreateDefinition", nm.ctx,
 		mock.AnythingOfType("*core.IdentityUpdate"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"

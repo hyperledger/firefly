@@ -41,6 +41,6 @@ func (dh *definitionHandler) handleDeprecatedNodeBroadcast(ctx context.Context, 
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "node", nodeOld.ID, nodeOld.Owner)
 	}
 
-	return dh.handleIdentityClaim(ctx, state, msg, nodeOld.AddMigratedParent(owner.ID), nil)
+	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, nil), nodeOld.AddMigratedParent(owner.ID))
 
 }

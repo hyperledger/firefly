@@ -67,18 +67,18 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	mmp := nm.multiparty.(*multipartymocks.Manager)
 	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org0"})
 
-	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
 	mds := nm.defsender.(*definitionsmocks.Sender)
-	mds.On("CreateIdentityClaim", nm.ctx,
+	mds.On("DefineIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
+		(*core.SignerRef)(nil),
+		core.SystemTagIdentityClaim, false).Return(nil)
 
 	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *mockMsg.Header.ID, *org.Messages.Claim)
+	assert.NotNil(t, org)
 
 	mim.AssertExpectations(t)
 	mds.AssertExpectations(t)

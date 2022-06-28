@@ -35,9 +35,9 @@ type Sender interface {
 	core.Named
 
 	Init(handler Handler)
-	CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
-	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	DefineIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, tag string, waitConfirm bool) error
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
 	DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
@@ -92,27 +92,13 @@ func (bm *definitionSender) Init(handler Handler) {
 }
 
 func (bm *definitionSender) createDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	return bm.CreateDefinitionWithIdentity(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
+	return bm.CreateDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *definitionSender) CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *definitionSender) CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
 	if bm.multiparty {
 		err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return bm.createDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
-}
-
-// CreateIdentityClaim is a special form of CreateDefinition where the signing identity does not need to have been pre-registered
-// The blockchain "key" will be normalized, but the "author" will pass through unchecked
-func (bm *definitionSender) CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
-
-	if signingIdentity != nil {
-		signingIdentity.Key, err = bm.identity.NormalizeSigningKey(ctx, signingIdentity.Key, identity.KeyNormalizationBlockchainPlugin)
 		if err != nil {
 			return nil, err
 		}
