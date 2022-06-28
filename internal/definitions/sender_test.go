@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
@@ -76,52 +75,6 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mim.AssertExpectations(t)
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
-}
-
-func TestCreateIdentityClaim(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-	mbm := ds.broadcast.(*broadcastmocks.Manager)
-	mms := &sysmessagingmocks.MessageSender{}
-
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", nil)
-	mbm.On("NewBroadcast", mock.Anything).Return(mms)
-	mms.On("SendAndWait", mock.Anything).Return(nil)
-
-	ds.multiparty = true
-
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
-		Identity: &core.Identity{},
-	}, &core.SignerRef{
-		Key: "0x1234",
-	}, nil, core.SystemTagDefineNamespace, true)
-	assert.NoError(t, err)
-
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
-	mms.AssertExpectations(t)
-}
-
-func TestCreateIdentityClaimFail(t *testing.T) {
-	ds, cancel := newTestDefinitionSender(t)
-	defer cancel()
-
-	mim := ds.identity.(*identitymanagermocks.Manager)
-
-	mim.On("NormalizeSigningKey", mock.Anything, "0x1234", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
-
-	ds.multiparty = true
-
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
-		Identity: &core.Identity{},
-	}, &core.SignerRef{
-		Key: "0x1234",
-	}, nil, core.SystemTagDefineNamespace, true)
-	assert.EqualError(t, err, "pop")
-
-	mim.AssertExpectations(t)
 }
 
 func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {

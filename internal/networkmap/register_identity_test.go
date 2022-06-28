@@ -115,6 +115,80 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	msa.AssertExpectations(t)
 }
 
+func TestRegisterIdentityOrgNonMultiparty(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+	nm.multiparty = nil
+
+	parentIdentity := testOrg("parent1")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentIdentity, false, nil)
+	mim.On("CachedIdentityLookupMustExist", nm.ctx, "did:firefly:org/parent1").Return(&core.Identity{
+		IdentityBase: core.IdentityBase{
+			ID:  fftypes.NewUUID(),
+			DID: "did:firefly:org/parent1",
+		},
+	}, false, nil)
+
+	mds := nm.defsender.(*definitionsmocks.Sender)
+	mds.On("DefineIdentity", nm.ctx,
+		mock.AnythingOfType("*core.IdentityClaim"),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x12345"
+		}),
+		(*core.SignerRef)(nil),
+		core.SystemTagIdentityClaim, false).Return(fmt.Errorf("pop"))
+
+	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
+		Name:   "custom1",
+		Key:    "0x12345",
+		Parent: "did:firefly:org/parent1",
+	}, false)
+	assert.Regexp(t, "pop", err)
+
+	mim.AssertExpectations(t)
+	mds.AssertExpectations(t)
+}
+
+func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	parentIdentity := testOrg("parent1")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentIdentity, false, nil)
+	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&core.SignerRef{
+		Key: "0x23456",
+	}, nil)
+
+	mds := nm.defsender.(*definitionsmocks.Sender)
+
+	mds.On("DefineIdentity", nm.ctx,
+		mock.AnythingOfType("*core.IdentityClaim"),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x12345"
+		}),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x23456"
+		}),
+		core.SystemTagIdentityClaim, false).Return(nil)
+
+	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
+		Name:   "child1",
+		Key:    "0x12345",
+		Parent: fftypes.NewUUID().String(),
+	}, false)
+	assert.NoError(t, err)
+	assert.NotNil(t, org)
+
+	mim.AssertExpectations(t)
+	mds.AssertExpectations(t)
+}
+
 func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)

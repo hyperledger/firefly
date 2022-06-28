@@ -37,7 +37,6 @@ import (
 
 type Handler interface {
 	HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error)
-	HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error
 }
 
 type HandlerResult struct {
@@ -148,12 +147,4 @@ func (dh *definitionHandler) getSystemBroadcastPayload(ctx context.Context, msg 
 	}
 	res.SetBroadcastMessage(msg.Header.ID)
 	return true
-}
-
-func (dh *definitionHandler) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
-	result, err := dh.HandleDefinitionBroadcast(ctx, state, msg, core.DataArray{data}, nil)
-	if result.Action == ActionReject {
-		return i18n.WrapError(ctx, err, coremsgs.MsgDefinitionRejected)
-	}
-	return err
 }

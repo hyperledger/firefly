@@ -33,11 +33,11 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *core.FFI, waitCo
 		event.ID = fftypes.NewUUID()
 	}
 
-	if err := bm.contracts.ResolveFFI(ctx, ffi); err != nil {
-		return err
-	}
-
 	if bm.multiparty {
+		if err := bm.contracts.ResolveFFI(ctx, ffi); err != nil {
+			return err
+		}
+
 		msg, err := bm.createDefinitionDefault(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
 		if msg != nil {
 			ffi.Message = msg.Header.ID
@@ -54,11 +54,11 @@ func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 	api.ID = fftypes.NewUUID()
 	api.Namespace = bm.namespace
 
-	if err := bm.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
-		return err
-	}
-
 	if bm.multiparty {
+		if err := bm.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
+			return err
+		}
+
 		msg, err := bm.createDefinitionDefault(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
 		if msg != nil {
 			api.Message = msg.Header.ID
@@ -67,6 +67,6 @@ func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 	}
 
 	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
-		return bm.handler.handleContractAPIDefinition(ctx, state, api, nil)
+		return bm.handler.handleContractAPIDefinition(ctx, state, httpServerURL, api, nil)
 	})
 }

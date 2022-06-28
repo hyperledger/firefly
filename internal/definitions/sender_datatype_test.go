@@ -109,3 +109,17 @@ func TestBroadcastOk(t *testing.T) {
 	mbm.AssertExpectations(t)
 	mms.AssertExpectations(t)
 }
+
+func TestDefineDatatypeNonMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = false
+
+	err := ds.DefineDatatype(context.Background(), &core.Datatype{
+		Namespace: "ns1",
+		Name:      "ent1",
+		Version:   "0.0.1",
+		Value:     fftypes.JSONAnyPtr(`{"some": "data"}`),
+	}, false)
+	assert.Regexp(t, "FF10414", err)
+}

@@ -33,6 +33,32 @@ import (
 func TestBroadcastTokenPoolInvalid(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
+	ds.multiparty = true
+
+	mdm := ds.data.(*datamocks.Manager)
+
+	pool := &core.TokenPoolAnnouncement{
+		Pool: &core.TokenPool{
+			ID:        fftypes.NewUUID(),
+			Namespace: "",
+			Name:      "",
+			Type:      core.TokenTypeNonFungible,
+			Locator:   "N1",
+			Symbol:    "COIN",
+		},
+	}
+
+	err := ds.DefineTokenPool(context.Background(), pool, false)
+	assert.Regexp(t, "FF00140", err)
+
+	mdm.AssertExpectations(t)
+}
+
+func TestBroadcastTokenPoolInvalidNonMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+	ds.multiparty = false
+
 	mdm := ds.data.(*datamocks.Manager)
 
 	pool := &core.TokenPoolAnnouncement{

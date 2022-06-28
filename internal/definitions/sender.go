@@ -56,15 +56,16 @@ type definitionSender struct {
 }
 
 // Definitions that get processed immediately will create a temporary batch state and then finalize it inline
-func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchState) (HandlerResult, error)) error {
+func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchState) (HandlerResult, error)) (err error) {
 	var state core.BatchState
-	if _, err := handler(ctx, &state); err != nil {
-		return err
+	_, err = handler(ctx, &state)
+	if err == nil {
+		err = state.RunPreFinalize(ctx)
 	}
-	if err := state.RunPreFinalize(ctx); err != nil {
-		return err
+	if err == nil {
+		err = state.RunFinalize(ctx)
 	}
-	return state.RunFinalize(ctx)
+	return err
 }
 
 func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, cm contracts.Manager) (Sender, error) {
@@ -129,32 +130,14 @@ func (bm *definitionSender) createDefinitionCommon(ctx context.Context, def core
 		message.Header.SignerRef = *signingIdentity
 	}
 
-	if bm.multiparty {
-		message.InlineData = core.InlineData{
-			&core.DataRefOrValue{Value: dataValue},
-		}
-		sender := bm.broadcast.NewBroadcast(message)
-		if waitConfirm {
-			err = sender.SendAndWait(ctx)
-		} else {
-			err = sender.Send(ctx)
-		}
+	message.InlineData = core.InlineData{
+		&core.DataRefOrValue{Value: dataValue},
+	}
+	sender := bm.broadcast.NewBroadcast(message)
+	if waitConfirm {
+		err = sender.SendAndWait(ctx)
 	} else {
-		data := &core.Data{Value: dataValue}
-		err = bm.createDefinitionLocal(ctx, &message.Message, data)
+		err = sender.Send(ctx)
 	}
-
 	return &message.Message, err
-}
-
-func (bm *definitionSender) createDefinitionLocal(ctx context.Context, msg *core.Message, data *core.Data) (err error) {
-	state := &core.BatchState{
-		PendingConfirms: make(map[fftypes.UUID]*core.Message),
-	}
-	if err = bm.handler.HandleDefinition(ctx, state, msg, data); err == nil {
-		if err = state.RunPreFinalize(ctx); err == nil {
-			err = state.RunFinalize(ctx)
-		}
-	}
-	return err
 }

@@ -111,14 +111,3 @@ func TestActionEnum(t *testing.T) {
 	assert.Equal(t, "wait", fmt.Sprintf("%s", ActionWait))
 	assert.Equal(t, "unknown", fmt.Sprintf("%s", DefinitionMessageAction(999)))
 }
-
-func TestHandleDefinitionReject(t *testing.T) {
-	dh, bs := newTestDefinitionHandler(t)
-	err := dh.HandleDefinition(context.Background(), &bs.BatchState, &core.Message{
-		Header: core.MessageHeader{
-			Tag: "unknown",
-		},
-	}, &core.Data{})
-	assert.Error(t, err)
-	bs.assertNoFinalizers()
-}

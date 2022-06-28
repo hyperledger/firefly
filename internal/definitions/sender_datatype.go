@@ -33,17 +33,17 @@ func (bm *definitionSender) DefineDatatype(ctx context.Context, datatype *core.D
 	if datatype.Validator == "" {
 		datatype.Validator = core.ValidatorTypeJSON
 	}
-	if err := datatype.Validate(ctx, false); err != nil {
-		return err
-	}
 	datatype.Hash = datatype.Value.Hash()
 
-	// Verify the data type is now all valid, before we broadcast it
-	if err := bm.data.CheckDatatype(ctx, datatype); err != nil {
-		return err
-	}
-
 	if bm.multiparty {
+		if err := datatype.Validate(ctx, false); err != nil {
+			return err
+		}
+		// Verify the data type is now all valid, before we broadcast it
+		if err := bm.data.CheckDatatype(ctx, datatype); err != nil {
+			return err
+		}
+
 		msg, err := bm.createDefinitionDefault(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
 		if msg != nil {
 			datatype.Message = msg.Header.ID

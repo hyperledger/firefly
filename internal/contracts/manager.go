@@ -308,7 +308,9 @@ func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL
 		return err
 	}
 
-	cm.addContractURLs(httpServerURL, api)
+	if httpServerURL != "" {
+		cm.addContractURLs(httpServerURL, api)
+	}
 	return nil
 }
 

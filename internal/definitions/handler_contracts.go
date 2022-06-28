@@ -27,44 +27,35 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *core.FFI) (err error) {
+func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *core.FFI) (retry bool, err error) {
 	if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
-		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
-		return nil
+		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
 	}
 
 	err = dh.database.UpsertFFI(ctx, ffi)
 	if err != nil {
-		return err
+		return true, err
 	}
 
 	for _, method := range ffi.Methods {
-		err := dh.database.UpsertFFIMethod(ctx, method)
-		if err != nil {
-			return err
+		if err := dh.database.UpsertFFIMethod(ctx, method); err != nil {
+			return true, err
 		}
 	}
-
 	for _, event := range ffi.Events {
-		err := dh.database.UpsertFFIEvent(ctx, event)
-		if err != nil {
-			return err
+		if err := dh.database.UpsertFFIEvent(ctx, event); err != nil {
+			return true, err
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
-func (dh *definitionHandler) persistContractAPI(ctx context.Context, api *core.ContractAPI) (retry bool, err error) {
-	existing, err := dh.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
-	if err != nil {
-		return true, err
+func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (retry bool, err error) {
+	if err := dh.contracts.ResolveContractAPI(ctx, httpServerURL, api); err != nil {
+		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
 	}
-	if existing != nil {
-		if !api.LocationAndLedgerEquals(existing) {
-			return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedLocationMismatch, "contract API", api.ID)
-		}
-	}
+
 	err = dh.database.UpsertContractAPI(ctx, api)
 	if err != nil {
 		if err == database.IDMismatch {
@@ -90,8 +81,11 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 
 func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *core.FFI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	if err := dh.persistFFI(ctx, ffi); err != nil {
-		return HandlerResult{Action: ActionRetry}, err
+	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
+		if retry {
+			return HandlerResult{Action: ActionRetry}, err
+		}
+		return HandlerResult{Action: ActionReject}, err
 	}
 
 	l.Infof("Contract interface created id=%s", ffi.ID)
@@ -112,12 +106,12 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 	}
 
 	api.Message = msg.Header.ID
-	return dh.handleContractAPIDefinition(ctx, state, &api, tx)
+	return dh.handleContractAPIDefinition(ctx, state, "", &api, tx)
 }
 
-func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, api *core.ContractAPI, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, httpServerURL string, api *core.ContractAPI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
-	if retry, err := dh.persistContractAPI(ctx, api); err != nil {
+	if retry, err := dh.persistContractAPI(ctx, httpServerURL, api); err != nil {
 		if retry {
 			return HandlerResult{Action: ActionRetry}, err
 		}
