@@ -48,7 +48,7 @@ type aggregator struct {
 	namespace     string
 	database      database.Plugin
 	messaging     privatemessaging.Manager
-	definitions   definitions.DefinitionHandler
+	definitions   definitions.Handler
 	identity      identity.Manager
 	data          data.Manager
 	eventPoller   *eventPoller
@@ -65,7 +65,7 @@ type batchCacheEntry struct {
 	manifest *core.BatchManifest
 }
 
-func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),

@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitionBatchState) {
+func newTestDefinitionHandler(t *testing.T) (*definitionHandler, *testDefinitionBatchState) {
 	mdi := &databasemocks.Plugin{}
 	mbi := &blockchainmocks.Plugin{}
 	mdx := &dataexchangemocks.Plugin{}
@@ -43,7 +43,7 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandlers, *testDefinitio
 	mcm := &contractmocks.Manager{}
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
 	dh, _ := NewDefinitionHandler(context.Background(), "ns1", false, mdi, mbi, mdx, mdm, mim, mam, mcm)
-	return dh.(*definitionHandlers), newTestDefinitionBatchState(t)
+	return dh.(*definitionHandler), newTestDefinitionBatchState(t)
 }
 
 type testDefinitionBatchState struct {

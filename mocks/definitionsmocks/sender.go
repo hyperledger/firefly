@@ -178,7 +178,7 @@ func (_m *Sender) CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnou
 }
 
 // Init provides a mock function with given fields: handler
-func (_m *Sender) Init(handler definitions.DefinitionHandler) {
+func (_m *Sender) Init(handler definitions.Handler) {
 	_m.Called(handler)
 }
 

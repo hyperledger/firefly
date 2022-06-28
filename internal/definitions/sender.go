@@ -34,7 +34,7 @@ import (
 type Sender interface {
 	core.Named
 
-	Init(handler DefinitionHandler)
+	Init(handler Handler)
 	CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
 	CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
@@ -53,7 +53,7 @@ type definitionSender struct {
 	identity   identity.Manager
 	data       data.Manager
 	contracts  contracts.Manager
-	handler    DefinitionHandler
+	handler    Handler
 }
 
 func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, cm contracts.Manager) (Sender, error) {
@@ -76,7 +76,7 @@ func (bm *definitionSender) Name() string {
 	return "DefinitionSender"
 }
 
-func (bm *definitionSender) Init(handler DefinitionHandler) {
+func (bm *definitionSender) Init(handler Handler) {
 	bm.handler = handler
 }
 

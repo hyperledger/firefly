@@ -95,7 +95,7 @@ type eventManager struct {
 	txHelper              txcommon.Helper
 	identity              identity.Manager
 	defsender             definitions.Sender
-	defhandler            definitions.DefinitionHandler
+	defhandler            definitions.Handler
 	data                  data.Manager
 	subManager            *subscriptionManager
 	retry                 retry.Retry
@@ -115,7 +115,7 @@ type eventManager struct {
 	multiparty            multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
 	if ni == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}

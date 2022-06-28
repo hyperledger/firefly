@@ -178,7 +178,7 @@ type orchestrator struct {
 	identity       identity.Manager
 	events         events.EventManager
 	networkmap     networkmap.Manager
-	defhandler     definitions.DefinitionHandler
+	defhandler     definitions.Handler
 	defsender      definitions.Sender
 	data           data.Manager
 	syncasync      syncasync.Bridge

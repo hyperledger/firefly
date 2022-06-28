@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleIdentityVerificationBroadcast(ctx context.Context, state *core.BatchState, verifyMsg *core.Message, data core.DataArray) (HandlerResult, error) {
+func (dh *definitionHandler) handleIdentityVerificationBroadcast(ctx context.Context, state *core.BatchState, verifyMsg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var verification core.IdentityVerification
 	valid := dh.getSystemBroadcastPayload(ctx, verifyMsg, data, &verification)
 	if !valid {

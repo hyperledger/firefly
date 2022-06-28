@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (err error) {
+func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *core.FFI) (err error) {
 	if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
 		log.L(ctx).Warnf("Unable to process FFI %s - validate failed: %s", ffi.ID, err)
 		return nil
@@ -55,7 +55,7 @@ func (dh *definitionHandlers) persistFFI(ctx context.Context, ffi *core.FFI) (er
 	return nil
 }
 
-func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.ContractAPI) (retry bool, err error) {
+func (dh *definitionHandler) persistContractAPI(ctx context.Context, api *core.ContractAPI) (retry bool, err error) {
 	existing, err := dh.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
 	if err != nil {
 		return true, err
@@ -75,7 +75,7 @@ func (dh *definitionHandlers) persistContractAPI(ctx context.Context, api *core.
 	return false, nil
 }
 
-func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	var ffi core.FFI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
@@ -98,7 +98,7 @@ func (dh *definitionHandlers) handleFFIBroadcast(ctx context.Context, state *cor
 	return HandlerResult{Action: ActionConfirm}, nil
 }
 
-func (dh *definitionHandlers) handleContractAPIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	var api core.ContractAPI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {

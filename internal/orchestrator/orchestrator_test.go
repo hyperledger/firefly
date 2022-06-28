@@ -75,7 +75,7 @@ type testOrchestrator struct {
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
 	mae *spieventsmocks.Manager
-	mdh *definitionsmocks.DefinitionHandler
+	mdh *definitionsmocks.Handler
 	mmp *multipartymocks.Manager
 	mds *definitionsmocks.Sender
 }
@@ -134,7 +134,7 @@ func newTestOrchestrator() *testOrchestrator {
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
 		mae: &spieventsmocks.Manager{},
-		mdh: &definitionsmocks.DefinitionHandler{},
+		mdh: &definitionsmocks.Handler{},
 		mmp: &multipartymocks.Manager{},
 		mds: &definitionsmocks.Sender{},
 	}

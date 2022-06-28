@@ -28,7 +28,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleIdentityClaimBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, verificationID *fftypes.UUID) (HandlerResult, error) {
 	var claim core.IdentityClaim
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity claim", msg.Header.ID)
@@ -36,7 +36,7 @@ func (dh *definitionHandlers) handleIdentityClaimBroadcast(ctx context.Context, 
 	return dh.handleIdentityClaim(ctx, state, msg, &claim, verificationID)
 }
 
-func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *core.Message, identity *core.Identity, parent *core.Identity) error {
+func (dh *definitionHandler) verifyClaimSignature(ctx context.Context, msg *core.Message, identity *core.Identity, parent *core.Identity) error {
 	author := msg.Header.Author
 	if author == "" {
 		return i18n.NewError(ctx, coremsgs.MsgDefRejectedAuthorBlank, "identity claim", msg.Header.ID)
@@ -60,7 +60,7 @@ func (dh *definitionHandlers) verifyClaimSignature(ctx context.Context, msg *cor
 	return nil
 }
 
-func (dh *definitionHandlers) getClaimVerifier(msg *core.Message, identity *core.Identity) *core.Verifier {
+func (dh *definitionHandler) getClaimVerifier(msg *core.Message, identity *core.Identity) *core.Verifier {
 	verifier := &core.Verifier{
 		Identity:  identity.ID,
 		Namespace: identity.Namespace,
@@ -77,7 +77,7 @@ func (dh *definitionHandlers) getClaimVerifier(msg *core.Message, identity *core
 	return verifier
 }
 
-func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identity, parent *core.Identity) (*fftypes.UUID, error) {
+func (dh *definitionHandler) confirmVerificationForClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identity, parent *core.Identity) (*fftypes.UUID, error) {
 	// Query for messages on the topic for this DID, signed by the right identity
 	idTopic := identity.Topic()
 	fb := database.MessageQueryFactory.NewFilter(ctx)
@@ -126,7 +126,7 @@ func (dh *definitionHandlers) confirmVerificationForClaim(ctx context.Context, s
 	return nil, nil
 }
 
-func (dh *definitionHandlers) handleIdentityClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identityClaim *core.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *core.BatchState, msg *core.Message, identityClaim *core.IdentityClaim, verificationID *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 
 	identity := identityClaim.Identity

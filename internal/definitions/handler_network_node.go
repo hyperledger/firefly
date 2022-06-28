@@ -24,7 +24,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (dh *definitionHandlers) handleDeprecatedNodeBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
+func (dh *definitionHandler) handleDeprecatedNodeBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var nodeOld core.DeprecatedNode
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &nodeOld); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "node", msg.Header.ID)

@@ -73,7 +73,7 @@ func newTestEventManagerCommon(t *testing.T, metrics, dbconcurrency bool) (*even
 	mim := &identitymanagermocks.Manager{}
 	met := &eventsmocks.Plugin{}
 	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
+	msh := &definitionsmocks.Handler{}
 	mds := &definitionsmocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
@@ -142,7 +142,7 @@ func TestStartStopEventListenerFail(t *testing.T) {
 	mbi := &blockchainmocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
+	msh := &definitionsmocks.Handler{}
 	mds := &definitionsmocks.Sender{}
 	mbm := &broadcastmocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}

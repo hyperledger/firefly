@@ -35,7 +35,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
-type DefinitionHandler interface {
+type Handler interface {
 	HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error)
 	HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error
 }
@@ -77,7 +77,7 @@ func (dma DefinitionMessageAction) String() string {
 	}
 }
 
-type definitionHandlers struct {
+type definitionHandler struct {
 	namespace  string
 	multiparty bool
 	database   database.Plugin
@@ -89,11 +89,11 @@ type definitionHandlers struct {
 	contracts  contracts.Manager
 }
 
-func NewDefinitionHandler(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (DefinitionHandler, error) {
+func NewDefinitionHandler(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, dm data.Manager, im identity.Manager, am assets.Manager, cm contracts.Manager) (Handler, error) {
 	if di == nil || bi == nil || dm == nil || im == nil || am == nil || cm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DefinitionHandler")
 	}
-	return &definitionHandlers{
+	return &definitionHandler{
 		namespace:  ns,
 		multiparty: multiparty,
 		database:   di,
@@ -106,7 +106,7 @@ func NewDefinitionHandler(ctx context.Context, ns string, multiparty bool, di da
 	}, nil
 }
 
-func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
+func (dh *definitionHandler) HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (msgAction HandlerResult, err error) {
 	l := log.L(ctx)
 	l.Infof("Processing system definition '%s' [%s]", msg.Header.Tag, msg.Header.ID)
 	switch msg.Header.Tag {
@@ -135,7 +135,7 @@ func (dh *definitionHandlers) HandleDefinitionBroadcast(ctx context.Context, sta
 	}
 }
 
-func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg *core.Message, data core.DataArray, res core.Definition) (valid bool) {
+func (dh *definitionHandler) getSystemBroadcastPayload(ctx context.Context, msg *core.Message, data core.DataArray, res core.Definition) (valid bool) {
 	l := log.L(ctx)
 	if len(data) != 1 {
 		l.Warnf("Unable to process system definition %s - expecting 1 attachment, found %d", msg.Header.ID, len(data))
@@ -150,7 +150,7 @@ func (dh *definitionHandlers) getSystemBroadcastPayload(ctx context.Context, msg
 	return true
 }
 
-func (dh *definitionHandlers) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
+func (dh *definitionHandler) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
 	result, err := dh.HandleDefinitionBroadcast(ctx, state, msg, core.DataArray{data}, nil)
 	if result.Action == ActionReject {
 		return i18n.WrapError(ctx, err, coremsgs.MsgDefinitionRejected)
