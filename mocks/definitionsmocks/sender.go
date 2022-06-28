@@ -154,27 +154,18 @@ func (_m *Sender) CreateIdentityClaim(ctx context.Context, def *core.IdentityCla
 	return r0, r1
 }
 
-// CreateTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
-func (_m *Sender) CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (*core.Message, error) {
+// DefineTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
+func (_m *Sender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
 	ret := _m.Called(ctx, pool, waitConfirm)
 
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolAnnouncement, bool) *core.Message); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolAnnouncement, bool) error); ok {
 		r0 = rf(ctx, pool, waitConfirm)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPoolAnnouncement, bool) error); ok {
-		r1 = rf(ctx, pool, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // Init provides a mock function with given fields: handler

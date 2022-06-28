@@ -39,7 +39,7 @@ type Sender interface {
 	CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	CreateDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
 	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
+	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
 	CreateFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error)
 	CreateContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error)
 }
@@ -53,7 +53,19 @@ type definitionSender struct {
 	identity   identity.Manager
 	data       data.Manager
 	contracts  contracts.Manager
-	handler    Handler
+	handler    *definitionHandler
+}
+
+// Definitions that get processed immediately will create a temporary batch state and then finalize it inline
+func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchState) (HandlerResult, error)) error {
+	var state core.BatchState
+	if _, err := handler(ctx, &state); err != nil {
+		return err
+	}
+	if err := state.RunPreFinalize(ctx); err != nil {
+		return err
+	}
+	return state.RunFinalize(ctx)
 }
 
 func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, cm contracts.Manager) (Sender, error) {
@@ -77,7 +89,7 @@ func (bm *definitionSender) Name() string {
 }
 
 func (bm *definitionSender) Init(handler Handler) {
-	bm.handler = handler
+	bm.handler = handler.(*definitionHandler)
 }
 
 func (bm *definitionSender) CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {

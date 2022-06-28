@@ -22,14 +22,19 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *definitionSender) CreateTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error) {
-	if err := pool.Pool.Validate(ctx); err != nil {
-		return nil, err
+func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
+	if bm.multiparty {
+		if err := pool.Pool.Validate(ctx); err != nil {
+			return err
+		}
+		msg, err := bm.CreateDefinition(ctx, pool, core.SystemTagDefinePool, waitConfirm)
+		if msg != nil {
+			pool.Pool.Message = msg.Header.ID
+		}
+		return err
 	}
 
-	msg, err = bm.CreateDefinition(ctx, pool, core.SystemTagDefinePool, waitConfirm)
-	if msg != nil {
-		pool.Pool.Message = msg.Header.ID
-	}
-	return msg, err
+	return fakeBatch(ctx, func(ctx context.Context, state *core.BatchState) (HandlerResult, error) {
+		return bm.handler.handleTokenPoolDefinition(ctx, state, pool.Pool)
+	})
 }

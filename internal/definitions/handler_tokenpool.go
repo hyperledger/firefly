@@ -34,7 +34,10 @@ func (dh *definitionHandler) handleTokenPoolBroadcast(ctx context.Context, state
 
 	pool := announce.Pool
 	pool.Message = msg.Header.ID
+	return dh.handleTokenPoolDefinition(ctx, state, pool)
+}
 
+func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, state *core.BatchState, pool *core.TokenPool) (HandlerResult, error) {
 	// Set an event correlator, so that if we reject then the sync-async bridge action can know
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
