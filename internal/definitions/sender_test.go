@@ -21,9 +21,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/assetmocks"
+	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
+	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/sysmessagingmocks"
@@ -34,19 +37,22 @@ import (
 
 func newTestDefinitionSender(t *testing.T) (*definitionSender, func()) {
 	mdi := &databasemocks.Plugin{}
+	mbi := &blockchainmocks.Plugin{}
+	mdx := &dataexchangemocks.Plugin{}
 	mbm := &broadcastmocks.Manager{}
 	mim := &identitymanagermocks.Manager{}
 	mdm := &datamocks.Manager{}
+	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewDefinitionSender(ctx, "ns1", false, mdi, mbm, mim, mdm, mcm)
+	ds, _, err := NewDefinitionSender(ctx, "ns1", false, mdi, mbi, mdx, mbm, mim, mdm, mam, mcm)
 	assert.NoError(t, err)
-	return b.(*definitionSender), cancel
+	return ds.(*definitionSender), cancel
 }
 
 func TestInitSenderFail(t *testing.T) {
-	_, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil, nil, nil)
+	_, _, err := NewDefinitionSender(context.Background(), "", false, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

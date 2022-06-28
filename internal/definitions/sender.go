@@ -22,19 +22,21 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
+	"github.com/hyperledger/firefly/internal/assets"
 	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/contracts"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
+	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
+	"github.com/hyperledger/firefly/pkg/dataexchange"
 )
 
 type Sender interface {
 	core.Named
 
-	Init(handler Handler)
 	CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
 	DefineIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, tag string, waitConfirm bool) error
@@ -68,11 +70,11 @@ func fakeBatch(ctx context.Context, handler func(context.Context, *core.BatchSta
 	return err
 }
 
-func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, cm contracts.Manager) (Sender, error) {
+func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, bm broadcast.Manager, im identity.Manager, dm data.Manager, am assets.Manager, cm contracts.Manager) (Sender, Handler, error) {
 	if di == nil || im == nil || dm == nil || cm == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError)
 	}
-	return &definitionSender{
+	ds := &definitionSender{
 		ctx:        ctx,
 		namespace:  ns,
 		multiparty: multiparty,
@@ -81,15 +83,14 @@ func NewDefinitionSender(ctx context.Context, ns string, multiparty bool, di dat
 		identity:   im,
 		data:       dm,
 		contracts:  cm,
-	}, nil
+	}
+	dh, err := newDefinitionHandler(ctx, ns, multiparty, di, bi, dx, dm, im, am, cm)
+	ds.handler = dh
+	return ds, dh, err
 }
 
 func (bm *definitionSender) Name() string {
 	return "DefinitionSender"
-}
-
-func (bm *definitionSender) Init(handler Handler) {
-	bm.handler = handler.(*definitionHandler)
 }
 
 func (bm *definitionSender) createDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {

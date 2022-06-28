@@ -172,8 +172,7 @@ func TestDefineIdentityChildFail(t *testing.T) {
 func TestDefineIdentityNonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	dh, _ := newTestDefinitionHandler(t)
-	ds.Init(dh)
+	dh := ds.handler
 
 	mim := dh.identity.(*identitymanagermocks.Manager)
 	mim.On("VerifyIdentityChain", mock.Anything, mock.AnythingOfType("*core.Identity")).Return(nil, false, fmt.Errorf("pop"))

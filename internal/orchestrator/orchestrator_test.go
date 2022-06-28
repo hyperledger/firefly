@@ -348,15 +348,6 @@ func TestInitContractsComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitDefinitionsComponentFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.plugins.Database.Plugin = nil
-	or.defhandler = nil
-	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err)
-}
-
 func TestInitOperationsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)

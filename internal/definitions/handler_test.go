@@ -42,8 +42,8 @@ func newTestDefinitionHandler(t *testing.T) (*definitionHandler, *testDefinition
 	mam := &assetmocks.Manager{}
 	mcm := &contractmocks.Manager{}
 	mbi.On("VerifierType").Return(core.VerifierTypeEthAddress).Maybe()
-	dh, _ := NewDefinitionHandler(context.Background(), "ns1", false, mdi, mbi, mdx, mdm, mim, mam, mcm)
-	return dh.(*definitionHandler), newTestDefinitionBatchState(t)
+	dh, _ := newDefinitionHandler(context.Background(), "ns1", false, mdi, mbi, mdx, mdm, mim, mam, mcm)
+	return dh, newTestDefinitionBatchState(t)
 }
 
 type testDefinitionBatchState struct {
@@ -68,7 +68,7 @@ func (bs *testDefinitionBatchState) assertNoFinalizers() {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewDefinitionHandler(context.Background(), "", false, nil, nil, nil, nil, nil, nil, nil)
+	_, err := newDefinitionHandler(context.Background(), "", false, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

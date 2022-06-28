@@ -247,17 +247,3 @@ func (_m *Manager) SendMessage(ctx context.Context, in *core.MessageInOut, waitC
 
 	return r0, r1
 }
-
-// Start provides a mock function with given fields:
-func (_m *Manager) Start() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}

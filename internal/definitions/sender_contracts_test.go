@@ -99,9 +99,7 @@ func TestDefineFFIOk(t *testing.T) {
 func TestDefineFFINonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	dh, _ := newTestDefinitionHandler(t)
-	ds.Init(dh)
-	ds.multiparty = false
+	dh := ds.handler
 
 	ffi := &core.FFI{}
 
@@ -183,9 +181,7 @@ func TestDefineContractAPIOk(t *testing.T) {
 func TestDefineContractAPINonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
-	dh, _ := newTestDefinitionHandler(t)
-	ds.Init(dh)
-	ds.multiparty = false
+	dh := ds.handler
 
 	url := "http://firefly"
 	api := &core.ContractAPI{}

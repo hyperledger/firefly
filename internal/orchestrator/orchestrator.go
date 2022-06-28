@@ -456,7 +456,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 	}
 
 	if or.defsender == nil {
-		or.defsender, err = definitions.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.broadcast, or.identity, or.data, or.contracts)
+		or.defsender, or.defhandler, err = definitions.NewDefinitionSender(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.broadcast, or.identity, or.data, or.assets, or.contracts)
 		if err != nil {
 			return err
 		}
@@ -464,24 +464,6 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.networkmap == nil {
 		or.networkmap, err = networkmap.NewNetworkMap(ctx, or.namespace, or.database(), or.dataexchange(), or.defsender, or.identity, or.syncasync, or.multiparty)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (or *orchestrator) initHandlers(ctx context.Context) (err error) {
-	if or.defhandler == nil {
-		or.defhandler, err = definitions.NewDefinitionHandler(ctx, or.namespace, or.config.Multiparty.Enabled, or.database(), or.blockchain(), or.dataexchange(), or.data, or.identity, or.assets, or.contracts)
-		if err != nil {
-			return err
-		}
-	}
-
-	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
 		if err != nil {
 			return err
 		}
@@ -502,12 +484,14 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 		return err
 	}
 
-	if err := or.initHandlers(ctx); err != nil {
-		return err
+	if or.events == nil {
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
+		if err != nil {
+			return err
+		}
 	}
 
 	or.syncasync.Init(or.events)
-	or.defsender.Init(or.defhandler)
 
 	return nil
 }

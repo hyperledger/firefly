@@ -18,20 +18,6 @@ type Handler struct {
 	mock.Mock
 }
 
-// HandleDefinition provides a mock function with given fields: ctx, state, msg, data
-func (_m *Handler) HandleDefinition(ctx context.Context, state *core.BatchState, msg *core.Message, data *core.Data) error {
-	ret := _m.Called(ctx, state, msg, data)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.BatchState, *core.Message, *core.Data) error); ok {
-		r0 = rf(ctx, state, msg, data)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // HandleDefinitionBroadcast provides a mock function with given fields: ctx, state, msg, data, tx
 func (_m *Handler) HandleDefinitionBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (definitions.HandlerResult, error) {
 	ret := _m.Called(ctx, state, msg, data, tx)
