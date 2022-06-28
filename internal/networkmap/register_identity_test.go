@@ -46,7 +46,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
 
-	mds.On("DefineIdentity", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -54,7 +54,7 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		core.SystemTagIdentityClaim, false).Return(nil)
+		false).Return(nil)
 
 	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
@@ -93,7 +93,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
 
-	mds.On("DefineIdentity", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -101,7 +101,7 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		core.SystemTagIdentityClaim, false).Return(nil)
+		false).Return(nil)
 
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
@@ -133,13 +133,13 @@ func TestRegisterIdentityOrgNonMultiparty(t *testing.T) {
 	}, false, nil)
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
-	mds.On("DefineIdentity", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
 		(*core.SignerRef)(nil),
-		core.SystemTagIdentityClaim, false).Return(fmt.Errorf("pop"))
+		false).Return(fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
@@ -167,7 +167,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
 
-	mds.On("DefineIdentity", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
@@ -175,7 +175,7 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		core.SystemTagIdentityClaim, false).Return(nil)
+		false).Return(nil)
 
 	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",

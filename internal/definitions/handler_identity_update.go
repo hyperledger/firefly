@@ -19,19 +19,32 @@ package definitions
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
+type identityUpdateMsgInfo struct {
+	ID     *fftypes.UUID
+	Author string
+}
+
 func (dh *definitionHandler) handleIdentityUpdateBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray) (HandlerResult, error) {
 	var update core.IdentityUpdate
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &update); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity update", msg.Header.ID)
 	}
+	return dh.handleIdentityUpdate(ctx, state, &identityUpdateMsgInfo{
+		ID:     msg.Header.ID,
+		Author: msg.Header.Author,
+	}, &update)
+}
+
+func (dh *definitionHandler) handleIdentityUpdate(ctx context.Context, state *core.BatchState, msg *identityUpdateMsgInfo, update *core.IdentityUpdate) (HandlerResult, error) {
 	if err := update.Identity.Validate(ctx); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity update", msg.Header.ID, err)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "identity update", update.Identity.ID, err)
 	}
 
 	// Get the existing identity (must be a confirmed identity at the point an update is issued)
@@ -40,17 +53,17 @@ func (dh *definitionHandler) handleIdentityUpdateBroadcast(ctx context.Context, 
 		return HandlerResult{Action: ActionRetry}, err
 	}
 	if identity == nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity update", msg.Header.ID, update.Identity.ID)
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedIdentityNotFound, "identity update", update.Identity.ID, update.Identity.ID)
 	}
 
 	// Check the author matches
-	if identity.DID != msg.Header.Author {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", msg.Header.ID, msg.Header.Author)
+	if dh.multiparty && identity.DID != msg.Author {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedWrongAuthor, "identity update", update.Identity.ID, msg.Author)
 	}
 
 	// Update the profile
 	identity.IdentityProfile = update.Updates
-	identity.Messages.Update = msg.Header.ID
+	identity.Messages.Update = msg.ID
 	err = dh.database.UpsertIdentity(ctx, identity, database.UpsertOptimizationExisting)
 	if err != nil {
 		return HandlerResult{Action: ActionRetry}, err

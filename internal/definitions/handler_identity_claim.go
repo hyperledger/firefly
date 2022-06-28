@@ -53,6 +53,7 @@ func (dh *definitionHandler) handleIdentityClaimBroadcast(ctx context.Context, s
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &claim); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "identity claim", msg.Header.ID)
 	}
+	claim.Identity.Messages.Claim = msg.Header.ID
 	return dh.handleIdentityClaim(ctx, state, buildIdentityMsgInfo(msg, verifyMsgID), &claim)
 }
 
@@ -151,9 +152,10 @@ func (dh *definitionHandler) handleIdentityClaim(ctx context.Context, state *cor
 
 	identity := identityClaim.Identity
 	parent, retryable, err := dh.identity.VerifyIdentityChain(ctx, identity)
-	if err != nil && retryable {
-		return HandlerResult{Action: ActionRetry}, err
-	} else if err != nil {
+	if err != nil {
+		if retryable {
+			return HandlerResult{Action: ActionRetry}, err
+		}
 		// This cannot be processed as something in the identity chain is invalid.
 		// We treat this as a park - because we don't know if the parent identity
 		// will be processed after this message and generate a rewind.

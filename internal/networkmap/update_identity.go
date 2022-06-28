@@ -60,14 +60,9 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 	}
 
 	// Send the update
-	updateMsg, err := nm.defsender.CreateDefinition(ctx, &core.IdentityUpdate{
+	err = nm.defsender.UpdateIdentity(ctx, identity, &core.IdentityUpdate{
 		Identity: identity.IdentityBase,
 		Updates:  dto.IdentityProfile,
-	}, updateSigner, core.SystemTagIdentityUpdate, waitConfirm)
-	if err != nil {
-		return nil, err
-	}
-	identity.Messages.Update = updateMsg.Header.ID
-
+	}, updateSigner, waitConfirm)
 	return identity, err
 }

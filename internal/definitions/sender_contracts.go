@@ -38,7 +38,7 @@ func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *core.FFI, waitCo
 			return err
 		}
 
-		msg, err := bm.createDefinitionDefault(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
+		msg, err := bm.sendDefinitionDefault(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
 		if msg != nil {
 			ffi.Message = msg.Header.ID
 		}
@@ -59,7 +59,7 @@ func (bm *definitionSender) DefineContractAPI(ctx context.Context, httpServerURL
 			return err
 		}
 
-		msg, err := bm.createDefinitionDefault(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
+		msg, err := bm.sendDefinitionDefault(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
 		if msg != nil {
 			api.Message = msg.Header.ID
 		}

@@ -75,7 +75,7 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
 	ds.multiparty = true
-	_, err := ds.createDefinitionDefault(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
+	_, err := ds.sendDefinitionDefault(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -97,7 +97,7 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 
 	ds.multiparty = true
 
-	_, err := ds.createDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
+	_, err := ds.sendDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -113,7 +113,7 @@ func TestCreateDefinitionBadIdentity(t *testing.T) {
 
 	mim := ds.identity.(*identitymanagermocks.Manager)
 	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
-	_, err := ds.CreateDefinition(ds.ctx, &core.Namespace{}, &core.SignerRef{
+	_, err := ds.sendDefinition(ds.ctx, &core.Namespace{}, &core.SignerRef{
 		Author: "wrong",
 		Key:    "wrong",
 	}, core.SystemTagDefineNamespace, false)

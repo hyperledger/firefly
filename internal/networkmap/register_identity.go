@@ -111,5 +111,5 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCr
 }
 
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Identity, claimSigner *core.SignerRef, parentSigner *core.SignerRef) error {
-	return nm.defsender.DefineIdentity(ctx, &core.IdentityClaim{Identity: identity}, claimSigner, parentSigner, core.SystemTagIdentityClaim, false)
+	return nm.defsender.ClaimIdentity(ctx, &core.IdentityClaim{Identity: identity}, claimSigner, parentSigner, false)
 }

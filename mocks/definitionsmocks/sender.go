@@ -15,27 +15,18 @@ type Sender struct {
 	mock.Mock
 }
 
-// CreateDefinition provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Sender) CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
+// ClaimIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner, waitConfirm
+func (_m *Sender) ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error {
+	ret := _m.Called(ctx, def, signingIdentity, parentSigner, waitConfirm)
 
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, core.Definition, *core.SignerRef, string, bool) *core.Message); ok {
-		r0 = rf(ctx, def, signingIdentity, tag, waitConfirm)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef, bool) error); ok {
+		r0 = rf(ctx, def, signingIdentity, parentSigner, waitConfirm)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.Definition, *core.SignerRef, string, bool) error); ok {
-		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // DefineContractAPI provides a mock function with given fields: ctx, httpServerURL, api, waitConfirm
@@ -80,20 +71,6 @@ func (_m *Sender) DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool
 	return r0
 }
 
-// DefineIdentity provides a mock function with given fields: ctx, def, signingIdentity, parentSigner, tag, waitConfirm
-func (_m *Sender) DefineIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, tag string, waitConfirm bool) error {
-	ret := _m.Called(ctx, def, signingIdentity, parentSigner, tag, waitConfirm)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, *core.SignerRef, string, bool) error); ok {
-		r0 = rf(ctx, def, signingIdentity, parentSigner, tag, waitConfirm)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DefineTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
 func (_m *Sender) DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error {
 	ret := _m.Called(ctx, pool, waitConfirm)
@@ -117,6 +94,20 @@ func (_m *Sender) Name() string {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// UpdateIdentity provides a mock function with given fields: ctx, identity, def, signingIdentity, waitConfirm
+func (_m *Sender) UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error {
+	ret := _m.Called(ctx, identity, def, signingIdentity, waitConfirm)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Identity, *core.IdentityUpdate, *core.SignerRef, bool) error); ok {
+		r0 = rf(ctx, identity, def, signingIdentity, waitConfirm)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0

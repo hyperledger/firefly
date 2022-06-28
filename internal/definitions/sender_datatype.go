@@ -44,7 +44,7 @@ func (bm *definitionSender) DefineDatatype(ctx context.Context, datatype *core.D
 			return err
 		}
 
-		msg, err := bm.createDefinitionDefault(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
+		msg, err := bm.sendDefinitionDefault(ctx, datatype, core.SystemTagDefineDatatype, waitConfirm)
 		if msg != nil {
 			datatype.Message = msg.Header.ID
 		}

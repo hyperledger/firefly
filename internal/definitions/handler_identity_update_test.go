@@ -122,6 +122,7 @@ func TestHandleDefinitionIdentityUpdateUpsertFail(t *testing.T) {
 func TestHandleDefinitionIdentityInvalidIdentity(t *testing.T) {
 	dh, bs := newTestDefinitionHandler(t)
 	ctx := context.Background()
+	dh.multiparty = true
 
 	org1, updateMsg, updateData, _ := testIdentityUpdate(t)
 	updateMsg.Header.Author = "wrong"

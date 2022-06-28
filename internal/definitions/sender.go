@@ -37,9 +37,9 @@ import (
 type Sender interface {
 	core.Named
 
-	CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
+	ClaimIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, waitConfirm bool) error
+	UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
-	DefineIdentity(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, parentSigner *core.SignerRef, tag string, waitConfirm bool) error
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
 	DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
@@ -93,23 +93,21 @@ func (bm *definitionSender) Name() string {
 	return "DefinitionSender"
 }
 
-func (bm *definitionSender) createDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
-	return bm.CreateDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
+func (bm *definitionSender) sendDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+	return bm.sendDefinition(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 
-func (bm *definitionSender) CreateDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *definitionSender) sendDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error) {
 
-	if bm.multiparty {
-		err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
-		if err != nil {
-			return nil, err
-		}
+	err = bm.identity.ResolveInputSigningIdentity(ctx, signingIdentity)
+	if err != nil {
+		return nil, err
 	}
 
-	return bm.createDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
+	return bm.sendDefinitionCommon(ctx, def, signingIdentity, tag, waitConfirm)
 }
 
-func (bm *definitionSender) createDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
+func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
 
 	b, err := json.Marshal(&def)
 	if err != nil {
@@ -124,16 +122,14 @@ func (bm *definitionSender) createDefinitionCommon(ctx context.Context, def core
 				Topics:    core.FFStringArray{def.Topic()},
 				Tag:       tag,
 				TxType:    core.TransactionTypeBatchPin,
+				SignerRef: *signingIdentity,
 			},
 		},
-	}
-	if signingIdentity != nil {
-		message.Header.SignerRef = *signingIdentity
+		InlineData: core.InlineData{
+			&core.DataRefOrValue{Value: dataValue},
+		},
 	}
 
-	message.InlineData = core.InlineData{
-		&core.DataRefOrValue{Value: dataValue},
-	}
 	sender := bm.broadcast.NewBroadcast(message)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)

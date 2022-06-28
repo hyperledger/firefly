@@ -29,7 +29,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDefineIdentity(t *testing.T) {
+func TestClaimIdentity(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -43,11 +43,11 @@ func TestDefineIdentity(t *testing.T) {
 
 	ds.multiparty = true
 
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
+	err := ds.ClaimIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, core.SystemTagDefineNamespace, true)
+	}, nil, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -55,7 +55,7 @@ func TestDefineIdentity(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
-func TestDefineIdentityFail(t *testing.T) {
+func TestClaimIdentityFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -69,11 +69,11 @@ func TestDefineIdentityFail(t *testing.T) {
 
 	ds.multiparty = true
 
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
+	err := ds.ClaimIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, core.SystemTagDefineNamespace, true)
+	}, nil, true)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -81,7 +81,7 @@ func TestDefineIdentityFail(t *testing.T) {
 	mms.AssertExpectations(t)
 }
 
-func TestDefineIdentityFailKey(t *testing.T) {
+func TestClaimIdentityFailKey(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -91,17 +91,17 @@ func TestDefineIdentityFailKey(t *testing.T) {
 
 	ds.multiparty = true
 
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
+	err := ds.ClaimIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, core.SystemTagDefineNamespace, true)
+	}, nil, true)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
 }
 
-func TestDefineIdentityChild(t *testing.T) {
+func TestClaimIdentityChild(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -121,13 +121,13 @@ func TestDefineIdentityChild(t *testing.T) {
 
 	ds.multiparty = true
 
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
+	err := ds.ClaimIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
 	}, &core.SignerRef{
 		Key: "0x2345",
-	}, core.SystemTagDefineNamespace, true)
+	}, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -135,7 +135,7 @@ func TestDefineIdentityChild(t *testing.T) {
 	mms1.AssertExpectations(t)
 }
 
-func TestDefineIdentityChildFail(t *testing.T) {
+func TestClaimIdentityChildFail(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 
@@ -155,13 +155,13 @@ func TestDefineIdentityChildFail(t *testing.T) {
 
 	ds.multiparty = true
 
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
+	err := ds.ClaimIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
 	}, &core.SignerRef{
 		Key: "0x2345",
-	}, core.SystemTagDefineNamespace, true)
+	}, true)
 	assert.EqualError(t, err, "pop")
 
 	mim.AssertExpectations(t)
@@ -169,7 +169,7 @@ func TestDefineIdentityChildFail(t *testing.T) {
 	mms1.AssertExpectations(t)
 }
 
-func TestDefineIdentityNonMultiparty(t *testing.T) {
+func TestClaimIdentityNonMultiparty(t *testing.T) {
 	ds, cancel := newTestDefinitionSender(t)
 	defer cancel()
 	dh := ds.handler
@@ -179,12 +179,56 @@ func TestDefineIdentityNonMultiparty(t *testing.T) {
 
 	ds.multiparty = false
 
-	err := ds.DefineIdentity(ds.ctx, &core.IdentityClaim{
+	err := ds.ClaimIdentity(ds.ctx, &core.IdentityClaim{
 		Identity: &core.Identity{},
 	}, &core.SignerRef{
 		Key: "0x1234",
-	}, nil, core.SystemTagDefineNamespace, true)
+	}, nil, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
+}
+
+func TestUpdateIdentity(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+
+	mim := ds.identity.(*identitymanagermocks.Manager)
+	mbm := ds.broadcast.(*broadcastmocks.Manager)
+	mms := &sysmessagingmocks.MessageSender{}
+
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
+	mms.On("Send", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", mock.Anything, mock.MatchedBy(func(signer *core.SignerRef) bool {
+		return signer.Key == "0x1234"
+	})).Return(nil)
+
+	ds.multiparty = true
+
+	err := ds.UpdateIdentity(ds.ctx, &core.Identity{}, &core.IdentityUpdate{
+		Identity: core.IdentityBase{},
+		Updates:  core.IdentityProfile{},
+	}, &core.SignerRef{
+		Key: "0x1234",
+	}, false)
+	assert.NoError(t, err)
+
+	mim.AssertExpectations(t)
+	mbm.AssertExpectations(t)
+	mms.AssertExpectations(t)
+}
+
+func TestUpdateIdentityNonMultiparty(t *testing.T) {
+	ds, cancel := newTestDefinitionSender(t)
+	defer cancel()
+
+	ds.multiparty = false
+
+	err := ds.UpdateIdentity(ds.ctx, &core.Identity{}, &core.IdentityUpdate{
+		Identity: core.IdentityBase{},
+		Updates:  core.IdentityProfile{},
+	}, &core.SignerRef{
+		Key: "0x1234",
+	}, false)
+	assert.Regexp(t, "FF10403", err)
 }

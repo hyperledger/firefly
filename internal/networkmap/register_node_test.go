@@ -55,11 +55,11 @@ func TestRegisterNodeOk(t *testing.T) {
 	}, nil)
 
 	mds := nm.defsender.(*definitionsmocks.Sender)
-	mds.On("DefineIdentity", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		signerRef,
 		(*core.SignerRef)(nil),
-		core.SystemTagIdentityClaim, false).Return(nil)
+		false).Return(nil)
 
 	node, err := nm.RegisterNode(nm.ctx, false)
 	assert.NoError(t, err)

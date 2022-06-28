@@ -28,7 +28,7 @@ func (bm *definitionSender) DefineTokenPool(ctx context.Context, pool *core.Toke
 			return err
 		}
 
-		msg, err := bm.createDefinitionDefault(ctx, pool, core.SystemTagDefinePool, waitConfirm)
+		msg, err := bm.sendDefinitionDefault(ctx, pool, core.SystemTagDefinePool, waitConfirm)
 		if msg != nil {
 			pool.Pool.Message = msg.Header.ID
 		}
