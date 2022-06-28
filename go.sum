@@ -726,10 +726,8 @@ github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/J
 github.com/hashicorp/serf v0.9.6/go.mod h1:TXZNMjZQijwlDvp+r0b63xZ45H7JmCmgg4gpTwn9UV4=
 github.com/hashicorp/serf v0.9.7/go.mod h1:TXZNMjZQijwlDvp+r0b63xZ45H7JmCmgg4gpTwn9UV4=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
-github.com/hyperledger/firefly-common v0.1.11-0.20220616154518-160b5cf404cc h1:QLDIYiK9+CTIQ5a2F6zLbjIsxW1+VW4BGNBIkwTYQ9Q=
-github.com/hyperledger/firefly-common v0.1.11-0.20220616154518-160b5cf404cc/go.mod h1:2NqPi5Ud9H6rSlZXkLbotxW7z4EAD89p3/8oNOpm9Gs=
-github.com/hyperledger/firefly-signer v0.9.11-0.20220617121121-907f2dd3b6fd h1:dZiUGENFiU3i88C+smXY9ANUopBvjFaaCGRQbj55uKU=
-github.com/hyperledger/firefly-signer v0.9.11-0.20220617121121-907f2dd3b6fd/go.mod h1:ycTpoDzq4/NS3F0Kq4u1ISdSW62xx6pMPMd3SkmB1UQ=
+github.com/hyperledger/firefly-common v0.1.13 h1:eNK99U9FV43u1F46MM0mPuXT4Xn++orghpoTIIPsmwo=
+github.com/hyperledger/firefly-common v0.1.13/go.mod h1:2NqPi5Ud9H6rSlZXkLbotxW7z4EAD89p3/8oNOpm9Gs=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=

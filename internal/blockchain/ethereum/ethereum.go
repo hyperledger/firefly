@@ -34,7 +34,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
-	"github.com/hyperledger/firefly-signer/pkg/ffi"
+	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -779,7 +779,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 	if err != nil {
 		return err
 	}
-	abi, err := ffi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
+	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, &listener.Event.FFIEventDefinition)
 	if err != nil {
 		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
 	}
@@ -802,20 +802,20 @@ func (e *Ethereum) DeleteContractListener(ctx context.Context, subscription *cor
 }
 
 func (e *Ethereum) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
-	return &ffi.ParamValidator{}, nil
+	return &ffi2abi.ParamValidator{}, nil
 }
 
 func (e *Ethereum) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
-	abi, err := ffi.ConvertFFIEventDefinitionToABI(ctx, event)
+	abi, err := ffi2abi.ConvertFFIEventDefinitionToABI(ctx, event)
 	if err != nil {
 		return ""
 	}
-	return ffi.ABIMethodToSignature(abi)
+	return ffi2abi.ABIMethodToSignature(abi)
 }
 
 func (e *Ethereum) prepareRequest(ctx context.Context, method *fftypes.FFIMethod, input map[string]interface{}) (*abi.Entry, []interface{}, error) {
 	orderedInput := make([]interface{}, len(method.Params))
-	abi, err := ffi.ConvertFFIMethodToABI(ctx, method)
+	abi, err := ffi2abi.ConvertFFIMethodToABI(ctx, method)
 	if err != nil {
 		return abi, orderedInput, err
 	}
@@ -849,7 +849,7 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	if len(*input.ABI) == 0 {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationFailed, "ABI is empty")
 	}
-	return ffi.ConvertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
+	return ffi2abi.ConvertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 }
 
 func (e *Ethereum) getNetworkVersion(ctx context.Context, address string) (int, error) {

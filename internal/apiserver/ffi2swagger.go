@@ -95,20 +95,28 @@ func (og *ffiSwaggerGen) addMethod(routes []*ffapi.Route, method *fftypes.FFIMet
 		description = fmt.Sprintf("%s\n\n%s:\n\n%s", description, additionalDetailsHeader, buildDetailsTable(ctx, method.Details))
 	}
 	routes = append(routes, &ffapi.Route{
-		Name:                     fmt.Sprintf("invoke_%s", method.Pathname),
-		Path:                     fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
-		Method:                   http.MethodPost,
-		JSONInputSchema:          func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
-		JSONOutputSchema:         func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
+		Name:   fmt.Sprintf("invoke_%s", method.Pathname),
+		Path:   fmt.Sprintf("invoke/%s", method.Pathname), // must match a route defined in apiserver routes!
+		Method: http.MethodPost,
+		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
+			return contractJSONSchema(&method.Params, hasLocation)
+		},
+		JSONOutputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
+			return contractJSONSchema(&method.Returns, true)
+		},
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
 	})
 	routes = append(routes, &ffapi.Route{
-		Name:                     fmt.Sprintf("query_%s", method.Pathname),
-		Path:                     fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
-		Method:                   http.MethodPost,
-		JSONInputSchema:          func(ctx context.Context) string { return contractCallJSONSchema(&method.Params, hasLocation).String() },
-		JSONOutputSchema:         func(ctx context.Context) string { return ffiParamsJSONSchema(&method.Returns).String() },
+		Name:   fmt.Sprintf("query_%s", method.Pathname),
+		Path:   fmt.Sprintf("query/%s", method.Pathname), // must match a route defined in apiserver routes!
+		Method: http.MethodPost,
+		JSONInputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
+			return contractJSONSchema(&method.Params, hasLocation)
+		},
+		JSONOutputSchema: func(ctx context.Context, schemaGen ffapi.SchemaGenerator) (*openapi3.SchemaRef, error) {
+			return contractJSONSchema(&method.Returns, true)
+		},
 		JSONOutputCodes:          []int{http.StatusOK},
 		PreTranslatedDescription: description,
 	})
@@ -154,9 +162,17 @@ func (og *ffiSwaggerGen) addEvent(routes []*ffapi.Route, event *fftypes.FFIEvent
  * Parse the FFI and build a corresponding JSON Schema to describe the request body for "invoke".
  * Returns the JSON Schema as an `fftypes.JSONObject`.
  */
-func contractCallJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftypes.JSONObject {
+func contractJSONSchema(params *fftypes.FFIParams, hasLocation bool) (*openapi3.SchemaRef, error) {
+	paramSchema := make(fftypes.JSONObject, len(*params))
+	for _, param := range *params {
+		paramSchema[param.Name] = param.Schema
+	}
+	inputSchema := fftypes.JSONObject{
+		"type":       "object",
+		"properties": paramSchema,
+	}
 	properties := fftypes.JSONObject{
-		"input": ffiParamsJSONSchema(params),
+		"input": inputSchema,
 		"options": fftypes.JSONObject{
 			"type": "object",
 		},
@@ -164,29 +180,20 @@ func contractCallJSONSchema(params *fftypes.FFIParams, hasLocation bool) *fftype
 	if !hasLocation {
 		properties["location"] = fftypes.JSONAnyPtr(`{}`)
 	}
-	return &fftypes.JSONObject{
+	schema := fftypes.JSONObject{
 		"type":       "object",
 		"properties": properties,
 	}
-}
-
-func ffiParamsJSONSchema(params *fftypes.FFIParams) *fftypes.JSONObject {
-	out := make(fftypes.JSONObject, len(*params))
-	for _, param := range *params {
-		out[param.Name] = ffiParamJSONSchema(param)
+	b, err := json.Marshal(schema)
+	if err != nil {
+		return nil, err
 	}
-	return &fftypes.JSONObject{
-		"type":       "object",
-		"properties": out,
+	s := openapi3.NewSchema()
+	err = s.UnmarshalJSON(b)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func ffiParamJSONSchema(param *fftypes.FFIParam) *fftypes.JSONObject {
-	out := fftypes.JSONObject{}
-	if err := json.Unmarshal(param.Schema.Bytes(), &out); err == nil {
-		return &out
-	}
-	return nil
+	return openapi3.NewSchemaRef("", s), nil
 }
 
 func buildDetailsTable(ctx context.Context, details map[string]interface{}) string {

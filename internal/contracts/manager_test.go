@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly-signer/pkg/ffi"
+	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/txcommon"
@@ -99,7 +99,7 @@ func TestNewContractManagerFFISchemaLoader(t *testing.T) {
 	mom := &operationmocks.Manager{}
 	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
 	msa := &syncasyncmocks.Bridge{}
-	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ffi.ParamValidator{}, nil)
+	mbi.On("GetFFIParamValidator", mock.Anything).Return(&ffi2abi.ParamValidator{}, nil)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	_, err := NewContractManager(context.Background(), mdi, mbm, mim, mbi, mom, txHelper, msa)
 	assert.NoError(t, err)
@@ -164,7 +164,7 @@ func TestBroadcastFFIInvalid(t *testing.T) {
 				Params: []*fftypes.FFIParam{
 					{
 						Name:   "x",
-						Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
+						Schema: fftypes.JSONAnyPtr(`{"type": "null"}`),
 					},
 				},
 			},
@@ -324,6 +324,39 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 			Params: []*fftypes.FFIParam{
 				{
 					Name:   "x",
+					Schema: fftypes.JSONAnyPtr(`{"type": "null", "details": {"type": "uint256"}}`),
+				},
+				{
+					Name:   "y",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
+				},
+			},
+			Returns: []*fftypes.FFIParam{
+				{
+					Name:   "z",
+					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
+				},
+			},
+		},
+		Input: map[string]interface{}{
+			"x": float64(1),
+			"y": float64(2),
+		},
+	}
+
+	err := cm.validateInvokeContractRequest(context.Background(), req)
+	assert.Regexp(t, "does not validate", err)
+}
+
+func TestValidateInvokeContractRequestInvalidReturn(t *testing.T) {
+	cm := newTestContractManager()
+	req := &core.ContractCallRequest{
+		Type: core.CallTypeInvoke,
+		Method: &fftypes.FFIMethod{
+			Name: "sum",
+			Params: []*fftypes.FFIParam{
+				{
+					Name:   "x",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
 				},
 				{
@@ -334,7 +367,7 @@ func TestValidateInvokeContractRequestInvalidParam(t *testing.T) {
 			Returns: []*fftypes.FFIParam{
 				{
 					Name:   "z",
-					Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
+					Schema: fftypes.JSONAnyPtr(`{"type": "null"}`),
 				},
 			},
 		},
@@ -941,7 +974,7 @@ func TestAddContractListenerValidateFail(t *testing.T) {
 					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
-							Schema: fftypes.JSONAnyPtr(`{"type": "number"}`),
+							Schema: fftypes.JSONAnyPtr(`{"type": "null"}`),
 						},
 					},
 				},

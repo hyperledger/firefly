@@ -186,10 +186,21 @@ func TestGenerateWithLocation(t *testing.T) {
 }
 
 func TestFFIParamBadSchema(t *testing.T) {
-	param := &fftypes.FFIParam{
-		Name:   "test",
-		Schema: fftypes.JSONAnyPtr(`{`),
+	params := &fftypes.FFIParams{
+		&fftypes.FFIParam{
+			Name:   "test",
+			Schema: fftypes.JSONAnyPtr(`{`),
+		},
 	}
-	r := ffiParamJSONSchema(param)
-	assert.Nil(t, r)
+	_, err := contractJSONSchema(params, true)
+	assert.Error(t, err)
+
+	params = &fftypes.FFIParams{
+		&fftypes.FFIParam{
+			Name:   "test",
+			Schema: fftypes.JSONAnyPtr(`{"type": false}`),
+		},
+	}
+	_, err = contractJSONSchema(params, true)
+	assert.Error(t, err)
 }
