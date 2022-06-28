@@ -35,7 +35,6 @@ type Sender interface {
 	core.Named
 
 	Init(handler Handler)
-	CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
 	CreateDefinitionWithIdentity(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
 	CreateIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
@@ -92,7 +91,7 @@ func (bm *definitionSender) Init(handler Handler) {
 	bm.handler = handler.(*definitionHandler)
 }
 
-func (bm *definitionSender) CreateDefinition(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
+func (bm *definitionSender) createDefinitionDefault(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error) {
 	return bm.CreateDefinitionWithIdentity(ctx, def, &core.SignerRef{ /* resolve to node default */ }, tag, waitConfirm)
 }
 

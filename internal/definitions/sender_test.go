@@ -70,7 +70,7 @@ func TestCreateDefinitionConfirm(t *testing.T) {
 	mms.On("SendAndWait", mock.Anything).Return(nil)
 
 	ds.multiparty = true
-	_, err := ds.CreateDefinition(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
+	_, err := ds.createDefinitionDefault(ds.ctx, &core.Namespace{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
@@ -136,7 +136,7 @@ func TestCreateDatatypeDefinitionAsNodeConfirm(t *testing.T) {
 
 	ds.multiparty = true
 
-	_, err := ds.CreateDefinition(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
+	_, err := ds.createDefinitionDefault(ds.ctx, &core.Datatype{}, core.SystemTagDefineNamespace, true)
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
