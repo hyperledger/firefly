@@ -55,7 +55,7 @@ func (cb *callbacks) TokenOpUpdate(ctx context.Context, plugin tokens.Plugin, ns
 	}
 }
 
-func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
+func (cb *callbacks) TokenPoolCreated(ctx context.Context, namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
@@ -67,11 +67,12 @@ func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, po
 		if handler, ok := cb.handlers[namespace]; ok {
 			return handler.TokenPoolCreated(plugin, pool)
 		}
+		log.L(ctx).Errorf("No handler found for token pool event on namespace '%s'", namespace)
 	}
 	return nil
 }
 
-func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
+func (cb *callbacks) TokensTransferred(ctx context.Context, namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
@@ -83,11 +84,12 @@ func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, t
 		if handler, ok := cb.handlers[namespace]; ok {
 			return handler.TokensTransferred(plugin, transfer)
 		}
+		log.L(ctx).Errorf("No handler found for token transfer event on namespace '%s'", namespace)
 	}
 	return nil
 }
 
-func (cb *callbacks) TokensApproved(namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+func (cb *callbacks) TokensApproved(ctx context.Context, namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
 	if namespace == "" {
 		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
@@ -99,6 +101,7 @@ func (cb *callbacks) TokensApproved(namespace string, plugin tokens.Plugin, appr
 		if handler, ok := cb.handlers[namespace]; ok {
 			return handler.TokensApproved(plugin, approval)
 		}
+		log.L(ctx).Errorf("No handler found for token approval event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -336,7 +339,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokenPoolCreated(namespace, ft, pool)
+	return ft.callbacks.TokenPoolCreated(ctx, namespace, ft, pool)
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -425,7 +428,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokensTransferred(namespace, ft, transfer)
+	return ft.callbacks.TokensTransferred(ctx, namespace, ft, transfer)
 }
 
 func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -500,7 +503,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 		},
 	}
 
-	return ft.callbacks.TokensApproved(namespace, ft, approval)
+	return ft.callbacks.TokensApproved(ctx, namespace, ft, approval)
 }
 
 func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err error) {
