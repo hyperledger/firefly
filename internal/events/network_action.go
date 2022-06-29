@@ -19,18 +19,18 @@ package events
 import (
 	"context"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
-	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (em *eventManager) actionTerminate(mm multiparty.Manager, event *blockchain.Event) error {
+func (em *eventManager) actionTerminate(location *fftypes.JSONAny, event *blockchain.Event) error {
 	namespace, err := em.database.GetNamespace(em.ctx, em.namespace)
 	if err != nil {
 		return err
 	}
-	if err := mm.TerminateContract(em.ctx, &namespace.Contracts, event); err != nil {
+	if err := em.multiparty.TerminateContract(em.ctx, &namespace.Contracts, location, event); err != nil {
 		return err
 	}
 	// Currently, a termination event is implied to apply to ALL namespaces
@@ -42,7 +42,7 @@ func (em *eventManager) actionTerminate(mm multiparty.Manager, event *blockchain
 	})
 }
 
-func (em *eventManager) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
+func (em *eventManager) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
 	return em.retry.Do(em.ctx, "handle network action", func(attempt int) (retry bool, err error) {
 		// Verify that the action came from a registered root org
 		resolvedAuthor, err := em.identity.FindIdentityForVerifier(em.ctx, []core.IdentityType{core.IdentityTypeOrg}, signingKey)
@@ -59,7 +59,7 @@ func (em *eventManager) BlockchainNetworkAction(action string, event *blockchain
 		}
 
 		if action == core.NetworkActionTerminate.String() {
-			err = em.actionTerminate(em.multiparty, event)
+			err = em.actionTerminate(location, event)
 		} else {
 			log.L(em.ctx).Errorf("Ignoring unrecognized network action: %s", action)
 			return false, nil

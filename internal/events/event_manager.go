@@ -67,7 +67,7 @@ type EventManager interface {
 	// Bound blockchain callbacks
 	BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error
 	BlockchainEvent(event *blockchain.EventWithSubscription) error
-	BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error
 
 	// Bound dataexchange callbacks
 	DXEvent(dx dataexchange.Plugin, event dataexchange.DXEvent)

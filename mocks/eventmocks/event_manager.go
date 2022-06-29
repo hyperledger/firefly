@@ -69,13 +69,13 @@ func (_m *EventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 	return r0
 }
 
-// BlockchainNetworkAction provides a mock function with given fields: action, event, signingKey
-func (_m *EventManager) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	ret := _m.Called(action, event, signingKey)
+// BlockchainNetworkAction provides a mock function with given fields: action, location, event, signingKey
+func (_m *EventManager) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	ret := _m.Called(action, location, event, signingKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, *blockchain.Event, *core.VerifierRef) error); ok {
-		r0 = rf(action, event, signingKey)
+	if rf, ok := ret.Get(0).(func(string, *fftypes.JSONAny, *blockchain.Event, *core.VerifierRef) error); ok {
+		r0 = rf(action, location, event, signingKey)
 	} else {
 		r0 = ret.Error(0)
 	}

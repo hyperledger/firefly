@@ -401,34 +401,6 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 	mp.mbi.AssertExpectations(t)
 }
 
-func TestSubmitNetworkActionBadNS(t *testing.T) {
-	contracts := make([]Contract, 1)
-	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
-		"address": "0x123",
-	}.String())
-	contract := Contract{
-		FirstEvent: "0",
-		Location:   location,
-	}
-
-	contracts[0] = contract
-	mp := newTestMultipartyManager()
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.multipartyManager.config.Contracts = contracts
-
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
-	}
-
-	err := mp.ConfigureContract(context.Background(), cf)
-	assert.NoError(t, err)
-	err = mp.SubmitNetworkAction(context.Background(), "0x123", &core.NetworkAction{Type: core.NetworkActionTerminate})
-	assert.Regexp(t, "FF10399", err)
-
-	mp.mbi.AssertExpectations(t)
-}
-
 func TestSubmitBatchPinOk(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
@@ -584,7 +556,7 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 	err := mp.ConfigureContract(context.Background(), cf)
 	assert.NoError(t, err)
 
-	err = mp.TerminateContract(context.Background(), cf, &blockchain.Event{})
+	err = mp.TerminateContract(context.Background(), cf, location, &blockchain.Event{})
 	assert.NoError(t, err)
 }
 
@@ -593,10 +565,29 @@ func TestTerminateContractError(t *testing.T) {
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
 	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
+		Active: core.FireFlyContractInfo{Index: 0, Location: location},
 	}
 
-	err := mp.TerminateContract(context.Background(), cf, &blockchain.Event{})
+	err := mp.TerminateContract(context.Background(), cf, location, &blockchain.Event{})
 	assert.Regexp(t, "pop", err)
+}
+
+func TestTerminateContractWrongAddress(t *testing.T) {
+	mp := newTestMultipartyManager()
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	cf := &core.FireFlyContracts{
+		Active: core.FireFlyContractInfo{Index: 0, Location: location},
+	}
+
+	err := mp.TerminateContract(context.Background(), cf, fftypes.JSONAnyPtr("{}"), &blockchain.Event{})
+	assert.NoError(t, err)
 }

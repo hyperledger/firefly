@@ -261,7 +261,7 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nm.mdi.On("SetHandler", "default", mock.Anything).Return()
 	nm.mdi.On("GetIdentities", mock.Anything, "default", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
-	nm.mbi.On("SetHandler", mock.Anything).Return()
+	nm.mbi.On("SetHandler", "default", mock.Anything).Return()
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("SetHandler", "default", mock.Anything).Return()

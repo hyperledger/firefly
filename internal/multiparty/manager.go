@@ -47,7 +47,7 @@ type Manager interface {
 	// - Validates that the event came from the currently active FireFly contract
 	// - Re-initializes the plugin against the next configured FireFly contract
 	// - Updates the provided contract info to record the point of termination and the newly active contract
-	TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error)
+	TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, location *fftypes.JSONAny, termination *blockchain.Event) (err error)
 
 	// GetNetworkVersion returns the network version of the active FireFly contract
 	GetNetworkVersion() int
@@ -170,9 +170,13 @@ func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contrac
 	return location, firstEvent, err
 }
 
-func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
+func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, location *fftypes.JSONAny, termination *blockchain.Event) (err error) {
 	// TODO: Investigate if it better to consolidate DB termination here
-	log.L(ctx).Infof("Processing termination of contract at index %d", contracts.Active.Index)
+	if contracts.Active.Location.String() != location.String() {
+		log.L(ctx).Warnf("Ignoring termination event from contract at '%s', which does not match active '%s'", location, contracts.Active.Location)
+		return nil
+	}
+	log.L(ctx).Infof("Processing termination of contract #%d at '%s'", contracts.Active.Index, contracts.Active.Location)
 	contracts.Active.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
@@ -188,12 +192,7 @@ func (mm *multipartyManager) GetNetworkVersion() int {
 }
 
 func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey string, action *core.NetworkAction) error {
-	if action.Type == core.NetworkActionTerminate {
-		if mm.namespace != core.LegacySystemNamespace {
-			// For now, "terminate" only works on ff_system
-			return i18n.NewError(ctx, coremsgs.MsgTerminateNotSupported, mm.namespace)
-		}
-	} else {
+	if action.Type != core.NetworkActionTerminate {
 		return i18n.NewError(ctx, coremsgs.MsgUnrecognizedNetworkAction, action.Type)
 	}
 

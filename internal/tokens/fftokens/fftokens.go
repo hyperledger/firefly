@@ -46,23 +46,26 @@ type callbacks struct {
 	handlers map[string]tokens.Callbacks
 }
 
-func (cb *callbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.handlers {
-		cb.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+func (cb *callbacks) TokenOpUpdate(ctx context.Context, plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
+	if handler, ok := cb.handlers[namespace]; ok {
+		handler.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	} else {
+		log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
 	}
 }
 
 func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			if err := cb.TokenPoolCreated(plugin, pool); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.handlers[namespace]; ok {
-			return listener.TokenPoolCreated(plugin, pool)
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokenPoolCreated(plugin, pool)
 		}
 	}
 	return nil
@@ -70,15 +73,15 @@ func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, po
 
 func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			if err := cb.TokensTransferred(plugin, transfer); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.handlers[namespace]; ok {
-			return listener.TokensTransferred(plugin, transfer)
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokensTransferred(plugin, transfer)
 		}
 	}
 	return nil
@@ -86,15 +89,15 @@ func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, t
 
 func (cb *callbacks) TokensApproved(namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			if err := cb.TokensApproved(plugin, approval); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.handlers[namespace]; ok {
-			return listener.TokensApproved(plugin, approval)
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokensApproved(plugin, approval)
 		}
 	}
 	return nil
@@ -260,7 +263,7 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		replyType = core.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	ft.callbacks.TokenOpUpdate(ft, requestID, replyType, transactionHash, message, data)
+	ft.callbacks.TokenOpUpdate(ctx, ft, requestID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {

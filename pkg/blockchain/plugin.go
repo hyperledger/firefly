@@ -120,7 +120,7 @@ type Callbacks interface {
 	// BlockchainNetworkAction notifies on the arrival of a network operator action
 	//
 	// Error should only be returned in shutdown scenarios
-	BlockchainNetworkAction(action string, event *Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *Event, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

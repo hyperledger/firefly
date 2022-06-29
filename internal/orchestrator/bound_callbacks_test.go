@@ -52,6 +52,7 @@ func TestBoundCallbacks(t *testing.T) {
 	pool := &tokens.TokenPool{}
 	transfer := &tokens.TokenTransfer{}
 	approval := &tokens.TokenApproval{}
+	location := fftypes.JSONAnyPtr("{}")
 	event := &blockchain.Event{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
@@ -60,8 +61,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BlockchainNetworkAction", "terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainNetworkAction("terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
+	mei.On("BlockchainNetworkAction", "terminate", location, event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainNetworkAction("terminate", location, event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	nsOpID := "ns1:" + opID.String()

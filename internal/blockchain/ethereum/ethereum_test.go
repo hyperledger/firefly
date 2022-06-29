@@ -489,7 +489,7 @@ func TestInitAllExistingStreams(t *testing.T) {
 	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
 	assert.NoError(t, err)
 
-	assert.Equal(t, 3, httpmock.GetTotalCallCount())
+	assert.Equal(t, 4, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
 }
 
@@ -815,8 +815,11 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -871,6 +874,127 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 }
 
+func TestHandleMessageBatchPinV2(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber": "38011",
+		"transactionIndex": "0x0",
+		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"data": {
+			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
+			"payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+			"contexts": [
+				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
+				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
+			]
+    },
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"logIndex": "50",
+		"timestamp": "1620576488"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+	}
+
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   2,
+	}
+
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+	}
+
+	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	em.AssertExpectations(t)
+
+	b := em.Calls[0].Arguments[0].(*blockchain.BatchPin)
+	assert.Equal(t, "ns1", b.Namespace)
+	assert.Equal(t, "e19af8b3-9060-4051-812d-7597d19adfb9", b.TransactionID.String())
+	assert.Equal(t, "847d3bfd-0742-49ef-b65d-3fed15f5b0a6", b.BatchID.String())
+	assert.Equal(t, "d71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be", b.BatchHash.String())
+	assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", b.BatchPayloadRef)
+	assert.Equal(t, expectedSigningKeyRef, em.Calls[0].Arguments[1])
+	assert.Len(t, b.Contexts, 2)
+	assert.Equal(t, "68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a", b.Contexts[0].String())
+	assert.Equal(t, "19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771", b.Contexts[1].String())
+
+	info1 := fftypes.JSONObject{
+		"address":          "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber":      "38011",
+		"logIndex":         "50",
+		"signature":        "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"subId":            "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"transactionHash":  "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"transactionIndex": "0x0",
+		"timestamp":        "1620576488",
+	}
+	assert.Equal(t, info1, b.Event.Info)
+
+}
+
+func TestHandleMessageBatchPinMissingAddress(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+		"blockNumber": "38011",
+		"transactionIndex": "0x0",
+		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"data": {
+			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "ns1",
+			"uuids": "0xe19af8b390604051812d7597d19adfb9847d3bfd074249efb65d3fed15f5b0a6",
+			"batchHash": "0xd71eb138d74c229a388eb0e1abc03f4c7cbb21d4fc4b839fbf0ec73e4263f6be",
+			"payloadRef": "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+			"contexts": [
+				"0x68e4da79f805bca5b912bcda9c63d03e6e867108dabb9b944109aea541ef522a",
+				"0x19b82093de5ce92a01e333048e877e2374354bf846dd034864ef6ffbd6438771"
+			]
+    },
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"logIndex": "50",
+		"timestamp": "1620576488"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+	}
+
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.Regexp(t, "FF10141", err)
+
+}
+
 func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 	data := fftypes.JSONAnyPtr(`
 [
@@ -898,8 +1022,11 @@ func TestHandleMessageBatchPinMissingAuthor(t *testing.T) {
 ]`)
 
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -940,8 +1067,11 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -1002,8 +1132,11 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 	em.On("BatchPinComplete", mock.Anything, expectedSigningKeyRef, mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
@@ -1017,13 +1150,17 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 func TestHandleMessageBatchPinEmpty(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
 	[
 		{
+			"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 			"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 			"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])"
 		}
@@ -1035,13 +1172,17 @@ func TestHandleMessageBatchPinEmpty(t *testing.T) {
 
 func TestHandleMessageBatchMissingData(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	var events []interface{}
 	err := json.Unmarshal([]byte(`
 	[
 		{
+			"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 			"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
 			"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
 			"timestamp": "1620576488"
@@ -1054,8 +1195,12 @@ func TestHandleMessageBatchMissingData(t *testing.T) {
 
 func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1085,8 +1230,12 @@ func TestHandleMessageBatchPinBadTransactionID(t *testing.T) {
 
 func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1116,8 +1265,12 @@ func TestHandleMessageBatchPinBadIDentity(t *testing.T) {
 
 func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1147,8 +1300,12 @@ func TestHandleMessageBatchPinBadBatchHash(t *testing.T) {
 
 func TestHandleMessageBatchPinBadPin(t *testing.T) {
 	e := &Ethereum{}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
 	data := fftypes.JSONAnyPtr(`[{
 		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
 		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
@@ -1547,8 +1704,12 @@ func TestHandleMessageContractEvent(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
 		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
@@ -1609,8 +1770,12 @@ func TestHandleMessageContractEventError(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
+
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
@@ -2854,15 +3019,68 @@ func TestHandleNetworkAction(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BlockchainNetworkAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(nil)
+	em.On("BlockchainNetworkAction", "terminate", mock.AnythingOfType("*fftypes.JSONAny"), mock.AnythingOfType("*blockchain.Event"), expectedSigningKeyRef).Return(nil)
+
+	var events []interface{}
+	err := json.Unmarshal(data.Bytes(), &events)
+	assert.NoError(t, err)
+	err = e.handleMessageBatch(context.Background(), events)
+	assert.NoError(t, err)
+
+	em.AssertExpectations(t)
+
+}
+
+func TestHandleNetworkActionV2(t *testing.T) {
+	data := fftypes.JSONAnyPtr(`
+[
+  {
+		"address": "0x1C197604587F046FD40684A8f21f4609FB811A7b",
+		"blockNumber": "38011",
+		"transactionIndex": "0x0",
+		"transactionHash": "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628",
+		"data": {
+			"author": "0X91D2B4381A4CD5C7C0F27565A7D4B829844C8635",
+			"namespace": "firefly:terminate",
+			"uuids": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"batchHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+			"payloadRef": "",
+			"contexts": []
+    },
+		"subId": "sb-b5b97a4e-a317-4053-6400-1474650efcb5",
+		"signature": "BatchPin(address,uint256,string,bytes32,bytes32,string,bytes32[])",
+		"logIndex": "50",
+		"timestamp": "1620576488"
+  }
+]`)
+
+	em := &blockchainmocks.Callbacks{}
+	e := &Ethereum{
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+	}
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   2,
+	}
+
+	expectedSigningKeyRef := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
+	}
+
+	em.On("BlockchainNetworkAction", "terminate", mock.AnythingOfType("*fftypes.JSONAny"), mock.AnythingOfType("*blockchain.Event"), expectedSigningKeyRef).Return(nil)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -2901,15 +3119,18 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	e := &Ethereum{
 		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
-	e.subs = map[string]string{}
-	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
+	e.subs = map[string]subscriptionInfo{}
+	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
+		namespace: "ns1",
+		version:   1,
+	}
 
 	expectedSigningKeyRef := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x91d2b4381a4cd5c7c0f27565a7d4b829844c8635",
 	}
 
-	em.On("BlockchainNetworkAction", "terminate", mock.Anything, expectedSigningKeyRef).Return(fmt.Errorf("pop"))
+	em.On("BlockchainNetworkAction", "terminate", mock.AnythingOfType("*fftypes.JSONAny"), mock.AnythingOfType("*blockchain.Event"), expectedSigningKeyRef).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -3323,6 +3544,43 @@ func TestAddFireflySubscriptionCreateError(t *testing.T) {
 	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/",
+		httpmock.NewJsonResponderOrPanic(500, `pop`))
+
+	resetConf(e)
+	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
+	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
+	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
+	utConfig.AddKnownKey(FireFlyContractConfigKey+".0."+FireFlyContractAddress, "0x71C7656EC7ab88b098defB751B7401B5f6d8976F")
+
+	err := e.Init(e.ctx, utConfig, e.metrics)
+	assert.NoError(t, err)
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
+	assert.Regexp(t, "FF10111", err)
+}
+
+func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	resetConf(e)
+
+	mockedClient := &http.Client{}
+	httpmock.ActivateNonDefault(mockedClient)
+	defer httpmock.DeactivateAndReset()
+
+	httpmock.RegisterResponder("GET", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, []eventStream{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/eventstreams",
+		httpmock.NewJsonResponderOrPanic(200, eventStream{ID: "es12345"}))
+	httpmock.RegisterResponder("GET", "http://localhost:12345/subscriptions",
+		httpmock.NewJsonResponderOrPanic(200, []subscription{}))
+	httpmock.RegisterResponder("POST", "http://localhost:12345/subscriptions",
 		httpmock.NewJsonResponderOrPanic(500, `pop`))
 	httpmock.RegisterResponder("POST", "http://localhost:12345/", mockNetworkVersion(t, 2))
 
@@ -3348,4 +3606,12 @@ func TestRemoveInvalidSubscription(t *testing.T) {
 
 	err := e.RemoveFireflySubscription(e.ctx, "bad")
 	assert.Regexp(t, "FF10412", err)
+}
+
+func TestCallbacksWrongNamespace(t *testing.T) {
+	e, _ := newTestEthereum()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
+	e.callbacks.BlockchainOpUpdate(context.Background(), e, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	e.callbacks.BatchPinComplete(context.Background(), &blockchain.BatchPin{Namespace: "ns1"}, nil)
+	e.callbacks.BlockchainNetworkAction(context.Background(), "ns1", "terminate", nil, nil, nil)
 }
