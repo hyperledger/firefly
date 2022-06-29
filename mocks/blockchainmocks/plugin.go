@@ -326,9 +326,9 @@ func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) e
 	return r0
 }
 
-// SetHandler provides a mock function with given fields: handler
-func (_m *Plugin) SetHandler(handler blockchain.Callbacks) {
-	_m.Called(handler)
+// SetHandler provides a mock function with given fields: namespace, handler
+func (_m *Plugin) SetHandler(namespace string, handler blockchain.Callbacks) {
+	_m.Called(namespace, handler)
 }
 
 // Start provides a mock function with given fields:

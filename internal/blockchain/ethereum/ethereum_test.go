@@ -92,6 +92,7 @@ func newTestEthereum() (*Ethereum, func()) {
 		wsconn:      wsm,
 		metrics:     mm,
 	}
+	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
 	return e, func() {
 		cancel()
 		if e.closed != nil {
@@ -811,7 +812,7 @@ func TestHandleMessageBatchPinOK(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 
 	e.subs = map[string]string{}
@@ -936,7 +937,7 @@ func TestHandleMessageEmptyPayloadRef(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 
 	e.subs = map[string]string{}
@@ -999,7 +1000,7 @@ func TestHandleMessageBatchPinExit(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 	e.subs = map[string]string{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
@@ -1229,7 +1230,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	e := &Ethereum{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 		wsconn:    wsm,
 	}
 
@@ -1299,7 +1300,7 @@ func TestHandleBadPayloadsAndThenReceiptFailure(t *testing.T) {
 	}`)
 
 	em := &blockchainmocks.Callbacks{}
-	e.SetHandler(em)
+	e.SetHandler("ns1", em)
 	txsu := em.On("BlockchainOpUpdate",
 		e,
 		"ns1:"+operationID.String(),
@@ -1544,7 +1545,7 @@ func TestHandleMessageContractEvent(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 	e.subs = map[string]string{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
@@ -1606,7 +1607,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 	e.subs = map[string]string{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
@@ -2851,7 +2852,7 @@ func TestHandleNetworkAction(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 	e.subs = map[string]string{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"
@@ -2898,7 +2899,7 @@ func TestHandleNetworkActionFail(t *testing.T) {
 
 	em := &blockchainmocks.Callbacks{}
 	e := &Ethereum{
-		callbacks: callbacks{handlers: []blockchain.Callbacks{em}},
+		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
 	}
 	e.subs = map[string]string{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = "ns1"

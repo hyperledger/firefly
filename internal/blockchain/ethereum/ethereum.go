@@ -72,7 +72,7 @@ type Ethereum struct {
 }
 
 type callbacks struct {
-	handlers []blockchain.Callbacks
+	handlers map[string]blockchain.Callbacks
 }
 
 func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
@@ -190,6 +190,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
+	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -239,8 +240,8 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 	return nil
 }
 
-func (e *Ethereum) SetHandler(handler blockchain.Callbacks) {
-	e.callbacks.handlers = append(e.callbacks.handlers, handler)
+func (e *Ethereum) SetHandler(namespace string, handler blockchain.Callbacks) {
+	e.callbacks.handlers[namespace] = handler
 }
 
 func (e *Ethereum) Start() (err error) {

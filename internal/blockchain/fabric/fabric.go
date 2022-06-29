@@ -63,7 +63,7 @@ type Fabric struct {
 }
 
 type callbacks struct {
-	handlers []blockchain.Callbacks
+	handlers map[string]blockchain.Callbacks
 }
 
 func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
@@ -197,6 +197,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
+	f.callbacks.handlers = make(map[string]blockchain.Callbacks)
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
@@ -239,8 +240,8 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	return nil
 }
 
-func (f *Fabric) SetHandler(handler blockchain.Callbacks) {
-	f.callbacks.handlers = append(f.callbacks.handlers, handler)
+func (f *Fabric) SetHandler(namespace string, handler blockchain.Callbacks) {
+	f.callbacks.handlers[namespace] = handler
 }
 
 func (f *Fabric) Start() (err error) {
