@@ -229,7 +229,10 @@ func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *co
 	if im.defaultKey != "" {
 		return im.normalizeKeyViaBlockchainPlugin(ctx, im.defaultKey)
 	}
-	return im.GetMultipartyRootVerifier(ctx)
+	if im.multiparty != nil {
+		return im.GetMultipartyRootVerifier(ctx)
+	}
+	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 }
 
 // GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration

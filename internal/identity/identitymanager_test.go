@@ -493,6 +493,16 @@ func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 }
 
+func TestNormalizeSigningKeyNoDefault(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	im.multiparty = nil
+
+	_, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	assert.Regexp(t, "FF10354", err)
+
+}
+
 func TestResolveInputSigningKeyOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
