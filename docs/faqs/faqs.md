@@ -17,20 +17,20 @@ There aren't any out of the box bridges to connect two separate chains together,
 ## 📜 How do I deploy smart contracts?
 In order to interact with a smart contract on a public or private Ethereum chain you need to first deploy it to the chain. Deployment means that you've sent a transaction with the compiled source code to the chain without a specified recipient and received a contract address that you and others on the network can use to interact with your contract.
 
-In order to deploy the contract on the Ethereum network, you'll need the following:
+In order to deploy the contract on the public Ethereum network, you'll need the following:
 - Your contract's bytecode (which is generated through [compilation](https://ethereum.org/en/developers/docs/smart-contracts/compiling/_))
 - Any currency needed to cover gas fees on your chosen network (i.e. ETH for gas on the public Ethereum network)
 - A deployment script (two of the most popular deployment tools are [Hardhat](https://hardhat.org/guides/deploying.html) and [Truffle](https://trufflesuite.com/docs/truffle/advanced/networks-and-app-deployment/))
-- Access to a node on your network
+- Access to a node on the network
 
-Once your contract is deployed, you can view the contract details through popular blockchain explorers such as [Etherscan](https://etherscan.io/), which will show all transaction interactions with the contract and show any token value associated with the contract.
+Once your contract is deployed, you can view the contract details through popular blockchain explorers such as [Etherscan](https://etherscan.io/), which will show all transaction on the public ethereum network interactions with the contract and show any token value associated with the contract. It's worth noting that Etherscan is a block explorer for public Ethereum, so if you deploy on a different network you'll need to find a block explorer that services that network specifically.
+
+Kaleido has built in Smart Contract deployment and management functionality.  See our [documentation](https://docs.kaleido.io/kaleido-services/smart-contract-management/usage/) here to learn more about how you can deploy smart contracts to your private network hosted on Kaleido.
 
 For additional information about Smart Contracts, please see the official [Ethereum.org documentation](https://ethereum.org/en/developers/docs/smart-contracts/)
 
 ## 🦊 Can I connect FireFly to MetaMask?
-Yes! In order to do this, you'll want to set up a FireFly stack and deploy an ERC-20 or ERC-721 contract to the chain (see the FAQ above on how to deploy a smart contract). 
-
-Once this contract is deployed, follow the steps listed [here](https://hyperledger.github.io/firefly/tutorials/tokens/erc721.html#use-metamask)
+Yes! Before you set up MetaMask you'll likely want to create some tokens that you can use to send between wallets on your FF network. Go to the tokens tab in your FireFly node's UI, create a token pool, and then mint some tokens. Once you've done this, follow the steps listed [here](https://hyperledger.github.io/firefly/tutorials/tokens/erc721.html#use-metamask) to set up MetaMask on your network.
 
 ## 🚀 Connect with us on Discord
 If your question isn't answered here or if you have immediate questions please don't hesitate to reach out to us on [Discord](https://discord.gg/hyperledger_) in the `firefly` channel:
