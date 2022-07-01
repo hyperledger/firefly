@@ -119,7 +119,7 @@ So if you use the same topic in every message, then a single failed send on one
 topic blocks delivery of all messages between those parties, until the missing
 data arrives.
 
-Instead it is best practice to set the topic on your messages to value
+Instead it is best practice to set the topic on your messages to a value
 that identifies an ordered stream of business processing. Some examples:
 
 - A long-running business process instance identifier assigned at initiation
