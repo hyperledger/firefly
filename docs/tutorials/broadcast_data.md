@@ -217,14 +217,14 @@ To get started, open up the Web UI and Sanbox UI for at least one of your member
 
 In the sandbox, enter your message into the message field as seen in the screenshot below.
 
-<img src="../images/message_broadcast_initial.png" style="width:50%; height:50%;"/>
+![Initial Broadcast Message](../images/message_broadcast_initial.png)
 
 Notice how the `data` field in the center panel updates in real time.
 
 Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
 
-<img src="../images/message_broadcast_sample_result.png"/>
+![Broadcast Result](../images/message_broadcast_sample_result.png)
 
 Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see your successful blockchain transaction
 
-<img src="../images/first_successful_transaction.png"/>
+![Successful Broadcast Transaction](../images/first_successful_transaction.png)

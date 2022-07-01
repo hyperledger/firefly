@@ -279,14 +279,14 @@ To get started, open up the Web UI and Sanbox UI for at least one of your member
 
 Make sure to expand the "Send a Private Message" section. Enter your message into the message field as seen in the screenshot below. Because we are sending a private message, make sure you're in the "Send a Private Message" section and that you choose a message recipient
 
-<img src="../images/message_private_broadcast.png" style="width:50%; height:50%;"/>
+![Private Message Broadcast](../images/message_private_broadcast.png)
 
 Notice how the `data` field in the center panel updates in real time as you update the message you wish to send.
 
 Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
 
-<img src="../images/message_broadcast_sample_result.png"/>
+![Private Message result](../images/message_broadcast_sample_result.png)
 
 Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see your successful blockchain transaction. Compare the "Recent Network Changes" widget With private messages, your 
 
-<img src="../images/first_successful_transaction.png"/>
+![Successful Transaction](../images/first_successful_transaction.png)
