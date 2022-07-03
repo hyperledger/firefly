@@ -131,6 +131,7 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 	if err != nil {
 		return err
 	}
+
 	version, err := mm.blockchain.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return err

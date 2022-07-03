@@ -454,7 +454,7 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		return "", err
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	sub, subNS, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
@@ -464,8 +464,12 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		return "", err
 	}
 
+	if version > 1 && subNS == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, sub.Name, version)
+	}
+
 	f.subs[sub.ID] = subscriptionInfo{
-		namespace: namespace,
+		namespace: subNS,
 		channel:   fabricOnChainLocation.Channel,
 		version:   version,
 	}

@@ -282,7 +282,7 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 		firstEvent = "latest"
 	}
 
-	sub, err := e.streams.ensureFireFlySubscription(ctx, namespace, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
+	sub, subNS, err := e.streams.ensureFireFlySubscription(ctx, namespace, ethLocation.Address, firstEvent, e.streamID, batchPinEventABI)
 	if err != nil {
 		return "", err
 	}
@@ -292,8 +292,12 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 		return "", err
 	}
 
+	if version > 1 && subNS == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, sub.Name, version)
+	}
+
 	e.subs[sub.ID] = subscriptionInfo{
-		namespace: namespace,
+		namespace: subNS,
 		version:   version,
 	}
 	return sub.ID, nil

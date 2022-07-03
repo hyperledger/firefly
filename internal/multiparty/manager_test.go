@@ -105,6 +105,8 @@ func TestConfigureContract(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.multipartyManager.config.Contracts = contracts
@@ -129,6 +131,8 @@ func TestConfigureContractOldestBlock(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.multipartyManager.config.Contracts = contracts
@@ -155,6 +159,8 @@ func TestConfigureContractNewestBlock(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.multipartyManager.config.Contracts = contracts
@@ -171,6 +177,7 @@ func TestConfigureContractNewestBlock(t *testing.T) {
 
 func TestResolveContractDeprecatedConfig(t *testing.T) {
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	mp.mbi.On("GetAndConvertDeprecatedContractConfig", context.Background()).Return(fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
@@ -188,6 +195,7 @@ func TestResolveContractDeprecatedConfig(t *testing.T) {
 
 func TestResolveContractDeprecatedConfigError(t *testing.T) {
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	mp.mbi.On("GetAndConvertDeprecatedContractConfig", context.Background()).Return(nil, "", fmt.Errorf("pop"))
 
@@ -197,6 +205,7 @@ func TestResolveContractDeprecatedConfigError(t *testing.T) {
 
 func TestResolveContractDeprecatedConfigNewestBlock(t *testing.T) {
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
 
 	mp.mbi.On("GetAndConvertDeprecatedContractConfig", context.Background()).Return(fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
@@ -218,8 +227,8 @@ func TestConfigureContractBadIndex(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	defer mp.cleanup(t)
+
 	mp.multipartyManager.config.Contracts = contracts
 
 	cf := &core.FireFlyContracts{
@@ -242,8 +251,9 @@ func TestConfigureContractNetworkVersionFail(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(0, fmt.Errorf("pop"))
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.multipartyManager.config.Contracts = contracts
 
 	cf := &core.FireFlyContracts{
@@ -267,6 +277,8 @@ func TestSubmitNetworkAction(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.multipartyManager.config.Contracts = contracts
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
@@ -313,6 +325,8 @@ func TestSubmitNetworkActionTXFail(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.multipartyManager.config.Contracts = contracts
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
@@ -347,6 +361,8 @@ func TestSubmitNetworkActionOpFail(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.multipartyManager.config.Contracts = contracts
 
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
@@ -383,6 +399,8 @@ func TestSubmitNetworkActionBadType(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.multipartyManager.config.Contracts = contracts
@@ -513,6 +531,8 @@ func TestGetNetworkVersion(t *testing.T) {
 
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.multipartyManager.config.Contracts = contracts
@@ -545,6 +565,8 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 	contracts[0] = contract
 	contracts[1] = contract2
 	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+
 	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
 	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
 	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(nil)
@@ -562,7 +584,8 @@ func TestConfgureAndTerminateContract(t *testing.T) {
 
 func TestTerminateContractError(t *testing.T) {
 	mp := newTestMultipartyManager()
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
+	defer mp.cleanup(t)
+
 	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
@@ -578,8 +601,7 @@ func TestTerminateContractError(t *testing.T) {
 
 func TestTerminateContractWrongAddress(t *testing.T) {
 	mp := newTestMultipartyManager()
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	defer mp.cleanup(t)
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",

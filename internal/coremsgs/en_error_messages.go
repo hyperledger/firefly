@@ -252,4 +252,5 @@ var (
 	MsgDefRejectedHashMismatch            = ffe("FF10410", "Rejected %s '%s' - hash mismatch: %s != %s")
 	MsgInvalidNamespaceUUID               = ffe("FF10411", "Expected 'namespace:' prefix on ID '%s'", 400)
 	MsgSubscriptionIDInvalid              = ffe("FF10412", "Invalid subscription ID: %s")
+	MsgInvalidSubscriptionForNetwork      = ffe("FF10413", "Subscription name '%s' is invalid according to multiparty network rules in effect (network version=%d)")
 )
