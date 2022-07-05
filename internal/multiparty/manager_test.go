@@ -81,7 +81,7 @@ func TestNewMultipartyManager(t *testing.T) {
 		core.OpTypeBlockchainPinBatch,
 		core.OpTypeBlockchainNetworkAction,
 	}).Return()
-	nm, err := NewMultipartyManager(context.Background(), "namespace", config, mdi, mbi, mom, mmi, mth)
+	nm, err := NewMultipartyManager(context.Background(), func() {}, "namespace", config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)
 	assert.NoError(t, err)
 	assert.Equal(t, "MultipartyManager", nm.Name())
@@ -90,7 +90,7 @@ func TestNewMultipartyManager(t *testing.T) {
 
 func TestInitFail(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
-	_, err := NewMultipartyManager(context.Background(), "namespace", config, nil, nil, nil, nil, nil)
+	_, err := NewMultipartyManager(context.Background(), func() {}, "namespace", config, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -120,7 +120,7 @@ func TestConfigureContract(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestConfigureContractOldestBlock(t *testing.T) {
+func TestConfigureContractTerminateSystem(t *testing.T) {
 	contracts := make([]Contract, 1)
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
@@ -133,9 +133,11 @@ func TestConfigureContractOldestBlock(t *testing.T) {
 	contracts[0] = contract
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
+	stopped := false
+	mp.stop = func() { stopped = true }
+	mp.namespace = core.LegacySystemNamespace
 
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
+	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(2, nil)
 	mp.multipartyManager.config.Contracts = contracts
 
 	cf := &core.FireFlyContracts{
@@ -144,36 +146,7 @@ func TestConfigureContractOldestBlock(t *testing.T) {
 
 	err := mp.ConfigureContract(context.Background(), cf)
 	assert.NoError(t, err)
-
-	assert.Equal(t, "0", mp.activeContract.firstEvent)
-}
-
-func TestConfigureContractNewestBlock(t *testing.T) {
-	contracts := make([]Contract, 1)
-	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
-		"address": "0x123",
-	}.String())
-	contract := Contract{
-		FirstEvent: "latest",
-		Location:   location,
-	}
-
-	contracts[0] = contract
-	mp := newTestMultipartyManager()
-	defer mp.cleanup(t)
-
-	mp.mbi.On("GetNetworkVersion", mock.Anything, mock.Anything).Return(1, nil)
-	mp.mbi.On("AddFireflySubscription", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return("test", nil)
-	mp.multipartyManager.config.Contracts = contracts
-
-	cf := &core.FireFlyContracts{
-		Active: core.FireFlyContractInfo{Index: 0},
-	}
-
-	err := mp.ConfigureContract(context.Background(), cf)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "latest", mp.activeContract.firstEvent)
+	assert.True(t, stopped)
 }
 
 func TestResolveContractDeprecatedConfig(t *testing.T) {

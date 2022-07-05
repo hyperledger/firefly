@@ -1119,7 +1119,7 @@ func TestStart(t *testing.T) {
 	}
 	nm.metricsEnabled = true
 
-	mo.On("Start").Return(nil)
+	mo.On("Start", mock.Anything).Return(nil)
 
 	err := nm.Start()
 	assert.NoError(t, err)
@@ -1143,7 +1143,7 @@ func TestStartBlockchainFail(t *testing.T) {
 		},
 	}
 
-	mo.On("Start").Return(nil)
+	mo.On("Start", mock.Anything).Return(nil)
 	nm.mbi.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1167,7 +1167,7 @@ func TestStartDataExchangeFail(t *testing.T) {
 		},
 	}
 
-	mo.On("Start").Return(nil)
+	mo.On("Start", mock.Anything).Return(nil)
 	nm.mdx.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1191,7 +1191,7 @@ func TestStartTokensFail(t *testing.T) {
 		},
 	}
 
-	mo.On("Start").Return(nil)
+	mo.On("Start", mock.Anything).Return(nil)
 	nm.mti.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1208,10 +1208,32 @@ func TestStartOrchestratorFail(t *testing.T) {
 		"ns": {orchestrator: mo},
 	}
 
-	mo.On("Start").Return(fmt.Errorf("pop"))
+	mo.On("Start", mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
 	assert.EqualError(t, err, "pop")
+
+	mo.AssertExpectations(t)
+}
+
+func TestStartStop(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	mo := &orchestratormocks.Orchestrator{}
+	nm.namespaces = map[string]*namespace{
+		"ns": {orchestrator: mo},
+	}
+
+	mo.On("Start", mock.Anything).Return(nil)
+
+	err := nm.Start()
+	assert.NoError(t, err)
+	assert.Len(t, nm.namespaces, 1)
+
+	onStop := mo.Calls[0].Arguments[0].(func())
+	onStop()
+	assert.Len(t, nm.namespaces, 0)
 
 	mo.AssertExpectations(t)
 }
