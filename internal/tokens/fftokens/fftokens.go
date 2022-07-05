@@ -154,7 +154,7 @@ type mintTokens struct {
 	RequestID   string `json:"requestId,omitempty"`
 	Signer      string `json:"signer"`
 	Data        string `json:"data,omitempty"`
-	URI         string `json:"uri"`
+	URI         string `json:"uri,omitempty"`
 }
 
 type burnTokens struct {
