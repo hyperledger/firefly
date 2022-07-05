@@ -205,4 +205,4 @@ Click the blue `Run` button. This should return a `202` response immediately in 
 
 Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see that you've successfully defined your datatype
 
-![Successful Transaction](../images/first_successful_transaction.png)
+![Successful Transaction](../images/firefly_first_successful_transaction.png)
