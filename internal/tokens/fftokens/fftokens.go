@@ -147,35 +147,38 @@ type activatePool struct {
 }
 
 type mintTokens struct {
-	PoolLocator string `json:"poolLocator"`
-	TokenIndex  string `json:"tokenIndex,omitempty"`
-	To          string `json:"to"`
-	Amount      string `json:"amount"`
-	RequestID   string `json:"requestId,omitempty"`
-	Signer      string `json:"signer"`
-	Data        string `json:"data,omitempty"`
-	URI         string `json:"uri,omitempty"`
+	PoolLocator string             `json:"poolLocator"`
+	TokenIndex  string             `json:"tokenIndex,omitempty"`
+	To          string             `json:"to"`
+	Amount      string             `json:"amount"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Signer      string             `json:"signer"`
+	Data        string             `json:"data,omitempty"`
+	URI         string             `json:"uri,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type burnTokens struct {
-	PoolLocator string `json:"poolLocator"`
-	TokenIndex  string `json:"tokenIndex,omitempty"`
-	From        string `json:"from"`
-	Amount      string `json:"amount"`
-	RequestID   string `json:"requestId,omitempty"`
-	Signer      string `json:"signer"`
-	Data        string `json:"data,omitempty"`
+	PoolLocator string             `json:"poolLocator"`
+	TokenIndex  string             `json:"tokenIndex,omitempty"`
+	From        string             `json:"from"`
+	Amount      string             `json:"amount"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Signer      string             `json:"signer"`
+	Data        string             `json:"data,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type transferTokens struct {
-	PoolLocator string `json:"poolLocator"`
-	TokenIndex  string `json:"tokenIndex,omitempty"`
-	From        string `json:"from"`
-	To          string `json:"to"`
-	Amount      string `json:"amount"`
-	RequestID   string `json:"requestId,omitempty"`
-	Signer      string `json:"signer"`
-	Data        string `json:"data,omitempty"`
+	PoolLocator string             `json:"poolLocator"`
+	TokenIndex  string             `json:"tokenIndex,omitempty"`
+	From        string             `json:"from"`
+	To          string             `json:"to"`
+	Amount      string             `json:"amount"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Signer      string             `json:"signer"`
+	Data        string             `json:"data,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type tokenApproval struct {
@@ -665,6 +668,7 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 			Signer:      mint.Key,
 			Data:        string(data),
 			URI:         mint.URI,
+			Config:      mint.Config,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/mint")
@@ -691,6 +695,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 			RequestID:   nsOpID,
 			Signer:      burn.Key,
 			Data:        string(data),
+			Config:      burn.Config,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/burn")
@@ -718,6 +723,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 			RequestID:   nsOpID,
 			Signer:      transfer.Key,
 			Data:        string(data),
+			Config:      transfer.Config,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/transfer")

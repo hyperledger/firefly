@@ -66,6 +66,7 @@ nav_order: 11
 | `created` | The creation time of the transfer | [`FFTime`](simpletypes#fftime) |
 | `tx` | If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data) | [`TransactionRef`](#transactionref) |
 | `blockchainEvent` | The UUID of the blockchain event | [`UUID`](simpletypes#uuid) |
+| `config` | Input only field, with token connector specific configuration of the transfer. See your chosen token connector documentation for details | [`JSONObject`](simpletypes#jsonobject) |
 
 ## TransactionRef
 

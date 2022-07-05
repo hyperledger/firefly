@@ -536,6 +536,9 @@ func TestMintTokens(t *testing.T) {
 			Type: core.TransactionTypeTokenTransfer,
 		},
 		URI: "FLAPFLIP",
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -550,7 +553,10 @@ func TestMintTokens(t *testing.T) {
 				"to":          "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -668,6 +674,9 @@ func TestBurnTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -683,7 +692,10 @@ func TestBurnTokens(t *testing.T) {
 				"from":        "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -733,6 +745,9 @@ func TestTransferTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -749,7 +764,10 @@ func TestTransferTokens(t *testing.T) {
 				"to":          "user2",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
