@@ -42,6 +42,7 @@ type TokenTransfer struct {
 	Created         *FFTime           `ffstruct:"TokenTransfer" json:"created,omitempty" ffexcludeinput:"true"`
 	TX              TransactionRef    `ffstruct:"TokenTransfer" json:"tx" ffexcludeinput:"true"`
 	BlockchainEvent *UUID             `ffstruct:"TokenTransfer" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`
+	Config          JSONObject        `ffstruct:"TokenTransfer" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
 }
 
 type TokenTransferInput struct {
