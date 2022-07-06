@@ -17,14 +17,14 @@ type SmartContract struct {
 type BatchPinEvent struct {
 	Signer     string               `json:"signer"`
 	Timestamp  *timestamp.Timestamp `json:"timestamp"`
-	Namespace  string               `json:"namespace"`
+	Action     string               `json:"action"`
 	Uuids      string               `json:"uuids"`
 	BatchHash  string               `json:"batchHash"`
 	PayloadRef string               `json:"payloadRef"`
 	Contexts   []string             `json:"contexts"`
 }
 
-func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, namespace, uuids, batchHash, payloadRef string, contexts []string) error {
+func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, action, uuids, batchHash, payloadRef string, contexts []string) error {
 	cid := ctx.GetClientIdentity()
 	id, err := cid.GetID()
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 	event := BatchPinEvent{
 		Signer:     fmt.Sprintf("%s::%s", mspId, idString),
 		Timestamp:  timestamp,
-		Namespace:  namespace,
+		Action:     action,
 		Uuids:      uuids,
 		BatchHash:  batchHash,
 		PayloadRef: payloadRef,
@@ -60,5 +60,5 @@ func (s *SmartContract) PinBatch(ctx contractapi.TransactionContextInterface, na
 }
 
 func (s *SmartContract) NetworkVersion() int {
-	return 1
+	return 2
 }

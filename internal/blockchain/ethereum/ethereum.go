@@ -354,7 +354,10 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 	}
 
 	authorAddress := event.Output.GetString("author")
-	nsOrAction := event.Output.GetString("namespace")
+	nsOrAction := event.Output.GetString("action")
+	if nsOrAction == "" {
+		nsOrAction = event.Output.GetString("namespace")
+	}
 	sUUIDs := event.Output.GetString("uuids")
 	sBatchHash := event.Output.GetString("batchHash")
 	sPayloadRef := event.Output.GetString("payloadRef")
@@ -675,6 +678,11 @@ func (e *Ethereum) queryContractMethod(ctx context.Context, address string, abi 
 }
 
 func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ethLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
 	ethHashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		ethHashes[i] = ethHexFormatB32(v)
@@ -683,32 +691,36 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 	input := []interface{}{
-		batch.Namespace,
+		"",
 		ethHexFormatB32(&uuids),
 		ethHexFormatB32(batch.BatchHash),
 		batch.BatchPayloadRef,
 		ethHashes,
 	}
 
-	ethLocation, err := parseContractLocation(ctx, location)
+	version, err := e.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return err
+	}
+	if version == 1 {
+		input[0] = batch.Namespace
 	}
 
 	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
+	ethLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
 	input := []interface{}{
 		blockchain.FireFlyActionPrefix + action,
 		ethHexFormatB32(nil),
 		ethHexFormatB32(nil),
 		"",
 		[]string{},
-	}
-	ethLocation, err := parseContractLocation(ctx, location)
-	if err != nil {
-		return err
 	}
 	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
 }

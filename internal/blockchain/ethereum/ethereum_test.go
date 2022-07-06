@@ -101,8 +101,9 @@ func newTestEthereum() (*Ethereum, func()) {
 
 func mockNetworkVersion(t *testing.T, version int) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
+		readBody, _ := req.GetBody()
 		var body map[string]interface{}
-		json.NewDecoder(req.Body).Decode(&body)
+		json.NewDecoder(readBody).Decode(&body)
 		headers := body["headers"].(map[string]interface{})
 		method := body["method"].(map[string]interface{})
 		if headers["type"] == "Query" && method["name"] == "networkVersion" {
@@ -641,6 +642,55 @@ func TestSubmitBatchPinOK(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 2)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+
+	assert.NoError(t, err)
+}
+
+func TestSubmitBatchPinV1(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(fftypes.NewRandB32())
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		BatchID:         fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 1)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			params := body["params"].([]interface{})
@@ -678,19 +728,6 @@ func TestSubmitBatchPinBadLocation(t *testing.T) {
 		},
 	}
 
-	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
-		func(req *http.Request) (*http.Response, error) {
-			var body map[string]interface{}
-			json.NewDecoder(req.Body).Decode(&body)
-			params := body["params"].([]interface{})
-			headers := body["headers"].(map[string]interface{})
-			assert.Equal(t, "SendTransaction", headers["type"])
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
-			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
-			return httpmock.NewJsonResponderOrPanic(200, "")(req)
-		})
-
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"bad": "bad",
 	}.String())
@@ -719,6 +756,11 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 2)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			params := body["params"].([]interface{})
@@ -737,6 +779,37 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
 	assert.NoError(t, err)
+
+}
+
+func TestSubmitBatchPinVersionFail(t *testing.T) {
+
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	addr := ethHexFormatB32(fftypes.NewRandB32())
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		httpmock.NewStringResponder(500, "pop"))
+
+	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
+
+	assert.Regexp(t, "FF10111.*pop", err)
 
 }
 
@@ -763,7 +836,13 @@ func TestSubmitBatchPinFail(t *testing.T) {
 	}.String())
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
-		httpmock.NewStringResponder(500, "pop"))
+		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 2)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+			return httpmock.NewStringResponder(500, "pop")(req)
+		})
 
 	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
@@ -795,9 +874,16 @@ func TestSubmitBatchPinError(t *testing.T) {
 	}.String())
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
-		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
-			"error": "Unknown error",
-		}))
+		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 2)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+			return httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
+				"error": "Unknown error",
+			})(req)
+		})
+
 	err := e.SubmitBatchPin(context.Background(), "", addr, batch, location)
 
 	assert.Regexp(t, "FF10111.*Unknown error", err)

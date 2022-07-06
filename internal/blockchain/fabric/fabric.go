@@ -698,12 +698,21 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey s
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
 	pinInput := map[string]interface{}{
-		"namespace":  batch.Namespace,
+		"namespace":  "",
 		"uuids":      hexFormatB32(&uuids),
 		"batchHash":  hexFormatB32(batch.BatchHash),
 		"payloadRef": batch.BatchPayloadRef,
 		"contexts":   hashes,
 	}
+
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+	if version == 1 {
+		pinInput["namespace"] = batch.Namespace
+	}
+
 	input, _ := jsonEncodeInput(pinInput)
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
@@ -721,6 +730,7 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signing
 		"payloadRef": "",
 		"contexts":   []string{},
 	}
+
 	input, _ := jsonEncodeInput(pinInput)
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }

@@ -619,6 +619,53 @@ func TestSubmitBatchPinOK(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 2))
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", (body["args"].(map[string]interface{}))["uuids"])
+			assert.Equal(t, hexFormatB32(batch.BatchHash), (body["args"].(map[string]interface{}))["batchHash"])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", (body["args"].(map[string]interface{}))["payloadRef"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+
+	assert.NoError(t, err)
+
+}
+
+func TestSubmitBatchPinV1(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signer := "signer001"
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.MustParseUUID("9ffc50ff-6bfe-4502-adc7-93aea54cc059"),
+		BatchID:         fftypes.MustParseUUID("c5df767c-fe44-4e03-8eb5-1c5523097db5"),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
+
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
@@ -684,6 +731,9 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 		"chaincode": "simplestorage",
 	}.String())
 
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
+
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		func(req *http.Request) (*http.Response, error) {
 			var body map[string]interface{}
@@ -698,6 +748,39 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
 
 	assert.NoError(t, err)
+
+}
+
+func TestSubmitBatchPinVersionFail(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signer := "signer001"
+	batch := &blockchain.BatchPin{
+		TransactionID:   fftypes.NewUUID(),
+		BatchID:         fftypes.NewUUID(),
+		BatchHash:       fftypes.NewRandB32(),
+		BatchPayloadRef: "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
+		Contexts: []*fftypes.Bytes32{
+			fftypes.NewRandB32(),
+			fftypes.NewRandB32(),
+		},
+	}
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		httpmock.NewStringResponder(500, "pop"))
+
+	err := e.SubmitBatchPin(context.Background(), "", signer, batch, location)
+
+	assert.Regexp(t, "FF10284.*pop", err)
 
 }
 
@@ -724,6 +807,9 @@ func TestSubmitBatchPinFail(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewStringResponder(500, "pop"))
@@ -757,6 +843,9 @@ func TestSubmitBatchPinError(t *testing.T) {
 		"channel":   "firefly",
 		"chaincode": "simplestorage",
 	}.String())
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
 		httpmock.NewJsonResponderOrPanic(500, fftypes.JSONObject{
