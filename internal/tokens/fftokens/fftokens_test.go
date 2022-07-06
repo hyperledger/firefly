@@ -511,6 +511,10 @@ func TestMintTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
+		URI: "FLAPFLIP",
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 
@@ -525,10 +529,14 @@ func TestMintTokens(t *testing.T) {
 				"amount":      "10",
 				"signer":      "0x123",
 				"requestId":   opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
 					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
 				}.String(),
+				"uri": "FLAPFLIP",
 			}, body)
 
 			res := &http.Response{
@@ -638,6 +646,9 @@ func TestBurnTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 
@@ -653,6 +664,9 @@ func TestBurnTokens(t *testing.T) {
 				"amount":      "10",
 				"signer":      "0x123",
 				"requestId":   opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
 					"txtype": fftypes.TransactionTypeTokenTransfer.String(),
@@ -701,6 +715,9 @@ func TestTransferTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: fftypes.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 
@@ -717,6 +734,9 @@ func TestTransferTokens(t *testing.T) {
 				"amount":      "10",
 				"signer":      "0x123",
 				"requestId":   opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
 					"txtype": fftypes.TransactionTypeTokenTransfer.String(),

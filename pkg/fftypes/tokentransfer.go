@@ -29,7 +29,7 @@ type TokenTransfer struct {
 	LocalID         *UUID             `ffstruct:"TokenTransfer" json:"localId,omitempty" ffexcludeinput:"true"`
 	Pool            *UUID             `ffstruct:"TokenTransfer" json:"pool,omitempty"`
 	TokenIndex      string            `ffstruct:"TokenTransfer" json:"tokenIndex,omitempty"`
-	URI             string            `ffstruct:"TokenTransfer" json:"uri,omitempty" ffexcludeinput:"true"`
+	URI             string            `ffstruct:"TokenTransfer" json:"uri,omitempty"`
 	Connector       string            `ffstruct:"TokenTransfer" json:"connector,omitempty" ffexcludeinput:"true"`
 	Namespace       string            `ffstruct:"TokenTransfer" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Key             string            `ffstruct:"TokenTransfer" json:"key,omitempty"`
@@ -42,6 +42,7 @@ type TokenTransfer struct {
 	Created         *FFTime           `ffstruct:"TokenTransfer" json:"created,omitempty" ffexcludeinput:"true"`
 	TX              TransactionRef    `ffstruct:"TokenTransfer" json:"tx" ffexcludeinput:"true"`
 	BlockchainEvent *UUID             `ffstruct:"TokenTransfer" json:"blockchainEvent,omitempty" ffexcludeinput:"true"`
+	Config          JSONObject        `ffstruct:"TokenTransfer" json:"config,omitempty" ffexcludeoutput:"true"` // for REST calls only (not stored)
 }
 
 type TokenTransferInput struct {
