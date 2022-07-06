@@ -34,11 +34,11 @@ nav_order: 4
 ## Additional info
 
 - Key Concepts: [Broadcast / shared data](../overview/broadcast.md)
-- Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast]</a>
+- Swagger Reference: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore>POST /api/v1/namespaces/{ns}/messages/broadcast</a>
 
 ## Example 1: Inline string data
 
-`POST` `/api/v1/namespaces/default/broadcast/message`
+`POST` `/api/v1/namespaces/default/messages/broadcast`
 
 ```json
 {
@@ -51,12 +51,6 @@ nav_order: 4
 ```
 
 ## Example message response
-
-Status: `202 Accepted` - the message is on it's way, but has not yet been confirmed.
-
-> _Issue [#112](https://github.com/hyperledger/firefly/issues/112) proposes adding
-> an option to wait for the message to be confirmed by the blockchain before returning,
-> with `200 OK`._
 
 ```json
 {
@@ -96,7 +90,7 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
   information you are publishing. It is used as an ordering context, so all
   broadcasts on a given topic are assured to be processed in order.
 
-`POST` `/api/v1/namespaces/default/broadcast/message`
+`POST` `/api/v1/namespaces/default/messages/broadcast`
 
 ```json
 {
@@ -114,21 +108,45 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
   ]
 }
 ```
+## Notes on why setting a topic is important
+
+The FireFly aggregator uses the `topic` (obfuscated on chain) to determine if a
+message is the next message in an in-flight sequence for any groups the node is
+involved in. If it is, then that message must receive all off-chain private data
+and be confirmed before any subsequent messages can be confirmed on the same sequence.
+
+So if you use the same topic in every message, then a single failed send on one
+topic blocks delivery of all messages between those parties, until the missing
+data arrives.
+
+Instead it is best practice to set the topic on your messages to a value
+that identifies an ordered stream of business processing. Some examples:
+
+- A long-running business process instance identifier assigned at initiation
+- A real-world business transaction identifier used off-chain
+- The agreed identifier of an asset you are attaching a stream of evidence to
+- An NFT identifier that is assigned to an asset (digital twin scenarios)
+- An agreed primary key for a data resource being reconciled between multiple parties
+
+The `topic` field is an array, because there are cases (such as merging two identifiers)
+where you need a message to be deterministically ordered across multiple sequences.
+However, this is an advanced use case and you are likely to set a single topic
+on the vast majority of your messages.
 
 ## Example 3: Upload a blob with metadata and broadcast
 
 Here we make two API calls.
 
-1. Create the `data` object explicitly, using a multi-party form upload
+1) Create the `data` object explicitly, using a multi-party form upload
 
-- You can also just post JSON to this endpoint
+  - You can also just post JSON to this endpoint
 
-2. Broadcast a message referring to that data
+2) Broadcast a message referring to that data
 
-- The Blob attachment gets published to shared storage
-  - This happens the first time a broadcast happens on a data attachment
-- A pin goes to the blockchain
-- The metadata goes into a batch with the message
+  - The Blob attachment gets published to shared storage
+    - This happens the first time a broadcast happens on a data attachment
+  - A pin goes to the blockchain
+  - The metadata goes into a batch with the message
 
 ### Multipart form post of a file
 
@@ -191,3 +209,22 @@ Just include a reference to the `id` returned from the upload.
   ]
 }
 ```
+
+## Broadcasting Messages using the Sandbox
+All of the functionality discussed above can be done through the [FireFly Sandbox](../gettingstarted/sandbox.md).
+
+To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.
+
+In the sandbox, enter your message into the message field as seen in the screenshot below.
+
+![Initial Broadcast Message](../images/message_broadcast_initial.png)
+
+Notice how the `data` field in the center panel updates in real time.
+
+Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
+
+![Broadcast Result](../images/message_broadcast_sample_result.png)
+
+Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see your successful blockchain transaction
+
+![Successful Broadcast Transaction](../images/firefly_first_successful_transaction.png)
