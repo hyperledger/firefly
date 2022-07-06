@@ -607,7 +607,7 @@
   },"101": {
     "doc": "pages.reference",
     "title": "dataexchange",
-    "content": "| Key | Description | Type | Default Value | . | type | The Data Exchange plugin to use | string | ffdx | . ",
+    "content": "| Key | Description | Type | Default Value | . | type | The Data Exchange plugin to use | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#dataexchange",
     "relUrl": "/reference/config.html#dataexchange"
   },"102": {
@@ -781,7 +781,7 @@
   },"130": {
     "doc": "pages.reference",
     "title": "namespaces.predefined[]",
-    "content": "| Key | Description | Type | Default Value | . | defaultKey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remoteName | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
+    "content": "| Key | Description | Type | Default Value | . | defaultkey | A default signing key for blockchain transactions within this namespace | string | &lt;nil&gt; | . | description | A description for the namespace | string | &lt;nil&gt; | . | name | The name of the namespace (must be unique) | string | &lt;nil&gt; | . | plugins | The list of plugins for this namespace | string | &lt;nil&gt; | . | remotename | The namespace name to be sent in plugin calls, if it differs from namespace name | string | &lt;nil&gt; | . ",
     "url": "/firefly/head/reference/config.html#namespacespredefined",
     "relUrl": "/reference/config.html#namespacespredefined"
   },"131": {
