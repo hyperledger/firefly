@@ -78,6 +78,7 @@ type Manager interface {
 }
 
 type namespace struct {
+	remoteName   string
 	description  string
 	orchestrator orchestrator.Orchestrator
 	config       orchestrator.Config
@@ -190,6 +191,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		if name == defaultNS && ns.config.Multiparty.Enabled && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
 			systemNS = &namespace{}
 			*systemNS = *ns
+			systemNS.remoteName = core.LegacySystemNamespace
 			if err := nm.initNamespace(core.LegacySystemNamespace, systemNS); err != nil {
 				return err
 			}
@@ -205,7 +207,8 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 func (nm *namespaceManager) initNamespace(name string, ns *namespace) error {
 	or := nm.utOrchestrator
 	if or == nil {
-		or = orchestrator.NewOrchestrator(name, ns.config, ns.plugins, nm.metrics)
+		names := core.NamespaceRef{LocalName: name, RemoteName: ns.remoteName}
+		or = orchestrator.NewOrchestrator(names, ns.config, ns.plugins, nm.metrics)
 	}
 	if err := or.Init(nm.ctx, nm.cancelCtx); err != nil {
 		return err
@@ -640,8 +643,12 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	if err := fftypes.ValidateFFNameField(ctx, name, fmt.Sprintf("namespaces.predefined[%d].name", index)); err != nil {
 		return nil, err
 	}
-	if name == core.LegacySystemNamespace || conf.GetString(coreconfig.NamespaceRemoteName) == core.LegacySystemNamespace {
+	remoteName := conf.GetString(coreconfig.NamespaceRemoteName)
+	if name == core.LegacySystemNamespace || remoteName == core.LegacySystemNamespace {
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
+	}
+	if remoteName == "" {
+		remoteName = name
 	}
 
 	multipartyConf := conf.SubSection(coreconfig.NamespaceMultiparty)
@@ -742,6 +749,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 
 	return &namespace{
+		remoteName:  remoteName,
 		description: conf.GetString(coreconfig.NamespaceDescription),
 		config:      config,
 		plugins:     *p,

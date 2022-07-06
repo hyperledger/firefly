@@ -97,7 +97,7 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus,
 		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}
 	status = &core.NodeStatus{
-		Namespace: or.namespace,
+		Namespace: or.namespace.LocalName,
 		Node: core.NodeStatusNode{
 			Name: config.GetString(coreconfig.NodeName),
 		},
