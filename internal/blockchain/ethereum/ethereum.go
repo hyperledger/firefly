@@ -880,6 +880,12 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 		return 0, err
 	}
 
+	cacheKey := "version:" + ethLocation.Address
+	if cached := e.cache.Get(cacheKey); cached != nil {
+		cached.Extend(e.cacheTTL)
+		return cached.Value().(int), nil
+	}
+
 	res, err := e.queryContractMethod(ctx, ethLocation.Address, networkVersionMethodABI, []interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Call failed" is interpreted as "method does not exist, default to version 1"
@@ -892,7 +898,12 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return 0, err
 	}
-	return strconv.Atoi(output.Output.(string))
+
+	version, err := strconv.Atoi(output.Output.(string))
+	if err == nil {
+		e.cache.Set(cacheKey, version, e.cacheTTL)
+	}
+	return version, err
 }
 
 func (e *Ethereum) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {

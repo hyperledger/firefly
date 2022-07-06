@@ -915,6 +915,12 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 		return 0, err
 	}
 
+	cacheKey := "version:" + fabricOnChainLocation.Channel + ":" + fabricOnChainLocation.Chaincode
+	if cached := f.cache.Get(cacheKey); cached != nil {
+		cached.Extend(f.cacheTTL)
+		return cached.Value().(int), nil
+	}
+
 	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Function not found" is interpreted as "default to version 1"
@@ -928,7 +934,12 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 	if err = json.Unmarshal(res.Body(), output); err != nil {
 		return 0, err
 	}
-	return int(output.Result.(float64)), nil
+
+	version := int(output.Result.(float64))
+	if err == nil {
+		f.cache.Set(cacheKey, version, f.cacheTTL)
+	}
+	return version, err
 }
 
 func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {

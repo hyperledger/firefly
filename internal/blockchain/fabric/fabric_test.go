@@ -64,6 +64,7 @@ func newTestFabric() (*Fabric, func()) {
 		prefixShort:    defaultPrefixShort,
 		prefixLong:     defaultPrefixLong,
 		wsconn:         wsm,
+		cache:          ccache.New(ccache.Configure().MaxSize(100)),
 	}
 	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
 	return e, func() {
@@ -2616,9 +2617,15 @@ func TestGetNetworkVersion(t *testing.T) {
 		mockNetworkVersion(t, 1))
 
 	version, err := e.GetNetworkVersion(context.Background(), location)
-
 	assert.NoError(t, err)
 	assert.Equal(t, 1, version)
+
+	// second call is cached
+	version, err = e.GetNetworkVersion(context.Background(), location)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, version)
+
+	assert.Equal(t, 1, httpmock.GetTotalCallCount())
 }
 
 func TestGetNetworkVersionFunctionNotFound(t *testing.T) {
