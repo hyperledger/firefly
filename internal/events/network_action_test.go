@@ -110,6 +110,21 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 	mii.AssertExpectations(t)
 }
 
+func TestNetworkActionNonMultiparty(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	location := fftypes.JSONAnyPtr("{}")
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x1234",
+	}
+
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
+	assert.NoError(t, err)
+}
+
 func TestNetworkActionUnknown(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()

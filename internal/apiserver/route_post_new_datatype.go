@@ -22,6 +22,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -38,10 +39,13 @@ var postNewDatatype = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.Datatype{} },
 	JSONOutputCodes: []int{http.StatusAccepted, http.StatusOK},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.MultiParty() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			_, err = cr.or.Broadcast().BroadcastDatatype(cr.ctx, r.Input.(*core.Datatype), waitConfirm)
+			err = cr.or.DefinitionSender().DefineDatatype(cr.ctx, r.Input.(*core.Datatype), waitConfirm)
 			return r.Input, err
 		},
 	},

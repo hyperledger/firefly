@@ -63,6 +63,37 @@ func TestBroadcastMessageOk(t *testing.T) {
 	mdm.AssertExpectations(t)
 }
 
+func TestBroadcastMessageWriteFail(t *testing.T) {
+	bm, cancel := newTestBroadcastWithMetrics(t)
+	defer cancel()
+	mdm := bm.data.(*datamocks.Manager)
+	mim := bm.identity.(*identitymanagermocks.Manager)
+
+	ctx := context.Background()
+	mdm.On("ResolveInlineData", ctx, mock.Anything).Return(nil)
+	mdm.On("WriteNewMessage", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", ctx, mock.Anything).Return(nil)
+
+	msg, err := bm.BroadcastMessage(ctx, &core.MessageInOut{
+		Message: core.Message{
+			Header: core.MessageHeader{
+				SignerRef: core.SignerRef{
+					Author: "did:firefly:org/abcd",
+					Key:    "0x12345",
+				},
+			},
+		},
+		InlineData: core.InlineData{
+			{Value: fftypes.JSONAnyPtr(`{"hello": "world"}`)},
+		},
+	}, false)
+	assert.EqualError(t, err, "pop")
+	assert.Equal(t, "ns1", msg.Header.Namespace)
+
+	mim.AssertExpectations(t)
+	mdm.AssertExpectations(t)
+}
+
 func TestBroadcastMessageWaitConfirmOk(t *testing.T) {
 	bm, cancel := newTestBroadcast(t)
 	defer cancel()

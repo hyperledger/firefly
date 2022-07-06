@@ -91,19 +91,19 @@ type eventManager struct {
 	ctx                   context.Context
 	namespace             string
 	ni                    sysmessaging.LocalNodeInfo
-	sharedstorage         sharedstorage.Plugin
 	database              database.Plugin
 	txHelper              txcommon.Helper
 	identity              identity.Manager
-	definitions           definitions.DefinitionHandler
+	defsender             definitions.Sender
+	defhandler            definitions.Handler
 	data                  data.Manager
 	subManager            *subscriptionManager
 	retry                 retry.Retry
 	aggregator            *aggregator
-	broadcast             broadcast.Manager
-	messaging             privatemessaging.Manager
+	broadcast             broadcast.Manager        // optional
+	messaging             privatemessaging.Manager // optional
 	assets                assets.Manager
-	sharedDownload        shareddownload.Manager
+	sharedDownload        shareddownload.Manager // optional
 	blobReceiver          *blobReceiver
 	newEventNotifier      *eventNotifier
 	newPinNotifier        *eventNotifier
@@ -112,11 +112,11 @@ type eventManager struct {
 	metrics               metrics.Manager
 	chainListenerCache    *ccache.Cache
 	chainListenerCacheTTL time.Duration
-	multiparty            multiparty.Manager
+	multiparty            multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, si sharedstorage.Plugin, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.DefinitionHandler, dm data.Manager, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
-	if ni == nil || si == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || bm == nil || pm == nil || am == nil {
+func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+	if ni == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
 	newPinNotifier := newEventNotifier(ctx, "pins")
@@ -125,11 +125,11 @@ func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 		ctx:            log.WithLogField(ctx, "role", "event-manager"),
 		namespace:      ns,
 		ni:             ni,
-		sharedstorage:  si,
 		database:       di,
 		txHelper:       txHelper,
 		identity:       im,
-		definitions:    dh,
+		defsender:      ds,
+		defhandler:     dh,
 		data:           dm,
 		broadcast:      bm,
 		messaging:      pm,

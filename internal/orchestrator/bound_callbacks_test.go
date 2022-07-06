@@ -25,7 +25,6 @@ import (
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/eventmocks"
-	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/tokenmocks"
@@ -40,12 +39,11 @@ import (
 func TestBoundCallbacks(t *testing.T) {
 	mei := &eventmocks.EventManager{}
 	mbi := &blockchainmocks.Plugin{}
-	mmp := &multipartymocks.Manager{}
 	mdx := &dataexchangemocks.Plugin{}
 	mti := &tokenmocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom, multiparty: mmp}
+	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}

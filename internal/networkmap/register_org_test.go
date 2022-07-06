@@ -23,7 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/multiparty"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -67,21 +67,21 @@ func TestRegisterNodeOrgOk(t *testing.T) {
 	mmp := nm.multiparty.(*multipartymocks.Manager)
 	mmp.On("RootOrg").Return(multiparty.RootOrg{Name: "org0"})
 
-	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds := nm.defsender.(*definitionsmocks.Sender)
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
+		(*core.SignerRef)(nil),
+		false).Return(nil)
 
 	org, err := nm.RegisterNodeOrganization(nm.ctx, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *mockMsg.Header.ID, *org.Messages.Claim)
+	assert.NotNil(t, org)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 	mmp.AssertExpectations(t)
 }
 

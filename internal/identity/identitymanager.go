@@ -57,7 +57,7 @@ type Manager interface {
 type identityManager struct {
 	database               database.Plugin
 	blockchain             blockchain.Plugin
-	multiparty             multiparty.Manager
+	multiparty             multiparty.Manager // optional
 	namespace              string
 	defaultKey             string
 	multipartyRootVerifier *core.VerifierRef
@@ -229,7 +229,10 @@ func (im *identityManager) getDefaultVerifier(ctx context.Context) (verifier *co
 	if im.defaultKey != "" {
 		return im.normalizeKeyViaBlockchainPlugin(ctx, im.defaultKey)
 	}
-	return im.GetMultipartyRootVerifier(ctx)
+	if im.multiparty != nil {
+		return im.GetMultipartyRootVerifier(ctx)
+	}
+	return nil, i18n.NewError(ctx, coremsgs.MsgNodeMissingBlockchainKey)
 }
 
 // GetMultipartyRootVerifier gets the blockchain verifier of the root org via the configuration
@@ -332,7 +335,7 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 		if err := im.validateParentType(ctx, current, parent); err != nil {
 			return nil, false, err
 		}
-		if parent.Messages.Claim == nil {
+		if im.multiparty != nil && parent.Messages.Claim == nil {
 			return nil, false, i18n.NewError(ctx, coremsgs.MsgParentIdentityMissingClaim, parent.DID, parent.ID)
 		}
 		current = parent
@@ -343,7 +346,8 @@ func (im *identityManager) VerifyIdentityChain(ctx context.Context, checkIdentit
 
 }
 
-func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (parentSigner *core.SignerRef, err error) {
+func (im *identityManager) ResolveIdentitySigner(ctx context.Context, identity *core.Identity) (signer *core.SignerRef, err error) {
+
 	// Find the message that registered the identity
 	msg, err := im.database.GetMessageByID(ctx, im.namespace, identity.Messages.Claim)
 	if err != nil {
@@ -385,7 +389,7 @@ func (im *identityManager) cachedIdentityLookupByVerifierRef(ctx context.Context
 	if err != nil {
 		return nil, err
 	} else if verifier == nil {
-		if namespace != core.LegacySystemNamespace && im.multiparty.GetNetworkVersion() == 1 {
+		if namespace != core.LegacySystemNamespace && im.multiparty != nil && im.multiparty.GetNetworkVersion() == 1 {
 			// For V1 networks, fall back to LegacySystemNamespace for looking up identities
 			// This assumes that the system namespace shares a database with this manager's namespace!
 			return im.cachedIdentityLookupByVerifierRef(ctx, core.LegacySystemNamespace, verifierRef)

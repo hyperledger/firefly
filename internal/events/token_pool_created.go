@@ -195,7 +195,7 @@ func (em *eventManager) TokenPoolCreated(ti tokens.Plugin, pool *tokens.TokenPoo
 				Pool: announcePool,
 			}
 			log.L(em.ctx).Infof("Announcing token pool, id=%s", announcePool.ID)
-			_, err = em.broadcast.BroadcastTokenPool(em.ctx, broadcast, false)
+			err = em.defsender.DefineTokenPool(em.ctx, broadcast, false)
 		}
 	}
 

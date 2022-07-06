@@ -37,6 +37,7 @@ type coreRequest struct {
 
 type coreExtensions struct {
 	FilterFactory         database.QueryFactory
+	EnabledIf             func(or orchestrator.Orchestrator) bool
 	CoreJSONHandler       func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
 	CoreFormUploadHandler func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error)
 }

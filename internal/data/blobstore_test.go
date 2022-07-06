@@ -84,6 +84,18 @@ func TestUploadBlobOk(t *testing.T) {
 
 }
 
+func TestUploadBlobDisabled(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	dm.exchange = nil
+
+	b := make([]byte, 10)
+	_, err := dm.UploadBlob(ctx, &core.DataRefOrValue{}, &ffapi.Multipart{Data: bytes.NewReader(b)}, false)
+	assert.Regexp(t, "FF10414", err)
+
+}
+
 func TestUploadBlobAutoMetaOk(t *testing.T) {
 
 	dm, ctx, cancel := newTestDataManager(t)
@@ -280,6 +292,17 @@ func TestDownloadBlobOk(t *testing.T) {
 	b, err := ioutil.ReadAll(reader)
 	reader.Close()
 	assert.Equal(t, "some blob", string(b))
+
+}
+
+func TestDownloadBlobDisabled(t *testing.T) {
+
+	dm, ctx, cancel := newTestDataManager(t)
+	defer cancel()
+	dm.exchange = nil
+
+	_, _, err := dm.DownloadBlob(ctx, "")
+	assert.Regexp(t, "FF10414", err)
 
 }
 

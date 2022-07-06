@@ -46,12 +46,7 @@ type Manager interface {
 	core.Named
 
 	NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender
-	BroadcastDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
 	BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
-	BroadcastDefinitionAsNode(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
 	Start() error
 	WaitStop()
 

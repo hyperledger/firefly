@@ -40,10 +40,9 @@ func newBatchState(ag *aggregator) *batchState {
 		maskedContexts:     make(map[fftypes.Bytes32]*nextPinGroupState),
 		unmaskedContexts:   make(map[fftypes.Bytes32]*contextState),
 		dispatchedMessages: make([]*dispatchedMessage, 0),
-		pendingConfirms:    make(map[fftypes.UUID]*core.Message),
-
-		PreFinalize: make([]func(ctx context.Context) error, 0),
-		Finalize:    make([]func(ctx context.Context) error, 0),
+		BatchState: core.BatchState{
+			PendingConfirms: make(map[fftypes.UUID]*core.Message),
+		},
 	}
 }
 
@@ -96,6 +95,8 @@ type dispatchedMessage struct {
 //              Runs in a database operation group/tranaction, which will be the same as phase (1) if there
 //              are no pre-finalize handlers registered.
 type batchState struct {
+	core.BatchState
+
 	namespace          string
 	database           database.Plugin
 	messaging          privatemessaging.Manager
@@ -103,67 +104,26 @@ type batchState struct {
 	maskedContexts     map[fftypes.Bytes32]*nextPinGroupState
 	unmaskedContexts   map[fftypes.Bytes32]*contextState
 	dispatchedMessages []*dispatchedMessage
-	pendingConfirms    map[fftypes.UUID]*core.Message
-	confirmedDIDClaims []string
-
-	// PreFinalize callbacks may perform blocking actions (possibly to an external connector)
-	// - Will execute after all batch messages have been processed
-	// - Will execute outside database RunAsGroup
-	// - If any PreFinalize callback errors out, batch will be aborted and retried
-	PreFinalize []func(ctx context.Context) error
-
-	// Finalize callbacks may perform final, non-idempotent database operations (such as inserting Events)
-	// - Will execute after all batch messages have been processed and any PreFinalize callbacks have succeeded
-	// - Will execute inside database RunAsGroup
-	// - If any Finalize callback errors out, batch will be aborted and retried (small chance of duplicate execution here)
-	Finalize []func(ctx context.Context) error
-}
-
-func (bs *batchState) AddPreFinalize(action func(ctx context.Context) error) {
-	if action != nil {
-		bs.PreFinalize = append(bs.PreFinalize, action)
-	}
-}
-
-func (bs *batchState) AddFinalize(action func(ctx context.Context) error) {
-	if action != nil {
-		bs.Finalize = append(bs.Finalize, action)
-	}
-}
-
-func (bs *batchState) GetPendingConfirm() map[fftypes.UUID]*core.Message {
-	return bs.pendingConfirms
 }
 
 func (bs *batchState) RunPreFinalize(ctx context.Context) error {
-	for _, action := range bs.PreFinalize {
-		if err := action(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+	return bs.BatchState.RunPreFinalize(ctx)
 }
 
 func (bs *batchState) RunFinalize(ctx context.Context) error {
-	for _, action := range bs.Finalize {
-		if err := action(ctx); err != nil {
-			return err
-		}
+	if err := bs.BatchState.RunFinalize(ctx); err != nil {
+		return err
 	}
 	return bs.flushPins(ctx)
 }
 
-func (bs *batchState) DIDClaimConfirmed(did string) {
-	bs.confirmedDIDClaims = append(bs.confirmedDIDClaims, did)
-}
-
 func (bs *batchState) queueRewinds(ag *aggregator) {
-	for _, did := range bs.confirmedDIDClaims {
+	for _, did := range bs.ConfirmedDIDClaims {
 		ag.queueDIDRewind(did)
 	}
 }
 
-func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *core.Message, topic string, firstMsgPinSequence int64) (bool, error) {
+func (bs *batchState) checkUnmaskedContextReady(ctx context.Context, contextUnmasked *fftypes.Bytes32, msg *core.Message, firstMsgPinSequence int64) (bool, error) {
 
 	ucs, found := bs.unmaskedContexts[*contextUnmasked]
 	if !found {
@@ -195,7 +155,7 @@ func (bs *batchState) CheckUnmaskedContextReady(ctx context.Context, contextUnma
 
 }
 
-func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *core.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
+func (bs *batchState) checkMaskedContextReady(ctx context.Context, msg *core.Message, topic string, firstMsgPinSequence int64, pin *fftypes.Bytes32, nonceStr string) (*nextPinState, error) {
 	l := log.L(ctx)
 
 	// For masked pins, we can only process if:
@@ -240,7 +200,7 @@ func (bs *batchState) CheckMaskedContextReady(ctx context.Context, msg *core.Mes
 	}, err
 }
 
-func (bs *batchState) MarkMessageDispatched(ctx context.Context, batchID *fftypes.UUID, msg *core.Message, msgBaseIndex int64, newState core.MessageState) {
+func (bs *batchState) markMessageDispatched(batchID *fftypes.UUID, msg *core.Message, msgBaseIndex int64, newState core.MessageState) {
 	bs.dispatchedMessages = append(bs.dispatchedMessages, &dispatchedMessage{
 		batchID:       batchID,
 		msgID:         msg.Header.ID,

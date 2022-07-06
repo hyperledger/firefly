@@ -49,7 +49,7 @@ func newTestAggregatorCommon(metrics bool) (*aggregator, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mpm := &privatemessagingmocks.Manager{}
-	msh := &definitionsmocks.DefinitionHandler{}
+	msh := &definitionsmocks.Handler{}
 	mim := &identitymanagermocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mbi := &blockchainmocks.Plugin{}
@@ -261,7 +261,7 @@ func TestAggregationMaskedZeroNonceMatch(t *testing.T) {
 	err = bs.RunFinalize(ag.ctx)
 	assert.NoError(t, err)
 
-	assert.NotNil(t, bs.GetPendingConfirm()[*msgID])
+	assert.NotNil(t, bs.PendingConfirms[*msgID])
 
 	// Confirm the offset
 	assert.Equal(t, int64(10001), <-ag.eventPoller.offsetCommitted)
@@ -1130,7 +1130,7 @@ func TestCheckMaskedContextReadyMismatchedAuthor(t *testing.T) {
 	}, nil, nil)
 
 	bs := newBatchState(ag)
-	_, err := bs.CheckMaskedContextReady(ag.ctx, &core.Message{
+	_, err := bs.checkMaskedContextReady(ag.ctx, &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Group:  fftypes.NewRandB32(),
@@ -1516,7 +1516,7 @@ func TestDefinitionBroadcastActionRejectCustomCorrelator(t *testing.T) {
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
 	customCorrelator := fftypes.NewUUID()
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
+	msh := ag.definitions.(*definitionsmocks.Handler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(definitions.HandlerResult{Action: definitions.ActionReject, CustomCorrelator: customCorrelator}, nil)
 
@@ -1733,7 +1733,7 @@ func TestDefinitionBroadcastActionRetry(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
+	msh := ag.definitions.(*definitionsmocks.Handler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionRetry}, fmt.Errorf("pop"))
 
 	mdm := ag.data.(*datamocks.Manager)
@@ -1799,7 +1799,7 @@ func TestDefinitionBroadcastParkUnregisteredSignerIdentityClaim(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(nil, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
+	msh := ag.definitions.(*definitionsmocks.Handler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
 	newState, valid, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
@@ -1836,7 +1836,7 @@ func TestDefinitionBroadcastActionWait(t *testing.T) {
 	mim := ag.identity.(*identitymanagermocks.Manager)
 	mim.On("FindIdentityForVerifier", ag.ctx, mock.Anything, mock.Anything).Return(org1, nil)
 
-	msh := ag.definitions.(*definitionsmocks.DefinitionHandler)
+	msh := ag.definitions.(*definitionsmocks.Handler)
 	msh.On("HandleDefinitionBroadcast", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(definitions.HandlerResult{Action: definitions.ActionWait}, nil)
 
 	_, _, err := ag.attemptMessageDispatch(ag.ctx, msg1, nil, nil, &batchState{}, &core.Pin{Signer: "0x12345"})
@@ -2131,7 +2131,7 @@ func TestProcessWithBatchRewindsSuccess(t *testing.T) {
 	}
 
 	err := ag.processWithBatchState(func(ctx context.Context, actions *batchState) error {
-		actions.DIDClaimConfirmed("did:firefly:org/test")
+		actions.AddConfirmedDIDClaim("did:firefly:org/test")
 		return nil
 	})
 	assert.NoError(t, err)

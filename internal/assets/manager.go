@@ -76,8 +76,8 @@ type assetManager struct {
 	txHelper         txcommon.Helper
 	identity         identity.Manager
 	syncasync        syncasync.Bridge
-	broadcast        broadcast.Manager
-	messaging        privatemessaging.Manager
+	broadcast        broadcast.Manager        // optional
+	messaging        privatemessaging.Manager // optional
 	tokens           map[string]tokens.Plugin
 	metrics          metrics.Manager
 	operations       operations.Manager
@@ -85,7 +85,7 @@ type assetManager struct {
 }
 
 func NewAssetManager(ctx context.Context, ns string, di database.Plugin, ti map[string]tokens.Plugin, im identity.Manager, sa syncasync.Bridge, bm broadcast.Manager, pm privatemessaging.Manager, mm metrics.Manager, om operations.Manager, txHelper txcommon.Helper) (Manager, error) {
-	if di == nil || im == nil || sa == nil || bm == nil || pm == nil || ti == nil || mm == nil || om == nil {
+	if di == nil || im == nil || sa == nil || ti == nil || mm == nil || om == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "AssetManager")
 	}
 	am := &assetManager{

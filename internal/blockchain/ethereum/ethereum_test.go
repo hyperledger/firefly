@@ -565,7 +565,7 @@ func TestInitAllExistingStreamsInvalidName(t *testing.T) {
 	err := e.Init(e.ctx, utConfig, e.metrics)
 	assert.NoError(t, err)
 	_, err = e.AddFireflySubscription(e.ctx, "ns1", location, "oldest")
-	assert.Regexp(t, "FF10413", err)
+	assert.Regexp(t, "FF10416", err)
 }
 
 func TestSubQueryError(t *testing.T) {

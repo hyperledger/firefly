@@ -34,11 +34,11 @@ const (
 	// NamespaceName is the long description for a pre-defined namespace
 	NamespaceDescription = "description"
 	// NamespaceRemoteName is the namespace name to be sent in plugin calls
-	NamespaceRemoteName = "remoteName"
+	NamespaceRemoteName = "remotename"
 	// NamespacePlugins is the list of namespace plugins
 	NamespacePlugins = "plugins"
 	// NamespaceDefaultKey is the default signing key for blockchain transactions within this namespace
-	NamespaceDefaultKey = "defaultKey"
+	NamespaceDefaultKey = "defaultkey"
 	// NamespaceMultiparty contains the multiparty configuration for a namespace
 	NamespaceMultiparty = "multiparty"
 	// NamespaceMultipartyEnabled specifies if multi-party mode is enabled for a namespace

@@ -19,7 +19,6 @@ package orchestrator
 import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/events"
-	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -29,11 +28,10 @@ import (
 )
 
 type boundCallbacks struct {
-	dx         dataexchange.Plugin
-	ss         sharedstorage.Plugin
-	ei         events.EventManager
-	om         operations.Manager
-	multiparty multiparty.Manager
+	dx dataexchange.Plugin
+	ss sharedstorage.Plugin
+	ei events.EventManager
+	om operations.Manager
 }
 
 func (bc *boundCallbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {

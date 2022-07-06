@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
@@ -34,12 +34,12 @@ func newTestNetworkmap(t *testing.T) (*networkMap, func()) {
 	coreconfig.Reset()
 	ctx, cancel := context.WithCancel(context.Background())
 	mdi := &databasemocks.Plugin{}
-	mbm := &broadcastmocks.Manager{}
+	mds := &definitionsmocks.Sender{}
 	mdx := &dataexchangemocks.Plugin{}
 	mim := &identitymanagermocks.Manager{}
 	msa := &syncasyncmocks.Bridge{}
 	mmp := &multipartymocks.Manager{}
-	nm, err := NewNetworkMap(ctx, "ns1", mdi, mdx, mbm, mim, msa, mmp)
+	nm, err := NewNetworkMap(ctx, "ns1", mdi, mdx, mds, mim, msa, mmp)
 	assert.NoError(t, err)
 	return nm.(*networkMap), cancel
 

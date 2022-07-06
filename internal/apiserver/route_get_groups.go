@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 )
@@ -37,6 +38,9 @@ var getGroups = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		FilterFactory: database.GroupQueryFactory,
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.PrivateMessaging() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			return filterResult(cr.or.PrivateMessaging().GetGroups(cr.ctx, cr.filter))
 		},

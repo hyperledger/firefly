@@ -36,7 +36,7 @@ func TestFlushPinsFailUpdatePins(t *testing.T) {
 	mdi := ag.database.(*databasemocks.Plugin)
 	mdi.On("UpdatePins", ag.ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	bs.MarkMessageDispatched(ag.ctx, fftypes.NewUUID(), &core.Message{
+	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
 			ID:     fftypes.NewUUID(),
 			Topics: core.FFStringArray{"topic1"},
@@ -60,7 +60,7 @@ func TestFlushPinsFailUpdateMessages(t *testing.T) {
 	mdm := ag.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageStateIfCached", ag.ctx, msgID, core.MessageStateConfirmed, mock.Anything).Return()
 
-	bs.MarkMessageDispatched(ag.ctx, fftypes.NewUUID(), &core.Message{
+	bs.markMessageDispatched(fftypes.NewUUID(), &core.Message{
 		Header: core.MessageHeader{
 			ID:     msgID,
 			Topics: core.FFStringArray{"topic1"},
@@ -80,7 +80,7 @@ func TestSetContextBlockedByNoState(t *testing.T) {
 	unmaskedContext := fftypes.NewRandB32()
 	bs.SetContextBlockedBy(ag.ctx, *unmaskedContext, 10)
 
-	ready, err := bs.CheckUnmaskedContextReady(ag.ctx, unmaskedContext, &core.Message{}, "topic1", 1)
+	ready, err := bs.checkUnmaskedContextReady(ag.ctx, unmaskedContext, &core.Message{}, 1)
 	assert.NoError(t, err)
 	assert.False(t, ready)
 }

@@ -44,10 +44,14 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NoResult)
 	}
 
-	// Resolve the signer of the original claim
-	updateSigner, err := nm.identity.ResolveIdentitySigner(ctx, identity)
-	if err != nil {
-		return nil, err
+	var updateSigner *core.SignerRef
+
+	if nm.multiparty != nil {
+		// Resolve the signer of the original claim
+		updateSigner, err = nm.identity.ResolveIdentitySigner(ctx, identity)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	identity.IdentityProfile = dto.IdentityProfile
@@ -56,14 +60,9 @@ func (nm *networkMap) updateIdentityID(ctx context.Context, id *fftypes.UUID, dt
 	}
 
 	// Send the update
-	updateMsg, err := nm.broadcast.BroadcastDefinition(ctx, &core.IdentityUpdate{
+	err = nm.defsender.UpdateIdentity(ctx, identity, &core.IdentityUpdate{
 		Identity: identity.IdentityBase,
 		Updates:  dto.IdentityProfile,
-	}, updateSigner, core.SystemTagIdentityUpdate, waitConfirm)
-	if err != nil {
-		return nil, err
-	}
-	identity.Messages.Update = updateMsg.Header.ID
-
+	}, updateSigner, waitConfirm)
 	return identity, err
 }

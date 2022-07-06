@@ -49,7 +49,6 @@ type Manager interface {
 	core.Named
 	GroupManager
 
-	Start() error
 	NewMessage(msg *core.MessageInOut) sysmessaging.MessageSender
 	SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
 	RequestReply(ctx context.Context, request *core.MessageInOut) (reply *core.MessageInOut, err error)
@@ -159,10 +158,6 @@ func NewPrivateMessaging(ctx context.Context, ns string, di database.Plugin, dx 
 
 func (pm *privateMessaging) Name() string {
 	return "PrivateMessaging"
-}
-
-func (pm *privateMessaging) Start() error {
-	return pm.exchange.Start()
 }
 
 func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, state *batch.DispatchState) error {

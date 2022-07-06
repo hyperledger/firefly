@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/tokens/tifactory"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
@@ -828,7 +829,7 @@ func TestLoadNamespacesUseDefaults(t *testing.T) {
 	assert.Len(t, nm.namespaces, 1)
 }
 
-func TestLoadNamespacesGatewayNoDatabase(t *testing.T) {
+func TestLoadNamespacesNonMultipartyNoDatabase(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -980,7 +981,7 @@ func TestLoadNamespacesMultipartyContractBadLocation(t *testing.T) {
 	assert.Regexp(t, "json:", err)
 }
 
-func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
+func TestLoadNamespacesNonMultipartyMultipleDB(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -998,7 +999,7 @@ func TestLoadNamespacesGatewayMultipleDB(t *testing.T) {
 	assert.Regexp(t, "FF10394.*database", err)
 }
 
-func TestLoadNamespacesGatewayMultipleBlockchains(t *testing.T) {
+func TestLoadNamespacesNonMultipartyMultipleBlockchains(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1036,7 +1037,7 @@ func TestLoadNamespacesMultipartyMissingPlugins(t *testing.T) {
 	assert.Regexp(t, "FF10391", err)
 }
 
-func TestLoadNamespacesGatewayWithDX(t *testing.T) {
+func TestLoadNamespacesNonMultipartyWithDX(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1054,7 +1055,7 @@ func TestLoadNamespacesGatewayWithDX(t *testing.T) {
 	assert.Regexp(t, "FF10393", err)
 }
 
-func TestLoadNamespacesGatewayWithSharedStorage(t *testing.T) {
+func TestLoadNamespacesNonMultipartyWithSharedStorage(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1072,7 +1073,7 @@ func TestLoadNamespacesGatewayWithSharedStorage(t *testing.T) {
 	assert.Regexp(t, "FF10393", err)
 }
 
-func TestLoadNamespacesGatewayUnknownPlugin(t *testing.T) {
+func TestLoadNamespacesNonMultipartyUnknownPlugin(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1090,7 +1091,7 @@ func TestLoadNamespacesGatewayUnknownPlugin(t *testing.T) {
 	assert.Regexp(t, "FF10390.*unknown", err)
 }
 
-func TestLoadNamespacesGatewayTokens(t *testing.T) {
+func TestLoadNamespacesNonMultipartyTokens(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
@@ -1126,7 +1127,70 @@ func TestStart(t *testing.T) {
 	mo.AssertExpectations(t)
 }
 
-func TestStartFail(t *testing.T) {
+func TestStartBlockchainFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"ns": {
+			plugins: orchestrator.Plugins{
+				Blockchain: orchestrator.BlockchainPlugin{
+					Plugin: nm.mbi,
+				},
+			},
+		},
+	}
+
+	nm.mbi.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestStartDataExchangeFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"ns": {
+			plugins: orchestrator.Plugins{
+				DataExchange: orchestrator.DataExchangePlugin{
+					Plugin: nm.mdx,
+				},
+			},
+		},
+	}
+
+	nm.mdx.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestStartTokensFail(t *testing.T) {
+	nm := newTestNamespaceManager(true)
+	defer nm.cleanup(t)
+
+	nm.namespaces = map[string]*namespace{
+		"ns": {
+			plugins: orchestrator.Plugins{
+				Tokens: []orchestrator.TokensPlugin{{
+					Plugin: nm.mti,
+				}},
+			},
+		},
+	}
+
+	nm.mti.On("Start").Return(fmt.Errorf("pop"))
+
+	err := nm.Start()
+	assert.EqualError(t, err, "pop")
+
+}
+
+func TestStartOrchestratorFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 

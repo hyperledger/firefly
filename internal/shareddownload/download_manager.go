@@ -53,7 +53,7 @@ type downloadManager struct {
 	cancelFunc                 func()
 	namespace                  string
 	database                   database.Plugin
-	sharedstorage              sharedstorage.Plugin
+	sharedstorage              sharedstorage.Plugin // optional
 	dataexchange               dataexchange.Plugin
 	operations                 operations.Manager
 	callbacks                  Callbacks

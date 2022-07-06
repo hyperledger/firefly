@@ -393,3 +393,44 @@ func TestFormDataBadNamespace(t *testing.T) {
 
 	assert.Equal(t, 404, res.Result().StatusCode)
 }
+
+func TestJSONDisabledRoute(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	o.On("PrivateMessaging").Return(nil)
+
+	var b bytes.Buffer
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/groups", &b)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
+}
+
+func TestFormDataDisabledRoute(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	o.On("MultiParty").Return(nil)
+
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	writer, err := w.CreateFormFile("file", "filename.ext")
+	assert.NoError(t, err)
+	writer.Write([]byte(`some data`))
+	w.Close()
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/data", &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
+}
