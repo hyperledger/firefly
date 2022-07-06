@@ -565,6 +565,7 @@ var (
 	TokenTransferCreated         = ffm("TokenTransfer.created", "The creation time of the transfer")
 	TokenTransferTX              = ffm("TokenTransfer.tx", "If submitted via FireFly, this will reference the UUID of the FireFly transaction (if the token connector in use supports attaching data)")
 	TokenTransferBlockchainEvent = ffm("TokenTransfer.blockchainEvent", "The UUID of the blockchain event")
+	TokenTransferConfig          = ffm("TokenTransfer.config", "Input only field, with token connector specific configuration of the transfer. See your chosen token connector documentation for details")
 
 	// TokenTransferInput field descriptions
 	TokenTransferInputMessage = ffm("TokenTransferInput.message", "You can specify a message to correlate with the transfer, which can be of type broadcast or private. Your chosen token connector and on-chain smart contract must support on-chain/off-chain correlation by taking a `data` input on the transfer")
