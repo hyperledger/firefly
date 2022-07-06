@@ -255,12 +255,14 @@
   <li><a href="#example-1-inline-string-data" id="markdown-toc-example-1-inline-string-data">Example 1: Inline string data</a></li>
   <li><a href="#example-message-response" id="markdown-toc-example-message-response">Example message response</a></li>
   <li><a href="#example-2-inline-object-data-to-a-topic-no-datatype-verification" id="markdown-toc-example-2-inline-object-data-to-a-topic-no-datatype-verification">Example 2: Inline object data to a topic (no datatype verification)</a></li>
+  <li><a href="#notes-on-why-setting-a-topic-is-important" id="markdown-toc-notes-on-why-setting-a-topic-is-important">Notes on why setting a topic is important</a></li>
   <li><a href="#example-3-upload-a-blob-with-metadata-and-broadcast" id="markdown-toc-example-3-upload-a-blob-with-metadata-and-broadcast">Example 3: Upload a blob with metadata and broadcast</a>    <ol>
       <li><a href="#multipart-form-post-of-a-file" id="markdown-toc-multipart-form-post-of-a-file">Multipart form post of a file</a></li>
       <li><a href="#example-data-response-from-blob-upload" id="markdown-toc-example-data-response-from-blob-upload">Example data response from Blob upload</a></li>
       <li><a href="#broadcast-the-uploaded-data" id="markdown-toc-broadcast-the-uploaded-data">Broadcast the uploaded data</a></li>
     </ol>
   </li>
+  <li><a href="#broadcasting-messages-using-the-sandbox" id="markdown-toc-broadcasting-messages-using-the-sandbox">Broadcasting Messages using the Sandbox</a></li>
 </ol><hr />
       <h2 id="quick-reference">
         
@@ -311,7 +313,7 @@
 
 <ul>
   <li>Key Concepts: <a href="/firefly/head/overview/broadcast.html">Broadcast / shared data</a></li>
-  <li>Swagger: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore="">POST /api/v1/namespaces/{ns}/messages/broadcast]</a></li>
+  <li>Swagger Reference: <a href="../swagger/swagger.html#/Default%20Namespace/postNewMessageBroadcast" data-proofer-ignore="">POST /api/v1/namespaces/{ns}/messages/broadcast</a></li>
 </ul>
       <h2 id="example-1-inline-string-data">
         
@@ -322,7 +324,7 @@
       </h2>
     
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/broadcast/message</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/messages/broadcast</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
@@ -340,14 +342,6 @@
         
       </h2>
     
-
-<p>Status: <code class="language-plaintext highlighter-rouge">202 Accepted</code> - the message is on it’s way, but has not yet been confirmed.</p>
-
-<blockquote>
-  <p><em>Issue <a href="https://github.com/hyperledger/firefly/issues/112">#112</a> proposes adding
-an option to wait for the message to be confirmed by the blockchain before returning,
-with <code class="language-plaintext highlighter-rouge">200 OK</code>.</em></p>
-</blockquote>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"header"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -394,7 +388,7 @@ information you are publishing. It is used as an ordering context, so all
 broadcasts on a given topic are assured to be processed in order.</li>
 </ul>
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/broadcast/message</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/messages/broadcast</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"header"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -411,6 +405,39 @@ broadcasts on a given topic are assured to be processed in order.</li>
   </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
+      <h2 id="notes-on-why-setting-a-topic-is-important">
+        
+        
+          <a href="#notes-on-why-setting-a-topic-is-important" class="anchor-heading" aria-labelledby="notes-on-why-setting-a-topic-is-important"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Notes on why setting a topic is important
+        
+        
+      </h2>
+    
+
+<p>The FireFly aggregator uses the <code class="language-plaintext highlighter-rouge">topic</code> (obfuscated on chain) to determine if a
+message is the next message in an in-flight sequence for any groups the node is
+involved in. If it is, then that message must receive all off-chain private data
+and be confirmed before any subsequent messages can be confirmed on the same sequence.</p>
+
+<p>So if you use the same topic in every message, then a single failed send on one
+topic blocks delivery of all messages between those parties, until the missing
+data arrives.</p>
+
+<p>Instead it is best practice to set the topic on your messages to a value
+that identifies an ordered stream of business processing. Some examples:</p>
+
+<ul>
+  <li>A long-running business process instance identifier assigned at initiation</li>
+  <li>A real-world business transaction identifier used off-chain</li>
+  <li>The agreed identifier of an asset you are attaching a stream of evidence to</li>
+  <li>An NFT identifier that is assigned to an asset (digital twin scenarios)</li>
+  <li>An agreed primary key for a data resource being reconciled between multiple parties</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">topic</code> field is an array, because there are cases (such as merging two identifiers)
+where you need a message to be deterministically ordered across multiple sequences.
+However, this is an advanced use case and you are likely to set a single topic
+on the vast majority of your messages.</p>
       <h2 id="example-3-upload-a-blob-with-metadata-and-broadcast">
         
         
@@ -422,17 +449,13 @@ broadcasts on a given topic are assured to be processed in order.</li>
 
 <p>Here we make two API calls.</p>
 
-<ol>
-  <li>Create the <code class="language-plaintext highlighter-rouge">data</code> object explicitly, using a multi-party form upload</li>
-</ol>
+<p>1) Create the <code class="language-plaintext highlighter-rouge">data</code> object explicitly, using a multi-party form upload</p>
 
 <ul>
   <li>You can also just post JSON to this endpoint</li>
 </ul>
 
-<ol>
-  <li>Broadcast a message referring to that data</li>
-</ol>
+<p>2) Broadcast a message referring to that data</p>
 
 <ul>
   <li>The Blob attachment gets published to shared storage
@@ -522,6 +545,31 @@ the <code class="language-plaintext highlighter-rouge">filename</code>, and <cod
   </span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
+      <h2 id="broadcasting-messages-using-the-sandbox">
+        
+        
+          <a href="#broadcasting-messages-using-the-sandbox" class="anchor-heading" aria-labelledby="broadcasting-messages-using-the-sandbox"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Broadcasting Messages using the Sandbox
+        
+        
+      </h2>
+    
+<p>All of the functionality discussed above can be done through the <a href="/firefly/head/gettingstarted/sandbox.html">FireFly Sandbox</a>.</p>
+
+<p>To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.</p>
+
+<p>In the sandbox, enter your message into the message field as seen in the screenshot below.</p>
+
+<p><img src="/firefly/head/images/message_broadcast_initial.png" alt="Initial Broadcast Message" /></p>
+
+<p>Notice how the <code class="language-plaintext highlighter-rouge">data</code> field in the center panel updates in real time.</p>
+
+<p>Click the blue <code class="language-plaintext highlighter-rouge">Run</code> button. This should return a <code class="language-plaintext highlighter-rouge">202</code> response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds.</p>
+
+<p><img src="/firefly/head/images/message_broadcast_sample_result.png" alt="Broadcast Result" /></p>
+
+<p>Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you’ll see your successful blockchain transaction</p>
+
+<p><img src="/firefly/head/images/firefly_first_successful_transaction.png" alt="Successful Broadcast Transaction" /></p>
 
         
 

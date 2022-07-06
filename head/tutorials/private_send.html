@@ -263,6 +263,7 @@
       <li><a href="#send-the-uploaded-data-privately" id="markdown-toc-send-the-uploaded-data-privately">Send the uploaded data privately</a></li>
     </ol>
   </li>
+  <li><a href="#sending-private-messages-using-the-sandbox" id="markdown-toc-sending-private-messages-using-the-sandbox">Sending Private Messages using the Sandbox</a></li>
 </ol><hr />
       <h2 id="quick-reference">
         
@@ -354,7 +355,7 @@ has been sequenced via the blockchain and a <code class="language-plaintext high
       </h2>
     
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/send/message</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/messages/private</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
@@ -381,12 +382,6 @@ has been sequenced via the blockchain and a <code class="language-plaintext high
     
 
 <p>Status: <code class="language-plaintext highlighter-rouge">202 Accepted</code> - the message is on it’s way, but has not yet been confirmed.</p>
-
-<blockquote>
-  <p><em>Issue <a href="https://github.com/hyperledger/firefly/issues/112">#112</a> proposes adding
-an option to wait for the message to be confirmed by the blockchain before returning,
-with <code class="language-plaintext highlighter-rouge">200 OK</code>.</em></p>
-</blockquote>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"header"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -429,7 +424,7 @@ with <code class="language-plaintext highlighter-rouge">200 OK</code>.</em></p>
 <p>Set <code class="language-plaintext highlighter-rouge">header.txtype: "none"</code> to disable pinning of the private message send to the blockchain.
 The message is sent immediately (no batching) over the private data exchange.</p>
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/send/message</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/messages/private</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"header"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -469,7 +464,7 @@ information you are publishing. It is used as an ordering context, so all
 sends on a given topic are assured to be processed in order.</li>
 </ul>
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/send/message</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/messages/private</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"header"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -537,18 +532,12 @@ on the vast majority of your messages.</p>
 
 <p>Here we make two API calls.</p>
 
-<ol>
-  <li>Create the <code class="language-plaintext highlighter-rouge">data</code> object explicitly, using a multi-party form upload</li>
-</ol>
-
+<p>1) Create the <code class="language-plaintext highlighter-rouge">data</code> object explicitly, using a multi-party form upload</p>
 <ul>
   <li>You can also just post JSON to this endpoint</li>
 </ul>
 
-<ol>
-  <li>Privately send a message referring to that data</li>
-</ol>
-
+<p>2) Privately send a message referring to that data</p>
 <ul>
   <li>The Blob is sent privately to each party</li>
   <li>A pin goes to the blockchain</li>
@@ -618,7 +607,7 @@ the <code class="language-plaintext highlighter-rouge">filename</code>, and <cod
 
 <p>Just include a reference to the <code class="language-plaintext highlighter-rouge">id</code> returned from the upload.</p>
 
-<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/send/message</code></p>
+<p><code class="language-plaintext highlighter-rouge">POST</code> <code class="language-plaintext highlighter-rouge">/api/v1/namespaces/default/messages/private</code></p>
 
 <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
@@ -635,6 +624,31 @@ the <code class="language-plaintext highlighter-rouge">filename</code>, and <cod
     </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre></div></div>
+      <h2 id="sending-private-messages-using-the-sandbox">
+        
+        
+          <a href="#sending-private-messages-using-the-sandbox" class="anchor-heading" aria-labelledby="sending-private-messages-using-the-sandbox"><svg viewBox="0 0 16 16" aria-hidden="true"><use xlink:href="#svg-link"></use></svg></a> Sending Private Messages using the Sandbox
+        
+        
+      </h2>
+    
+<p>All of the functionality discussed above can be done through the <a href="/firefly/head/gettingstarted/sandbox.html">FireFly Sandbox</a>.</p>
+
+<p>To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.</p>
+
+<p>Make sure to expand the “Send a Private Message” section. Enter your message into the message field as seen in the screenshot below. Because we are sending a private message, make sure you’re in the “Send a Private Message” section and that you choose a message recipient</p>
+
+<p><img src="/firefly/head/images/message_private_broadcast.png" alt="Private Message Broadcast" /></p>
+
+<p>Notice how the <code class="language-plaintext highlighter-rouge">data</code> field in the center panel updates in real time as you update the message you wish to send.</p>
+
+<p>Click the blue <code class="language-plaintext highlighter-rouge">Run</code> button. This should return a <code class="language-plaintext highlighter-rouge">202</code> response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds.</p>
+
+<p><img src="/firefly/head/images/message_broadcast_sample_result.png" alt="Private Message result" /></p>
+
+<p>Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you’ll see your successful blockchain transaction. Compare the “Recent Network Changes” widget With private messages, your</p>
+
+<p><img src="/firefly/head/images/firefly_first_successful_transaction.png" alt="Successful Transaction" /></p>
 
         
 
