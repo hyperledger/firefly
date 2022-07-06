@@ -11225,10 +11225,6 @@ paths:
                     of the transfer. See your chosen token connector documentation
                     for details
                   type: object
-                from:
-                  description: The source account for the transfer. On input defaults
-                    to the value of 'key'
-                  type: string
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
