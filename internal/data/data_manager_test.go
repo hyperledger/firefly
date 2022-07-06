@@ -26,7 +26,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
-	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
@@ -42,8 +41,7 @@ func newTestDataManager(t *testing.T) (*dataManager, context.Context, func()) {
 		Concurrency: true,
 	})
 	mdx := &dataexchangemocks.Plugin{}
-	mps := &sharedstoragemocks.Plugin{}
-	dm, err := NewDataManager(ctx, "ns1", mdi, mps, mdx)
+	dm, err := NewDataManager(ctx, "ns1", mdi, mdx)
 	assert.NoError(t, err)
 	return dm.(*dataManager), ctx, func() {
 		cancel()
@@ -213,7 +211,7 @@ func TestWriteNewMessageE2E(t *testing.T) {
 }
 
 func TestInitBadDeps(t *testing.T) {
-	_, err := NewDataManager(context.Background(), "", nil, nil, nil)
+	_, err := NewDataManager(context.Background(), "", nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 

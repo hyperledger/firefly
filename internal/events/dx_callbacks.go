@@ -77,6 +77,10 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerI
 }
 
 func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, wrapperGroup *core.Group) (manifest string, err error) {
+	if em.multiparty == nil {
+		log.L(em.ctx).Errorf("Ignoring private batch from non-multiparty network!")
+		return "", nil
+	}
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {

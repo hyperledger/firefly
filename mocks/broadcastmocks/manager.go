@@ -18,98 +18,6 @@ type Manager struct {
 	mock.Mock
 }
 
-// BroadcastDatatype provides a mock function with given fields: ctx, datatype, waitConfirm
-func (_m *Manager) BroadcastDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, datatype, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *core.Datatype, bool) *core.Message); ok {
-		r0 = rf(ctx, datatype, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.Datatype, bool) error); ok {
-		r1 = rf(ctx, datatype, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastDefinition provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastDefinition(ctx context.Context, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, core.Definition, *core.SignerRef, string, bool) *core.Message); ok {
-		r0 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.Definition, *core.SignerRef, string, bool) error); ok {
-		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastDefinitionAsNode provides a mock function with given fields: ctx, def, tag, waitConfirm
-func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, def core.Definition, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, def, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, core.Definition, string, bool) *core.Message); ok {
-		r0 = rf(ctx, def, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, core.Definition, string, bool) error); ok {
-		r1 = rf(ctx, def, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastIdentityClaim provides a mock function with given fields: ctx, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastIdentityClaim(ctx context.Context, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, def, signingIdentity, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *core.IdentityClaim, *core.SignerRef, string, bool) *core.Message); ok {
-		r0 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.IdentityClaim, *core.SignerRef, string, bool) error); ok {
-		r1 = rf(ctx, def, signingIdentity, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // BroadcastMessage provides a mock function with given fields: ctx, in, waitConfirm
 func (_m *Manager) BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
 	ret := _m.Called(ctx, in, waitConfirm)
@@ -126,29 +34,6 @@ func (_m *Manager) BroadcastMessage(ctx context.Context, in *core.MessageInOut, 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut, bool) error); ok {
 		r1 = rf(ctx, in, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastTokenPool provides a mock function with given fields: ctx, pool, waitConfirm
-func (_m *Manager) BroadcastTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, pool, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, *core.TokenPoolAnnouncement, bool) *core.Message); ok {
-		r0 = rf(ctx, pool, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.TokenPoolAnnouncement, bool) error); ok {
-		r1 = rf(ctx, pool, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}

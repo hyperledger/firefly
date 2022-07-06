@@ -254,6 +254,23 @@ func TestMessageReceivedWrongNS(t *testing.T) {
 
 }
 
+func TestMessageReceivedNonMultiparty(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	_, b := sampleBatchTransfer(t, core.TransactionTypeBatchPin)
+
+	mdx := &dataexchangemocks.Plugin{}
+	mdx.On("Name").Return("utdx")
+
+	mde := newMessageReceived("peer1", b, "")
+	em.messageReceived(mdx, mde)
+
+	mde.AssertExpectations(t)
+
+}
+
 func TestMessageReceiveNodeLookupError(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	cancel() // to stop retry

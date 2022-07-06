@@ -535,14 +535,3 @@ func TestTransferBlobsOpInsertFail(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 }
-
-func TestStart(t *testing.T) {
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mdx := pm.exchange.(*dataexchangemocks.Plugin)
-	mdx.On("Start").Return(nil)
-
-	err := pm.Start()
-	assert.NoError(t, err)
-}

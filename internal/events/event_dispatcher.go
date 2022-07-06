@@ -56,8 +56,8 @@ type eventDispatcher struct {
 	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
-	broadcast     broadcast.Manager
-	messaging     privatemessaging.Manager
+	broadcast     broadcast.Manager        // optional
+	messaging     privatemessaging.Manager // optional
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*core.Event

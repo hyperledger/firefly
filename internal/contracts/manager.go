@@ -23,7 +23,6 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
-	"github.com/hyperledger/firefly/internal/broadcast"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/operations"
@@ -38,21 +37,19 @@ import (
 type Manager interface {
 	core.Named
 
-	BroadcastFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error)
 	GetFFI(ctx context.Context, name, version string) (*core.FFI, error)
 	GetFFIWithChildren(ctx context.Context, name, version string) (*core.FFI, error)
 	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
 	GetFFIByIDWithChildren(ctx context.Context, id *fftypes.UUID) (*core.FFI, error)
 	GetFFIs(ctx context.Context, filter database.AndFilter) ([]*core.FFI, *database.FilterResult, error)
+	ResolveFFI(ctx context.Context, ffi *core.FFI) error
 
 	InvokeContract(ctx context.Context, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	InvokeContractAPI(ctx context.Context, apiName, methodPath string, req *core.ContractCallRequest, waitConfirm bool) (interface{}, error)
 	GetContractAPI(ctx context.Context, httpServerURL, apiName string) (*core.ContractAPI, error)
 	GetContractAPIInterface(ctx context.Context, apiName string) (*core.FFI, error)
 	GetContractAPIs(ctx context.Context, httpServerURL string, filter database.AndFilter) ([]*core.ContractAPI, *database.FilterResult, error)
-	BroadcastContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error)
-
-	ValidateFFIAndSetPathnames(ctx context.Context, ffi *core.FFI) error
+	ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) error
 
 	AddContractListener(ctx context.Context, listener *core.ContractListenerInput) (output *core.ContractListener, err error)
 	AddContractAPIListener(ctx context.Context, apiName, eventPath string, listener *core.ContractListener) (output *core.ContractListener, err error)
@@ -71,7 +68,6 @@ type contractManager struct {
 	namespace         string
 	database          database.Plugin
 	txHelper          txcommon.Helper
-	broadcast         broadcast.Manager
 	identity          identity.Manager
 	blockchain        blockchain.Plugin
 	ffiParamValidator core.FFIParamValidator
@@ -79,8 +75,8 @@ type contractManager struct {
 	syncasync         syncasync.Bridge
 }
 
-func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, bm broadcast.Manager, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
-	if di == nil || bm == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
+func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, im identity.Manager, om operations.Manager, txHelper txcommon.Helper, sa syncasync.Bridge) (Manager, error) {
+	if di == nil || im == nil || bi == nil || om == nil || txHelper == nil || sa == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "ContractManager")
 	}
 	v, err := bi.GetFFIParamValidator(ctx)
@@ -92,7 +88,6 @@ func NewContractManager(ctx context.Context, ns string, di database.Plugin, bi b
 		namespace:         ns,
 		database:          di,
 		txHelper:          txHelper,
-		broadcast:         bm,
 		identity:          im,
 		blockchain:        bi,
 		ffiParamValidator: v,
@@ -117,34 +112,6 @@ func (cm *contractManager) newFFISchemaCompiler() *jsonschema.Compiler {
 		c.RegisterExtension(cm.ffiParamValidator.GetExtensionName(), cm.ffiParamValidator.GetMetaSchema(), cm.ffiParamValidator)
 	}
 	return c
-}
-
-func (cm *contractManager) BroadcastFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) (output *core.FFI, err error) {
-	ffi.ID = fftypes.NewUUID()
-	ffi.Namespace = cm.namespace
-
-	existing, err := cm.database.GetFFI(ctx, cm.namespace, ffi.Name, ffi.Version)
-	if existing != nil && err == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
-	}
-
-	for _, method := range ffi.Methods {
-		method.ID = fftypes.NewUUID()
-	}
-	for _, event := range ffi.Events {
-		event.ID = fftypes.NewUUID()
-	}
-	if err := cm.ValidateFFIAndSetPathnames(ctx, ffi); err != nil {
-		return nil, err
-	}
-
-	output = ffi
-	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, ffi, core.SystemTagDefineFFI, waitConfirm)
-	if err != nil {
-		return nil, err
-	}
-	output.Message = msg.Header.ID
-	return ffi, nil
 }
 
 func (cm *contractManager) GetFFI(ctx context.Context, name, version string) (*core.FFI, error) {
@@ -317,6 +284,36 @@ func (cm *contractManager) GetContractAPIs(ctx context.Context, httpServerURL st
 	return apis, fr, err
 }
 
+func (cm *contractManager) ResolveContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI) (err error) {
+	if api.Location != nil {
+		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, api.Location); err != nil {
+			return err
+		}
+	}
+
+	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
+		existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
+		if existing != nil && err == nil {
+			if !api.LocationAndLedgerEquals(existing) {
+				return i18n.NewError(ctx, coremsgs.MsgContractLocationExists)
+			}
+		}
+
+		if err := cm.resolveFFIReference(ctx, api.Interface); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if httpServerURL != "" {
+		cm.addContractURLs(httpServerURL, api)
+	}
+	return nil
+}
+
 func (cm *contractManager) resolveFFIReference(ctx context.Context, ref *core.FFIReference) error {
 	switch {
 	case ref == nil:
@@ -346,42 +343,6 @@ func (cm *contractManager) resolveFFIReference(ctx context.Context, ref *core.FF
 	}
 }
 
-func (cm *contractManager) BroadcastContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) (output *core.ContractAPI, err error) {
-	api.ID = fftypes.NewUUID()
-	api.Namespace = cm.namespace
-
-	if api.Location != nil {
-		if api.Location, err = cm.blockchain.NormalizeContractLocation(ctx, api.Location); err != nil {
-			return nil, err
-		}
-	}
-
-	err = cm.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		existing, err := cm.database.GetContractAPIByName(ctx, api.Namespace, api.Name)
-		if existing != nil && err == nil {
-			if !api.LocationAndLedgerEquals(existing) {
-				return i18n.NewError(ctx, coremsgs.MsgContractLocationExists)
-			}
-		}
-
-		if err := cm.resolveFFIReference(ctx, api.Interface); err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	msg, err := cm.broadcast.BroadcastDefinitionAsNode(ctx, api, core.SystemTagDefineContractAPI, waitConfirm)
-	if err != nil {
-		return nil, err
-	}
-	api.Message = msg.Header.ID
-	cm.addContractURLs(httpServerURL, api)
-	return api, nil
-}
-
 func (cm *contractManager) uniquePathName(name string, usedNames map[string]bool) string {
 	pathName := name
 	for counter := 1; ; counter++ {
@@ -394,9 +355,14 @@ func (cm *contractManager) uniquePathName(name string, usedNames map[string]bool
 	}
 }
 
-func (cm *contractManager) ValidateFFIAndSetPathnames(ctx context.Context, ffi *core.FFI) error {
+func (cm *contractManager) ResolveFFI(ctx context.Context, ffi *core.FFI) error {
 	if err := ffi.Validate(ctx, false); err != nil {
 		return err
+	}
+
+	existing, err := cm.database.GetFFI(ctx, cm.namespace, ffi.Name, ffi.Version)
+	if existing != nil && err == nil {
+		return i18n.NewError(ctx, coremsgs.MsgContractInterfaceExists, ffi.Namespace, ffi.Name, ffi.Version)
 	}
 
 	methodPathNames := map[string]bool{}

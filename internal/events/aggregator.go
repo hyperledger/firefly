@@ -48,7 +48,7 @@ type aggregator struct {
 	namespace     string
 	database      database.Plugin
 	messaging     privatemessaging.Manager
-	definitions   definitions.DefinitionHandler
+	definitions   definitions.Handler
 	identity      identity.Manager
 	data          data.Manager
 	eventPoller   *eventPoller
@@ -65,7 +65,7 @@ type batchCacheEntry struct {
 	manifest *core.BatchManifest
 }
 
-func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
@@ -453,19 +453,19 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, manifest.ID, i, pinStr)
 				return nil
 			}
-			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
+			nextPin, err := state.checkMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
 			if err != nil || nextPin == nil {
 				return err
 			}
 			nextPins = append(nextPins, nextPin)
 		}
 	} else {
-		for i, topic := range msg.Header.Topics {
+		for _, topic := range msg.Header.Topics {
 			h := sha256.New()
 			h.Write([]byte(topic))
 			msgContext := fftypes.HashResult(h)
 			unmaskedContexts = append(unmaskedContexts, msgContext)
-			ready, err := state.CheckUnmaskedContextReady(ctx, msgContext, msg, msg.Header.Topics[i], pin.Sequence)
+			ready, err := state.checkUnmaskedContextReady(ctx, msgContext, msg, pin.Sequence)
 			if err != nil || !ready {
 				return err
 			}
@@ -490,7 +490,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		for _, np := range nextPins {
 			np.IncrementNextPin(ctx)
 		}
-		state.MarkMessageDispatched(ctx, manifest.ID, msg, msgBaseIndex, newState)
+		state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
 	} else {
 		for _, unmaskedContext := range unmaskedContexts {
 			state.SetContextBlockedBy(ctx, *unmaskedContext, pin.Sequence)
@@ -534,7 +534,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	case msg.Header.Type == core.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
+		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
 		if handlerResult.Action == definitions.ActionRetry {
 			return "", false, err
@@ -561,7 +561,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	newState = core.MessageStateConfirmed
 	eventType := core.EventTypeMessageConfirmed
 	if valid {
-		state.pendingConfirms[*msg.Header.ID] = msg
+		state.AddPendingConfirm(msg.Header.ID, msg)
 	} else {
 		newState = core.MessageStateRejected
 		eventType = core.EventTypeMessageRejected

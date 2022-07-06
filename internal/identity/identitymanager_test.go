@@ -493,6 +493,16 @@ func TestNormalizeSigningKeyOrgFallbackErr(t *testing.T) {
 
 }
 
+func TestNormalizeSigningKeyNoDefault(t *testing.T) {
+
+	ctx, im := newTestIdentityManager(t)
+	im.multiparty = nil
+
+	_, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	assert.Regexp(t, "FF10354", err)
+
+}
+
 func TestResolveInputSigningKeyOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
@@ -997,8 +1007,8 @@ func TestVerifyIdentityChainCustomOrgOrgOk(t *testing.T) {
 	mdi.On("GetIdentityByID", ctx, "ns1", idIntermediateCustom.ID).Return(idIntermediateCustom, nil).Once()
 	mdi.On("GetIdentityByID", ctx, "ns1", idRoot.ID).Return(idRoot, nil).Once()
 
-	immeidateParent, _, err := im.VerifyIdentityChain(ctx, idLeaf)
-	assert.Equal(t, idIntermediateCustom, immeidateParent)
+	immediateParent, _, err := im.VerifyIdentityChain(ctx, idLeaf)
+	assert.Equal(t, idIntermediateCustom, immediateParent)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)

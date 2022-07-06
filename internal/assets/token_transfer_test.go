@@ -752,6 +752,39 @@ func TestTransferTokensWithBroadcastMessage(t *testing.T) {
 	mom.AssertExpectations(t)
 }
 
+func TestTransferTokensWithBroadcastMessageDisabled(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	am.broadcast = nil
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	transfer := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID: msgID,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+	}
+
+	_, err := am.TransferTokens(context.Background(), transfer, false)
+	assert.Regexp(t, "FF10415", err)
+}
+
 func TestTransferTokensWithBroadcastMessageSendFail(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
@@ -905,6 +938,40 @@ func TestTransferTokensWithPrivateMessage(t *testing.T) {
 	mms.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mom.AssertExpectations(t)
+}
+
+func TestTransferTokensWithPrivateMessageDisabled(t *testing.T) {
+	am, cancel := newTestAssets(t)
+	defer cancel()
+	am.messaging = nil
+
+	msgID := fftypes.NewUUID()
+	hash := fftypes.NewRandB32()
+	transfer := &core.TokenTransferInput{
+		TokenTransfer: core.TokenTransfer{
+			From:   "A",
+			To:     "B",
+			Amount: *fftypes.NewFFBigInt(5),
+		},
+		Pool: "pool1",
+		Message: &core.MessageInOut{
+			Message: core.Message{
+				Header: core.MessageHeader{
+					ID:   msgID,
+					Type: core.MessageTypeTransferPrivate,
+				},
+				Hash: hash,
+			},
+			InlineData: core.InlineData{
+				{
+					Value: fftypes.JSONAnyPtr("test data"),
+				},
+			},
+		},
+	}
+
+	_, err := am.TransferTokens(context.Background(), transfer, false)
+	assert.Regexp(t, "FF10415", err)
 }
 
 func TestTransferTokensWithInvalidMessage(t *testing.T) {

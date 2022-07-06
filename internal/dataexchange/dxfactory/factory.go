@@ -44,7 +44,7 @@ func InitConfig(config config.ArraySection) {
 }
 
 func InitConfigDeprecated(config config.Section) {
-	config.AddKnownKey(coreconfig.PluginConfigType, NewFFDXPluginName)
+	config.AddKnownKey(coreconfig.PluginConfigType)
 	for name, plugin := range pluginsByName {
 		plugin().InitConfig(config.SubSection(name))
 	}

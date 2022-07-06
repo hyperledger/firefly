@@ -31,14 +31,12 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/sharedstorage"
 )
 
 type blobStore struct {
-	dm            *dataManager
-	sharedstorage sharedstorage.Plugin
-	database      database.Plugin
-	exchange      dataexchange.Plugin
+	dm       *dataManager
+	database database.Plugin
+	exchange dataexchange.Plugin // optional
 }
 
 func (bs *blobStore) uploadVerifyBlob(ctx context.Context, id *fftypes.UUID, reader io.Reader) (hash *fftypes.Bytes32, written int64, payloadRef string, err error) {
@@ -80,6 +78,10 @@ func (bs *blobStore) uploadVerifyBlob(ctx context.Context, id *fftypes.UUID, rea
 }
 
 func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue, mpart *ffapi.Multipart, autoMeta bool) (*core.Data, error) {
+
+	if bs.exchange == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+	}
 
 	data := &core.Data{
 		ID:        fftypes.NewUUID(),
@@ -143,6 +145,10 @@ func (bs *blobStore) UploadBlob(ctx context.Context, inData *core.DataRefOrValue
 }
 
 func (bs *blobStore) DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error) {
+
+	if bs.exchange == nil {
+		return nil, nil, i18n.NewError(ctx, coremsgs.MsgActionNotSupported)
+	}
 
 	id, err := fftypes.ParseUUID(ctx, dataID)
 	if err != nil {

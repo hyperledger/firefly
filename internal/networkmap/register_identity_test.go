@@ -23,7 +23,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/syncasync"
-	"github.com/hyperledger/firefly/mocks/broadcastmocks"
+	"github.com/hyperledger/firefly/mocks/definitionsmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -44,23 +44,17 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		Key: "0x23456",
 	}, nil)
 
-	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		core.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
-
-	mbm.On("BroadcastDefinition", nm.ctx,
-		mock.AnythingOfType("*core.IdentityVerification"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		core.SystemTagIdentityVerification, false).Return(mockMsg2, nil)
+		false).Return(nil)
 
 	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
@@ -68,11 +62,10 @@ func TestRegisterIdentityOrgWithParentOk(t *testing.T) {
 		Parent: fftypes.NewUUID().String(),
 	}, false)
 	assert.NoError(t, err)
-	assert.Equal(t, *mockMsg1.Header.ID, *org.Messages.Claim)
-	assert.Equal(t, *mockMsg2.Header.ID, *org.Messages.Verification)
+	assert.NotNil(t, org)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
@@ -98,23 +91,17 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 		assert.NoError(t, err)
 	}).Return(nil, nil)
 
-	mockMsg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mockMsg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
+	mds := nm.defsender.(*definitionsmocks.Sender)
 
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		core.SystemTagIdentityClaim, false).Return(mockMsg1, nil)
-
-	mbm.On("BroadcastDefinition", nm.ctx,
-		mock.AnythingOfType("*core.IdentityVerification"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x23456"
 		}),
-		core.SystemTagIdentityVerification, false).Return(mockMsg2, nil)
+		false).Return(nil)
 
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "child1",
@@ -124,14 +111,15 @@ func TestRegisterIdentityOrgWithParentWaitConfirmOk(t *testing.T) {
 	assert.NoError(t, err)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
 	msa.AssertExpectations(t)
 }
 
-func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
+func TestRegisterIdentityOrgNonMultiparty(t *testing.T) {
 
 	nm, cancel := newTestNetworkmap(t)
 	defer cancel()
+	nm.multiparty = nil
 
 	parentIdentity := testOrg("parent1")
 
@@ -143,26 +131,15 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 			DID: "did:firefly:org/parent1",
 		},
 	}, false, nil)
-	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&core.SignerRef{
-		Key: "0x23456",
-	}, nil)
 
-	mockMsg := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID()}}
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
+	mds := nm.defsender.(*definitionsmocks.Sender)
+	mds.On("ClaimIdentity", nm.ctx,
 		mock.AnythingOfType("*core.IdentityClaim"),
 		mock.MatchedBy(func(sr *core.SignerRef) bool {
 			return sr.Key == "0x12345"
 		}),
-		core.SystemTagIdentityClaim, false).Return(mockMsg, nil)
-
-	mbm.On("BroadcastDefinition", nm.ctx,
-		mock.AnythingOfType("*core.IdentityVerification"),
-		mock.MatchedBy(func(sr *core.SignerRef) bool {
-			return sr.Key == "0x23456"
-		}),
-		core.SystemTagIdentityVerification, false).Return(nil, fmt.Errorf("pop"))
+		(*core.SignerRef)(nil),
+		false).Return(fmt.Errorf("pop"))
 
 	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
 		Name:   "custom1",
@@ -172,7 +149,44 @@ func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
+	mds.AssertExpectations(t)
+}
+
+func TestRegisterIdentityCustomWithParentFail(t *testing.T) {
+
+	nm, cancel := newTestNetworkmap(t)
+	defer cancel()
+
+	parentIdentity := testOrg("parent1")
+
+	mim := nm.identity.(*identitymanagermocks.Manager)
+	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(parentIdentity, false, nil)
+	mim.On("ResolveIdentitySigner", nm.ctx, parentIdentity).Return(&core.SignerRef{
+		Key: "0x23456",
+	}, nil)
+
+	mds := nm.defsender.(*definitionsmocks.Sender)
+
+	mds.On("ClaimIdentity", nm.ctx,
+		mock.AnythingOfType("*core.IdentityClaim"),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x12345"
+		}),
+		mock.MatchedBy(func(sr *core.SignerRef) bool {
+			return sr.Key == "0x23456"
+		}),
+		false).Return(nil)
+
+	org, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
+		Name:   "child1",
+		Key:    "0x12345",
+		Parent: fftypes.NewUUID().String(),
+	}, false)
+	assert.NoError(t, err)
+	assert.NotNil(t, org)
+
+	mim.AssertExpectations(t)
+	mds.AssertExpectations(t)
 }
 
 func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
@@ -194,33 +208,6 @@ func TestRegisterIdentityGetParentMsgFail(t *testing.T) {
 	assert.Regexp(t, "pop", err)
 
 	mim.AssertExpectations(t)
-}
-
-func TestRegisterIdentityRootBroadcastFail(t *testing.T) {
-
-	nm, cancel := newTestNetworkmap(t)
-	defer cancel()
-
-	mim := nm.identity.(*identitymanagermocks.Manager)
-	mim.On("VerifyIdentityChain", nm.ctx, mock.AnythingOfType("*core.Identity")).Return(nil, false, nil)
-
-	mbm := nm.broadcast.(*broadcastmocks.Manager)
-	mbm.On("BroadcastIdentityClaim", nm.ctx,
-		mock.AnythingOfType("*core.IdentityClaim"),
-		mock.MatchedBy(func(sr *core.SignerRef) bool {
-			return sr.Key == "0x12345"
-		}),
-		core.SystemTagIdentityClaim, false).Return(nil, fmt.Errorf("pop"))
-
-	_, err := nm.RegisterIdentity(nm.ctx, &core.IdentityCreateDTO{
-		Name:   "custom1",
-		Key:    "0x12345",
-		Parent: fftypes.NewUUID().String(),
-	}, false)
-	assert.Regexp(t, "pop", err)
-
-	mim.AssertExpectations(t)
-	mbm.AssertExpectations(t)
 }
 
 func TestRegisterIdentityMissingKey(t *testing.T) {

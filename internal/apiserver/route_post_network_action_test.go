@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -29,6 +30,7 @@ import (
 
 func TestPostNetworkAction(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	input := core.NetworkAction{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)

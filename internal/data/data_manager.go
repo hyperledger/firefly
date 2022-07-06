@@ -32,7 +32,6 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/karlseguin/ccache"
 )
 
@@ -59,7 +58,6 @@ type dataManager struct {
 	blobStore
 	namespace         string
 	database          database.Plugin
-	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
 	messageCache      *ccache.Cache
@@ -95,22 +93,20 @@ const (
 	CRORequireBatchID
 )
 
-func NewDataManager(ctx context.Context, ns string, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
-	if di == nil || pi == nil || dx == nil {
+func NewDataManager(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
+	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DataManager")
 	}
 	dm := &dataManager{
 		namespace:         ns,
 		database:          di,
-		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(coreconfig.ValidatorCacheTTL),
 		messageCacheTTL:   config.GetDuration(coreconfig.MessageCacheTTL),
 	}
 	dm.blobStore = blobStore{
-		dm:            dm,
-		database:      di,
-		sharedstorage: pi,
-		exchange:      dx,
+		dm:       dm,
+		database: di,
+		exchange: dx,
 	}
 	dm.validatorCache = ccache.New(
 		// We use a LRU cache with a size-aware max

@@ -75,8 +75,9 @@ type testOrchestrator struct {
 	mth *txcommonmocks.Helper
 	msd *shareddownloadmocks.Manager
 	mae *spieventsmocks.Manager
-	mdh *definitionsmocks.DefinitionHandler
+	mdh *definitionsmocks.Handler
 	mmp *multipartymocks.Manager
+	mds *definitionsmocks.Sender
 }
 
 func (tor *testOrchestrator) cleanup(t *testing.T) {
@@ -133,8 +134,9 @@ func newTestOrchestrator() *testOrchestrator {
 		mth: &txcommonmocks.Helper{},
 		msd: &shareddownloadmocks.Manager{},
 		mae: &spieventsmocks.Manager{},
-		mdh: &definitionsmocks.DefinitionHandler{},
+		mdh: &definitionsmocks.Handler{},
 		mmp: &multipartymocks.Manager{},
+		mds: &definitionsmocks.Sender{},
 	}
 	tor.orchestrator.multiparty = tor.mmp
 	tor.orchestrator.data = tor.mdm
@@ -150,7 +152,9 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.orchestrator.operations = tor.mom
 	tor.orchestrator.sharedDownload = tor.msd
 	tor.orchestrator.txHelper = tor.mth
-	tor.orchestrator.definitions = tor.mdh
+	tor.orchestrator.defhandler = tor.mdh
+	tor.orchestrator.defsender = tor.mds
+	tor.orchestrator.config.Multiparty.Enabled = true
 	tor.orchestrator.plugins.Blockchain.Plugin = tor.mbi
 	tor.orchestrator.plugins.SharedStorage.Plugin = tor.mps
 	tor.orchestrator.plugins.DataExchange.Plugin = tor.mdx
@@ -170,6 +174,7 @@ func newTestOrchestrator() *testOrchestrator {
 	tor.mcm.On("Name").Return("mock-cm").Maybe()
 	tor.mmi.On("Name").Return("mock-mm").Maybe()
 	tor.mmp.On("Name").Return("mock-mp").Maybe()
+	tor.mds.On("Init", mock.Anything).Maybe()
 	return tor
 }
 
@@ -199,6 +204,7 @@ func TestInitOK(t *testing.T) {
 	assert.Equal(t, or.mba, or.BatchManager())
 	assert.Equal(t, or.mbm, or.Broadcast())
 	assert.Equal(t, or.mpm, or.PrivateMessaging())
+	assert.Equal(t, or.mds, or.DefinitionSender())
 	assert.Equal(t, or.mem, or.Events())
 	assert.Equal(t, or.mam, or.Assets())
 	assert.Equal(t, or.mdm, or.Data())
@@ -297,6 +303,15 @@ func TestInitBroadcastComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
+func TestInitDefSenderComponentFail(t *testing.T) {
+	or := newTestOrchestrator()
+	defer or.cleanup(t)
+	or.data = nil
+	or.defsender = nil
+	err := or.initManagers(context.Background())
+	assert.Regexp(t, "FF10128", err)
+}
+
 func TestInitDataComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -333,15 +348,6 @@ func TestInitContractsComponentFail(t *testing.T) {
 	assert.Regexp(t, "FF10128", err)
 }
 
-func TestInitDefinitionsComponentFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.plugins.Database.Plugin = nil
-	or.definitions = nil
-	err := or.initComponents(context.Background())
-	assert.Regexp(t, "FF10128", err)
-}
-
 func TestInitOperationsComponentFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
@@ -359,38 +365,7 @@ func TestStartBatchFail(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, mock.Anything).Return(nil)
-	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(fmt.Errorf("pop"))
-	err := or.Start()
-	assert.EqualError(t, err, "pop")
-}
-
-func TestStartTokensFail(t *testing.T) {
-	coreconfig.Reset()
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
-	or.mbi.On("Start").Return(nil)
-	or.mba.On("Start").Return(nil)
-	or.mem.On("Start").Return(nil)
-	or.mbm.On("Start").Return(nil)
-	or.mpm.On("Start").Return(nil)
-	or.msd.On("Start").Return(nil)
-	or.mom.On("Start").Return(nil)
-	or.mti.On("Start").Return(fmt.Errorf("pop"))
-	err := or.Start()
-	assert.EqualError(t, err, "pop")
-}
-
-func TestStartBlockchainsFail(t *testing.T) {
-	coreconfig.Reset()
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
-	or.mbi.On("Start").Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -412,12 +387,9 @@ func TestStartStopOk(t *testing.T) {
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
 	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
-	or.mbi.On("Start").Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)
-	or.mpm.On("Start").Return(nil)
-	or.mti.On("Start").Return(nil)
 	or.msd.On("Start").Return(nil)
 	or.mom.On("Start").Return(nil)
 	or.mba.On("WaitStop").Return(nil)
@@ -448,4 +420,11 @@ func TestNetworkActionBadKey(t *testing.T) {
 	or.mim.On("NormalizeSigningKey", context.Background(), "", identity.KeyNormalizationBlockchainPlugin).Return("", fmt.Errorf("pop"))
 	err := or.SubmitNetworkAction(context.Background(), action)
 	assert.EqualError(t, err, "pop")
+}
+
+func TestNetworkActionNonMultiparty(t *testing.T) {
+	or := newTestOrchestrator()
+	or.multiparty = nil
+	err := or.SubmitNetworkAction(context.Background(), &core.NetworkAction{Type: core.NetworkActionTerminate})
+	assert.Regexp(t, "FF10414", err)
 }
