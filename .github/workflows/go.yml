@@ -29,23 +29,46 @@ jobs:
   e2e-test:
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        test-suite: [TestEthereumE2ESuite, TestFabricE2ESuite]
-        blockchain-provider: [geth, fabric]
-        token-provider: [none, erc1155, erc20_erc721]
-        database-type: [sqlite3, postgres]
-        exclude:
-          - blockchain-provider: geth
-            test-suite: TestFabricE2ESuite
-          - blockchain-provider: fabric
-            test-suite: TestEthereumE2ESuite
-          - blockchain-provider: fabric
-            token-provider: erc1155
-          - blockchain-provider: fabric
-            token-provider: erc20_erc721
-          - blockchain-provider: geth
-            token-provider: none
       fail-fast: false
+      matrix:
+        blockchain-provider: [geth, fabric]
+        exclude: [ blockchain-provider: geth, blockchain-provider: fabric ]
+        include:
+            - blockchain-provider: geth
+              test-suite: TestEthereumMultipartyE2ESuite
+              database-type: sqlite3
+              token-provider: erc20_erc721
+              multiparty-enabled: true
+
+            - blockchain-provider: geth
+              test-suite: TestEthereumMultipartyE2ESuite
+              database-type: postgres
+              token-provider: erc20_erc721
+              multiparty-enabled: true
+            
+            - blockchain-provider: geth
+              test-suite: TestEthereumMultipartyE2ESuite
+              database-type: sqlite3
+              token-provider: erc_1155
+              multiparty-enabled: true
+
+            - blockchain-provider: fabric
+              test-suite: TestFabricE2ESuite
+              database-type: sqlite3
+              token-provider: none
+              multiparty-enabled: true
+
+            - blockchain-provider: geth
+              test-suite: TestEthereumGatewayE2ESuite
+              database-type: sqlite3
+              token-provider: erc20_erc721
+              multiparty-enabled: false
+
+            - blockchain-provider: fabric
+              test-suite: TestFabricGatewayE2ESuite
+              database-type: sqlite3
+              token-provider: none
+              multiparty-enabled: false
     steps:
       - uses: actions/checkout@v2
         with:
@@ -62,6 +85,7 @@ jobs:
           BLOCKCHAIN_PROVIDER: ${{ matrix.blockchain-provider }}
           TOKENS_PROVIDER: ${{ matrix.token-provider }}
           DATABASE_TYPE: ${{ matrix.database-type }}
+          MULTIPARTY_ENABLED: ${{ matrix.multiparty-enabled }}
         run: ./test/e2e/run.sh
 
       - name: Archive container logs

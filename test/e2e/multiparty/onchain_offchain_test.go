@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package multiparty
 
 import (
 	"bytes"
@@ -30,6 +30,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -45,14 +46,14 @@ func (suite *OnChainOffChainTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *OnChainOffChainTestSuite) AfterTest(suiteName, testName string) {
-	verifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, true)
-	received2 := wsReader(suite.testState.ws2, true)
+	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received2 := e2e.WsReader(suite.testState.ws2, true)
 
 	// Broadcast some messages, that should get batched, across two topics
 	totalMessages := 10
@@ -63,19 +64,19 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 		data := &core.DataRefOrValue{
 			Value: value,
 		}
-		topic := pickTopic(i, topics)
+		topic := e2e.PickTopic(i, topics)
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := BroadcastMessage(suite.T(), suite.testState.client1, topic, data, false)
+		resp, err := e2e.BroadcastMessage(suite.T(), suite.testState.client1, topic, data, false)
 		require.NoError(suite.T(), err)
 		assert.Equal(suite.T(), 202, resp.StatusCode())
 	}
 
 	for i := 0; i < totalMessages; i++ {
 		// Wait for all the message-confirmed events, from both participants
-		waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
-		waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+		e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+		e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 	}
 
 	for topic, dataArray := range expectedData {
@@ -93,8 +94,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcast() {
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, true)
-	received2 := wsReader(suite.testState.ws2, true)
+	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received2 := e2e.WsReader(suite.testState.ws2, true)
 
 	var resp *resty.Response
 	value := fftypes.JSONAnyPtr(`"Hello"`)
@@ -109,7 +110,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	}
 
 	// Should be rejected as datatype not known
-	resp, err := BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
+	resp, err := e2e.BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10195") // datatype not found
@@ -117,11 +118,11 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 	dt := &core.Datatype{
 		Name:    "widget",
 		Version: version,
-		Value:   fftypes.JSONAnyPtrBytes(widgetSchemaJSON),
+		Value:   fftypes.JSONAnyPtrBytes(e2e.WidgetSchemaJSON),
 	}
-	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
+	dt = e2e.CreateDatatype(suite.T(), suite.testState.client1, dt, true)
 
-	resp, err = BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
+	resp, err = e2e.BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 400, resp.StatusCode())
 	assert.Contains(suite.T(), resp.String(), "FF10198") // does not conform
@@ -131,19 +132,19 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesBroadcast() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
+	resp, err = e2e.BroadcastMessage(suite.T(), suite.testState.client1, "topic1", &data, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
-	waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 }
 
 func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, true)
-	received2 := wsReader(suite.testState.ws2, true)
+	received1 := e2e.WsReader(suite.testState.ws1, true)
+	received2 := e2e.WsReader(suite.testState.ws2, true)
 
 	var resp *resty.Response
 	value := fftypes.JSONAnyPtr(`{"foo":"bar"}`)
@@ -158,7 +159,7 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	}
 
 	// Should be rejected as datatype not known
-	resp, err := PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err := e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "", core.TransactionTypeBatchPin, true)
@@ -169,11 +170,11 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 	dt := &core.Datatype{
 		Name:    "widget",
 		Version: version,
-		Value:   fftypes.JSONAnyPtrBytes(widgetSchemaJSON),
+		Value:   fftypes.JSONAnyPtrBytes(e2e.WidgetSchemaJSON),
 	}
-	dt = CreateDatatype(suite.T(), suite.testState.client1, dt, true)
+	dt = e2e.CreateDatatype(suite.T(), suite.testState.client1, dt, true)
 
-	resp, err = PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err = e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "", core.TransactionTypeBatchPin, false)
@@ -186,23 +187,23 @@ func (suite *OnChainOffChainTestSuite) TestStrongDatatypesPrivate() {
 		"name": "mywidget"
 	}`)
 
-	resp, err = PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err = e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "", core.TransactionTypeBatchPin, true)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 200, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
-	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 }
 
 func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, false)
-	received2 := wsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1, false)
+	received2 := e2e.WsReader(suite.testState.ws2, false)
 
 	// Send 10 messages, that should get batched, across two topics
 	totalMessages := 10
@@ -213,11 +214,11 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 		data := &core.DataRefOrValue{
 			Value: value,
 		}
-		topic := pickTopic(i, topics)
+		topic := e2e.PickTopic(i, topics)
 
 		expectedData[topic] = append(expectedData[topic], data)
 
-		resp, err := PrivateMessage(suite.testState, suite.testState.client1, topic, data, []string{
+		resp, err := e2e.PrivateMessage(suite.testState, suite.testState.client1, topic, data, []string{
 			suite.testState.org1.Name,
 			suite.testState.org2.Name,
 		}, "", core.TransactionTypeBatchPin, false)
@@ -227,8 +228,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 
 	for i := 0; i < totalMessages; i++ {
 		// Wait for all thel message-confirmed events, from both participants
-		waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
-		waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
+		e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+		e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 	}
 
 	for topic, dataArray := range expectedData {
@@ -246,22 +247,22 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivate() {
 func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, false)
-	received2 := wsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1, false)
+	received2 := e2e.WsReader(suite.testState.ws2, false)
 
 	var resp *resty.Response
 
-	data, resp, err := BroadcastBlobMessage(suite.T(), suite.testState.client1, "topic1")
+	data, resp, err := e2e.BroadcastBlobMessage(suite.T(), suite.testState.client1, "topic1")
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypeBroadcast)
 	val1 := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", core.MessageTypeBroadcast, core.TransactionTypeBatchPin, 1)
 	assert.Regexp(suite.T(), "myfile.txt", val1[0].Value.String())
 	assert.Equal(suite.T(), "myfile.txt", val1[0].Blob.Name)
 	assert.Equal(suite.T(), data.Blob.Size, val1[0].Blob.Size)
 
-	waitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypeBroadcast)
 	val2 := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", core.MessageTypeBroadcast, core.TransactionTypeBatchPin, 1)
 	assert.Regexp(suite.T(), "myfile.txt", val2[0].Value.String())
 	assert.Equal(suite.T(), "myfile.txt", val2[0].Blob.Name)
@@ -272,12 +273,12 @@ func (suite *OnChainOffChainTestSuite) TestE2EBroadcastBlob() {
 func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, false)
-	received2 := wsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1, false)
+	received2 := e2e.WsReader(suite.testState.ws2, false)
 
 	var resp *resty.Response
 
-	data, resp, err := PrivateBlobMessageDatatypeTagged(suite.testState, suite.testState.client1, "topic1", []string{
+	data, resp, err := e2e.PrivateBlobMessageDatatypeTagged(suite.testState, suite.testState.client1, "topic1", []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	})
@@ -286,13 +287,13 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 	assert.Empty(suite.T(), data.Blob.Name)
 	assert.NotNil(suite.T(), data.Blob.Hash)
 
-	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate)
 	res1 := validateReceivedMessages(suite.testState, suite.testState.client1, "topic1", core.MessageTypePrivate, core.TransactionTypeBatchPin, 1)
 	assert.Equal(suite.T(), data.Blob.Hash.String(), res1[0].Blob.Hash.String())
 	assert.Empty(suite.T(), res1[0].Blob.Name)
 	assert.Equal(suite.T(), data.Blob.Size, res1[0].Blob.Size)
 
-	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate)
 	res2 := validateReceivedMessages(suite.testState, suite.testState.client2, "topic1", core.MessageTypePrivate, core.TransactionTypeBatchPin, 1)
 	assert.Equal(suite.T(), data.Blob.Hash.String(), res2[0].Blob.Hash.String())
 	assert.Empty(suite.T(), res2[0].Blob.Name)
@@ -302,8 +303,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EPrivateBlobDatatypeTagged() {
 func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, false)
-	received2 := wsReader(suite.testState.ws2, false)
+	received1 := e2e.WsReader(suite.testState.ws1, false)
+	received2 := e2e.WsReader(suite.testState.ws2, false)
 
 	subJSON := fmt.Sprintf(`{
 		"transport": "webhooks",
@@ -320,8 +321,8 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 			"tag": "myrequest"
 		}
 	}`, suite.testState.namespace)
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
-	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
+	e2e.CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
+	sub := e2e.CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
 	data := core.DataRefOrValue{
@@ -329,17 +330,17 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookExchange() {
 	}
 
 	var resp *resty.Response
-	resp, err := PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
+	resp, err := e2e.PrivateMessage(suite.testState, suite.testState.client1, "topic1", &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "myrequest", core.TransactionTypeBatchPin, false)
 	require.NoError(suite.T(), err)
 	assert.Equal(suite.T(), 202, resp.StatusCode())
 
-	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate) // request 1
-	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate) // request 2
-	waitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate) // response 1
-	waitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate) // response 2
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate) // request 1
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate) // request 2
+	e2e.WaitForMessageConfirmed(suite.T(), received1, core.MessageTypePrivate) // response 1
+	e2e.WaitForMessageConfirmed(suite.T(), received2, core.MessageTypePrivate) // response 2
 
 	// When we query the confirmed messages for each receiver, we will see the requests and responses.
 	// We just check the reponses (index 1)
@@ -376,15 +377,15 @@ func (suite *OnChainOffChainTestSuite) TestE2EWebhookRequestReplyNoTx() {
 			"tag": "myrequest"
 		}
 	}`, suite.testState.namespace)
-	CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
-	sub := CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
+	e2e.CleanupExistingSubscription(suite.T(), suite.testState.client2, suite.testState.namespace, "myhook")
+	sub := e2e.CreateSubscription(suite.T(), suite.testState.client2, subJSON, 201)
 	assert.NotNil(suite.T(), sub.ID)
 
 	data := core.DataRefOrValue{
 		Value: fftypes.JSONAnyPtr(`{}`),
 	}
 
-	reply := RequestReply(suite.testState, suite.testState.client1, &data, []string{
+	reply := e2e.RequestReply(suite.testState, suite.testState.client1, &data, []string{
 		suite.testState.org1.Name,
 		suite.testState.org2.Name,
 	}, "myrequest", core.TransactionTypeUnpinned)

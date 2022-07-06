@@ -355,8 +355,8 @@ func BroadcastBlobMessage(t *testing.T, client *resty.Client, topic string) (*co
 	return data, res, err
 }
 
-func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic string, orgNames []string) (*core.Data, *resty.Response, error) {
-	data := CreateBlob(ts.t, client, &core.DatatypeRef{Name: "myblob"})
+func PrivateBlobMessageDatatypeTagged(ts TestState, client *resty.Client, topic string, orgNames []string) (*core.Data, *resty.Response, error) {
+	data := CreateBlob(ts.T(), client, &core.DatatypeRef{Name: "myblob"})
 	members := make([]core.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -376,18 +376,18 @@ func PrivateBlobMessageDatatypeTagged(ts *testState, client *resty.Client, topic
 			},
 			Group: &core.InputGroup{
 				Members: members,
-				Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
+				Name:    fmt.Sprintf("test_%d", ts.StartTime().UnixNano()),
 			},
 		}).
 		Post(urlPrivateMessage)
 	return data, res, err
 }
 
-func PrivateMessage(ts *testState, client *resty.Client, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool) (*resty.Response, error) {
+func PrivateMessage(ts TestState, client *resty.Client, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool) (*resty.Response, error) {
 	return PrivateMessageWithKey(ts, client, "", topic, data, orgNames, tag, txType, confirm)
 }
 
-func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool) (*resty.Response, error) {
+func PrivateMessageWithKey(ts TestState, client *resty.Client, key, topic string, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType, confirm bool) (*resty.Response, error) {
 	members := make([]core.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -409,7 +409,7 @@ func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic strin
 		InlineData: core.InlineData{data},
 		Group: &core.InputGroup{
 			Members: members,
-			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
+			Name:    fmt.Sprintf("test_%d", ts.StartTime().UnixNano()),
 		},
 	}
 	res, err := client.R().
@@ -417,11 +417,11 @@ func PrivateMessageWithKey(ts *testState, client *resty.Client, key, topic strin
 		SetQueryParam("confirm", strconv.FormatBool(confirm)).
 		SetResult(&msg.Message).
 		Post(urlPrivateMessage)
-	ts.t.Logf("Sent private message %s to %+v", msg.Header.ID, msg.Group.Members)
+	ts.T().Logf("Sent private message %s to %+v", msg.Header.ID, msg.Group.Members)
 	return res, err
 }
 
-func RequestReply(ts *testState, client *resty.Client, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType) *core.MessageInOut {
+func RequestReply(ts TestState, client *resty.Client, data *core.DataRefOrValue, orgNames []string, tag string, txType core.TransactionType) *core.MessageInOut {
 	members := make([]core.MemberInput, len(orgNames))
 	for i, oName := range orgNames {
 		// We let FireFly resolve the friendly name of the org to the identity
@@ -439,7 +439,7 @@ func RequestReply(ts *testState, client *resty.Client, data *core.DataRefOrValue
 		InlineData: core.InlineData{data},
 		Group: &core.InputGroup{
 			Members: members,
-			Name:    fmt.Sprintf("test_%d", ts.startTime.UnixNano()),
+			Name:    fmt.Sprintf("test_%d", ts.StartTime().UnixNano()),
 		},
 	}
 	var replyMsg core.MessageInOut
@@ -447,8 +447,8 @@ func RequestReply(ts *testState, client *resty.Client, data *core.DataRefOrValue
 		SetBody(msg).
 		SetResult(&replyMsg).
 		Post(urlRequestMessage)
-	require.NoError(ts.t, err)
-	require.Equal(ts.t, 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
+	require.NoError(ts.T(), err)
+	require.Equal(ts.T(), 200, resp.StatusCode(), "POST %s [%d]: %s", urlUploadData, resp.StatusCode(), resp.String())
 	return &replyMsg
 }
 
@@ -732,10 +732,10 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *core.FFI) (interface{}, 
 	return res, err
 }
 
-func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIReference *core.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
+func CreateContractAPI(t *testing.T, client *resty.Client, name string, ffiReference *core.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
 	apiReqBody := &core.ContractAPI{
 		Name:      name,
-		Interface: FFIReference,
+		Interface: ffiReference,
 		Location:  location,
 	}
 
@@ -751,12 +751,12 @@ func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIRefer
 	return res, err
 }
 
-func InvokeContractAPIMethod(t *testing.T, client *resty.Client, APIName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {
+func InvokeContractAPIMethod(t *testing.T, client *resty.Client, apiName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {
 	apiReqBody := map[string]interface{}{
 		"input": input,
 	}
 	var res interface{}
-	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractAPI, APIName, methodName)
+	path := fmt.Sprintf("%s/%s/invoke/%s", urlContractAPI, apiName, methodName)
 	resp, err := client.R().
 		SetBody(apiReqBody).
 		SetResult(&res).
@@ -767,12 +767,12 @@ func InvokeContractAPIMethod(t *testing.T, client *resty.Client, APIName string,
 	return res, err
 }
 
-func QueryContractAPIMethod(t *testing.T, client *resty.Client, APIName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {
+func QueryContractAPIMethod(t *testing.T, client *resty.Client, apiName string, methodName string, input *fftypes.JSONAny) (interface{}, error) {
 	apiReqBody := map[string]interface{}{
 		"input": input,
 	}
 	var res interface{}
-	path := fmt.Sprintf("%s/%s/query/%s", urlContractAPI, APIName, methodName)
+	path := fmt.Sprintf("%s/%s/query/%s", urlContractAPI, apiName, methodName)
 	resp, err := client.R().
 		SetBody(apiReqBody).
 		SetResult(&res).
@@ -782,12 +782,12 @@ func QueryContractAPIMethod(t *testing.T, client *resty.Client, APIName string, 
 	return res, err
 }
 
-func CreateContractAPIListener(t *testing.T, client *resty.Client, APIName, eventName, topic string) (*core.ContractListener, error) {
+func CreateContractAPIListener(t *testing.T, client *resty.Client, apiName, eventName, topic string) (*core.ContractListener, error) {
 	apiReqBody := map[string]interface{}{
 		"topic": topic,
 	}
 	var listener core.ContractListener
-	path := fmt.Sprintf("%s/%s/listeners/%s", urlContractAPI, APIName, eventName)
+	path := fmt.Sprintf("%s/%s/listeners/%s", urlContractAPI, apiName, eventName)
 	resp, err := client.R().
 		SetBody(apiReqBody).
 		SetResult(&listener).

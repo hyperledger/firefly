@@ -61,6 +61,10 @@ if [ -z "${DATABASE_TYPE}" ]; then
   DATABASE_TYPE=sqlite3
 fi
 
+if [ -z "${MULTIPARTY_ENABLED}" ]; then
+  MULTIPARTY_ENABLED=true
+fi
+
 if [ -z "${STACK_FILE}" ]; then
   STACK_FILE=$STACKS_DIR/$STACK_NAME/stack.json
 fi
@@ -98,7 +102,7 @@ if [ "$DOWNLOAD_CLI" == "true" ]; then
 fi
 
 if [ "$CREATE_STACK" == "true" ]; then
-  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false
+  $CLI init --prometheus-enabled --database $DATABASE_TYPE $STACK_NAME 2 --blockchain-provider $BLOCKCHAIN_PROVIDER --token-providers $TOKENS_PROVIDER --manifest ../../manifest.json $EXTRA_INIT_ARGS --sandbox-enabled=false --multiparty=$MULTIPARTY_ENABLED
   checkOk $?
 
   $CLI pull $STACK_NAME -r 3
@@ -108,7 +112,7 @@ if [ "$CREATE_STACK" == "true" ]; then
   checkOk $?
 fi
 
-if [ "$TEST_SUITE" == "TestEthereumE2ESuite" ]; then
+if [ "$TEST_SUITE" == "TestEthereumMultipartyE2ESuite" ] || [ "$TEST_SUITE" == "TestEthereumGatewayE2ESuite" ]; then
     export CONTRACT_ADDRESS=$($CLI deploy ethereum $STACK_NAME ../data/simplestorage/simple_storage.json | jq -r '.address')
 fi
 
@@ -120,7 +124,7 @@ checkOk $?
 export STACK_FILE
 export STACK_STATE
 
-go clean -testcache && go test -v . -run $TEST_SUITE
+go clean -testcache && go test -v ./multiparty ./gateway -run $TEST_SUITE
 checkOk $?
 
 if [ "$RESTART" == "true" ]; then
@@ -132,6 +136,6 @@ if [ "$RESTART" == "true" ]; then
 
   create_accounts
 
-  go clean -testcache && go test -v . -run $TEST_SUITE
+  go clean -testcache && go test -v ./multiparty ./gateway -run $TEST_SUITE
   checkOk $?
 fi

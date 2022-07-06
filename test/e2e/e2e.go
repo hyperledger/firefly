@@ -1,0 +1,248 @@
+// Copyright © 2022 Kaleido, Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package e2e
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/gorilla/websocket"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+type TestState interface {
+	T() *testing.T
+	StartTime() time.Time
+	Done() func()
+}
+
+var WidgetSchemaJSON = []byte(`{
+	"$id": "https://example.com/widget.schema.json",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "Widget",
+	"type": "object",
+	"properties": {
+		"id": {
+			"type": "string",
+			"description": "The unique identifier for the widget."
+		},
+		"name": {
+			"type": "string",
+			"description": "The person's last name."
+		}
+	},
+	"additionalProperties": false
+}`)
+
+func PollForUp(t *testing.T, client *resty.Client) {
+	var resp *resty.Response
+	var err error
+	for i := 0; i < 3; i++ {
+		resp, err = GetNamespaces(client)
+		if err == nil && resp.StatusCode() == 200 {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	require.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode())
+}
+
+func ValidateAccountBalances(t *testing.T, client *resty.Client, poolID *fftypes.UUID, tokenIndex string, balances map[string]int64) {
+	for key, balance := range balances {
+		account := GetTokenBalance(t, client, poolID, tokenIndex, key)
+		assert.Equal(t, balance, account.Balance.Int().Int64())
+	}
+}
+
+func PickTopic(i int, options []string) string {
+	return options[i%len(options)]
+}
+
+func ReadStack(t *testing.T) *Stack {
+	stackFile := os.Getenv("STACK_FILE")
+	if stackFile == "" {
+		t.Fatal("STACK_FILE must be set")
+	}
+	stack, err := ReadStackFile(stackFile)
+	assert.NoError(t, err)
+	return stack
+}
+
+func ReadStackState(t *testing.T) *StackState {
+	stackFile := os.Getenv("STACK_STATE")
+	if stackFile == "" {
+		t.Fatal("STACK_STATE must be set")
+	}
+	stackState, err := ReadStackStateFile(stackFile)
+	assert.NoError(t, err)
+	return stackState
+}
+
+func WsReader(conn *websocket.Conn, dbChanges bool) chan *core.EventDelivery {
+	events := make(chan *core.EventDelivery, 100)
+	go func() {
+		for {
+			_, b, err := conn.ReadMessage()
+			if err != nil {
+				fmt.Printf("Websocket %s closing, error: %s\n", conn.RemoteAddr(), err)
+				return
+			}
+			var wsa core.WSActionBase
+			err = json.Unmarshal(b, &wsa)
+			if err != nil {
+				panic(fmt.Errorf("invalid JSON received on WebSocket: %s", err))
+			}
+			var ed core.EventDelivery
+			err = json.Unmarshal(b, &ed)
+			if err != nil {
+				panic(fmt.Errorf("invalid JSON received on WebSocket: %s", err))
+			}
+			if err == nil {
+				fmt.Printf("Websocket %s event: %s/%s/%s -> %s (tx=%s)\n", conn.RemoteAddr(), ed.Namespace, ed.Type, ed.ID, ed.Reference, ed.Transaction)
+				events <- &ed
+			}
+		}
+	}()
+	return events
+}
+
+func WaitForEvent(t *testing.T, c chan *core.EventDelivery, eventType core.EventType, ref *fftypes.UUID) {
+	for {
+		ed := <-c
+		if ed.Type == eventType && (ref == nil || *ref == *ed.Reference) {
+			t.Logf("Detected '%s' event for ref '%s'", ed.Type, ed.Reference)
+			return
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
+func WaitForMessageConfirmed(t *testing.T, c chan *core.EventDelivery, msgType core.MessageType) *core.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == core.EventTypeMessageConfirmed && ed.Message != nil && ed.Message.Header.Type == msgType {
+			t.Logf("Detected '%s' event for message '%s' of type '%s'", ed.Type, ed.Message.Header.ID, msgType)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
+func WaitForIdentityConfirmed(t *testing.T, c chan *core.EventDelivery) *core.EventDelivery {
+	for {
+		ed := <-c
+		if ed.Type == core.EventTypeIdentityConfirmed {
+			t.Logf("Detected '%s' event for identity '%s'", ed.Type, ed.Reference)
+			return ed
+		}
+		t.Logf("Ignored event '%s'", ed.ID)
+	}
+}
+
+func WaitForContractEvent(t *testing.T, client *resty.Client, c chan *core.EventDelivery, match map[string]interface{}) map[string]interface{} {
+	for {
+		eventDelivery := <-c
+		if eventDelivery.Type == core.EventTypeBlockchainEventReceived {
+			event, err := GetBlockchainEvent(t, client, eventDelivery.Event.Reference.String())
+			if err != nil {
+				t.Logf("WARN: unable to get event: %v", err.Error())
+				continue
+			}
+			eventJSON, ok := event.(map[string]interface{})
+			if !ok {
+				t.Logf("WARN: unable to parse changeEvent: %v", event)
+				continue
+			}
+			if checkObject(t, match, eventJSON) {
+				return eventJSON
+			}
+		}
+	}
+}
+
+func checkObject(t *testing.T, expected interface{}, actual interface{}) bool {
+	match := true
+
+	// check if this is a nested object
+	expectedObject, expectedIsObject := expected.(map[string]interface{})
+	actualObject, actualIsObject := actual.(map[string]interface{})
+
+	t.Logf("Matching blockchain event: %s", fftypes.JSONObject(actualObject).String())
+
+	// check if this is an array
+	expectedArray, expectedIsArray := expected.([]interface{})
+	actualArray, actualIsArray := actual.([]interface{})
+	switch {
+	case expectedIsObject && actualIsObject:
+		for expectedKey, expectedValue := range expectedObject {
+			if !checkObject(t, expectedValue, actualObject[expectedKey]) {
+				return false
+			}
+		}
+	case expectedIsArray && actualIsArray:
+		for _, expectedItem := range expectedArray {
+			for j, actualItem := range actualArray {
+				if checkObject(t, expectedItem, actualItem) {
+					break
+				}
+				if j == len(actualArray)-1 {
+					return false
+				}
+			}
+		}
+	default:
+		expectedString, expectedIsString := expected.(string)
+		actualString, actualIsString := actual.(string)
+		if expectedIsString && actualIsString {
+			return strings.EqualFold(expectedString, actualString)
+		}
+		return expected == actual
+	}
+	return match
+}
+
+func VerifyAllOperationsSucceeded(t *testing.T, clients []*resty.Client, startTime time.Time) {
+	tries := 3
+	delay := 2 * time.Second
+
+	var pending string
+	for i := 0; i < tries; i++ {
+		pending = ""
+		for _, client := range clients {
+			for _, op := range GetOperations(t, client, startTime) {
+				if op.Status != core.OpStatusSucceeded {
+					pending += fmt.Sprintf("Operation '%s' (%s) on '%s' is not successful\n", op.ID, op.Type, client.BaseURL)
+				}
+			}
+		}
+		if pending == "" {
+			return
+		}
+		time.Sleep(delay)
+	}
+
+	assert.Fail(t, pending)
+}

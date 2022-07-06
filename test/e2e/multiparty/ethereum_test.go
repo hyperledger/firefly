@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package multiparty
 
 import (
 	"testing"
@@ -22,7 +22,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestEthereumNamespaceE2ESuite(t *testing.T) {
+func TestEthereumMultipartyE2ESuite(t *testing.T) {
+	suite.Run(t, new(IdentityTestSuite))
 	suite.Run(t, new(OnChainOffChainTestSuite))
 	suite.Run(t, new(TokensTestSuite))
 	suite.Run(t, new(EthereumContractTestSuite))

@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package multiparty
 
 import (
 	"encoding/json"
@@ -25,6 +25,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -116,8 +117,8 @@ type EthereumContractTestSuite struct {
 
 func (suite *EthereumContractTestSuite) SetupSuite() {
 	suite.testState = beforeE2ETest(suite.T())
-	stack := readStackFile(suite.T())
-	suite.ethClient = NewResty(suite.T())
+	stack := e2e.ReadStack(suite.T())
+	suite.ethClient = e2e.NewResty(suite.T())
 	suite.ethClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 	suite.ethIdentity = suite.testState.org1key.Value
 	suite.contractAddress = os.Getenv("CONTRACT_ADDRESS")
@@ -126,7 +127,7 @@ func (suite *EthereumContractTestSuite) SetupSuite() {
 	}
 	suite.T().Logf("contractAddress: %s", suite.contractAddress)
 
-	res, err := CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
+	res, err := e2e.CreateFFI(suite.T(), suite.testState.client1, simpleStorageFFI())
 	suite.interfaceID = fftypes.MustParseUUID(res.(map[string]interface{})["id"].(string))
 	suite.T().Logf("interfaceID: %s", suite.interfaceID)
 	assert.NoError(suite.T(), err)
@@ -137,18 +138,18 @@ func (suite *EthereumContractTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *EthereumContractTestSuite) AfterTest(suiteName, testName string) {
-	verifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
-	defer suite.testState.done()
+	defer suite.testState.Done()
 
-	received1 := wsReader(suite.testState.ws1, true)
-	listener := CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
+	received1 := e2e.WsReader(suite.testState.ws1, true)
+	listener := e2e.CreateContractListener(suite.T(), suite.testState.client1, simpleStorageFFIChanged(), &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
-	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	listeners := e2e.GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
 	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
 
@@ -164,7 +165,7 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		},
 	}
 
-	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
+	res, err := e2e.InvokeContractMethod(suite.T(), suite.testState.client1, invokeContractRequest)
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), res)
 
@@ -179,34 +180,34 @@ func (suite *EthereumContractTestSuite) TestDirectInvokeMethod() {
 		"listener": listener.ID.String(),
 	}
 
-	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
+	event := e2e.WaitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 
 	queryContractRequest := &core.ContractCallRequest{
 		Location: fftypes.JSONAnyPtrBytes(locationBytes),
 		Method:   simpleStorageFFIGet(),
 	}
-	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
-	assert.NoError(suite.testState.t, err)
+	res, err = e2e.QueryContractMethod(suite.T(), suite.testState.client1, queryContractRequest)
+	assert.NoError(suite.T(), err)
 	resJSON, err := json.Marshal(res)
-	assert.NoError(suite.testState.t, err)
-	assert.Equal(suite.testState.t, `{"output":"2"}`, string(resJSON))
-	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), `{"output":"2"}`, string(resJSON))
+	e2e.DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }
 
 func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
-	defer suite.testState.done()
+	defer suite.testState.Done()
 
-	received1 := wsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1, true)
 
 	ffiReference := &core.FFIReference{
 		ID: suite.interfaceID,
 	}
-	listener := CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
+	listener := e2e.CreateFFIContractListener(suite.T(), suite.testState.client1, ffiReference, "Changed", &fftypes.JSONObject{
 		"address": suite.contractAddress,
 	})
 
-	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	listeners := e2e.GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
 	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
 
@@ -223,9 +224,9 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		MethodPath: "set",
 	}
 
-	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
-	assert.NoError(suite.testState.t, err)
-	assert.NotNil(suite.testState.t, res)
+	res, err := e2e.InvokeContractMethod(suite.T(), suite.testState.client1, invokeContractRequest)
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), res)
 
 	match := map[string]interface{}{
 		"info": map[string]interface{}{
@@ -237,7 +238,7 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		},
 		"listener": listener.ID.String(),
 	}
-	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
+	event := e2e.WaitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
 
 	queryContractRequest := &core.ContractCallRequest{
@@ -245,18 +246,18 @@ func (suite *EthereumContractTestSuite) TestFFIInvokeMethod() {
 		Interface:  suite.interfaceID,
 		MethodPath: "get",
 	}
-	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
-	assert.NoError(suite.testState.t, err)
+	res, err = e2e.QueryContractMethod(suite.T(), suite.testState.client1, queryContractRequest)
+	assert.NoError(suite.T(), err)
 	resJSON, err := json.Marshal(res)
-	assert.NoError(suite.testState.t, err)
-	assert.Equal(suite.testState.t, `{"output":"42"}`, string(resJSON))
-	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), `{"output":"42"}`, string(resJSON))
+	e2e.DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }
 
 func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
-	defer suite.testState.done()
+	defer suite.testState.Done()
 
-	received1 := wsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1, true)
 	APIName := fftypes.NewUUID().String()
 
 	ffiReference := &core.FFIReference{
@@ -268,20 +269,20 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 	}
 	locationBytes, _ := json.Marshal(location)
 
-	createContractAPIResult, err := CreateContractAPI(suite.T(), suite.testState.client1, APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)))
+	createContractAPIResult, err := e2e.CreateContractAPI(suite.T(), suite.testState.client1, APIName, ffiReference, fftypes.JSONAnyPtr(string(locationBytes)))
 	assert.NotNil(suite.T(), createContractAPIResult)
 	assert.NoError(suite.T(), err)
 
-	listener, err := CreateContractAPIListener(suite.T(), suite.testState.client1, APIName, "Changed", "firefly_e2e")
+	listener, err := e2e.CreateContractAPIListener(suite.T(), suite.testState.client1, APIName, "Changed", "firefly_e2e")
 	assert.NoError(suite.T(), err)
 
-	listeners := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	listeners := e2e.GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(listeners))
 	assert.Equal(suite.T(), listener.BackendID, listeners[0].BackendID)
 
 	input := fftypes.JSONAny(`{"newValue": 42}`)
-	invokeResult, err := InvokeContractAPIMethod(suite.T(), suite.testState.client1, APIName, "set", &input)
-	assert.NoError(suite.testState.t, err)
+	invokeResult, err := e2e.InvokeContractAPIMethod(suite.T(), suite.testState.client1, APIName, "set", &input)
+	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), invokeResult)
 
 	match := map[string]interface{}{
@@ -294,15 +295,15 @@ func (suite *EthereumContractTestSuite) TestContractAPIMethod() {
 		},
 		"listener": listener.ID.String(),
 	}
-	event := waitForContractEvent(suite.T(), suite.testState.client1, received1, match)
+	event := e2e.WaitForContractEvent(suite.T(), suite.testState.client1, received1, match)
 	assert.NotNil(suite.T(), event)
-	assert.NoError(suite.testState.t, err)
+	assert.NoError(suite.T(), err)
 
-	res, err := QueryContractAPIMethod(suite.T(), suite.testState.client1, APIName, "get", fftypes.JSONAnyPtr("{}"))
-	assert.NoError(suite.testState.t, err)
+	res, err := e2e.QueryContractAPIMethod(suite.T(), suite.testState.client1, APIName, "get", fftypes.JSONAnyPtr("{}"))
+	assert.NoError(suite.T(), err)
 	resJSON, err := json.Marshal(res)
-	assert.NoError(suite.testState.t, err)
-	assert.Equal(suite.testState.t, `{"output":"42"}`, string(resJSON))
+	assert.NoError(suite.T(), err)
+	assert.Equal(suite.T(), `{"output":"42"}`, string(resJSON))
 
-	DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
+	e2e.DeleteContractListener(suite.T(), suite.testState.client1, listener.ID)
 }
