@@ -145,8 +145,7 @@ func TestInit(t *testing.T) {
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -163,8 +162,7 @@ func TestInitDatabaseFail(t *testing.T) {
 
 	nm.mdi.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -178,8 +176,7 @@ func TestInitBlockchainFail(t *testing.T) {
 	nm.mdi.On("SetHandler", database.GlobalHandler, mock.Anything).Return()
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(fmt.Errorf("pop"))
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -194,8 +191,7 @@ func TestInitDataExchangeFail(t *testing.T) {
 	nm.mbi.On("Init", mock.Anything, mock.Anything, nm.mmi).Return(nil)
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -211,8 +207,7 @@ func TestInitSharedStorageFail(t *testing.T) {
 	nm.mdx.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -229,8 +224,7 @@ func TestInitTokensFail(t *testing.T) {
 	nm.mps.On("Init", mock.Anything, mock.Anything).Return(nil)
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -248,8 +242,7 @@ func TestInitEventsFail(t *testing.T) {
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -269,8 +262,7 @@ func TestInitOrchestratorFail(t *testing.T) {
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 }
 
@@ -296,8 +288,7 @@ func TestInitVersion1(t *testing.T) {
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.NoError(t, err)
 
 	assert.Equal(t, mo, nm.Orchestrator("default"))
@@ -329,8 +320,7 @@ func TestInitVersion1Fail(t *testing.T) {
 	nm.mti.On("Init", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	nm.mev.On("Init", mock.Anything, mock.Anything).Return(nil)
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.EqualError(t, err, "pop")
 
 	mo.AssertExpectations(t)
@@ -387,8 +377,7 @@ func TestDatabasePluginBadName(t *testing.T) {
 	config.Set("plugins.database", []fftypes.JSONObject{{}})
 	databaseConfig.AddKnownKey(coreconfig.PluginConfigName, "wrong////")
 	databaseConfig.AddKnownKey(coreconfig.PluginConfigType, "postgres")
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Error(t, err)
 }
 
@@ -421,8 +410,7 @@ func TestIdentityPluginNoType(t *testing.T) {
 	iifactory.InitConfig(identityConfig)
 	identityConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	config.Set("plugins.identity", []fftypes.JSONObject{{}})
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Regexp(t, "FF10386.*type", err)
 }
 
@@ -486,8 +474,7 @@ func TestBlockchainPluginBadType(t *testing.T) {
 	config.Set("plugins.blockchain", []fftypes.JSONObject{{}})
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	blockchainConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Error(t, err)
 }
 
@@ -540,8 +527,7 @@ func TestSharedStoragePluginBadType(t *testing.T) {
 	config.Set("plugins.sharedstorage", []fftypes.JSONObject{{}})
 	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	sharedstorageConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Error(t, err)
 }
 
@@ -594,8 +580,7 @@ func TestDataExchangePluginBadType(t *testing.T) {
 	config.Set("plugins.dataexchange", []fftypes.JSONObject{{}})
 	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigName, "flapflip")
 	dataexchangeConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong//")
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Error(t, err)
 }
 
@@ -673,8 +658,7 @@ func TestTokensPluginBadType(t *testing.T) {
 	config.Set("plugins.tokens", []fftypes.JSONObject{{}})
 	tokensConfig.AddKnownKey(coreconfig.PluginConfigName, "erc20_erc721")
 	tokensConfig.AddKnownKey(coreconfig.PluginConfigType, "wrong")
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Error(t, err)
 }
 
@@ -704,8 +688,7 @@ func TestEventsPluginBadType(t *testing.T) {
 	defer nm.cleanup(t)
 	nm.plugins.events = nil
 	config.Set(coreconfig.EventTransportsEnabled, []string{"!unknown!"})
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err := nm.Init(ctx, cancelCtx)
+	err := nm.Init(context.Background())
 	assert.Error(t, err)
 }
 
@@ -732,8 +715,7 @@ func TestInitBadNamespace(t *testing.T) {
     `))
 	assert.NoError(t, err)
 
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	err = nm.Init(ctx, cancelCtx)
+	err = nm.Init(context.Background())
 	assert.Regexp(t, "FF00140", err)
 }
 

@@ -64,13 +64,13 @@ func (_m *Manager) GetOperationByNamespacedID(ctx context.Context, nsOpID string
 	return r0, r1
 }
 
-// Init provides a mock function with given fields: ctx, cancelCtx
-func (_m *Manager) Init(ctx context.Context, cancelCtx context.CancelFunc) error {
-	ret := _m.Called(ctx, cancelCtx)
+// Init provides a mock function with given fields: ctx
+func (_m *Manager) Init(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, context.CancelFunc) error); ok {
-		r0 = rf(ctx, cancelCtx)
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}

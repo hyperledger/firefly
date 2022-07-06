@@ -67,7 +67,7 @@ var (
 )
 
 type Manager interface {
-	Init(ctx context.Context, cancelCtx context.CancelFunc) error
+	Init(ctx context.Context) error
 	Start() error
 	WaitStop()
 
@@ -87,7 +87,6 @@ type namespace struct {
 
 type namespaceManager struct {
 	ctx         context.Context
-	cancelCtx   context.CancelFunc
 	nsMux       sync.Mutex
 	namespaces  map[string]*namespace
 	pluginNames map[string]bool
@@ -165,9 +164,8 @@ func NewNamespaceManager(withDefaults bool) Manager {
 	return nm
 }
 
-func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
+func (nm *namespaceManager) Init(ctx context.Context) (err error) {
 	nm.ctx = ctx
-	nm.cancelCtx = cancelCtx
 
 	if err = nm.loadPlugins(ctx); err != nil {
 		return err
