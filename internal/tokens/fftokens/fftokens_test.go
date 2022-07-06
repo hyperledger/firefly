@@ -1311,3 +1311,13 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	h.eventLoop() // we're simply looking for it exiting
 }
+
+func TestCallbacksWrongNamespace(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
+	h.callbacks.TokenOpUpdate(context.Background(), h, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	h.callbacks.TokenPoolCreated(context.Background(), "ns1", h, nil)
+	h.callbacks.TokensTransferred(context.Background(), "ns1", h, nil)
+	h.callbacks.TokensApproved(context.Background(), "ns1", h, nil)
+}

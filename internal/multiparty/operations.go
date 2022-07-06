@@ -108,8 +108,15 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 	switch data := op.Data.(type) {
 	case batchPinData:
 		batch := data.Batch
+
+		// Only include namespace for V1 networks
+		var namespace string
+		if mm.activeContract.networkVersion == 1 {
+			namespace = batch.Namespace
+		}
+
 		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
-			Namespace:       batch.Namespace,
+			Namespace:       namespace,
 			TransactionID:   batch.TX.ID,
 			BatchID:         batch.ID,
 			BatchHash:       batch.Hash,

@@ -36,7 +36,8 @@ type Plugin interface {
 	Init(ctx context.Context, config config.Section, metrics metrics.Manager) error
 
 	// SetHandler registers a handler to receive callbacks
-	SetHandler(handler Callbacks)
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	SetHandler(namespace string, handler Callbacks)
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -89,7 +90,7 @@ type Plugin interface {
 	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
 
 	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
-	AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error)
+	AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
 	RemoveFireflySubscription(ctx context.Context, subID string) error
@@ -119,7 +120,7 @@ type Callbacks interface {
 	// BlockchainNetworkAction notifies on the arrival of a network operator action
 	//
 	// Error should only be returned in shutdown scenarios
-	BlockchainNetworkAction(action string, event *Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *Event, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

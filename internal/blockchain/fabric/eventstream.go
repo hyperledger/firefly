@@ -151,28 +151,34 @@ func (s *streamManager) deleteSubscription(ctx context.Context, subID string) er
 	return nil
 }
 
-func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, location *Location, fromBlock, stream, event string) (sub *subscription, err error) {
+func (s *streamManager) ensureFireFlySubscription(ctx context.Context, namespace string, location *Location, fromBlock, stream, event string) (sub *subscription, subNS string, err error) {
 	existingSubs, err := s.getSubscriptions(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	subName := fmt.Sprintf("%s_%s", namespace, event)
+	oldName := event
+	currentName := fmt.Sprintf("%s_%s", namespace, event)
+
 	for _, s := range existingSubs {
-		if s.Stream == stream && (s.Name == subName || s.Name == event) {
-			sub = s
-			if s.Name == event {
-				log.L(ctx).Warnf("Subscription %s uses deprecated functionality, please upgrade to utilize multiple namespaces.", s.Name)
+		if s.Stream == stream {
+			if s.Name == oldName {
+				log.L(ctx).Warnf("Subscription %s uses a legacy name format '%s' and may not support multiple namespaces. Expected '%s' instead.", s.ID, s.Name, currentName)
+				sub = s
+			} else if s.Name == currentName {
+				sub = s
+				subNS = namespace
 			}
 		}
 	}
 
 	if sub == nil {
-		if sub, err = s.createSubscription(ctx, location, stream, subName, event, fromBlock); err != nil {
-			return nil, err
+		if sub, err = s.createSubscription(ctx, location, stream, currentName, event, fromBlock); err != nil {
+			return nil, "", err
 		}
+		subNS = namespace
 	}
 
 	log.L(ctx).Infof("%s subscription: %s", event, sub.ID)
-	return sub, nil
+	return sub, subNS, nil
 }
