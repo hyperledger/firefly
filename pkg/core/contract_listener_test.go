@@ -49,11 +49,11 @@ func TestFFISerializedEventScanError(t *testing.T) {
 
 func TestFFISerializedEventValue(t *testing.T) {
 	params := &FFISerializedEvent{
-		FFIEventDefinition: FFIEventDefinition{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name:        "event1",
 			Description: "a super event",
-			Params: FFIParams{
-				&FFIParam{Name: "details", Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`)},
+			Params: fftypes.FFIParams{
+				&fftypes.FFIParam{Name: "details", Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`)},
 			},
 		},
 	}

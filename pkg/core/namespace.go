@@ -18,7 +18,6 @@ package core
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/json"
 
@@ -76,10 +75,10 @@ type NetworkAction struct {
 }
 
 func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
 		return err
 	}
-	if err = ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
+	if err = fftypes.ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
 		return err
 	}
 	if existing {
@@ -90,18 +89,8 @@ func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
 	return nil
 }
 
-func typeNamespaceNameTopicHash(objType string, ns string, name string) string {
-	// Topic generation function for ordering anything with a type, namespace and name.
-	// Means all messages racing for this name will be consistently ordered by all parties.
-	h := sha256.New()
-	h.Write([]byte(objType))
-	h.Write([]byte(ns))
-	h.Write([]byte(name))
-	return fftypes.HashResult(h).String()
-}
-
 func (ns *Namespace) Topic() string {
-	return typeNamespaceNameTopicHash("namespace", ns.Name, "")
+	return fftypes.TypeNamespaceNameTopicHash("namespace", ns.Name, "")
 }
 
 func (ns *Namespace) SetBroadcastMessage(msgID *fftypes.UUID) {

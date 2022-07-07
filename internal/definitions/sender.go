@@ -41,7 +41,7 @@ type Sender interface {
 	UpdateIdentity(ctx context.Context, identity *core.Identity, def *core.IdentityUpdate, signingIdentity *core.SignerRef, waitConfirm bool) error
 	DefineDatatype(ctx context.Context, datatype *core.Datatype, waitConfirm bool) error
 	DefineTokenPool(ctx context.Context, pool *core.TokenPoolAnnouncement, waitConfirm bool) error
-	DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error
+	DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error
 	DefineContractAPI(ctx context.Context, httpServerURL string, api *core.ContractAPI, waitConfirm bool) error
 }
 

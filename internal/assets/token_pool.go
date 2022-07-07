@@ -29,7 +29,7 @@ import (
 )
 
 func (am *assetManager) CreateTokenPool(ctx context.Context, pool *core.TokenPool, waitConfirm bool) (*core.TokenPool, error) {
-	if err := core.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, pool.Name, "name"); err != nil {
 		return nil, err
 	}
 	if existing, err := am.database.GetTokenPool(ctx, am.namespace, pool.Name); err != nil {
@@ -141,7 +141,7 @@ func (am *assetManager) GetTokenPool(ctx context.Context, connector, poolName st
 	if _, err := am.selectTokenPlugin(ctx, connector); err != nil {
 		return nil, err
 	}
-	if err := core.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, poolName, "name"); err != nil {
 		return nil, err
 	}
 	pool, err := am.database.GetTokenPool(ctx, am.namespace, poolName)
@@ -159,7 +159,7 @@ func (am *assetManager) GetTokenPoolByNameOrID(ctx context.Context, poolNameOrID
 
 	poolID, err := fftypes.ParseUUID(ctx, poolNameOrID)
 	if err != nil {
-		if err := core.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, poolNameOrID, "name"); err != nil {
 			return nil, err
 		}
 		if pool, err = am.database.GetTokenPool(ctx, am.namespace, poolNameOrID); err != nil {

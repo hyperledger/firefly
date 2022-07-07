@@ -113,7 +113,7 @@ func (or *orchestrator) GetDatatypeByID(ctx context.Context, id string) (*core.D
 }
 
 func (or *orchestrator) GetDatatypeByName(ctx context.Context, name, version string) (*core.Datatype, error) {
-	if err := core.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, name, "name"); err != nil {
 		return nil, err
 	}
 	return or.database().GetDatatypeByName(ctx, or.namespace, name, version)

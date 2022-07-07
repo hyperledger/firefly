@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/mocks/broadcastmocks"
 	"github.com/hyperledger/firefly/mocks/contractmocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
@@ -35,9 +36,9 @@ func TestDefineFFIResolveFail(t *testing.T) {
 	defer cancel()
 	ds.multiparty = true
 
-	ffi := &core.FFI{
-		Methods: []*core.FFIMethod{{}},
-		Events:  []*core.FFIEvent{{}},
+	ffi := &fftypes.FFI{
+		Methods: []*fftypes.FFIMethod{{}},
+		Events:  []*fftypes.FFIEvent{{}},
 	}
 
 	mcm := ds.contracts.(*contractmocks.Manager)
@@ -54,7 +55,7 @@ func TestDefineFFIFail(t *testing.T) {
 	defer cancel()
 	ds.multiparty = true
 
-	ffi := &core.FFI{}
+	ffi := &fftypes.FFI{}
 
 	mcm := ds.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
@@ -74,7 +75,7 @@ func TestDefineFFIOk(t *testing.T) {
 	defer cancel()
 	ds.multiparty = true
 
-	ffi := &core.FFI{}
+	ffi := &fftypes.FFI{}
 
 	mcm := ds.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", context.Background(), ffi).Return(nil)
@@ -101,7 +102,7 @@ func TestDefineFFINonMultiparty(t *testing.T) {
 	defer cancel()
 	dh := ds.handler
 
-	ffi := &core.FFI{}
+	ffi := &fftypes.FFI{}
 
 	mcm := dh.contracts.(*contractmocks.Manager)
 	mcm.On("ResolveFFI", context.Background(), ffi).Return(fmt.Errorf("pop"))

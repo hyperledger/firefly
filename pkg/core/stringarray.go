@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
@@ -97,11 +98,11 @@ func (sa FFStringArray) Validate(ctx context.Context, fieldName string, isName b
 		dupCheck[n] = true
 		totalLength += len(n)
 		if isName {
-			if err := ValidateFFNameField(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
+			if err := fftypes.ValidateFFNameField(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
 				return err
 			}
 		} else {
-			if err := ValidateSafeCharsOnly(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
+			if err := fftypes.ValidateSafeCharsOnly(ctx, n, fmt.Sprintf("%s[%d]", fieldName, i)); err != nil {
 				return err
 			}
 		}

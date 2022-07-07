@@ -28,12 +28,9 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
-	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly/internal/coreconfig"
-	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
@@ -49,10 +46,10 @@ var utEthconnectConf = utConfig.SubSection(EthconnectConfigKey)
 var utAddressResolverConf = utConfig.SubSection(AddressResolverConfigKey)
 var utFFTMConf = utConfig.SubSection(FFTMConfigKey)
 
-func testFFIMethod() *core.FFIMethod {
-	return &core.FFIMethod{
+func testFFIMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
 		Name: "sum",
-		Params: []*core.FFIParam{
+		Params: []*fftypes.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256"}}`),
@@ -62,7 +59,7 @@ func testFFIMethod() *core.FFIMethod {
 				Schema: fftypes.JSONAnyPtr(`{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256"}}`),
 			},
 		},
-		Returns: []*core.FFIParam{
+		Returns: []*fftypes.FFIParam{
 			{
 				Name:   "z",
 				Schema: fftypes.JSONAnyPtr(`{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256"}}`),
@@ -1573,10 +1570,10 @@ func TestFormatNil(t *testing.T) {
 	assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", ethHexFormatB32(nil))
 }
 
-func encodeDetails(internalType string) *fftypes.JSONAny {
-	result, _ := json.Marshal(&paramDetails{Type: internalType})
-	return fftypes.JSONAnyPtrBytes(result)
-}
+// func encodeDetails(internalType string) *fftypes.JSONAny {
+// 	result, _ := json.Marshal(&paramDetails{Type: internalType})
+// 	return fftypes.JSONAnyPtrBytes(result)
+// }
 
 func TestAddSubscription(t *testing.T) {
 	e, cancel := newTestEthereum()
@@ -1594,9 +1591,9 @@ func TestAddSubscription(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "Changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": "string"}}`),
@@ -1634,9 +1631,9 @@ func TestAddSubscriptionBadParamDetails(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "Changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name:   "value",
 							Schema: fftypes.JSONAnyPtr(`{"type": "string", "details": {"type": ""}}`),
@@ -2017,9 +2014,9 @@ func TestInvokeContractPrepareFail(t *testing.T) {
 	location := &Location{
 		Address: "0x12345",
 	}
-	method := &core.FFIMethod{
+	method := &fftypes.FFIMethod{
 		Name: "set",
-		Params: core.FFIParams{
+		Params: fftypes.FFIParams{
 			{
 				Schema: fftypes.JSONAnyPtr("{bad schema!"),
 			},
@@ -2102,8 +2099,8 @@ func TestQueryContractErrorPrepare(t *testing.T) {
 	location := &Location{
 		Address: "0x12345",
 	}
-	method := &core.FFIMethod{
-		Params: core.FFIParams{
+	method := &fftypes.FFIMethod{
+		Params: fftypes.FFIParams{
 			{
 				Name:   "bad",
 				Schema: fftypes.JSONAnyPtr("{badschema}"),
@@ -2246,660 +2243,9 @@ func TestGetContractAddressBadJSON(t *testing.T) {
 	assert.Regexp(t, "invalid character 'n' looking for beginning of object key string", err)
 }
 
-func TestGetContractAddressBadResponse(t *testing.T) {
-	e, cancel := newTestEthereum()
-	defer cancel()
-
-	mockedClient := &http.Client{}
-	httpmock.ActivateNonDefault(mockedClient)
-	defer httpmock.DeactivateAndReset()
-
-	httpmock.RegisterResponder("GET", "http://localhost:12345/contracts/firefly",
-		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "FFEC100148"}))
-
-	resetConf(e)
-	utEthconnectConf.Set(ffresty.HTTPConfigURL, "http://localhost:12345")
-	utEthconnectConf.Set(ffresty.HTTPCustomClient, mockedClient)
-	utEthconnectConf.Set(EthconnectConfigInstanceDeprecated, "0x12345")
-	utEthconnectConf.Set(EthconnectConfigTopic, "topic1")
-
-	e.client = ffresty.New(e.ctx, utEthconnectConf)
-
-	_, err := e.getContractAddress(context.Background(), "/contracts/firefly")
-
-	assert.Regexp(t, "FF10111", err)
-}
-
-func TestFFIMethodToABI(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	method := &core.FFIMethod{
-		Name: "set",
-		Params: []*core.FFIParam{
-			{
-				Name: "newValue",
-				Schema: fftypes.JSONAnyPtr(`{
-					"type": "integer",
-					"details": {
-						"type": "uint256"
-					}
-				}`),
-			},
-		},
-		Returns: []*core.FFIParam{},
-	}
-
-	expectedABIElement := &abi.Entry{
-		Name: "set",
-		Type: "function",
-		Inputs: abi.ParameterArray{
-			{
-				Name:    "newValue",
-				Type:    "uint256",
-				Indexed: false,
-			},
-		},
-		Outputs: abi.ParameterArray{},
-	}
-
-	abi, err := e.FFIMethodToABI(context.Background(), method, nil)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedABIElement, abi)
-}
-
-func TestFFIMethodToABIObject(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	method := &core.FFIMethod{
-		Name: "set",
-		Params: []*core.FFIParam{
-			{
-				Name: "widget",
-				Schema: fftypes.JSONAnyPtr(`{
-					"type": "object",
-					"details": {
-						"type": "tuple"
-					},
-					"properties": {
-						"radius": {
-							"type": "integer",
-							"details": {
-								"type": "uint256",
-								"index": 0,
-								"indexed": true
-							}
-						},
-						"numbers": {
-							"type": "array",
-							"details": {
-								"type": "uint256[]",
-								"index": 1
-							},
-							"items": {
-								"type": "integer",
-								"details": {
-									"type": "uint256"
-								}
-							}
-						}
-					}
-				}`),
-			},
-		},
-		Returns: []*core.FFIParam{},
-	}
-
-	expectedABIElement := abi.Entry{
-		Name: "set",
-		Type: "function",
-		Inputs: abi.ParameterArray{
-			{
-				Name:    "widget",
-				Type:    "tuple",
-				Indexed: false,
-				Components: abi.ParameterArray{
-					{
-						Name:         "radius",
-						Type:         "uint256",
-						Indexed:      true,
-						InternalType: "",
-					},
-					{
-						Name:         "numbers",
-						Type:         "uint256[]",
-						Indexed:      false,
-						InternalType: "",
-					},
-				},
-			},
-		},
-		Outputs: abi.ParameterArray{},
-	}
-
-	abi, err := e.FFIMethodToABI(context.Background(), method, nil)
-	assert.NoError(t, err)
-	assert.ObjectsAreEqual(expectedABIElement, abi)
-}
-
-func TestABIFFIConversionArrayOfObjects(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abiJSON := `[
-		{
-			"inputs": [
-				{
-					"components": [
-						{
-							"internalType": "string",
-							"name": "name",
-							"type": "string"
-						},
-						{
-							"internalType": "uint256",
-							"name": "weight",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "volume",
-							"type": "uint256"
-						},
-						{
-							"components": [
-								{
-									"internalType": "string",
-									"name": "name",
-									"type": "string"
-								},
-								{
-									"internalType": "string",
-									"name": "description",
-									"type": "string"
-								},
-								{
-									"internalType": "enum ComplexStorage.Alignment",
-									"name": "alignment",
-									"type": "uint8"
-								}
-							],
-							"internalType": "struct ComplexStorage.BoxContent[]",
-							"name": "contents",
-							"type": "tuple[]"
-						}
-					],
-					"internalType": "struct ComplexStorage.Box[]",
-					"name": "newBox",
-					"type": "tuple[]"
-				}
-			],
-			"name": "set",
-			"outputs": [],
-			"stateMutability": "payable",
-			"type": "function",
-			"payable": true,
-			"constant": true
-		}
-	]`
-
-	var abi *abi.ABI
-	json.Unmarshal([]byte(abiJSON), &abi)
-	abiFunction := abi.Functions()["set"]
-
-	ffiMethod, err := e.convertABIFunctionToFFIMethod(context.Background(), abiFunction)
-	assert.NoError(t, err)
-	abiFunctionOut, err := e.FFIMethodToABI(context.Background(), ffiMethod, nil)
-	assert.NoError(t, err)
-
-	expectedABIFunctionJSON, err := json.Marshal(abiFunction)
-	assert.NoError(t, err)
-	abiFunctionJSON, err := json.Marshal(abiFunctionOut)
-	assert.NoError(t, err)
-	assert.JSONEq(t, string(expectedABIFunctionJSON), string(abiFunctionJSON))
-
-}
-
-func TestFFIMethodToABINestedArray(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	method := &core.FFIMethod{
-		Name: "set",
-		Params: []*core.FFIParam{
-			{
-				Name: "widget",
-				Schema: fftypes.JSONAnyPtr(`{
-					"type": "array",
-					"details": {
-						"type": "string[][]",
-						"internalType": "string[][]"
-					},
-					"items": {
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					}
-				}`),
-			},
-		},
-		Returns: []*core.FFIParam{},
-	}
-
-	expectedABIElement := &abi.Entry{
-		Name: "set",
-		Type: "function",
-		Inputs: abi.ParameterArray{
-			{
-				Name:         "widget",
-				Type:         "string[][]",
-				InternalType: "string[][]",
-				Indexed:      false,
-			},
-		},
-		Outputs: abi.ParameterArray{},
-	}
-
-	abi, err := e.FFIMethodToABI(context.Background(), method, nil)
-	assert.NoError(t, err)
-	expectedABIJSON, err := json.Marshal(expectedABIElement)
-	assert.NoError(t, err)
-	abiJSON, err := json.Marshal(abi)
-	assert.NoError(t, err)
-	assert.JSONEq(t, string(expectedABIJSON), string(abiJSON))
-}
-
-func TestFFIMethodToABIInvalidJSON(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	method := &core.FFIMethod{
-		Name: "set",
-		Params: []*core.FFIParam{
-			{
-				Name:   "newValue",
-				Schema: fftypes.JSONAnyPtr(`{#!`),
-			},
-		},
-		Returns: []*core.FFIParam{},
-	}
-
-	_, err := e.FFIMethodToABI(context.Background(), method, nil)
-	assert.Regexp(t, "invalid json", err)
-}
-
-func TestFFIMethodToABIBadSchema(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	method := &core.FFIMethod{
-		Name: "set",
-		Params: []*core.FFIParam{
-			{
-				Name: "newValue",
-				Schema: fftypes.JSONAnyPtr(`{
-					"type": "integer",
-					"detailz": {
-						"type": "uint256"
-					}
-				}`),
-			},
-		},
-		Returns: []*core.FFIParam{},
-	}
-
-	_, err := e.FFIMethodToABI(context.Background(), method, nil)
-	assert.Regexp(t, "compilation failed", err)
-}
-
-func TestFFIMethodToABIBadReturn(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	method := &core.FFIMethod{
-		Name:   "set",
-		Params: []*core.FFIParam{},
-		Returns: []*core.FFIParam{
-			{
-				Name: "newValue",
-				Schema: fftypes.JSONAnyPtr(`{
-					"type": "integer",
-					"detailz": {
-						"type": "uint256"
-					}
-				}`),
-			},
-		},
-	}
-
-	_, err := e.FFIMethodToABI(context.Background(), method, nil)
-	assert.Regexp(t, "compilation failed", err)
-}
-
-func TestConvertABIToFFI(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abi := &abi.ABI{
-		{
-			Name: "set",
-			Type: "function",
-			Inputs: abi.ParameterArray{
-				{
-					Name:         "newValue",
-					Type:         "uint256",
-					InternalType: "uint256",
-				},
-			},
-			Outputs: abi.ParameterArray{},
-		},
-		{
-			Name:   "get",
-			Type:   "function",
-			Inputs: abi.ParameterArray{},
-			Outputs: abi.ParameterArray{
-				{
-					Name:         "value",
-					Type:         "uint256",
-					InternalType: "uint256",
-				},
-			},
-		},
-		{
-			Name: "Updated",
-			Type: "event",
-			Inputs: abi.ParameterArray{{
-				Name:         "value",
-				Type:         "uint256",
-				InternalType: "uint256",
-			}},
-			Outputs: abi.ParameterArray{},
-		},
-	}
-
-	schema := fftypes.JSONAnyPtr(`{"type":"integer","details":{"type":"uint256","internalType":"uint256"}}`)
-
-	expectedFFI := &core.FFI{
-		Name:        "SimpleStorage",
-		Version:     "v0.0.1",
-		Namespace:   "default",
-		Description: "desc",
-		Methods: []*core.FFIMethod{
-			{
-				Name: "set",
-				Params: core.FFIParams{
-					{
-						Name:   "newValue",
-						Schema: schema,
-					},
-				},
-				Returns: core.FFIParams{},
-			},
-			{
-				Name:   "get",
-				Params: core.FFIParams{},
-				Returns: core.FFIParams{
-					{
-						Name:   "value",
-						Schema: schema,
-					},
-				},
-			},
-		},
-		Events: []*core.FFIEvent{
-			{
-				FFIEventDefinition: core.FFIEventDefinition{
-					Name: "Updated",
-					Params: core.FFIParams{
-						{
-							Name:   "value",
-							Schema: schema,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "SimpleStorage", "v0.0.1", "desc", abi)
-	assert.NoError(t, err)
-	assert.NotNil(t, actualFFI)
-	assert.ObjectsAreEqual(expectedFFI, actualFFI)
-}
-
-func TestConvertABIToFFIWithObject(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abi := &abi.ABI{
-		&abi.Entry{
-			Name: "set",
-			Type: "function",
-			Inputs: abi.ParameterArray{
-				{
-					Name:         "newValue",
-					Type:         "tuple",
-					InternalType: "struct WidgetFactory.Widget",
-					Components: abi.ParameterArray{
-						{
-							Name:         "size",
-							Type:         "uint256",
-							InternalType: "uint256",
-						},
-						{
-							Name:         "description",
-							Type:         "string",
-							InternalType: "string",
-						},
-					},
-				},
-			},
-			Outputs: abi.ParameterArray{},
-		},
-	}
-
-	bigIntDesc := i18n.Expand(context.Background(), coremsgs.APIIntegerDescription)
-	schema := fftypes.JSONAnyPtr(fmt.Sprintf(`{"type":"object","details":{"type":"tuple","internalType":"struct WidgetFactory.Widget"},"properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":1}},"size":{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256","internalType":"uint256","index":0},"description":"%s"}}}`, bigIntDesc))
-
-	expectedFFI := &core.FFI{
-		Name:        "WidgetTest",
-		Version:     "v0.0.1",
-		Namespace:   "default",
-		Description: "desc",
-		Methods: []*core.FFIMethod{
-			{
-				Name: "set",
-				Params: core.FFIParams{
-					{
-						Name:   "newValue",
-						Schema: schema,
-					},
-				},
-				Returns: core.FFIParams{},
-				Details: map[string]interface{}{},
-			},
-		},
-		Events: []*core.FFIEvent{},
-	}
-
-	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
-	assert.NoError(t, err)
-	assert.NotNil(t, actualFFI)
-
-	expectedFFIJSON, err := json.Marshal(expectedFFI)
-	assert.NoError(t, err)
-	actualFFIJSON, err := json.Marshal(actualFFI)
-	assert.NoError(t, err)
-	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
-
-}
-
-func TestConvertABIToFFIWithArray(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abi := &abi.ABI{
-		{
-			Name: "set",
-			Type: "function",
-			Inputs: abi.ParameterArray{
-				{
-					Name:         "newValue",
-					Type:         "string[]",
-					InternalType: "string[]",
-				},
-			},
-			Outputs: abi.ParameterArray{},
-		},
-	}
-
-	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"string[]","internalType":"string[]"},"items":{"type":"string"}}`)
-
-	expectedFFI := &core.FFI{
-		Name:        "WidgetTest",
-		Version:     "v0.0.1",
-		Namespace:   "default",
-		Description: "desc",
-		Methods: []*core.FFIMethod{
-			{
-				Name: "set",
-				Params: core.FFIParams{
-					{
-						Name:   "newValue",
-						Schema: schema,
-					},
-				},
-				Returns: core.FFIParams{},
-				Details: map[string]interface{}{},
-			},
-		},
-		Events: []*core.FFIEvent{},
-	}
-
-	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
-	assert.NoError(t, err)
-	assert.NotNil(t, actualFFI)
-
-	expectedFFIJSON, err := json.Marshal(expectedFFI)
-	assert.NoError(t, err)
-	actualFFIJSON, err := json.Marshal(actualFFI)
-	assert.NoError(t, err)
-	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
-}
-
-func TestConvertABIToFFIWithNestedArray(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abi := &abi.ABI{
-		{
-			Name: "set",
-			Type: "function",
-			Inputs: abi.ParameterArray{
-				{
-					Name:         "newValue",
-					Type:         "uint256[][]",
-					InternalType: "uint256[][]",
-				},
-			},
-			Outputs: abi.ParameterArray{},
-		},
-	}
-
-	schema := fftypes.JSONAnyPtr(`{"type":"array","details":{"type":"uint256[][]","internalType":"uint256[][]"},"items":{"type":"array","items":{"oneOf":[{"type":"string"},{"type":"integer"}],"description":"An integer. You are recommended to use a JSON string. A JSON number can be used for values up to the safe maximum."}}}`)
-	expectedFFI := &core.FFI{
-		Name:        "WidgetTest",
-		Version:     "v0.0.1",
-		Namespace:   "default",
-		Description: "desc",
-		Methods: []*core.FFIMethod{
-			{
-				Name: "set",
-				Params: core.FFIParams{
-					{
-						Name:   "newValue",
-						Schema: schema,
-					},
-				},
-				Returns: core.FFIParams{},
-				Details: map[string]interface{}{},
-			},
-		},
-		Events: []*core.FFIEvent{},
-	}
-
-	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
-	assert.NoError(t, err)
-	assert.NotNil(t, actualFFI)
-	expectedFFIJSON, err := json.Marshal(expectedFFI)
-	assert.NoError(t, err)
-	actualFFIJSON, err := json.Marshal(actualFFI)
-	assert.NoError(t, err)
-	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
-}
-
-func TestConvertABIToFFIWithNestedArrayOfObjects(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abi := &abi.ABI{
-		{
-			Name: "set",
-			Type: "function",
-			Inputs: abi.ParameterArray{
-				{
-					InternalType: "struct WidgetFactory.Widget[][]",
-					Name:         "gears",
-					Type:         "tuple[][]",
-					Components: abi.ParameterArray{
-						{
-							InternalType: "string",
-							Name:         "description",
-							Type:         "string",
-						},
-						{
-							InternalType: "uint256",
-							Name:         "size",
-							Type:         "uint256",
-						},
-						{
-							InternalType: "bool",
-							Name:         "inUse",
-							Type:         "bool",
-						},
-					},
-				},
-			},
-			Outputs: abi.ParameterArray{},
-		},
-	}
-
-	bigIntDesc := i18n.Expand(context.Background(), coremsgs.APIIntegerDescription)
-	schema := fftypes.JSONAnyPtr(fmt.Sprintf(`{"type":"array","details":{"type":"tuple[][]","internalType":"struct WidgetFactory.Widget[][]"},"items":{"type":"array","items":{"type":"object","properties":{"description":{"type":"string","details":{"type":"string","internalType":"string","index":0}},"inUse":{"type":"boolean","details":{"type":"bool","internalType":"bool","index":2}},"size":{"oneOf":[{"type":"string"},{"type":"integer"}],"details":{"type":"uint256","internalType":"uint256","index":1},"description":"%s"}}}}}`, bigIntDesc))
-	expectedFFI := &core.FFI{
-		Name:        "WidgetTest",
-		Version:     "v0.0.1",
-		Namespace:   "default",
-		Description: "desc",
-		Methods: []*core.FFIMethod{
-			{
-				Name: "set",
-				Params: core.FFIParams{
-					{
-						Name:   "gears",
-						Schema: schema,
-					},
-				},
-				Returns: core.FFIParams{},
-				Details: map[string]interface{}{},
-			},
-		},
-		Events: []*core.FFIEvent{},
-	}
-
-	actualFFI, err := e.convertABIToFFI(context.Background(), "default", "WidgetTest", "v0.0.1", "desc", abi)
-	assert.NoError(t, err)
-	assert.NotNil(t, actualFFI)
-	expectedFFIJSON, err := json.Marshal(expectedFFI)
-	assert.NoError(t, err)
-	actualFFIJSON, err := json.Marshal(actualFFI)
-	assert.NoError(t, err)
-	assert.JSONEq(t, string(expectedFFIJSON), string(actualFFIJSON))
-}
-
 func TestGenerateFFI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2910,7 +2256,7 @@ func TestGenerateFFI(t *testing.T) {
 
 func TestGenerateFFIInlineNamespace(t *testing.T) {
 	e, _ := newTestEthereum()
-	ffi, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
+	ffi, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2923,7 +2269,7 @@ func TestGenerateFFIInlineNamespace(t *testing.T) {
 
 func TestGenerateFFIEmptyABI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2934,24 +2280,13 @@ func TestGenerateFFIEmptyABI(t *testing.T) {
 
 func TestGenerateFFIBadABI(t *testing.T) {
 	e, _ := newTestEthereum()
-	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
 		Input:       fftypes.JSONAnyPtr(`{"abi": "not an array"}`),
 	})
 	assert.Regexp(t, "FF10346", err)
-}
-
-func TestGetFFIType(t *testing.T) {
-	e, _ := newTestEthereum()
-	assert.Equal(t, core.FFIInputTypeString, e.getFFIType("string"))
-	assert.Equal(t, core.FFIInputTypeString, e.getFFIType("address"))
-	assert.Equal(t, core.FFIInputTypeString, e.getFFIType("byte"))
-	assert.Equal(t, core.FFIInputTypeBoolean, e.getFFIType("bool"))
-	assert.Equal(t, core.FFIInputTypeInteger, e.getFFIType("uint256"))
-	assert.Equal(t, core.FFIInputTypeObject, e.getFFIType("tuple"))
-	assert.Equal(t, fftypes.FFEnumValue("", ""), e.getFFIType("foobar"))
 }
 
 func TestGenerateEventSignature(t *testing.T) {
@@ -2979,9 +2314,9 @@ func TestGenerateEventSignature(t *testing.T) {
 		},
 	}.String()
 
-	event := &core.FFIEventDefinition{
+	event := &fftypes.FFIEventDefinition{
 		Name: "Changed",
-		Params: []*core.FFIParam{
+		Params: []*fftypes.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer", "details": {"type": "uint256"}}`),
@@ -3003,9 +2338,9 @@ func TestGenerateEventSignature(t *testing.T) {
 
 func TestGenerateEventSignatureInvalid(t *testing.T) {
 	e, _ := newTestEthereum()
-	event := &core.FFIEventDefinition{
+	event := &fftypes.FFIEventDefinition{
 		Name: "Changed",
-		Params: []*core.FFIParam{
+		Params: []*fftypes.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"!bad": "bad"`),
@@ -3216,112 +2551,11 @@ func TestHandleNetworkActionFail(t *testing.T) {
 	em.AssertExpectations(t)
 }
 
-func TestConvertABIToFFIBadInputType(t *testing.T) {
+func TestGetFFIParamValidator(t *testing.T) {
 	e, _ := newTestEthereum()
-
-	abiJSON := `[
-		{
-			"inputs": [
-				{
-					"internalType": "string",
-					"name": "name",
-					"type": "foobar"
-				}
-			],
-			"name": "set",
-			"outputs": [],
-			"stateMutability": "payable",
-			"type": "function",
-			"payable": true,
-			"constant": true
-		}
-	]`
-
-	var abi *abi.ABI
-	json.Unmarshal([]byte(abiJSON), &abi)
-	_, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
-	assert.Regexp(t, "FF22025", err)
-}
-
-func TestConvertABIToFFIBadOutputType(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abiJSON := `[
-		{
-			"outputs": [
-				{
-					"internalType": "string",
-					"name": "name",
-					"type": "foobar"
-				}
-			],
-			"name": "set",
-			"stateMutability": "viewable",
-			"type": "function"
-		}
-	]`
-
-	var abi *abi.ABI
-	json.Unmarshal([]byte(abiJSON), &abi)
-	_, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
-	assert.Regexp(t, "FF22025", err)
-}
-
-func TestConvertABIToFFIBadEventType(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abiJSON := `[
-		{
-			"inputs": [
-				{
-					"internalType": "string",
-					"name": "name",
-					"type": "foobar"
-				}
-			],
-			"name": "set",
-			"type": "event"
-		}
-	]`
-
-	var abi *abi.ABI
-	json.Unmarshal([]byte(abiJSON), &abi)
-	_, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
-	assert.Regexp(t, "FF22025", err)
-}
-
-func TestConvertABIEventFFIEvent(t *testing.T) {
-	e, _ := newTestEthereum()
-
-	abiJSON := `[
-		{
-			"inputs": [
-				{
-					"internalType": "string",
-					"name": "name",
-					"type": "string"
-				}
-			],
-			"name": "set",
-			"type": "event",
-			"anonymous": true
-		}
-	]`
-
-	var abi *abi.ABI
-	json.Unmarshal([]byte(abiJSON), &abi)
-	ffi, err := e.convertABIToFFI(context.Background(), "ns1", "name", "version", "description", abi)
+	v, err := e.GetFFIParamValidator(context.Background())
 	assert.NoError(t, err)
-
-	actualABIEvent, err := e.FFIEventDefinitionToABI(context.Background(), &ffi.Events[0].FFIEventDefinition)
-	assert.NoError(t, err)
-
-	expectedABIEventJSON, err := json.Marshal(abi.Events()["set"])
-	assert.NoError(t, err)
-	actualABIEventJSON, err := json.Marshal(actualABIEvent)
-	assert.NoError(t, err)
-
-	assert.JSONEq(t, string(expectedABIEventJSON), string(actualABIEventJSON))
+	assert.NotNil(t, v)
 }
 
 func TestGetNetworkVersion(t *testing.T) {

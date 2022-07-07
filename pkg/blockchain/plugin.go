@@ -60,10 +60,10 @@ type Plugin interface {
 	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
-	InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
+	InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
 
 	// QueryContract executes a method via custom on-chain logic and returns the result
-	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
+	QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error)
 
 	// AddContractListener adds a new subscription to a user-specified contract and event
 	AddContractListener(ctx context.Context, subscription *core.ContractListenerInput) error
@@ -72,16 +72,16 @@ type Plugin interface {
 	DeleteContractListener(ctx context.Context, subscription *core.ContractListener) error
 
 	// GetFFIParamValidator returns a blockchain-plugin-specific validator for FFIParams and their JSON Schema
-	GetFFIParamValidator(ctx context.Context) (core.FFIParamValidator, error)
+	GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error)
 
 	// GenerateFFI returns an FFI from a blockchain specific interface format e.g. an Ethereum ABI
-	GenerateFFI(ctx context.Context, generationRequest *core.FFIGenerationRequest) (*core.FFI, error)
+	GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error)
 
 	// NormalizeContractLocation validates and normalizes the formatting of the location JSON
 	NormalizeContractLocation(ctx context.Context, location *fftypes.JSONAny) (*fftypes.JSONAny, error)
 
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
-	GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string
+	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
 
 	// GetNetworkVersion queries the provided contract to get the network version
 	GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error)

@@ -7,6 +7,8 @@ import (
 
 	core "github.com/hyperledger/firefly/pkg/core"
 
+	fftypes "github.com/hyperledger/firefly-common/pkg/fftypes"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -58,11 +60,11 @@ func (_m *Sender) DefineDatatype(ctx context.Context, datatype *core.Datatype, w
 }
 
 // DefineFFI provides a mock function with given fields: ctx, ffi, waitConfirm
-func (_m *Sender) DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error {
+func (_m *Sender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error {
 	ret := _m.Called(ctx, ffi, waitConfirm)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFI, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFI, bool) error); ok {
 		r0 = rf(ctx, ffi, waitConfirm)
 	} else {
 		r0 = ret.Error(0)

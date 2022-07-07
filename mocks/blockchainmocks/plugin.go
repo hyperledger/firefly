@@ -88,11 +88,11 @@ func (_m *Plugin) DeleteContractListener(ctx context.Context, subscription *core
 }
 
 // GenerateEventSignature provides a mock function with given fields: ctx, event
-func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string {
+func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
 	ret := _m.Called(ctx, event)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIEventDefinition) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIEventDefinition) string); ok {
 		r0 = rf(ctx, event)
 	} else {
 		r0 = ret.Get(0).(string)
@@ -102,20 +102,20 @@ func (_m *Plugin) GenerateEventSignature(ctx context.Context, event *core.FFIEve
 }
 
 // GenerateFFI provides a mock function with given fields: ctx, generationRequest
-func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *core.FFIGenerationRequest) (*core.FFI, error) {
+func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	ret := _m.Called(ctx, generationRequest)
 
-	var r0 *core.FFI
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FFIGenerationRequest) *core.FFI); ok {
+	var r0 *fftypes.FFI
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.FFIGenerationRequest) *fftypes.FFI); ok {
 		r0 = rf(ctx, generationRequest)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.FFI)
+			r0 = ret.Get(0).(*fftypes.FFI)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *core.FFIGenerationRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.FFIGenerationRequest) error); ok {
 		r1 = rf(ctx, generationRequest)
 	} else {
 		r1 = ret.Error(1)
@@ -155,15 +155,15 @@ func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*f
 }
 
 // GetFFIParamValidator provides a mock function with given fields: ctx
-func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (core.FFIParamValidator, error) {
+func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	ret := _m.Called(ctx)
 
-	var r0 core.FFIParamValidator
-	if rf, ok := ret.Get(0).(func(context.Context) core.FFIParamValidator); ok {
+	var r0 fftypes.FFIParamValidator
+	if rf, ok := ret.Get(0).(func(context.Context) fftypes.FFIParamValidator); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(core.FFIParamValidator)
+			r0 = ret.Get(0).(fftypes.FFIParamValidator)
 		}
 	}
 
@@ -218,11 +218,11 @@ func (_m *Plugin) InitConfig(_a0 config.Section) {
 }
 
 // InvokeContract provides a mock function with given fields: ctx, nsOpID, signingKey, location, method, input, options
-func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
+func (_m *Plugin) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	ret := _m.Called(ctx, nsOpID, signingKey, location, method, input, options)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
 		r0 = rf(ctx, nsOpID, signingKey, location, method, input, options)
 	} else {
 		r0 = ret.Error(0)
@@ -290,11 +290,11 @@ func (_m *Plugin) NormalizeSigningKey(ctx context.Context, keyRef string) (strin
 }
 
 // QueryContract provides a mock function with given fields: ctx, location, method, input, options
-func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
+func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	ret := _m.Called(ctx, location, method, input, options)
 
 	var r0 interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}, map[string]interface{}) interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, map[string]interface{}) interface{}); ok {
 		r0 = rf(ctx, location, method, input, options)
 	} else {
 		if ret.Get(0) != nil {
@@ -303,7 +303,7 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *core.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny, *fftypes.FFIMethod, map[string]interface{}, map[string]interface{}) error); ok {
 		r1 = rf(ctx, location, method, input, options)
 	} else {
 		r1 = ret.Error(1)

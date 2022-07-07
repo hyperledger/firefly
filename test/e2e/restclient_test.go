@@ -624,7 +624,7 @@ func GetTokenBalance(t *testing.T, client *resty.Client, poolID *fftypes.UUID, t
 	return accounts[0]
 }
 
-func CreateContractListener(t *testing.T, client *resty.Client, event *core.FFIEvent, location *fftypes.JSONObject) *core.ContractListener {
+func CreateContractListener(t *testing.T, client *resty.Client, event *fftypes.FFIEvent, location *fftypes.JSONObject) *core.ContractListener {
 	body := core.ContractListenerInput{
 		ContractListener: core.ContractListener{
 			Location: fftypes.JSONAnyPtr(location.String()),
@@ -645,7 +645,7 @@ func CreateContractListener(t *testing.T, client *resty.Client, event *core.FFIE
 	return &sub
 }
 
-func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *core.FFIReference, eventPath string, location *fftypes.JSONObject) *core.ContractListener {
+func CreateFFIContractListener(t *testing.T, client *resty.Client, ffiReference *fftypes.FFIReference, eventPath string, location *fftypes.JSONObject) *core.ContractListener {
 	body := core.ContractListenerInput{
 		ContractListener: core.ContractListener{
 			Location:  fftypes.JSONAnyPtr(location.String()),
@@ -719,7 +719,7 @@ func QueryContractMethod(t *testing.T, client *resty.Client, req *core.ContractC
 	return res, err
 }
 
-func CreateFFI(t *testing.T, client *resty.Client, ffi *core.FFI) (interface{}, error) {
+func CreateFFI(t *testing.T, client *resty.Client, ffi *fftypes.FFI) (interface{}, error) {
 	var res interface{}
 	path := urlContractInterface
 	resp, err := client.R().
@@ -732,7 +732,7 @@ func CreateFFI(t *testing.T, client *resty.Client, ffi *core.FFI) (interface{}, 
 	return res, err
 }
 
-func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIReference *core.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
+func CreateContractAPI(t *testing.T, client *resty.Client, name string, FFIReference *fftypes.FFIReference, location *fftypes.JSONAny) (interface{}, error) {
 	apiReqBody := &core.ContractAPI{
 		Name:      name,
 		Interface: FFIReference,

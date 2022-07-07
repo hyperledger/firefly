@@ -73,10 +73,10 @@ func newTestFabric() (*Fabric, func()) {
 	}
 }
 
-func testFFIMethod() *core.FFIMethod {
-	return &core.FFIMethod{
+func testFFIMethod() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
 		Name: "sum",
-		Params: []*core.FFIParam{
+		Params: []*fftypes.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -90,7 +90,7 @@ func testFFIMethod() *core.FFIMethod {
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
 			},
 		},
-		Returns: []*core.FFIParam{
+		Returns: []*fftypes.FFIParam{
 			{
 				Name:   "z",
 				Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -1837,15 +1837,15 @@ func TestInvokeContractBadSchema(t *testing.T) {
 		Channel:   "firefly",
 		Chaincode: "simplestorage",
 	}
-	method := &core.FFIMethod{
+	method := &fftypes.FFIMethod{
 		Name: "sum",
-		Params: []*core.FFIParam{
+		Params: []*fftypes.FFIParam{
 			{
 				Name:   "x",
 				Schema: fftypes.JSONAnyPtr(`{not json]`),
 			},
 		},
-		Returns: []*core.FFIParam{},
+		Returns: []*fftypes.FFIParam{},
 	}
 	params := map[string]interface{}{
 		"x":           float64(1),
@@ -2116,7 +2116,7 @@ func TestGetFFIParamValidator(t *testing.T) {
 
 func TestGenerateFFI(t *testing.T) {
 	e, _ := newTestFabric()
-	_, err := e.GenerateFFI(context.Background(), &core.FFIGenerationRequest{
+	_, err := e.GenerateFFI(context.Background(), &fftypes.FFIGenerationRequest{
 		Name:        "Simple",
 		Version:     "v0.0.1",
 		Description: "desc",
@@ -2127,7 +2127,7 @@ func TestGenerateFFI(t *testing.T) {
 
 func TestGenerateEventSignature(t *testing.T) {
 	e, _ := newTestFabric()
-	signature := e.GenerateEventSignature(context.Background(), &core.FFIEventDefinition{Name: "Changed"})
+	signature := e.GenerateEventSignature(context.Background(), &fftypes.FFIEventDefinition{Name: "Changed"})
 	assert.Equal(t, "Changed", signature)
 }
 

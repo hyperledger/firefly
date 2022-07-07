@@ -40,7 +40,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	req := &core.ContractCallRequest{
 		Key:      "0x123",
 		Location: fftypes.JSONAnyPtr(`{"address":"0x1111"}`),
-		Method: &core.FFIMethod{
+		Method: &fftypes.FFIMethod{
 			Name: "set",
 		},
 		Input: map[string]interface{}{
@@ -53,7 +53,7 @@ func TestPrepareAndRunBlockchainInvoke(t *testing.T) {
 	mbi := cm.blockchain.(*blockchainmocks.Plugin)
 	mbi.On("InvokeContract", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.MatchedBy(func(loc *fftypes.JSONAny) bool {
 		return loc.String() == req.Location.String()
-	}), mock.MatchedBy(func(method *core.FFIMethod) bool {
+	}), mock.MatchedBy(func(method *fftypes.FFIMethod) bool {
 		return method.Name == req.Method.Name
 	}), req.Input, req.Options).Return(nil)
 

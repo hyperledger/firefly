@@ -27,7 +27,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *core.FFI) (retry bool, err error) {
+func (dh *definitionHandler) persistFFI(ctx context.Context, ffi *fftypes.FFI) (retry bool, err error) {
 	if err = dh.contracts.ResolveFFI(ctx, ffi); err != nil {
 		return false, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
 	}
@@ -67,7 +67,7 @@ func (dh *definitionHandler) persistContractAPI(ctx context.Context, httpServerU
 }
 
 func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core.BatchState, msg *core.Message, data core.DataArray, tx *fftypes.UUID) (HandlerResult, error) {
-	var ffi core.FFI
+	var ffi fftypes.FFI
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
@@ -79,7 +79,7 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 	return dh.handleFFIDefinition(ctx, state, &ffi, tx)
 }
 
-func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *core.FFI, tx *fftypes.UUID) (HandlerResult, error) {
+func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
 	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
 		if retry {

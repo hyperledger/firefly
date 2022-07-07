@@ -258,9 +258,9 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	ffi := &core.FFI{}
+	ffi := &fftypes.FFI{}
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}
@@ -313,7 +313,7 @@ func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 	defer s.Close()
 
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 	}

@@ -66,17 +66,17 @@ type TokenPoolAnnouncement struct {
 }
 
 func (t *TokenPool) Validate(ctx context.Context) (err error) {
-	if err = ValidateFFNameField(ctx, t.Namespace, "namespace"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, t.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameFieldNoUUID(ctx, t.Name, "name"); err != nil {
+	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, t.Name, "name"); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (t *TokenPoolAnnouncement) Topic() string {
-	return typeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
+	return fftypes.TypeNamespaceNameTopicHash("tokenpool", t.Pool.Namespace, t.Pool.Name)
 }
 
 func (t *TokenPoolAnnouncement) SetBroadcastMessage(msgID *fftypes.UUID) {

@@ -93,7 +93,7 @@ func (s *SQLCommon) InsertContractListener(ctx context.Context, listener *core.C
 
 func (s *SQLCommon) contractListenerResult(ctx context.Context, row *sql.Rows) (*core.ContractListener, error) {
 	listener := core.ContractListener{
-		Interface: &core.FFIReference{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := row.Scan(
 		&listener.ID,

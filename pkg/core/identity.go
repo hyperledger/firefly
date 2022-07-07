@@ -166,10 +166,10 @@ func (i *IdentityBase) Validate(ctx context.Context) (err error) {
 	if i.ID == nil {
 		return i18n.NewError(ctx, i18n.MsgNilID)
 	}
-	if err = ValidateFFNameFieldNoUUID(ctx, i.Namespace, "namespace"); err != nil {
+	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, i.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameFieldNoUUID(ctx, i.Name, "name"); err != nil {
+	if err = fftypes.ValidateFFNameFieldNoUUID(ctx, i.Name, "name"); err != nil {
 		return err
 	}
 
@@ -231,7 +231,7 @@ func (identity *Identity) Validate(ctx context.Context) (err error) {
 	if err = identity.IdentityBase.Validate(ctx); err != nil {
 		return err
 	}
-	if err = ValidateLength(ctx, identity.Description, "description", 4096); err != nil {
+	if err = fftypes.ValidateLength(ctx, identity.Description, "description", 4096); err != nil {
 		return err
 	}
 	return nil

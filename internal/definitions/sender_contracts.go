@@ -23,7 +23,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *core.FFI, waitConfirm bool) error {
+func (bm *definitionSender) DefineFFI(ctx context.Context, ffi *fftypes.FFI, waitConfirm bool) error {
 	ffi.ID = fftypes.NewUUID()
 	ffi.Namespace = bm.namespace
 	for _, method := range ffi.Methods {
