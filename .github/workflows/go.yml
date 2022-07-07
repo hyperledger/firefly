@@ -49,7 +49,7 @@ jobs:
             - blockchain-provider: geth
               test-suite: TestEthereumMultipartyE2ESuite
               database-type: sqlite3
-              token-provider: erc_1155
+              token-provider: erc1155
               multiparty-enabled: true
 
             - blockchain-provider: fabric
