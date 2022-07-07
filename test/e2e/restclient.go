@@ -99,16 +99,6 @@ func GetNamespaces(client *resty.Client) (*resty.Response, error) {
 		Get(urlGetNamespaces)
 }
 
-func CreateNamespaces(client *resty.Client, namespace string) (*resty.Response, error) {
-	namespaceJSON := map[string]interface{}{
-		"description": "Firefly test namespace",
-		"name":        namespace,
-	}
-	return client.R().
-		SetBody(namespaceJSON).
-		Post(urlGetNamespaces)
-}
-
 func GetMessageEvents(t *testing.T, client *resty.Client, startTime time.Time, topic string, expectedStatus int) (events []*core.EnrichedEvent) {
 	path := urlGetEvents
 	resp, err := client.R().

@@ -96,7 +96,6 @@ func beforeE2ETest(t *testing.T) *testState {
 	if os.Getenv("NAMESPACE") != "" {
 		namespace := os.Getenv("NAMESPACE")
 		ts.namespace = namespace
-		e2e.CreateNamespaces(ts.client1, namespace)
 	}
 
 	t.Logf("Client 1: " + ts.client1.HostURL)
