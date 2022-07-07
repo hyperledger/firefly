@@ -82,7 +82,19 @@ if [ -z "${TOKENS_PROVIDER}" ]; then
 fi
 
 if [ -z "${TEST_SUITE}" ]; then
-  TEST_SUITE=TestEthereumE2ESuite
+  if [ "${BLOCKCHAIN_PROVIDER}" == "fabric" ]; then
+    if [ "${MULTIPARTY_ENABLED}" == "true" ]; then
+      TEST_SUITE=TestFabricMultipartyE2ESuite
+    else
+      TEST_SUITE=TestFabricGatewayE2ESuite
+    fi
+  else
+    if [ "${MULTIPARTY_ENABLED}" == "true" ]; then
+      TEST_SUITE=TestEthereumMultipartyE2ESuite
+    else
+      TEST_SUITE=TestEthereumGatewayE2ESuite
+    fi
+  fi
 fi
 
 cd $CWD
