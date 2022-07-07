@@ -179,5 +179,6 @@ func getUnregisteredAccount(suite *IdentityTestSuite, orgName string) string {
 			return key
 		}
 	}
+	suite.T().Logf("could not find an unregistered account!")
 	return ""
 }
