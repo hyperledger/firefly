@@ -36,7 +36,7 @@ var getTokenConnectors = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Assets().GetTokenConnectors(cr.ctx, extractNamespace(r.PP)), nil
+			return cr.or.Assets().GetTokenConnectors(cr.ctx), nil
 		},
 	},
 }

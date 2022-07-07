@@ -28,7 +28,6 @@ import (
 )
 
 type boundCallbacks struct {
-	bi blockchain.Plugin
 	dx dataexchange.Plugin
 	ss sharedstorage.Plugin
 	ei events.EventManager
@@ -56,11 +55,11 @@ func (bc *boundCallbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txS
 }
 
 func (bc *boundCallbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	return bc.ei.BatchPinComplete(bc.bi, batch, signingKey)
+	return bc.ei.BatchPinComplete(batch, signingKey)
 }
 
-func (bc *boundCallbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	return bc.ei.BlockchainNetworkAction(bc.bi, action, event, signingKey)
+func (bc *boundCallbacks) BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	return bc.ei.BlockchainNetworkAction(action, location, event, signingKey)
 }
 
 func (bc *boundCallbacks) DXEvent(event dataexchange.DXEvent) {
@@ -88,8 +87,8 @@ func (bc *boundCallbacks) TokensApproved(plugin tokens.Plugin, approval *tokens.
 	return bc.ei.TokensApproved(plugin, approval)
 }
 
-func (bc *boundCallbacks) SharedStorageBatchDownloaded(ns, payloadRef string, data []byte) (*fftypes.UUID, error) {
-	return bc.ei.SharedStorageBatchDownloaded(bc.ss, ns, payloadRef, data)
+func (bc *boundCallbacks) SharedStorageBatchDownloaded(payloadRef string, data []byte) (*fftypes.UUID, error) {
+	return bc.ei.SharedStorageBatchDownloaded(bc.ss, payloadRef, data)
 }
 
 func (bc *boundCallbacks) SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string) {

@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -35,8 +36,11 @@ var postNetworkAction = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.NetworkAction{} },
 	JSONOutputCodes: []int{http.StatusAccepted},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.MultiParty() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			err = cr.or.SubmitNetworkAction(cr.ctx, extractNamespace(r.PP), r.Input.(*core.NetworkAction))
+			err = cr.or.SubmitNetworkAction(cr.ctx, r.Input.(*core.NetworkAction))
 			return r.Input, err
 		},
 	},

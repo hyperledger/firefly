@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/batch"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 )
 
 var getStatusBatchManager = &ffapi.Route{
@@ -35,9 +36,11 @@ var getStatusBatchManager = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &batch.ManagerStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.BatchManager() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output = cr.or.BatchManager().Status()
-			return output, nil
+			return cr.or.BatchManager().Status(), nil
 		},
 	},
 }

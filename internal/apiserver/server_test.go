@@ -17,10 +17,12 @@
 package apiserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,7 +52,9 @@ func newTestServer() (*namespacemocks.Manager, *orchestratormocks.Orchestrator, 
 	InitConfig()
 	mgr := &namespacemocks.Manager{}
 	o := &orchestratormocks.Orchestrator{}
-	mgr.On("Orchestrator", mock.Anything).Return(o)
+	mgr.On("Orchestrator", "default").Return(o).Maybe()
+	mgr.On("Orchestrator", "mynamespace").Return(o).Maybe()
+	mgr.On("Orchestrator", "ns1").Return(o).Maybe()
 	as := &apiServer{
 		apiTimeout:     5 * time.Second,
 		maxFilterLimit: 100,
@@ -261,7 +265,7 @@ func TestContractAPISwaggerJSON(t *testing.T) {
 		},
 	}
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(api, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(ffi, nil)
 	mffi.On("Generate", mock.Anything, "http://127.0.0.1:5000/api/v1/namespaces/default/apis/my-api", api, ffi).Return(&openapi3.T{})
 
@@ -278,7 +282,7 @@ func TestContractAPISwaggerJSONGetAPIFail(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(nil, fmt.Errorf("pop"))
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -293,7 +297,7 @@ func TestContractAPISwaggerJSONGetAPINotFound(t *testing.T) {
 	s := httptest.NewServer(r)
 	defer s.Close()
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(nil, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(nil, nil)
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
@@ -314,12 +318,27 @@ func TestContractAPISwaggerJSONGetFFIFail(t *testing.T) {
 		},
 	}
 
-	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "default", "my-api").Return(api, nil)
+	mcm.On("GetContractAPI", mock.Anything, "http://127.0.0.1:5000/api/v1", "my-api").Return(api, nil)
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, api.Interface.ID).Return(nil, fmt.Errorf("pop"))
 
 	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/default/apis/my-api/api/swagger.json", s.Listener.Addr()))
 	assert.NoError(t, err)
 	assert.Equal(t, 500, res.StatusCode)
+}
+
+func TestContractAPISwaggerJSONBadNamespace(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	mcm := &contractmocks.Manager{}
+	o.On("Contracts").Return(mcm)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mgr.On("Orchestrator", "BAD").Return(nil)
+
+	res, err := http.Get(fmt.Sprintf("http://%s/api/v1/namespaces/BAD/apis/my-api/api/swagger.json", s.Listener.Addr()))
+	assert.NoError(t, err)
+	assert.Equal(t, 404, res.StatusCode)
 }
 
 func TestContractAPISwaggerUI(t *testing.T) {
@@ -332,4 +351,86 @@ func TestContractAPISwaggerUI(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	b, _ := ioutil.ReadAll(res.Body)
 	assert.Regexp(t, "html", string(b))
+}
+
+func TestJSONBadNamespace(t *testing.T) {
+	mgr, _, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mgr.On("Orchestrator", "BAD").Return(nil)
+
+	var b bytes.Buffer
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/BAD/apis", &b)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 404, res.Result().StatusCode)
+}
+
+func TestFormDataBadNamespace(t *testing.T) {
+	mgr, _, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	mgr.On("Orchestrator", "BAD").Return(nil)
+
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	writer, err := w.CreateFormFile("file", "filename.ext")
+	assert.NoError(t, err)
+	writer.Write([]byte(`some data`))
+	w.Close()
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/BAD/data", &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 404, res.Result().StatusCode)
+}
+
+func TestJSONDisabledRoute(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	o.On("PrivateMessaging").Return(nil)
+
+	var b bytes.Buffer
+	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/groups", &b)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
+}
+
+func TestFormDataDisabledRoute(t *testing.T) {
+	mgr, o, as := newTestServer()
+	r := as.createMuxRouter(context.Background(), mgr)
+	s := httptest.NewServer(r)
+	defer s.Close()
+
+	o.On("MultiParty").Return(nil)
+
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	writer, err := w.CreateFormFile("file", "filename.ext")
+	assert.NoError(t, err)
+	writer.Write([]byte(`some data`))
+	w.Close()
+	req := httptest.NewRequest("POST", "/api/v1/namespaces/ns1/data", &b)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	res := httptest.NewRecorder()
+
+	r.ServeHTTP(res, req)
+
+	assert.Equal(t, 400, res.Result().StatusCode)
 }

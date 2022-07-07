@@ -37,7 +37,7 @@ func TestSendReplyBroadcastFail(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mbm := ed.broadcast.(*broadcastmocks.Manager)
-	mbm.On("NewBroadcast", "ns1", mock.Anything).Return(mms)
+	mbm.On("NewBroadcast", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	ed.sendReply(context.Background(), &core.Event{
@@ -57,7 +57,7 @@ func TestSendReplyPrivateFail(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mpm := ed.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mpm.On("NewMessage", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(fmt.Errorf("pop"))
 
 	ed.sendReply(context.Background(), &core.Event{
@@ -89,7 +89,7 @@ func TestSendReplyPrivateOk(t *testing.T) {
 
 	mms := &sysmessagingmocks.MessageSender{}
 	mpm := ed.messaging.(*privatemessagingmocks.Manager)
-	mpm.On("NewMessage", "ns1", mock.Anything).Return(mms)
+	mpm.On("NewMessage", mock.Anything).Return(mms)
 	mms.On("Send", context.Background()).Return(nil)
 
 	ed.sendReply(context.Background(), &core.Event{
@@ -101,4 +101,38 @@ func TestSendReplyPrivateOk(t *testing.T) {
 
 	mpm.AssertExpectations(t)
 	mms.AssertExpectations(t)
+}
+
+func TestSendReplyBroadcastDisabled(t *testing.T) {
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &core.Subscription{},
+	})
+	defer cancel()
+	ed.broadcast = nil
+
+	ed.sendReply(context.Background(), &core.Event{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}, &core.MessageInOut{})
+}
+
+func TestSendReplyPrivateDisabled(t *testing.T) {
+	ed, cancel := newTestEventDispatcher(&subscription{
+		definition: &core.Subscription{},
+	})
+	defer cancel()
+	ed.messaging = nil
+
+	msg := &core.Message{
+		Header: core.MessageHeader{
+			Group: fftypes.NewRandB32(),
+		},
+	}
+
+	ed.sendReply(context.Background(), &core.Event{
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}, &core.MessageInOut{
+		Message: *msg,
+	})
 }

@@ -35,7 +35,7 @@ func TestGetTokenTransfers(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenTransfers", mock.Anything, "ns1", mock.Anything).
+	mam.On("GetTokenTransfers", mock.Anything, mock.Anything).
 		Return([]*core.TokenTransfer{}, nil, nil)
 	r.ServeHTTP(res, req)
 
@@ -50,7 +50,7 @@ func TestGetTokenTransfersFromOrTo(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenTransfers", mock.Anything, "ns1", mock.MatchedBy(func(filter database.AndFilter) bool {
+	mam.On("GetTokenTransfers", mock.Anything, mock.MatchedBy(func(filter database.AndFilter) bool {
 		info, _ := filter.Finalize()
 		return info.String() == "( ( from == '0x1' ) || ( to == '0x1' ) )"
 	})).Return([]*core.TokenTransfer{}, nil, nil)

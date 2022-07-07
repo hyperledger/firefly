@@ -33,7 +33,7 @@ func TestGetMessages(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetMessages", mock.Anything, mock.Anything).
 		Return([]*core.Message{}, nil, nil)
 	r.ServeHTTP(res, req)
 
@@ -47,7 +47,7 @@ func TestGetMessagesWithCount(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	var ten int64 = 10
-	o.On("GetMessages", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetMessages", mock.Anything, mock.Anything).
 		Return([]*core.Message{}, &database.FilterResult{
 			TotalCount: &ten,
 		}, nil)
@@ -69,7 +69,7 @@ func TestGetMessagesWithCountAndData(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	var ten int64 = 10
-	o.On("GetMessagesWithData", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetMessagesWithData", mock.Anything, mock.Anything).
 		Return([]*core.MessageInOut{}, &database.FilterResult{
 			TotalCount: &ten,
 		}, nil)

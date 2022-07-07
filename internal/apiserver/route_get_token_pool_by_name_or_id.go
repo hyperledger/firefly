@@ -38,7 +38,7 @@ var getTokenPoolByNameOrID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.Assets().GetTokenPoolByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			output, err = cr.or.Assets().GetTokenPoolByNameOrID(cr.ctx, r.PP["nameOrId"])
 			return output, err
 		},
 	},

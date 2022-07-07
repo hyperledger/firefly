@@ -19,7 +19,6 @@ package events
 import (
 	"context"
 	"database/sql/driver"
-	"encoding/json"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
@@ -30,11 +29,11 @@ import (
 
 // Check data exchange peer the data came from, has been registered to the org listed in the batch.
 // Note the on-chain identity check is performed separately by the aggregator (across broadcast and private consistently).
-func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, ns, peerID, author string) (node *core.Identity, err error) {
+func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, peerID, author string) (node *core.Identity, err error) {
 	l := log.L(em.ctx)
 
 	// Resolve the node for the peer ID
-	node, err = em.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeNode}, ns, &core.VerifierRef{
+	node, err = em.identity.FindIdentityForVerifier(ctx, []core.IdentityType{core.IdentityTypeNode}, &core.VerifierRef{
 		Type:  core.VerifierTypeFFDXPeerID,
 		Value: peerID,
 	})
@@ -43,7 +42,7 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, ns, p
 	}
 
 	// Find the identity in the mesage
-	org, retryable, err := em.identity.CachedIdentityLookupMustExist(ctx, ns, author)
+	org, retryable, err := em.identity.CachedIdentityLookupMustExist(ctx, author)
 	if err != nil && retryable {
 		l.Errorf("Failed to retrieve org: %v", err)
 		return nil, err // retryable error
@@ -78,6 +77,10 @@ func (em *eventManager) checkReceivedOffchainIdentity(ctx context.Context, ns, p
 }
 
 func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, wrapperGroup *core.Group) (manifest string, err error) {
+	if em.multiparty == nil {
+		log.L(em.ctx).Errorf("Ignoring private batch from non-multiparty network!")
+		return "", nil
+	}
 
 	// Retry for persistence errors (not validation errors)
 	err = em.retry.Do(em.ctx, "private batch received", func(attempt int) (bool, error) {
@@ -95,7 +98,7 @@ func (em *eventManager) privateBatchReceived(peerID string, batch *core.Batch, w
 				}
 			}
 
-			node, err := em.checkReceivedOffchainIdentity(ctx, batch.Namespace, peerID, batch.Author)
+			node, err := em.checkReceivedOffchainIdentity(ctx, peerID, batch.Author)
 			if err != nil {
 				return err
 			}
@@ -184,27 +187,15 @@ func (em *eventManager) messageReceived(dx dataexchange.Plugin, event dataexchan
 	l := log.L(em.ctx)
 
 	mr := event.MessageReceived()
+	l.Infof("Private batch received from %s peer '%s'", dx.Name(), mr.PeerID)
 
-	// De-serialize the transport wrapper
-	var wrapper *core.TransportWrapper
-	err := json.Unmarshal(mr.Data, &wrapper)
-	if err != nil {
-		l.Errorf("Invalid transmission from %s peer '%s': %s", dx.Name(), mr.PeerID, err)
+	if mr.Transport.Batch.Namespace != em.namespace {
+		log.L(em.ctx).Debugf("Ignoring batch from different namespace '%s'", mr.Transport.Batch.Namespace)
 		event.AckWithManifest("")
 		return
 	}
-	if wrapper.Batch == nil {
-		l.Errorf("Invalid transmission: nil batch")
-		event.AckWithManifest("")
-		return
-	}
-	if wrapper.Batch.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring batch from different namespace '%s'", wrapper.Batch.Namespace)
-		return
-	}
-	l.Infof("Private batch received from %s peer '%s' (len=%d)", dx.Name(), mr.PeerID, len(mr.Data))
 
-	manifestString, err := em.privateBatchReceived(mr.PeerID, wrapper.Batch, wrapper.Group)
+	manifestString, err := em.privateBatchReceived(mr.PeerID, mr.Transport.Batch, mr.Transport.Group)
 	if err != nil {
 		l.Warnf("Exited while persisting batch: %s", err)
 		// We do NOT ack here as we broke out of the retry
@@ -224,6 +215,7 @@ func (em *eventManager) privateBlobReceived(dx dataexchange.Plugin, event dataex
 	}
 	if br.Namespace != em.namespace {
 		log.L(em.ctx).Debugf("Ignoring blob from different namespace '%s'", br.Namespace)
+		event.Ack() // Still confirm the event
 		return
 	}
 

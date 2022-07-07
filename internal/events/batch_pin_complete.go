@@ -31,7 +31,11 @@ import (
 //
 // We must block here long enough to get the payload from the sharedstorage, persist the messages in the correct
 // sequence, and also persist all the data.
-func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+func (em *eventManager) BatchPinComplete(batchPin *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	if em.multiparty == nil {
+		log.L(em.ctx).Errorf("Ignoring batch pin from non-multiparty network!")
+		return nil
+	}
 	if batchPin.TransactionID == nil {
 		log.L(em.ctx).Errorf("Invalid BatchPin transaction - ID is nil")
 		return nil // move on
@@ -42,7 +46,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 		return nil // move on
 	}
 	if batchPin.Namespace != em.namespace {
-		log.L(em.ctx).Debugf("Ignoring BatchPin from different namespace '%s'", batchPin.Namespace)
+		log.L(em.ctx).Debugf("Ignoring batch pin from different namespace '%s'", batchPin.Namespace)
 		return nil // move on
 	}
 
@@ -66,7 +70,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 				ID:           batchPin.TransactionID,
 				BlockchainID: batchPin.Event.BlockchainTXID,
 			})
-			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+			if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 				return err
 			}
 			em.emitBlockchainEventMetric(&batchPin.Event)
@@ -84,7 +88,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 			}
 			// Kick off a download for broadcast batches if the batch isn't already persisted
 			if !private && batch == nil {
-				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.Namespace, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
+				if err := em.sharedDownload.InitiateDownloadBatch(ctx, batchPin.TransactionID, batchPin.BatchPayloadRef); err != nil {
 					return err
 				}
 			}
@@ -95,7 +99,7 @@ func (em *eventManager) BatchPinComplete(bi blockchain.Plugin, batchPin *blockch
 }
 
 func (em *eventManager) persistBatchTransaction(ctx context.Context, batchPin *blockchain.BatchPin) error {
-	_, err := em.txHelper.PersistTransaction(ctx, batchPin.Namespace, batchPin.TransactionID, core.TransactionTypeBatchPin, batchPin.Event.BlockchainTXID)
+	_, err := em.txHelper.PersistTransaction(ctx, batchPin.TransactionID, core.TransactionTypeBatchPin, batchPin.Event.BlockchainTXID)
 	return err
 }
 

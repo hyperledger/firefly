@@ -31,7 +31,7 @@ func TestGetMessageTransaction(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageTransaction", mock.Anything, "mynamespace", "uuid1").
+	o.On("GetMessageTransaction", mock.Anything, "uuid1").
 		Return(&core.Transaction{}, nil)
 	r.ServeHTTP(res, req)
 

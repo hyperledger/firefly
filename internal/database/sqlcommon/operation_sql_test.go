@@ -60,7 +60,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 	assert.True(t, hookCalled)
 
 	// Query back the operation (by ID)
-	operationRead, err := s.GetOperationByID(ctx, operationID)
+	operationRead, err := s.GetOperationByID(ctx, "ns1", operationID)
 	assert.NoError(t, err)
 	operationJson, _ := json.Marshal(operation)
 	operationReadJson, _ := json.Marshal(operationRead)
@@ -78,7 +78,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		fb.Gt("created", 0),
 		fb.Gt("updated", 0),
 	)
-	operations, res, err := s.GetOperations(ctx, filter.Count(true))
+	operations, res, err := s.GetOperations(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(operations))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -91,7 +91,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		fb.Eq("id", operation.ID.String()),
 		fb.Eq("updated", "0"),
 	)
-	operations, _, err = s.GetOperations(ctx, filter)
+	operations, _, err = s.GetOperations(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(operations))
 
@@ -110,7 +110,7 @@ func TestOperationE2EWithDB(t *testing.T) {
 		fb.Eq("status", core.OpStatusFailed),
 		fb.Eq("error", "FF10143"),
 	)
-	operations, _, err = s.GetOperations(ctx, filter)
+	operations, _, err = s.GetOperations(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(operations))
 
@@ -151,7 +151,7 @@ func TestGetOperationByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetOperationByID(context.Background(), operationID)
+	_, err := s.GetOperationByID(context.Background(), "ns1", operationID)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -160,7 +160,7 @@ func TestGetOperationByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}))
-	msg, err := s.GetOperationByID(context.Background(), operationID)
+	msg, err := s.GetOperationByID(context.Background(), "ns1", operationID)
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -170,7 +170,7 @@ func TestGetOperationByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	operationID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetOperationByID(context.Background(), operationID)
+	_, err := s.GetOperationByID(context.Background(), "ns1", operationID)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -179,7 +179,7 @@ func TestGetOperationsQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetOperations(context.Background(), f)
+	_, _, err := s.GetOperations(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -187,7 +187,7 @@ func TestGetOperationsQueryFail(t *testing.T) {
 func TestGetOperationsBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", map[bool]bool{true: false})
-	_, _, err := s.GetOperations(context.Background(), f)
+	_, _, err := s.GetOperations(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*id", err)
 }
 
@@ -195,7 +195,7 @@ func TestGettOperationsReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
 	f := database.OperationQueryFactory.NewFilter(context.Background()).Eq("id", "")
-	_, _, err := s.GetOperations(context.Background(), f)
+	_, _, err := s.GetOperations(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

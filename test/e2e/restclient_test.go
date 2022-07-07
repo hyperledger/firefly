@@ -64,6 +64,7 @@ var (
 	urlContractListeners = "/namespaces/default/contracts/listeners"
 	urlContractAPI       = "/namespaces/default/apis"
 	urlBlockchainEvents  = "/namespaces/default/blockchainevents"
+	urlOperations        = "/namespaces/default/operations"
 	urlGetOrganizations  = "/namespaces/default/network/organizations"
 	urlGetOrgKeys        = "/namespaces/default/identities/%s/verifiers"
 )
@@ -816,4 +817,15 @@ func GetBlockchainEvent(t *testing.T, client *resty.Client, eventID string) (int
 	require.NoError(t, err)
 	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
 	return res, err
+}
+
+func GetOperations(t *testing.T, client *resty.Client, startTime time.Time) (operations []*core.Operation) {
+	path := urlOperations
+	resp, err := client.R().
+		SetQueryParam("created", fmt.Sprintf(">%d", startTime.UnixNano())).
+		SetResult(&operations).
+		Get(path)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode(), "GET %s [%d]: %s", path, resp.StatusCode(), resp.String())
+	return operations
 }

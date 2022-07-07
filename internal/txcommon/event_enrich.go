@@ -47,25 +47,25 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.BlockchainEvent = be
 	case core.EventTypeContractAPIConfirmed:
-		contractAPI, err := t.database.GetContractAPIByID(ctx, event.Reference)
+		contractAPI, err := t.database.GetContractAPIByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractAPI = contractAPI
 	case core.EventTypeContractInterfaceConfirmed:
-		contractInterface, err := t.database.GetFFIByID(ctx, event.Reference)
+		contractInterface, err := t.database.GetFFIByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.ContractInterface = contractInterface
 	case core.EventTypeDatatypeConfirmed:
-		dt, err := t.database.GetDatatypeByID(ctx, event.Reference)
+		dt, err := t.database.GetDatatypeByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.Datatype = dt
 	case core.EventTypeIdentityConfirmed, core.EventTypeIdentityUpdated:
-		identity, err := t.database.GetIdentityByID(ctx, event.Reference)
+		identity, err := t.database.GetIdentityByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
@@ -77,25 +77,25 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 		}
 		e.NamespaceDetails = ns
 	case core.EventTypePoolConfirmed:
-		tokenPool, err := t.database.GetTokenPoolByID(ctx, event.Reference)
+		tokenPool, err := t.database.GetTokenPoolByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenPool = tokenPool
 	case core.EventTypeApprovalConfirmed:
-		approval, err := t.database.GetTokenApprovalByID(ctx, event.Reference)
+		approval, err := t.database.GetTokenApprovalByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenApproval = approval
 	case core.EventTypeTransferConfirmed:
-		transfer, err := t.database.GetTokenTransferByID(ctx, event.Reference)
+		transfer, err := t.database.GetTokenTransferByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}
 		e.TokenTransfer = transfer
 	case core.EventTypeApprovalOpFailed, core.EventTypeTransferOpFailed, core.EventTypeBlockchainInvokeOpFailed, core.EventTypePoolOpFailed, core.EventTypeBlockchainInvokeOpSucceeded:
-		operation, err := t.database.GetOperationByID(ctx, event.Reference)
+		operation, err := t.database.GetOperationByID(ctx, t.namespace, event.Reference)
 		if err != nil {
 			return nil, err
 		}

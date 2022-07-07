@@ -55,7 +55,7 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same verifier back
-	verifierRead, err := s.GetVerifierByHash(ctx, verifier.Hash)
+	verifierRead, err := s.GetVerifierByHash(ctx, "ns1", verifier.Hash)
 	assert.NoError(t, err)
 	assert.NotNil(t, verifierRead)
 	verifierJson, _ := json.Marshal(&verifier)
@@ -88,29 +88,13 @@ func TestVerifiersE2EWithDB(t *testing.T) {
 	fb := database.VerifierQueryFactory.NewFilter(ctx)
 	filter := fb.And(
 		fb.Eq("value", string(verifierUpdated.Value)),
-		fb.Eq("namespace", verifierUpdated.Namespace),
 	)
-	verifierRes, res, err := s.GetVerifiers(ctx, filter.Count(true))
+	verifierRes, res, err := s.GetVerifiers(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(verifierRes))
 	assert.Equal(t, int64(1), *res.TotalCount)
 	verifierReadJson, _ = json.Marshal(verifierRes[0])
 	assert.Equal(t, string(verifierJson), string(verifierReadJson))
-
-	// Update
-	updateTime := fftypes.Now()
-	up := database.VerifierQueryFactory.NewUpdate(ctx).Set("created", updateTime)
-	err = s.UpdateVerifier(ctx, verifierUpdated.Hash, up)
-	assert.NoError(t, err)
-
-	// Test find updated value
-	filter = fb.And(
-		fb.Eq("value", verifierUpdated.Value),
-		fb.Eq("created", updateTime.String()),
-	)
-	verifiers, _, err := s.GetVerifiers(ctx, filter)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(verifiers))
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -170,7 +154,7 @@ func TestUpsertVerifierFailCommit(t *testing.T) {
 func TestGetVerifierByHashSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetVerifierByHash(context.Background(), fftypes.NewRandB32())
+	_, err := s.GetVerifierByHash(context.Background(), "ns1", fftypes.NewRandB32())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -194,7 +178,7 @@ func TestGetVerifierByVerifierSelectFail(t *testing.T) {
 func TestGetVerifierByHashNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"verifier", "verifier", "verifier"}))
-	msg, err := s.GetVerifierByHash(context.Background(), fftypes.NewRandB32())
+	msg, err := s.GetVerifierByHash(context.Background(), "ns1", fftypes.NewRandB32())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -203,7 +187,7 @@ func TestGetVerifierByHashNotFound(t *testing.T) {
 func TestGetVerifierByHashScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"verifier"}).AddRow("only one"))
-	_, err := s.GetVerifierByHash(context.Background(), fftypes.NewRandB32())
+	_, err := s.GetVerifierByHash(context.Background(), "ns1", fftypes.NewRandB32())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -212,7 +196,7 @@ func TestGetVerifierQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.VerifierQueryFactory.NewFilter(context.Background()).Eq("value", "")
-	_, _, err := s.GetVerifiers(context.Background(), f)
+	_, _, err := s.GetVerifiers(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -220,7 +204,7 @@ func TestGetVerifierQueryFail(t *testing.T) {
 func TestGetVerifierBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.VerifierQueryFactory.NewFilter(context.Background()).Eq("value", map[bool]bool{true: false})
-	_, _, err := s.GetVerifiers(context.Background(), f)
+	_, _, err := s.GetVerifiers(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*type", err)
 }
 
@@ -228,33 +212,7 @@ func TestGetVerifierReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow("only one"))
 	f := database.VerifierQueryFactory.NewFilter(context.Background()).Eq("value", "")
-	_, _, err := s.GetVerifiers(context.Background(), f)
+	_, _, err := s.GetVerifiers(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestVerifierUpdateBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", "anything")
-	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestVerifierUpdateBuildQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", map[bool]bool{true: false})
-	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF00143.*value", err)
-}
-
-func TestVerifierUpdateFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	u := database.VerifierQueryFactory.NewUpdate(context.Background()).Set("value", fftypes.NewUUID())
-	err := s.UpdateVerifier(context.Background(), fftypes.NewRandB32(), u)
-	assert.Regexp(t, "FF10117", err)
 }

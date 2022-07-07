@@ -55,9 +55,11 @@ type FireFlyContracts struct {
 }
 
 type FireFlyContractInfo struct {
-	Index      int                `ffstruct:"FireFlyContractInfo" json:"index"`
-	FinalEvent string             `ffstruct:"FireFlyContractInfo" json:"finalEvent,omitempty"`
-	Info       fftypes.JSONObject `ffstruct:"FireFlyContractInfo" json:"info,omitempty"`
+	Index        int              `ffstruct:"FireFlyContractInfo" json:"index"`
+	FinalEvent   string           `ffstruct:"FireFlyContractInfo" json:"finalEvent,omitempty"`
+	Location     *fftypes.JSONAny `ffstruct:"FireFlyContractInfo" json:"location,omitempty"`
+	FirstEvent   string           `ffstruct:"FireFlyContractInfo" json:"firstEvent,omitempty"`
+	Subscription string           `ffstruct:"FireFlyContractInfo" json:"subscription,omitempty"`
 }
 
 // NetworkActionType is a type of action to perform

@@ -36,7 +36,7 @@ var getStatus = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetStatus(cr.ctx, extractNamespace(r.PP))
+			output, err = cr.or.GetStatus(cr.ctx)
 			return output, err
 		},
 	},

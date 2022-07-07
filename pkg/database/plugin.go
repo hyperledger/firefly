@@ -43,6 +43,11 @@ const (
 	UpsertOptimizationExisting
 )
 
+const (
+	// Pseudo-namespace to register a global callback handler, which will receive all namespaced and non-namespaced events
+	GlobalHandler = "ff:global"
+)
+
 // Plugin is the interface implemented by each plugin
 type Plugin interface {
 	PersistenceInterface // Split out to aid pluggability the next level down (SQL provider etc.)
@@ -53,8 +58,9 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section) error
 
-	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(listener Callbacks)
+	// SetHandler registers a handler to receive callbacks
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	SetHandler(namespace string, handler Callbacks)
 
 	// Capabilities returns capabilities - not called until after Init
 	Capabilities() *Capabilities
@@ -95,16 +101,16 @@ type iMessageCollection interface {
 	UpdateMessages(ctx context.Context, filter Filter, update Update) (err error)
 
 	// GetMessageByID - Get a message by ID
-	GetMessageByID(ctx context.Context, id *fftypes.UUID) (message *core.Message, err error)
+	GetMessageByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Message, err error)
 
 	// GetMessages - List messages, reverse sorted (newest first) by Confirmed then Created, with pagination, and simple must filters
-	GetMessages(ctx context.Context, filter Filter) (message []*core.Message, res *FilterResult, err error)
+	GetMessages(ctx context.Context, namespace string, filter Filter) (message []*core.Message, res *FilterResult, err error)
 
 	// GetMessageIDs - Retrieves messages, but only querying the messages ID (no other fields)
-	GetMessageIDs(ctx context.Context, filter Filter) (ids []*core.IDAndSequence, err error)
+	GetMessageIDs(ctx context.Context, namespace string, filter Filter) (ids []*core.IDAndSequence, err error)
 
 	// GetMessagesForData - List messages where there is a data reference to the specified ID
-	GetMessagesForData(ctx context.Context, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
+	GetMessagesForData(ctx context.Context, namespace string, dataID *fftypes.UUID, filter Filter) (message []*core.Message, res *FilterResult, err error)
 
 	// GetBatchIDsForMessages - an optimized query to retrieve any non-null batch IDs for a list of message IDs
 	GetBatchIDsForMessages(ctx context.Context, msgIDs []*fftypes.UUID) (batchIDs []*fftypes.UUID, err error)
@@ -126,13 +132,13 @@ type iDataCollection interface {
 	UpdateData(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetDataByID - Get a data record by ID
-	GetDataByID(ctx context.Context, id *fftypes.UUID, withValue bool) (message *core.Data, err error)
+	GetDataByID(ctx context.Context, namespace string, id *fftypes.UUID, withValue bool) (message *core.Data, err error)
 
 	// GetData - Get data
-	GetData(ctx context.Context, filter Filter) (message core.DataArray, res *FilterResult, err error)
+	GetData(ctx context.Context, namespace string, filter Filter) (message core.DataArray, res *FilterResult, err error)
 
 	// GetDataRefs - Get data references only (no data)
-	GetDataRefs(ctx context.Context, filter Filter) (message core.DataRefs, res *FilterResult, err error)
+	GetDataRefs(ctx context.Context, namespace string, filter Filter) (message core.DataRefs, res *FilterResult, err error)
 }
 
 type iBatchCollection interface {
@@ -143,10 +149,10 @@ type iBatchCollection interface {
 	UpdateBatch(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetBatchByID - Get a batch by ID
-	GetBatchByID(ctx context.Context, id *fftypes.UUID) (message *core.BatchPersisted, err error)
+	GetBatchByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.BatchPersisted, err error)
 
 	// GetBatches - Get batches
-	GetBatches(ctx context.Context, filter Filter) (message []*core.BatchPersisted, res *FilterResult, err error)
+	GetBatches(ctx context.Context, namespace string, filter Filter) (message []*core.BatchPersisted, res *FilterResult, err error)
 }
 
 type iTransactionCollection interface {
@@ -157,27 +163,24 @@ type iTransactionCollection interface {
 	UpdateTransaction(ctx context.Context, id *fftypes.UUID, update Update) (err error)
 
 	// GetTransactionByID - Get a transaction by ID
-	GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *core.Transaction, err error)
+	GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error)
 
 	// GetTransactions - Get transactions
-	GetTransactions(ctx context.Context, filter Filter) (message []*core.Transaction, res *FilterResult, err error)
+	GetTransactions(ctx context.Context, namespace string, filter Filter) (message []*core.Transaction, res *FilterResult, err error)
 }
 
 type iDatatypeCollection interface {
 	// UpsertDatatype - Upsert a data definition
 	UpsertDatatype(ctx context.Context, datadef *core.Datatype, allowExisting bool) (err error)
 
-	// UpdateDatatype - Update data definition
-	UpdateDatatype(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
 	// GetDatatypeByID - Get a data definition by ID
-	GetDatatypeByID(ctx context.Context, id *fftypes.UUID) (datadef *core.Datatype, err error)
+	GetDatatypeByID(ctx context.Context, namespace string, id *fftypes.UUID) (datadef *core.Datatype, err error)
 
 	// GetDatatypeByName - Get a data definition by name
-	GetDatatypeByName(ctx context.Context, ns, name, version string) (datadef *core.Datatype, err error)
+	GetDatatypeByName(ctx context.Context, namespace, name, version string) (datadef *core.Datatype, err error)
 
 	// GetDatatypes - Get data definitions
-	GetDatatypes(ctx context.Context, filter Filter) (datadef []*core.Datatype, res *FilterResult, err error)
+	GetDatatypes(ctx context.Context, namespace string, filter Filter) (datadef []*core.Datatype, res *FilterResult, err error)
 }
 
 type iOffsetCollection interface {
@@ -205,7 +208,7 @@ type iPinCollection interface {
 	UpsertPin(ctx context.Context, parked *core.Pin) (err error)
 
 	// GetPins - Get pins
-	GetPins(ctx context.Context, filter Filter) (offset []*core.Pin, res *FilterResult, err error)
+	GetPins(ctx context.Context, namespace string, filter Filter) (offset []*core.Pin, res *FilterResult, err error)
 
 	// UpdatePins - Updates pins
 	UpdatePins(ctx context.Context, filter Filter, update Update) (err error)
@@ -216,16 +219,16 @@ type iOperationCollection interface {
 	InsertOperation(ctx context.Context, operation *core.Operation, hooks ...PostCompletionHook) (err error)
 
 	// ResolveOperation - Resolve operation upon completion
-	ResolveOperation(ctx context.Context, ns string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
+	ResolveOperation(ctx context.Context, namespace string, id *fftypes.UUID, status core.OpStatus, errorMsg *string, output fftypes.JSONObject) (err error)
 
 	// UpdateOperation - Update an operation
-	UpdateOperation(ctx context.Context, ns string, id *fftypes.UUID, update Update) (err error)
+	UpdateOperation(ctx context.Context, namespace string, id *fftypes.UUID, update Update) (err error)
 
 	// GetOperationByID - Get an operation by ID
-	GetOperationByID(ctx context.Context, id *fftypes.UUID) (operation *core.Operation, err error)
+	GetOperationByID(ctx context.Context, namespace string, id *fftypes.UUID) (operation *core.Operation, err error)
 
 	// GetOperations - Get operation
-	GetOperations(ctx context.Context, filter Filter) (operation []*core.Operation, res *FilterResult, err error)
+	GetOperations(ctx context.Context, namespace string, filter Filter) (operation []*core.Operation, res *FilterResult, err error)
 }
 
 type iSubscriptionCollection interface {
@@ -234,19 +237,19 @@ type iSubscriptionCollection interface {
 
 	// UpdateSubscription - Update subscription
 	// Throws IDMismatch error if updating and ids don't match
-	UpdateSubscription(ctx context.Context, ns, name string, update Update) (err error)
+	UpdateSubscription(ctx context.Context, namespace, name string, update Update) (err error)
 
 	// GetSubscriptionByName - Get an subscription by name
-	GetSubscriptionByName(ctx context.Context, ns, name string) (offset *core.Subscription, err error)
+	GetSubscriptionByName(ctx context.Context, namespace, name string) (offset *core.Subscription, err error)
 
 	// GetSubscriptionByID - Get an subscription by id
-	GetSubscriptionByID(ctx context.Context, id *fftypes.UUID) (offset *core.Subscription, err error)
+	GetSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (offset *core.Subscription, err error)
 
 	// GetSubscriptions - Get subscriptions
-	GetSubscriptions(ctx context.Context, filter Filter) (offset []*core.Subscription, res *FilterResult, err error)
+	GetSubscriptions(ctx context.Context, namespace string, filter Filter) (offset []*core.Subscription, res *FilterResult, err error)
 
 	// DeleteSubscriptionByID - Delete a subscription
-	DeleteSubscriptionByID(ctx context.Context, id *fftypes.UUID) (err error)
+	DeleteSubscriptionByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iEventCollection interface {
@@ -256,65 +259,53 @@ type iEventCollection interface {
 	//               to hold an exclusive table lock.
 	InsertEvent(ctx context.Context, data *core.Event) (err error)
 
-	// UpdateEvent - Update event
-	UpdateEvent(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
 	// GetEventByID - Get a event by ID
-	GetEventByID(ctx context.Context, id *fftypes.UUID) (message *core.Event, err error)
+	GetEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Event, err error)
 
 	// GetEvents - Get events
-	GetEvents(ctx context.Context, filter Filter) (message []*core.Event, res *FilterResult, err error)
+	GetEvents(ctx context.Context, namespace string, filter Filter) (message []*core.Event, res *FilterResult, err error)
 }
 
 type iIdentitiesCollection interface {
 	// UpsertIdentity - Upsert an identity
 	UpsertIdentity(ctx context.Context, data *core.Identity, optimization UpsertOptimization) (err error)
 
-	// UpdateIdentity - Update identity
-	UpdateIdentity(ctx context.Context, id *fftypes.UUID, update Update) (err error)
-
 	// GetIdentityByDID - Get a identity by DID
-	GetIdentityByDID(ctx context.Context, did string) (org *core.Identity, err error)
+	GetIdentityByDID(ctx context.Context, namespace, did string) (org *core.Identity, err error)
 
 	// GetIdentityByName - Get a identity by name
 	GetIdentityByName(ctx context.Context, iType core.IdentityType, namespace, name string) (org *core.Identity, err error)
 
 	// GetIdentityByID - Get a identity by ID
-	GetIdentityByID(ctx context.Context, id *fftypes.UUID) (org *core.Identity, err error)
+	GetIdentityByID(ctx context.Context, namespace string, id *fftypes.UUID) (org *core.Identity, err error)
 
 	// GetIdentities - Get identities
-	GetIdentities(ctx context.Context, filter Filter) (org []*core.Identity, res *FilterResult, err error)
+	GetIdentities(ctx context.Context, namespace string, filter Filter) (org []*core.Identity, res *FilterResult, err error)
 }
 
 type iVerifiersCollection interface {
 	// UpsertVerifier - Upsert an verifier
 	UpsertVerifier(ctx context.Context, data *core.Verifier, optimization UpsertOptimization) (err error)
 
-	// UpdateVerifier - Update verifier
-	UpdateVerifier(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
-
 	// GetVerifierByValue - Get a verifier by name
 	GetVerifierByValue(ctx context.Context, vType core.VerifierType, namespace, value string) (org *core.Verifier, err error)
 
 	// GetVerifierByHash - Get a verifier by its hash
-	GetVerifierByHash(ctx context.Context, hash *fftypes.Bytes32) (org *core.Verifier, err error)
+	GetVerifierByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (org *core.Verifier, err error)
 
 	// GetVerifiers - Get verifiers
-	GetVerifiers(ctx context.Context, filter Filter) (org []*core.Verifier, res *FilterResult, err error)
+	GetVerifiers(ctx context.Context, namespace string, filter Filter) (org []*core.Verifier, res *FilterResult, err error)
 }
 
 type iGroupCollection interface {
 	// UpsertGroup - Upsert a group, with a hint to whether to optmize for existing or new
 	UpsertGroup(ctx context.Context, data *core.Group, optimization UpsertOptimization) (err error)
 
-	// UpdateGroup - Update group
-	UpdateGroup(ctx context.Context, hash *fftypes.Bytes32, update Update) (err error)
-
 	// GetGroupByHash - Get a group by ID
-	GetGroupByHash(ctx context.Context, hash *fftypes.Bytes32) (node *core.Group, err error)
+	GetGroupByHash(ctx context.Context, namespace string, hash *fftypes.Bytes32) (node *core.Group, err error)
 
 	// GetGroups - Get groups
-	GetGroups(ctx context.Context, filter Filter) (node []*core.Group, res *FilterResult, err error)
+	GetGroups(ctx context.Context, namespace string, filter Filter) (node []*core.Group, res *FilterResult, err error)
 }
 
 type iNonceCollection interface {
@@ -371,36 +362,21 @@ type iBlobCollection interface {
 	DeleteBlob(ctx context.Context, sequence int64) (err error)
 }
 
-type iConfigRecordCollection interface {
-	// UpsertConfigRecord - Upsert a config record
-	// Throws IDMismatch error if updating and ids don't match
-	UpsertConfigRecord(ctx context.Context, data *fftypes.ConfigRecord, allowExisting bool) (err error)
-
-	// GetConfigRecord - Get a config record by key
-	GetConfigRecord(ctx context.Context, key string) (offset *fftypes.ConfigRecord, err error)
-
-	// GetConfigRecords - Get config records
-	GetConfigRecords(ctx context.Context, filter Filter) (offset []*fftypes.ConfigRecord, res *FilterResult, err error)
-
-	// DeleteConfigRecord - Delete config record
-	DeleteConfigRecord(ctx context.Context, key string) (err error)
-}
-
 type iTokenPoolCollection interface {
 	// UpsertTokenPool - Upsert a token pool
 	UpsertTokenPool(ctx context.Context, pool *core.TokenPool) error
 
 	// GetTokenPool - Get a token pool by name
-	GetTokenPool(ctx context.Context, ns, name string) (*core.TokenPool, error)
+	GetTokenPool(ctx context.Context, namespace, name string) (*core.TokenPool, error)
 
 	// GetTokenPoolByID - Get a token pool by pool ID
-	GetTokenPoolByID(ctx context.Context, id *fftypes.UUID) (*core.TokenPool, error)
+	GetTokenPoolByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.TokenPool, error)
 
-	// GetTokenPoolByID - Get a token pool by locator
-	GetTokenPoolByLocator(ctx context.Context, connector, locator string) (*core.TokenPool, error)
+	// GetTokenPoolByLocator - Get a token pool by locator
+	GetTokenPoolByLocator(ctx context.Context, namespace, connector, locator string) (*core.TokenPool, error)
 
 	// GetTokenPools - Get token pools
-	GetTokenPools(ctx context.Context, filter Filter) ([]*core.TokenPool, *FilterResult, error)
+	GetTokenPools(ctx context.Context, namespace string, filter Filter) ([]*core.TokenPool, *FilterResult, error)
 }
 
 type iTokenBalanceCollection interface {
@@ -408,16 +384,16 @@ type iTokenBalanceCollection interface {
 	UpdateTokenBalances(ctx context.Context, transfer *core.TokenTransfer) error
 
 	// GetTokenBalance - Get a token balance by pool and account identity
-	GetTokenBalance(ctx context.Context, poolID *fftypes.UUID, tokenIndex, identity string) (*core.TokenBalance, error)
+	GetTokenBalance(ctx context.Context, namespace string, poolID *fftypes.UUID, tokenIndex, identity string) (*core.TokenBalance, error)
 
 	// GetTokenBalances - Get token balances
-	GetTokenBalances(ctx context.Context, filter Filter) ([]*core.TokenBalance, *FilterResult, error)
+	GetTokenBalances(ctx context.Context, namespace string, filter Filter) ([]*core.TokenBalance, *FilterResult, error)
 
 	// GetTokenAccounts - Get token accounts (all distinct addresses that have a balance)
-	GetTokenAccounts(ctx context.Context, filter Filter) ([]*core.TokenAccount, *FilterResult, error)
+	GetTokenAccounts(ctx context.Context, namespace string, filter Filter) ([]*core.TokenAccount, *FilterResult, error)
 
 	// GetTokenAccountPools - Get the list of pools referenced by a given account
-	GetTokenAccountPools(ctx context.Context, key string, filter Filter) ([]*core.TokenAccountPool, *FilterResult, error)
+	GetTokenAccountPools(ctx context.Context, namespace, key string, filter Filter) ([]*core.TokenAccountPool, *FilterResult, error)
 }
 
 type iTokenTransferCollection interface {
@@ -425,13 +401,13 @@ type iTokenTransferCollection interface {
 	UpsertTokenTransfer(ctx context.Context, transfer *core.TokenTransfer) error
 
 	// GetTokenTransferByID - Get a token transfer by ID
-	GetTokenTransferByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenTransfer, error)
+	GetTokenTransferByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenTransfer, error)
 
 	// GetTokenTransferByProtocolID - Get a token transfer by protocol ID
-	GetTokenTransferByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenTransfer, error)
+	GetTokenTransferByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenTransfer, error)
 
 	// GetTokenTransfers - Get token transfers
-	GetTokenTransfers(ctx context.Context, filter Filter) ([]*core.TokenTransfer, *FilterResult, error)
+	GetTokenTransfers(ctx context.Context, namespace string, filter Filter) ([]*core.TokenTransfer, *FilterResult, error)
 }
 
 type iTokenApprovalCollection interface {
@@ -442,60 +418,83 @@ type iTokenApprovalCollection interface {
 	UpdateTokenApprovals(ctx context.Context, filter Filter, update Update) (err error)
 
 	// GetTokenApprovalByID - Get a token approval by ID
-	GetTokenApprovalByID(ctx context.Context, localID *fftypes.UUID) (*core.TokenApproval, error)
+	GetTokenApprovalByID(ctx context.Context, namespace string, localID *fftypes.UUID) (*core.TokenApproval, error)
 
 	// GetTokenTransferByProtocolID - Get a token approval by protocol ID
-	GetTokenApprovalByProtocolID(ctx context.Context, connector, protocolID string) (*core.TokenApproval, error)
+	GetTokenApprovalByProtocolID(ctx context.Context, namespace, connector, protocolID string) (*core.TokenApproval, error)
 
 	// GetTokenApprovals - Get token approvals
-	GetTokenApprovals(ctx context.Context, filter Filter) ([]*core.TokenApproval, *FilterResult, error)
+	GetTokenApprovals(ctx context.Context, namespace string, filter Filter) ([]*core.TokenApproval, *FilterResult, error)
 }
 
 type iFFICollection interface {
+	// UpsertFFI - Upsert an FFI
 	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
-	GetFFIs(ctx context.Context, ns string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
-	GetFFIByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFI, error)
-	GetFFI(ctx context.Context, ns, name, version string) (*fftypes.FFI, error)
+
+	// GetFFIs - Get FFIs
+	GetFFIs(ctx context.Context, namespace string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
+
+	// GetFFIByID - Get an FFI by ID
+	GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*fftypes.FFI, error)
+
+	// GetFFI - Get an FFI by name and version
+	GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error)
 }
 
 type iFFIMethodCollection interface {
+	// UpsertFFIMethod - Upsert an FFI method
 	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
-	GetFFIMethod(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
-	GetFFIMethods(ctx context.Context, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
+
+	// GetFFIMethod - Get an FFI method by path
+	GetFFIMethod(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
+
+	// GetFFIMethods - Get FFI methods
+	GetFFIMethods(ctx context.Context, namespace string, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
+	// UpsertFFIEvent - Upsert an FFI event
 	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
-	GetFFIEvent(ctx context.Context, ns string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
-	GetFFIEventByID(ctx context.Context, id *fftypes.UUID) (*fftypes.FFIEvent, error)
-	GetFFIEvents(ctx context.Context, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
+
+	// GetFFIEvent - Get an FFI event by path
+	GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
+
+	// GetFFIEvents - Get FFI events
+	GetFFIEvents(ctx context.Context, namespace string, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {
+	// UpsertFFIEvent - Upsert a contract API
 	UpsertContractAPI(ctx context.Context, cd *core.ContractAPI) error
-	GetContractAPIs(ctx context.Context, ns string, filter AndFilter) ([]*core.ContractAPI, *FilterResult, error)
-	GetContractAPIByID(ctx context.Context, id *fftypes.UUID) (*core.ContractAPI, error)
-	GetContractAPIByName(ctx context.Context, ns, name string) (*core.ContractAPI, error)
+
+	// GetContractAPIs - Get contract APIs
+	GetContractAPIs(ctx context.Context, namespace string, filter AndFilter) ([]*core.ContractAPI, *FilterResult, error)
+
+	// GetContractAPIByID - Get a contract API by ID
+	GetContractAPIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.ContractAPI, error)
+
+	// GetContractAPIByName - Get a contract API by name
+	GetContractAPIByName(ctx context.Context, namespace, name string) (*core.ContractAPI, error)
 }
 
 type iContractListenerCollection interface {
-	// InsertContractListener - upsert a subscription to an external smart contract
+	// InsertContractListener - upsert a listener to an external smart contract
 	InsertContractListener(ctx context.Context, sub *core.ContractListener) (err error)
 
-	// GetContractListener - get smart contract subscription by name
-	GetContractListener(ctx context.Context, ns, name string) (sub *core.ContractListener, err error)
+	// GetContractListener - get contract listener by name
+	GetContractListener(ctx context.Context, namespace, name string) (sub *core.ContractListener, err error)
 
-	// GetContractListenerByID - get smart contract subscription by ID
-	GetContractListenerByID(ctx context.Context, id *fftypes.UUID) (sub *core.ContractListener, err error)
+	// GetContractListenerByID - get contract listener by ID
+	GetContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (sub *core.ContractListener, err error)
 
-	// GetContractListenerByBackendID - get smart contract subscription by backend ID
-	GetContractListenerByBackendID(ctx context.Context, id string) (sub *core.ContractListener, err error)
+	// GetContractListenerByBackendID - get contract listener by backend ID
+	GetContractListenerByBackendID(ctx context.Context, namespace, id string) (sub *core.ContractListener, err error)
 
-	// GetContractListeners - get smart contract subscriptions
-	GetContractListeners(ctx context.Context, filter Filter) ([]*core.ContractListener, *FilterResult, error)
+	// GetContractListeners - get contract listeners
+	GetContractListeners(ctx context.Context, namespace string, filter Filter) ([]*core.ContractListener, *FilterResult, error)
 
-	// DeleteContractListener - delete a subscription to an external smart contract
-	DeleteContractListenerByID(ctx context.Context, id *fftypes.UUID) (err error)
+	// DeleteContractListener - delete a contract listener
+	DeleteContractListenerByID(ctx context.Context, namespace string, id *fftypes.UUID) (err error)
 }
 
 type iBlockchainEventCollection interface {
@@ -503,19 +502,19 @@ type iBlockchainEventCollection interface {
 	InsertBlockchainEvent(ctx context.Context, event *core.BlockchainEvent) (err error)
 
 	// GetBlockchainEventByID - get blockchain event by ID
-	GetBlockchainEventByID(ctx context.Context, id *fftypes.UUID) (*core.BlockchainEvent, error)
+	GetBlockchainEventByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.BlockchainEvent, error)
 
 	// GetBlockchainEventByID - get blockchain event by protocol ID
-	GetBlockchainEventByProtocolID(ctx context.Context, ns string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error)
+	GetBlockchainEventByProtocolID(ctx context.Context, namespace string, listener *fftypes.UUID, protocolID string) (*core.BlockchainEvent, error)
 
 	// GetBlockchainEvents - get blockchain events
-	GetBlockchainEvents(ctx context.Context, filter Filter) ([]*core.BlockchainEvent, *FilterResult, error)
+	GetBlockchainEvents(ctx context.Context, namespace string, filter Filter) ([]*core.BlockchainEvent, *FilterResult, error)
 }
 
 // PersistenceInterface are the operations that must be implemented by a database interface plugin.
 type iChartCollection interface {
 	// GetChartHistogram - Get charting data for a histogram
-	GetChartHistogram(ctx context.Context, ns string, intervals []core.ChartHistogramInterval, collection CollectionName) ([]*core.ChartHistogram, error)
+	GetChartHistogram(ctx context.Context, namespace string, intervals []core.ChartHistogramInterval, collection CollectionName) ([]*core.ChartHistogram, error)
 }
 
 // PeristenceInterface are the operations that must be implemented by a database interfavce plugin.
@@ -570,7 +569,6 @@ type PersistenceInterface interface {
 	iNonceCollection
 	iNextPinCollection
 	iBlobCollection
-	iConfigRecordCollection
 	iTokenPoolCollection
 	iTokenBalanceCollection
 	iTokenTransferCollection
@@ -653,7 +651,6 @@ const (
 type OtherCollection CollectionName
 
 const (
-	CollectionConfigrecords OtherCollection = "configrecords"
 	CollectionBlobs         OtherCollection = "blobs"
 	CollectionNextpins      OtherCollection = "nextpins"
 	CollectionNonces        OtherCollection = "nonces"
@@ -686,11 +683,11 @@ type PostCompletionHook func()
 //
 type Callbacks interface {
 	// OrderedUUIDCollectionNSEvent emits the sequence on insert, but it will be -1 on update
-	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64)
-	OrderedCollectionNSEvent(resType OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64)
-	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID)
+	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID, sequence int64)
+	OrderedCollectionNSEvent(resType OrderedCollectionNS, eventType core.ChangeEventType, namespace string, sequence int64)
+	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID)
 	UUIDCollectionEvent(resType UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID)
-	HashCollectionNSEvent(resType HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32)
+	HashCollectionNSEvent(resType HashCollectionNS, eventType core.ChangeEventType, namespace string, hash *fftypes.Bytes32)
 }
 
 // Capabilities defines the capabilities a plugin can report as implementing or not
@@ -702,7 +699,6 @@ type Capabilities struct {
 var MessageQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"cid":       &UUIDField{},
-	"namespace": &StringField{},
 	"type":      &StringField{},
 	"author":    &StringField{},
 	"key":       &StringField{},
@@ -722,7 +718,6 @@ var MessageQueryFactory = &queryFields{
 // BatchQueryFactory filter fields for batches
 var BatchQueryFactory = &queryFields{
 	"id":         &UUIDField{},
-	"namespace":  &StringField{},
 	"type":       &StringField{},
 	"author":     &StringField{},
 	"key":        &StringField{},
@@ -741,14 +736,12 @@ var TransactionQueryFactory = &queryFields{
 	"id":            &UUIDField{},
 	"type":          &StringField{},
 	"created":       &TimeField{},
-	"namespace":     &StringField{},
 	"blockchainids": &FFStringArrayField{},
 }
 
 // DataQueryFactory filter fields for data
 var DataQueryFactory = &queryFields{
 	"id":               &UUIDField{},
-	"namespace":        &StringField{},
 	"validator":        &StringField{},
 	"datatype.name":    &StringField{},
 	"datatype.version": &StringField{},
@@ -765,7 +758,6 @@ var DataQueryFactory = &queryFields{
 var DatatypeQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"message":   &UUIDField{},
-	"namespace": &StringField{},
 	"validator": &StringField{},
 	"name":      &StringField{},
 	"version":   &StringField{},
@@ -781,24 +773,22 @@ var OffsetQueryFactory = &queryFields{
 
 // OperationQueryFactory filter fields for data operations
 var OperationQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"tx":        &UUIDField{},
-	"type":      &StringField{},
-	"namespace": &StringField{},
-	"status":    &StringField{},
-	"error":     &StringField{},
-	"plugin":    &StringField{},
-	"input":     &JSONField{},
-	"output":    &JSONField{},
-	"created":   &TimeField{},
-	"updated":   &TimeField{},
-	"retry":     &UUIDField{},
+	"id":      &UUIDField{},
+	"tx":      &UUIDField{},
+	"type":    &StringField{},
+	"status":  &StringField{},
+	"error":   &StringField{},
+	"plugin":  &StringField{},
+	"input":   &JSONField{},
+	"output":  &JSONField{},
+	"created": &TimeField{},
+	"updated": &TimeField{},
+	"retry":   &UUIDField{},
 }
 
 // SubscriptionQueryFactory filter fields for data subscriptions
 var SubscriptionQueryFactory = &queryFields{
 	"id":        &UUIDField{},
-	"namespace": &StringField{},
 	"name":      &StringField{},
 	"transport": &StringField{},
 	"events":    &StringField{},
@@ -811,7 +801,6 @@ var SubscriptionQueryFactory = &queryFields{
 var EventQueryFactory = &queryFields{
 	"id":         &UUIDField{},
 	"type":       &StringField{},
-	"namespace":  &StringField{},
 	"reference":  &UUIDField{},
 	"correlator": &UUIDField{},
 	"tx":         &UUIDField{},
@@ -822,7 +811,6 @@ var EventQueryFactory = &queryFields{
 
 // PinQueryFactory filter fields for parked contexts
 var PinQueryFactory = &queryFields{
-	"namespace":  &StringField{},
 	"sequence":   &Int64Field{},
 	"masked":     &BoolField{},
 	"hash":       &Bytes32Field{},
@@ -841,7 +829,6 @@ var IdentityQueryFactory = &queryFields{
 	"messages.verification": &UUIDField{},
 	"messages.update":       &UUIDField{},
 	"type":                  &StringField{},
-	"namespace":             &StringField{},
 	"name":                  &StringField{},
 	"description":           &StringField{},
 	"profile":               &JSONField{},
@@ -851,19 +838,17 @@ var IdentityQueryFactory = &queryFields{
 
 // VerifierQueryFactory filter fields for identities
 var VerifierQueryFactory = &queryFields{
-	"hash":      &Bytes32Field{},
-	"identity":  &UUIDField{},
-	"type":      &StringField{},
-	"namespace": &StringField{},
-	"value":     &StringField{},
-	"created":   &TimeField{},
+	"hash":     &Bytes32Field{},
+	"identity": &UUIDField{},
+	"type":     &StringField{},
+	"value":    &StringField{},
+	"created":  &TimeField{},
 }
 
 // GroupQueryFactory filter fields for nodes
 var GroupQueryFactory = &queryFields{
 	"hash":        &Bytes32Field{},
 	"message":     &UUIDField{},
-	"namespace":   &StringField{},
 	"description": &StringField{},
 	"ledger":      &UUIDField{},
 	"created":     &TimeField{},
@@ -883,12 +868,6 @@ var NextPinQueryFactory = &queryFields{
 	"nonce":    &Int64Field{},
 }
 
-// ConfigRecordQueryFactory filter fields for config records
-var ConfigRecordQueryFactory = &queryFields{
-	"key":   &StringField{},
-	"value": &StringField{},
-}
-
 // BlobQueryFactory filter fields for config records
 var BlobQueryFactory = &queryFields{
 	"hash":       &Bytes32Field{},
@@ -901,7 +880,6 @@ var BlobQueryFactory = &queryFields{
 var TokenPoolQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"type":      &StringField{},
-	"namespace": &StringField{},
 	"name":      &StringField{},
 	"standard":  &StringField{},
 	"locator":   &StringField{},
@@ -921,7 +899,6 @@ var TokenBalanceQueryFactory = &queryFields{
 	"tokenindex": &StringField{},
 	"uri":        &StringField{},
 	"connector":  &StringField{},
-	"namespace":  &StringField{},
 	"key":        &StringField{},
 	"balance":    &Int64Field{},
 	"updated":    &TimeField{},
@@ -929,16 +906,14 @@ var TokenBalanceQueryFactory = &queryFields{
 
 // TokenAccountQueryFactory filter fields for token accounts
 var TokenAccountQueryFactory = &queryFields{
-	"key":       &StringField{},
-	"namespace": &StringField{},
-	"updated":   &TimeField{},
+	"key":     &StringField{},
+	"updated": &TimeField{},
 }
 
 // TokenAccountPoolQueryFactory filter fields for token account pools
 var TokenAccountPoolQueryFactory = &queryFields{
-	"pool":      &UUIDField{},
-	"namespace": &StringField{},
-	"updated":   &TimeField{},
+	"pool":    &UUIDField{},
+	"updated": &TimeField{},
 }
 
 // TokenTransferQueryFactory filter fields for token transfers
@@ -948,7 +923,6 @@ var TokenTransferQueryFactory = &queryFields{
 	"tokenindex":      &StringField{},
 	"uri":             &StringField{},
 	"connector":       &StringField{},
-	"namespace":       &StringField{},
 	"key":             &StringField{},
 	"from":            &StringField{},
 	"to":              &StringField{},
@@ -967,7 +941,6 @@ var TokenApprovalQueryFactory = &queryFields{
 	"localid":         &StringField{},
 	"pool":            &UUIDField{},
 	"connector":       &StringField{},
-	"namespace":       &StringField{},
 	"key":             &StringField{},
 	"operator":        &StringField{},
 	"approved":        &BoolField{},
@@ -982,16 +955,14 @@ var TokenApprovalQueryFactory = &queryFields{
 
 // FFIQueryFactory filter fields for contract definitions
 var FFIQueryFactory = &queryFields{
-	"id":        &UUIDField{},
-	"namespace": &StringField{},
-	"name":      &StringField{},
-	"version":   &StringField{},
+	"id":      &UUIDField{},
+	"name":    &StringField{},
+	"version": &StringField{},
 }
 
 // FFIMethodQueryFactory filter fields for contract methods
 var FFIMethodQueryFactory = &queryFields{
 	"id":          &UUIDField{},
-	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"pathname":    &StringField{},
 	"interface":   &UUIDField{},
@@ -1001,7 +972,6 @@ var FFIMethodQueryFactory = &queryFields{
 // FFIEventQueryFactory filter fields for contract events
 var FFIEventQueryFactory = &queryFields{
 	"id":          &UUIDField{},
-	"namespace":   &StringField{},
 	"name":        &StringField{},
 	"pathname":    &StringField{},
 	"interface":   &UUIDField{},
@@ -1012,7 +982,6 @@ var FFIEventQueryFactory = &queryFields{
 var ContractListenerQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"interface": &UUIDField{},
-	"namespace": &StringField{},
 	"location":  &JSONField{},
 	"topic":     &StringField{},
 	"signature": &StringField{},
@@ -1026,7 +995,6 @@ var ContractListenerQueryFactory = &queryFields{
 var BlockchainEventQueryFactory = &queryFields{
 	"id":              &UUIDField{},
 	"source":          &StringField{},
-	"namespace":       &StringField{},
 	"name":            &StringField{},
 	"protocolid":      &StringField{},
 	"listener":        &StringField{},
@@ -1040,6 +1008,5 @@ var BlockchainEventQueryFactory = &queryFields{
 var ContractAPIQueryFactory = &queryFields{
 	"id":        &UUIDField{},
 	"name":      &StringField{},
-	"namespace": &StringField{},
 	"interface": &UUIDField{},
 }

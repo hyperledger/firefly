@@ -52,7 +52,6 @@ $(eval $(call makemock, pkg/tokens,                Plugin,             tokenmock
 $(eval $(call makemock, pkg/tokens,                Callbacks,          tokenmocks))
 $(eval $(call makemock, internal/txcommon,         Helper,             txcommonmocks))
 $(eval $(call makemock, internal/identity,         Manager,            identitymanagermocks))
-$(eval $(call makemock, internal/batchpin,         Submitter,          batchpinmocks))
 $(eval $(call makemock, internal/sysmessaging,     SystemEvents,       sysmessagingmocks))
 $(eval $(call makemock, internal/sysmessaging,     MessageSender,      sysmessagingmocks))
 $(eval $(call makemock, internal/sysmessaging,     LocalNodeInfo,      sysmessagingmocks))
@@ -63,7 +62,8 @@ $(eval $(call makemock, internal/broadcast,        Manager,            broadcast
 $(eval $(call makemock, internal/privatemessaging, Manager,            privatemessagingmocks))
 $(eval $(call makemock, internal/shareddownload,   Manager,            shareddownloadmocks))
 $(eval $(call makemock, internal/shareddownload,   Callbacks,          shareddownloadmocks))
-$(eval $(call makemock, internal/definitions,      DefinitionHandler,  definitionsmocks))
+$(eval $(call makemock, internal/definitions,      Handler,            definitionsmocks))
+$(eval $(call makemock, internal/definitions,      Sender,             definitionsmocks))
 $(eval $(call makemock, internal/events,           EventManager,       eventmocks))
 $(eval $(call makemock, internal/namespace,        Manager,            namespacemocks))
 $(eval $(call makemock, internal/networkmap,       Manager,            networkmapmocks))
@@ -75,6 +75,7 @@ $(eval $(call makemock, internal/apiserver,        FFISwaggerGen,      apiserver
 $(eval $(call makemock, internal/apiserver,        Server,             apiservermocks))
 $(eval $(call makemock, internal/metrics,          Manager,            metricsmocks))
 $(eval $(call makemock, internal/operations,       Manager,            operationmocks))
+$(eval $(call makemock, internal/multiparty,       Manager,            multipartymocks))
 
 firefly-nocgo: ${GOFILES}
 		CGO_ENABLED=0 $(VGO) build -o ${BINARY_NAME}-nocgo -ldflags "-X main.buildDate=$(DATE) -X main.buildVersion=$(BUILD_VERSION) -X 'github.com/hyperledger/firefly/cmd.BuildVersionOverride=$(BUILD_VERSION)' -X 'github.com/hyperledger/firefly/cmd.BuildDate=$(DATE)' -X 'github.com/hyperledger/firefly/cmd.BuildCommit=$(GIT_REF)'" -tags=prod -tags=prod -v

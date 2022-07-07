@@ -38,7 +38,7 @@ var getPins = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.PinQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetPins(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetPins(cr.ctx, cr.filter))
 		},
 	},
 }

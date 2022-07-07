@@ -48,7 +48,7 @@ type aggregator struct {
 	namespace     string
 	database      database.Plugin
 	messaging     privatemessaging.Manager
-	definitions   definitions.DefinitionHandler
+	definitions   definitions.Handler
 	identity      identity.Manager
 	data          data.Manager
 	eventPoller   *eventPoller
@@ -65,7 +65,7 @@ type batchCacheEntry struct {
 	manifest *core.BatchManifest
 }
 
-func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.DefinitionHandler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
+func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, pm privatemessaging.Manager, sh definitions.Handler, im identity.Manager, dm data.Manager, en *eventNotifier, mm metrics.Manager) *aggregator {
 	batchSize := config.GetInt(coreconfig.EventAggregatorBatchSize)
 	ag := &aggregator{
 		ctx:           log.WithLogField(ctx, "role", "aggregator"),
@@ -104,7 +104,7 @@ func newAggregator(ctx context.Context, ns string, di database.Plugin, bi blockc
 		queryFactory:     database.PinQueryFactory,
 		addCriteria: func(af database.AndFilter) database.AndFilter {
 			fb := af.Builder()
-			return af.Condition(fb.Eq("dispatched", false), fb.Eq("namespace", ns))
+			return af.Condition(fb.Eq("dispatched", false))
 		},
 		maybeRewind: ag.rewindOffchainBatches,
 	})
@@ -163,11 +163,10 @@ func (ag *aggregator) rewindOffchainBatches() (bool, int64) {
 	_ = ag.retry.Do(ag.ctx, "check for off-chain batch deliveries", func(attempt int) (retry bool, err error) {
 		pfb := database.PinQueryFactory.NewFilter(ag.ctx)
 		pinFilter := pfb.And(
-			pfb.Eq("namespace", ag.namespace),
 			pfb.In("batch", batchIDs),
 			pfb.Eq("dispatched", false),
 		).Sort("sequence").Limit(1) // only need the one oldest sequence
-		sequences, _, err := ag.database.GetPins(ag.ctx, pinFilter)
+		sequences, _, err := ag.database.GetPins(ag.ctx, ag.namespace, pinFilter)
 		if err != nil {
 			return true, err
 		}
@@ -227,7 +226,7 @@ func (ag *aggregator) processPinsEventsHandler(items []core.LocallySequenced) (r
 
 func (ag *aggregator) getPins(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of pins > %d (first pin would be %d)", offset, offset+1)
-	pins, _, err := ag.database.GetPins(ctx, filter)
+	pins, _, err := ag.database.GetPins(ctx, ag.namespace, filter)
 	ls := make([]core.LocallySequenced, len(pins))
 	for i, p := range pins {
 		ls[i] = p
@@ -297,7 +296,7 @@ func (ag *aggregator) GetBatchForPin(ctx context.Context, pin *core.Pin) (*core.
 		log.L(ag.ctx).Debugf("Batch cache hit %s", cacheKey)
 		return bce.batch, bce.manifest, nil
 	}
-	batch, err := ag.database.GetBatchByID(ctx, pin.Batch)
+	batch, err := ag.database.GetBatchByID(ctx, ag.namespace, pin.Batch)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -389,7 +388,7 @@ func (ag *aggregator) checkOnchainConsistency(ctx context.Context, msg *core.Mes
 	resolvedAuthor, err := ag.identity.FindIdentityForVerifier(ctx, []core.IdentityType{
 		core.IdentityTypeOrg,
 		core.IdentityTypeCustom,
-	}, msg.Header.Namespace, verifierRef)
+	}, verifierRef)
 	if err != nil {
 		return false, err
 	}
@@ -454,19 +453,19 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 				l.Errorf("Message '%s' in batch '%s' has invalid pin at index %d: '%s'", msg.Header.ID, manifest.ID, i, pinStr)
 				return nil
 			}
-			nextPin, err := state.CheckMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
+			nextPin, err := state.checkMaskedContextReady(ctx, msg, msg.Header.Topics[i], pin.Sequence, &msgContext, nonceStr)
 			if err != nil || nextPin == nil {
 				return err
 			}
 			nextPins = append(nextPins, nextPin)
 		}
 	} else {
-		for i, topic := range msg.Header.Topics {
+		for _, topic := range msg.Header.Topics {
 			h := sha256.New()
 			h.Write([]byte(topic))
 			msgContext := fftypes.HashResult(h)
 			unmaskedContexts = append(unmaskedContexts, msgContext)
-			ready, err := state.CheckUnmaskedContextReady(ctx, msgContext, msg, msg.Header.Topics[i], pin.Sequence)
+			ready, err := state.checkUnmaskedContextReady(ctx, msgContext, msg, pin.Sequence)
 			if err != nil || !ready {
 				return err
 			}
@@ -491,7 +490,7 @@ func (ag *aggregator) processMessage(ctx context.Context, manifest *core.BatchMa
 		for _, np := range nextPins {
 			np.IncrementNextPin(ctx)
 		}
-		state.MarkMessageDispatched(ctx, manifest.ID, msg, msgBaseIndex, newState)
+		state.markMessageDispatched(manifest.ID, msg, msgBaseIndex, newState)
 	} else {
 		for _, unmaskedContext := range unmaskedContexts {
 			state.SetContextBlockedBy(ctx, *unmaskedContext, pin.Sequence)
@@ -519,7 +518,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 		filter := fb.And(
 			fb.Eq("message", msg.Header.ID),
 		)
-		if transfers, _, err := ag.database.GetTokenTransfers(ctx, filter); err != nil || len(transfers) == 0 {
+		if transfers, _, err := ag.database.GetTokenTransfers(ctx, ag.namespace, filter); err != nil || len(transfers) == 0 {
 			log.L(ctx).Debugf("Transfer for message %s not yet available", msg.Header.ID)
 			return "", false, err
 		} else if !msg.Hash.Equals(transfers[0].MessageHash) {
@@ -535,7 +534,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	case msg.Header.Type == core.MessageTypeDefinition:
 		// We handle definition events in-line on the aggregator, as it would be confusing for apps to be
 		// dispatched subsequent events before we have processed the definition events they depend on.
-		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, state, msg, data, tx)
+		handlerResult, err := ag.definitions.HandleDefinitionBroadcast(ctx, &state.BatchState, msg, data, tx)
 		log.L(ctx).Infof("Result of definition broadcast '%s' [%s]: %s", msg.Header.Tag, msg.Header.ID, handlerResult.Action)
 		if handlerResult.Action == definitions.ActionRetry {
 			return "", false, err
@@ -562,7 +561,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	newState = core.MessageStateConfirmed
 	eventType := core.EventTypeMessageConfirmed
 	if valid {
-		state.pendingConfirms[*msg.Header.ID] = msg
+		state.AddPendingConfirm(msg.Header.ID, msg)
 	} else {
 		newState = core.MessageStateRejected
 		eventType = core.EventTypeMessageRejected

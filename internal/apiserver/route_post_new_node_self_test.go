@@ -22,6 +22,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/networkmapmocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,7 @@ func TestPostNewNodeSelf(t *testing.T) {
 	o, r := newTestAPIServer()
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	input := core.EmptyInput{}
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(&input)
@@ -39,7 +41,7 @@ func TestPostNewNodeSelf(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("RegisterNode", mock.Anything, "default", false).
+	mnm.On("RegisterNode", mock.Anything, false).
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

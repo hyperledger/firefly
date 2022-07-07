@@ -39,8 +39,8 @@ type Manager interface {
 	Start() error
 	WaitStop()
 
-	InitiateDownloadBatch(ctx context.Context, ns string, tx *fftypes.UUID, payloadRef string) error
-	InitiateDownloadBlob(ctx context.Context, ns string, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error
+	InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string) error
+	InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error
 }
 
 // downloadManager operates a number of workers that can perform downloads/retries. Each download
@@ -51,8 +51,9 @@ type Manager interface {
 type downloadManager struct {
 	ctx                        context.Context
 	cancelFunc                 func()
+	namespace                  string
 	database                   database.Plugin
-	sharedstorage              sharedstorage.Plugin
+	sharedstorage              sharedstorage.Plugin // optional
 	dataexchange               dataexchange.Plugin
 	operations                 operations.Manager
 	callbacks                  Callbacks
@@ -74,11 +75,11 @@ type downloadWork struct {
 }
 
 type Callbacks interface {
-	SharedStorageBatchDownloaded(ns string, payloadRef string, data []byte) (batchID *fftypes.UUID, err error)
+	SharedStorageBatchDownloaded(payloadRef string, data []byte) (batchID *fftypes.UUID, err error)
 	SharedStorageBlobDownloaded(hash fftypes.Bytes32, size int64, payloadRef string)
 }
 
-func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
+func NewDownloadManager(ctx context.Context, ns string, di database.Plugin, ss sharedstorage.Plugin, dx dataexchange.Plugin, om operations.Manager, cb Callbacks) (Manager, error) {
 	if di == nil || dx == nil || ss == nil || cb == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DownloadManager")
 	}
@@ -87,6 +88,7 @@ func NewDownloadManager(ctx context.Context, di database.Plugin, ss sharedstorag
 	dm := &downloadManager{
 		ctx:                        dmCtx,
 		cancelFunc:                 cancelFunc,
+		namespace:                  ns,
 		database:                   di,
 		sharedstorage:              ss,
 		dataexchange:               dx,
@@ -170,7 +172,7 @@ func (dm *downloadManager) recoverDownloads(startupTime *fftypes.FFTime) {
 			Sort("created").
 			Skip(page * pageSize).
 			Limit(pageSize)
-		pendingOps, _, err := dm.database.GetOperations(dm.ctx, filter)
+		pendingOps, _, err := dm.database.GetOperations(dm.ctx, dm.namespace, filter)
 		if err != nil {
 			log.L(dm.ctx).Errorf("Error while recovering pending downloads (retries=%d): %s", errorAttempts, err)
 			errorAttempts++
@@ -219,16 +221,16 @@ func (dm *downloadManager) waitAndRetryDownload(work *downloadWork) {
 	dm.dispatchWork(work)
 }
 
-func (dm *downloadManager) InitiateDownloadBatch(ctx context.Context, ns string, tx *fftypes.UUID, payloadRef string) error {
-	op := core.NewOperation(dm.sharedstorage, ns, tx, core.OpTypeSharedStorageDownloadBatch)
-	addDownloadBatchInputs(op, ns, payloadRef)
-	return dm.createAndDispatchOp(ctx, op, opDownloadBatch(op, ns, payloadRef))
+func (dm *downloadManager) InitiateDownloadBatch(ctx context.Context, tx *fftypes.UUID, payloadRef string) error {
+	op := core.NewOperation(dm.sharedstorage, dm.namespace, tx, core.OpTypeSharedStorageDownloadBatch)
+	addDownloadBatchInputs(op, payloadRef)
+	return dm.createAndDispatchOp(ctx, op, opDownloadBatch(op, payloadRef))
 }
 
-func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, ns string, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error {
-	op := core.NewOperation(dm.sharedstorage, ns, tx, core.OpTypeSharedStorageDownloadBlob)
-	addDownloadBlobInputs(op, ns, dataID, payloadRef)
-	return dm.createAndDispatchOp(ctx, op, opDownloadBlob(op, ns, dataID, payloadRef))
+func (dm *downloadManager) InitiateDownloadBlob(ctx context.Context, tx *fftypes.UUID, dataID *fftypes.UUID, payloadRef string) error {
+	op := core.NewOperation(dm.sharedstorage, dm.namespace, tx, core.OpTypeSharedStorageDownloadBlob)
+	addDownloadBlobInputs(op, dataID, payloadRef)
+	return dm.createAndDispatchOp(ctx, op, opDownloadBlob(op, dataID, payloadRef))
 }
 
 func (dm *downloadManager) createAndDispatchOp(ctx context.Context, op *core.Operation, preparedOp *core.PreparedOperation) error {

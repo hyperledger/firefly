@@ -200,8 +200,12 @@ func (as *apiServer) swaggerGenerator(routes []*ffapi.Route, apiBaseURL string) 
 func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL string) func(req *http.Request) (*openapi3.T, error) {
 	return func(req *http.Request) (*openapi3.T, error) {
 		vars := mux.Vars(req)
-		cm := mgr.Orchestrator(vars["ns"]).Contracts()
-		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["ns"], vars["apiName"])
+		or := mgr.Orchestrator(vars["ns"])
+		if or == nil {
+			return nil, i18n.NewError(req.Context(), coremsgs.MsgNamespaceDoesNotExist)
+		}
+		cm := or.Contracts()
+		api, err := cm.GetContractAPI(req.Context(), apiBaseURL, vars["apiName"])
 		if err != nil {
 			return nil, err
 		} else if api == nil || api.Interface == nil {
@@ -218,23 +222,43 @@ func (as *apiServer) contractSwaggerGenerator(mgr namespace.Manager, apiBaseURL 
 	}
 }
 
+func getOrchestrator(ctx context.Context, mgr namespace.Manager, tag string, r *ffapi.APIRequest) (or orchestrator.Orchestrator, err error) {
+	switch tag {
+	case routeTagDefaultNamespace:
+		or = mgr.Orchestrator(config.GetString(coreconfig.NamespacesDefault))
+	case routeTagNonDefaultNamespace:
+		vars := mux.Vars(r.Req)
+		if ns, ok := vars["ns"]; ok {
+			or = mgr.Orchestrator(ns)
+		}
+	default:
+		return nil, nil
+	}
+	if or == nil {
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceDoesNotExist)
+	}
+	return or, nil
+}
+
 func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manager, apiBaseURL string, route *ffapi.Route) http.HandlerFunc {
 	// We extend the base ffapi functionality, with standardized DB filter support for all core resources.
 	// We also pass the Orchestrator context through
 	ce := route.Extensions.(*coreExtensions)
 	route.JSONHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
+		or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
+		if err != nil {
+			return nil, err
+		}
+		if ce.EnabledIf != nil && !ce.EnabledIf(or) {
+			return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
+		}
+
 		var filter database.AndFilter
 		if ce.FilterFactory != nil {
 			filter, err = as.buildFilter(r.Req, ce.FilterFactory)
 			if err != nil {
 				return nil, err
 			}
-		}
-
-		var or orchestrator.Orchestrator
-		if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
-			vars := mux.Vars(r.Req)
-			or = mgr.Orchestrator(extractNamespace(vars))
 		}
 
 		cr := &coreRequest{
@@ -248,10 +272,12 @@ func (as *apiServer) routeHandler(hf *ffapi.HandlerFactory, mgr namespace.Manage
 	}
 	if ce.CoreFormUploadHandler != nil {
 		route.FormUploadHandler = func(r *ffapi.APIRequest) (output interface{}, err error) {
-			var or orchestrator.Orchestrator
-			if route.Tag == routeTagDefaultNamespace || route.Tag == routeTagNonDefaultNamespace {
-				vars := mux.Vars(r.Req)
-				or = mgr.Orchestrator(extractNamespace(vars))
+			or, err := getOrchestrator(r.Req.Context(), mgr, route.Tag, r)
+			if err != nil {
+				return nil, err
+			}
+			if ce.EnabledIf != nil && !ce.EnabledIf(or) {
+				return nil, i18n.NewError(r.Req.Context(), coremsgs.MsgActionNotSupported)
 			}
 
 			cr := &coreRequest{

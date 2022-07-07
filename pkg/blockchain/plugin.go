@@ -35,19 +35,9 @@ type Plugin interface {
 	// Init initializes the plugin, with configuration
 	Init(ctx context.Context, config config.Section, metrics metrics.Manager) error
 
-	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(listener Callbacks)
-
-	// ConfigureContract initializes the subscription to the FireFly contract
-	// - Checks the provided contract info against the plugin's configuration, and updates it as needed
-	// - Initializes the contract info for performing BatchPin transactions, and initializes subscriptions for BatchPin events
-	ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error)
-
-	// TerminateContract marks the given event as the last one to be parsed on the current FireFly contract
-	// - Validates that the event came from the currently active FireFly contract
-	// - Re-initializes the plugin against the next configured FireFly contract
-	// - Updates the provided contract info to record the point of termination and the newly active contract
-	TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *Event) (err error)
+	// SetHandler registers a handler to receive callbacks
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	SetHandler(namespace string, handler Callbacks)
 
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
@@ -64,10 +54,10 @@ type Plugin interface {
 	NormalizeSigningKey(ctx context.Context, keyRef string) (string, error)
 
 	// SubmitBatchPin sequences a batch of message globally to all viewers of a given ledger
-	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *BatchPin) error
+	SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *BatchPin, location *fftypes.JSONAny) error
 
 	// SubmitNetworkAction writes a special "BatchPin" event which signals the plugin to take an action
-	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error
+	SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error
 
 	// InvokeContract submits a new transaction to be executed by custom on-chain logic
 	InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error
@@ -93,8 +83,17 @@ type Plugin interface {
 	// GenerateEventSignature generates a strigified signature for the event, incorporating any fields significant to identifying the event as unique
 	GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string
 
-	// NetworkVersion returns the version of the network rules being used by this plugin
-	NetworkVersion() int
+	// GetNetworkVersion queries the provided contract to get the network version
+	GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error)
+
+	// GetAndConvertDeprecatedContractConfig converts the deprecated ethconnect config to a location object
+	GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error)
+
+	// AddFireflySubscription creates a FireFly BatchPin subscription for the provided location
+	AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
+
+	// RemoveFireFlySubscription removes the provided FireFly subscription
+	RemoveFireflySubscription(ctx context.Context, subID string) error
 }
 
 const FireFlyActionPrefix = "firefly:"
@@ -121,7 +120,7 @@ type Callbacks interface {
 	// BlockchainNetworkAction notifies on the arrival of a network operator action
 	//
 	// Error should only be returned in shutdown scenarios
-	BlockchainNetworkAction(action string, event *Event, signingKey *core.VerifierRef) error
+	BlockchainNetworkAction(action string, location *fftypes.JSONAny, event *Event, signingKey *core.VerifierRef) error
 
 	// BlockchainEvent notifies on the arrival of any event from a user-created subscription.
 	BlockchainEvent(event *EventWithSubscription) error

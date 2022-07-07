@@ -18,6 +18,7 @@ package namespace
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -29,8 +30,11 @@ import (
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/database/difactory"
 	"github.com/hyperledger/firefly/internal/dataexchange/dxfactory"
+	"github.com/hyperledger/firefly/internal/events/eifactory"
+	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
+	multipartyManager "github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/spievents"
@@ -39,6 +43,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
+	"github.com/hyperledger/firefly/pkg/events"
 	"github.com/hyperledger/firefly/pkg/identity"
 	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/hyperledger/firefly/pkg/tokens"
@@ -91,6 +96,7 @@ type namespaceManager struct {
 		sharedstorage map[string]sharedStoragePlugin
 		dataexchange  map[string]dataExchangePlugin
 		tokens        map[string]tokensPlugin
+		events        map[string]eventsPlugin
 	}
 	metricsEnabled bool
 	metrics        metrics.Manager
@@ -126,6 +132,11 @@ type tokensPlugin struct {
 type identityPlugin struct {
 	config config.Section
 	plugin identity.Plugin
+}
+
+type eventsPlugin struct {
+	config config.Section
+	plugin events.Plugin
 }
 
 func NewNamespaceManager(withDefaults bool) Manager {
@@ -176,7 +187,7 @@ func (nm *namespaceManager) Init(ctx context.Context, cancelCtx context.CancelFu
 		}
 
 		// If the default namespace is a multiparty V1 namespace, insert the legacy ff_system namespace
-		if name == defaultNS && ns.config.Multiparty.Enabled && ns.plugins.Blockchain.Plugin.NetworkVersion() == 1 {
+		if name == defaultNS && ns.config.Multiparty.Enabled && ns.orchestrator.MultiParty().GetNetworkVersion() == 1 {
 			systemNS = &namespace{}
 			*systemNS = *ns
 			if err := nm.initNamespace(core.LegacySystemNamespace, systemNS); err != nil {
@@ -209,6 +220,21 @@ func (nm *namespaceManager) Start() error {
 		metrics.Registry()
 	}
 	for _, ns := range nm.namespaces {
+		if ns.plugins.Blockchain.Plugin != nil {
+			if err := ns.plugins.Blockchain.Plugin.Start(); err != nil {
+				return err
+			}
+		}
+		if ns.plugins.DataExchange.Plugin != nil {
+			if err := ns.plugins.DataExchange.Plugin.Start(); err != nil {
+				return err
+			}
+		}
+		for _, plugin := range ns.plugins.Tokens {
+			if err := plugin.Plugin.Start(); err != nil {
+				return err
+			}
+		}
 		if err := ns.orchestrator.Start(); err != nil {
 			return err
 		}
@@ -270,6 +296,13 @@ func (nm *namespaceManager) loadPlugins(ctx context.Context) (err error) {
 
 	if nm.plugins.tokens == nil {
 		nm.plugins.tokens, err = nm.getTokensPlugins(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	if nm.plugins.events == nil {
+		nm.plugins.events, err = nm.getEventPlugins(ctx)
 		if err != nil {
 			return err
 		}
@@ -357,14 +390,17 @@ func (nm *namespaceManager) getDatabasePlugins(ctx context.Context) (plugins map
 	// check for deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := difactory.GetPlugin(ctx, deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType))
-		if err != nil {
-			return nil, err
-		}
-		name := "database_0"
-		plugins[name] = databasePlugin{
-			config: deprecatedDatabaseConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := difactory.GetPlugin(ctx, deprecatedDatabaseConfig.GetString(coreconfig.PluginConfigType))
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your database config uses a deprecated configuration structure - the database configuration has been moved under the 'plugins' section")
+			name := "database_0"
+			plugins[name] = databasePlugin{
+				config: deprecatedDatabaseConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -412,18 +448,20 @@ func (nm *namespaceManager) getDataExchangePlugins(ctx context.Context) (plugins
 		}
 	}
 
+	// check deprecated config
 	if len(plugins) == 0 {
-		log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
 		pluginType := deprecatedDataexchangeConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := dxfactory.GetPlugin(ctx, pluginType)
-		if err != nil {
-			return nil, err
-		}
-
-		name := "dataexchange_0"
-		plugins[name] = dataExchangePlugin{
-			config: deprecatedDataexchangeConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := dxfactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your data exchange config uses a deprecated configuration structure - the data exchange configuration has been moved under the 'plugins' section")
+			name := "dataexchange_0"
+			plugins[name] = dataExchangePlugin{
+				config: deprecatedDataexchangeConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -478,15 +516,17 @@ func (nm *namespaceManager) getBlockchainPlugins(ctx context.Context) (plugins m
 	// check deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedBlockchainConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := bifactory.GetPlugin(ctx, pluginType)
-		if err != nil {
-			return nil, err
-		}
-
-		name := "blockchain_0"
-		plugins[name] = blockchainPlugin{
-			config: deprecatedBlockchainConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := bifactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your blockchain config uses a deprecated configuration structure - the blockchain configuration has been moved under the 'plugins' section")
+			name := "blockchain_0"
+			plugins[name] = blockchainPlugin{
+				config: deprecatedBlockchainConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -517,15 +557,17 @@ func (nm *namespaceManager) getSharedStoragePlugins(ctx context.Context) (plugin
 	// check deprecated config
 	if len(plugins) == 0 {
 		pluginType := deprecatedSharedStorageConfig.GetString(coreconfig.PluginConfigType)
-		plugin, err := ssfactory.GetPlugin(ctx, pluginType)
-		if err != nil {
-			return nil, err
-		}
-
-		name := "sharedstorage_0"
-		plugins[name] = sharedStoragePlugin{
-			config: deprecatedSharedStorageConfig.SubSection(pluginType),
-			plugin: plugin,
+		if pluginType != "" {
+			plugin, err := ssfactory.GetPlugin(ctx, pluginType)
+			if err != nil {
+				return nil, err
+			}
+			log.L(ctx).Warnf("Your shared storage config uses a deprecated configuration structure - the shared storage configuration has been moved under the 'plugins' section")
+			name := "sharedstorage_0"
+			plugins[name] = sharedStoragePlugin{
+				config: deprecatedSharedStorageConfig.SubSection(pluginType),
+				plugin: plugin,
+			}
 		}
 	}
 
@@ -537,7 +579,7 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 		if err = entry.plugin.Init(ctx, entry.config); err != nil {
 			return err
 		}
-		entry.plugin.RegisterListener(nm)
+		entry.plugin.SetHandler(database.GlobalHandler, nm)
 	}
 	for _, entry := range nm.plugins.blockchain {
 		if err = entry.plugin.Init(ctx, entry.config, nm.metrics); err != nil {
@@ -556,6 +598,11 @@ func (nm *namespaceManager) initPlugins(ctx context.Context) (err error) {
 	}
 	for name, entry := range nm.plugins.tokens {
 		if err = entry.plugin.Init(ctx, name, entry.config); err != nil {
+			return err
+		}
+	}
+	for _, entry := range nm.plugins.events {
+		if err = entry.plugin.Init(nm.ctx, entry.config); err != nil {
 			return err
 		}
 	}
@@ -597,20 +644,27 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 		return nil, i18n.NewError(ctx, coremsgs.MsgFFSystemReservedName, core.LegacySystemNamespace)
 	}
 
+	multipartyConf := conf.SubSection(coreconfig.NamespaceMultiparty)
 	// If any multiparty org information is configured (here or at the root), assume multiparty mode by default
-	orgName := conf.GetString(coreconfig.NamespaceMultipartyOrgName)
+	orgName := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgName)
+	orgKey := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgKey)
+	orgDesc := multipartyConf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
+	deprecatedOrgName := config.GetString(coreconfig.OrgName)
+	deprecatedOrgKey := config.GetString(coreconfig.OrgKey)
+	deprecatedOrgDesc := config.GetString(coreconfig.OrgDescription)
+	if deprecatedOrgName != "" || deprecatedOrgKey != "" || deprecatedOrgDesc != "" {
+		log.L(ctx).Warnf("Your org config uses a deprecated configuration structure - the org configuration has been moved under the 'namespaces.predefined[].multiparty' section")
+	}
 	if orgName == "" {
-		orgName = config.GetString(coreconfig.OrgName)
+		orgName = deprecatedOrgName
 	}
-	orgKey := conf.GetString(coreconfig.NamespaceMultipartyOrgKey)
 	if orgKey == "" {
-		orgKey = config.GetString(coreconfig.OrgKey)
+		orgKey = deprecatedOrgKey
 	}
-	orgDesc := conf.GetString(coreconfig.NamespaceMultipartyOrgDescription)
 	if orgDesc == "" {
-		orgDesc = config.GetString(coreconfig.OrgDescription)
+		orgDesc = deprecatedOrgDesc
 	}
-	multiparty := conf.Get(coreconfig.NamespaceMultipartyEnabled)
+	multiparty := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
 	if multiparty == nil {
 		multiparty = orgName != "" || orgKey != ""
 	}
@@ -650,16 +704,41 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	var p *orchestrator.Plugins
 	var err error
 	if multiparty.(bool) {
+		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
+		contractConfArraySize := contractsConf.ArraySize()
+		contracts := make([]multipartyManager.Contract, contractConfArraySize)
+
+		for i := 0; i < contractConfArraySize; i++ {
+			conf := contractsConf.ArrayEntry(i)
+			locationObject := conf.GetObject(coreconfig.NamespaceMultipartyContractLocation)
+			b, err := json.Marshal(locationObject)
+			if err != nil {
+				return nil, err
+			}
+			location := fftypes.JSONAnyPtrBytes(b)
+			contract := multipartyManager.Contract{
+				Location:   location,
+				FirstEvent: conf.GetString(coreconfig.NamespaceMultipartyContractFirstEvent),
+			}
+			contracts[i] = contract
+		}
+
 		config.Multiparty.Enabled = true
-		config.Multiparty.OrgName = orgName
-		config.Multiparty.OrgKey = orgKey
-		config.Multiparty.OrgDesc = orgDesc
+		config.Multiparty.Org.Name = orgName
+		config.Multiparty.Org.Key = orgKey
+		config.Multiparty.Org.Description = orgDesc
+		config.Multiparty.Contracts = contracts
 		p, err = nm.validateMultiPartyConfig(ctx, name, plugins)
 	} else {
-		p, err = nm.validateGatewayConfig(ctx, name, plugins)
+		p, err = nm.validateNonMultipartyConfig(ctx, name, plugins)
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	p.Events = make(map[string]events.Plugin, len(nm.plugins.events))
+	for name, entry := range nm.plugins.events {
+		p.Events[name] = entry.plugin
 	}
 
 	return &namespace{
@@ -674,7 +753,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 	for _, pluginName := range plugins {
 		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
 			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
 			}
 			result.Blockchain = orchestrator.BlockchainPlugin{
 				Name:   pluginName,
@@ -684,7 +763,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		}
 		if instance, ok := nm.plugins.dataexchange[pluginName]; ok {
 			if result.DataExchange.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "dataexchange")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "dataexchange")
 			}
 			result.DataExchange = orchestrator.DataExchangePlugin{
 				Name:   pluginName,
@@ -694,7 +773,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		}
 		if instance, ok := nm.plugins.sharedstorage[pluginName]; ok {
 			if result.SharedStorage.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "sharedstorage")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "sharedstorage")
 			}
 			result.SharedStorage = orchestrator.SharedStoragePlugin{
 				Name:   pluginName,
@@ -704,7 +783,7 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		}
 		if instance, ok := nm.plugins.database[pluginName]; ok {
 			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
 			}
 			result.Database = orchestrator.DatabasePlugin{
 				Name:   pluginName,
@@ -734,18 +813,18 @@ func (nm *namespaceManager) validateMultiPartyConfig(ctx context.Context, name s
 		result.SharedStorage.Plugin == nil ||
 		result.DataExchange.Plugin == nil ||
 		result.Blockchain.Plugin == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultipartyConfiguration, name)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsMultiparty, name)
 	}
 
 	return &result, nil
 }
 
-func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
+func (nm *namespaceManager) validateNonMultipartyConfig(ctx context.Context, name string, plugins []string) (*orchestrator.Plugins, error) {
 	var result orchestrator.Plugins
 	for _, pluginName := range plugins {
 		if instance, ok := nm.plugins.blockchain[pluginName]; ok {
 			if result.Blockchain.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "blockchain")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "blockchain")
 			}
 			result.Blockchain = orchestrator.BlockchainPlugin{
 				Name:   pluginName,
@@ -754,14 +833,14 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 			continue
 		}
 		if _, ok := nm.plugins.dataexchange[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
 		}
 		if _, ok := nm.plugins.sharedstorage[pluginName]; ok {
-			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayInvalidPlugins, name)
+			return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceWrongPluginsNonMultiparty, name)
 		}
 		if instance, ok := nm.plugins.database[pluginName]; ok {
 			if result.Database.Plugin != nil {
-				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayMultiplePluginType, name, "database")
+				return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceMultiplePluginType, name, "database")
 			}
 			result.Database = orchestrator.DatabasePlugin{
 				Name:   pluginName,
@@ -781,7 +860,7 @@ func (nm *namespaceManager) validateGatewayConfig(ctx context.Context, name stri
 	}
 
 	if result.Database.Plugin == nil {
-		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceGatewayNoDB, name)
+		return nil, i18n.NewError(ctx, coremsgs.MsgNamespaceNoDatabase, name)
 	}
 
 	return &result, nil
@@ -818,7 +897,7 @@ func (nm *namespaceManager) GetOperationByNamespacedID(ctx context.Context, nsOp
 	if or == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
-	return or.GetOperationByID(ctx, ns, u.String())
+	return or.GetOperationByID(ctx, u.String())
 }
 
 func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, nsOpID string, op *core.OperationUpdateDTO) error {
@@ -830,5 +909,31 @@ func (nm *namespaceManager) ResolveOperationByNamespacedID(ctx context.Context, 
 	if or == nil {
 		return i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
-	return or.Operations().ResolveOperationByID(ctx, ns, u, op)
+	return or.Operations().ResolveOperationByID(ctx, u, op)
+}
+
+func (nm *namespaceManager) getEventPlugins(ctx context.Context) (plugins map[string]eventsPlugin, err error) {
+	plugins = make(map[string]eventsPlugin)
+	enabledTransports := config.GetStringSlice(coreconfig.EventTransportsEnabled)
+	uniqueTransports := make(map[string]bool)
+	for _, transport := range enabledTransports {
+		uniqueTransports[transport] = true
+	}
+	// Cannot disable the internal listener
+	uniqueTransports[system.SystemEventsTransport] = true
+	for transport := range uniqueTransports {
+		plugin, err := eifactory.GetPlugin(ctx, transport)
+		if err != nil {
+			return nil, err
+		}
+
+		name := plugin.Name()
+		section := config.RootSection("events").SubSection(name)
+		plugin.InitConfig(section)
+		plugins[name] = eventsPlugin{
+			config: section,
+			plugin: plugin,
+		}
+	}
+	return plugins, err
 }

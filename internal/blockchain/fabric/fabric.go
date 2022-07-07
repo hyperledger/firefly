@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -44,63 +43,73 @@ const (
 )
 
 type Fabric struct {
-	ctx             context.Context
-	topic           string
-	defaultChannel  string
-	signer          string
-	prefixShort     string
-	prefixLong      string
-	capabilities    *blockchain.Capabilities
-	callbacks       callbacks
-	client          *resty.Client
-	streams         *streamManager
-	streamID        string
-	fireflyContract struct {
-		mux            sync.Mutex
-		chaincode      string
-		fromBlock      string
-		networkVersion int
-		subscription   string
-	}
-	idCache          map[string]*fabIdentity
-	wsconn           wsclient.WSClient
-	closed           chan struct{}
-	metrics          metrics.Manager
-	fabconnectConf   config.Section
-	contractConf     config.ArraySection
-	contractConfSize int
+	ctx            context.Context
+	topic          string
+	defaultChannel string
+	signer         string
+	prefixShort    string
+	prefixLong     string
+	capabilities   *blockchain.Capabilities
+	callbacks      callbacks
+	client         *resty.Client
+	streams        *streamManager
+	streamID       string
+	idCache        map[string]*fabIdentity
+	wsconn         wsclient.WSClient
+	closed         chan struct{}
+	metrics        metrics.Manager
+	fabconnectConf config.Section
+	subs           map[string]subscriptionInfo
+}
+
+type subscriptionInfo struct {
+	namespace string
+	channel   string
+	version   int
 }
 
 type callbacks struct {
-	listeners []blockchain.Callbacks
+	handlers map[string]blockchain.Callbacks
 }
 
-func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.listeners {
-		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+func (cb *callbacks) BlockchainOpUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
+	if handler, ok := cb.handlers[namespace]; ok {
+		handler.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	} else {
+		log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
 	}
 }
 
-func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.listeners {
-		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
-			return err
-		}
+func (cb *callbacks) BatchPinComplete(ctx context.Context, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	if handler, ok := cb.handlers[batch.Namespace]; ok {
+		return handler.BatchPinComplete(batch, signingKey)
 	}
+	log.L(ctx).Errorf("No handler found for blockchain batch pin on namespace '%s'", batch.Namespace)
 	return nil
 }
 
-func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.listeners {
-		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
-			return err
+func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	if namespace == "" {
+		// Older networks don't populate namespace, so deliver the event to every handler
+		for _, handler := range cb.handlers {
+			if err := handler.BlockchainNetworkAction(action, location, event, signingKey); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.BlockchainNetworkAction(action, location, event, signingKey)
+		}
+		log.L(ctx).Errorf("No handler found for blockchain network action on namespace '%s'", namespace)
 	}
 	return nil
 }
 
 func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.listeners {
+	for _, cb := range cb.handlers {
+		// Send the event to all handlers and let them match it to a contract listener
+		// TODO: can we push more listener/namespace knowledge down to this layer?
 		if err := cb.BlockchainEvent(event); err != nil {
 			return err
 		}
@@ -206,6 +215,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
+	f.callbacks.handlers = make(map[string]blockchain.Callbacks)
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
@@ -239,6 +249,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 		return err
 	}
 	f.streamID = stream.ID
+	f.subs = make(map[string]subscriptionInfo)
 	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
 
 	f.closed = make(chan struct{})
@@ -247,83 +258,8 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	return nil
 }
 
-func (f *Fabric) resolveFireFlyContract(ctx context.Context, contractIndex int) (chaincode, fromBlock string, err error) {
-
-	if f.contractConfSize > 0 || contractIndex > 0 {
-		// New config (array of objects under "fireflyContract")
-		if contractIndex >= f.contractConfSize {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("blockchain.fabric.fireflyContract[%d]", contractIndex))
-		}
-		chaincode = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractChaincode)
-		if chaincode == "" {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fireflyContract")
-		}
-		fromBlock = f.contractConf.ArrayEntry(contractIndex).GetString(FireFlyContractFromBlock)
-	} else {
-		// Old config (attributes under "ethconnect")
-		chaincode = f.fabconnectConf.GetString(FabconnectConfigChaincodeDeprecated)
-		if chaincode != "" {
-			log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use %s.%s instead",
-				FabconnectConfigKey, FabconnectConfigChaincodeDeprecated,
-				FireFlyContractConfigKey, FireFlyContractChaincode)
-			fromBlock = string(core.SubOptsFirstEventOldest)
-		} else {
-			return "", "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fabconnect")
-		}
-	}
-
-	return chaincode, fromBlock, nil
-}
-
-func (f *Fabric) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) (err error) {
-
-	chaincode, fromBlock, err := f.resolveFireFlyContract(ctx, contracts.Active.Index)
-	if err != nil {
-		return err
-	}
-
-	location := &Location{Channel: f.defaultChannel, Chaincode: chaincode}
-	sub, err := f.streams.ensureFireFlySubscription(ctx, location, fromBlock, f.streamID, batchPinEvent)
-	if err == nil {
-		var version int
-		version, err = f.getNetworkVersion(ctx, chaincode)
-		if err == nil {
-			f.fireflyContract.mux.Lock()
-			f.fireflyContract.chaincode = chaincode
-			f.fireflyContract.fromBlock = fromBlock
-			f.fireflyContract.networkVersion = version
-			f.fireflyContract.subscription = sub.ID
-			f.fireflyContract.mux.Unlock()
-			contracts.Active.Info = fftypes.JSONObject{
-				"chaincode":    chaincode,
-				"fromBlock":    fromBlock,
-				"subscription": sub.ID,
-			}
-		}
-	}
-	return err
-}
-
-func (f *Fabric) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) (err error) {
-
-	chaincode := termination.Info.GetString("chaincodeId")
-	f.fireflyContract.mux.Lock()
-	fireflyChaincode := f.fireflyContract.chaincode
-	f.fireflyContract.mux.Unlock()
-	if chaincode != fireflyChaincode {
-		log.L(ctx).Warnf("Ignoring termination request from chaincode %s, which differs from active chaincode %s", chaincode, fireflyChaincode)
-		return nil
-	}
-
-	log.L(ctx).Infof("Processing termination request from chaincode %s", chaincode)
-	contracts.Active.FinalEvent = termination.ProtocolID
-	contracts.Terminated = append(contracts.Terminated, contracts.Active)
-	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
-	return f.ConfigureContract(ctx, contracts)
-}
-
-func (f *Fabric) RegisterListener(listener blockchain.Callbacks) {
-	f.callbacks.listeners = append(f.callbacks.listeners, listener)
+func (f *Fabric) SetHandler(namespace string, handler blockchain.Callbacks) {
+	f.callbacks.handlers[namespace] = handler
 }
 
 func (f *Fabric) Start() (err error) {
@@ -394,7 +330,7 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 	}
 }
 
-func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *subscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
@@ -415,7 +351,24 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	// Check if this is actually an operator action
 	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
 		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-		return f.callbacks.BlockchainNetworkAction(action, event, verifier)
+
+		// For V1 of the FireFly contract, action is sent to all namespaces
+		// For V2+, namespace is inferred from the subscription
+		var namespace string
+		if subInfo.version > 1 {
+			namespace = subInfo.namespace
+		}
+
+		return f.callbacks.BlockchainNetworkAction(ctx, namespace, action, location, event, verifier)
+	}
+
+	// For V1 of the FireFly contract, namespace is passed explicitly
+	// For V2+, namespace is inferred from the subscription
+	var namespace string
+	if subInfo.version == 1 {
+		namespace = nsOrAction
+	} else {
+		namespace = subInfo.namespace
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -447,7 +400,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	batch := &blockchain.BatchPin{
-		Namespace:       nsOrAction,
+		Namespace:       namespace,
 		TransactionID:   &txnID,
 		BatchID:         &batchID,
 		BatchHash:       &batchHash,
@@ -457,7 +410,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, verifier)
+	return f.callbacks.BatchPinComplete(ctx, batch, verifier)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -492,7 +445,47 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	f.callbacks.BlockchainOpUpdate(f, requestID, updateType, txHash, message, reply)
+	f.callbacks.BlockchainOpUpdate(ctx, f, requestID, updateType, txHash, message, reply)
+}
+
+func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	sub, subNS, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	if err != nil {
+		return "", err
+	}
+
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	if version > 1 && subNS == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, sub.Name, version)
+	}
+
+	f.subs[sub.ID] = subscriptionInfo{
+		namespace: subNS,
+		channel:   fabricOnChainLocation.Channel,
+		version:   version,
+	}
+	return sub.ID, nil
+}
+
+func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) error {
+	// Don't actually delete the subscription from fabconnect, as this may be called while processing
+	// events from the subscription (and handling that scenario cleanly could be difficult for fabconnect).
+	// TODO: can old subscriptions be somehow cleaned up later?
+	if _, ok := f.subs[subID]; ok {
+		delete(f.subs, subID)
+		return nil
+	}
+
+	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {
@@ -513,15 +506,19 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		l1.Infof("Received '%s' message", eventName)
 		l1.Tracef("Message: %+v", msgJSON)
 
-		f.fireflyContract.mux.Lock()
-		fireflySub := f.fireflyContract.subscription
-		f.fireflyContract.mux.Unlock()
+		// Matches one of the active FireFly BatchPin subscriptions
+		if subInfo, ok := f.subs[sub]; ok {
+			location, err := encodeContractLocation(ctx, &Location{
+				Chaincode: msgJSON.GetString("chaincodeId"),
+				Channel:   subInfo.channel,
+			})
+			if err != nil {
+				return err
+			}
 
-		if sub == fireflySub {
-			// Matches the active FireFly BatchPin subscription
 			switch eventName {
 			case broadcastBatchEventName:
-				if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
+				if err := f.handleBatchPinEvent(ctx1, location, &subInfo, msgJSON); err != nil {
 					return err
 				}
 			default:
@@ -675,7 +672,12 @@ func hexFormatB32(b *fftypes.Bytes32) string {
 	return "0x" + hex.EncodeToString(b[0:32])
 }
 
-func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
+func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
 	hashes := make([]string, len(batch.Contexts))
 	for i, v := range batch.Contexts {
 		hashes[i] = hexFormatB32(v)
@@ -691,13 +693,15 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey s
 		"contexts":   hashes,
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	f.fireflyContract.mux.Lock()
-	chaincode := f.fireflyContract.chaincode
-	f.fireflyContract.mux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
 
-func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType) error {
+func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return err
+	}
+
 	pinInput := map[string]interface{}{
 		"namespace":  "firefly:" + action,
 		"uuids":      hexFormatB32(nil),
@@ -706,10 +710,7 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signing
 		"contexts":   []string{},
 	}
 	input, _ := jsonEncodeInput(pinInput)
-	f.fireflyContract.mux.Lock()
-	chaincode := f.fireflyContract.chaincode
-	f.fireflyContract.mux.Unlock()
-	return f.invokeContractMethod(ctx, f.defaultChannel, chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
 }
 
 func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {
@@ -815,11 +816,7 @@ func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftype
 	if err != nil {
 		return nil, err
 	}
-	normalized, err := json.Marshal(parsed)
-	if err == nil {
-		result = fftypes.JSONAnyPtrBytes(normalized)
-	}
-	return result, err
+	return encodeContractLocation(ctx, parsed)
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -834,6 +831,20 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	return &fabricLocation, nil
+}
+
+func encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+	if location.Channel == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
+	}
+	if location.Chaincode == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
+	}
+	normalized, err := json.Marshal(location)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
@@ -866,8 +877,13 @@ func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIE
 	return event.Name
 }
 
-func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, error) {
-	res, err := f.queryContractMethod(ctx, f.defaultChannel, chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
+func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+	fabricOnChainLocation, err := parseContractLocation(ctx, location)
+	if err != nil {
+		return 0, err
+	}
+
+	res, err := f.queryContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, networkVersionMethodName, f.signer, "", []*PrefixItem{}, map[string]interface{}{}, nil)
 	if err != nil || !res.IsSuccess() {
 		// "Function not found" is interpreted as "default to version 1"
 		notFoundError := fmt.Sprintf("Function %s not found", networkVersionMethodName)
@@ -883,8 +899,20 @@ func (f *Fabric) getNetworkVersion(ctx context.Context, chaincode string) (int, 
 	return int(output.Result.(float64)), nil
 }
 
-func (f *Fabric) NetworkVersion() int {
-	f.fireflyContract.mux.Lock()
-	defer f.fireflyContract.mux.Unlock()
-	return f.fireflyContract.networkVersion
+func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (location *fftypes.JSONAny, fromBlock string, err error) {
+	// Old config (attributes under "fabconnect")
+	chaincode := f.fabconnectConf.GetString(FabconnectConfigChaincodeDeprecated)
+	if chaincode != "" {
+		log.L(ctx).Warnf("The %s.%s config key has been deprecated. Please use namespaces.predefined[].multiparty.contract[].location.address",
+			FabconnectConfigKey, FabconnectConfigChaincodeDeprecated)
+	} else {
+		return nil, "", i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "chaincode", "blockchain.fabric.fabconnect")
+	}
+	fromBlock = string(core.SubOptsFirstEventOldest)
+
+	location, err = encodeContractLocation(ctx, &Location{
+		Chaincode: chaincode,
+		Channel:   f.defaultChannel,
+	})
+	return location, fromBlock, err
 }

@@ -36,7 +36,7 @@ func newTestSyncAsyncBridge(t *testing.T) (*syncAsyncBridge, func()) {
 	mdi := &databasemocks.Plugin{}
 	mdm := &datamocks.Manager{}
 	mse := &sysmessagingmocks.SystemEvents{}
-	sa := NewSyncAsyncBridge(ctx, mdi, mdm)
+	sa := NewSyncAsyncBridge(ctx, "ns1", mdi, mdm)
 	sa.Init(mse)
 	return sa.(*syncAsyncBridge), cancel
 }
@@ -54,7 +54,7 @@ func TestRequestReplyOk(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		gmid.ReturnArguments = mock.Arguments{
 			&core.Message{
@@ -74,7 +74,7 @@ func TestRequestReplyOk(t *testing.T) {
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
-	reply, err := sa.WaitForReply(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForReply(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -108,7 +108,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		msgSent := &core.Message{}
 		msgSent.Header.ID = requestID
@@ -124,7 +124,7 @@ func TestAwaitConfirmationOk(t *testing.T) {
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
-	reply, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForMessage(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -156,7 +156,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetMessageByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		msgSent := &core.Message{}
 		msgSent.Header.ID = requestID
@@ -172,7 +172,7 @@ func TestAwaitConfirmationRejected(t *testing.T) {
 		{ID: dataID, Value: fftypes.JSONAnyPtr(`"response data"`)},
 	}, true, nil)
 
-	_, err := sa.WaitForMessage(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForMessage(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -198,7 +198,7 @@ func TestRequestReplyTimeout(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.WaitForReply(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForReply(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
 		return nil
 	})
 	assert.Regexp(t, "FF10260", err)
@@ -212,7 +212,7 @@ func TestRequestSetupSystemListenerFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := sa.WaitForReply(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForReply(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
 		return nil
 	})
 	assert.Regexp(t, "pop", err)
@@ -310,7 +310,7 @@ func TestEventCallbackMsgLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -341,7 +341,7 @@ func TestEventCallbackTokenPoolLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenPoolByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -372,7 +372,7 @@ func TestEventCallbackIdentityLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetIdentityByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -403,7 +403,7 @@ func TestEventCallbackIdentityLookupNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetIdentityByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -434,7 +434,7 @@ func TestEventCallbackTokenTransferLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -464,7 +464,7 @@ func TestEventCallbackTokenApprovalLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetTokenApprovalByID", sa.ctx, "ns1", mock.Anything).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -495,7 +495,7 @@ func TestEventCallbackMsgNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -531,7 +531,7 @@ func TestEventCallbackRejectedMsgNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -564,7 +564,7 @@ func TestEventCallbackTokenPoolNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenPoolByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -596,7 +596,7 @@ func TestEventCallbackTokenTransferNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -628,7 +628,7 @@ func TestEventCallbackTokenApprovalNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything).Return(nil, nil)
+	mdi.On("GetTokenApprovalByID", sa.ctx, "ns1", mock.Anything).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -669,7 +669,7 @@ func TestEventCallbackTokenPoolRejectedNoData(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(msg, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -718,8 +718,8 @@ func TestEventCallbackTokenPoolRejectedDataError(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, mock.Anything).Return(msg, nil)
-	mdi.On("GetDataByID", sa.ctx, dataID, true).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetMessageByID", sa.ctx, "ns1", mock.Anything).Return(msg, nil)
+	mdi.On("GetDataByID", sa.ctx, "ns1", dataID, true).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -766,7 +766,7 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenPoolByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenPoolByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		pool := &core.TokenPool{
 			ID:   requestID,
@@ -777,7 +777,7 @@ func TestAwaitTokenPoolConfirmation(t *testing.T) {
 		}
 	}
 
-	reply, err := sa.WaitForTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForTokenPool(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -805,7 +805,7 @@ func TestAwaitTokenPoolConfirmationSendFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForTokenPool(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
@@ -841,10 +841,10 @@ func TestAwaitTokenPoolConfirmationRejected(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetMessageByID", sa.ctx, msg.Header.ID).Return(msg, nil)
-	mdi.On("GetDataByID", sa.ctx, data.ID, true).Return(data, nil)
+	mdi.On("GetMessageByID", sa.ctx, "ns1", msg.Header.ID).Return(msg, nil)
+	mdi.On("GetDataByID", sa.ctx, "ns1", data.ID, true).Return(data, nil)
 
-	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", pool.Pool.ID, func(ctx context.Context) error {
+	_, err := sa.WaitForTokenPool(sa.ctx, pool.Pool.ID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -874,7 +874,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenTransferByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenTransferByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		transfer := &core.TokenTransfer{
 			LocalID:    requestID,
@@ -885,7 +885,7 @@ func TestAwaitTokenTransferConfirmation(t *testing.T) {
 		}
 	}
 
-	reply, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForTokenTransfer(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -916,7 +916,7 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	gmid := mdi.On("GetTokenApprovalByID", sa.ctx, mock.Anything)
+	gmid := mdi.On("GetTokenApprovalByID", sa.ctx, "ns1", mock.Anything)
 	gmid.RunFn = func(a mock.Arguments) {
 		approval := &core.TokenApproval{
 			LocalID: requestID,
@@ -927,7 +927,7 @@ func TestAwaitTokenApprovalConfirmation(t *testing.T) {
 		}
 	}
 
-	reply, err := sa.WaitForTokenApproval(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	reply, err := sa.WaitForTokenApproval(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -955,7 +955,7 @@ func TestAwaitTokenApprovalConfirmationSendFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.WaitForTokenApproval(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForTokenApproval(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
@@ -969,7 +969,7 @@ func TestAwaitTokenTransferConfirmationSendFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", fftypes.NewUUID(), func(ctx context.Context) error {
+	_, err := sa.WaitForTokenTransfer(sa.ctx, fftypes.NewUUID(), func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 	assert.EqualError(t, err, "pop")
@@ -993,9 +993,9 @@ func TestAwaitFailedTokenPool(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
 
-	_, err := sa.WaitForTokenPool(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForTokenPool(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -1032,9 +1032,9 @@ func TestAwaitFailedTokenTransfer(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
 
-	_, err := sa.WaitForTokenTransfer(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForTokenTransfer(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -1071,9 +1071,9 @@ func TestAwaitFailedTokenApproval(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
 
-	_, err := sa.WaitForTokenApproval(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForTokenApproval(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -1114,7 +1114,7 @@ func TestFailedTokenTransferOpError(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1154,7 +1154,7 @@ func TestFailedTokenApprovalOpError(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1194,7 +1194,7 @@ func TestFailedTokenPoolOpNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1234,7 +1234,7 @@ func TestFailedTokenApprovalOpNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1272,7 +1272,7 @@ func TestFailedTokenApprovalIDLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1312,7 +1312,7 @@ func TestFailedTokenTransferOpNotFound(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(nil, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(nil, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1350,7 +1350,7 @@ func TestFailedTokenTransferIDLookupFail(t *testing.T) {
 	}
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, op.ID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", op.ID).Return(op, nil)
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1384,9 +1384,9 @@ func TestAwaitIdentityConfirmed(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByID", sa.ctx, requestID).Return(identity, nil)
+	mdi.On("GetIdentityByID", sa.ctx, "ns1", requestID).Return(identity, nil)
 
-	retIdentity, err := sa.WaitForIdentity(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	retIdentity, err := sa.WaitForIdentity(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -1415,7 +1415,7 @@ func TestAwaitIdentityFail(t *testing.T) {
 	mse := sa.sysevents.(*sysmessagingmocks.SystemEvents)
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
-	_, err := sa.WaitForIdentity(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForIdentity(sa.ctx, requestID, func(ctx context.Context) error {
 		return fmt.Errorf("pop")
 	})
 	assert.Regexp(t, "pop", err)
@@ -1436,9 +1436,9 @@ func TestAwaitInvokeOpSucceeded(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, requestID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(op, nil)
 
-	ret, err := sa.WaitForInvokeOperation(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	ret, err := sa.WaitForInvokeOperation(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -1475,7 +1475,7 @@ func TestAwaitInvokeOpSucceededLookupFail(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, requestID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
@@ -1506,9 +1506,9 @@ func TestAwaitInvokeOpFailed(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, requestID).Return(op, nil)
+	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(op, nil)
 
-	_, err := sa.WaitForInvokeOperation(sa.ctx, "ns1", requestID, func(ctx context.Context) error {
+	_, err := sa.WaitForInvokeOperation(sa.ctx, requestID, func(ctx context.Context) error {
 		go func() {
 			sa.eventCallback(&core.EventDelivery{
 				EnrichedEvent: core.EnrichedEvent{
@@ -1544,7 +1544,7 @@ func TestAwaitInvokeOpFailedLookupFail(t *testing.T) {
 	mse.On("AddSystemEventListener", "ns1", mock.Anything).Return(nil)
 
 	mdi := sa.database.(*databasemocks.Plugin)
-	mdi.On("GetOperationByID", sa.ctx, requestID).Return(nil, fmt.Errorf("pop"))
+	mdi.On("GetOperationByID", sa.ctx, "ns1", requestID).Return(nil, fmt.Errorf("pop"))
 
 	err := sa.eventCallback(&core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{

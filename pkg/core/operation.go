@@ -33,6 +33,8 @@ type OpType = fftypes.FFEnum
 var (
 	// OpTypeBlockchainPinBatch is a blockchain transaction to pin a batch
 	OpTypeBlockchainPinBatch = fftypes.FFEnumValue("optype", "blockchain_pin_batch")
+	// OpTypeBlockchainNetworkAction is an administrative action on a multiparty blockchain network
+	OpTypeBlockchainNetworkAction = fftypes.FFEnumValue("optype", "blockchain_network_action")
 	// OpTypeBlockchainInvoke is a smart contract invoke
 	OpTypeBlockchainInvoke = fftypes.FFEnumValue("optype", "blockchain_invoke")
 	// OpTypeSharedStorageUploadBatch is a shared storage operation to upload broadcast data
@@ -129,7 +131,7 @@ func (po *PreparedOperation) NamespacedIDString() string {
 func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.UUID, error) {
 	nsIDSplit := strings.Split(nsIDStr, ":")
 	if len(nsIDSplit) != 2 {
-		return "", nil, i18n.NewError(context.Background(), coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
+		return "", nil, i18n.NewError(ctx, coremsgs.MsgInvalidNamespaceUUID, nsIDStr)
 	}
 	ns := nsIDSplit[0]
 	uuidStr := nsIDSplit[1]

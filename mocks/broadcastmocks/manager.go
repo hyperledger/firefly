@@ -18,13 +18,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// BroadcastDatatype provides a mock function with given fields: ctx, ns, datatype, waitConfirm
-func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *core.Datatype, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, datatype, waitConfirm)
+// BroadcastMessage provides a mock function with given fields: ctx, in, waitConfirm
+func (_m *Manager) BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
+	ret := _m.Called(ctx, in, waitConfirm)
 
 	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Datatype, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, datatype, waitConfirm)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MessageInOut, bool) *core.Message); ok {
+		r0 = rf(ctx, in, waitConfirm)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Message)
@@ -32,123 +32,8 @@ func (_m *Manager) BroadcastDatatype(ctx context.Context, ns string, datatype *c
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.Datatype, bool) error); ok {
-		r1 = rf(ctx, ns, datatype, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastDefinition provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, def, signingIdentity, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, core.Definition, *core.SignerRef, string, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, core.Definition, *core.SignerRef, string, bool) error); ok {
-		r1 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastDefinitionAsNode provides a mock function with given fields: ctx, ns, def, tag, waitConfirm
-func (_m *Manager) BroadcastDefinitionAsNode(ctx context.Context, ns string, def core.Definition, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, def, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, core.Definition, string, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, def, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, core.Definition, string, bool) error); ok {
-		r1 = rf(ctx, ns, def, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastIdentityClaim provides a mock function with given fields: ctx, ns, def, signingIdentity, tag, waitConfirm
-func (_m *Manager) BroadcastIdentityClaim(ctx context.Context, ns string, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, def, signingIdentity, tag, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.IdentityClaim, *core.SignerRef, string, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.IdentityClaim, *core.SignerRef, string, bool) error); ok {
-		r1 = rf(ctx, ns, def, signingIdentity, tag, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastMessage provides a mock function with given fields: ctx, ns, in, waitConfirm
-func (_m *Manager) BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, in, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.MessageInOut, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, in, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.MessageInOut, bool) error); ok {
-		r1 = rf(ctx, ns, in, waitConfirm)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// BroadcastTokenPool provides a mock function with given fields: ctx, ns, pool, waitConfirm
-func (_m *Manager) BroadcastTokenPool(ctx context.Context, ns string, pool *core.TokenPoolAnnouncement, waitConfirm bool) (*core.Message, error) {
-	ret := _m.Called(ctx, ns, pool, waitConfirm)
-
-	var r0 *core.Message
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.TokenPoolAnnouncement, bool) *core.Message); ok {
-		r0 = rf(ctx, ns, pool, waitConfirm)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Message)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.TokenPoolAnnouncement, bool) error); ok {
-		r1 = rf(ctx, ns, pool, waitConfirm)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.MessageInOut, bool) error); ok {
+		r1 = rf(ctx, in, waitConfirm)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -170,13 +55,13 @@ func (_m *Manager) Name() string {
 	return r0
 }
 
-// NewBroadcast provides a mock function with given fields: ns, in
-func (_m *Manager) NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender {
-	ret := _m.Called(ns, in)
+// NewBroadcast provides a mock function with given fields: in
+func (_m *Manager) NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender {
+	ret := _m.Called(in)
 
 	var r0 sysmessaging.MessageSender
-	if rf, ok := ret.Get(0).(func(string, *core.MessageInOut) sysmessaging.MessageSender); ok {
-		r0 = rf(ns, in)
+	if rf, ok := ret.Get(0).(func(*core.MessageInOut) sysmessaging.MessageSender); ok {
+		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(sysmessaging.MessageSender)

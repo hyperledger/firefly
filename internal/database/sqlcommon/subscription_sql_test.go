@@ -101,7 +101,7 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same data back - note the removal of one of the subscription elements
-	subscriptionRead, err = s.GetSubscriptionByID(ctx, subscription.ID)
+	subscriptionRead, err = s.GetSubscriptionByID(ctx, "ns1", subscription.ID)
 	assert.NoError(t, err)
 	subscriptionJson, _ = json.Marshal(&subscriptionUpdated)
 	subscriptionReadJson, _ = json.Marshal(&subscriptionRead)
@@ -111,10 +111,9 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 	// Query back the subscription
 	fb := database.SubscriptionQueryFactory.NewFilter(ctx)
 	filter := fb.And(
-		fb.Eq("namespace", subscriptionUpdated.Namespace),
 		fb.Eq("name", subscriptionUpdated.Name),
 	)
-	subscriptionRes, res, err := s.GetSubscriptions(ctx, filter.Count(true))
+	subscriptionRes, res, err := s.GetSubscriptions(ctx, "ns1", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subscriptionRes))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -132,15 +131,15 @@ func TestSubscriptionsE2EWithDB(t *testing.T) {
 		fb.Eq("name", subscriptionUpdated.Name),
 		fb.Eq("created", updateTime.String()),
 	)
-	subscriptions, _, err := s.GetSubscriptions(ctx, filter)
+	subscriptions, _, err := s.GetSubscriptions(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subscriptions))
 
 	// Test delete, and refind no return
 	s.callbacks.On("UUIDCollectionNSEvent", database.CollectionSubscriptions, core.ChangeEventTypeDeleted, "ns1", subscription.ID).Return()
-	err = s.DeleteSubscriptionByID(ctx, subscriptionUpdated.ID)
+	err = s.DeleteSubscriptionByID(ctx, "ns1", subscriptionUpdated.ID)
 	assert.NoError(t, err)
-	subscriptions, _, err = s.GetSubscriptions(ctx, filter)
+	subscriptions, _, err = s.GetSubscriptions(ctx, "ns1", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(subscriptions))
 
@@ -228,7 +227,7 @@ func TestGetSubscriptionQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
-	_, _, err := s.GetSubscriptions(context.Background(), f)
+	_, _, err := s.GetSubscriptions(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -236,7 +235,7 @@ func TestGetSubscriptionQueryFail(t *testing.T) {
 func TestGetSubscriptionBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", map[bool]bool{true: false})
-	_, _, err := s.GetSubscriptions(context.Background(), f)
+	_, _, err := s.GetSubscriptions(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF00143.*type", err)
 }
 
@@ -244,7 +243,7 @@ func TestGetSubscriptionReadMessageFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
 	f := database.SubscriptionQueryFactory.NewFilter(context.Background()).Eq("name", "")
-	_, _, err := s.GetSubscriptions(context.Background(), f)
+	_, _, err := s.GetSubscriptions(context.Background(), "ns1", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -304,7 +303,7 @@ func TestSubscriptionUpdateFail(t *testing.T) {
 func TestSubscriptionDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteSubscriptionByID(context.Background(), fftypes.NewUUID())
+	err := s.DeleteSubscriptionByID(context.Background(), "ns1", fftypes.NewUUID())
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -315,6 +314,6 @@ func TestSubscriptionDeleteFail(t *testing.T) {
 		fftypes.NewUUID(), "ns1", "sub1", "websockets", `{}`, `{}`, fftypes.Now(), fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteSubscriptionByID(context.Background(), fftypes.NewUUID())
+	err := s.DeleteSubscriptionByID(context.Background(), "ns1", fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err)
 }

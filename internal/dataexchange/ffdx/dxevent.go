@@ -17,7 +17,8 @@
 package ffdx
 
 import (
-	"strings"
+	"encoding/json"
+	"fmt"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
@@ -45,14 +46,19 @@ type wsEvent struct {
 type dxEvent struct {
 	ffdx                *FFDX
 	id                  string
+	requestID           string
 	dxType              dataexchange.DXEventType
 	messageReceived     *dataexchange.MessageReceived
 	privateBlobReceived *dataexchange.PrivateBlobReceived
 	transferResult      *dataexchange.TransferResult
 }
 
-func (e *dxEvent) NamespacedID() string {
+func (e *dxEvent) EventID() string {
 	return e.id
+}
+
+func (e *dxEvent) NamespacedID() string {
+	return e.requestID
 }
 
 func (e *dxEvent) Type() dataexchange.DXEventType {
@@ -87,8 +93,9 @@ func (e *dxEvent) TransferResult() *dataexchange.TransferResult {
 }
 
 func (h *FFDX) dispatchEvent(msg *wsEvent) {
+	var namespace string
 	var err error
-	e := &dxEvent{ffdx: h, id: msg.EventID}
+	e := &dxEvent{ffdx: h, id: msg.EventID, requestID: msg.RequestID}
 	switch msg.Type {
 	case messageFailed:
 		e.dxType = dataexchange.DXEventTypeTransferResult
@@ -124,10 +131,21 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 			},
 		}
 	case messageReceived:
-		e.dxType = dataexchange.DXEventTypeMessageReceived
-		e.messageReceived = &dataexchange.MessageReceived{
-			PeerID: msg.Sender,
-			Data:   []byte(msg.Message),
+		// De-serialize the transport wrapper
+		var wrapper *core.TransportWrapper
+		err = json.Unmarshal([]byte(msg.Message), &wrapper)
+		switch {
+		case err != nil:
+			err = fmt.Errorf("invalid transmission from peer '%s': %s", msg.Sender, err)
+		case wrapper.Batch == nil:
+			err = fmt.Errorf("invalid transmission from peer '%s': nil batch", msg.Sender)
+		default:
+			namespace = wrapper.Batch.Namespace
+			e.dxType = dataexchange.DXEventTypeMessageReceived
+			e.messageReceived = &dataexchange.MessageReceived{
+				PeerID:    msg.Sender,
+				Transport: wrapper,
+			}
 		}
 	case blobFailed:
 		e.dxType = dataexchange.DXEventTypeTransferResult
@@ -156,14 +174,10 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 		var hash *fftypes.Bytes32
 		hash, err = fftypes.ParseBytes32(h.ctx, msg.Hash)
 		if err == nil {
-			var ns string
-			pathParts := strings.Split(msg.Path, "/")
-			if len(pathParts) >= 2 {
-				ns = pathParts[len(pathParts)-2]
-			}
+			_, namespace, _ = splitBlobPath(msg.Path)
 			e.dxType = dataexchange.DXEventTypePrivateBlobReceived
 			e.privateBlobReceived = &dataexchange.PrivateBlobReceived{
-				Namespace:  ns,
+				Namespace:  namespace,
 				PeerID:     msg.Sender,
 				Hash:       *hash,
 				Size:       msg.Size,
@@ -183,11 +197,15 @@ func (h *FFDX) dispatchEvent(msg *wsEvent) {
 	default:
 		err = i18n.NewError(h.ctx, coremsgs.MsgUnexpectedDXMessageType, msg.Type)
 	}
+
 	// If we couldn't dispatch the event we received, we still ack it
 	if err != nil {
 		log.L(h.ctx).Warnf("Failed to dispatch DX event: %s", err)
 		e.Ack()
 	} else {
-		h.callbacks.DXEvent(e)
+		if namespace == "" && msg.RequestID != "" {
+			namespace, _, _ = core.ParseNamespacedOpID(h.ctx, msg.RequestID)
+		}
+		h.callbacks.DXEvent(h.ctx, namespace, e)
 	}
 }

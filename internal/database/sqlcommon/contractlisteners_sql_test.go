@@ -71,7 +71,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	filter := fb.And(
 		fb.Eq("backendid", sub.BackendID),
 	)
-	subs, res, err := s.GetContractListeners(ctx, filter.Count(true))
+	subs, res, err := s.GetContractListeners(ctx, "ns", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -85,13 +85,13 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Query back the listener (by ID)
-	subRead, err = s.GetContractListenerByID(ctx, sub.ID)
+	subRead, err = s.GetContractListenerByID(ctx, "ns", sub.ID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Query back the listener (by protocol ID)
-	subRead, err = s.GetContractListenerByBackendID(ctx, sub.BackendID)
+	subRead, err = s.GetContractListenerByBackendID(ctx, "ns", sub.BackendID)
 	assert.NoError(t, err)
 	subReadJson, _ = json.Marshal(subRead)
 	assert.Equal(t, string(subJson), string(subReadJson))
@@ -100,7 +100,7 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	filter = fb.And(
 		fb.Eq("backendid", sub.BackendID),
 	)
-	subs, res, err = s.GetContractListeners(ctx, filter.Count(true))
+	subs, res, err = s.GetContractListeners(ctx, "ns", filter.Count(true))
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(subs))
 	assert.Equal(t, int64(1), *res.TotalCount)
@@ -108,9 +108,9 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(subJson), string(subReadJson))
 
 	// Test delete, and refind no return
-	err = s.DeleteContractListenerByID(ctx, sub.ID)
+	err = s.DeleteContractListenerByID(ctx, "ns", sub.ID)
 	assert.NoError(t, err)
-	subs, _, err = s.GetContractListeners(ctx, filter)
+	subs, _, err = s.GetContractListeners(ctx, "ns", filter)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(subs))
 }
@@ -146,7 +146,7 @@ func TestUpsertContractListenerFailCommit(t *testing.T) {
 func TestGetContractListenerByIDSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -154,7 +154,7 @@ func TestGetContractListenerByIDSelectFail(t *testing.T) {
 func TestGetContractListenerByIDNotFound(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}))
-	msg, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
+	msg, err := s.GetContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
 	assert.NoError(t, err)
 	assert.Nil(t, msg)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -163,7 +163,7 @@ func TestGetContractListenerByIDNotFound(t *testing.T) {
 func TestGetContractListenerByIDScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}).AddRow("only one"))
-	_, err := s.GetContractListenerByID(context.Background(), fftypes.NewUUID())
+	_, err := s.GetContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -172,7 +172,7 @@ func TestGetContractListenersQueryFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", "")
-	_, _, err := s.GetContractListeners(context.Background(), f)
+	_, _, err := s.GetContractListeners(context.Background(), "ns", f)
 	assert.Regexp(t, "FF10115", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -180,7 +180,7 @@ func TestGetContractListenersQueryFail(t *testing.T) {
 func TestGetContractListenersBuildQueryFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", map[bool]bool{true: false})
-	_, _, err := s.GetContractListeners(context.Background(), f)
+	_, _, err := s.GetContractListeners(context.Background(), "ns", f)
 	assert.Regexp(t, "FF00143.*id", err)
 }
 
@@ -188,7 +188,7 @@ func TestGetContractListenersScanFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"backendid"}).AddRow("only one"))
 	f := database.ContractListenerQueryFactory.NewFilter(context.Background()).Eq("backendid", "")
-	_, _, err := s.GetContractListeners(context.Background(), f)
+	_, _, err := s.GetContractListeners(context.Background(), "ns", f)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -196,7 +196,7 @@ func TestGetContractListenersScanFail(t *testing.T) {
 func TestContractListenerDeleteBeginFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())
+	err := s.DeleteContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
 	assert.Regexp(t, "FF10114", err)
 }
 
@@ -207,7 +207,7 @@ func TestContractListenerDeleteFail(t *testing.T) {
 		fftypes.NewUUID(), nil, []byte("{}"), "ns1", "sub1", "123", "{}", "sig", "topic1", nil, fftypes.Now()),
 	)
 	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteContractListenerByID(context.Background(), fftypes.NewUUID())
+	err := s.DeleteContractListenerByID(context.Background(), "ns", fftypes.NewUUID())
 	assert.Regexp(t, "FF10118", err)
 }
 
@@ -231,7 +231,7 @@ func TestContractListenerOptions(t *testing.T) {
 	err := s.InsertContractListener(ctx, l)
 	assert.NoError(t, err)
 
-	li, err := s.GetContractListenerByID(ctx, l.ID)
+	li, err := s.GetContractListenerByID(ctx, "ns", l.ID)
 	assert.NoError(t, err)
 
 	assert.Equal(t, l.Options, li.Options)

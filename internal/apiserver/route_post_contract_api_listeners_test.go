@@ -39,7 +39,7 @@ func TestPostContractAPIListen(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("AddContractAPIListener", mock.Anything, "ns1", "banana", "peeled", mock.AnythingOfType("*core.ContractListener")).Return(&core.ContractListener{}, nil)
+	mcm.On("AddContractAPIListener", mock.Anything, "banana", "peeled", mock.AnythingOfType("*core.ContractListener")).Return(&core.ContractListener{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

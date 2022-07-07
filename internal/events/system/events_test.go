@@ -42,7 +42,8 @@ func newTestEvents(t *testing.T) (se *Events, cancel func()) {
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	config := config.RootSection("ut.events")
 	se.InitConfig(config)
-	se.Init(ctx, config, cbs)
+	se.Init(ctx, config)
+	se.SetHandler("ns1", cbs)
 	assert.Equal(t, "system", se.Name())
 	assert.NotNil(t, se.Capabilities())
 	assert.Nil(t, se.ValidateOptions(&core.SubscriptionOptions{}))
@@ -54,7 +55,13 @@ func TestDeliveryRequestOk(t *testing.T) {
 	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := se.callbacks.(*eventsmocks.Callbacks)
+	sub := &core.Subscription{
+		SubscriptionRef: core.SubscriptionRef{
+			Namespace: "ns1",
+		},
+	}
+
+	cbs := se.callbacks["ns1"].(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 	cbs.On("DeliveryResponse", se.connID, mock.Anything).Return(nil)
 
@@ -65,7 +72,7 @@ func TestDeliveryRequestOk(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = se.DeliveryRequest(se.connID, &core.Subscription{}, &core.EventDelivery{
+	err = se.DeliveryRequest(se.connID, sub, &core.EventDelivery{
 		EnrichedEvent: core.EnrichedEvent{
 			Event: core.Event{
 				Namespace: "ns1",
@@ -93,7 +100,7 @@ func TestDeliveryRequestFail(t *testing.T) {
 	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := se.callbacks.(*eventsmocks.Callbacks)
+	cbs := se.callbacks["ns1"].(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(nil)
 
 	err := se.AddListener("ns1", func(event *core.EventDelivery) error {
@@ -117,7 +124,7 @@ func TestAddListenerFail(t *testing.T) {
 	se, cancel := newTestEvents(t)
 	defer cancel()
 
-	cbs := se.callbacks.(*eventsmocks.Callbacks)
+	cbs := se.callbacks["ns1"].(*eventsmocks.Callbacks)
 	cbs.On("EphemeralSubscription", mock.Anything, "ns1", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
 
 	err := se.AddListener("ns1", func(event *core.EventDelivery) error { return nil })

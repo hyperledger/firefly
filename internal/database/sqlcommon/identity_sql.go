@@ -197,17 +197,17 @@ func (s *SQLCommon) GetIdentityByName(ctx context.Context, iType core.IdentityTy
 	return s.getIdentityPred(ctx, name, sq.Eq{"itype": iType, "namespace": namespace, "name": name})
 }
 
-func (s *SQLCommon) GetIdentityByDID(ctx context.Context, did string) (identity *core.Identity, err error) {
-	return s.getIdentityPred(ctx, did, sq.Eq{"did": did})
+func (s *SQLCommon) GetIdentityByDID(ctx context.Context, namespace, did string) (identity *core.Identity, err error) {
+	return s.getIdentityPred(ctx, did, sq.Eq{"did": did, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetIdentityByID(ctx context.Context, id *fftypes.UUID) (identity *core.Identity, err error) {
-	return s.getIdentityPred(ctx, id.String(), sq.Eq{"id": id})
+func (s *SQLCommon) GetIdentityByID(ctx context.Context, namespace string, id *fftypes.UUID) (identity *core.Identity, err error) {
+	return s.getIdentityPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (identities []*core.Identity, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetIdentities(ctx context.Context, namespace string, filter database.Filter) (identities []*core.Identity, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From(identitiesTable), filter, identityFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(identityColumns...).From(identitiesTable), filter, identityFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -229,26 +229,4 @@ func (s *SQLCommon) GetIdentities(ctx context.Context, filter database.Filter) (
 
 	return identities, s.queryRes(ctx, identitiesTable, tx, fop, fi), err
 
-}
-
-func (s *SQLCommon) UpdateIdentity(ctx context.Context, id *fftypes.UUID, update database.Update) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	query, err := s.buildUpdate(sq.Update(identitiesTable), update, identityFilterFieldMap)
-	if err != nil {
-		return err
-	}
-	query = query.Where(sq.Eq{"id": id})
-
-	_, err = s.updateTx(ctx, identitiesTable, tx, query, nil /* no change events for filter based updates */)
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
 }

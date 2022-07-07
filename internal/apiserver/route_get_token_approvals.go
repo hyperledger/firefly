@@ -38,7 +38,7 @@ var getTokenApprovals = &ffapi.Route{
 		FilterFactory: database.TokenApprovalQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			filter := cr.filter
-			return filterResult(cr.or.Assets().GetTokenApprovals(cr.ctx, extractNamespace(r.PP), filter))
+			return filterResult(cr.or.Assets().GetTokenApprovals(cr.ctx, filter))
 		},
 	},
 }

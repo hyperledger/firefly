@@ -27,13 +27,13 @@ import (
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/mocks/batchmocks"
-	"github.com/hyperledger/firefly/mocks/batchpinmocks"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/dataexchangemocks"
 	"github.com/hyperledger/firefly/mocks/datamocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/operationmocks"
 	"github.com/hyperledger/firefly/mocks/sharedstoragemocks"
 	"github.com/hyperledger/firefly/mocks/syncasyncmocks"
@@ -52,7 +52,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	mba := &batchmocks.Manager{}
 	mdx := &dataexchangemocks.Plugin{}
 	msa := &syncasyncmocks.Bridge{}
-	mbp := &batchpinmocks.Submitter{}
+	mmp := &multipartymocks.Manager{}
 	mmi := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
 	mmi.On("IsMetricsEnabled").Return(metricsEnabled)
@@ -76,7 +76,7 @@ func newTestBroadcastCommon(t *testing.T, metricsEnabled bool) (*broadcastManage
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	b, err := NewBroadcastManager(ctx, mdi, mim, mdm, mbi, mdx, mpi, mba, msa, mbp, mmi, mom)
+	b, err := NewBroadcastManager(ctx, "ns1", mdi, mbi, mdx, mpi, mim, mdm, mba, msa, mmp, mmi, mom)
 	assert.NoError(t, err)
 	return b.(*broadcastManager), cancel
 }
@@ -93,7 +93,7 @@ func newTestBroadcastWithMetrics(t *testing.T) (*broadcastManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewBroadcastManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewBroadcastManager(context.Background(), "ns1", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -247,10 +247,10 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mbp := bm.batchpin.(*batchpinmocks.Submitter)
+	mmp := bm.multiparty.(*multipartymocks.Manager)
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(nil)
+	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(nil)
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
@@ -260,7 +260,7 @@ func TestDispatchBatchSubmitBatchPinSucceed(t *testing.T) {
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
-	mbp.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 
@@ -279,10 +279,10 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	}
 
 	mdi := bm.database.(*databasemocks.Plugin)
-	mbp := bm.batchpin.(*batchpinmocks.Submitter)
+	mmp := bm.multiparty.(*multipartymocks.Manager)
 	mom := bm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", mock.Anything, mock.Anything).Return(nil)
-	mbp.On("SubmitPinnedBatch", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(fmt.Errorf("pop"))
+	mmp.On("SubmitBatchPin", mock.Anything, mock.Anything, mock.Anything, "payload1").Return(fmt.Errorf("pop"))
 	mom.On("RunOperation", mock.Anything, mock.MatchedBy(func(op *core.PreparedOperation) bool {
 		data := op.Data.(uploadBatchData)
 		return op.Type == core.OpTypeSharedStorageUploadBatch && data.Batch.ID.Equals(state.Persisted.ID)
@@ -292,7 +292,7 @@ func TestDispatchBatchSubmitBroadcastFail(t *testing.T) {
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
-	mbp.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 	mom.AssertExpectations(t)
 }
 

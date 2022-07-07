@@ -25,7 +25,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error) {
+func (nm *networkMap) RegisterIdentity(ctx context.Context, dto *core.IdentityCreateDTO, waitConfirm bool) (identity *core.Identity, err error) {
 
 	// The parent can be a UUID directly
 	var parent *fftypes.UUID
@@ -33,7 +33,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		parent, err = fftypes.ParseUUID(ctx, dto.Parent)
 		if err != nil {
 			// Or a DID
-			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, ns, dto.Parent)
+			parentIdentity, _, err := nm.identity.CachedIdentityLookupMustExist(ctx, dto.Parent)
 			if err != nil {
 				return nil, err
 			}
@@ -45,7 +45,7 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 	identity = &core.Identity{
 		IdentityBase: core.IdentityBase{
 			ID:        fftypes.NewUUID(),
-			Namespace: ns,
+			Namespace: nm.namespace,
 			Name:      dto.Name,
 			Type:      dto.Type,
 			Parent:    parent,
@@ -56,15 +56,10 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		},
 	}
 
-	if err := nm.data.VerifyNamespaceExists(ctx, ns); err != nil {
-		return nil, err
-	}
-
 	// Set defaults
 	if identity.Type == "" {
 		identity.Type = core.IdentityTypeCustom
 	}
-
 	identity.DID, _ = identity.GenerateDID(ctx)
 
 	// Verify the chain
@@ -73,67 +68,48 @@ func (nm *networkMap) RegisterIdentity(ctx context.Context, ns string, dto *core
 		return nil, err
 	}
 
-	// Resolve if we need to perform a validation
-	var parentSigner *core.SignerRef
-	if immediateParent != nil {
-		parentSigner, err = nm.identity.ResolveIdentitySigner(ctx, immediateParent)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Determine claim signer
 	var claimSigner *core.SignerRef
-	if dto.Type == core.IdentityTypeNode {
-		// Nodes are special - as they need the claim to be signed directly by the parent
-		claimSigner = parentSigner
-		parentSigner = nil
+	var parentSigner *core.SignerRef
+
+	if nm.multiparty != nil {
+		// Resolve if we need to perform a validation
+		if immediateParent != nil {
+			parentSigner, err = nm.identity.ResolveIdentitySigner(ctx, immediateParent)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		// Determine claim signer
+		if dto.Type == core.IdentityTypeNode {
+			// Nodes are special - as they need the claim to be signed directly by the parent
+			claimSigner = parentSigner
+			parentSigner = nil
+		} else {
+			if dto.Key == "" {
+				return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
+			}
+			claimSigner = &core.SignerRef{
+				Key:    dto.Key,
+				Author: identity.DID,
+			}
+		}
 	} else {
-		if dto.Key == "" {
-			return nil, i18n.NewError(ctx, coremsgs.MsgBlockchainKeyNotSet)
-		}
 		claimSigner = &core.SignerRef{
-			Key: dto.Key,
+			Key:    dto.Key,
+			Author: identity.DID,
 		}
-		claimSigner.Author = identity.DID
 	}
 
 	if waitConfirm {
-		return nm.syncasync.WaitForIdentity(ctx, identity.Namespace, identity.ID, func(ctx context.Context) error {
+		return nm.syncasync.WaitForIdentity(ctx, identity.ID, func(ctx context.Context) error {
 			return nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
 		})
 	}
 	err = nm.sendIdentityRequest(ctx, identity, claimSigner, parentSigner)
-	if err != nil {
-		return nil, err
-	}
-	return identity, nil
+	return identity, err
 }
 
 func (nm *networkMap) sendIdentityRequest(ctx context.Context, identity *core.Identity, claimSigner *core.SignerRef, parentSigner *core.SignerRef) error {
-
-	// Send the claim - we disable the check on the DID author here, as we are registering the identity so it will not exist
-	claimMsg, err := nm.broadcast.BroadcastIdentityClaim(ctx, identity.Namespace, &core.IdentityClaim{
-		Identity: identity,
-	}, claimSigner, core.SystemTagIdentityClaim, false)
-	if err != nil {
-		return err
-	}
-	identity.Messages.Claim = claimMsg.Header.ID
-
-	// Send the verification if one is required.
-	if parentSigner != nil {
-		verifyMsg, err := nm.broadcast.BroadcastDefinition(ctx, identity.Namespace, &core.IdentityVerification{
-			Claim: core.MessageRef{
-				ID:   claimMsg.Header.ID,
-				Hash: claimMsg.Hash,
-			},
-			Identity: identity.IdentityBase,
-		}, parentSigner, core.SystemTagIdentityVerification, false)
-		if err != nil {
-			return err
-		}
-		identity.Messages.Verification = verifyMsg.Header.ID
-	}
-	return nil
+	return nm.defsender.ClaimIdentity(ctx, &core.IdentityClaim{Identity: identity}, claimSigner, parentSigner, false)
 }

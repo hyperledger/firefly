@@ -30,8 +30,6 @@ import (
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
-	"github.com/hyperledger/firefly/internal/events/eifactory"
-	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/privatemessaging"
 	"github.com/hyperledger/firefly/internal/txcommon"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -75,6 +73,7 @@ type connection struct {
 
 type subscriptionManager struct {
 	ctx                       context.Context
+	namespace                 string
 	database                  database.Plugin
 	data                      data.Manager
 	txHelper                  txcommon.Helper
@@ -92,13 +91,14 @@ type subscriptionManager struct {
 	retry                     retry.Retry
 }
 
-func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager, txHelper txcommon.Helper) (*subscriptionManager, error) {
+func newSubscriptionManager(ctx context.Context, ns string, di database.Plugin, dm data.Manager, en *eventNotifier, bm broadcast.Manager, pm privatemessaging.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin) (*subscriptionManager, error) {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	sm := &subscriptionManager{
 		ctx:                       ctx,
+		namespace:                 ns,
 		database:                  di,
 		data:                      dm,
-		transports:                make(map[string]events.Plugin),
+		transports:                transports,
 		connections:               make(map[string]*connection),
 		durableSubs:               make(map[fftypes.UUID]*subscription),
 		newOrUpdatedSubscriptions: make(chan *fftypes.UUID),
@@ -106,8 +106,8 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 		maxSubs:                   uint64(config.GetUint(coreconfig.SubscriptionMax)),
 		cancelCtx:                 cancelCtx,
 		eventNotifier:             en,
-		broadcast:                 bm,
-		messaging:                 pm,
+		broadcast:                 bm, // optional
+		messaging:                 pm, // optional
 		txHelper:                  txHelper,
 		retry: retry.Retry{
 			InitialDelay: config.GetDuration(coreconfig.SubscriptionsRetryInitialDelay),
@@ -116,48 +116,19 @@ func newSubscriptionManager(ctx context.Context, di database.Plugin, dm data.Man
 		},
 	}
 
-	err := sm.loadTransports()
-	if err == nil {
-		err = sm.initTransports()
-	}
-	return sm, err
-}
-
-func (sm *subscriptionManager) loadTransports() error {
-	var err error
-	enabledTransports := config.GetStringSlice(coreconfig.EventTransportsEnabled)
-	uniqueTransports := make(map[string]bool)
-	for _, transport := range enabledTransports {
-		uniqueTransports[transport] = true
-	}
-	// Cannot disable the internal listener
-	uniqueTransports[system.SystemEventsTransport] = true
-	for transport := range uniqueTransports {
-		sm.transports[transport], err = eifactory.GetPlugin(sm.ctx, transport)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (sm *subscriptionManager) initTransports() error {
-	var err error
 	for _, ei := range sm.transports {
-		config := config.RootSection("events").SubSection(ei.Name())
-		ei.InitConfig(config)
-		err = ei.Init(sm.ctx, config, &boundCallbacks{sm: sm, ei: ei})
-		if err != nil {
-			return err
+		if err := ei.SetHandler(sm.namespace, &boundCallbacks{sm: sm, ei: ei}); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+
+	return sm, nil
 }
 
 func (sm *subscriptionManager) start() error {
 	fb := database.SubscriptionQueryFactory.NewFilter(sm.ctx)
 	filter := fb.And().Limit(sm.maxSubs)
-	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, filter)
+	persistedSubs, _, err := sm.database.GetSubscriptions(sm.ctx, sm.namespace, filter)
 	if err != nil {
 		return err
 	}
@@ -196,7 +167,7 @@ func (sm *subscriptionManager) subscriptionEventListener() {
 func (sm *subscriptionManager) newOrUpdatedDurableSubscription(id *fftypes.UUID) {
 	var subDef *core.Subscription
 	err := sm.retry.Do(sm.ctx, "retrieve subscription", func(attempt int) (retry bool, err error) {
-		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, id)
+		subDef, err = sm.database.GetSubscriptionByID(sm.ctx, sm.namespace, id)
 		return err != nil, err // indefinite retry
 	})
 	if err != nil || subDef == nil {

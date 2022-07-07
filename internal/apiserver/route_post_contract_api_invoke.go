@@ -46,7 +46,7 @@ var postContractAPIInvoke = &ffapi.Route{
 			r.SuccessStatus = syncRetcode(waitConfirm)
 			req := r.Input.(*core.ContractCallRequest)
 			req.Type = core.CallTypeInvoke
-			return cr.or.Contracts().InvokeContractAPI(cr.ctx, extractNamespace(r.PP), r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
+			return cr.or.Contracts().InvokeContractAPI(cr.ctx, r.PP["apiName"], r.PP["methodPath"], req, waitConfirm)
 		},
 	},
 }

@@ -32,7 +32,7 @@ func TestSQLQueryFactory(t *testing.T) {
 	s.individualSort = true
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
-		fb.Eq("namespace", "ns1"),
+		fb.Eq("tag", "tag1"),
 		fb.Or(
 			fb.Eq("id", "35c11cba-adff-4a4d-970a-02e3a0858dc8"),
 			fb.Eq("id", "caefb9d1-9fc9-4d6a-a155-514d3139adf7"),
@@ -43,7 +43,7 @@ func TestSQLQueryFactory(t *testing.T) {
 		Skip(50).
 		Limit(25).
 		Sort("-id").
-		Sort("namespace").
+		Sort("tag").
 		Sort("-sequence")
 
 	sel := squirrel.Select("*").From("mytable")
@@ -54,8 +54,8 @@ func TestSQLQueryFactory(t *testing.T) {
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (ns = ? AND (id = ? OR id = ?) AND seq > ? AND confirmed IS NULL) ORDER BY id DESC, ns, seq DESC LIMIT 25 OFFSET 50", sqlFilter)
-	assert.Equal(t, "ns1", args[0])
+	assert.Equal(t, "SELECT * FROM mytable WHERE (tag = ? AND (id = ? OR id = ?) AND seq > ? AND confirmed IS NULL) ORDER BY id DESC, tag, seq DESC LIMIT 25 OFFSET 50", sqlFilter)
+	assert.Equal(t, "tag1", args[0])
 	assert.Equal(t, "35c11cba-adff-4a4d-970a-02e3a0858dc8", args[1])
 	assert.Equal(t, "caefb9d1-9fc9-4d6a-a155-514d3139adf7", args[2])
 	assert.Equal(t, int64(12345), args[3])
@@ -125,8 +125,8 @@ func TestSQLQueryFactoryFinalizeFail(t *testing.T) {
 	s, _ := newMockProvider().init()
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	sel := squirrel.Select("*").From("mytable")
-	_, _, _, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("namespace", map[bool]bool{true: false}), nil, []interface{}{"sequence"})
-	assert.Regexp(t, "FF00143.*namespace", err)
+	_, _, _, err := s.filterSelect(context.Background(), "ns", sel, fb.Eq("tag", map[bool]bool{true: false}), nil, []interface{}{"sequence"})
+	assert.Regexp(t, "FF00143.*tag", err)
 }
 
 func TestSQLQueryFactoryBadOp(t *testing.T) {
@@ -168,7 +168,7 @@ func TestSQLQueryFactoryDefaultSort(t *testing.T) {
 	sel := squirrel.Select("*").From("mytable")
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
-		fb.Eq("namespace", "ns1"),
+		fb.Eq("tag", "tag1"),
 	)
 	sel, _, _, err := s.filterSelect(context.Background(), "", sel, f, nil, []interface{}{
 		&database.SortField{
@@ -181,8 +181,8 @@ func TestSQLQueryFactoryDefaultSort(t *testing.T) {
 
 	sqlFilter, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM mytable WHERE (namespace = ?) ORDER BY seq DESC NULLS LAST", sqlFilter)
-	assert.Equal(t, "ns1", args[0])
+	assert.Equal(t, "SELECT * FROM mytable WHERE (tag = ?) ORDER BY seq DESC NULLS LAST", sqlFilter)
+	assert.Equal(t, "tag1", args[0])
 }
 
 func TestSQLQueryFactoryDefaultSortBadType(t *testing.T) {
@@ -191,7 +191,7 @@ func TestSQLQueryFactoryDefaultSortBadType(t *testing.T) {
 	sel := squirrel.Select("*").From("mytable")
 	fb := database.MessageQueryFactory.NewFilter(context.Background())
 	f := fb.And(
-		fb.Eq("namespace", "ns1"),
+		fb.Eq("tag", "tag1"),
 	)
 	assert.PanicsWithValue(t, "unknown sort type: 100", func() {
 		s.filterSelect(context.Background(), "", sel, f, nil, []interface{}{100})

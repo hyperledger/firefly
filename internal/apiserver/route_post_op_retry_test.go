@@ -41,7 +41,7 @@ func TestPostOpRetry(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mom.On("RetryOperation", mock.Anything, "ns1", opID).
+	mom.On("RetryOperation", mock.Anything, opID).
 		Return(&core.Operation{}, nil)
 	r.ServeHTTP(res, req)
 

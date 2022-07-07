@@ -564,9 +564,7 @@ If you look at the source code for the smart contract we're working with above, 
   "location": {
     "address": "0xa5ea5d0a6b2eaf194716f0cc73981939dca26da1"
   },
-  "event": {
-    "name": "Changed"
-  },
+  "eventPath": "Changed",
   "options": {
     "firstEvent": "oldest"
   }

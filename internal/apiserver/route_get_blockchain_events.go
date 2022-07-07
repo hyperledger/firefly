@@ -38,7 +38,7 @@ var getBlockchainEvents = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.BlockchainEventQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetBlockchainEvents(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetBlockchainEvents(cr.ctx, cr.filter))
 		},
 	},
 }

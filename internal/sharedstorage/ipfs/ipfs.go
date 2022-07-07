@@ -67,7 +67,7 @@ func (i *IPFS) Init(ctx context.Context, config config.Section) error {
 	return nil
 }
 
-func (i *IPFS) RegisterListener(listener sharedstorage.Callbacks) {
+func (i *IPFS) SetHandler(namespace string, handler sharedstorage.Callbacks) {
 }
 
 func (i *IPFS) Capabilities() *sharedstorage.Capabilities {

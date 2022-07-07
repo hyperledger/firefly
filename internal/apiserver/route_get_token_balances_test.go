@@ -34,7 +34,7 @@ func TestGetTokenBalances(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("GetTokenBalances", mock.Anything, "ns1", mock.Anything).
+	mam.On("GetTokenBalances", mock.Anything, mock.Anything).
 		Return([]*core.TokenBalance{}, nil, nil)
 	r.ServeHTTP(res, req)
 

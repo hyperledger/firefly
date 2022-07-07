@@ -26,12 +26,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/retry"
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/batchpin"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -49,10 +49,9 @@ type Manager interface {
 	core.Named
 	GroupManager
 
-	Start() error
-	NewMessage(ns string, msg *core.MessageInOut) sysmessaging.MessageSender
-	SendMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
-	RequestReply(ctx context.Context, ns string, request *core.MessageInOut) (reply *core.MessageInOut, err error)
+	NewMessage(msg *core.MessageInOut) sysmessaging.MessageSender
+	SendMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
+	RequestReply(ctx context.Context, request *core.MessageInOut) (reply *core.MessageInOut, err error)
 
 	// From operations.OperationHandler
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
@@ -63,14 +62,14 @@ type privateMessaging struct {
 	groupManager
 
 	ctx                   context.Context
+	namespace             string
 	database              database.Plugin
 	identity              identity.Manager
 	exchange              dataexchange.Plugin
 	blockchain            blockchain.Plugin
-	batch                 batch.Manager
 	data                  data.Manager
 	syncasync             syncasync.Bridge
-	batchpin              batchpin.Submitter
+	multiparty            multiparty.Manager
 	retry                 retry.Retry
 	localNodeName         string
 	localNodeID           *fftypes.UUID // lookup and cached on first use, as might not be registered at startup
@@ -86,24 +85,26 @@ type blobTransferTracker struct {
 	op       *core.PreparedOperation
 }
 
-func NewPrivateMessaging(ctx context.Context, di database.Plugin, im identity.Manager, dx dataexchange.Plugin, bi blockchain.Plugin, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
-	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil {
+func NewPrivateMessaging(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin, bi blockchain.Plugin, im identity.Manager, ba batch.Manager, dm data.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+	if di == nil || im == nil || dx == nil || bi == nil || ba == nil || dm == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "PrivateMessaging")
 	}
 
 	pm := &privateMessaging{
 		ctx:           ctx,
+		namespace:     ns,
 		database:      di,
 		identity:      im,
 		exchange:      dx,
 		blockchain:    bi,
-		batch:         ba,
 		data:          dm,
 		syncasync:     sa,
-		batchpin:      bp,
+		multiparty:    mult,
 		localNodeName: config.GetString(coreconfig.NodeName),
 		groupManager: groupManager{
+			namespace:     ns,
 			database:      di,
+			identity:      im,
 			data:          dm,
 			groupCacheTTL: config.GetDuration(coreconfig.GroupCacheTTL),
 		},
@@ -159,10 +160,6 @@ func (pm *privateMessaging) Name() string {
 	return "PrivateMessaging"
 }
 
-func (pm *privateMessaging) Start() error {
-	return pm.exchange.Start()
-}
-
 func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, state *batch.DispatchState) error {
 	err := pm.dispatchBatchCommon(ctx, state)
 	if err != nil {
@@ -170,7 +167,7 @@ func (pm *privateMessaging) dispatchPinnedBatch(ctx context.Context, state *batc
 	}
 
 	log.L(ctx).Infof("Pinning private batch %s with author=%s key=%s group=%s", state.Persisted.ID, state.Persisted.Author, state.Persisted.Key, state.Persisted.Group)
-	return pm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, "" /* no payloadRef for private */)
+	return pm.multiparty.SubmitBatchPin(ctx, &state.Persisted, state.Pins, "" /* no payloadRef for private */)
 }
 
 func (pm *privateMessaging) dispatchUnpinnedBatch(ctx context.Context, state *batch.DispatchState) error {
@@ -269,7 +266,7 @@ func (pm *privateMessaging) sendData(ctx context.Context, tw *core.TransportWrap
 	batch := tw.Batch
 
 	// Lookup the local org
-	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx, batch.Namespace)
+	localOrg, err := pm.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		return err
 	}

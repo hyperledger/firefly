@@ -24,9 +24,9 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
-func (or *orchestrator) RequestReply(ctx context.Context, ns string, msg *core.MessageInOut) (reply *core.MessageInOut, err error) {
+func (or *orchestrator) RequestReply(ctx context.Context, msg *core.MessageInOut) (reply *core.MessageInOut, err error) {
 	if msg.Header.Group == nil && (msg.Group == nil || len(msg.Group.Members) == 0) {
 		return nil, i18n.NewError(ctx, coremsgs.MsgRequestMustBePrivate)
 	}
-	return or.PrivateMessaging().RequestReply(ctx, ns, msg)
+	return or.PrivateMessaging().RequestReply(ctx, msg)
 }

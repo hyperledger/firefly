@@ -19,7 +19,6 @@ package eifactory
 import (
 	"context"
 
-	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/events/system"
@@ -39,12 +38,6 @@ var pluginsByName = make(map[string]events.Plugin)
 func init() {
 	for _, p := range plugins {
 		pluginsByName[p.Name()] = p
-	}
-}
-
-func InitConfig(config config.Section) {
-	for _, plugin := range plugins {
-		plugin.InitConfig(config.SubSection(plugin.Name()))
 	}
 }
 

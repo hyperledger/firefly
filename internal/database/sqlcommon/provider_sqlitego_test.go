@@ -65,7 +65,7 @@ func newSQLiteTestProvider(t *testing.T) (*sqliteGoTestProvider, func()) {
 
 	err = tp.Init(context.Background(), tp, tp.config, tp.capabilities)
 	assert.NoError(tp.t, err)
-	tp.RegisterListener(tp.callbacks)
+	tp.SetHandler(database.GlobalHandler, tp.callbacks)
 
 	return tp, func() {
 		tp.Close()

@@ -56,8 +56,8 @@ func TestContractEventWithRetries(t *testing.T) {
 	var eventID *fftypes.UUID
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(nil, fmt.Errorf("pop")).Once()
-	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(sub, nil).Times(1) // cached
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(sub, nil).Times(1) // cached
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", sub.ID, ev.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
@@ -65,7 +65,6 @@ func TestContractEventWithRetries(t *testing.T) {
 		eventID = e.ID
 		return *e.Listener == *sub.ID && e.Name == "Changed" && e.Namespace == "ns1"
 	})).Return(nil).Times(2)
-	mdi.On("GetContractListenerByID", mock.Anything, sub.ID).Return(sub, nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(fmt.Errorf("pop")).Once()
 	mdi.On("InsertEvent", mock.Anything, mock.MatchedBy(func(e *core.Event) bool {
 		return e.Type == core.EventTypeBlockchainEventReceived && e.Reference != nil && e.Reference == eventID && e.Topic == "topic1"
@@ -97,7 +96,7 @@ func TestContractEventUnknownSubscription(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(nil, nil)
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(nil, nil)
 
 	err := em.BlockchainEvent(ev)
 	assert.NoError(t, err)
@@ -129,7 +128,7 @@ func TestContractEventWrongNS(t *testing.T) {
 	}
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListenerByBackendID", mock.Anything, "sb-1").Return(sub, nil)
+	mdi.On("GetContractListenerByBackendID", mock.Anything, "ns1", "sb-1").Return(sub, nil)
 
 	err := em.BlockchainEvent(ev)
 	assert.NoError(t, err)
@@ -157,7 +156,7 @@ func TestPersistBlockchainEventDuplicate(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", ev.Listener, ev.ProtocolID).Return(&core.BlockchainEvent{}, nil)
 
-	err := em.maybePersistBlockchainEvent(em.ctx, ev)
+	err := em.maybePersistBlockchainEvent(em.ctx, ev, nil)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -183,40 +182,10 @@ func TestPersistBlockchainEventLookupFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", ev.Listener, ev.ProtocolID).Return(nil, fmt.Errorf("pop"))
 
-	err := em.maybePersistBlockchainEvent(em.ctx, ev)
+	err := em.maybePersistBlockchainEvent(em.ctx, ev, nil)
 	assert.EqualError(t, err, "pop")
 
 	mdi.AssertExpectations(t)
-}
-
-func TestPersistBlockchainEventChainListenerLookupFail(t *testing.T) {
-	em, cancel := newTestEventManager(t)
-	defer cancel()
-
-	ev := &core.BlockchainEvent{
-		Name:       "Changed",
-		Namespace:  "ns1",
-		ProtocolID: "10/20/30",
-		Output: fftypes.JSONObject{
-			"value": "1",
-		},
-		Info: fftypes.JSONObject{
-			"blockNumber": "10",
-		},
-		Listener: fftypes.NewUUID(),
-	}
-
-	mdi := em.database.(*databasemocks.Plugin)
-	mth := em.txHelper.(*txcommonmocks.Helper)
-	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", ev.Listener, ev.ProtocolID).Return(nil, nil)
-	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetContractListenerByID", mock.Anything, ev.Listener).Return(nil, fmt.Errorf("pop"))
-
-	err := em.maybePersistBlockchainEvent(em.ctx, ev)
-	assert.Regexp(t, "pop", err)
-
-	mdi.AssertExpectations(t)
-	mth.AssertExpectations(t)
 }
 
 func TestGetTopicForChainListenerFallback(t *testing.T) {
@@ -229,14 +198,8 @@ func TestGetTopicForChainListenerFallback(t *testing.T) {
 		Topic:     "",
 	}
 
-	mdi := em.database.(*databasemocks.Plugin)
-	mdi.On("GetContractListenerByID", mock.Anything, mock.Anything).Return(sub, nil)
-
-	topic, err := em.getTopicForChainListener(em.ctx, sub.ID)
-	assert.NoError(t, err)
+	topic := em.getTopicForChainListener(sub)
 	assert.Equal(t, sub.ID.String(), topic)
-
-	mdi.AssertExpectations(t)
 }
 
 func TestBlockchainEventMetric(t *testing.T) {

@@ -57,13 +57,13 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 	mti := &tokenmocks.Plugin{}
 	mm := &metricsmocks.Manager{}
 	mom := &operationmocks.Manager{}
-	txHelper := txcommon.NewTransactionHelper(mdi, mdm)
+	txHelper := txcommon.NewTransactionHelper("ns1", mdi, mdm)
 	mm.On("IsMetricsEnabled").Return(metrics)
 	mm.On("TransferSubmitted", mock.Anything)
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, mock.Anything)
 	mti.On("Name").Return("ut").Maybe()
 	ctx, cancel := context.WithCancel(context.Background())
-	a, err := NewAssetManager(ctx, mdi, mim, mdm, msa, mbm, mpm, map[string]tokens.Plugin{"magic-tokens": mti}, mm, mom, txHelper)
+	a, err := NewAssetManager(ctx, "ns1", mdi, map[string]tokens.Plugin{"magic-tokens": mti}, mim, msa, mbm, mpm, mm, mom, txHelper)
 	rag := mdi.On("RunAsGroup", mock.Anything, mock.Anything).Maybe()
 	rag.RunFn = func(a mock.Arguments) {
 		rag.ReturnArguments = mock.Arguments{a[1].(func(context.Context) error)(a[0].(context.Context))}
@@ -75,7 +75,7 @@ func newTestAssetsCommon(t *testing.T, metrics bool) (*assetManager, func()) {
 }
 
 func TestInitFail(t *testing.T) {
-	_, err := NewAssetManager(context.Background(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := NewAssetManager(context.Background(), "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.Regexp(t, "FF10128", err)
 }
 
@@ -92,8 +92,8 @@ func TestGetTokenBalances(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenBalances", context.Background(), f).Return([]*core.TokenBalance{}, nil, nil)
-	_, _, err := am.GetTokenBalances(context.Background(), "ns1", f)
+	mdi.On("GetTokenBalances", context.Background(), "ns1", f).Return([]*core.TokenBalance{}, nil, nil)
+	_, _, err := am.GetTokenBalances(context.Background(), f)
 	assert.NoError(t, err)
 }
 
@@ -104,8 +104,8 @@ func TestGetTokenAccounts(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccounts", context.Background(), f).Return([]*core.TokenAccount{}, nil, nil)
-	_, _, err := am.GetTokenAccounts(context.Background(), "ns1", f)
+	mdi.On("GetTokenAccounts", context.Background(), "ns1", f).Return([]*core.TokenAccount{}, nil, nil)
+	_, _, err := am.GetTokenAccounts(context.Background(), f)
 	assert.NoError(t, err)
 }
 
@@ -116,8 +116,8 @@ func TestGetTokenAccountPools(t *testing.T) {
 	mdi := am.database.(*databasemocks.Plugin)
 	fb := database.TokenBalanceQueryFactory.NewFilter(context.Background())
 	f := fb.And()
-	mdi.On("GetTokenAccountPools", context.Background(), "0x1", f).Return([]*core.TokenAccountPool{}, nil, nil)
-	_, _, err := am.GetTokenAccountPools(context.Background(), "ns1", "0x1", f)
+	mdi.On("GetTokenAccountPools", context.Background(), "ns1", "0x1", f).Return([]*core.TokenAccountPool{}, nil, nil)
+	_, _, err := am.GetTokenAccountPools(context.Background(), "0x1", f)
 	assert.NoError(t, err)
 }
 
@@ -125,7 +125,7 @@ func TestGetTokenConnectors(t *testing.T) {
 	am, cancel := newTestAssets(t)
 	defer cancel()
 
-	connectors := am.GetTokenConnectors(context.Background(), "ns1")
+	connectors := am.GetTokenConnectors(context.Background())
 	assert.Equal(t, 1, len(connectors))
 	assert.Equal(t, "magic-tokens", connectors[0].Name)
 }

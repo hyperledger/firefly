@@ -41,7 +41,7 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	b, _ := json.Marshal(&batch)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
+	mss := &sharedstoragemocks.Plugin{}
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertDataArray", em.ctx, mock.Anything).Return(nil, nil)
 	mdi.On("InsertMessages", em.ctx, mock.Anything, mock.AnythingOfType("database.PostCompletionHook")).Return(nil, nil).Run(func(args mock.Arguments) {
@@ -51,7 +51,7 @@ func TestSharedStorageBatchDownloadedOk(t *testing.T) {
 	mdm := em.data.(*datamocks.Manager)
 	mdm.On("UpdateMessageCache", mock.Anything, mock.Anything).Return()
 
-	bid, err := em.SharedStorageBatchDownloaded(mss, batch.Namespace, "payload1", b)
+	bid, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
 	assert.NoError(t, err)
 	assert.Equal(t, batch.ID, bid)
 
@@ -74,11 +74,11 @@ func TestSharedStorageBatchDownloadedPersistFail(t *testing.T) {
 	b, _ := json.Marshal(&batch)
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
+	mss := &sharedstoragemocks.Plugin{}
 	mdi.On("UpsertBatch", em.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 	mss.On("Name").Return("utdx").Maybe()
 
-	_, err := em.SharedStorageBatchDownloaded(mss, batch.Namespace, "payload1", b)
+	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
 	assert.Regexp(t, "FF00154", err)
 
 	mdi.AssertExpectations(t)
@@ -95,10 +95,29 @@ func TestSharedStorageBatchDownloadedNSMismatch(t *testing.T) {
 	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
 	b, _ := json.Marshal(&batch)
 
-	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
+	mss := &sharedstoragemocks.Plugin{}
 	mss.On("Name").Return("utdx").Maybe()
 
-	_, err := em.SharedStorageBatchDownloaded(mss, "srong", "payload1", b)
+	em.namespace = "ns2"
+	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
+	assert.NoError(t, err)
+
+	mss.AssertExpectations(t)
+
+}
+
+func TestSharedStorageBatchDownloadedNonMultiparty(t *testing.T) {
+
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	data := &core.Data{ID: fftypes.NewUUID(), Value: fftypes.JSONAnyPtr(`"test"`)}
+	batch := sampleBatch(t, core.BatchTypeBroadcast, core.TransactionTypeBatchPin, core.DataArray{data})
+	b, _ := json.Marshal(&batch)
+
+	mss := &sharedstoragemocks.Plugin{}
+	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", b)
 	assert.NoError(t, err)
 
 	mss.AssertExpectations(t)
@@ -110,10 +129,10 @@ func TestSharedStorageBatchDownloadedBadData(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
+	mss := &sharedstoragemocks.Plugin{}
 	mss.On("Name").Return("utdx").Maybe()
 
-	_, err := em.SharedStorageBatchDownloaded(mss, "srong", "payload1", []byte("!json"))
+	_, err := em.SharedStorageBatchDownloaded(mss, "payload1", []byte("!json"))
 	assert.NoError(t, err)
 
 	mss.AssertExpectations(t)
@@ -126,7 +145,7 @@ func TestSharedStorageBlobDownloadedOk(t *testing.T) {
 	defer cancel()
 
 	mdi := em.database.(*databasemocks.Plugin)
-	mss := em.sharedstorage.(*sharedstoragemocks.Plugin)
+	mss := &sharedstoragemocks.Plugin{}
 	mss.On("Name").Return("utsd")
 	mdi.On("GetBlobs", em.ctx, mock.Anything).Return([]*core.Blob{}, nil, nil)
 	mdi.On("InsertBlobs", em.ctx, mock.Anything).Return(nil, nil)

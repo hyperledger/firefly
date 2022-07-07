@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
 	"github.com/hyperledger/firefly/mocks/shareddownloadmocks"
@@ -108,9 +107,9 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	batchPin.BatchHash = batch.Hash
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(false, fmt.Errorf("pop")).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -135,11 +134,10 @@ func TestBatchPinCompleteOkBroadcast(t *testing.T) {
 	})).Return(nil).Times(1)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
-	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
-	mbi := &blockchainmocks.Plugin{}
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
+	msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(nil)
 
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -180,9 +178,9 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 	batchPin.BatchHash = batch.Hash
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(false, fmt.Errorf("pop")).Once()
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").
 		Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
@@ -206,10 +204,9 @@ func TestBatchPinCompleteOkBroadcastExistingBatch(t *testing.T) {
 		return e.Type == core.EventTypeBlockchainEventReceived
 	})).Return(nil).Times(1)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil).Once()
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(batchPersisted, nil)
-	mbi := &blockchainmocks.Plugin{}
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(batchPersisted, nil)
 
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -235,7 +232,7 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
@@ -244,11 +241,9 @@ func TestBatchPinCompleteOkPrivate(t *testing.T) {
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -280,7 +275,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
@@ -290,9 +285,7 @@ func TestBatchPinCompleteInsertPinsFail(t *testing.T) {
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -318,7 +311,7 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("RunAsGroup", mock.Anything, mock.Anything).Return(nil)
@@ -326,11 +319,9 @@ func TestBatchPinCompleteGetBatchByIDFails(t *testing.T) {
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, fmt.Errorf("batch lookup failed"))
 
-	mbi := &blockchainmocks.Plugin{}
-
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -356,21 +347,20 @@ func TestSequencedBroadcastInitiateDownloadFail(t *testing.T) {
 	}
 
 	cancel() // to avoid retry
-	mbi := &blockchainmocks.Plugin{}
 
 	mth := em.txHelper.(*txcommonmocks.Helper)
-	mth.On("PersistTransaction", mock.Anything, "ns1", batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
+	mth.On("PersistTransaction", mock.Anything, batchPin.TransactionID, core.TransactionTypeBatchPin, "0x12345").Return(true, nil)
 
 	mdi := em.database.(*databasemocks.Plugin)
 	mdi.On("GetBlockchainEventByProtocolID", mock.Anything, "ns1", (*fftypes.UUID)(nil), batchPin.Event.ProtocolID).Return(nil, nil)
 	mth.On("InsertBlockchainEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertEvent", mock.Anything, mock.Anything).Return(nil)
 	mdi.On("InsertPins", mock.Anything, mock.Anything).Return(nil)
-	mdi.On("GetBatchByID", mock.Anything, mock.Anything).Return(nil, nil)
+	mdi.On("GetBatchByID", mock.Anything, "ns1", mock.Anything).Return(nil, nil)
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	msd.On("InitiateDownloadBatch", mock.Anything, "ns1", batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
+	msd.On("InitiateDownloadBatch", mock.Anything, batchPin.TransactionID, batchPin.BatchPayloadRef).Return(fmt.Errorf("pop"))
 
-	err := em.BatchPinComplete(mbi, batchPin, &core.VerifierRef{
+	err := em.BatchPinComplete(batchPin, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0xffffeeee",
 	})
@@ -385,9 +375,8 @@ func TestBatchPinCompleteNoTX(t *testing.T) {
 	defer cancel()
 
 	batch := &blockchain.BatchPin{}
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &core.VerifierRef{
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -405,9 +394,8 @@ func TestBatchPinCompleteBadNamespace(t *testing.T) {
 			BlockchainTXID: "0x12345",
 		},
 	}
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &core.VerifierRef{
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -425,9 +413,28 @@ func TestBatchPinCompleteWrongNamespace(t *testing.T) {
 			BlockchainTXID: "0x12345",
 		},
 	}
-	mbi := &blockchainmocks.Plugin{}
 
-	err := em.BatchPinComplete(mbi, batch, &core.VerifierRef{
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x12345",
+	})
+	assert.NoError(t, err)
+}
+
+func TestBatchPinCompleteNonMultiparty(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	batch := &blockchain.BatchPin{
+		Namespace:     "ns1",
+		TransactionID: fftypes.NewUUID(),
+		Event: blockchain.Event{
+			BlockchainTXID: "0x12345",
+		},
+	}
+
+	err := em.BatchPinComplete(batch, &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x12345",
 	})
@@ -766,7 +773,7 @@ func TestPersistBatchDataWithPublicInitiateDownload(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
+	msd.On("InitiateDownloadBlob", mock.Anything, batch.Payload.TX.ID, data.ID, "ref1").Return(nil)
 
 	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Nil(t, err)
@@ -793,7 +800,7 @@ func TestPersistBatchDataWithPublicInitiateDownloadFail(t *testing.T) {
 	mdi.On("GetBlobMatchingHash", mock.Anything, blob.Hash).Return(nil, nil)
 
 	msd := em.sharedDownload.(*shareddownloadmocks.Manager)
-	msd.On("InitiateDownloadBlob", mock.Anything, batch.Namespace, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
+	msd.On("InitiateDownloadBlob", mock.Anything, batch.Payload.TX.ID, data.ID, "ref1").Return(fmt.Errorf("pop"))
 
 	valid, err := em.checkAndInitiateBlobDownloads(context.Background(), batch, 0, data)
 	assert.Regexp(t, "pop", err)

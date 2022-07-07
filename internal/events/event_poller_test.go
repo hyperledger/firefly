@@ -49,7 +49,7 @@ func newTestEventPoller(t *testing.T, mdi *databasemocks.Plugin, neh newEventsHa
 		offsetName:       "test",
 		queryFactory:     database.EventQueryFactory,
 		getItems: func(c context.Context, f database.Filter, o int64) ([]core.LocallySequenced, error) {
-			events, _, err := mdi.GetEvents(c, f)
+			events, _, err := mdi.GetEvents(c, "unit", f)
 			ls := make([]core.LocallySequenced, len(events))
 			for i, e := range events {
 				ls[i] = e
@@ -85,7 +85,7 @@ func TestRestoreOffsetNewestOK(t *testing.T) {
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, nil).Once()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(&core.Offset{Current: 12345}, nil, nil).Once()
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{{Sequence: 12345}}, nil, nil)
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{{Sequence: 12345}}, nil, nil)
 	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *core.Offset) bool {
 		return offset.Current == 12345
 	}), false).Return(nil)
@@ -101,7 +101,7 @@ func TestRestoreOffsetNewestNoEvents(t *testing.T) {
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, nil).Once()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(&core.Offset{Current: -1}, nil).Once()
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{}, nil, nil)
 	mdi.On("UpsertOffset", mock.Anything, mock.MatchedBy(func(offset *core.Offset) bool {
 		return offset.Current == -1
 	}), false).Return(nil)
@@ -116,7 +116,7 @@ func TestRestoreOffsetNewestFail(t *testing.T) {
 	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
 	defer cancel()
 	mdi.On("GetOffset", mock.Anything, core.OffsetTypeSubscription, "test").Return(nil, nil)
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	err := ep.restoreOffset()
 	assert.EqualError(t, err, "pop")
 	assert.Equal(t, int64(0), ep.pollingOffset)
@@ -195,7 +195,7 @@ func TestReadPageExit(t *testing.T) {
 	mdi := &databasemocks.Plugin{}
 	ep, cancel := newTestEventPoller(t, mdi, nil, nil)
 	cancel()
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
 	ep.eventLoop()
 	mdi.AssertExpectations(t)
 }
@@ -209,8 +209,8 @@ func TestReadPageSingleCommitEvent(t *testing.T) {
 	}, nil)
 	cancel()
 	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{ev1}, nil, nil).Once()
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{ev1}, nil, nil).Once()
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{}, nil, nil)
 	ep.eventLoop()
 
 	event := <-processEventCalled
@@ -230,7 +230,7 @@ func TestReadPageRewind(t *testing.T) {
 	ep.pollingOffset = 23456
 	cancel()
 	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
-	mdi.On("GetEvents", mock.Anything, mock.MatchedBy(func(filter database.Filter) bool {
+	mdi.On("GetEvents", mock.Anything, "unit", mock.MatchedBy(func(filter database.Filter) bool {
 		f, err := filter.Finalize()
 		assert.NoError(t, err)
 		assert.Equal(t, "sequence", f.Children[0].Field)
@@ -238,7 +238,7 @@ func TestReadPageRewind(t *testing.T) {
 		assert.Equal(t, int64(12345), v)
 		return true
 	})).Return([]*core.Event{ev1}, nil, nil).Once()
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{}, nil, nil)
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{}, nil, nil)
 	ep.eventLoop()
 
 	event := <-processEventCalled
@@ -251,7 +251,7 @@ func TestReadPageProcessEventsRetryExit(t *testing.T) {
 	ep, cancel := newTestEventPoller(t, mdi, func(events []core.LocallySequenced) (bool, error) { return false, fmt.Errorf("pop") }, nil)
 	cancel()
 	ev1 := core.NewEvent(core.EventTypeMessageConfirmed, "ns1", fftypes.NewUUID(), nil, "")
-	mdi.On("GetEvents", mock.Anything, mock.Anything).Return([]*core.Event{ev1}, nil, nil).Once()
+	mdi.On("GetEvents", mock.Anything, "unit", mock.Anything).Return([]*core.Event{ev1}, nil, nil).Once()
 	ep.eventLoop()
 
 	mdi.AssertExpectations(t)

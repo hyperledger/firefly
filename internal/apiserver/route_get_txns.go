@@ -38,7 +38,7 @@ var getTxns = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.TransactionQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetTransactions(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetTransactions(cr.ctx, cr.filter))
 		},
 	},
 }

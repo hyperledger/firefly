@@ -21,6 +21,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
 	"github.com/hyperledger/firefly/internal/coremsgs"
+	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/pkg/core"
 )
 
@@ -35,8 +36,11 @@ var postNewMessageRequestReply = &ffapi.Route{
 	JSONOutputValue: func() interface{} { return &core.MessageInOut{} },
 	JSONOutputCodes: []int{http.StatusOK}, // Sync operation
 	Extensions: &coreExtensions{
+		EnabledIf: func(or orchestrator.Orchestrator) bool {
+			return or.PrivateMessaging() != nil
+		},
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.RequestReply(cr.ctx, extractNamespace(r.PP), r.Input.(*core.MessageInOut))
+			output, err = cr.or.RequestReply(cr.ctx, r.Input.(*core.MessageInOut))
 			return output, err
 		},
 	},

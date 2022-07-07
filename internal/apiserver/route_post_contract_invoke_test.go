@@ -39,7 +39,7 @@ func TestPostContractInvoke(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("InvokeContract", mock.Anything, "ns1", mock.MatchedBy(func(req *core.ContractCallRequest) bool {
+	mcm.On("InvokeContract", mock.Anything, mock.MatchedBy(func(req *core.ContractCallRequest) bool {
 		return req.Type == core.CallTypeInvoke
 	}), false).Return("banana", nil)
 	r.ServeHTTP(res, req)

@@ -46,13 +46,7 @@ func buildBlockchainEvent(ns string, subID *fftypes.UUID, event *blockchain.Even
 
 func (em *eventManager) getChainListenerByProtocolIDCached(ctx context.Context, protocolID string) (*core.ContractListener, error) {
 	return em.getChainListenerCached(fmt.Sprintf("pid:%s", protocolID), func() (*core.ContractListener, error) {
-		return em.database.GetContractListenerByBackendID(ctx, protocolID)
-	})
-}
-
-func (em *eventManager) getChainListenerByIDCached(ctx context.Context, id *fftypes.UUID) (*core.ContractListener, error) {
-	return em.getChainListenerCached(fmt.Sprintf("id:%s", id), func() (*core.ContractListener, error) {
-		return em.database.GetContractListenerByID(ctx, id)
+		return em.database.GetContractListenerByBackendID(ctx, em.namespace, protocolID)
 	})
 }
 
@@ -70,24 +64,20 @@ func (em *eventManager) getChainListenerCached(cacheKey string, getter func() (*
 	return listener, err
 }
 
-func (em *eventManager) getTopicForChainListener(ctx context.Context, listenerID *fftypes.UUID) (string, error) {
-	if listenerID == nil {
-		return core.SystemBatchPinTopic, nil
-	}
-	listener, err := em.getChainListenerByIDCached(ctx, listenerID)
-	if err != nil {
-		return "", err
+func (em *eventManager) getTopicForChainListener(listener *core.ContractListener) string {
+	if listener == nil {
+		return core.SystemBatchPinTopic
 	}
 	var topic string
 	if listener != nil && listener.Topic != "" {
 		topic = listener.Topic
 	} else {
-		topic = listenerID.String()
+		topic = listener.ID.String()
 	}
-	return topic, nil
+	return topic
 }
 
-func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent) error {
+func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEvent *core.BlockchainEvent, listener *core.ContractListener) error {
 	if existing, err := em.database.GetBlockchainEventByProtocolID(ctx, chainEvent.Namespace, chainEvent.Listener, chainEvent.ProtocolID); err != nil {
 		return err
 	} else if existing != nil {
@@ -99,10 +89,7 @@ func (em *eventManager) maybePersistBlockchainEvent(ctx context.Context, chainEv
 	if err := em.txHelper.InsertBlockchainEvent(ctx, chainEvent); err != nil {
 		return err
 	}
-	topic, err := em.getTopicForChainListener(ctx, chainEvent.Listener)
-	if err != nil {
-		return err
-	}
+	topic := em.getTopicForChainListener(listener)
 	ffEvent := core.NewEvent(core.EventTypeBlockchainEventReceived, chainEvent.Namespace, chainEvent.ID, chainEvent.TX.ID, topic)
 	if err := em.database.InsertEvent(ctx, ffEvent); err != nil {
 		return err
@@ -119,23 +106,23 @@ func (em *eventManager) emitBlockchainEventMetric(event *blockchain.Event) {
 func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	return em.retry.Do(em.ctx, "persist blockchain event", func(attempt int) (bool, error) {
 		err := em.database.RunAsGroup(em.ctx, func(ctx context.Context) error {
-			sub, err := em.getChainListenerByProtocolIDCached(ctx, event.Subscription)
+			listener, err := em.getChainListenerByProtocolIDCached(ctx, event.Subscription)
 			if err != nil {
 				return err
 			}
-			if sub == nil {
+			if listener == nil {
 				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
 				return nil // no retry
 			}
-			if sub.Namespace != em.namespace {
-				log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", sub.Namespace)
+			if listener.Namespace != em.namespace {
+				log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
 				return nil
 			}
 
-			chainEvent := buildBlockchainEvent(sub.Namespace, sub.ID, &event.Event, &core.BlockchainTransactionRef{
+			chainEvent := buildBlockchainEvent(listener.Namespace, listener.ID, &event.Event, &core.BlockchainTransactionRef{
 				BlockchainID: event.BlockchainTXID,
 			})
-			if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+			if err := em.maybePersistBlockchainEvent(ctx, chainEvent, listener); err != nil {
 				return err
 			}
 			em.emitBlockchainEventMetric(&event.Event)

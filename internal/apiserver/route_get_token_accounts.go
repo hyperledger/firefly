@@ -38,7 +38,7 @@ var getTokenAccounts = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.TokenAccountQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Assets().GetTokenAccounts(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.Assets().GetTokenAccounts(cr.ctx, cr.filter))
 		},
 	},
 }

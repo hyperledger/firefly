@@ -39,7 +39,7 @@ func TestPostTokenTransfer(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mam.On("TransferTokens", mock.Anything, "ns1", mock.AnythingOfType("*core.TokenTransferInput"), false).
+	mam.On("TransferTokens", mock.Anything, mock.AnythingOfType("*core.TokenTransferInput"), false).
 		Return(&core.TokenTransfer{}, nil)
 	r.ServeHTTP(res, req)
 

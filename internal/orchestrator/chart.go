@@ -39,7 +39,7 @@ func (or *orchestrator) getHistogramIntervals(startTime int64, endTime int64, nu
 	return intervals
 }
 
-func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*core.ChartHistogram, error) {
+func (or *orchestrator) GetChartHistogram(ctx context.Context, startTime int64, endTime int64, buckets int64, collection database.CollectionName) ([]*core.ChartHistogram, error) {
 	if buckets > core.ChartHistogramMaxBuckets || buckets < core.ChartHistogramMinBuckets {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInvalidNumberOfIntervals, core.ChartHistogramMinBuckets, core.ChartHistogramMaxBuckets)
 	}
@@ -49,7 +49,7 @@ func (or *orchestrator) GetChartHistogram(ctx context.Context, ns string, startT
 
 	intervals := or.getHistogramIntervals(startTime, endTime, buckets)
 
-	histogram, err := or.database().GetChartHistogram(ctx, ns, intervals, collection)
+	histogram, err := or.database().GetChartHistogram(ctx, or.namespace, intervals, collection)
 	if err != nil {
 		return nil, err
 	}

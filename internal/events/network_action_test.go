@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
-	"github.com/hyperledger/firefly/mocks/blockchainmocks"
 	"github.com/hyperledger/firefly/mocks/databasemocks"
 	"github.com/hyperledger/firefly/mocks/identitymanagermocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/mocks/txcommonmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
@@ -35,18 +35,19 @@ func TestNetworkAction(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	event := &blockchain.Event{ProtocolID: "0001"}
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
 	}
 
-	mbi := &blockchainmocks.Plugin{}
+	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 	mth := em.txHelper.(*txcommonmocks.Helper)
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{}, nil)
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 	mdi.On("GetBlockchainEventByProtocolID", em.ctx, "ff_system", (*fftypes.UUID)(nil), "0001").Return(nil, nil)
 	mth.On("InsertBlockchainEvent", em.ctx, mock.MatchedBy(func(be *core.BlockchainEvent) bool {
 		return be.ProtocolID == "0001"
@@ -54,12 +55,11 @@ func TestNetworkAction(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainNetworkAction(mbi, "terminate", event, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, event, verifier)
 	assert.NoError(t, err)
 
-	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mth.AssertExpectations(t)
 	mii.AssertExpectations(t)
@@ -69,21 +69,20 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
 	}
 
-	mbi := &blockchainmocks.Plugin{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(nil, fmt.Errorf("pop")).Once()
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(nil, nil).Once()
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
 
-	err := em.BlockchainNetworkAction(mbi, "terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
-	mbi.AssertExpectations(t)
 	mii.AssertExpectations(t)
 }
 
@@ -91,45 +90,58 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
 	}
 
-	mbi := &blockchainmocks.Plugin{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{
 		IdentityBase: core.IdentityBase{
 			Parent: fftypes.NewUUID(),
 		},
 	}, nil)
 
-	err := em.BlockchainNetworkAction(mbi, "terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
-	mbi.AssertExpectations(t)
 	mii.AssertExpectations(t)
+}
+
+func TestNetworkActionNonMultiparty(t *testing.T) {
+	em, cancel := newTestEventManager(t)
+	defer cancel()
+	em.multiparty = nil
+
+	location := fftypes.JSONAnyPtr("{}")
+	verifier := &core.VerifierRef{
+		Type:  core.VerifierTypeEthAddress,
+		Value: "0x1234",
+	}
+
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
+	assert.NoError(t, err)
 }
 
 func TestNetworkActionUnknown(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
 	}
 
-	mbi := &blockchainmocks.Plugin{}
 	mii := em.identity.(*identitymanagermocks.Manager)
 
-	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, "ff_system", verifier).Return(&core.Identity{}, nil)
+	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 
-	err := em.BlockchainNetworkAction(mbi, "bad", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("bad", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
-	mbi.AssertExpectations(t)
 	mii.AssertExpectations(t)
 }
 
@@ -137,15 +149,15 @@ func TestActionTerminateQueryFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mbi := &blockchainmocks.Plugin{}
+	location := fftypes.JSONAnyPtr("{}")
+
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
 
-	err := em.actionTerminate(mbi, &blockchain.Event{})
+	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
-	mbi.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -153,16 +165,18 @@ func TestActionTerminateFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mbi := &blockchainmocks.Plugin{}
+	location := fftypes.JSONAnyPtr("{}")
+
+	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
-	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
-	err := em.actionTerminate(mbi, &blockchain.Event{})
+	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
-	mbi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -170,16 +184,18 @@ func TestActionTerminateUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mbi := &blockchainmocks.Plugin{}
+	location := fftypes.JSONAnyPtr("{}")
+
+	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
-	mbi.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.actionTerminate(mbi, &blockchain.Event{})
+	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
-	mbi.AssertExpectations(t)
+	mmp.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }

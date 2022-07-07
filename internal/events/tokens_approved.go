@@ -43,7 +43,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 		fb.Eq("tx", tx),
 		fb.Eq("type", core.OpTypeTokenApproval),
 	)
-	operations, _, err := em.database.GetOperations(ctx, filter)
+	operations, _, err := em.database.GetOperations(ctx, em.namespace, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 			log.L(ctx).Warnf("Failed to read operation inputs for token approval '%s': %s", approval.Subject, err)
 		} else if input != nil && input.Connector == approval.Connector && input.Pool.Equals(approval.Pool) {
 			// Check if the LocalID has already been used
-			if existing, err := em.database.GetTokenApprovalByID(ctx, input.LocalID); err != nil {
+			if existing, err := em.database.GetTokenApprovalByID(ctx, em.namespace, input.LocalID); err != nil {
 				return nil, err
 			} else if existing == nil {
 				// Everything matches - use the LocalID that was assigned up-front when the operation was submitted
@@ -70,7 +70,7 @@ func (em *eventManager) loadApprovalID(ctx context.Context, tx *fftypes.UUID, ap
 func (em *eventManager) persistTokenApproval(ctx context.Context, approval *tokens.TokenApproval) (valid bool, err error) {
 	// Check that this is from a known pool
 	// TODO: should cache this lookup for efficiency
-	pool, err := em.database.GetTokenPoolByLocator(ctx, approval.Connector, approval.PoolLocator)
+	pool, err := em.database.GetTokenPoolByLocator(ctx, em.namespace, approval.Connector, approval.PoolLocator)
 	if err != nil {
 		return false, err
 	}
@@ -86,7 +86,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 	approval.Pool = pool.ID
 
 	// Check that approval has not already been recorded
-	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, approval.Connector, approval.ProtocolID); err != nil {
+	if existing, err := em.database.GetTokenApprovalByProtocolID(ctx, em.namespace, approval.Connector, approval.ProtocolID); err != nil {
 		return false, err
 	} else if existing != nil {
 		log.L(ctx).Warnf("Token approval '%s' has already been recorded - ignoring", approval.ProtocolID)
@@ -99,7 +99,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		if approval.LocalID, err = em.loadApprovalID(ctx, approval.TX.ID, &approval.TokenApproval); err != nil {
 			return false, err
 		}
-		if valid, err := em.txHelper.PersistTransaction(ctx, approval.Namespace, approval.TX.ID, approval.TX.Type, approval.Event.BlockchainTXID); err != nil || !valid {
+		if valid, err := em.txHelper.PersistTransaction(ctx, approval.TX.ID, approval.TX.Type, approval.Event.BlockchainTXID); err != nil || !valid {
 			return valid, err
 		}
 	}
@@ -109,7 +109,7 @@ func (em *eventManager) persistTokenApproval(ctx context.Context, approval *toke
 		Type:         approval.TX.Type,
 		BlockchainID: approval.Event.BlockchainTXID,
 	})
-	if err := em.maybePersistBlockchainEvent(ctx, chainEvent); err != nil {
+	if err := em.maybePersistBlockchainEvent(ctx, chainEvent, nil); err != nil {
 		return false, err
 	}
 	em.emitBlockchainEventMetric(&approval.Event)

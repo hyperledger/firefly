@@ -28,14 +28,13 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (am *assetManager) GetTokenApprovals(ctx context.Context, ns string, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error) {
-	return am.database.GetTokenApprovals(ctx, am.scopeNS(ns, filter))
+func (am *assetManager) GetTokenApprovals(ctx context.Context, filter database.AndFilter) ([]*core.TokenApproval, *database.FilterResult, error) {
+	return am.database.GetTokenApprovals(ctx, am.namespace, filter)
 }
 
 type approveSender struct {
-	mgr       *assetManager
-	namespace string
-	approval  *core.TokenApprovalInput
+	mgr      *assetManager
+	approval *core.TokenApprovalInput
 }
 
 func (s *approveSender) Prepare(ctx context.Context) error {
@@ -54,18 +53,17 @@ func (s *approveSender) setDefaults() {
 	s.approval.LocalID = fftypes.NewUUID()
 }
 
-func (am *assetManager) NewApproval(ns string, approval *core.TokenApprovalInput) sysmessaging.MessageSender {
+func (am *assetManager) NewApproval(approval *core.TokenApprovalInput) sysmessaging.MessageSender {
 	sender := &approveSender{
-		mgr:       am,
-		namespace: ns,
-		approval:  approval,
+		mgr:      am,
+		approval: approval,
 	}
 	sender.setDefaults()
 	return sender
 }
 
-func (am *assetManager) TokenApproval(ctx context.Context, ns string, approval *core.TokenApprovalInput, waitConfirm bool) (out *core.TokenApproval, err error) {
-	sender := am.NewApproval(ns, approval)
+func (am *assetManager) TokenApproval(ctx context.Context, approval *core.TokenApprovalInput, waitConfirm bool) (out *core.TokenApproval, err error) {
+	sender := am.NewApproval(approval)
 	if waitConfirm {
 		err = sender.SendAndWait(ctx)
 	} else {
@@ -76,7 +74,7 @@ func (am *assetManager) TokenApproval(ctx context.Context, ns string, approval *
 
 func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (err error) {
 	if method == methodSendAndWait {
-		out, err := s.mgr.syncasync.WaitForTokenApproval(ctx, s.namespace, s.approval.LocalID, s.Send)
+		out, err := s.mgr.syncasync.WaitForTokenApproval(ctx, s.approval.LocalID, s.Send)
 		if out != nil {
 			s.approval.TokenApproval = *out
 		}
@@ -86,7 +84,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 	var op *core.Operation
 	var pool *core.TokenPool
 	err = s.mgr.database.RunAsGroup(ctx, func(ctx context.Context) (err error) {
-		pool, err = s.mgr.validateApproval(ctx, s.namespace, s.approval)
+		pool, err = s.mgr.validateApproval(ctx, s.approval)
 		if err != nil {
 			return err
 		}
@@ -100,7 +98,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 			return nil
 		}
 
-		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, s.namespace, core.TransactionTypeTokenApproval)
+		txid, err := s.mgr.txHelper.SubmitNewTransaction(ctx, core.TransactionTypeTokenApproval)
 		if err != nil {
 			return err
 		}
@@ -109,7 +107,7 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 
 		op = core.NewOperation(
 			plugin,
-			s.namespace,
+			s.mgr.namespace,
 			txid,
 			core.TransactionTypeTokenApproval)
 		if err = txcommon.AddTokenApprovalInputs(op, &s.approval.TokenApproval); err == nil {
@@ -127,14 +125,14 @@ func (s *approveSender) sendInternal(ctx context.Context, method sendMethod) (er
 	return err
 }
 
-func (am *assetManager) validateApproval(ctx context.Context, ns string, approval *core.TokenApprovalInput) (pool *core.TokenPool, err error) {
+func (am *assetManager) validateApproval(ctx context.Context, approval *core.TokenApprovalInput) (pool *core.TokenPool, err error) {
 	if approval.Pool == "" {
-		pool, err = am.getDefaultTokenPool(ctx, ns)
+		pool, err = am.getDefaultTokenPool(ctx)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		pool, err = am.GetTokenPoolByNameOrID(ctx, ns, approval.Pool)
+		pool, err = am.GetTokenPoolByNameOrID(ctx, approval.Pool)
 		if err != nil {
 			return nil, err
 		}
@@ -145,6 +143,6 @@ func (am *assetManager) validateApproval(ctx context.Context, ns string, approva
 	if pool.State != core.TokenPoolStateConfirmed {
 		return nil, i18n.NewError(ctx, coremsgs.MsgTokenPoolNotConfirmed)
 	}
-	approval.Key, err = am.identity.NormalizeSigningKey(ctx, ns, approval.Key, am.keyNormalization)
+	approval.Key, err = am.identity.NormalizeSigningKey(ctx, approval.Key, am.keyNormalization)
 	return pool, err
 }

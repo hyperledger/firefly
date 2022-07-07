@@ -40,7 +40,7 @@ var getTxnByID = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.TransactionQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.GetTransactionByID(cr.ctx, extractNamespace(r.PP), r.PP["txnid"])
+			output, err = cr.or.GetTransactionByID(cr.ctx, r.PP["txnid"])
 			return output, err
 		},
 	},

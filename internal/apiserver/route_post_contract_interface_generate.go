@@ -37,7 +37,7 @@ var postContractInterfaceGenerate = &ffapi.Route{
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			generationRequest := r.Input.(*fftypes.FFIGenerationRequest)
-			return cr.or.Contracts().GenerateFFI(cr.ctx, extractNamespace(r.PP), generationRequest)
+			return cr.or.Contracts().GenerateFFI(cr.ctx, generationRequest)
 		},
 	},
 }

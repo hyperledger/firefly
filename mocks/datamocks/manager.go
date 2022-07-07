@@ -22,13 +22,13 @@ type Manager struct {
 	mock.Mock
 }
 
-// CheckDatatype provides a mock function with given fields: ctx, ns, datatype
-func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *core.Datatype) error {
-	ret := _m.Called(ctx, ns, datatype)
+// CheckDatatype provides a mock function with given fields: ctx, datatype
+func (_m *Manager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
+	ret := _m.Called(ctx, datatype)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.Datatype) error); ok {
-		r0 = rf(ctx, ns, datatype)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.Datatype) error); ok {
+		r0 = rf(ctx, datatype)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -36,13 +36,13 @@ func (_m *Manager) CheckDatatype(ctx context.Context, ns string, datatype *core.
 	return r0
 }
 
-// DownloadBlob provides a mock function with given fields: ctx, ns, dataID
-func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (*core.Blob, io.ReadCloser, error) {
-	ret := _m.Called(ctx, ns, dataID)
+// DownloadBlob provides a mock function with given fields: ctx, dataID
+func (_m *Manager) DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error) {
+	ret := _m.Called(ctx, dataID)
 
 	var r0 *core.Blob
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *core.Blob); ok {
-		r0 = rf(ctx, ns, dataID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Blob); ok {
+		r0 = rf(ctx, dataID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Blob)
@@ -50,8 +50,8 @@ func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (
 	}
 
 	var r1 io.ReadCloser
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) io.ReadCloser); ok {
-		r1 = rf(ctx, ns, dataID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) io.ReadCloser); ok {
+		r1 = rf(ctx, dataID)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(io.ReadCloser)
@@ -59,8 +59,8 @@ func (_m *Manager) DownloadBlob(ctx context.Context, ns string, dataID string) (
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
-		r2 = rf(ctx, ns, dataID)
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, dataID)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -235,13 +235,13 @@ func (_m *Manager) UpdateMessageStateIfCached(ctx context.Context, id *fftypes.U
 	_m.Called(ctx, id, state, confirmed)
 }
 
-// UploadBlob provides a mock function with given fields: ctx, ns, inData, blob, autoMeta
-func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error) {
-	ret := _m.Called(ctx, ns, inData, blob, autoMeta)
+// UploadBlob provides a mock function with given fields: ctx, inData, blob, autoMeta
+func (_m *Manager) UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error) {
+	ret := _m.Called(ctx, inData, blob, autoMeta)
 
 	var r0 *core.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.DataRefOrValue, *ffapi.Multipart, bool) *core.Data); ok {
-		r0 = rf(ctx, ns, inData, blob, autoMeta)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.DataRefOrValue, *ffapi.Multipart, bool) *core.Data); ok {
+		r0 = rf(ctx, inData, blob, autoMeta)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Data)
@@ -249,8 +249,8 @@ func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataR
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.DataRefOrValue, *ffapi.Multipart, bool) error); ok {
-		r1 = rf(ctx, ns, inData, blob, autoMeta)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.DataRefOrValue, *ffapi.Multipart, bool) error); ok {
+		r1 = rf(ctx, inData, blob, autoMeta)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -258,13 +258,13 @@ func (_m *Manager) UploadBlob(ctx context.Context, ns string, inData *core.DataR
 	return r0, r1
 }
 
-// UploadJSON provides a mock function with given fields: ctx, ns, inData
-func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error) {
-	ret := _m.Called(ctx, ns, inData)
+// UploadJSON provides a mock function with given fields: ctx, inData
+func (_m *Manager) UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error) {
+	ret := _m.Called(ctx, inData)
 
 	var r0 *core.Data
-	if rf, ok := ret.Get(0).(func(context.Context, string, *core.DataRefOrValue) *core.Data); ok {
-		r0 = rf(ctx, ns, inData)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.DataRefOrValue) *core.Data); ok {
+		r0 = rf(ctx, inData)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Data)
@@ -272,8 +272,8 @@ func (_m *Manager) UploadJSON(ctx context.Context, ns string, inData *core.DataR
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *core.DataRefOrValue) error); ok {
-		r1 = rf(ctx, ns, inData)
+	if rf, ok := ret.Get(1).(func(context.Context, *core.DataRefOrValue) error); ok {
+		r1 = rf(ctx, inData)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -300,20 +300,6 @@ func (_m *Manager) ValidateAll(ctx context.Context, _a1 core.DataArray) (bool, e
 	}
 
 	return r0, r1
-}
-
-// VerifyNamespaceExists provides a mock function with given fields: ctx, ns
-func (_m *Manager) VerifyNamespaceExists(ctx context.Context, ns string) error {
-	ret := _m.Called(ctx, ns)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, ns)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // WaitStop provides a mock function with given fields:

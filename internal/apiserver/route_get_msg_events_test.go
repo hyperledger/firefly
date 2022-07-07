@@ -31,7 +31,7 @@ func TestGetMessageEvents(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetMessageEvents", mock.Anything, "mynamespace", "uuid1", mock.Anything).
+	o.On("GetMessageEvents", mock.Anything, "uuid1", mock.Anything).
 		Return([]*core.Event{}, nil, nil)
 	r.ServeHTTP(res, req)
 

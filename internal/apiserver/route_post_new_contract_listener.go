@@ -36,7 +36,7 @@ var postNewContractListener = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Contracts().AddContractListener(cr.ctx, extractNamespace(r.PP), r.Input.(*core.ContractListenerInput))
+			return cr.or.Contracts().AddContractListener(cr.ctx, r.Input.(*core.ContractListenerInput))
 		},
 	},
 }

@@ -23,6 +23,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/go-resty/resty/v2"
@@ -50,13 +51,34 @@ type FFDX struct {
 }
 
 type callbacks struct {
-	listeners []dataexchange.Callbacks
+	handlers map[string]dataexchange.Callbacks
 }
 
-func (cb *callbacks) DXEvent(event dataexchange.DXEvent) {
-	for _, cb := range cb.listeners {
-		cb.DXEvent(event)
+func (cb *callbacks) DXEvent(ctx context.Context, namespace string, event dataexchange.DXEvent) {
+	if handler, ok := cb.handlers[namespace]; ok {
+		handler.DXEvent(event)
+	} else {
+		log.L(ctx).Errorf("unknown namespace on event '%s'", event.EventID())
+		event.Ack()
 	}
+}
+
+func splitLast(s string, sep string) (string, string) {
+	split := strings.LastIndex(s, sep)
+	if split == -1 {
+		return "", s
+	}
+	return s[:split], s[split+1:]
+}
+
+func splitBlobPath(path string) (prefix, namespace, id string) {
+	path, id = splitLast(path, "/")
+	path, namespace = splitLast(path, "/")
+	return path, namespace, id
+}
+
+func joinBlobPath(namespace, id string) string {
+	return fmt.Sprintf("%s/%s", namespace, id)
 }
 
 const (
@@ -121,7 +143,7 @@ func (h *FFDX) Name() string {
 func (h *FFDX) Init(ctx context.Context, config config.Section) (err error) {
 	h.ctx = log.WithLogField(ctx, "dx", "https")
 	h.ackChannel = make(chan *ack)
-
+	h.callbacks.handlers = make(map[string]dataexchange.Callbacks)
 	h.needsInit = config.GetBool(DataExchangeInitEnabled)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
@@ -148,8 +170,8 @@ func (h *FFDX) SetNodes(nodes []fftypes.JSONObject) {
 	h.nodes = nodes
 }
 
-func (h *FFDX) RegisterListener(listener dataexchange.Callbacks) {
-	h.callbacks.listeners = append(h.callbacks.listeners, listener)
+func (h *FFDX) SetHandler(namespace string, handler dataexchange.Callbacks) {
+	h.callbacks.handlers[namespace] = handler
 }
 
 func (h *FFDX) Start() error {
@@ -227,7 +249,7 @@ func (h *FFDX) AddPeer(ctx context.Context, peer fftypes.JSONObject) (err error)
 }
 
 func (h *FFDX) UploadBlob(ctx context.Context, ns string, id fftypes.UUID, content io.Reader) (payloadRef string, hash *fftypes.Bytes32, size int64, err error) {
-	payloadRef = fmt.Sprintf("%s/%s", ns, &id)
+	payloadRef = joinBlobPath(ns, id.String())
 	var upload uploadBlob
 	res, err := h.client.R().SetContext(ctx).
 		SetFileReader("file", id.String(), content).

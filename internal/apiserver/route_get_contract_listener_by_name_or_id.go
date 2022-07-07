@@ -38,7 +38,7 @@ var getContractListenerByNameOrID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return cr.or.Contracts().GetContractListenerByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			return cr.or.Contracts().GetContractListenerByNameOrID(cr.ctx, r.PP["nameOrId"])
 		},
 	},
 }

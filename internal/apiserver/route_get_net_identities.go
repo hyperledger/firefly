@@ -42,9 +42,9 @@ var getNetworkIdentities = &ffapi.Route{
 		FilterFactory: database.IdentityQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchverifiers"], "true") {
-				return filterResult(cr.or.NetworkMap().GetIdentitiesWithVerifiers(cr.ctx, extractNamespace(r.PP), cr.filter))
+				return filterResult(cr.or.NetworkMap().GetIdentitiesWithVerifiers(cr.ctx, cr.filter))
 			}
-			return filterResult(cr.or.NetworkMap().GetIdentities(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.NetworkMap().GetIdentities(cr.ctx, cr.filter))
 		},
 	},
 }

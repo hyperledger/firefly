@@ -43,23 +43,24 @@ func TestBoundCallbacks(t *testing.T) {
 	mti := &tokenmocks.Plugin{}
 	mss := &sharedstoragemocks.Plugin{}
 	mom := &operationmocks.Manager{}
-	bc := boundCallbacks{bi: mbi, dx: mdx, ei: mei, ss: mss, om: mom}
+	bc := boundCallbacks{dx: mdx, ei: mei, ss: mss, om: mom}
 
 	info := fftypes.JSONObject{"hello": "world"}
 	batch := &blockchain.BatchPin{TransactionID: fftypes.NewUUID()}
 	pool := &tokens.TokenPool{}
 	transfer := &tokens.TokenTransfer{}
 	approval := &tokens.TokenApproval{}
+	location := fftypes.JSONAnyPtr("{}")
 	event := &blockchain.Event{}
 	hash := fftypes.NewRandB32()
 	opID := fftypes.NewUUID()
 
-	mei.On("BatchPinComplete", mbi, batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	mei.On("BatchPinComplete", batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
 	err := bc.BatchPinComplete(batch, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("BlockchainNetworkAction", mbi, "terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
-	err = bc.BlockchainNetworkAction("terminate", event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
+	mei.On("BlockchainNetworkAction", "terminate", location, event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress}).Return(fmt.Errorf("pop"))
+	err = bc.BlockchainNetworkAction("terminate", location, event, &core.VerifierRef{Value: "0x12345", Type: core.VerifierTypeEthAddress})
 	assert.EqualError(t, err, "pop")
 
 	nsOpID := "ns1:" + opID.String()
@@ -101,8 +102,8 @@ func TestBoundCallbacks(t *testing.T) {
 	err = bc.BlockchainEvent(&blockchain.EventWithSubscription{})
 	assert.EqualError(t, err, "pop")
 
-	mei.On("SharedStorageBatchDownloaded", mss, "ns1", "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
-	_, err = bc.SharedStorageBatchDownloaded("ns1", "payload1", []byte(`{}`))
+	mei.On("SharedStorageBatchDownloaded", mss, "payload1", []byte(`{}`)).Return(nil, fmt.Errorf("pop"))
+	_, err = bc.SharedStorageBatchDownloaded("payload1", []byte(`{}`))
 	assert.EqualError(t, err, "pop")
 
 	mei.On("SharedStorageBlobDownloaded", mss, *hash, int64(12345), "payload1").Return()

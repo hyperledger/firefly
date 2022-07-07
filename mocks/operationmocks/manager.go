@@ -62,13 +62,13 @@ func (_m *Manager) RegisterHandler(ctx context.Context, handler operations.Opera
 	_m.Called(ctx, handler, ops)
 }
 
-// ResolveOperationByID provides a mock function with given fields: ctx, ns, opID, op
-func (_m *Manager) ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
-	ret := _m.Called(ctx, ns, opID, op)
+// ResolveOperationByID provides a mock function with given fields: ctx, opID, op
+func (_m *Manager) ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
+	ret := _m.Called(ctx, opID, op)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID, *core.OperationUpdateDTO) error); ok {
-		r0 = rf(ctx, ns, opID, op)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID, *core.OperationUpdateDTO) error); ok {
+		r0 = rf(ctx, opID, op)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -76,13 +76,13 @@ func (_m *Manager) ResolveOperationByID(ctx context.Context, ns string, opID *ff
 	return r0
 }
 
-// RetryOperation provides a mock function with given fields: ctx, ns, opID
-func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*core.Operation, error) {
-	ret := _m.Called(ctx, ns, opID)
+// RetryOperation provides a mock function with given fields: ctx, opID
+func (_m *Manager) RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error) {
+	ret := _m.Called(ctx, opID)
 
 	var r0 *core.Operation
-	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.UUID) *core.Operation); ok {
-		r0 = rf(ctx, ns, opID)
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Operation); ok {
+		r0 = rf(ctx, opID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Operation)
@@ -90,8 +90,8 @@ func (_m *Manager) RetryOperation(ctx context.Context, ns string, opID *fftypes.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, ns, opID)
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
+		r1 = rf(ctx, opID)
 	} else {
 		r1 = ret.Error(1)
 	}

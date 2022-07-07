@@ -25,27 +25,28 @@ import (
 )
 
 // RegisterNodeOrganization is a convenience helper to register the org configured on the node, without any extra info
-func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, ns string, waitConfirm bool) (*core.Identity, error) {
+func (nm *networkMap) RegisterNodeOrganization(ctx context.Context, waitConfirm bool) (*core.Identity, error) {
 
-	key, err := nm.identity.GetMultipartyRootVerifier(ctx, ns)
+	key, err := nm.identity.GetMultipartyRootVerifier(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if nm.orgName == "" {
+	orgName := nm.multiparty.RootOrg().Name
+	if orgName == "" {
 		return nil, i18n.NewError(ctx, coremsgs.MsgNodeAndOrgIDMustBeSet)
 	}
 	orgRequest := &core.IdentityCreateDTO{
-		Name: nm.orgName,
+		Name: orgName,
 		IdentityProfile: core.IdentityProfile{
-			Description: nm.orgDesc,
+			Description: nm.multiparty.RootOrg().Description,
 		},
 		Key: key.Value,
 	}
-	return nm.RegisterOrganization(ctx, ns, orgRequest, waitConfirm)
+	return nm.RegisterOrganization(ctx, orgRequest, waitConfirm)
 }
 
-func (nm *networkMap) RegisterOrganization(ctx context.Context, ns string, orgRequest *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
+func (nm *networkMap) RegisterOrganization(ctx context.Context, orgRequest *core.IdentityCreateDTO, waitConfirm bool) (*core.Identity, error) {
 	orgRequest.Type = core.IdentityTypeOrg
-	return nm.RegisterIdentity(ctx, ns, orgRequest, waitConfirm)
+	return nm.RegisterIdentity(ctx, orgRequest, waitConfirm)
 }

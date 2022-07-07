@@ -22,6 +22,20 @@ func (_m *DXEvent) AckWithManifest(manifest string) {
 	_m.Called(manifest)
 }
 
+// EventID provides a mock function with given fields:
+func (_m *DXEvent) EventID() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // MessageReceived provides a mock function with given fields:
 func (_m *DXEvent) MessageReceived() *dataexchange.MessageReceived {
 	ret := _m.Called()

@@ -41,7 +41,9 @@ var postNewContractInterface = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			return cr.or.Contracts().BroadcastFFI(cr.ctx, extractNamespace(r.PP), r.Input.(*fftypes.FFI), waitConfirm)
+			ffi := r.Input.(*fftypes.FFI)
+			err = cr.or.DefinitionSender().DefineFFI(cr.ctx, ffi, waitConfirm)
+			return ffi, err
 		},
 	},
 }

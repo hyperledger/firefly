@@ -36,6 +36,27 @@ func (_m *Plugin) AddContractListener(ctx context.Context, subscription *core.Co
 	return r0
 }
 
+// AddFireflySubscription provides a mock function with given fields: ctx, namespace, location, firstEvent
+func (_m *Plugin) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {
+	ret := _m.Called(ctx, namespace, location, firstEvent)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, *fftypes.JSONAny, string) string); ok {
+		r0 = rf(ctx, namespace, location, firstEvent)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *fftypes.JSONAny, string) error); ok {
+		r1 = rf(ctx, namespace, location, firstEvent)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Capabilities provides a mock function with given fields:
 func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 	ret := _m.Called()
@@ -47,20 +68,6 @@ func (_m *Plugin) Capabilities() *blockchain.Capabilities {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*blockchain.Capabilities)
 		}
-	}
-
-	return r0
-}
-
-// ConfigureContract provides a mock function with given fields: ctx, contracts
-func (_m *Plugin) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) error {
-	ret := _m.Called(ctx, contracts)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts) error); ok {
-		r0 = rf(ctx, contracts)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -117,6 +124,36 @@ func (_m *Plugin) GenerateFFI(ctx context.Context, generationRequest *fftypes.FF
 	return r0, r1
 }
 
+// GetAndConvertDeprecatedContractConfig provides a mock function with given fields: ctx
+func (_m *Plugin) GetAndConvertDeprecatedContractConfig(ctx context.Context) (*fftypes.JSONAny, string, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *fftypes.JSONAny
+	if rf, ok := ret.Get(0).(func(context.Context) *fftypes.JSONAny); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*fftypes.JSONAny)
+		}
+	}
+
+	var r1 string
+	if rf, ok := ret.Get(1).(func(context.Context) string); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
 // GetFFIParamValidator provides a mock function with given fields: ctx
 func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	ret := _m.Called(ctx)
@@ -133,6 +170,27 @@ func (_m *Plugin) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamVal
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetNetworkVersion provides a mock function with given fields: ctx, location
+func (_m *Plugin) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+	ret := _m.Called(ctx, location)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.JSONAny) int); ok {
+		r0 = rf(ctx, location)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.JSONAny) error); ok {
+		r1 = rf(ctx, location)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -182,20 +240,6 @@ func (_m *Plugin) Name() string {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(string)
-	}
-
-	return r0
-}
-
-// NetworkVersion provides a mock function with given fields:
-func (_m *Plugin) NetworkVersion() int {
-	ret := _m.Called()
-
-	var r0 int
-	if rf, ok := ret.Get(0).(func() int); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(int)
 	}
 
 	return r0
@@ -268,9 +312,23 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 	return r0, r1
 }
 
-// RegisterListener provides a mock function with given fields: listener
-func (_m *Plugin) RegisterListener(listener blockchain.Callbacks) {
-	_m.Called(listener)
+// RemoveFireflySubscription provides a mock function with given fields: ctx, subID
+func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) error {
+	ret := _m.Called(ctx, subID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, subID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SetHandler provides a mock function with given fields: namespace, handler
+func (_m *Plugin) SetHandler(namespace string, handler blockchain.Callbacks) {
+	_m.Called(namespace, handler)
 }
 
 // Start provides a mock function with given fields:
@@ -287,13 +345,13 @@ func (_m *Plugin) Start() error {
 	return r0
 }
 
-// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, signingKey, batch
-func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, batch)
+// SubmitBatchPin provides a mock function with given fields: ctx, nsOpID, signingKey, batch, location
+func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey string, batch *blockchain.BatchPin, location *fftypes.JSONAny) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, batch, location)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *blockchain.BatchPin) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, batch)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *blockchain.BatchPin, *fftypes.JSONAny) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, batch, location)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -301,27 +359,13 @@ func (_m *Plugin) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey 
 	return r0
 }
 
-// SubmitNetworkAction provides a mock function with given fields: ctx, nsOpID, signingKey, action
-func (_m *Plugin) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action fftypes.FFEnum) error {
-	ret := _m.Called(ctx, nsOpID, signingKey, action)
+// SubmitNetworkAction provides a mock function with given fields: ctx, nsOpID, signingKey, action, location
+func (_m *Plugin) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action fftypes.FFEnum, location *fftypes.JSONAny) error {
+	ret := _m.Called(ctx, nsOpID, signingKey, action, location)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.FFEnum) error); ok {
-		r0 = rf(ctx, nsOpID, signingKey, action)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TerminateContract provides a mock function with given fields: ctx, contracts, termination
-func (_m *Plugin) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) error {
-	ret := _m.Called(ctx, contracts, termination)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts, *blockchain.Event) error); ok {
-		r0 = rf(ctx, contracts, termination)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, fftypes.FFEnum, *fftypes.JSONAny) error); ok {
+		r0 = rf(ctx, nsOpID, signingKey, action, location)
 	} else {
 		r0 = ret.Error(0)
 	}

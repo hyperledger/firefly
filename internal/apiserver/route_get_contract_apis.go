@@ -38,7 +38,7 @@ var getContractAPIs = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.ContractAPIQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.Contracts().GetContractAPIs(cr.ctx, cr.apiBaseURL, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.Contracts().GetContractAPIs(cr.ctx, cr.apiBaseURL, cr.filter))
 		},
 	},
 }

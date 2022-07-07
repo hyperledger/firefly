@@ -37,7 +37,7 @@ var deleteContractListener = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusNoContent}, // Sync operation, no output
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			err = cr.or.Contracts().DeleteContractListenerByNameOrID(cr.ctx, extractNamespace(r.PP), r.PP["nameOrId"])
+			err = cr.or.Contracts().DeleteContractListenerByNameOrID(cr.ctx, r.PP["nameOrId"])
 			return nil, err
 		},
 	},

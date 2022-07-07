@@ -88,12 +88,12 @@ func (s *SQLCommon) transactionResult(ctx context.Context, row *sql.Rows) (*core
 	return &transaction, nil
 }
 
-func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (message *core.Transaction, err error) {
+func (s *SQLCommon) GetTransactionByID(ctx context.Context, namespace string, id *fftypes.UUID) (message *core.Transaction, err error) {
 
 	rows, _, err := s.query(ctx, transactionsTable,
 		sq.Select(transactionColumns...).
 			From(transactionsTable).
-			Where(sq.Eq{"id": id}),
+			Where(sq.Eq{"id": id, "namespace": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -113,9 +113,9 @@ func (s *SQLCommon) GetTransactionByID(ctx context.Context, id *fftypes.UUID) (m
 	return transaction, nil
 }
 
-func (s *SQLCommon) GetTransactions(ctx context.Context, filter database.Filter) (message []*core.Transaction, fr *database.FilterResult, err error) {
+func (s *SQLCommon) GetTransactions(ctx context.Context, namespace string, filter database.Filter) (message []*core.Transaction, fr *database.FilterResult, err error) {
 
-	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From(transactionsTable), filter, transactionFilterFieldMap, []interface{}{"sequence"})
+	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(transactionColumns...).From(transactionsTable), filter, transactionFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -38,7 +38,7 @@ var getOps = &ffapi.Route{
 	Extensions: &coreExtensions{
 		FilterFactory: database.OperationQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			return filterResult(cr.or.GetOperationsNamespaced(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetOperations(cr.ctx, cr.filter))
 		},
 	},
 }

@@ -39,7 +39,7 @@ func TestPostNewContractListener(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("AddContractListener", mock.Anything, "mynamespace", mock.AnythingOfType("*core.ContractListenerInput")).
+	mcm.On("AddContractListener", mock.Anything, mock.AnythingOfType("*core.ContractListenerInput")).
 		Return(&core.ContractListener{}, nil, nil)
 	r.ServeHTTP(res, req)
 

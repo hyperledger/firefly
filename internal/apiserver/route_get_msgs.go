@@ -42,9 +42,9 @@ var getMsgs = &ffapi.Route{
 		FilterFactory: database.MessageQueryFactory,
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchdata"], "true") {
-				return filterResult(cr.or.GetMessagesWithData(cr.ctx, extractNamespace(r.PP), cr.filter))
+				return filterResult(cr.or.GetMessagesWithData(cr.ctx, cr.filter))
 			}
-			return filterResult(cr.or.GetMessages(cr.ctx, extractNamespace(r.PP), cr.filter))
+			return filterResult(cr.or.GetMessages(cr.ctx, cr.filter))
 		},
 	},
 }

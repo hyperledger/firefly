@@ -61,7 +61,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same ContractAPI back
-	dataRead, err := s.GetContractAPIByID(ctx, apiID)
+	dataRead, err := s.GetContractAPIByID(ctx, "ns1", apiID)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataRead)
 	assert.Equal(t, *apiID, *dataRead.ID)
@@ -72,7 +72,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check we get the exact same ContractAPI back
-	dataRead, err = s.GetContractAPIByID(ctx, apiID)
+	dataRead, err = s.GetContractAPIByID(ctx, "ns1", apiID)
 	assert.NoError(t, err)
 	assert.NotNil(t, dataRead)
 	assert.Equal(t, *apiID, *dataRead.ID)
@@ -126,7 +126,7 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 func TestUpsertContractAPIIDMismatch(t *testing.T) {
 	s, db := newMockProvider().init()
 	callbacks := &databasemocks.Callbacks{}
-	s.RegisterListener(callbacks)
+	s.SetHandler("ns1", callbacks)
 	apiID := fftypes.NewUUID()
 	api := &core.ContractAPI{
 		ID:        apiID,
@@ -145,7 +145,7 @@ func TestContractAPIDBFailScan(t *testing.T) {
 	s, mock := newMockProvider().init()
 	apiID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("only one"))
-	_, err := s.GetContractAPIByID(context.Background(), apiID)
+	_, err := s.GetContractAPIByID(context.Background(), "ns1", apiID)
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -154,7 +154,7 @@ func TestContractAPIDBSelectFail(t *testing.T) {
 	s, mock := newMockProvider().init()
 	apiID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	_, err := s.GetContractAPIByID(context.Background(), apiID)
+	_, err := s.GetContractAPIByID(context.Background(), "ns1", apiID)
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -163,7 +163,7 @@ func TestContractAPIDBNoRows(t *testing.T) {
 	s, mock := newMockProvider().init()
 	apiID := fftypes.NewUUID()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "interface_id", "ledger", "location", "name", "namespace", "message_id"}))
-	_, err := s.GetContractAPIByID(context.Background(), apiID)
+	_, err := s.GetContractAPIByID(context.Background(), "ns1", apiID)
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }

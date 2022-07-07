@@ -40,7 +40,7 @@ func TestGetContractAPIInterface(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mcm.On("GetContractAPIInterface", mock.Anything, "ns1", "banana").
+	mcm.On("GetContractAPIInterface", mock.Anything, "banana").
 		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 

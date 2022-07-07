@@ -24,12 +24,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/batch"
-	"github.com/hyperledger/firefly/internal/batchpin"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/data"
 	"github.com/hyperledger/firefly/internal/identity"
 	"github.com/hyperledger/firefly/internal/metrics"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/operations"
 	"github.com/hyperledger/firefly/internal/syncasync"
 	"github.com/hyperledger/firefly/internal/sysmessaging"
@@ -45,13 +45,8 @@ const broadcastDispatcherName = "pinned_broadcast"
 type Manager interface {
 	core.Named
 
-	NewBroadcast(ns string, in *core.MessageInOut) sysmessaging.MessageSender
-	BroadcastDatatype(ctx context.Context, ns string, datatype *core.Datatype, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastMessage(ctx context.Context, ns string, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
-	BroadcastDefinitionAsNode(ctx context.Context, ns string, def core.Definition, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastDefinition(ctx context.Context, ns string, def core.Definition, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastIdentityClaim(ctx context.Context, ns string, def *core.IdentityClaim, signingIdentity *core.SignerRef, tag string, waitConfirm bool) (msg *core.Message, err error)
-	BroadcastTokenPool(ctx context.Context, ns string, pool *core.TokenPoolAnnouncement, waitConfirm bool) (msg *core.Message, err error)
+	NewBroadcast(in *core.MessageInOut) sysmessaging.MessageSender
+	BroadcastMessage(ctx context.Context, in *core.MessageInOut, waitConfirm bool) (out *core.Message, err error)
 	Start() error
 	WaitStop()
 
@@ -62,35 +57,35 @@ type Manager interface {
 
 type broadcastManager struct {
 	ctx                   context.Context
+	namespace             string
 	database              database.Plugin
 	identity              identity.Manager
 	data                  data.Manager
 	blockchain            blockchain.Plugin
 	exchange              dataexchange.Plugin
 	sharedstorage         sharedstorage.Plugin
-	batch                 batch.Manager
 	syncasync             syncasync.Bridge
-	batchpin              batchpin.Submitter
+	multiparty            multiparty.Manager
 	maxBatchPayloadLength int64
 	metrics               metrics.Manager
 	operations            operations.Manager
 }
 
-func NewBroadcastManager(ctx context.Context, di database.Plugin, im identity.Manager, dm data.Manager, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, ba batch.Manager, sa syncasync.Bridge, bp batchpin.Submitter, mm metrics.Manager, om operations.Manager) (Manager, error) {
-	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil {
+func NewBroadcastManager(ctx context.Context, ns string, di database.Plugin, bi blockchain.Plugin, dx dataexchange.Plugin, si sharedstorage.Plugin, im identity.Manager, dm data.Manager, ba batch.Manager, sa syncasync.Bridge, mult multiparty.Manager, mm metrics.Manager, om operations.Manager) (Manager, error) {
+	if di == nil || im == nil || dm == nil || bi == nil || dx == nil || si == nil || ba == nil || mm == nil || om == nil || mult == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BroadcastManager")
 	}
 	bm := &broadcastManager{
 		ctx:                   ctx,
+		namespace:             ns,
 		database:              di,
 		identity:              im,
 		data:                  dm,
 		blockchain:            bi,
 		exchange:              dx,
 		sharedstorage:         si,
-		batch:                 ba,
 		syncasync:             sa,
-		batchpin:              bp,
+		multiparty:            mult,
 		maxBatchPayloadLength: config.GetByteSize(coreconfig.BroadcastBatchPayloadLimit),
 		metrics:               mm,
 		operations:            om,
@@ -152,7 +147,7 @@ func (bm *broadcastManager) dispatchBatch(ctx context.Context, state *batch.Disp
 	}
 	payloadRef := outputs.GetString("payloadRef")
 	log.L(ctx).Infof("Pinning broadcast batch %s with author=%s key=%s payloadRef=%s", batch.ID, batch.Author, batch.Key, payloadRef)
-	return bm.batchpin.SubmitPinnedBatch(ctx, &state.Persisted, state.Pins, payloadRef)
+	return bm.multiparty.SubmitBatchPin(ctx, &state.Persisted, state.Pins, payloadRef)
 }
 
 func (bm *broadcastManager) uploadBlobs(ctx context.Context, tx *fftypes.UUID, data core.DataArray) error {

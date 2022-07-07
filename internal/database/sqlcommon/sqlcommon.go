@@ -45,35 +45,47 @@ type SQLCommon struct {
 }
 
 type callbacks struct {
-	listeners []database.Callbacks
+	handlers map[string]database.Callbacks
 }
 
 func (cb *callbacks) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID, sequence int64) {
-	for _, cb := range cb.listeners {
+	if cb, ok := cb.handlers[ns]; ok {
+		cb.OrderedUUIDCollectionNSEvent(resType, eventType, ns, id, sequence)
+	}
+	if cb, ok := cb.handlers[database.GlobalHandler]; ok {
 		cb.OrderedUUIDCollectionNSEvent(resType, eventType, ns, id, sequence)
 	}
 }
 
 func (cb *callbacks) OrderedCollectionNSEvent(resType database.OrderedCollectionNS, eventType core.ChangeEventType, ns string, sequence int64) {
-	for _, cb := range cb.listeners {
+	if cb, ok := cb.handlers[ns]; ok {
+		cb.OrderedCollectionNSEvent(resType, eventType, ns, sequence)
+	}
+	if cb, ok := cb.handlers[database.GlobalHandler]; ok {
 		cb.OrderedCollectionNSEvent(resType, eventType, ns, sequence)
 	}
 }
 
 func (cb *callbacks) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, ns string, id *fftypes.UUID) {
-	for _, cb := range cb.listeners {
+	if cb, ok := cb.handlers[ns]; ok {
+		cb.UUIDCollectionNSEvent(resType, eventType, ns, id)
+	}
+	if cb, ok := cb.handlers[database.GlobalHandler]; ok {
 		cb.UUIDCollectionNSEvent(resType, eventType, ns, id)
 	}
 }
 
 func (cb *callbacks) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	for _, cb := range cb.listeners {
+	if cb, ok := cb.handlers[database.GlobalHandler]; ok {
 		cb.UUIDCollectionEvent(resType, eventType, id)
 	}
 }
 
 func (cb *callbacks) HashCollectionNSEvent(resType database.HashCollectionNS, eventType core.ChangeEventType, ns string, hash *fftypes.Bytes32) {
-	for _, cb := range cb.listeners {
+	if cb, ok := cb.handlers[ns]; ok {
+		cb.HashCollectionNSEvent(resType, eventType, ns, hash)
+	}
+	if cb, ok := cb.handlers[database.GlobalHandler]; ok {
 		cb.HashCollectionNSEvent(resType, eventType, ns, hash)
 	}
 }
@@ -130,8 +142,11 @@ func (s *SQLCommon) Init(ctx context.Context, provider Provider, config config.S
 	return nil
 }
 
-func (s *SQLCommon) RegisterListener(listener database.Callbacks) {
-	s.callbacks.listeners = append(s.callbacks.listeners, listener)
+func (s *SQLCommon) SetHandler(namespace string, handler database.Callbacks) {
+	if s.callbacks.handlers == nil {
+		s.callbacks.handlers = make(map[string]database.Callbacks)
+	}
+	s.callbacks.handlers[namespace] = handler
 }
 
 func (s *SQLCommon) Capabilities() *database.Capabilities { return s.capabilities }

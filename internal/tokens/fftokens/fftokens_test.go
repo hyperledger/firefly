@@ -237,6 +237,8 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 		Symbol: "symbol",
 	}
 
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		httpmock.NewStringResponder(204, ""))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/createpool", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			body := make(fftypes.JSONObject)
@@ -260,7 +262,9 @@ func TestCreateTokenPoolSynchronous(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	err := h.SetHandler("ns1", mcb)
+	assert.NoError(t, err)
+
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && *p.TX.ID == *pool.TX.ID
 	})).Return(nil)
@@ -323,8 +327,9 @@ func TestActivateTokenPool(t *testing.T) {
 		"address": "0x12345",
 	}
 	pool := &core.TokenPool{
-		Locator: "N1",
-		Config:  poolConfig,
+		Namespace: "ns1",
+		Locator:   "N1",
+		Config:    poolConfig,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -333,6 +338,7 @@ func TestActivateTokenPool(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
@@ -384,16 +390,20 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		"foo": "bar",
 	}
 	pool := &core.TokenPool{
-		Locator: "N1",
-		Config:  poolConfig,
+		Namespace: "ns1",
+		Locator:   "N1",
+		Config:    poolConfig,
 	}
 
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		httpmock.NewStringResponder(204, ""))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			body := make(fftypes.JSONObject)
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
@@ -414,7 +424,7 @@ func TestActivateTokenPoolSynchronous(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler("ns1", mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil && p.Event.ProtocolID == ""
 	})).Return(nil)
@@ -434,16 +444,20 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		"foo": "bar",
 	}
 	pool := &core.TokenPool{
-		Locator: "N1",
-		Config:  poolConfig,
+		Namespace: "ns1",
+		Locator:   "N1",
+		Config:    poolConfig,
 	}
 
+	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/init", httpURL),
+		httpmock.NewStringResponder(204, ""))
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
 		func(req *http.Request) (*http.Response, error) {
 			body := make(fftypes.JSONObject)
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
@@ -460,7 +474,7 @@ func TestActivateTokenPoolSynchronousBadResponse(t *testing.T) {
 		})
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler("ns1", mcb)
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && p.TX.ID == nil
 	})).Return(nil)
@@ -480,8 +494,9 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 		"foo": "bar",
 	}
 	pool := &core.TokenPool{
-		Locator: "N1",
-		Config:  poolConfig,
+		Namespace: "ns1",
+		Locator:   "N1",
+		Config:    poolConfig,
 	}
 
 	httpmock.RegisterResponder("POST", fmt.Sprintf("%s/api/v1/activatepool", httpURL),
@@ -490,6 +505,7 @@ func TestActivateTokenPoolNoContent(t *testing.T) {
 			err := json.NewDecoder(req.Body).Decode(&body)
 			assert.NoError(t, err)
 			assert.Equal(t, fftypes.JSONObject{
+				"namespace":   "ns1",
 				"requestId":   "ns1:" + opID.String(),
 				"poolLocator": "N1",
 				"config":      poolConfig,
@@ -519,6 +535,10 @@ func TestMintTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		URI: "FLAPFLIP",
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -533,11 +553,15 @@ func TestMintTokens(t *testing.T) {
 				"to":          "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
 				}.String(),
+				"uri": "FLAPFLIP",
 			}, body)
 
 			res := &http.Response{
@@ -650,6 +674,9 @@ func TestBurnTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -665,7 +692,10 @@ func TestBurnTokens(t *testing.T) {
 				"from":        "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -715,6 +745,9 @@ func TestTransferTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -731,7 +764,10 @@ func TestTransferTokens(t *testing.T) {
 				"to":          "user2",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -794,7 +830,7 @@ func TestReceiptEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler("ns1", mcb)
 	opID := fftypes.NewUUID()
 
 	// receipt: bad ID - passed through
@@ -838,7 +874,7 @@ func TestPoolEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler("ns1", mcb)
 	txID := fftypes.NewUUID()
 
 	// token-pool: missing data
@@ -882,6 +918,7 @@ func TestPoolEvents(t *testing.T) {
 		"event": "token-pool",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"namespace":   "ns1",
 			"type":        "fungible",
 			"poolLocator": "F1",
 			"signer":      "0x0",
@@ -897,25 +934,30 @@ func TestPoolEvents(t *testing.T) {
 	msg = <-toServer
 	assert.Equal(t, `{"data":{"id":"8"},"event":"ack"}`, string(msg))
 
-	// token-pool: callback fail
+	// token-pool: batch + callback fail
 	mcb.On("TokenPoolCreated", h, mock.MatchedBy(func(p *tokens.TokenPool) bool {
 		return p.PoolLocator == "F1" && p.Type == core.TokenTypeFungible && txID.Equals(p.TX.ID) && p.Event.ProtocolID == "000000000010/000020/000030"
 	})).Return(fmt.Errorf("pop")).Once()
 	fromServer <- fftypes.JSONObject{
 		"id":    "9",
-		"event": "token-pool",
+		"event": "batch",
 		"data": fftypes.JSONObject{
-			"id":          "000000000010/000020/000030/000040",
-			"type":        "fungible",
-			"poolLocator": "F1",
-			"signer":      "0x0",
-			"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
-			"blockchain": fftypes.JSONObject{
-				"id": "000000000010/000020/000030",
-				"info": fftypes.JSONObject{
-					"transactionHash": "0xffffeeee",
+			"events": fftypes.JSONObjectArray{{
+				"event": "token-pool",
+				"data": fftypes.JSONObject{
+					"id":          "000000000010/000020/000030/000040",
+					"type":        "fungible",
+					"poolLocator": "F1",
+					"signer":      "0x0",
+					"data":        fftypes.JSONObject{"tx": txID.String()}.String(),
+					"blockchain": fftypes.JSONObject{
+						"id": "000000000010/000020/000030",
+						"info": fftypes.JSONObject{
+							"transactionHash": "0xffffeeee",
+						},
+					},
 				},
-			},
+			}},
 		},
 	}.String()
 }
@@ -928,7 +970,7 @@ func TestTransferEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler("ns1", mcb)
 	txID := fftypes.NewUUID()
 
 	// token-mint: missing data
@@ -970,6 +1012,7 @@ func TestTransferEvents(t *testing.T) {
 		"event": "token-mint",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"namespace":   "ns1",
 			"poolLocator": "F1",
 			"signer":      "0x0",
 			"to":          "0x0",
@@ -1146,7 +1189,7 @@ func TestApprovalEvents(t *testing.T) {
 	assert.NoError(t, err)
 
 	mcb := &tokenmocks.Callbacks{}
-	h.RegisterListener(mcb)
+	h.SetHandler("ns1", mcb)
 	txID := fftypes.NewUUID()
 
 	// token-approval: success
@@ -1158,6 +1201,7 @@ func TestApprovalEvents(t *testing.T) {
 		"event": "token-approval",
 		"data": fftypes.JSONObject{
 			"id":          "000000000010/000020/000030/000040",
+			"namespace":   "ns1",
 			"subject":     "a:b",
 			"poolLocator": "F1",
 			"signer":      "0x0",
@@ -1266,4 +1310,14 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	h.eventLoop() // we're simply looking for it exiting
+}
+
+func TestCallbacksWrongNamespace(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
+	h.callbacks.TokenOpUpdate(context.Background(), h, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	h.callbacks.TokenPoolCreated(context.Background(), "ns1", h, nil)
+	h.callbacks.TokensTransferred(context.Background(), "ns1", h, nil)
+	h.callbacks.TokensApproved(context.Background(), "ns1", h, nil)
 }

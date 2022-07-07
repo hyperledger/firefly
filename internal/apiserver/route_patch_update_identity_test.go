@@ -39,7 +39,7 @@ func TestUpdateIdentity(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("UpdateIdentity", mock.Anything, "ns1", "id1", mock.AnythingOfType("*core.IdentityUpdateDTO"), false).
+	mnm.On("UpdateIdentity", mock.Anything, "id1", mock.AnythingOfType("*core.IdentityUpdateDTO"), false).
 		Return(&core.Identity{}, nil)
 	r.ServeHTTP(res, req)
 

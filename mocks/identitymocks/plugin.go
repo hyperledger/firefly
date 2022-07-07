@@ -66,9 +66,9 @@ func (_m *Plugin) Name() string {
 	return r0
 }
 
-// RegisterListener provides a mock function with given fields: listener
-func (_m *Plugin) RegisterListener(listener identity.Callbacks) {
-	_m.Called(listener)
+// SetHandler provides a mock function with given fields: namespace, handler
+func (_m *Plugin) SetHandler(namespace string, handler identity.Callbacks) {
+	_m.Called(namespace, handler)
 }
 
 // Start provides a mock function with given fields:

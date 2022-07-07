@@ -26,6 +26,7 @@ import (
 
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/mocks/datamocks"
+	"github.com/hyperledger/firefly/mocks/multipartymocks"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -34,6 +35,7 @@ import (
 func TestPostDataJSON(t *testing.T) {
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 	input := core.Data{}
 	var buf bytes.Buffer
@@ -42,7 +44,7 @@ func TestPostDataJSON(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadJSON", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue")).
+	mdm.On("UploadJSON", mock.Anything, mock.AnythingOfType("*core.DataRefOrValue")).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -52,6 +54,7 @@ func TestPostDataJSON(t *testing.T) {
 func TestPostDataJSONDefaultNS(t *testing.T) {
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 	input := core.Data{}
 	var buf bytes.Buffer
@@ -60,7 +63,7 @@ func TestPostDataJSONDefaultNS(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadJSON", mock.Anything, "default", mock.AnythingOfType("*core.DataRefOrValue")).
+	mdm.On("UploadJSON", mock.Anything, mock.AnythingOfType("*core.DataRefOrValue")).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -72,6 +75,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -85,7 +89,7 @@ func TestPostDataBinary(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, mock.AnythingOfType("*core.DataRefOrValue"), mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -97,6 +101,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -125,7 +130,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.MatchedBy(func(d *core.DataRefOrValue) bool {
+	mdm.On("UploadBlob", mock.Anything, mock.MatchedBy(func(d *core.DataRefOrValue) bool {
 		assert.Equal(t, `{"filename":"anything"}`, string(*d.Value))
 		assert.Equal(t, core.ValidatorTypeJSON, d.Validator)
 		assert.Equal(t, "fileinfo", d.Datatype.Name)
@@ -143,6 +148,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -159,7 +165,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.MatchedBy(func(d *core.DataRefOrValue) bool {
+	mdm.On("UploadBlob", mock.Anything, mock.MatchedBy(func(d *core.DataRefOrValue) bool {
 		assert.Equal(t, `"string metadata"`, string(*d.Value))
 		assert.Equal(t, "", string(d.Validator))
 		assert.Nil(t, d.Datatype)
@@ -176,6 +182,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -192,7 +199,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 
 	res := httptest.NewRecorder()
 
-	mdm.On("UploadBlob", mock.Anything, "ns1", mock.Anything, mock.AnythingOfType("*ffapi.Multipart"), false).
+	mdm.On("UploadBlob", mock.Anything, mock.Anything, mock.AnythingOfType("*ffapi.Multipart"), false).
 		Return(&core.Data{}, nil)
 	r.ServeHTTP(res, req)
 
@@ -207,6 +214,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer
@@ -231,6 +239,7 @@ func TestPostDataBadForm(t *testing.T) {
 
 	o, r := newTestAPIServer()
 	mdm := &datamocks.Manager{}
+	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
 
 	var b bytes.Buffer

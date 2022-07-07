@@ -56,8 +56,8 @@ type eventDispatcher struct {
 	data          data.Manager
 	database      database.Plugin
 	transport     events.Plugin
-	broadcast     broadcast.Manager
-	messaging     privatemessaging.Manager
+	broadcast     broadcast.Manager        // optional
+	messaging     privatemessaging.Manager // optional
 	elected       bool
 	eventPoller   *eventPoller
 	inflight      map[fftypes.UUID]*core.Event
@@ -109,12 +109,10 @@ func newEventDispatcher(ctx context.Context, ei events.Plugin, di database.Plugi
 			MaximumDelay: config.GetDuration(coreconfig.EventDispatcherRetryMaxDelay),
 			Factor:       config.GetFloat64(coreconfig.EventDispatcherRetryFactor),
 		},
-		namespace:  sub.definition.Namespace,
-		offsetType: core.OffsetTypeSubscription,
-		offsetName: sub.definition.ID.String(),
-		addCriteria: func(af database.AndFilter) database.AndFilter {
-			return af.Condition(af.Builder().Eq("namespace", sub.definition.Namespace))
-		},
+		namespace:        sub.definition.Namespace,
+		offsetType:       core.OffsetTypeSubscription,
+		offsetName:       sub.definition.ID.String(),
+		addCriteria:      func(af database.AndFilter) database.AndFilter { return af },
 		queryFactory:     database.EventQueryFactory,
 		getItems:         ed.getEvents,
 		newEventsHandler: ed.bufferedDelivery,
@@ -155,7 +153,7 @@ func (ed *eventDispatcher) electAndStart() {
 
 func (ed *eventDispatcher) getEvents(ctx context.Context, filter database.Filter, offset int64) ([]core.LocallySequenced, error) {
 	log.L(ctx).Tracef("Reading page of events > %d (first events would be %d)", offset, offset+1)
-	events, _, err := ed.database.GetEvents(ctx, filter)
+	events, _, err := ed.database.GetEvents(ctx, ed.namespace, filter)
 	ls := make([]core.LocallySequenced, len(events))
 	for i, e := range events {
 		ls[i] = e

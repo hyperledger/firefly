@@ -36,7 +36,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
+func NewBatchManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, di database.Plugin, dm data.Manager, txHelper txcommon.Helper) (Manager, error) {
 	if di == nil || dm == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "BatchManager")
 	}
@@ -45,6 +45,7 @@ func NewBatchManager(ctx context.Context, ni sysmessaging.LocalNodeInfo, di data
 	bm := &batchManager{
 		ctx:                        pCtx,
 		cancelCtx:                  cancelCtx,
+		namespace:                  ns,
 		ni:                         ni,
 		database:                   di,
 		data:                       dm,
@@ -92,6 +93,7 @@ type ProcessorStatus struct {
 type batchManager struct {
 	ctx                        context.Context
 	cancelCtx                  func()
+	namespace                  string
 	ni                         sysmessaging.LocalNodeInfo
 	database                   database.Plugin
 	data                       data.Manager
@@ -269,7 +271,7 @@ func (bm *batchManager) readPage(lastPageFull bool) ([]*core.IDAndSequence, bool
 	var ids []*core.IDAndSequence
 	err := bm.retry.Do(bm.ctx, "retrieve messages", func(attempt int) (retry bool, err error) {
 		fb := database.MessageQueryFactory.NewFilterLimit(bm.ctx, bm.readPageSize)
-		ids, err = bm.database.GetMessageIDs(bm.ctx, fb.And(
+		ids, err = bm.database.GetMessageIDs(bm.ctx, bm.namespace, fb.And(
 			fb.Gt("sequence", bm.readOffset),
 			fb.Eq("state", core.MessageStateReady),
 		).Sort("sequence").Limit(bm.readPageSize))

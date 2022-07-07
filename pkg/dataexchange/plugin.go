@@ -66,8 +66,9 @@ type Plugin interface {
 	// SetNodes initializes the known nodes from the database
 	SetNodes(nodes []fftypes.JSONObject)
 
-	// RegisterListener registers a listener to receive callbacks
-	RegisterListener(listener Callbacks)
+	// SetHandler registers a handler to receive callbacks
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	SetHandler(namespace string, handler Callbacks)
 
 	// Data exchange interface must not deliver any events until start is called
 	Start() error
@@ -108,6 +109,7 @@ type DXEventType int
 
 // DXEvent is a single interface that can be passed to all events
 type DXEvent interface {
+	EventID() string
 	NamespacedID() string
 	Ack()
 	AckWithManifest(manifest string)
@@ -124,8 +126,8 @@ const (
 )
 
 type MessageReceived struct {
-	PeerID string
-	Data   []byte
+	PeerID    string
+	Transport *core.TransportWrapper
 }
 
 type PrivateBlobReceived struct {

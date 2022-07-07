@@ -31,11 +31,6 @@ paths:
         name: name
         schema:
           type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
-        schema:
-          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -677,6 +672,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -748,6 +744,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -818,11 +815,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: location
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -1441,11 +1433,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: node
         schema:
           type: string
@@ -1678,11 +1665,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -2014,11 +1996,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -3325,6 +3302,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -3396,6 +3374,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -3453,11 +3432,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: location
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4171,11 +4145,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: validator
         schema:
           type: string
@@ -4571,11 +4540,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pins
         schema:
           type: string
@@ -4716,11 +4680,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -4885,6 +4844,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -4955,11 +4915,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -5320,11 +5275,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: reference
         schema:
           type: string
@@ -5609,11 +5559,6 @@ paths:
         name: message
         schema:
           type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
-        schema:
-          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -5823,11 +5768,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -6726,11 +6666,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -6876,11 +6811,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7047,6 +6977,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -7236,6 +7167,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -7396,11 +7328,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -7604,6 +7531,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -7708,6 +7636,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -7812,6 +7741,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -7934,6 +7864,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8105,6 +8036,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -8215,6 +8147,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8343,6 +8276,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8510,6 +8444,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -8652,6 +8587,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -8729,17 +8665,24 @@ paths:
                               description: The identifier for the final blockchain
                                 event received from this contract before termination
                               type: string
+                            firstEvent:
+                              description: A blockchain specific string, such as a
+                                block number, to start listening from. The special
+                                strings 'oldest' and 'newest' are supported by all
+                                blockchain connectors
+                              type: string
                             index:
                               description: The index of this contract in the config
                                 file
                               type: integer
-                            info:
-                              additionalProperties:
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                              type: object
+                            location:
+                              description: A blockchain specific contract identifier.
+                                For example an Ethereum contract address, or a Fabric
+                                chaincode name and channel
+                            subscription:
+                              description: The backend identifier of the subscription
+                                for the FireFly BatchPin contract
+                              type: string
                           type: object
                         terminated:
                           description: Previously-terminated FireFly smart contracts
@@ -8750,17 +8693,24 @@ paths:
                                 description: The identifier for the final blockchain
                                   event received from this contract before termination
                                 type: string
+                              firstEvent:
+                                description: A blockchain specific string, such as
+                                  a block number, to start listening from. The special
+                                  strings 'oldest' and 'newest' are supported by all
+                                  blockchain connectors
+                                type: string
                               index:
                                 description: The index of this contract in the config
                                   file
                                 type: integer
-                              info:
-                                additionalProperties:
-                                  description: Blockchain-specific info on the contract,
-                                    such as its location on chain
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                                type: object
+                              location:
+                                description: A blockchain specific contract identifier.
+                                  For example an Ethereum contract address, or a Fabric
+                                  chaincode name and channel
+                              subscription:
+                                description: The backend identifier of the subscription
+                                  for the FireFly BatchPin contract
+                                type: string
                             type: object
                           type: array
                       type: object
@@ -8835,17 +8785,24 @@ paths:
                             description: The identifier for the final blockchain event
                               received from this contract before termination
                             type: string
+                          firstEvent:
+                            description: A blockchain specific string, such as a block
+                              number, to start listening from. The special strings
+                              'oldest' and 'newest' are supported by all blockchain
+                              connectors
+                            type: string
                           index:
                             description: The index of this contract in the config
                               file
                             type: integer
-                          info:
-                            additionalProperties:
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                            description: Blockchain-specific info on the contract,
-                              such as its location on chain
-                            type: object
+                          location:
+                            description: A blockchain specific contract identifier.
+                              For example an Ethereum contract address, or a Fabric
+                              chaincode name and channel
+                          subscription:
+                            description: The backend identifier of the subscription
+                              for the FireFly BatchPin contract
+                            type: string
                         type: object
                       terminated:
                         description: Previously-terminated FireFly smart contracts
@@ -8856,17 +8813,24 @@ paths:
                               description: The identifier for the final blockchain
                                 event received from this contract before termination
                               type: string
+                            firstEvent:
+                              description: A blockchain specific string, such as a
+                                block number, to start listening from. The special
+                                strings 'oldest' and 'newest' are supported by all
+                                blockchain connectors
+                              type: string
                             index:
                               description: The index of this contract in the config
                                 file
                               type: integer
-                            info:
-                              additionalProperties:
-                                description: Blockchain-specific info on the contract,
-                                  such as its location on chain
-                              description: Blockchain-specific info on the contract,
-                                such as its location on chain
-                              type: object
+                            location:
+                              description: A blockchain specific contract identifier.
+                                For example an Ethereum contract address, or a Fabric
+                                chaincode name and channel
+                            subscription:
+                              description: The backend identifier of the subscription
+                                for the FireFly BatchPin contract
+                              type: string
                           type: object
                         type: array
                     type: object
@@ -8929,11 +8893,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: Sort field. For multi-field sort use comma separated values (or
@@ -9672,6 +9631,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -9743,6 +9703,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -9820,11 +9781,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: location
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -10591,11 +10547,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: node
         schema:
           type: string
@@ -10842,11 +10793,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -11199,11 +11145,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -12545,6 +12486,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -12616,6 +12558,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -12680,11 +12623,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: location
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -13433,11 +13371,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: validator
         schema:
           type: string
@@ -13854,11 +13787,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pins
         schema:
           type: string
@@ -14006,11 +13934,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -14175,6 +14098,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -14252,11 +14176,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -14638,11 +14557,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: reference
         schema:
           type: string
@@ -14941,11 +14855,6 @@ paths:
         name: message
         schema:
           type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
-        schema:
-          type: string
       - description: Sort field. For multi-field sort use comma separated values (or
           multiple query values) with '-' prefix for descending
         in: query
@@ -15169,11 +15078,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -16114,11 +16018,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -16271,11 +16170,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: key
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -16442,6 +16336,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -16638,6 +16533,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -16812,11 +16708,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -17027,6 +16918,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -17176,6 +17068,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -17286,6 +17179,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17414,6 +17308,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17592,6 +17487,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -17702,6 +17598,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -17830,6 +17727,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -18004,6 +17902,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -18146,6 +18045,7 @@ paths:
                         - none
                         - unpinned
                         - batch_pin
+                        - network_action
                         - token_pool
                         - token_transfer
                         - contract_invoke
@@ -18381,11 +18281,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -18735,11 +18630,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -19220,11 +19110,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -19902,11 +19787,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: output
         schema:
           type: string
@@ -20029,6 +19909,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -20131,6 +20012,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -20236,6 +20118,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -20305,11 +20188,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: masked
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -20740,11 +20618,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -22162,11 +22035,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: updated
         schema:
           type: string
@@ -22247,11 +22115,6 @@ paths:
         name: Request-Timeout
         schema:
           default: 2m0s
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
-        schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -22368,11 +22231,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: localid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -22788,11 +22646,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pool
         schema:
           type: string
@@ -22932,6 +22785,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -23058,6 +22920,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -23085,6 +22948,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -23357,6 +23223,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -23483,6 +23358,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -23510,6 +23386,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -23761,11 +23640,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -24355,11 +24229,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pool
         schema:
           type: string
@@ -24570,6 +24439,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -24696,6 +24574,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -24723,6 +24602,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -25084,11 +24966,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -25165,6 +25042,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -25215,11 +25093,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -25298,6 +25171,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -25490,6 +25364,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -25628,11 +25503,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: identity
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -25963,11 +25833,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -26303,11 +26168,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -26767,11 +26627,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -27421,11 +27276,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: output
         schema:
           type: string
@@ -27548,6 +27398,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -27643,6 +27494,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -27741,6 +27593,7 @@ paths:
                     description: The type of the operation
                     enum:
                     - blockchain_pin_batch
+                    - blockchain_network_action
                     - blockchain_invoke
                     - sharedstorage_upload_batch
                     - sharedstorage_upload_blob
@@ -27803,11 +27656,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: masked
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -28217,11 +28065,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -29604,11 +29447,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: updated
         schema:
           type: string
@@ -29682,11 +29520,6 @@ paths:
         name: Request-Timeout
         schema:
           default: 2m0s
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
-        schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
@@ -29796,11 +29629,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: localid
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -30202,11 +30030,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pool
         schema:
           type: string
@@ -30339,6 +30162,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -30465,6 +30297,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -30488,6 +30321,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -30746,6 +30582,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
@@ -30868,6 +30713,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -30895,6 +30741,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -31139,11 +30988,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: name
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -31712,11 +31556,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: pool
         schema:
           type: string
@@ -31920,6 +31759,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -32046,6 +31894,7 @@ paths:
                           - none
                           - unpinned
                           - batch_pin
+                          - network_action
                           - token_pool
                           - token_transfer
                           - contract_invoke
@@ -32073,6 +31922,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -32420,11 +32272,6 @@ paths:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
-        name: namespace
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
         name: type
         schema:
           type: string
@@ -32501,6 +32348,7 @@ paths:
                       - none
                       - unpinned
                       - batch_pin
+                      - network_action
                       - token_pool
                       - token_transfer
                       - contract_invoke
@@ -32544,11 +32392,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: id
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
@@ -32627,6 +32470,7 @@ paths:
                     - none
                     - unpinned
                     - batch_pin
+                    - network_action
                     - token_pool
                     - token_transfer
                     - contract_invoke
@@ -32805,6 +32649,7 @@ paths:
                       description: The type of the operation
                       enum:
                       - blockchain_pin_batch
+                      - blockchain_network_action
                       - blockchain_invoke
                       - sharedstorage_upload_batch
                       - sharedstorage_upload_blob
@@ -32929,11 +32774,6 @@ paths:
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
         in: query
         name: identity
-        schema:
-          type: string
-      - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'
-        in: query
-        name: namespace
         schema:
           type: string
       - description: 'Data filter field. Prefixes supported: > >= < <= @ ^ ! !@ !^'

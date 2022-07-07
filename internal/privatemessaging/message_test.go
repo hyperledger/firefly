@@ -80,20 +80,19 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 	intermediateOrg := newTestOrg("localorg")
 	intermediateOrg.Parent = rootOrg.ID
 	localNode := newTestNode("node1", intermediateOrg)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(intermediateOrg, nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "org1").Return(intermediateOrg, false, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(intermediateOrg, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "org1").Return(intermediateOrg, false, nil)
 	mim.On("CachedIdentityLookupByID", pm.ctx, rootOrg.ID).Return(rootOrg, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{}, nil, nil).Once()
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	retMsg := &core.Message{
 		Header: core.MessageHeader{
@@ -101,14 +100,14 @@ func TestSendConfirmMessageE2EOk(t *testing.T) {
 		},
 	}
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("WaitForMessage", pm.ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForMessage", pm.ctx, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[3].(syncasync.RequestSender)
+			send := args[2].(syncasync.RequestSender)
 			send(pm.ctx)
 		}).
 		Return(retMsg, nil).Once()
 
-	msg, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	msg, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
@@ -132,22 +131,21 @@ func TestSendUnpinnedMessageE2EOk(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[2].(*core.SignerRef)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{Hash: groupID}, nil)
 
-	msg, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	msg, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				TxType: core.TransactionTypeUnpinned,
@@ -177,13 +175,10 @@ func TestSendMessageBadGroup(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
-
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
@@ -200,13 +195,10 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
-
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		InlineData: core.InlineData{
 			{Value: fftypes.JSONAnyPtr(`{"some": "data"}`)},
 		},
@@ -218,7 +210,6 @@ func TestSendMessageBadIdentity(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10206.*pop", err)
 
-	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
 }
@@ -231,26 +222,24 @@ func TestResolveAndSendBadInlineData(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		identity := args[2].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
 	message := &messageSender{
-		mgr:       pm,
-		namespace: "ns1",
+		mgr: pm,
 		msg: &data.NewMessage{
 			Message: &core.MessageInOut{
 				Message: core.Message{Header: core.MessageHeader{Namespace: "ns1"}},
@@ -279,8 +268,8 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[2].(*core.SignerRef)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
@@ -288,7 +277,6 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	dataID := fftypes.NewUUID()
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
 		newMsg := args[1].(*data.NewMessage)
 		newMsg.Message.Data = core.DataRefs{
@@ -297,9 +285,9 @@ func TestSendUnpinnedMessageTooLarge(t *testing.T) {
 	}).Return(nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{Hash: groupID}, nil)
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				TxType: core.TransactionTypeUnpinned,
@@ -328,7 +316,7 @@ func TestSealFail(t *testing.T) {
 	defer cancel()
 
 	id1 := fftypes.NewUUID()
-	message := pm.NewMessage("ns1", &core.MessageInOut{
+	message := pm.NewMessage(&core.MessageInOut{
 		Message: core.Message{
 			Data: core.DataRefs{
 				{ID: id1, Hash: fftypes.NewRandB32()},
@@ -350,24 +338,23 @@ func TestMessagePrepare(t *testing.T) {
 	mim := pm.identity.(*identitymanagermocks.Manager)
 	localOrg := newTestOrg("localorg")
 	localNode := newTestNode("node1", localOrg)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Run(func(args mock.Arguments) {
-		identity := args[2].(*core.SignerRef)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Run(func(args mock.Arguments) {
+		identity := args[1].(*core.SignerRef)
 		identity.Author = "localorg"
 		identity.Key = "localkey"
 	}).Return(nil)
-	mim.On("CachedIdentityLookupMustExist", pm.ctx, "ns1", "localorg").Return(localOrg, false, nil)
+	mim.On("CachedIdentityLookupMustExist", pm.ctx, "localorg").Return(localOrg, false, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentities", pm.ctx, mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
-	mdi.On("GetGroupByHash", pm.ctx, mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
+	mdi.On("GetIdentities", pm.ctx, "ns1", mock.Anything).Return([]*core.Identity{localNode}, nil, nil).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", mock.Anything, mock.Anything).Return(&core.Group{Hash: fftypes.NewRandB32()}, nil, nil).Once()
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 
-	message := pm.NewMessage("ns1", &core.MessageInOut{
+	message := pm.NewMessage(&core.MessageInOut{
 		Message: core.Message{
 			Data: core.DataRefs{
 				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
@@ -389,34 +376,6 @@ func TestMessagePrepare(t *testing.T) {
 
 }
 
-func TestMessagePrepareBadNamespace(t *testing.T) {
-
-	pm, cancel := newTestPrivateMessaging(t)
-	defer cancel()
-
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(fmt.Errorf("pop"))
-
-	message := pm.NewMessage("ns1", &core.MessageInOut{
-		Message: core.Message{
-			Data: core.DataRefs{
-				{ID: fftypes.NewUUID(), Hash: fftypes.NewRandB32()},
-			},
-		},
-		Group: &core.InputGroup{
-			Members: []core.MemberInput{
-				{Identity: "localorg"},
-			},
-		},
-	})
-
-	err := message.Prepare(pm.ctx)
-	assert.EqualError(t, err, "pop")
-
-	mdm.AssertExpectations(t)
-
-}
-
 func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 
 	pm, cancel := newTestPrivateMessaging(t)
@@ -424,7 +383,7 @@ func TestSendUnpinnedMessageGroupLookupFail(t *testing.T) {
 
 	groupID := fftypes.NewRandB32()
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(nil, fmt.Errorf("pop")).Once()
 
 	err := pm.dispatchUnpinnedBatch(pm.ctx, &batch.DispatchState{
 		Persisted: core.BatchPersisted{
@@ -457,21 +416,20 @@ func TestSendUnpinnedMessageInsertFail(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *core.SignerRef) bool {
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.MatchedBy(func(identity *core.SignerRef) bool {
 		assert.Empty(t, identity.Author)
 		return true
 	})).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(fmt.Errorf("pop")).Once()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{Hash: groupID}, nil)
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				TxType: core.TransactionTypeUnpinned,
@@ -500,13 +458,10 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
-
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(fmt.Errorf("pop"))
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				TxType: core.TransactionTypeUnpinned,
@@ -521,7 +476,6 @@ func TestSendUnpinnedMessageConfirmFail(t *testing.T) {
 	}, true)
 	assert.Regexp(t, "pop", err)
 
-	mdm.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
 }
@@ -531,21 +485,18 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
-
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, fmt.Errorf("pop")).Once()
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(nil, fmt.Errorf("pop")).Once()
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return("tracking1", nil).Once()
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				TxType: core.TransactionTypeUnpinned,
@@ -563,7 +514,6 @@ func TestSendUnpinnedMessageResolveGroupFail(t *testing.T) {
 	}, false)
 	assert.EqualError(t, err, "pop")
 
-	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
@@ -574,21 +524,18 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 	pm, cancel := newTestPrivateMessaging(t)
 	defer cancel()
 
-	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
-
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	groupID := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(nil, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(nil, nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "peer2-remote", mock.Anything).Return(nil).Once()
 
-	_, err := pm.SendMessage(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.SendMessage(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				TxType: core.TransactionTypeUnpinned,
@@ -606,7 +553,6 @@ func TestSendUnpinnedMessageResolveGroupNotFound(t *testing.T) {
 	}, false)
 	assert.Regexp(t, "FF10226", err)
 
-	mdm.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 	mim.AssertExpectations(t)
 
@@ -617,9 +563,9 @@ func TestRequestReplyMissingTag(t *testing.T) {
 	defer cancel()
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+	msa.On("WaitForReply", pm.ctx, mock.Anything).Return(nil, nil)
 
-	_, err := pm.RequestReply(pm.ctx, "ns1", &core.MessageInOut{})
+	_, err := pm.RequestReply(pm.ctx, &core.MessageInOut{})
 	assert.Regexp(t, "FF10261", err)
 }
 
@@ -628,9 +574,9 @@ func TestRequestReplyInvalidCID(t *testing.T) {
 	defer cancel()
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything).Return(nil, nil)
+	msa.On("WaitForReply", pm.ctx, mock.Anything).Return(nil, nil)
 
-	_, err := pm.RequestReply(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.RequestReply(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				Tag:   "mytag",
@@ -647,27 +593,26 @@ func TestRequestReplySuccess(t *testing.T) {
 	defer cancel()
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.Anything).Return(nil)
+	mim.On("ResolveInputSigningIdentity", pm.ctx, mock.Anything).Return(nil)
 
 	msa := pm.syncasync.(*syncasyncmocks.Bridge)
-	msa.On("WaitForReply", pm.ctx, "ns1", mock.Anything, mock.Anything).
+	msa.On("WaitForReply", pm.ctx, mock.Anything, mock.Anything).
 		Run(func(args mock.Arguments) {
-			send := args[3].(syncasync.RequestSender)
+			send := args[2].(syncasync.RequestSender)
 			send(pm.ctx)
 		}).
 		Return(nil, nil)
 
 	mdm := pm.data.(*datamocks.Manager)
-	mdm.On("VerifyNamespaceExists", pm.ctx, "ns1").Return(nil)
 	mdm.On("ResolveInlineData", pm.ctx, mock.Anything).Return(nil)
 	mdm.On("WriteNewMessage", pm.ctx, mock.Anything).Return(nil).Once()
 
 	groupID := fftypes.NewRandB32()
 
 	mdi := pm.database.(*databasemocks.Plugin)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{Hash: groupID}, nil)
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{Hash: groupID}, nil)
 
-	_, err := pm.RequestReply(pm.ctx, "ns1", &core.MessageInOut{
+	_, err := pm.RequestReply(pm.ctx, &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
 				Tag:   "mytag",
@@ -692,18 +637,14 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 	node2 := newTestNode("node2", newTestOrg("remoteorg"))
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("ResolveInputSigningIdentity", pm.ctx, "ns1", mock.MatchedBy(func(identity *core.SignerRef) bool {
-		assert.Equal(t, "localorg", identity.Author)
-		return true
-	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdx := pm.exchange.(*dataexchangemocks.Plugin)
 	mdx.On("SendMessage", pm.ctx, mock.Anything, "node2-peer", mock.Anything).Return(nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mom := pm.operations.(*operationmocks.Manager)
-	mdi.On("GetGroupByHash", pm.ctx, groupID).Return(&core.Group{
+	mdi.On("GetGroupByHash", pm.ctx, "ns1", groupID).Return(&core.Group{
 		Hash: groupID,
 		GroupIdentity: core.GroupIdentity{
 			Members: core.Members{
@@ -712,8 +653,8 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 			},
 		},
 	}, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node1.ID).Return(node1, nil).Once()
-	mdi.On("GetIdentityByID", pm.ctx, node2.ID).Return(node2, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node1.ID).Return(node1, nil).Once()
+	mim.On("CachedIdentityLookupByID", pm.ctx, node2.ID).Return(node2, nil).Once()
 
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
 	mom.On("RunOperation", pm.ctx, mock.MatchedBy(func(op *core.PreparedOperation) bool {
@@ -745,6 +686,7 @@ func TestDispatchedUnpinnedMessageOK(t *testing.T) {
 
 	mdi.AssertExpectations(t)
 	mom.AssertExpectations(t)
+	mim.AssertExpectations(t)
 
 }
 
@@ -763,7 +705,7 @@ func TestSendDataTransferBlobsFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mdi := pm.database.(*databasemocks.Plugin)
 	mdi.On("GetBlobMatchingHash", pm.ctx, mock.Anything).Return(nil, fmt.Errorf("pop"))
@@ -812,7 +754,7 @@ func TestSendDataTransferFail(t *testing.T) {
 	nodes := []*core.Identity{node2}
 
 	mim := pm.identity.(*identitymanagermocks.Manager)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(nil)
@@ -865,7 +807,7 @@ func TestSendDataTransferInsertOperationFail(t *testing.T) {
 		assert.Equal(t, "localorg", identity.Author)
 		return true
 	})).Return(nil)
-	mim.On("GetMultipartyRootOrg", pm.ctx, "ns1").Return(localOrg, nil)
+	mim.On("GetMultipartyRootOrg", pm.ctx).Return(localOrg, nil)
 
 	mom := pm.operations.(*operationmocks.Manager)
 	mom.On("AddOrReuseOperation", pm.ctx, mock.Anything).Return(fmt.Errorf("pop"))

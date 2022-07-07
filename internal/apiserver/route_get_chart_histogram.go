@@ -58,7 +58,7 @@ var getChartHistogram = &ffapi.Route{
 			if err != nil {
 				return nil, i18n.NewError(cr.ctx, coremsgs.MsgInvalidChartNumberParam, "buckets")
 			}
-			return cr.or.GetChartHistogram(cr.ctx, extractNamespace(r.PP), startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
+			return cr.or.GetChartHistogram(cr.ctx, startTime.UnixNano(), endTime.UnixNano(), buckets, database.CollectionName(r.PP["collection"]))
 		},
 	},
 }

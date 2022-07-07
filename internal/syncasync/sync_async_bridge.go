@@ -43,19 +43,19 @@ type Bridge interface {
 	// To use them, invoke the appropriate method, and pass a "send" callback that is expected to trigger the relevant event.
 
 	// WaitForReply waits for a reply to the message with the supplied ID
-	WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.MessageInOut, error)
+	WaitForReply(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.MessageInOut, error)
 	// WaitForMessage waits for a message with the supplied ID
-	WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.Message, error)
+	WaitForMessage(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Message, error)
 	// WaitForIdentity waits for an identity with the supplied ID
-	WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.Identity, error)
+	WaitForIdentity(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Identity, error)
 	// WaitForTokenPool waits for a token pool with the supplied ID
-	WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.TokenPool, error)
+	WaitForTokenPool(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenPool, error)
 	// WaitForTokenTransfer waits for a token transfer with the supplied ID
-	WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.TokenTransfer, error)
+	WaitForTokenTransfer(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenTransfer, error)
 	// WaitForTokenTransfer waits for a token approval with the supplied ID
-	WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.TokenApproval, error)
+	WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenApproval, error)
 	// WaitForInvokeOperation waits for an operation with the supplied ID
-	WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.Operation, error)
+	WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Operation, error)
 }
 
 type RequestSender func(ctx context.Context) error
@@ -89,6 +89,7 @@ type inflightRequestMap map[string]map[fftypes.UUID]*inflightRequest
 
 type syncAsyncBridge struct {
 	ctx         context.Context
+	namespace   string
 	database    database.Plugin
 	data        data.Manager
 	sysevents   sysmessaging.SystemEvents
@@ -96,12 +97,13 @@ type syncAsyncBridge struct {
 	inflight    inflightRequestMap
 }
 
-func NewSyncAsyncBridge(ctx context.Context, di database.Plugin, dm data.Manager) Bridge {
+func NewSyncAsyncBridge(ctx context.Context, ns string, di database.Plugin, dm data.Manager) Bridge {
 	sa := &syncAsyncBridge{
-		ctx:      log.WithLogField(ctx, "role", "sync-async-bridge"),
-		database: di,
-		data:     dm,
-		inflight: make(inflightRequestMap),
+		ctx:       log.WithLogField(ctx, "role", "sync-async-bridge"),
+		namespace: ns,
+		database:  di,
+		data:      dm,
+		inflight:  make(inflightRequestMap),
 	}
 	return sa
 }
@@ -166,7 +168,7 @@ func (inflight *inflightRequest) msInflight() float64 {
 }
 
 func (sa *syncAsyncBridge) getMessageFromEvent(event *core.EventDelivery) (msg *core.Message, err error) {
-	if msg, err = sa.database.GetMessageByID(sa.ctx, event.Reference); err != nil {
+	if msg, err = sa.database.GetMessageByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if msg == nil {
@@ -177,7 +179,7 @@ func (sa *syncAsyncBridge) getMessageFromEvent(event *core.EventDelivery) (msg *
 }
 
 func (sa *syncAsyncBridge) getIdentityFromEvent(event *core.EventDelivery) (identity *core.Identity, err error) {
-	if identity, err = sa.database.GetIdentityByID(sa.ctx, event.Reference); err != nil {
+	if identity, err = sa.database.GetIdentityByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if identity == nil {
@@ -188,7 +190,7 @@ func (sa *syncAsyncBridge) getIdentityFromEvent(event *core.EventDelivery) (iden
 }
 
 func (sa *syncAsyncBridge) getPoolFromEvent(event *core.EventDelivery) (pool *core.TokenPool, err error) {
-	if pool, err = sa.database.GetTokenPoolByID(sa.ctx, event.Reference); err != nil {
+	if pool, err = sa.database.GetTokenPoolByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if pool == nil {
@@ -200,7 +202,7 @@ func (sa *syncAsyncBridge) getPoolFromEvent(event *core.EventDelivery) (pool *co
 
 func (sa *syncAsyncBridge) getPoolFromMessage(msg *core.Message) (*core.TokenPool, error) {
 	if len(msg.Data) > 0 {
-		data, err := sa.database.GetDataByID(sa.ctx, msg.Data[0].ID, true)
+		data, err := sa.database.GetDataByID(sa.ctx, sa.namespace, msg.Data[0].ID, true)
 		if err != nil || data == nil {
 			return nil, err
 		}
@@ -213,7 +215,7 @@ func (sa *syncAsyncBridge) getPoolFromMessage(msg *core.Message) (*core.TokenPoo
 }
 
 func (sa *syncAsyncBridge) getTransferFromEvent(event *core.EventDelivery) (transfer *core.TokenTransfer, err error) {
-	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, event.Reference); err != nil {
+	if transfer, err = sa.database.GetTokenTransferByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if transfer == nil {
@@ -224,7 +226,7 @@ func (sa *syncAsyncBridge) getTransferFromEvent(event *core.EventDelivery) (tran
 }
 
 func (sa *syncAsyncBridge) getApprovalFromEvent(event *core.EventDelivery) (approval *core.TokenApproval, err error) {
-	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, event.Reference); err != nil {
+	if approval, err = sa.database.GetTokenApprovalByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 
@@ -236,7 +238,7 @@ func (sa *syncAsyncBridge) getApprovalFromEvent(event *core.EventDelivery) (appr
 }
 
 func (sa *syncAsyncBridge) getOperationFromEvent(event *core.EventDelivery) (op *core.Operation, err error) {
-	if op, err = sa.database.GetOperationByID(sa.ctx, event.Reference); err != nil {
+	if op, err = sa.database.GetOperationByID(sa.ctx, sa.namespace, event.Reference); err != nil {
 		return nil, err
 	}
 	if op == nil {
@@ -593,56 +595,56 @@ func (sa *syncAsyncBridge) sendAndWait(ctx context.Context, ns string, id *fftyp
 	}
 }
 
-func (sa *syncAsyncBridge) WaitForReply(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.MessageInOut, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, messageReply, send)
+func (sa *syncAsyncBridge) WaitForReply(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.MessageInOut, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, messageReply, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*core.MessageInOut), err
 }
 
-func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.Message, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, messageConfirm, send)
+func (sa *syncAsyncBridge) WaitForMessage(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Message, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, messageConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*core.Message), err
 }
 
-func (sa *syncAsyncBridge) WaitForIdentity(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.Identity, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, identityConfirm, send)
+func (sa *syncAsyncBridge) WaitForIdentity(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Identity, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, identityConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*core.Identity), err
 }
 
-func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.TokenPool, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, tokenPoolConfirm, send)
+func (sa *syncAsyncBridge) WaitForTokenPool(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenPool, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, tokenPoolConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*core.TokenPool), err
 }
 
-func (sa *syncAsyncBridge) WaitForTokenTransfer(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.TokenTransfer, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, tokenTransferConfirm, send)
+func (sa *syncAsyncBridge) WaitForTokenTransfer(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenTransfer, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, tokenTransferConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*core.TokenTransfer), err
 }
 
-func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.TokenApproval, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, tokenApproveConfirm, send)
+func (sa *syncAsyncBridge) WaitForTokenApproval(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.TokenApproval, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, tokenApproveConfirm, send)
 	if err != nil {
 		return nil, err
 	}
 	return reply.(*core.TokenApproval), err
 }
 
-func (sa *syncAsyncBridge) WaitForInvokeOperation(ctx context.Context, ns string, id *fftypes.UUID, send RequestSender) (*core.Operation, error) {
-	reply, err := sa.sendAndWait(ctx, ns, id, invokeOperationConfirm, send)
+func (sa *syncAsyncBridge) WaitForInvokeOperation(ctx context.Context, id *fftypes.UUID, send RequestSender) (*core.Operation, error) {
+	reply, err := sa.sendAndWait(ctx, sa.namespace, id, invokeOperationConfirm, send)
 	if err != nil {
 		return nil, err
 	}

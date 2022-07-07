@@ -41,11 +41,11 @@ type Manager interface {
 	RegisterHandler(ctx context.Context, handler OperationHandler, ops []core.OpType)
 	PrepareOperation(ctx context.Context, op *core.Operation) (*core.PreparedOperation, error)
 	RunOperation(ctx context.Context, op *core.PreparedOperation, options ...RunOperationOption) (fftypes.JSONObject, error)
-	RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (*core.Operation, error)
+	RetryOperation(ctx context.Context, opID *fftypes.UUID) (*core.Operation, error)
 	AddOrReuseOperation(ctx context.Context, op *core.Operation) error
 	SubmitOperationUpdate(plugin core.Named, update *OperationUpdate)
 	TransferResult(dx dataexchange.Plugin, event dataexchange.DXEvent)
-	ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
+	ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error
 	Start() error
 	WaitStop()
 }
@@ -110,16 +110,16 @@ func (om *operationsManager) RunOperation(ctx context.Context, op *core.Prepared
 	log.L(ctx).Tracef("Operation detail: %+v", op)
 	outputs, complete, err := handler.RunOperation(ctx, op)
 	if err != nil {
-		om.writeOperationFailure(ctx, op.Namespace, op.ID, outputs, err, failState)
+		om.writeOperationFailure(ctx, op.ID, outputs, err, failState)
 		return nil, err
 	} else if complete {
-		om.writeOperationSuccess(ctx, op.Namespace, op.ID, outputs)
+		om.writeOperationSuccess(ctx, op.ID, outputs)
 	}
 	return outputs, nil
 }
 
 func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
-	op, err = om.database.GetOperationByID(ctx, opID)
+	op, err = om.database.GetOperationByID(ctx, om.namespace, opID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (om *operationsManager) findLatestRetry(ctx context.Context, opID *fftypes.
 	return om.findLatestRetry(ctx, op.Retry)
 }
 
-func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID *fftypes.UUID) (op *core.Operation, err error) {
+func (om *operationsManager) RetryOperation(ctx context.Context, opID *fftypes.UUID) (op *core.Operation, err error) {
 	var po *core.PreparedOperation
 	err = om.database.RunAsGroup(ctx, func(ctx context.Context) error {
 		op, err = om.findLatestRetry(ctx, opID)
@@ -150,7 +150,7 @@ func (om *operationsManager) RetryOperation(ctx context.Context, ns string, opID
 
 		// Update the old operation to point to the new one
 		update := database.OperationQueryFactory.NewUpdate(ctx).Set("retry", op.ID)
-		if err = om.database.UpdateOperation(ctx, ns, opID, update); err != nil {
+		if err = om.database.UpdateOperation(ctx, om.namespace, opID, update); err != nil {
 			return err
 		}
 
@@ -196,22 +196,22 @@ func (om *operationsManager) TransferResult(dx dataexchange.Plugin, event dataex
 	om.SubmitOperationUpdate(dx, opUpdate)
 }
 
-func (om *operationsManager) writeOperationSuccess(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject) {
+func (om *operationsManager) writeOperationSuccess(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject) {
 	emptyString := ""
-	if err := om.database.ResolveOperation(ctx, ns, opID, core.OpStatusSucceeded, &emptyString, outputs); err != nil {
+	if err := om.database.ResolveOperation(ctx, om.namespace, opID, core.OpStatusSucceeded, &emptyString, outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
-func (om *operationsManager) writeOperationFailure(ctx context.Context, ns string, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
+func (om *operationsManager) writeOperationFailure(ctx context.Context, opID *fftypes.UUID, outputs fftypes.JSONObject, err error, newStatus core.OpStatus) {
 	errMsg := err.Error()
-	if err := om.database.ResolveOperation(ctx, ns, opID, newStatus, &errMsg, outputs); err != nil {
+	if err := om.database.ResolveOperation(ctx, om.namespace, opID, newStatus, &errMsg, outputs); err != nil {
 		log.L(ctx).Errorf("Failed to update operation %s: %s", opID, err)
 	}
 }
 
-func (om *operationsManager) ResolveOperationByID(ctx context.Context, ns string, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
-	return om.database.ResolveOperation(ctx, ns, opID, op.Status, op.Error, op.Output)
+func (om *operationsManager) ResolveOperationByID(ctx context.Context, opID *fftypes.UUID, op *core.OperationUpdateDTO) error {
+	return om.database.ResolveOperation(ctx, om.namespace, opID, op.Status, op.Error, op.Output)
 }
 
 func (om *operationsManager) SubmitOperationUpdate(plugin core.Named, update *OperationUpdate) {

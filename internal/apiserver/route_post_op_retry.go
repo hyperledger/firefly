@@ -43,7 +43,7 @@ var postOpRetry = &ffapi.Route{
 			if err != nil {
 				return nil, err
 			}
-			return cr.or.Operations().RetryOperation(cr.ctx, extractNamespace(r.PP), opid)
+			return cr.or.Operations().RetryOperation(cr.ctx, opid)
 		},
 	},
 }

@@ -34,7 +34,7 @@ func TestGetIdentityVerifiers(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	mnm.On("GetIdentityVerifiers", mock.Anything, "ns1", "id1", mock.Anything).Return([]*core.Verifier{}, nil, nil)
+	mnm.On("GetIdentityVerifiers", mock.Anything, "id1", mock.Anything).Return([]*core.Verifier{}, nil, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

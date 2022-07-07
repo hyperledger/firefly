@@ -38,7 +38,7 @@ var getTokenTransferByID = &ffapi.Route{
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
-			output, err = cr.or.Assets().GetTokenTransferByID(cr.ctx, extractNamespace(r.PP), r.PP["transferId"])
+			output, err = cr.or.Assets().GetTokenTransferByID(cr.ctx, r.PP["transferId"])
 			return output, err
 		},
 	},

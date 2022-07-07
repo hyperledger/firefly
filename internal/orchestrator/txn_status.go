@@ -62,20 +62,20 @@ func txBlockchainEventStatus(event *core.BlockchainEvent) *core.TransactionStatu
 	}
 }
 
-func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string) (*core.TransactionStatus, error) {
+func (or *orchestrator) GetTransactionStatus(ctx context.Context, id string) (*core.TransactionStatus, error) {
 	result := &core.TransactionStatus{
 		Status:  core.OpStatusSucceeded,
 		Details: make([]*core.TransactionStatusDetails, 0),
 	}
 
-	tx, err := or.GetTransactionByID(ctx, ns, id)
+	tx, err := or.GetTransactionByID(ctx, id)
 	if err != nil {
 		return nil, err
 	} else if tx == nil {
 		return nil, i18n.NewError(ctx, coremsgs.Msg404NotFound)
 	}
 
-	ops, _, err := or.GetTransactionOperations(ctx, ns, id)
+	ops, _, err := or.GetTransactionOperations(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 		}
 	}
 
-	events, _, err := or.GetTransactionBlockchainEvents(ctx, ns, id)
+	events, _, err := or.GetTransactionBlockchainEvents(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.BatchQueryFactory.NewFilter(ctx)
-		switch batches, _, err := or.database().GetBatches(ctx, f.Eq("tx.id", id)); {
+		switch batches, _, err := or.database().GetBatches(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(batches) == 0:
@@ -120,7 +120,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 	case core.TransactionTypeTokenPool:
 		// Note: no assumptions about blockchain events here (may or may not contain one)
 		f := database.TokenPoolQueryFactory.NewFilter(ctx)
-		switch pools, _, err := or.database().GetTokenPools(ctx, f.Eq("tx.id", id)); {
+		switch pools, _, err := or.database().GetTokenPools(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(pools) == 0:
@@ -150,7 +150,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenTransferQueryFactory.NewFilter(ctx)
-		switch transfers, _, err := or.database().GetTokenTransfers(ctx, f.Eq("tx.id", id)); {
+		switch transfers, _, err := or.database().GetTokenTransfers(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(transfers) == 0:
@@ -172,7 +172,7 @@ func (or *orchestrator) GetTransactionStatus(ctx context.Context, ns, id string)
 			updateStatus(result, core.OpStatusPending)
 		}
 		f := database.TokenApprovalQueryFactory.NewFilter(ctx)
-		switch approvals, _, err := or.database().GetTokenApprovals(ctx, f.Eq("tx.id", id)); {
+		switch approvals, _, err := or.database().GetTokenApprovals(ctx, or.namespace, f.Eq("tx.id", id)); {
 		case err != nil:
 			return nil, err
 		case len(approvals) == 0:

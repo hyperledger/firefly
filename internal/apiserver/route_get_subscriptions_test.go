@@ -31,7 +31,7 @@ func TestGetSubscriptions(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetSubscriptions", mock.Anything, "mynamespace", mock.Anything).
+	o.On("GetSubscriptions", mock.Anything, mock.Anything).
 		Return([]*core.Subscription{}, nil, nil)
 	r.ServeHTTP(res, req)
 

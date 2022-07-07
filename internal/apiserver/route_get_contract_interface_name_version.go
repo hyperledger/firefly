@@ -43,9 +43,9 @@ var getContractInterfaceNameVersion = &ffapi.Route{
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			if strings.EqualFold(r.QP["fetchchildren"], "true") {
-				return cr.or.Contracts().GetFFIWithChildren(cr.ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+				return cr.or.Contracts().GetFFIWithChildren(cr.ctx, r.PP["name"], r.PP["version"])
 			}
-			return cr.or.Contracts().GetFFI(cr.ctx, extractNamespace(r.PP), r.PP["name"], r.PP["version"])
+			return cr.or.Contracts().GetFFI(cr.ctx, r.PP["name"], r.PP["version"])
 		},
 	},
 }

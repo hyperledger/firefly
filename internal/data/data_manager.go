@@ -32,12 +32,11 @@ import (
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/hyperledger/firefly/pkg/dataexchange"
-	"github.com/hyperledger/firefly/pkg/sharedstorage"
 	"github.com/karlseguin/ccache"
 )
 
 type Manager interface {
-	CheckDatatype(ctx context.Context, ns string, datatype *core.Datatype) error
+	CheckDatatype(ctx context.Context, datatype *core.Datatype) error
 	ValidateAll(ctx context.Context, data core.DataArray) (valid bool, err error)
 	GetMessageWithDataCached(ctx context.Context, msgID *fftypes.UUID, options ...CacheReadOption) (msg *core.Message, data core.DataArray, foundAllData bool, err error)
 	GetMessageDataCached(ctx context.Context, msg *core.Message, options ...CacheReadOption) (data core.DataArray, foundAll bool, err error)
@@ -47,23 +46,20 @@ type Manager interface {
 	UpdateMessageStateIfCached(ctx context.Context, id *fftypes.UUID, state core.MessageState, confirmed *fftypes.FFTime)
 	ResolveInlineData(ctx context.Context, msg *NewMessage) error
 	WriteNewMessage(ctx context.Context, newMsg *NewMessage) error
-	VerifyNamespaceExists(ctx context.Context, ns string) error
 
-	UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error)
-	UploadBlob(ctx context.Context, ns string, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
-	DownloadBlob(ctx context.Context, ns, dataID string) (*core.Blob, io.ReadCloser, error)
+	UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error)
+	UploadBlob(ctx context.Context, inData *core.DataRefOrValue, blob *ffapi.Multipart, autoMeta bool) (*core.Data, error)
+	DownloadBlob(ctx context.Context, dataID string) (*core.Blob, io.ReadCloser, error)
 	HydrateBatch(ctx context.Context, persistedBatch *core.BatchPersisted) (*core.Batch, error)
 	WaitStop()
 }
 
 type dataManager struct {
 	blobStore
+	namespace         string
 	database          database.Plugin
-	exchange          dataexchange.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
-	namespaceCache    *ccache.Cache
-	namespaceCacheTTL time.Duration
 	messageCache      *ccache.Cache
 	messageCacheTTL   time.Duration
 	messageWriter     *messageWriter
@@ -97,31 +93,25 @@ const (
 	CRORequireBatchID
 )
 
-func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Plugin, dx dataexchange.Plugin) (Manager, error) {
-	if di == nil || pi == nil || dx == nil {
+func NewDataManager(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
+	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DataManager")
 	}
 	dm := &dataManager{
+		namespace:         ns,
 		database:          di,
-		exchange:          dx,
 		validatorCacheTTL: config.GetDuration(coreconfig.ValidatorCacheTTL),
 		messageCacheTTL:   config.GetDuration(coreconfig.MessageCacheTTL),
 	}
 	dm.blobStore = blobStore{
-		dm:            dm,
-		database:      di,
-		sharedstorage: pi,
-		exchange:      dx,
+		dm:       dm,
+		database: di,
+		exchange: dx,
 	}
 	dm.validatorCache = ccache.New(
 		// We use a LRU cache with a size-aware max
 		ccache.Configure().
 			MaxSize(config.GetByteSize(coreconfig.ValidatorCacheSize)),
-	)
-	dm.namespaceCache = ccache.New(
-		// We use a LRU cache with a size-aware max
-		ccache.Configure().
-			MaxSize(config.GetByteSize(coreconfig.NamespaceCacheSize)),
 	)
 	dm.messageCache = ccache.New(
 		// We use a LRU cache with a size-aware max
@@ -137,65 +127,38 @@ func NewDataManager(ctx context.Context, di database.Plugin, pi sharedstorage.Pl
 	return dm, nil
 }
 
-func (dm *dataManager) CheckDatatype(ctx context.Context, ns string, datatype *core.Datatype) error {
-	_, err := newJSONValidator(ctx, ns, datatype)
+func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
+	_, err := newJSONValidator(ctx, dm.namespace, datatype)
 	return err
 }
 
-func (dm *dataManager) namespaceExistsCached(ctx context.Context, ns string) (bool, error) {
-	cached := dm.namespaceCache.Get(ns)
-	if cached != nil {
-		cached.Extend(dm.namespaceCacheTTL)
-		return true, nil
-	}
-	log.L(context.Background()).Debugf("Cache miss for namespace %s", ns)
-	namespace, err := dm.database.GetNamespace(ctx, ns)
-	if err != nil || namespace == nil {
-		return false, err
-	}
-	dm.namespaceCache.Set(ns, namespace, dm.namespaceCacheTTL)
-	return true, nil
-}
-
-func (dm *dataManager) VerifyNamespaceExists(ctx context.Context, ns string) error {
-	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
-		return err
-	}
-	if exists, err := dm.namespaceExistsCached(ctx, ns); err != nil {
-		return err
-	} else if !exists {
-		return i18n.NewError(ctx, coremsgs.MsgNamespaceNotExist)
-	}
-	return nil
-}
-
 // getValidatorForDatatype only returns database errors - not found (of all kinds) is a nil
-func (dm *dataManager) getValidatorForDatatype(ctx context.Context, ns string, validator core.ValidatorType, datatypeRef *core.DatatypeRef) (Validator, error) {
+func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator core.ValidatorType, datatypeRef *core.DatatypeRef) (Validator, error) {
 	if validator == "" {
 		validator = core.ValidatorTypeJSON
 	}
 
-	if ns == "" || datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
-		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, ns, datatypeRef)
+	if datatypeRef == nil || datatypeRef.Name == "" || datatypeRef.Version == "" {
+		log.L(ctx).Warnf("Invalid datatype reference '%s:%s:%s'", validator, dm.namespace, datatypeRef)
 		return nil, nil
 	}
 
-	key := fmt.Sprintf("%s:%s:%s", validator, ns, datatypeRef)
+	key := fmt.Sprintf("%s:%s:%s", validator, dm.namespace, datatypeRef)
 	if cached := dm.validatorCache.Get(key); cached != nil {
 		cached.Extend(dm.validatorCacheTTL)
 		return cached.Value().(Validator), nil
 	}
 
-	datatype, err := dm.database.GetDatatypeByName(ctx, ns, datatypeRef.Name, datatypeRef.Version)
+	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace, datatypeRef.Name, datatypeRef.Version)
 	if err != nil {
 		return nil, err
 	}
 	if datatype == nil {
 		return nil, nil
 	}
-	v, err := newJSONValidator(ctx, ns, datatype)
+	v, err := newJSONValidator(ctx, dm.namespace, datatype)
 	if err != nil {
-		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, ns, datatypeRef, err)
+		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, dm.namespace, datatypeRef, err)
 		return nil, nil
 	}
 
@@ -210,7 +173,7 @@ func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *ffty
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil
 	}
-	msg, err = dm.database.GetMessageByID(ctx, msgID)
+	msg, err = dm.database.GetMessageByID(ctx, dm.namespace, msgID)
 	if err != nil || msg == nil {
 		return nil, nil, false, err
 	}
@@ -317,7 +280,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *core.Message) (d
 	data = make(core.DataArray, 0, len(msg.Data))
 	foundAll = true
 	for i, dataRef := range msg.Data {
-		d, err := dm.resolveRef(ctx, msg.Header.Namespace, dataRef)
+		d, err := dm.resolveRef(ctx, dataRef)
 		if err != nil {
 			return nil, false, err
 		}
@@ -334,7 +297,7 @@ func (dm *dataManager) getMessageData(ctx context.Context, msg *core.Message) (d
 func (dm *dataManager) ValidateAll(ctx context.Context, data core.DataArray) (valid bool, err error) {
 	for _, d := range data {
 		if d.Datatype != nil && d.Validator != core.ValidatorTypeNone {
-			v, err := dm.getValidatorForDatatype(ctx, d.Namespace, d.Validator, d.Datatype)
+			v, err := dm.getValidatorForDatatype(ctx, d.Validator, d.Datatype)
 			if err != nil {
 				return false, err
 			}
@@ -351,18 +314,18 @@ func (dm *dataManager) ValidateAll(ctx context.Context, data core.DataArray) (va
 	return true, nil
 }
 
-func (dm *dataManager) resolveRef(ctx context.Context, ns string, dataRef *core.DataRef) (*core.Data, error) {
+func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*core.Data, error) {
 	if dataRef == nil || dataRef.ID == nil {
 		log.L(ctx).Warnf("data is nil")
 		return nil, nil
 	}
-	d, err := dm.database.GetDataByID(ctx, dataRef.ID, true)
+	d, err := dm.database.GetDataByID(ctx, dm.namespace, dataRef.ID, true)
 	if err != nil {
 		return nil, err
 	}
 	switch {
-	case d == nil || d.Namespace != ns:
-		log.L(ctx).Warnf("Data %s not found in namespace %s", dataRef.ID, ns)
+	case d == nil:
+		log.L(ctx).Warnf("Data %s not found", dataRef.ID)
 		return nil, nil
 	case d.Hash == nil || (dataRef.Hash != nil && *d.Hash != *dataRef.Hash):
 		log.L(ctx).Warnf("Data hash does not match. Hash=%v Expected=%v", d.Hash, dataRef.Hash)
@@ -386,7 +349,7 @@ func (dm *dataManager) resolveBlob(ctx context.Context, blobRef *core.BlobRef) (
 	return nil, nil
 }
 
-func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator core.ValidatorType, datatype *core.DatatypeRef, value *fftypes.JSONAny) error {
+func (dm *dataManager) checkValidation(ctx context.Context, validator core.ValidatorType, datatype *core.DatatypeRef, value *fftypes.JSONAny) error {
 	if validator == "" {
 		validator = core.ValidatorTypeJSON
 	}
@@ -399,7 +362,7 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 			return i18n.NewError(ctx, coremsgs.MsgDatatypeNotFound, datatype)
 		}
 		if validator != core.ValidatorTypeNone {
-			v, err := dm.getValidatorForDatatype(ctx, ns, validator, datatype)
+			v, err := dm.getValidatorForDatatype(ctx, validator, datatype)
 			if err != nil {
 				return err
 			}
@@ -415,14 +378,14 @@ func (dm *dataManager) checkValidation(ctx context.Context, ns string, validator
 	return nil
 }
 
-func (dm *dataManager) validateInputData(ctx context.Context, ns string, inData *core.DataRefOrValue) (data *core.Data, err error) {
+func (dm *dataManager) validateInputData(ctx context.Context, inData *core.DataRefOrValue) (data *core.Data, err error) {
 
 	validator := inData.Validator
 	datatype := inData.Datatype
 	value := inData.Value
 	blobRef := inData.Blob
 
-	if err := dm.checkValidation(ctx, ns, validator, datatype, value); err != nil {
+	if err := dm.checkValidation(ctx, validator, datatype, value); err != nil {
 		return nil, err
 	}
 
@@ -435,7 +398,7 @@ func (dm *dataManager) validateInputData(ctx context.Context, ns string, inData 
 	data = &core.Data{
 		Validator: validator,
 		Datatype:  datatype,
-		Namespace: ns,
+		Namespace: dm.namespace,
 		Value:     value,
 		Blob:      blobRef,
 	}
@@ -446,8 +409,8 @@ func (dm *dataManager) validateInputData(ctx context.Context, ns string, inData 
 	return data, nil
 }
 
-func (dm *dataManager) UploadJSON(ctx context.Context, ns string, inData *core.DataRefOrValue) (*core.Data, error) {
-	data, err := dm.validateInputData(ctx, ns, inData)
+func (dm *dataManager) UploadJSON(ctx context.Context, inData *core.DataRefOrValue) (*core.Data, error) {
+	data, err := dm.validateInputData(ctx, inData)
 	if err != nil {
 		return nil, err
 	}
@@ -468,14 +431,13 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 	}
 
 	inData := newMessage.Message.InlineData
-	msg := newMessage.Message
 	newMessage.AllData = make(core.DataArray, len(newMessage.Message.InlineData))
 	for i, dataOrValue := range inData {
 		var d *core.Data
 		switch {
 		case dataOrValue.ID != nil:
 			// If an ID is supplied, then it must be a reference to existing data
-			d, err = dm.resolveRef(ctx, msg.Header.Namespace, &dataOrValue.DataRef)
+			d, err = dm.resolveRef(ctx, &dataOrValue.DataRef)
 			if err != nil {
 				return err
 			}
@@ -487,7 +449,7 @@ func (dm *dataManager) ResolveInlineData(ctx context.Context, newMessage *NewMes
 			}
 		case dataOrValue.Value != nil || dataOrValue.Blob != nil:
 			// We've got a Value, so we can validate + store it
-			if d, err = dm.validateInputData(ctx, msg.Header.Namespace, dataOrValue); err != nil {
+			if d, err = dm.validateInputData(ctx, dataOrValue); err != nil {
 				return err
 			}
 			newMessage.NewData = append(newMessage.NewData, d)
@@ -514,7 +476,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 	batch := persistedBatch.GenInflight(make([]*core.Message, len(manifest.Messages)), make(core.DataArray, len(manifest.Data)))
 
 	for i, mr := range manifest.Messages {
-		m, err := dm.database.GetMessageByID(ctx, mr.ID)
+		m, err := dm.database.GetMessageByID(ctx, dm.namespace, mr.ID)
 		if err != nil || m == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "message", mr.ID)
 		}
@@ -522,7 +484,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 		batch.Payload.Messages[i] = m.BatchMessage()
 	}
 	for i, dr := range manifest.Data {
-		d, err := dm.database.GetDataByID(ctx, dr.ID, true)
+		d, err := dm.database.GetDataByID(ctx, dm.namespace, dr.ID, true)
 		if err != nil || d == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "data", dr.ID)
 		}

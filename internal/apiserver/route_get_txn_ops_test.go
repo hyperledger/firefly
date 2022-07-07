@@ -31,7 +31,7 @@ func TestGetTxnOps(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetTransactionOperations", mock.Anything, "mynamespace", "abcd12345").
+	o.On("GetTransactionOperations", mock.Anything, "abcd12345").
 		Return([]*core.Operation{}, nil, nil)
 	r.ServeHTTP(res, req)
 
