@@ -44,6 +44,6 @@
     "release": "v1.1.0-alpha.1"
   },
   "cli": {
-    "tag": "namespace-isolation"
+    "tag": "v1.1.0-alpha.1"
   }
 }
