@@ -82,7 +82,7 @@ type Contract struct {
 
 type multipartyManager struct {
 	ctx            context.Context
-	namespace      string
+	namespace      core.NamespaceRef
 	database       database.Plugin
 	blockchain     blockchain.Plugin
 	operations     operations.Manager
@@ -97,7 +97,7 @@ type multipartyManager struct {
 	}
 }
 
-func NewMultipartyManager(ctx context.Context, ns string, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
+func NewMultipartyManager(ctx context.Context, ns core.NamespaceRef, config Config, di database.Plugin, bi blockchain.Plugin, om operations.Manager, mm metrics.Manager, th txcommon.Helper) (Manager, error) {
 	if di == nil || bi == nil || mm == nil || om == nil || th == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "MultipartyManager")
 	}
@@ -137,7 +137,7 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 		return err
 	}
 
-	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace, location, firstEvent)
+	subID, err := mm.blockchain.AddFireflySubscription(ctx, mm.namespace.RemoteName, location, firstEvent)
 	if err == nil {
 		mm.activeContract.location = location
 		mm.activeContract.firstEvent = firstEvent
@@ -204,7 +204,7 @@ func (mm *multipartyManager) SubmitNetworkAction(ctx context.Context, signingKey
 
 	op := core.NewOperation(
 		mm.blockchain,
-		mm.namespace,
+		mm.namespace.LocalName,
 		txid,
 		core.OpTypeBlockchainNetworkAction)
 	addNetworkActionInputs(op, action.Type, signingKey)

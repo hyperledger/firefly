@@ -138,7 +138,7 @@ type TransactionStatus = core.OpStatus
 // BatchPin is the set of data pinned to the blockchain for a batch - whether it's private or broadcast.
 type BatchPin struct {
 
-	// Namespace goes in the clear on the chain
+	// Namespace goes in the clear on the chain (for network rules V1 only)
 	Namespace string
 
 	// TransactionID is the firefly transaction ID allocated before transaction submission for correlation with events (it's a UUID so no leakage)

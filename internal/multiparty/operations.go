@@ -87,7 +87,7 @@ func (mm *multipartyManager) PrepareOperation(ctx context.Context, op *core.Oper
 		if err != nil {
 			return nil, err
 		}
-		batch, err := mm.database.GetBatchByID(ctx, mm.namespace, batchID)
+		batch, err := mm.database.GetBatchByID(ctx, mm.namespace.LocalName, batchID)
 		if err != nil {
 			return nil, err
 		} else if batch == nil {
@@ -112,7 +112,7 @@ func (mm *multipartyManager) RunOperation(ctx context.Context, op *core.Prepared
 		// Only include namespace for V1 networks
 		var namespace string
 		if mm.activeContract.networkVersion == 1 {
-			namespace = batch.Namespace
+			namespace = mm.namespace.RemoteName
 		}
 
 		return nil, false, mm.blockchain.SubmitBatchPin(ctx, op.NamespacedIDString(), batch.Key, &blockchain.BatchPin{
