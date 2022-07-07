@@ -191,13 +191,14 @@ func TestNewOrchestrator(t *testing.T) {
 func TestInitOK(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
+	or.namespace.RemoteName = "ns2"
 	or.mdi.On("SetHandler", "ns", mock.Anything).Return()
-	or.mbi.On("SetHandler", "ns", mock.Anything).Return()
+	or.mbi.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mdi.On("GetIdentities", mock.Anything, "ns", mock.Anything).Return([]*core.Identity{{}}, nil, nil)
-	or.mdx.On("SetHandler", "ns", mock.Anything).Return()
+	or.mdx.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
-	or.mps.On("SetHandler", "ns", mock.Anything).Return()
-	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
+	or.mps.On("SetHandler", "ns2", mock.Anything).Return()
+	or.mti.On("SetHandler", "ns2", mock.Anything).Return(nil)
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)
 

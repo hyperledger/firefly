@@ -89,7 +89,7 @@ type EventManager interface {
 
 type eventManager struct {
 	ctx                   context.Context
-	namespace             string
+	namespace             core.NamespaceRef
 	ni                    sysmessaging.LocalNodeInfo
 	database              database.Plugin
 	txHelper              txcommon.Helper
@@ -115,7 +115,7 @@ type eventManager struct {
 	multiparty            multiparty.Manager // optional
 }
 
-func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
+func NewEventManager(ctx context.Context, ns core.NamespaceRef, ni sysmessaging.LocalNodeInfo, di database.Plugin, bi blockchain.Plugin, im identity.Manager, dh definitions.Handler, dm data.Manager, ds definitions.Sender, bm broadcast.Manager, pm privatemessaging.Manager, am assets.Manager, sd shareddownload.Manager, mm metrics.Manager, txHelper txcommon.Helper, transports map[string]events.Plugin, mp multiparty.Manager) (EventManager, error) {
 	if ni == nil || di == nil || bi == nil || im == nil || dh == nil || dm == nil || ds == nil || am == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "EventManager")
 	}
@@ -144,7 +144,7 @@ func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 		defaultTransport:      config.GetString(coreconfig.EventTransportsDefault),
 		newEventNotifier:      newEventNotifier,
 		newPinNotifier:        newPinNotifier,
-		aggregator:            newAggregator(ctx, ns, di, bi, pm, dh, im, dm, newPinNotifier, mm),
+		aggregator:            newAggregator(ctx, ns.LocalName, di, bi, pm, dh, im, dm, newPinNotifier, mm),
 		metrics:               mm,
 		chainListenerCache:    ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.EventListenerTopicCacheSize))),
 		chainListenerCacheTTL: config.GetDuration(coreconfig.EventListenerTopicCacheTTL),
@@ -154,7 +154,7 @@ func NewEventManager(ctx context.Context, ns string, ni sysmessaging.LocalNodeIn
 	em.blobReceiver = newBlobReceiver(ctx, em.aggregator)
 
 	var err error
-	if em.subManager, err = newSubscriptionManager(ctx, ns, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
+	if em.subManager, err = newSubscriptionManager(ctx, ns.LocalName, di, dm, newEventNotifier, bm, pm, txHelper, transports); err != nil {
 		return nil, err
 	}
 
@@ -231,7 +231,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 	} else {
 		// We lock in the starting sequence at creation time, rather than when the first dispatcher
 		// starts, as that's a more obvious behavior for users
-		sequence, err := calcFirstOffset(ctx, em.namespace, em.database, subDef.Options.FirstEvent)
+		sequence, err := calcFirstOffset(ctx, em.namespace.LocalName, em.database, subDef.Options.FirstEvent)
 		if err != nil {
 			return err
 		}
@@ -245,7 +245,7 @@ func (em *eventManager) CreateUpdateDurableSubscription(ctx context.Context, sub
 
 func (em *eventManager) DeleteDurableSubscription(ctx context.Context, subDef *core.Subscription) (err error) {
 	// The event in the database for the deletion of the susbscription, will asynchronously update the submanager
-	return em.database.DeleteSubscriptionByID(ctx, em.namespace, subDef.ID)
+	return em.database.DeleteSubscriptionByID(ctx, em.namespace.LocalName, subDef.ID)
 }
 
 func (em *eventManager) AddSystemEventListener(ns string, el system.EventListener) error {

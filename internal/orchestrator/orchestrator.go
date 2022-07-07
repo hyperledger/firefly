@@ -202,7 +202,11 @@ func NewOrchestrator(ns core.NamespaceRef, config Config, plugins Plugins, metri
 }
 
 func (or *orchestrator) Init(ctx context.Context, cancelCtx context.CancelFunc) (err error) {
-	or.ctx = log.WithLogField(ctx, "ns", or.namespace.LocalName)
+	namespaceLog := or.namespace.LocalName
+	if or.namespace.RemoteName != or.namespace.LocalName {
+		namespaceLog += "->" + or.namespace.RemoteName
+	}
+	or.ctx = log.WithLogField(ctx, "ns", namespaceLog)
 	or.cancelCtx = cancelCtx
 	err = or.initPlugins(or.ctx)
 	if err == nil {
@@ -351,11 +355,11 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace.LocalName, or)
 
 	if or.plugins.Blockchain.Plugin != nil {
-		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.LocalName, &or.bc)
+		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
 	}
 
 	if or.plugins.SharedStorage.Plugin != nil {
-		or.plugins.SharedStorage.Plugin.SetHandler(or.namespace.LocalName, &or.bc)
+		or.plugins.SharedStorage.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
 	}
 
 	if or.plugins.DataExchange.Plugin != nil {
@@ -371,11 +375,11 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 			nodeInfo[i] = node.Profile
 		}
 		or.plugins.DataExchange.Plugin.SetNodes(nodeInfo)
-		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.LocalName, &or.bc)
+		or.plugins.DataExchange.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
 	}
 
 	for _, token := range or.plugins.Tokens {
-		if err := token.Plugin.SetHandler(or.namespace.LocalName, &or.bc); err != nil {
+		if err := token.Plugin.SetHandler(or.namespace.RemoteName, &or.bc); err != nil {
 			return err
 		}
 	}
@@ -485,7 +489,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace.LocalName, or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
+		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
 		if err != nil {
 			return err
 		}
