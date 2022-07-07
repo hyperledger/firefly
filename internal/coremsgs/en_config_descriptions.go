@@ -92,6 +92,9 @@ var (
 	ConfigBlockchainFabricFabconnectURL          = ffc("config.blockchain.fabric.fabconnect.url", "The URL of the Fabconnect instance", "URL "+i18n.StringType)
 	ConfigBlockchainFabricFabconnectProxyURL     = ffc("config.blockchain.fabric.fabconnect.proxy.url", "Optional HTTP proxy server to use when connecting to Fabconnect", "URL "+i18n.StringType)
 
+	ConfigCacheBlockchainTTL  = ffc("config.cache.blockchain.ttl", "test", i18n.StringType)
+	ConfigCacheBlockchainSize = ffc("config.cache.blockchain.size", "test", i18n.StringType)
+
 	ConfigPluginDatabase     = ffc("config.plugins.database", "The list of configured Database plugins", i18n.StringType)
 	ConfigPluginDatabaseName = ffc("config.plugins.database[].name", "The name of the Database plugin", i18n.StringType)
 	ConfigPluginDatabaseType = ffc("config.plugins.database[].type", "The type of the configured Database plugin", i18n.StringType)

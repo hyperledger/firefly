@@ -280,6 +280,13 @@ nav_order: 2
 |size|The maximum number of messages that can be packed into a batch|`int`|`<nil>`
 |timeout|The timeout to wait for a batch to fill, before sending|[`time.Duration`](https://pkg.go.dev/time#Duration)|`<nil>`
 
+## cache.blockchain
+
+|Key|Description|Type|Default Value|
+|---|-----------|----|-------------|
+|size|test|`string`|`<nil>`
+|ttl|test|`string`|`<nil>`
+
 ## cors
 
 |Key|Description|Type|Default Value|
