@@ -74,7 +74,7 @@ func GetMemberHostname(filename string, n int) (string, error) {
 	return stack.Members[n].FireflyHostname, nil
 }
 
-func ReadStack(filename string) (*Stack, error) {
+func ReadStackFile(filename string) (*Stack, error) {
 	jsonBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func ReadStack(filename string) (*Stack, error) {
 	return stack, nil
 }
 
-func ReadStackState(filename string) (*StackState, error) {
+func ReadStackStateFile(filename string) (*StackState, error) {
 	jsonBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err

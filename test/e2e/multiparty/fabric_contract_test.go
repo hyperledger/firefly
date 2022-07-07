@@ -1,4 +1,4 @@
-// Copyright © 2021 Kaleido, Inc.
+// Copyright © 2022 Kaleido, Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package e2e
+package multiparty
 
 import (
 	"encoding/json"
@@ -27,6 +27,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/hyperledger/firefly/test/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -87,7 +88,7 @@ func deployChaincode(t *testing.T, stackName string) string {
 	assert.NoError(t, err)
 	chaincodeName := "e2e_" + id
 
-	cmd := exec.Command("bash", "./deploy_chaincode.sh")
+	cmd := exec.Command("bash", "../deploy_chaincode.sh")
 	cmd.Env = append(cmd.Env, "STACK_NAME="+stackName)
 	cmd.Env = append(cmd.Env, "CHAINCODE_NAME="+chaincodeName)
 	cmd.Env = append(cmd.Env, "PATH="+os.Getenv("PATH"))
@@ -127,10 +128,10 @@ type FabricContractTestSuite struct {
 }
 
 func (suite *FabricContractTestSuite) SetupSuite() {
-	stack := readStackFile(suite.T())
+	stack := e2e.ReadStack(suite.T())
 	suite.chaincodeName = deployChaincode(suite.T(), stack.Name)
 
-	suite.fabClient = NewResty(suite.T())
+	suite.fabClient = e2e.NewResty(suite.T())
 	suite.fabClient.SetBaseURL(fmt.Sprintf("http://localhost:%d", stack.Members[0].ExposedConnectorPort))
 }
 
@@ -139,20 +140,20 @@ func (suite *FabricContractTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *FabricContractTestSuite) AfterTest(suiteName, testName string) {
-	verifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
+	e2e.VerifyAllOperationsSucceeded(suite.T(), []*resty.Client{suite.testState.client1, suite.testState.client2}, suite.testState.startTime)
 }
 
 func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 	defer suite.testState.done()
 
-	received1 := wsReader(suite.testState.ws1, true)
+	received1 := e2e.WsReader(suite.testState.ws1, true)
 
-	sub := CreateContractListener(suite.T(), suite.testState.client1, assetCreatedEvent, &fftypes.JSONObject{
+	sub := e2e.CreateContractListener(suite.T(), suite.testState.client1, assetCreatedEvent, &fftypes.JSONObject{
 		"channel":   "firefly",
 		"chaincode": suite.chaincodeName,
 	})
 
-	subs := GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	subs := e2e.GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 1, len(subs))
 	assert.Equal(suite.T(), sub.BackendID, subs[0].BackendID)
 
@@ -170,13 +171,13 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 		},
 	}
 
-	res, err := InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
+	res, err := e2e.InvokeContractMethod(suite.testState.t, suite.testState.client1, invokeContractRequest)
 	suite.T().Log(res)
 	assert.NoError(suite.T(), err)
 
 	<-received1
 
-	events := GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime, sub.ID)
+	events := e2e.GetContractEvents(suite.T(), suite.testState.client1, suite.testState.startTime, sub.ID)
 	assert.Equal(suite.T(), 1, len(events))
 	assert.Equal(suite.T(), "AssetCreated", events[0].Name)
 	assert.Equal(suite.T(), assetName, events[0].Output.GetString("name"))
@@ -189,13 +190,13 @@ func (suite *FabricContractTestSuite) TestE2EContractEvents() {
 		},
 	}
 
-	res, err = QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
+	res, err = e2e.QueryContractMethod(suite.testState.t, suite.testState.client1, queryContractRequest)
 	suite.T().Log(res)
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), assetName, res.(map[string]interface{})["name"])
 
-	DeleteContractListener(suite.T(), suite.testState.client1, subs[0].ID)
-	subs = GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
+	e2e.DeleteContractListener(suite.T(), suite.testState.client1, subs[0].ID)
+	subs = e2e.GetContractListeners(suite.T(), suite.testState.client1, suite.testState.startTime)
 	assert.Equal(suite.T(), 0, len(subs))
 
 }
