@@ -35,6 +35,7 @@ func TestNetworkAction(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	event := &blockchain.Event{ProtocolID: "0001"}
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
@@ -54,9 +55,9 @@ func TestNetworkAction(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.BlockchainNetworkAction("terminate", event, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, event, verifier)
 	assert.NoError(t, err)
 
 	mdi.AssertExpectations(t)
@@ -68,6 +69,7 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
@@ -78,7 +80,7 @@ func TestNetworkActionUnknownIdentity(t *testing.T) {
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, fmt.Errorf("pop")).Once()
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(nil, nil).Once()
 
-	err := em.BlockchainNetworkAction("terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
 	mii.AssertExpectations(t)
@@ -88,6 +90,7 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
@@ -101,7 +104,7 @@ func TestNetworkActionNonRootIdentity(t *testing.T) {
 		},
 	}, nil)
 
-	err := em.BlockchainNetworkAction("terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
 	mii.AssertExpectations(t)
@@ -112,12 +115,13 @@ func TestNetworkActionNonMultiparty(t *testing.T) {
 	defer cancel()
 	em.multiparty = nil
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
 	}
 
-	err := em.BlockchainNetworkAction("terminate", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("terminate", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 }
 
@@ -125,6 +129,7 @@ func TestNetworkActionUnknown(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
+	location := fftypes.JSONAnyPtr("{}")
 	verifier := &core.VerifierRef{
 		Type:  core.VerifierTypeEthAddress,
 		Value: "0x1234",
@@ -134,7 +139,7 @@ func TestNetworkActionUnknown(t *testing.T) {
 
 	mii.On("FindIdentityForVerifier", em.ctx, []core.IdentityType{core.IdentityTypeOrg}, verifier).Return(&core.Identity{}, nil)
 
-	err := em.BlockchainNetworkAction("bad", &blockchain.Event{}, verifier)
+	err := em.BlockchainNetworkAction("bad", location, &blockchain.Event{}, verifier)
 	assert.NoError(t, err)
 
 	mii.AssertExpectations(t)
@@ -144,15 +149,15 @@ func TestActionTerminateQueryFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mmp := &multipartymocks.Manager{}
+	location := fftypes.JSONAnyPtr("{}")
+
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(nil, fmt.Errorf("pop"))
 
-	err := em.actionTerminate(mmp, &blockchain.Event{})
+	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
-	mmp.AssertExpectations(t)
 	mdi.AssertExpectations(t)
 }
 
@@ -160,13 +165,15 @@ func TestActionTerminateFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mmp := &multipartymocks.Manager{}
+	location := fftypes.JSONAnyPtr("{}")
+
+	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
-	err := em.actionTerminate(mmp, &blockchain.Event{})
+	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
 	mmp.AssertExpectations(t)
@@ -177,14 +184,16 @@ func TestActionTerminateUpsertFail(t *testing.T) {
 	em, cancel := newTestEventManager(t)
 	defer cancel()
 
-	mmp := &multipartymocks.Manager{}
+	location := fftypes.JSONAnyPtr("{}")
+
+	mmp := em.multiparty.(*multipartymocks.Manager)
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
-	err := em.actionTerminate(mmp, &blockchain.Event{})
+	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
 
 	mmp.AssertExpectations(t)

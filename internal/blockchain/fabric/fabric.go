@@ -59,39 +59,57 @@ type Fabric struct {
 	closed         chan struct{}
 	metrics        metrics.Manager
 	fabconnectConf config.Section
-	subs           map[string]string
+	subs           map[string]subscriptionInfo
+}
+
+type subscriptionInfo struct {
+	namespace string
+	channel   string
+	version   int
 }
 
 type callbacks struct {
-	handlers []blockchain.Callbacks
+	handlers map[string]blockchain.Callbacks
 }
 
-func (cb *callbacks) BlockchainOpUpdate(plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.handlers {
-		cb.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+func (cb *callbacks) BlockchainOpUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
+	if handler, ok := cb.handlers[namespace]; ok {
+		handler.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	} else {
+		log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
 	}
 }
 
-func (cb *callbacks) BatchPinComplete(batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.handlers {
-		if err := cb.BatchPinComplete(batch, signingKey); err != nil {
-			return err
-		}
+func (cb *callbacks) BatchPinComplete(ctx context.Context, batch *blockchain.BatchPin, signingKey *core.VerifierRef) error {
+	if handler, ok := cb.handlers[batch.Namespace]; ok {
+		return handler.BatchPinComplete(batch, signingKey)
 	}
+	log.L(ctx).Errorf("No handler found for blockchain batch pin on namespace '%s'", batch.Namespace)
 	return nil
 }
 
-func (cb *callbacks) BlockchainNetworkAction(action string, event *blockchain.Event, signingKey *core.VerifierRef) error {
-	for _, cb := range cb.handlers {
-		if err := cb.BlockchainNetworkAction(action, event, signingKey); err != nil {
-			return err
+func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, action string, location *fftypes.JSONAny, event *blockchain.Event, signingKey *core.VerifierRef) error {
+	if namespace == "" {
+		// Older networks don't populate namespace, so deliver the event to every handler
+		for _, handler := range cb.handlers {
+			if err := handler.BlockchainNetworkAction(action, location, event, signingKey); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.BlockchainNetworkAction(action, location, event, signingKey)
+		}
+		log.L(ctx).Errorf("No handler found for blockchain network action on namespace '%s'", namespace)
 	}
 	return nil
 }
 
 func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
 	for _, cb := range cb.handlers {
+		// Send the event to all handlers and let them match it to a contract listener
+		// TODO: can we push more listener/namespace knowledge down to this layer?
 		if err := cb.BlockchainEvent(event); err != nil {
 			return err
 		}
@@ -197,6 +215,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	f.idCache = make(map[string]*fabIdentity)
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
+	f.callbacks.handlers = make(map[string]blockchain.Callbacks)
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
@@ -230,7 +249,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 		return err
 	}
 	f.streamID = stream.ID
-	f.subs = make(map[string]string)
+	f.subs = make(map[string]subscriptionInfo)
 	log.L(f.ctx).Infof("Event stream: %s", f.streamID)
 
 	f.closed = make(chan struct{})
@@ -239,8 +258,8 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	return nil
 }
 
-func (f *Fabric) SetHandler(handler blockchain.Callbacks) {
-	f.callbacks.handlers = append(f.callbacks.handlers, handler)
+func (f *Fabric) SetHandler(namespace string, handler blockchain.Callbacks) {
+	f.callbacks.handlers[namespace] = handler
 }
 
 func (f *Fabric) Start() (err error) {
@@ -311,7 +330,7 @@ func (f *Fabric) parseBlockchainEvent(ctx context.Context, msgJSON fftypes.JSONO
 	}
 }
 
-func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+func (f *Fabric) handleBatchPinEvent(ctx context.Context, location *fftypes.JSONAny, subInfo *subscriptionInfo, msgJSON fftypes.JSONObject) (err error) {
 	event := f.parseBlockchainEvent(ctx, msgJSON)
 	if event == nil {
 		return nil // move on
@@ -332,7 +351,24 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	// Check if this is actually an operator action
 	if strings.HasPrefix(nsOrAction, blockchain.FireFlyActionPrefix) {
 		action := nsOrAction[len(blockchain.FireFlyActionPrefix):]
-		return f.callbacks.BlockchainNetworkAction(action, event, verifier)
+
+		// For V1 of the FireFly contract, action is sent to all namespaces
+		// For V2+, namespace is inferred from the subscription
+		var namespace string
+		if subInfo.version > 1 {
+			namespace = subInfo.namespace
+		}
+
+		return f.callbacks.BlockchainNetworkAction(ctx, namespace, action, location, event, verifier)
+	}
+
+	// For V1 of the FireFly contract, namespace is passed explicitly
+	// For V2+, namespace is inferred from the subscription
+	var namespace string
+	if subInfo.version == 1 {
+		namespace = nsOrAction
+	} else {
+		namespace = subInfo.namespace
 	}
 
 	hexUUIDs, err := hex.DecodeString(strings.TrimPrefix(sUUIDs, "0x"))
@@ -364,7 +400,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	batch := &blockchain.BatchPin{
-		Namespace:       nsOrAction,
+		Namespace:       namespace,
 		TransactionID:   &txnID,
 		BatchID:         &batchID,
 		BatchHash:       &batchHash,
@@ -374,7 +410,7 @@ func (f *Fabric) handleBatchPinEvent(ctx context.Context, msgJSON fftypes.JSONOb
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return f.callbacks.BatchPinComplete(batch, verifier)
+	return f.callbacks.BatchPinComplete(ctx, batch, verifier)
 }
 
 func (f *Fabric) buildEventLocationString(chaincode string) string {
@@ -409,7 +445,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	f.callbacks.BlockchainOpUpdate(f, requestID, updateType, txHash, message, reply)
+	f.callbacks.BlockchainOpUpdate(ctx, f, requestID, updateType, txHash, message, reply)
 }
 
 func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {
@@ -418,12 +454,25 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 		return "", err
 	}
 
-	sub, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
+	sub, subNS, err := f.streams.ensureFireFlySubscription(ctx, namespace, fabricOnChainLocation, firstEvent, f.streamID, batchPinEvent)
 	if err != nil {
 		return "", err
 	}
-	f.subs[sub.ID] = namespace
 
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return "", err
+	}
+
+	if version > 1 && subNS == "" {
+		return "", i18n.NewError(ctx, coremsgs.MsgInvalidSubscriptionForNetwork, sub.Name, version)
+	}
+
+	f.subs[sub.ID] = subscriptionInfo{
+		namespace: subNS,
+		channel:   fabricOnChainLocation.Channel,
+		version:   version,
+	}
 	return sub.ID, nil
 }
 
@@ -458,10 +507,18 @@ func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{})
 		l1.Tracef("Message: %+v", msgJSON)
 
 		// Matches one of the active FireFly BatchPin subscriptions
-		if _, ok := f.subs[sub]; ok {
+		if subInfo, ok := f.subs[sub]; ok {
+			location, err := encodeContractLocation(ctx, &Location{
+				Chaincode: msgJSON.GetString("chaincodeId"),
+				Channel:   subInfo.channel,
+			})
+			if err != nil {
+				return err
+			}
+
 			switch eventName {
 			case broadcastBatchEventName:
-				if err := f.handleBatchPinEvent(ctx1, msgJSON); err != nil {
+				if err := f.handleBatchPinEvent(ctx1, location, &subInfo, msgJSON); err != nil {
 					return err
 				}
 			default:
@@ -687,7 +744,7 @@ func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chainc
 	return body, nil
 }
 
-func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
+func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return err
@@ -710,7 +767,7 @@ func (f *Fabric) InvokeContract(ctx context.Context, nsOpID string, signingKey s
 	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, method.Name, signingKey, nsOpID, prefixItems, input, options)
 }
 
-func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *core.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
+func (f *Fabric) QueryContract(ctx context.Context, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) (interface{}, error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return nil, err
@@ -759,11 +816,7 @@ func (f *Fabric) NormalizeContractLocation(ctx context.Context, location *fftype
 	if err != nil {
 		return nil, err
 	}
-	normalized, err := json.Marshal(parsed)
-	if err == nil {
-		result = fftypes.JSONAnyPtrBytes(normalized)
-	}
-	return result, err
+	return encodeContractLocation(ctx, parsed)
 }
 
 func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Location, error) {
@@ -778,6 +831,20 @@ func parseContractLocation(ctx context.Context, location *fftypes.JSONAny) (*Loc
 		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
 	}
 	return &fabricLocation, nil
+}
+
+func encodeContractLocation(ctx context.Context, location *Location) (result *fftypes.JSONAny, err error) {
+	if location.Channel == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'channel' not set")
+	}
+	if location.Chaincode == "" {
+		return nil, i18n.NewError(ctx, coremsgs.MsgContractLocationInvalid, "'chaincode' not set")
+	}
+	normalized, err := json.Marshal(location)
+	if err == nil {
+		result = fftypes.JSONAnyPtrBytes(normalized)
+	}
+	return result, err
 }
 
 func (f *Fabric) AddContractListener(ctx context.Context, listener *core.ContractListenerInput) error {
@@ -797,16 +864,16 @@ func (f *Fabric) DeleteContractListener(ctx context.Context, subscription *core.
 	return f.streams.deleteSubscription(ctx, subscription.BackendID)
 }
 
-func (f *Fabric) GetFFIParamValidator(ctx context.Context) (core.FFIParamValidator, error) {
+func (f *Fabric) GetFFIParamValidator(ctx context.Context) (fftypes.FFIParamValidator, error) {
 	// Fabconnect does not require any additional validation beyond "JSON Schema correctness" at this time
 	return nil, nil
 }
 
-func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *core.FFIGenerationRequest) (*core.FFI, error) {
+func (f *Fabric) GenerateFFI(ctx context.Context, generationRequest *fftypes.FFIGenerationRequest) (*fftypes.FFI, error) {
 	return nil, i18n.NewError(ctx, coremsgs.MsgFFIGenerationUnsupported)
 }
 
-func (f *Fabric) GenerateEventSignature(ctx context.Context, event *core.FFIEventDefinition) string {
+func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIEventDefinition) string {
 	return event.Name
 }
 
@@ -843,13 +910,9 @@ func (f *Fabric) GetAndConvertDeprecatedContractConfig(ctx context.Context) (loc
 	}
 	fromBlock = string(core.SubOptsFirstEventOldest)
 
-	fabricOnChainLocation := &Location{
+	location, err = encodeContractLocation(ctx, &Location{
 		Chaincode: chaincode,
 		Channel:   f.defaultChannel,
-	}
-
-	normalized, _ := json.Marshal(fabricOnChainLocation)
-	location = fftypes.JSONAnyPtrBytes(normalized)
-
-	return location, fromBlock, nil
+	})
+	return location, fromBlock, err
 }

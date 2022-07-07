@@ -46,35 +46,35 @@ type createAssetBody struct {
 	Args    []string          `json:"args"`
 }
 
-var assetCreatedEvent = &core.FFIEvent{
-	FFIEventDefinition: core.FFIEventDefinition{
+var assetCreatedEvent = &fftypes.FFIEvent{
+	FFIEventDefinition: fftypes.FFIEventDefinition{
 		Name: "AssetCreated",
 	},
 }
 
-func assetManagerCreateAsset() *core.FFIMethod {
-	return &core.FFIMethod{
+func assetManagerCreateAsset() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
 		Name: "CreateAsset",
-		Params: core.FFIParams{
+		Params: fftypes.FFIParams{
 			{
 				Name:   "name",
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
 			},
 		},
-		Returns: core.FFIParams{},
+		Returns: fftypes.FFIParams{},
 	}
 }
 
-func assetManagerGetAsset() *core.FFIMethod {
-	return &core.FFIMethod{
+func assetManagerGetAsset() *fftypes.FFIMethod {
+	return &fftypes.FFIMethod{
 		Name: "GetAsset",
-		Params: core.FFIParams{
+		Params: fftypes.FFIParams{
 			{
 				Name:   "name",
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),
 			},
 		},
-		Returns: core.FFIParams{
+		Returns: fftypes.FFIParams{
 			{
 				Name:   "name",
 				Schema: fftypes.JSONAnyPtr(`{"type": "string"}`),

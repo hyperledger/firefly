@@ -92,7 +92,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			ID:        fftypes.MustParseUUID("0f12317b-85a0-4a77-a722-857ea2b0a5fa"),
 			Name:      "my_contract_api",
 			Namespace: "ns1",
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
 			},
 			Location: fftypes.JSONAnyPtr(`{
@@ -157,14 +157,14 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			Created: fftypes.UnixTime(1652664195),
 		},
 
-		&core.FFI{
+		&fftypes.FFI{
 			ID:          fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
 			Namespace:   "ns1",
 			Name:        "SimpleStorage",
 			Description: "A simple example contract in Solidity",
 			Version:     "v0.0.1",
 			Message:     fftypes.MustParseUUID("e4ad2077-5714-416e-81f9-7964a6223b6f"),
-			Methods: []*core.FFIMethod{
+			Methods: []*fftypes.FFIMethod{
 				{
 					ID:          fftypes.MustParseUUID("8f3289dd-3a19-4a9f-aab3-cb05289b013c"),
 					Interface:   fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
@@ -172,8 +172,8 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 					Namespace:   "ns1",
 					Pathname:    "get",
 					Description: "Get the current value",
-					Params:      core.FFIParams{},
-					Returns: core.FFIParams{
+					Params:      fftypes.FFIParams{},
+					Returns: fftypes.FFIParams{
 						{
 							Name: "output",
 							Schema: fftypes.JSONAnyPtr(`{
@@ -195,7 +195,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 					Namespace:   "ns1",
 					Pathname:    "set",
 					Description: "Set the value",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name: "newValue",
 							Schema: fftypes.JSONAnyPtr(`{
@@ -206,23 +206,23 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 							}`),
 						},
 					},
-					Returns: core.FFIParams{},
+					Returns: fftypes.FFIParams{},
 					Details: fftypes.JSONObject{
 						"stateMutability": "payable",
 					},
 				},
 			},
-			Events: []*core.FFIEvent{
+			Events: []*fftypes.FFIEvent{
 				{
 					ID:        fftypes.MustParseUUID("9f653f93-86f4-45bc-be75-d7f5888fbbc0"),
 					Interface: fftypes.MustParseUUID("c35d3449-4f24-4676-8e64-91c9e46f06c4"),
 					Namespace: "ns1",
 					Pathname:  "Changed",
 					Signature: "Changed(address,uint256)",
-					FFIEventDefinition: core.FFIEventDefinition{
+					FFIEventDefinition: fftypes.FFIEventDefinition{
 						Name:        "Changed",
 						Description: "Emitted when the value changes",
-						Params: core.FFIParams{
+						Params: fftypes.FFIParams{
 							{
 								Name: "_from",
 								Schema: fftypes.JSONAnyPtr(`{
@@ -251,7 +251,7 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 
 		&core.ContractListener{
 			ID: fftypes.MustParseUUID("d61980a9-748c-4c72-baf5-8b485b514d59"),
-			Interface: &core.FFIReference{
+			Interface: &fftypes.FFIReference{
 				ID: fftypes.MustParseUUID("ff1da3c1-f9e7-40c2-8d93-abb8855e8a1d"),
 			},
 			Namespace: "ns1",
@@ -262,9 +262,9 @@ func GenerateObjectsReferenceMarkdown(ctx context.Context) (map[string][]byte, e
 			}`),
 			Created: fftypes.UnixTime(1652664195),
 			Event: &core.FFISerializedEvent{
-				FFIEventDefinition: core.FFIEventDefinition{
+				FFIEventDefinition: fftypes.FFIEventDefinition{
 					Name: "Changed",
-					Params: core.FFIParams{
+					Params: fftypes.FFIParams{
 						{
 							Name: "x",
 							Schema: fftypes.JSONAnyPtr(`{

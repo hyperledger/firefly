@@ -229,7 +229,7 @@ func (m *Message) VerifyFields(ctx context.Context) error {
 		return err
 	}
 	if m.Header.Tag != "" {
-		if err := ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
+		if err := fftypes.ValidateFFNameField(ctx, m.Header.Tag, "header.tag"); err != nil {
 			return err
 		}
 	}

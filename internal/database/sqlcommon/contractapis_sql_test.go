@@ -46,7 +46,7 @@ func TestContractAPIE2EWithDB(t *testing.T) {
 		ID:        apiID,
 		Namespace: "ns1",
 		Name:      "banana",
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID:      interfaceID,
 			Name:    "banana",
 			Version: "v1.0.0",
@@ -102,7 +102,7 @@ func TestContractAPIDBFailInsert(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	// mock.ExpectQuery("INSERT .*").WillReturnError(fmt.Errorf("pop"))
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "FF10116", err)
@@ -117,7 +117,7 @@ func TestContractAPIDBFailUpdate(t *testing.T) {
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
 	api := &core.ContractAPI{
-		Interface: &core.FFIReference{},
+		Interface: &fftypes.FFIReference{},
 	}
 	err := s.UpsertContractAPI(context.Background(), api)
 	assert.Regexp(t, "pop", err)

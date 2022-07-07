@@ -22785,6 +22785,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -22939,6 +22948,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -23211,6 +23223,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -23365,6 +23386,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -24415,6 +24439,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -24569,6 +24602,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -30126,6 +30162,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -30276,6 +30321,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -30534,6 +30582,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 key:
                   description: The blockchain signing key for the transfer. On input
                     defaults to the first signing key of the organization that operates
@@ -30684,6 +30741,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:
@@ -31699,6 +31759,15 @@ paths:
                     For example, with 18 decimals a fractional balance of 10.234 will
                     be specified as 10,234,000,000,000,000,000
                   type: string
+                config:
+                  additionalProperties:
+                    description: Input only field, with token connector specific configuration
+                      of the transfer. See your chosen token connector documentation
+                      for details
+                  description: Input only field, with token connector specific configuration
+                    of the transfer. See your chosen token connector documentation
+                    for details
+                  type: object
                 from:
                   description: The source account for the transfer. On input defaults
                     to the value of 'key'
@@ -31853,6 +31922,9 @@ paths:
                 tokenIndex:
                   description: The index of the token within the pool that this transfer
                     applies to
+                  type: string
+                uri:
+                  description: The URI of the token this transfer applies to
                   type: string
               type: object
       responses:

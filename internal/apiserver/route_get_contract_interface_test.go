@@ -56,7 +56,7 @@ func TestGetContractInterface(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFIByID", mock.Anything, id).
-		Return(&core.FFI{}, nil)
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)
@@ -75,7 +75,7 @@ func TestGetContractInterfaceWithChildren(t *testing.T) {
 	res := httptest.NewRecorder()
 
 	mcm.On("GetFFIByIDWithChildren", mock.Anything, id).
-		Return(&core.FFI{}, nil)
+		Return(&fftypes.FFI{}, nil)
 	r.ServeHTTP(res, req)
 
 	assert.Equal(t, 200, res.Result().StatusCode)

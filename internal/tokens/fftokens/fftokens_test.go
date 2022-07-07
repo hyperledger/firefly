@@ -535,6 +535,10 @@ func TestMintTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		URI: "FLAPFLIP",
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -549,11 +553,15 @@ func TestMintTokens(t *testing.T) {
 				"to":          "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     mint.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
 				}.String(),
+				"uri": "FLAPFLIP",
 			}, body)
 
 			res := &http.Response{
@@ -666,6 +674,9 @@ func TestBurnTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -681,7 +692,10 @@ func TestBurnTokens(t *testing.T) {
 				"from":        "user1",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     burn.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -731,6 +745,9 @@ func TestTransferTokens(t *testing.T) {
 			ID:   fftypes.NewUUID(),
 			Type: core.TransactionTypeTokenTransfer,
 		},
+		Config: fftypes.JSONObject{
+			"foo": "bar",
+		},
 	}
 	opID := fftypes.NewUUID()
 	nsOpID := "ns1:" + opID.String()
@@ -747,7 +764,10 @@ func TestTransferTokens(t *testing.T) {
 				"to":          "user2",
 				"amount":      "10",
 				"signer":      "0x123",
-				"requestId":   "ns1:" + opID.String(),
+				"config": map[string]interface{}{
+					"foo": "bar",
+				},
+				"requestId": "ns1:" + opID.String(),
 				"data": fftypes.JSONObject{
 					"tx":     transfer.TX.ID.String(),
 					"txtype": core.TransactionTypeTokenTransfer.String(),
@@ -1290,4 +1310,14 @@ func TestEventLoopClosedContext(t *testing.T) {
 	wsm.On("Close").Return()
 	wsm.On("Receive").Return((<-chan []byte)(r))
 	h.eventLoop() // we're simply looking for it exiting
+}
+
+func TestCallbacksWrongNamespace(t *testing.T) {
+	h, _, _, _, done := newTestFFTokens(t)
+	defer done()
+	nsOpID := "ns1:" + fftypes.NewUUID().String()
+	h.callbacks.TokenOpUpdate(context.Background(), h, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	h.callbacks.TokenPoolCreated(context.Background(), "ns1", h, nil)
+	h.callbacks.TokensTransferred(context.Background(), "ns1", h, nil)
+	h.callbacks.TokensApproved(context.Background(), "ns1", h, nil)
 }

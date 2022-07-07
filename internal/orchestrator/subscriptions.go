@@ -40,7 +40,7 @@ func (or *orchestrator) createUpdateSubscription(ctx context.Context, subDef *co
 	subDef.Created = fftypes.Now()
 	subDef.Namespace = or.namespace
 	subDef.Ephemeral = false
-	if err := core.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
+	if err := fftypes.ValidateFFNameFieldNoUUID(ctx, subDef.Name, "name"); err != nil {
 		return nil, err
 	}
 	if subDef.Transport == system.SystemEventsTransport {

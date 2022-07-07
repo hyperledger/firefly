@@ -38,15 +38,15 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	// Create a new event entry
 	interfaceID := fftypes.NewUUID()
 	eventID := fftypes.NewUUID()
-	event := &core.FFIEvent{
+	event := &fftypes.FFIEvent{
 		ID:        eventID,
 		Interface: interfaceID,
 		Namespace: "ns",
 		Pathname:  "Changed_1",
-		FFIEventDefinition: core.FFIEventDefinition{
+		FFIEventDefinition: fftypes.FFIEventDefinition{
 			Name:        "Changed",
 			Description: "Things changed",
-			Params: core.FFIParams{
+			Params: fftypes.FFIParams{
 				{
 					Name:   "value",
 					Schema: fftypes.JSONAnyPtr(`{"type": "integer"}`),
@@ -83,7 +83,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 	assert.Equal(t, string(eventJson), string(eventReadJson))
 
 	// Update event
-	event.Params = core.FFIParams{}
+	event.Params = fftypes.FFIParams{}
 	err = s.UpsertFFIEvent(ctx, event)
 	assert.NoError(t, err)
 
@@ -93,7 +93,7 @@ func TestFFIEventsE2EWithDB(t *testing.T) {
 func TestFFIEventDBFailBeginTransaction(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIEvent(context.Background(), &core.FFIEvent{})
+	err := s.UpsertFFIEvent(context.Background(), &fftypes.FFIEvent{})
 	assert.Regexp(t, "FF10114", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -102,7 +102,7 @@ func TestFFIEventDBFailSelect(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	err := s.UpsertFFIEvent(context.Background(), &core.FFIEvent{})
+	err := s.UpsertFFIEvent(context.Background(), &fftypes.FFIEvent{})
 	assert.Regexp(t, "pop", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
@@ -112,7 +112,7 @@ func TestFFIEventDBFailInsert(t *testing.T) {
 	s, mock := newMockProvider().init()
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
-	event := &core.FFIEvent{
+	event := &fftypes.FFIEvent{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIEvent(context.Background(), event)
@@ -127,7 +127,7 @@ func TestFFIEventDBFailUpdate(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 	mock.ExpectQuery("UPDATE .*").WillReturnError(fmt.Errorf("pop"))
-	event := &core.FFIEvent{
+	event := &fftypes.FFIEvent{
 		ID: fftypes.NewUUID(),
 	}
 	err := s.UpsertFFIEvent(context.Background(), event)

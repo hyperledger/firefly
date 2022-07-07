@@ -46,56 +46,62 @@ type callbacks struct {
 	handlers map[string]tokens.Callbacks
 }
 
-func (cb *callbacks) TokenOpUpdate(plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
-	for _, cb := range cb.handlers {
-		cb.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+func (cb *callbacks) TokenOpUpdate(ctx context.Context, plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
+	if handler, ok := cb.handlers[namespace]; ok {
+		handler.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	} else {
+		log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
 	}
 }
 
-func (cb *callbacks) TokenPoolCreated(namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
+func (cb *callbacks) TokenPoolCreated(ctx context.Context, namespace string, plugin tokens.Plugin, pool *tokens.TokenPool) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			if err := cb.TokenPoolCreated(plugin, pool); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.handlers[namespace]; ok {
-			return listener.TokenPoolCreated(plugin, pool)
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokenPoolCreated(plugin, pool)
 		}
+		log.L(ctx).Errorf("No handler found for token pool event on namespace '%s'", namespace)
 	}
 	return nil
 }
 
-func (cb *callbacks) TokensTransferred(namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
+func (cb *callbacks) TokensTransferred(ctx context.Context, namespace string, plugin tokens.Plugin, transfer *tokens.TokenTransfer) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			if err := cb.TokensTransferred(plugin, transfer); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.handlers[namespace]; ok {
-			return listener.TokensTransferred(plugin, transfer)
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokensTransferred(plugin, transfer)
 		}
+		log.L(ctx).Errorf("No handler found for token transfer event on namespace '%s'", namespace)
 	}
 	return nil
 }
 
-func (cb *callbacks) TokensApproved(namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
+func (cb *callbacks) TokensApproved(ctx context.Context, namespace string, plugin tokens.Plugin, approval *tokens.TokenApproval) error {
 	if namespace == "" {
-		// Older token subscriptions don't populate namespace, so deliver the event to every listener
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			if err := cb.TokensApproved(plugin, approval); err != nil {
 				return err
 			}
 		}
 	} else {
-		if listener, ok := cb.handlers[namespace]; ok {
-			return listener.TokensApproved(plugin, approval)
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.TokensApproved(plugin, approval)
 		}
+		log.L(ctx).Errorf("No handler found for token approval event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -147,34 +153,38 @@ type activatePool struct {
 }
 
 type mintTokens struct {
-	PoolLocator string `json:"poolLocator"`
-	TokenIndex  string `json:"tokenIndex,omitempty"`
-	To          string `json:"to"`
-	Amount      string `json:"amount"`
-	RequestID   string `json:"requestId,omitempty"`
-	Signer      string `json:"signer"`
-	Data        string `json:"data,omitempty"`
+	PoolLocator string             `json:"poolLocator"`
+	TokenIndex  string             `json:"tokenIndex,omitempty"`
+	To          string             `json:"to"`
+	Amount      string             `json:"amount"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Signer      string             `json:"signer"`
+	Data        string             `json:"data,omitempty"`
+	URI         string             `json:"uri,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type burnTokens struct {
-	PoolLocator string `json:"poolLocator"`
-	TokenIndex  string `json:"tokenIndex,omitempty"`
-	From        string `json:"from"`
-	Amount      string `json:"amount"`
-	RequestID   string `json:"requestId,omitempty"`
-	Signer      string `json:"signer"`
-	Data        string `json:"data,omitempty"`
+	PoolLocator string             `json:"poolLocator"`
+	TokenIndex  string             `json:"tokenIndex,omitempty"`
+	From        string             `json:"from"`
+	Amount      string             `json:"amount"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Signer      string             `json:"signer"`
+	Data        string             `json:"data,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type transferTokens struct {
-	PoolLocator string `json:"poolLocator"`
-	TokenIndex  string `json:"tokenIndex,omitempty"`
-	From        string `json:"from"`
-	To          string `json:"to"`
-	Amount      string `json:"amount"`
-	RequestID   string `json:"requestId,omitempty"`
-	Signer      string `json:"signer"`
-	Data        string `json:"data,omitempty"`
+	PoolLocator string             `json:"poolLocator"`
+	TokenIndex  string             `json:"tokenIndex,omitempty"`
+	From        string             `json:"from"`
+	To          string             `json:"to"`
+	Amount      string             `json:"amount"`
+	RequestID   string             `json:"requestId,omitempty"`
+	Signer      string             `json:"signer"`
+	Data        string             `json:"data,omitempty"`
+	Config      fftypes.JSONObject `json:"config"`
 }
 
 type tokenApproval struct {
@@ -260,7 +270,7 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		replyType = core.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	ft.callbacks.TokenOpUpdate(ft, requestID, replyType, transactionHash, message, data)
+	ft.callbacks.TokenOpUpdate(ctx, ft, requestID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -333,7 +343,7 @@ func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSON
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokenPoolCreated(namespace, ft, pool)
+	return ft.callbacks.TokenPoolCreated(ctx, namespace, ft, pool)
 }
 
 func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransferType, data fftypes.JSONObject) (err error) {
@@ -422,7 +432,7 @@ func (ft *FFTokens) handleTokenTransfer(ctx context.Context, t core.TokenTransfe
 	}
 
 	// If there's an error dispatching the event, we must return the error and shutdown
-	return ft.callbacks.TokensTransferred(namespace, ft, transfer)
+	return ft.callbacks.TokensTransferred(ctx, namespace, ft, transfer)
 }
 
 func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONObject) (err error) {
@@ -497,7 +507,7 @@ func (ft *FFTokens) handleTokenApproval(ctx context.Context, data fftypes.JSONOb
 		},
 	}
 
-	return ft.callbacks.TokensApproved(namespace, ft, approval)
+	return ft.callbacks.TokensApproved(ctx, namespace, ft, approval)
 }
 
 func (ft *FFTokens) handleMessage(ctx context.Context, msgBytes []byte) (err error) {
@@ -663,6 +673,8 @@ func (ft *FFTokens) MintTokens(ctx context.Context, nsOpID string, poolLocator s
 			RequestID:   nsOpID,
 			Signer:      mint.Key,
 			Data:        string(data),
+			URI:         mint.URI,
+			Config:      mint.Config,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/mint")
@@ -689,6 +701,7 @@ func (ft *FFTokens) BurnTokens(ctx context.Context, nsOpID string, poolLocator s
 			RequestID:   nsOpID,
 			Signer:      burn.Key,
 			Data:        string(data),
+			Config:      burn.Config,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/burn")
@@ -716,6 +729,7 @@ func (ft *FFTokens) TransferTokens(ctx context.Context, nsOpID string, poolLocat
 			RequestID:   nsOpID,
 			Signer:      transfer.Key,
 			Data:        string(data),
+			Config:      transfer.Config,
 		}).
 		SetError(&errRes).
 		Post("/api/v1/transfer")

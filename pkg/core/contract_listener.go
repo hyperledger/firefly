@@ -27,7 +27,7 @@ import (
 
 type ContractListener struct {
 	ID        *fftypes.UUID            `ffstruct:"ContractListener" json:"id,omitempty" ffexcludeinput:"true"`
-	Interface *FFIReference            `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
+	Interface *fftypes.FFIReference    `ffstruct:"ContractListener" json:"interface,omitempty" ffexcludeinput:"postContractAPIListeners"`
 	Namespace string                   `ffstruct:"ContractListener" json:"namespace,omitempty" ffexcludeinput:"true"`
 	Name      string                   `ffstruct:"ContractListener" json:"name,omitempty"`
 	BackendID string                   `ffstruct:"ContractListener" json:"backendId,omitempty" ffexcludeinput:"true"`
@@ -49,7 +49,7 @@ type ContractListenerInput struct {
 }
 
 type FFISerializedEvent struct {
-	FFIEventDefinition
+	fftypes.FFIEventDefinition
 }
 
 // Scan implements sql.Scanner

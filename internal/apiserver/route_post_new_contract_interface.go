@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	"github.com/hyperledger/firefly-common/pkg/ffapi"
+	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly/internal/coremsgs"
-	"github.com/hyperledger/firefly/pkg/core"
 )
 
 var postNewContractInterface = &ffapi.Route{
@@ -34,14 +34,14 @@ var postNewContractInterface = &ffapi.Route{
 		{Name: "confirm", Description: coremsgs.APIConfirmQueryParam, IsBool: true, Example: "true"},
 	},
 	Description:     coremsgs.APIEndpointsPostNewContractInterface,
-	JSONInputValue:  func() interface{} { return &core.FFI{} },
-	JSONOutputValue: func() interface{} { return &core.FFI{} },
+	JSONInputValue:  func() interface{} { return &fftypes.FFI{} },
+	JSONOutputValue: func() interface{} { return &fftypes.FFI{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			waitConfirm := strings.EqualFold(r.QP["confirm"], "true")
 			r.SuccessStatus = syncRetcode(waitConfirm)
-			ffi := r.Input.(*core.FFI)
+			ffi := r.Input.(*fftypes.FFI)
 			err = cr.or.DefinitionSender().DefineFFI(cr.ctx, ffi, waitConfirm)
 			return ffi, err
 		},

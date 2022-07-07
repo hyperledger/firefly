@@ -36,7 +36,7 @@ type ContractCallRequest struct {
 	Interface  *fftypes.UUID          `ffstruct:"ContractCallRequest" json:"interface,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Location   *fftypes.JSONAny       `ffstruct:"ContractCallRequest" json:"location,omitempty"`
 	Key        string                 `ffstruct:"ContractCallRequest" json:"key,omitempty"`
-	Method     *FFIMethod             `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
+	Method     *fftypes.FFIMethod     `ffstruct:"ContractCallRequest" json:"method,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	MethodPath string                 `ffstruct:"ContractCallRequest" json:"methodPath,omitempty" ffexcludeinput:"postContractAPIInvoke,postContractAPIQuery"`
 	Input      map[string]interface{} `ffstruct:"ContractCallRequest" json:"input"`
 	Options    map[string]interface{} `ffstruct:"ContractCallRequest" json:"options"`
@@ -48,27 +48,27 @@ type ContractURLs struct {
 }
 
 type ContractAPI struct {
-	ID        *fftypes.UUID    `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
-	Namespace string           `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
-	Interface *FFIReference    `ffstruct:"ContractAPI" json:"interface"`
-	Location  *fftypes.JSONAny `ffstruct:"ContractAPI" json:"location,omitempty"`
-	Name      string           `ffstruct:"ContractAPI" json:"name"`
-	Message   *fftypes.UUID    `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
-	URLs      ContractURLs     `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
+	ID        *fftypes.UUID         `ffstruct:"ContractAPI" json:"id,omitempty" ffexcludeinput:"true"`
+	Namespace string                `ffstruct:"ContractAPI" json:"namespace,omitempty" ffexcludeinput:"true"`
+	Interface *fftypes.FFIReference `ffstruct:"ContractAPI" json:"interface"`
+	Location  *fftypes.JSONAny      `ffstruct:"ContractAPI" json:"location,omitempty"`
+	Name      string                `ffstruct:"ContractAPI" json:"name"`
+	Message   *fftypes.UUID         `ffstruct:"ContractAPI" json:"message,omitempty" ffexcludeinput:"true"`
+	URLs      ContractURLs          `ffstruct:"ContractAPI" json:"urls" ffexcludeinput:"true"`
 }
 
 func (c *ContractAPI) Validate(ctx context.Context, existing bool) (err error) {
-	if err = ValidateFFNameField(ctx, c.Namespace, "namespace"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, c.Namespace, "namespace"); err != nil {
 		return err
 	}
-	if err = ValidateFFNameField(ctx, c.Name, "name"); err != nil {
+	if err = fftypes.ValidateFFNameField(ctx, c.Name, "name"); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (c *ContractAPI) Topic() string {
-	return typeNamespaceNameTopicHash("contractapi", c.Namespace, c.Name)
+	return fftypes.TypeNamespaceNameTopicHash("contractapi", c.Namespace, c.Name)
 }
 
 func (c *ContractAPI) SetBroadcastMessage(msgID *fftypes.UUID) {

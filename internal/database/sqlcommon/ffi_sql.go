@@ -45,7 +45,7 @@ var (
 
 const ffiTable = "ffi"
 
-func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *core.FFI) (err error) {
+func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *fftypes.FFI) (err error) {
 	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
 	if err != nil {
 		return err
@@ -100,8 +100,8 @@ func (s *SQLCommon) UpsertFFI(ctx context.Context, ffi *core.FFI) (err error) {
 	return s.commitTx(ctx, tx, autoCommit)
 }
 
-func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*core.FFI, error) {
-	ffi := core.FFI{}
+func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*fftypes.FFI, error) {
+	ffi := fftypes.FFI{}
 	err := row.Scan(
 		&ffi.ID,
 		&ffi.Namespace,
@@ -116,7 +116,7 @@ func (s *SQLCommon) ffiResult(ctx context.Context, row *sql.Rows) (*core.FFI, er
 	return &ffi, nil
 }
 
-func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{}) (*core.FFI, error) {
+func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{}) (*fftypes.FFI, error) {
 	rows, _, err := s.query(ctx, ffiTable,
 		sq.Select(ffiColumns...).
 			From(ffiTable).
@@ -140,7 +140,7 @@ func (s *SQLCommon) getFFIPred(ctx context.Context, desc string, pred interface{
 	return ffi, nil
 }
 
-func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter database.Filter) (ffis []*core.FFI, res *database.FilterResult, err error) {
+func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter database.Filter) (ffis []*fftypes.FFI, res *database.FilterResult, err error) {
 
 	query, fop, fi, err := s.filterSelect(ctx, "", sq.Select(ffiColumns...).From(ffiTable),
 		filter, ffiFilterFieldMap, []interface{}{"sequence"}, sq.Eq{"namespace": namespace})
@@ -154,7 +154,7 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter databa
 	}
 	defer rows.Close()
 
-	ffis = []*core.FFI{}
+	ffis = []*fftypes.FFI{}
 	for rows.Next() {
 		cd, err := s.ffiResult(ctx, rows)
 		if err != nil {
@@ -167,10 +167,10 @@ func (s *SQLCommon) GetFFIs(ctx context.Context, namespace string, filter databa
 
 }
 
-func (s *SQLCommon) GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.FFI, error) {
+func (s *SQLCommon) GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*fftypes.FFI, error) {
 	return s.getFFIPred(ctx, id.String(), sq.Eq{"id": id, "namespace": namespace})
 }
 
-func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, version string) (*core.FFI, error) {
+func (s *SQLCommon) GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error) {
 	return s.getFFIPred(ctx, namespace+":"+name+":"+version, sq.Eq{"namespace": namespace, "name": name, "version": version})
 }

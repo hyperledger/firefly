@@ -135,7 +135,7 @@ func ParseNamespacedOpID(ctx context.Context, nsIDStr string) (string, *fftypes.
 	}
 	ns := nsIDSplit[0]
 	uuidStr := nsIDSplit[1]
-	if err := ValidateFFNameField(ctx, ns, "namespace"); err != nil {
+	if err := fftypes.ValidateFFNameField(ctx, ns, "namespace"); err != nil {
 		return "", nil, err
 	}
 	u, err := fftypes.ParseUUID(ctx, uuidStr)

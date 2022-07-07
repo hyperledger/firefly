@@ -14,10 +14,6 @@ const config: HardhatUserConfig = {
   networks: {
     'firefly-cli': {
       url: "http://127.0.0.1:5100"
-    },
-    rinkeby: {
-        url: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-        accounts: [`${process.env.RINKEBY_PRIVATE_KEY}`]
     }
   },
   gasReporter: {

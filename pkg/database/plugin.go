@@ -429,38 +429,38 @@ type iTokenApprovalCollection interface {
 
 type iFFICollection interface {
 	// UpsertFFI - Upsert an FFI
-	UpsertFFI(ctx context.Context, cd *core.FFI) error
+	UpsertFFI(ctx context.Context, cd *fftypes.FFI) error
 
 	// GetFFIs - Get FFIs
-	GetFFIs(ctx context.Context, namespace string, filter Filter) ([]*core.FFI, *FilterResult, error)
+	GetFFIs(ctx context.Context, namespace string, filter Filter) ([]*fftypes.FFI, *FilterResult, error)
 
 	// GetFFIByID - Get an FFI by ID
-	GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*core.FFI, error)
+	GetFFIByID(ctx context.Context, namespace string, id *fftypes.UUID) (*fftypes.FFI, error)
 
 	// GetFFI - Get an FFI by name and version
-	GetFFI(ctx context.Context, namespace, name, version string) (*core.FFI, error)
+	GetFFI(ctx context.Context, namespace, name, version string) (*fftypes.FFI, error)
 }
 
 type iFFIMethodCollection interface {
 	// UpsertFFIMethod - Upsert an FFI method
-	UpsertFFIMethod(ctx context.Context, method *core.FFIMethod) error
+	UpsertFFIMethod(ctx context.Context, method *fftypes.FFIMethod) error
 
 	// GetFFIMethod - Get an FFI method by path
-	GetFFIMethod(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIMethod, error)
+	GetFFIMethod(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIMethod, error)
 
 	// GetFFIMethods - Get FFI methods
-	GetFFIMethods(ctx context.Context, namespace string, filter Filter) (methods []*core.FFIMethod, res *FilterResult, err error)
+	GetFFIMethods(ctx context.Context, namespace string, filter Filter) (methods []*fftypes.FFIMethod, res *FilterResult, err error)
 }
 
 type iFFIEventCollection interface {
 	// UpsertFFIEvent - Upsert an FFI event
-	UpsertFFIEvent(ctx context.Context, method *core.FFIEvent) error
+	UpsertFFIEvent(ctx context.Context, method *fftypes.FFIEvent) error
 
 	// GetFFIEvent - Get an FFI event by path
-	GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*core.FFIEvent, error)
+	GetFFIEvent(ctx context.Context, namespace string, interfaceID *fftypes.UUID, pathName string) (*fftypes.FFIEvent, error)
 
 	// GetFFIEvents - Get FFI events
-	GetFFIEvents(ctx context.Context, namespace string, filter Filter) (events []*core.FFIEvent, res *FilterResult, err error)
+	GetFFIEvents(ctx context.Context, namespace string, filter Filter) (events []*fftypes.FFIEvent, res *FilterResult, err error)
 }
 
 type iContractAPICollection interface {

@@ -39,11 +39,11 @@ func TestContractListenerE2EWithDB(t *testing.T) {
 	locationJson, _ := json.Marshal(location)
 	sub := &core.ContractListener{
 		ID: fftypes.NewUUID(),
-		Interface: &core.FFIReference{
+		Interface: &fftypes.FFIReference{
 			ID: fftypes.NewUUID(),
 		},
 		Event: &core.FFISerializedEvent{
-			FFIEventDefinition: core.FFIEventDefinition{
+			FFIEventDefinition: fftypes.FFIEventDefinition{
 				Name: "event1",
 			},
 		},

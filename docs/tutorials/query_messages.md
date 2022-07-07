@@ -22,7 +22,7 @@ The FireFly Explorer is a great way to view the messages sent and received by yo
 
 Just open `/ui` on your FireFly node to access it.
 
-![Explore Messages](../images/message_view.png)
+![Explore Messages](../images/new_message_view.png)
 
 This builds on the APIs to query and filter messages, described below
 

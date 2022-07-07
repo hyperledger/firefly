@@ -175,6 +175,38 @@ func TestPrepareOperationBatchPinNotFound(t *testing.T) {
 	assert.Regexp(t, "FF10109", err)
 }
 
+func TestRunBatchPinV1(t *testing.T) {
+	mp := newTestMultipartyManager()
+	defer mp.cleanup(t)
+	mp.activeContract.networkVersion = 1
+
+	op := &core.Operation{
+		Type:      core.OpTypeBlockchainPinBatch,
+		ID:        fftypes.NewUUID(),
+		Namespace: "ns1",
+	}
+	batch := &core.BatchPersisted{
+		BatchHeader: core.BatchHeader{
+			ID: fftypes.NewUUID(),
+			SignerRef: core.SignerRef{
+				Key: "0x123",
+			},
+		},
+	}
+	contexts := []*fftypes.Bytes32{
+		fftypes.NewRandB32(),
+		fftypes.NewRandB32(),
+	}
+	addBatchPinInputs(op, batch.ID, contexts, "payload1")
+
+	mp.mbi.On("SubmitBatchPin", context.Background(), "ns1:"+op.ID.String(), "0x123", mock.Anything, mock.Anything).Return(nil)
+
+	_, complete, err := mp.RunOperation(context.Background(), opBatchPin(op, batch, contexts, "payload1"))
+
+	assert.False(t, complete)
+	assert.NoError(t, err)
+}
+
 func TestOperationUpdate(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)

@@ -53,7 +53,7 @@ nav_order: 4
 
 ## Example 1: Pinned private send of in-line string data
 
-`POST` `/api/v1/namespaces/default/send/message`
+`POST` `/api/v1/namespaces/default/messages/private`
 
 ```json
 {
@@ -75,10 +75,6 @@ nav_order: 4
 ## Example message response
 
 Status: `202 Accepted` - the message is on it's way, but has not yet been confirmed.
-
-> _Issue [#112](https://github.com/hyperledger/firefly/issues/112) proposes adding
-> an option to wait for the message to be confirmed by the blockchain before returning,
-> with `200 OK`._
 
 ```json
 {
@@ -116,7 +112,7 @@ Status: `202 Accepted` - the message is on it's way, but has not yet been confir
 Set `header.txtype: "none"` to disable pinning of the private message send to the blockchain.
 The message is sent immediately (no batching) over the private data exchange.
 
-`POST` `/api/v1/namespaces/default/send/message`
+`POST` `/api/v1/namespaces/default/messages/private`
 
 ```json
 {
@@ -149,7 +145,7 @@ It is very good practice to set a `tag` and `topic` in each of your messages:
   information you are publishing. It is used as an ordering context, so all
   sends on a given topic are assured to be processed in order.
 
-`POST` `/api/v1/namespaces/default/send/message`
+`POST` `/api/v1/namespaces/default/messages/private`
 
 ```json
 {
@@ -204,12 +200,10 @@ on the vast majority of your messages.
 
 Here we make two API calls.
 
-1. Create the `data` object explicitly, using a multi-party form upload
-
+1) Create the `data` object explicitly, using a multi-party form upload
 - You can also just post JSON to this endpoint
 
-2. Privately send a message referring to that data
-
+2) Privately send a message referring to that data
 - The Blob is sent privately to each party
 - A pin goes to the blockchain
 - The metadata goes into a batch with the message
@@ -259,7 +253,7 @@ At this point the data has not be shared with anyone else in the network
 
 Just include a reference to the `id` returned from the upload.
 
-`POST` `/api/v1/namespaces/default/send/message`
+`POST` `/api/v1/namespaces/default/messages/private`
 
 ```json
 {
@@ -277,3 +271,22 @@ Just include a reference to the `id` returned from the upload.
     }
 }
 ```
+
+## Sending Private Messages using the Sandbox
+All of the functionality discussed above can be done through the [FireFly Sandbox](../gettingstarted/sandbox.md).
+
+To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.
+
+Make sure to expand the "Send a Private Message" section. Enter your message into the message field as seen in the screenshot below. Because we are sending a private message, make sure you're in the "Send a Private Message" section and that you choose a message recipient
+
+![Private Message Broadcast](../images/message_private_broadcast.png)
+
+Notice how the `data` field in the center panel updates in real time as you update the message you wish to send.
+
+Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
+
+![Private Message result](../images/message_broadcast_sample_result.png)
+
+Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see your successful blockchain transaction. Compare the "Recent Network Changes" widget With private messages, your 
+
+![Successful Transaction](../images/firefly_first_successful_transaction.png)

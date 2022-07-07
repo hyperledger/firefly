@@ -158,13 +158,13 @@ func (_m *Manager) SubmitNetworkAction(ctx context.Context, signingKey string, a
 	return r0
 }
 
-// TerminateContract provides a mock function with given fields: ctx, contracts, termination
-func (_m *Manager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, termination *blockchain.Event) error {
-	ret := _m.Called(ctx, contracts, termination)
+// TerminateContract provides a mock function with given fields: ctx, contracts, location, termination
+func (_m *Manager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, location *fftypes.JSONAny, termination *blockchain.Event) error {
+	ret := _m.Called(ctx, contracts, location, termination)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts, *blockchain.Event) error); ok {
-		r0 = rf(ctx, contracts, termination)
+	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts, *fftypes.JSONAny, *blockchain.Event) error); ok {
+		r0 = rf(ctx, contracts, location, termination)
 	} else {
 		r0 = ret.Error(0)
 	}

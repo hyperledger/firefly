@@ -351,7 +351,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	or.plugins.Database.Plugin.SetHandler(or.namespace, or)
 
 	if or.plugins.Blockchain.Plugin != nil {
-		or.plugins.Blockchain.Plugin.SetHandler(&or.bc)
+		or.plugins.Blockchain.Plugin.SetHandler(or.namespace, &or.bc)
 	}
 
 	if or.plugins.SharedStorage.Plugin != nil {
