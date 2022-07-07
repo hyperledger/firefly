@@ -67,10 +67,6 @@ Status: `202 Accepted` - a broadcast message has been sent, and on confirmation 
 datatype will be created (unless it conflicts with another definition with the same
 `name` and `version` that was ordered onto the blockchain before this definition).
 
-> _Issue [#112](https://github.com/hyperledger/firefly/issues/112) proposes adding
-> an option to wait for the message to be confirmed by the blockchain before returning,
-> with `200 OK`._
-
 ```json
 {
   "header": {
@@ -169,3 +165,44 @@ time if it does not conform. On other nodes, bad data results in a `message_reje
   ]
 }
 ```
+## Defining Datatypes using the Sandbox
+You can also define a datatype through the [FireFly Sandbox](../gettingstarted/sandbox.md).
+
+To get started, open up the Web UI and Sanbox UI for at least one of your members. The URLs for these were printed in your terminal when you started your FireFly stack.
+
+In the sandbox, enter the datatype's name, version, and JSON Schema as seen in the screenshot below.
+
+```json
+{
+  "name": "widget",
+  "version": "0.0.2",
+  "value": {
+    "$id": "https://example.com/widget.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Widget",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The unique identifier for the widget."
+      },
+      "name": {
+        "type": "string",
+        "description": "The person's last name."
+      }
+    }
+  }
+}
+```
+
+![Defining a Datatype](../images/define_a_datatype.png)
+
+Notice how the `data` field in the center panel updates in real time.
+
+Click the blue `Run` button. This should return a `202` response immediately in the Server Response section and will populate the right hand panel with transaction information after a few seconds. 
+
+![Message Broadcast](../images/message_broadcast_sample_result.png)
+
+Go back to the FireFly UI (the URL for this would have been shown in the terminal when you started the stack) and you'll see that you've successfully defined your datatype
+
+![Successful Transaction](../images/firefly_first_successful_transaction.png)
