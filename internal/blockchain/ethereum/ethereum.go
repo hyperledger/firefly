@@ -106,13 +106,20 @@ func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, act
 	return nil
 }
 
-func (cb *callbacks) BlockchainEvent(event *blockchain.EventWithSubscription) error {
-	for _, cb := range cb.handlers {
-		// Send the event to all handlers and let them match it to a contract listener
-		// TODO: can we push more listener/namespace knowledge down to this layer?
-		if err := cb.BlockchainEvent(event); err != nil {
-			return err
+func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
+	if namespace == "" {
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
+		for _, cb := range cb.handlers {
+			// Send the event to all handlers and let them match it to a contract listener
+			if err := cb.BlockchainEvent(event); err != nil {
+				return err
+			}
 		}
+	} else {
+		if handler, ok := cb.handlers[namespace]; ok {
+			return handler.BlockchainEvent(event)
+		}
+		log.L(ctx).Errorf("No handler found for blockchain event on namespace '%s'", namespace)
 	}
 	return nil
 }
@@ -207,7 +214,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 		return err
 	}
 
-	e.streams = &streamManager{client: e.client}
+	e.streams = newStreamManager(e.client)
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)
@@ -434,9 +441,15 @@ func (e *Ethereum) handleBatchPinEvent(ctx context.Context, location *fftypes.JS
 }
 
 func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSONObject) (err error) {
+	subName, err := e.streams.getSubscriptionName(ctx, msgJSON.GetString("subId"))
+	if err != nil {
+		return err
+	}
+
+	namespace := e.streams.getNamespaceFromSubName(subName)
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
-		err = e.callbacks.BlockchainEvent(&blockchain.EventWithSubscription{
+		err = e.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
 			Event:        *event,
 			Subscription: msgJSON.GetString("subId"),
 		})
@@ -773,7 +786,7 @@ func (e *Ethereum) AddContractListener(ctx context.Context, listener *core.Contr
 		return i18n.WrapError(ctx, err, coremsgs.MsgContractParamInvalid)
 	}
 
-	subName := fmt.Sprintf("ff-sub-%s", listener.ID)
+	subName := fmt.Sprintf("ff-sub-%s-%s", listener.Namespace, listener.ID)
 	firstEvent := string(core.SubOptsFirstEventNewest)
 	if listener.Options != nil {
 		firstEvent = listener.Options.FirstEvent

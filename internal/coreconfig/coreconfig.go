@@ -112,6 +112,10 @@ var (
 	BroadcastBatchPayloadLimit = ffc("broadcast.batch.payloadLimit")
 	// BroadcastBatchTimeout is the timeout to wait for a batch to fill, before sending
 	BroadcastBatchTimeout = ffc("broadcast.batch.timeout")
+	// CacheBlockchainTTL size of cache for blockchain plugin caches
+	CacheBlockchainTTL = ffc("cache.blockchain.ttl")
+	// CacheBlockchainTTL time to live of cache for blockchain plugin caches
+	CacheBlockchainSize = ffc("cache.blockchain.size")
 	// DownloadWorkerCount is the number of download workers created to pull data from shared storage to the local DX
 	DownloadWorkerCount = ffc("download.worker.count")
 	// DownloadWorkerQueueLength is the length of the work queue in the channel to the workers - defaults to 2x the worker count
@@ -316,6 +320,8 @@ func setDefaults() {
 	viper.SetDefault(string(BroadcastBatchSize), 200)
 	viper.SetDefault(string(BroadcastBatchPayloadLimit), "800Kb")
 	viper.SetDefault(string(BroadcastBatchTimeout), "1s")
+	viper.SetDefault(string(CacheBlockchainSize), "50Mb")
+	viper.SetDefault(string(CacheBlockchainTTL), "5m")
 	viper.SetDefault(string(HistogramsMaxChartRows), 100)
 	viper.SetDefault(string(DebugPort), -1)
 	viper.SetDefault(string(DownloadWorkerCount), 10)
