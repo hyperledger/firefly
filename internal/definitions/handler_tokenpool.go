@@ -42,6 +42,7 @@ func (dh *definitionHandler) handleTokenPoolDefinition(ctx context.Context, stat
 	// from the event (without downloading and parsing the msg)
 	correlator := pool.ID
 
+	pool.Namespace = dh.namespace
 	if err := pool.Validate(ctx); err != nil {
 		return HandlerResult{Action: ActionReject, CustomCorrelator: correlator}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "token pool", pool.ID, err)
 	}

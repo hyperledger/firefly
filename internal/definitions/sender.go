@@ -117,7 +117,6 @@ func (bm *definitionSender) sendDefinitionCommon(ctx context.Context, def core.D
 	message := &core.MessageInOut{
 		Message: core.Message{
 			Header: core.MessageHeader{
-				Namespace: bm.namespace,
 				Type:      core.MessageTypeDefinition,
 				Topics:    core.FFStringArray{def.Topic()},
 				Tag:       tag,

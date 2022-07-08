@@ -110,9 +110,9 @@ func TestHandleDeprecatedNodeDefinitionOK(t *testing.T) {
 	mim.On("VerifyIdentityChain", ctx, mock.Anything).Return(parent.Migrated().Identity, false, nil)
 
 	mdi := dh.database.(*databasemocks.Plugin)
-	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, core.LegacySystemNamespace, node.Name).Return(nil, nil)
+	mdi.On("GetIdentityByName", ctx, core.IdentityTypeNode, "ns1", node.Name).Return(nil, nil)
 	mdi.On("GetIdentityByID", ctx, "ns1", node.ID).Return(nil, nil)
-	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, core.LegacySystemNamespace, "member_0").Return(nil, nil)
+	mdi.On("GetVerifierByValue", ctx, core.VerifierTypeFFDXPeerID, "ns1", "member_0").Return(nil, nil)
 	mdi.On("UpsertIdentity", ctx, mock.MatchedBy(func(identity *core.Identity) bool {
 		assert.Equal(t, *msg.Header.ID, *identity.Messages.Claim)
 		return true

@@ -71,16 +71,17 @@ func (dh *definitionHandler) handleFFIBroadcast(ctx context.Context, state *core
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &ffi); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract interface", msg.Header.ID)
 	}
-	if err := ffi.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
-	}
-
 	ffi.Message = msg.Header.ID
 	return dh.handleFFIDefinition(ctx, state, &ffi, tx)
 }
 
 func (dh *definitionHandler) handleFFIDefinition(ctx context.Context, state *core.BatchState, ffi *fftypes.FFI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
+	ffi.Namespace = dh.namespace
+	if err := ffi.Validate(ctx, true); err != nil {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract interface", ffi.ID, err)
+	}
+
 	if retry, err := dh.persistFFI(ctx, ffi); err != nil {
 		if retry {
 			return HandlerResult{Action: ActionRetry}, err
@@ -101,16 +102,17 @@ func (dh *definitionHandler) handleContractAPIBroadcast(ctx context.Context, sta
 	if valid := dh.getSystemBroadcastPayload(ctx, msg, data, &api); !valid {
 		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedBadPayload, "contract API", msg.Header.ID)
 	}
-	if err := api.Validate(ctx, true); err != nil {
-		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
-	}
-
 	api.Message = msg.Header.ID
 	return dh.handleContractAPIDefinition(ctx, state, "", &api, tx)
 }
 
 func (dh *definitionHandler) handleContractAPIDefinition(ctx context.Context, state *core.BatchState, httpServerURL string, api *core.ContractAPI, tx *fftypes.UUID) (HandlerResult, error) {
 	l := log.L(ctx)
+	api.Namespace = dh.namespace
+	if err := api.Validate(ctx, true); err != nil {
+		return HandlerResult{Action: ActionReject}, i18n.NewError(ctx, coremsgs.MsgDefRejectedValidateFail, "contract API", api.ID, err)
+	}
+
 	if retry, err := dh.persistContractAPI(ctx, httpServerURL, api); err != nil {
 		if retry {
 			return HandlerResult{Action: ActionRetry}, err
