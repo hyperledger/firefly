@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -38,6 +39,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
+	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -71,6 +73,10 @@ func newTestFabric() (*Fabric, func()) {
 			<-e.closed
 		}
 	}
+}
+
+func newTestStreamManager(client *resty.Client, signer string) *streamManager {
+	return newStreamManager(client, signer, ccache.New(ccache.Configure()), 5*time.Minute)
 }
 
 func testFFIMethod() *fftypes.FFIMethod {
@@ -1739,7 +1745,7 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "old-sub-name",
 		}))
 
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -1823,7 +1829,7 @@ func TestHandleMessageContractEventNamespacedHandlers(t *testing.T) {
 			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
 		}))
 
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -1896,7 +1902,7 @@ func TestHandleMessageContractEventNoNamespacedHandlers(t *testing.T) {
 			ID: "sb-cb37cc07-e873-4f58-44ab-55add6bba320", Stream: "es12345", Name: "ff-sub-ns1-11232312312",
 		}))
 
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns2": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -1944,7 +1950,7 @@ func TestHandleMessageContractEventNoPayload(t *testing.T) {
 		}))
 
 	em := &blockchainmocks.Callbacks{}
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 
 	e.subs = map[string]subscriptionInfo{}
@@ -2018,7 +2024,7 @@ func TestHandleMessageContractOldSubError(t *testing.T) {
 		}))
 
 	em := &blockchainmocks.Callbacks{}
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -2062,7 +2068,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 		}))
 
 	em := &blockchainmocks.Callbacks{}
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{
@@ -2104,7 +2110,7 @@ func TestHandleMessageContractGetSubError(t *testing.T) {
 		httpmock.NewJsonResponderOrPanic(500, fabError{Error: "pop"}))
 
 	em := &blockchainmocks.Callbacks{}
-	e.streams = newStreamManager(e.client, e.signer)
+	e.streams = newTestStreamManager(e.client, e.signer)
 	e.callbacks = callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}}
 	e.subs = map[string]subscriptionInfo{}
 	e.subs["sb-b5b97a4e-a317-4053-6400-1474650efcb5"] = subscriptionInfo{

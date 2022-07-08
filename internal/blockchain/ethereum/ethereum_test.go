@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -37,6 +38,7 @@ import (
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
 	"github.com/jarcoal/httpmock"
+	"github.com/karlseguin/ccache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -97,6 +99,10 @@ func newTestEthereum() (*Ethereum, func()) {
 			<-e.closed
 		}
 	}
+}
+
+func newTestStreamManager(client *resty.Client) *streamManager {
+	return newStreamManager(client, ccache.New(ccache.Configure()), 5*time.Minute)
 }
 
 func mockNetworkVersion(t *testing.T, version int) func(req *http.Request) (*http.Response, error) {
@@ -1875,7 +1881,7 @@ func TestHandleMessageContractEventOldSubscription(t *testing.T) {
 		namespace: "ns1",
 		version:   1,
 	}
-	e.streams = newStreamManager(e.client)
+	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
@@ -1950,7 +1956,7 @@ func TestHandleMessageContractEventErrorOldSubscription(t *testing.T) {
 		namespace: "ns1",
 		version:   1,
 	}
-	e.streams = newStreamManager(e.client)
+	e.streams = newTestStreamManager(e.client)
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 
 	var events []interface{}
@@ -2012,7 +2018,7 @@ func TestHandleMessageContractEventWithNamespace(t *testing.T) {
 		namespace: "ns1",
 		version:   1,
 	}
-	e.streams = newStreamManager(e.client)
+	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "000000038011/000000/000050", e.Event.ProtocolID)
@@ -2086,7 +2092,7 @@ func TestHandleMessageContractEventNoNamespaceHandlers(t *testing.T) {
 		namespace: "ns1",
 		version:   1,
 	}
-	e.streams = newStreamManager(e.client)
+	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.MatchedBy(func(e *blockchain.EventWithSubscription) bool {
 		assert.Equal(t, "0xc26df2bf1a733e9249372d61eb11bd8662d26c8129df76890b1beb2f6fa72628", e.BlockchainTXID)
@@ -2136,7 +2142,7 @@ func TestHandleMessageContractEventSubNameError(t *testing.T) {
 		namespace: "ns1",
 		version:   1,
 	}
-	e.streams = newStreamManager(e.client)
+	e.streams = newTestStreamManager(e.client)
 
 	var events []interface{}
 	err := json.Unmarshal(data.Bytes(), &events)
@@ -2184,7 +2190,7 @@ func TestHandleMessageContractEventError(t *testing.T) {
 		namespace: "ns1",
 		version:   1,
 	}
-	e.streams = newStreamManager(e.client)
+	e.streams = newTestStreamManager(e.client)
 
 	em.On("BlockchainEvent", mock.Anything).Return(fmt.Errorf("pop"))
 

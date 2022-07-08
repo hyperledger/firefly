@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -34,10 +35,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly-signer/pkg/abi"
 	"github.com/hyperledger/firefly-signer/pkg/ffi2abi"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -61,6 +64,8 @@ type Ethereum struct {
 	metrics         metrics.Manager
 	ethconnectConf  config.Section
 	subs            map[string]subscriptionInfo
+	cache           *ccache.Cache
+	cacheTTL        time.Duration
 }
 
 type subscriptionInfo struct {
@@ -172,11 +177,11 @@ func (e *Ethereum) VerifierType() core.VerifierType {
 	return core.VerifierTypeEthAddress
 }
 
-func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
-	e.InitConfig(config)
+func (e *Ethereum) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+	e.InitConfig(conf)
 	ethconnectConf := e.ethconnectConf
-	addressResolverConf := config.SubSection(AddressResolverConfigKey)
-	fftmConf := config.SubSection(FFTMConfigKey)
+	addressResolverConf := conf.SubSection(AddressResolverConfigKey)
+	fftmConf := conf.SubSection(FFTMConfigKey)
 
 	e.ctx = log.WithLogField(ctx, "proto", "ethereum")
 	e.metrics = metrics
@@ -214,7 +219,10 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 		return err
 	}
 
-	e.streams = newStreamManager(e.client)
+	e.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
+	e.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+
+	e.streams = newStreamManager(e.client, e.cache, e.cacheTTL)
 	batchSize := ethconnectConf.GetUint(EthconnectConfigBatchSize)
 	batchTimeout := uint(ethconnectConf.GetDuration(EthconnectConfigBatchTimeout).Milliseconds())
 	stream, err := e.streams.ensureEventStream(e.ctx, e.topic, batchSize, batchTimeout)

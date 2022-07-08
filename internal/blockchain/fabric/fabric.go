@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hyperledger/firefly-common/pkg/config"
@@ -32,10 +33,12 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
+	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/internal/metrics"
 	"github.com/hyperledger/firefly/pkg/blockchain"
 	"github.com/hyperledger/firefly/pkg/core"
+	"github.com/karlseguin/ccache"
 )
 
 const (
@@ -60,6 +63,8 @@ type Fabric struct {
 	metrics        metrics.Manager
 	fabconnectConf config.Section
 	subs           map[string]subscriptionInfo
+	cache          *ccache.Cache
+	cacheTTL       time.Duration
 }
 
 type subscriptionInfo struct {
@@ -214,8 +219,8 @@ func (f *Fabric) VerifierType() core.VerifierType {
 	return core.VerifierTypeMSPIdentity
 }
 
-func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metrics.Manager) (err error) {
-	f.InitConfig(config)
+func (f *Fabric) Init(ctx context.Context, conf config.Section, metrics metrics.Manager) (err error) {
+	f.InitConfig(conf)
 	fabconnectConf := f.fabconnectConf
 
 	f.ctx = log.WithLogField(ctx, "proto", "fabric")
@@ -248,7 +253,10 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 		return err
 	}
 
-	f.streams = newStreamManager(f.client, f.signer)
+	f.cacheTTL = config.GetDuration(coreconfig.CacheBlockchainTTL)
+	f.cache = ccache.New(ccache.Configure().MaxSize(config.GetByteSize(coreconfig.CacheBlockchainSize)))
+
+	f.streams = newStreamManager(f.client, f.signer, f.cache, f.cacheTTL)
 	batchSize := f.fabconnectConf.GetUint(FabconnectConfigBatchSize)
 	batchTimeout := uint(f.fabconnectConf.GetDuration(FabconnectConfigBatchTimeout).Milliseconds())
 	stream, err := f.streams.ensureEventStream(f.ctx, f.topic, batchSize, batchTimeout)
