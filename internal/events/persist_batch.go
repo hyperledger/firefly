@@ -211,7 +211,7 @@ func (em *eventManager) validateBatchMessage(ctx context.Context, batch *core.Ba
 }
 
 func (em *eventManager) sentByUs(ctx context.Context, batch *core.Batch) bool {
-	localNode := em.ni.GetNodeUUID(ctx, batch.Namespace)
+	localNode := em.ni.GetNodeUUID(ctx)
 	if batch.Node == nil {
 		// This is from a node that hasn't yet completed registration, so we can't optimize
 		return false

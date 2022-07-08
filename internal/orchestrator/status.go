@@ -73,7 +73,7 @@ func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
 	}
 }
 
-func (or *orchestrator) GetNodeUUID(ctx context.Context, ns string) (node *fftypes.UUID) {
+func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 	if or.node != nil {
 		return or.node
 	}
