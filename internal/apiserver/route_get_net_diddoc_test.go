@@ -28,6 +28,7 @@ import (
 
 func TestGetDIDDocByDID(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	nmn := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(nmn)
 	req := httptest.NewRequest("GET", "/api/v1/network/diddocs/did:firefly:org/org_1", nil)

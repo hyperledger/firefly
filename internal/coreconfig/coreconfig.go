@@ -144,6 +144,8 @@ var (
 	TokensList = ffc("tokens")
 	// PluginsTokensList is the key containing a list of supported tokens plugins
 	PluginsTokensList = ffc("plugins.tokens")
+	// PluginsAuthList is the key containing a list of supported auth plugins
+	PluginsAuthList = ffc("plugins.auth")
 	// PluginsBlockchainList is the key containing a list of configured blockchain plugins
 	PluginsBlockchainList = ffc("plugins.blockchain")
 	// PluginsSharedStorageList is the key containing a list of configured shared storage plugins

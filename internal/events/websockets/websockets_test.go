@@ -29,6 +29,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/config"
 	"github.com/hyperledger/firefly-common/pkg/ffresty"
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
+	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
@@ -39,7 +40,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...string) (ws *WebSockets, wsc wsclient.WSClient, cancel func()) {
+type testAuthorizer struct{}
+
+func (t *testAuthorizer) Authorize(ctx context.Context, authReq *fftypes.AuthReq) error {
+	if authReq.Namespace == "ns1" {
+		return nil
+	}
+	return i18n.NewError(ctx, i18n.MsgUnauthorized)
+}
+
+func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, authorizer core.Authorizer, queryParams ...string) (ws *WebSockets, wsc wsclient.WSClient, cancel func()) {
 	coreconfig.Reset()
 
 	ws = &WebSockets{}
@@ -48,6 +58,7 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 	ws.InitConfig(svrConfig)
 	ws.Init(ctx, svrConfig)
 	ws.SetHandler("ns1", cbs)
+	ws.SetAuthorizer(authorizer)
 	assert.Equal(t, "websockets", ws.Name())
 	assert.NotNil(t, ws.Capabilities())
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil).Maybe()
@@ -75,10 +86,9 @@ func newTestWebsockets(t *testing.T, cbs *eventsmocks.Callbacks, queryParams ...
 		svr.Close()
 	}
 }
-
 func TestValidateOptionsFail(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, _, cancel := newTestWebsockets(t, cbs)
+	ws, _, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 
 	yes := true
@@ -92,7 +102,7 @@ func TestValidateOptionsFail(t *testing.T) {
 
 func TestValidateOptionsOk(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, _, cancel := newTestWebsockets(t, cbs)
+	ws, _, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 
 	opts := &core.SubscriptionOptions{}
@@ -103,7 +113,7 @@ func TestValidateOptionsOk(t *testing.T) {
 
 func TestSendBadData(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	_, wsc, cancel := newTestWebsockets(t, cbs)
+	_, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
@@ -120,7 +130,7 @@ func TestSendBadData(t *testing.T) {
 
 func TestSendBadAction(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	_, wsc, cancel := newTestWebsockets(t, cbs)
+	_, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
 
@@ -136,7 +146,7 @@ func TestSendBadAction(t *testing.T) {
 
 func TestSendEmptyStartAction(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	_, wsc, cancel := newTestWebsockets(t, cbs)
+	_, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 	cbs.On("ConnectionClosed", mock.Anything).Return(nil)
 
@@ -154,7 +164,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 	log.SetLevel("trace")
 
 	cbs := &eventsmocks.Callbacks{}
-	ws, wsc, cancel := newTestWebsockets(t, cbs)
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 	var connID string
 	sub := cbs.On("EphemeralSubscription",
@@ -202,7 +212,7 @@ func TestStartReceiveAckEphemeral(t *testing.T) {
 
 func TestStartReceiveDurable(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, wsc, cancel := newTestWebsockets(t, cbs)
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 	var connID string
 	sub := cbs.On("RegisterConnection",
@@ -280,6 +290,122 @@ func TestStartReceiveDurable(t *testing.T) {
 	cbs.AssertExpectations(t)
 }
 
+func TestStartReceiveDurableWithAuth(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	ws, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
+	defer cancel()
+	var connID string
+	sub := cbs.On("RegisterConnection",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
+			return subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub1"}) &&
+				!subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
+				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
+		}),
+	).Return(nil)
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
+
+	waitSubscribed := make(chan struct{})
+	sub.RunFn = func(a mock.Arguments) {
+		close(waitSubscribed)
+	}
+
+	waitAcked := make(chan struct{})
+	ack.RunFn = func(a mock.Arguments) {
+		close(waitAcked)
+	}
+
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns1","name":"sub1"}`))
+	assert.NoError(t, err)
+
+	<-waitSubscribed
+	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
+		},
+		Subscription: core.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub1",
+		},
+	}, nil)
+	// Put a second in flight
+	ws.DeliveryRequest(connID, nil, &core.EventDelivery{
+		EnrichedEvent: core.EnrichedEvent{
+			Event: core.Event{ID: fftypes.NewUUID()},
+		},
+		Subscription: core.SubscriptionRef{
+			ID:        fftypes.NewUUID(),
+			Namespace: "ns1",
+			Name:      "sub2",
+		},
+	}, nil)
+
+	b := <-wsc.Receive()
+	var res core.EventDelivery
+	err = json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "ns1", res.Subscription.Namespace)
+	assert.Equal(t, "sub1", res.Subscription.Name)
+	err = wsc.Send(context.Background(), []byte(fmt.Sprintf(`{
+		"type":"ack",
+		"id": "%s",
+		"subscription": {
+			"namespace": "ns1",
+			"name": "sub1"
+		}
+	}`, res.ID)))
+	assert.NoError(t, err)
+
+	<-waitAcked
+
+	// Check we left the right one behind
+	conn := ws.connections[connID]
+	assert.Equal(t, 1, len(conn.inflight))
+	assert.Equal(t, "sub2", conn.inflight[0].Subscription.Name)
+
+	cbs.AssertExpectations(t)
+}
+
+func TestStartReceiveDurableUnauthorized(t *testing.T) {
+	cbs := &eventsmocks.Callbacks{}
+	_, wsc, cancel := newTestWebsockets(t, cbs, &testAuthorizer{})
+	defer cancel()
+	var connID string
+	sub := cbs.On("RegisterConnection",
+		mock.MatchedBy(func(s string) bool { connID = s; return true }),
+		mock.MatchedBy(func(subMatch events.SubscriptionMatcher) bool {
+			return subMatch(core.SubscriptionRef{Namespace: "ns2", Name: "sub1"}) &&
+				!subMatch(core.SubscriptionRef{Namespace: "ns1", Name: "sub2"})
+		}),
+	).Return(nil)
+	ack := cbs.On("DeliveryResponse",
+		mock.MatchedBy(func(s string) bool { return s == connID }),
+		mock.Anything).Return(nil)
+
+	waitSubscribed := make(chan struct{})
+	sub.RunFn = func(a mock.Arguments) {
+		close(waitSubscribed)
+	}
+
+	waitAcked := make(chan struct{})
+	ack.RunFn = func(a mock.Arguments) {
+		close(waitAcked)
+	}
+
+	err := wsc.Send(context.Background(), []byte(`{"type":"start","namespace":"ns2","name":"sub1"}`))
+	assert.NoError(t, err)
+
+	b := <-wsc.Receive()
+	var res fftypes.JSONObject
+	err = json.Unmarshal(b, &res)
+	assert.NoError(t, err)
+	assert.Regexp(t, "FF00169", res.GetString("error"))
+}
+
 func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 	var connID string
 	cbs := &eventsmocks.Callbacks{}
@@ -300,7 +426,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 		close(waitAcked)
 	}
 
-	ws, wsc, cancel := newTestWebsockets(t, cbs, "ephemeral", "namespace=ns1")
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil, "ephemeral", "namespace=ns1")
 	defer cancel()
 
 	<-waitSubscribed
@@ -328,7 +454,7 @@ func TestAutoStartReceiveAckEphemeral(t *testing.T) {
 
 func TestAutoStartBadOptions(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	_, wsc, cancel := newTestWebsockets(t, cbs, "name=missingnamespace")
+	_, wsc, cancel := newTestWebsockets(t, cbs, nil, "name=missingnamespace")
 	defer cancel()
 
 	b := <-wsc.Receive()
@@ -341,7 +467,7 @@ func TestAutoStartBadOptions(t *testing.T) {
 
 func TestAutoStartBadNamespace(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	_, wsc, cancel := newTestWebsockets(t, cbs, "ephemeral", "namespace=ns2")
+	_, wsc, cancel := newTestWebsockets(t, cbs, nil, "ephemeral", "namespace=ns2")
 	defer cancel()
 
 	b := <-wsc.Receive()
@@ -454,7 +580,7 @@ func TestProtocolErrorSwallowsSendError(t *testing.T) {
 
 func TestSendLoopBadData(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, wsc, cancel := newTestWebsockets(t, cbs)
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 
 	subscribedConn := make(chan string, 1)
@@ -479,7 +605,7 @@ func TestSendLoopBadData(t *testing.T) {
 
 func TestUpgradeFail(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	_, wsc, cancel := newTestWebsockets(t, cbs)
+	_, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 
 	u, _ := url.Parse(wsc.URL())
@@ -536,7 +662,7 @@ func TestDispatchAutoAck(t *testing.T) {
 
 func TestWebsocketSendAfterClose(t *testing.T) {
 	cbs := &eventsmocks.Callbacks{}
-	ws, wsc, cancel := newTestWebsockets(t, cbs)
+	ws, wsc, cancel := newTestWebsockets(t, cbs, nil)
 	defer cancel()
 
 	subscribedConn := make(chan string, 1)

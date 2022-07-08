@@ -31,6 +31,7 @@ import (
 
 func TestPostNewDatatypes(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
@@ -49,6 +50,7 @@ func TestPostNewDatatypes(t *testing.T) {
 
 func TestPostNewDatatypesSync(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mds := &definitionsmocks.Sender{}
 	o.On("DefinitionSender").Return(mds)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})

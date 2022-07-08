@@ -29,6 +29,7 @@ import (
 
 func TestGetEvents(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/events", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
@@ -42,6 +43,7 @@ func TestGetEvents(t *testing.T) {
 
 func TestGetEventsWithReferences(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/events?fetchreferences", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

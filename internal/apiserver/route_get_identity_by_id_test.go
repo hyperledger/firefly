@@ -28,6 +28,7 @@ import (
 
 func TestGetIdentityByID(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/identities/id1", nil)
@@ -42,6 +43,7 @@ func TestGetIdentityByID(t *testing.T) {
 
 func TestGetIdentityByIDWithVerifiers(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/ns1/identities/id1?fetchverifiers", nil)

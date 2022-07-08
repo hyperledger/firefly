@@ -30,6 +30,7 @@ import (
 
 func TestPostNewMessageBroadcast(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
 	input := core.MessageInOut{}
@@ -48,6 +49,7 @@ func TestPostNewMessageBroadcast(t *testing.T) {
 
 func TestPostNewMessageBroadcastSync(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mbm := &broadcastmocks.Manager{}
 	o.On("Broadcast").Return(mbm)
 	input := core.MessageInOut{}

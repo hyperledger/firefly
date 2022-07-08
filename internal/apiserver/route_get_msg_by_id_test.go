@@ -27,6 +27,7 @@ import (
 
 func TestGetMessageByID(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
@@ -40,6 +41,7 @@ func TestGetMessageByID(t *testing.T) {
 
 func TestGetMessageByIDWithData(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	req := httptest.NewRequest("GET", "/api/v1/namespaces/mynamespace/messages/abcd12345?fetchdata", nil)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()

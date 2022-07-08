@@ -31,6 +31,7 @@ import (
 
 func TestPostNewNodeSelf(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mnm := &networkmapmocks.Manager{}
 	o.On("NetworkMap").Return(mnm)
 	o.On("MultiParty").Return(&multipartymocks.Manager{})

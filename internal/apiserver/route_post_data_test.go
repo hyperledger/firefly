@@ -34,6 +34,7 @@ import (
 
 func TestPostDataJSON(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -53,6 +54,7 @@ func TestPostDataJSON(t *testing.T) {
 
 func TestPostDataJSONDefaultNS(t *testing.T) {
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -74,6 +76,7 @@ func TestPostDataBinary(t *testing.T) {
 	log.SetLevel("debug")
 
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -100,6 +103,7 @@ func TestPostDataBinaryObjAutoMeta(t *testing.T) {
 	log.SetLevel("debug")
 
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -147,6 +151,7 @@ func TestPostDataBinaryStringMetadata(t *testing.T) {
 	log.SetLevel("debug")
 
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -181,6 +186,7 @@ func TestPostDataTrailingMetadata(t *testing.T) {
 	log.SetLevel("debug")
 
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -213,6 +219,7 @@ func TestPostDataBinaryMissing(t *testing.T) {
 	log.SetLevel("debug")
 
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
@@ -238,6 +245,7 @@ func TestPostDataBadForm(t *testing.T) {
 	log.SetLevel("debug")
 
 	o, r := newTestAPIServer()
+	o.On("Authorize", mock.Anything, mock.Anything).Return(nil)
 	mdm := &datamocks.Manager{}
 	o.On("MultiParty").Return(&multipartymocks.Manager{})
 	o.On("Data").Return(mdm)
