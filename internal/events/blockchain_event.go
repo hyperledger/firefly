@@ -114,7 +114,7 @@ func (em *eventManager) BlockchainEvent(event *blockchain.EventWithSubscription)
 				log.L(ctx).Warnf("Event received from unknown subscription %s", event.Subscription)
 				return nil // no retry
 			}
-			if listener.Namespace != em.namespace.RemoteName {
+			if listener.Namespace != em.namespace.LocalName {
 				log.L(em.ctx).Debugf("Ignoring blockchain event from different namespace '%s'", listener.Namespace)
 				return nil
 			}

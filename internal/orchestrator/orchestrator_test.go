@@ -199,7 +199,7 @@ func TestInitOK(t *testing.T) {
 	or.mdx.On("SetHandler", "ns2", mock.Anything).Return()
 	or.mdx.On("SetNodes", mock.Anything).Return()
 	or.mps.On("SetHandler", "ns2", mock.Anything).Return()
-	or.mti.On("SetHandler", "ns2", mock.Anything).Return(nil)
+	or.mti.On("SetHandler", "ns", mock.Anything).Return(nil)
 	or.mti.On("SetOperationHandler", "ns", mock.Anything).Return(nil)
 	err := or.Init(or.ctx, or.cancelCtx)
 	assert.NoError(t, err)

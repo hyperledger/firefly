@@ -380,7 +380,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 	}
 
 	for _, token := range or.plugins.Tokens {
-		if err := token.Plugin.SetHandler(or.namespace.RemoteName, &or.bc); err != nil {
+		if err := token.Plugin.SetHandler(or.namespace.LocalName, &or.bc); err != nil {
 			return err
 		}
 		token.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
