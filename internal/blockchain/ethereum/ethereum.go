@@ -106,8 +106,9 @@ func (cb *callbacks) BlockchainNetworkAction(ctx context.Context, namespace, act
 	return nil
 }
 
-func (cb *callbacks) BlockchainEvent(ctx context.Context, event *blockchain.EventWithSubscription, namespace string) error {
+func (cb *callbacks) BlockchainEvent(ctx context.Context, namespace string, event *blockchain.EventWithSubscription) error {
 	if namespace == "" {
+		// Older token subscriptions don't populate namespace, so deliver the event to every handler
 		for _, cb := range cb.handlers {
 			// Send the event to all handlers and let them match it to a contract listener
 			if err := cb.BlockchainEvent(event); err != nil {
@@ -448,10 +449,10 @@ func (e *Ethereum) handleContractEvent(ctx context.Context, msgJSON fftypes.JSON
 	namespace := e.streams.getNamespaceFromSubName(subName)
 	event := e.parseBlockchainEvent(ctx, msgJSON)
 	if event != nil {
-		err = e.callbacks.BlockchainEvent(ctx, &blockchain.EventWithSubscription{
+		err = e.callbacks.BlockchainEvent(ctx, namespace, &blockchain.EventWithSubscription{
 			Event:        *event,
 			Subscription: msgJSON.GetString("subId"),
-		}, namespace)
+		})
 	}
 	return err
 }

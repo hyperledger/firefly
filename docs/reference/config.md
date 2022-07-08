@@ -284,8 +284,8 @@ nav_order: 2
 
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
-|size|test|`string`|`<nil>`
-|ttl|test|`string`|`<nil>`
+|size|Size of blockchain cache|`string`|`<nil>`
+|ttl|Time to live for blockchain cache items|`string`|`<nil>`
 
 ## cors
 
