@@ -450,7 +450,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 	if replyType != "TransactionSuccess" {
 		updateType = core.OpStatusFailed
 	}
-	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
+	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
 	f.callbacks.OperationUpdate(ctx, f, requestID, updateType, txHash, message, reply)
 }
 

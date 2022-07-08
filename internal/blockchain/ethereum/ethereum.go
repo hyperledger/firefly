@@ -466,7 +466,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 	if replyType != "TransactionSuccess" {
 		updateType = core.OpStatusFailed
 	}
-	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
+	l.Infof("Received operation update: status=%s request=%s tx=%s message=%s", updateType, requestID, txHash, message)
 	e.callbacks.OperationUpdate(ctx, e, requestID, updateType, txHash, message, reply)
 }
 

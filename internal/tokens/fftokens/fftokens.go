@@ -271,12 +271,12 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		l.Errorf("Reply cannot be processed - missing fields: %+v", data)
 		return
 	}
-	replyType := core.OpStatusSucceeded
+	updateType := core.OpStatusSucceeded
 	if !success {
-		replyType = core.OpStatusFailed
+		updateType = core.OpStatusFailed
 	}
-	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	ft.callbacks.OperationUpdate(ctx, ft, requestID, replyType, transactionHash, message, data)
+	l.Infof("Received operation update: status=%s request=%s message=%s", updateType, requestID, message)
+	ft.callbacks.OperationUpdate(ctx, ft, requestID, updateType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {
