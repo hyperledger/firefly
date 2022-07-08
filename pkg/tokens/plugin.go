@@ -39,6 +39,10 @@ type Plugin interface {
 	// If namespace is set, plugin will attempt to deliver only events for that namespace
 	SetHandler(namespace string, handler Callbacks) error
 
+	// SetOperationHandler registers a handler to receive async operation status
+	// If namespace is set, plugin will attempt to deliver only events for that namespace
+	SetOperationHandler(namespace string, handler core.OperationCallbacks)
+
 	// Blockchain interface must not deliver any events until start is called
 	Start() error
 
@@ -70,15 +74,6 @@ type Plugin interface {
 // has completed. However, it does not matter if these events are workload balance between the firefly core
 // cluster instances of the node.
 type Callbacks interface {
-	// TokenOpUpdate notifies firefly of an update to this plugin's operation within a transaction.
-	// Only success/failure and errorMessage (for errors) are modeled.
-	// opOutput can be used to add opaque protocol specific JSON from the plugin (protocol transaction ID etc.)
-	// Note this is an optional hook information, and stored separately to the confirmation of the actual event that was being submitted/sequenced.
-	// Only the party submitting the transaction will see this data.
-	//
-	// Error should only be returned in shutdown scenarios
-	TokenOpUpdate(plugin Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject)
-
 	// TokenPoolCreated notifies on the creation of a new token pool, which might have been
 	// submitted by us, or by any other authorized party in the network.
 	//

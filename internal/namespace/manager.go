@@ -34,7 +34,7 @@ import (
 	"github.com/hyperledger/firefly/internal/events/system"
 	"github.com/hyperledger/firefly/internal/identity/iifactory"
 	"github.com/hyperledger/firefly/internal/metrics"
-	multipartyManager "github.com/hyperledger/firefly/internal/multiparty"
+	"github.com/hyperledger/firefly/internal/multiparty"
 	"github.com/hyperledger/firefly/internal/orchestrator"
 	"github.com/hyperledger/firefly/internal/sharedstorage/ssfactory"
 	"github.com/hyperledger/firefly/internal/spievents"
@@ -671,9 +671,9 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	if orgDesc == "" {
 		orgDesc = deprecatedOrgDesc
 	}
-	multiparty := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
-	if multiparty == nil {
-		multiparty = orgName != "" || orgKey != ""
+	multipartyEnabled := multipartyConf.Get(coreconfig.NamespaceMultipartyEnabled)
+	if multipartyEnabled == nil {
+		multipartyEnabled = orgName != "" || orgKey != ""
 	}
 
 	// If no plugins are listed under this namespace, use all defined plugins by default
@@ -710,10 +710,10 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 	}
 	var p *orchestrator.Plugins
 	var err error
-	if multiparty.(bool) {
+	if multipartyEnabled.(bool) {
 		contractsConf := multipartyConf.SubArray(coreconfig.NamespaceMultipartyContract)
 		contractConfArraySize := contractsConf.ArraySize()
-		contracts := make([]multipartyManager.Contract, contractConfArraySize)
+		contracts := make([]multiparty.Contract, contractConfArraySize)
 
 		for i := 0; i < contractConfArraySize; i++ {
 			conf := contractsConf.ArrayEntry(i)
@@ -723,7 +723,7 @@ func (nm *namespaceManager) loadNamespace(ctx context.Context, name string, inde
 				return nil, err
 			}
 			location := fftypes.JSONAnyPtrBytes(b)
-			contract := multipartyManager.Contract{
+			contract := multiparty.Contract{
 				Location:   location,
 				FirstEvent: conf.GetString(coreconfig.NamespaceMultipartyContractFirstEvent),
 			}

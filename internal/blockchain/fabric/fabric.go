@@ -69,13 +69,14 @@ type subscriptionInfo struct {
 }
 
 type callbacks struct {
-	handlers map[string]blockchain.Callbacks
+	handlers   map[string]blockchain.Callbacks
+	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) BlockchainOpUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
-	if handler, ok := cb.handlers[namespace]; ok {
-		handler.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	if handler, ok := cb.opHandlers[namespace]; ok {
+		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
 	} else {
 		log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
 	}
@@ -216,6 +217,7 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 	f.metrics = metrics
 	f.capabilities = &blockchain.Capabilities{}
 	f.callbacks.handlers = make(map[string]blockchain.Callbacks)
+	f.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
 
 	if fabconnectConf.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "blockchain.fabric.fabconnect")
@@ -260,6 +262,10 @@ func (f *Fabric) Init(ctx context.Context, config config.Section, metrics metric
 
 func (f *Fabric) SetHandler(namespace string, handler blockchain.Callbacks) {
 	f.callbacks.handlers[namespace] = handler
+}
+
+func (f *Fabric) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	f.callbacks.opHandlers[namespace] = handler
 }
 
 func (f *Fabric) Start() (err error) {
@@ -445,7 +451,7 @@ func (f *Fabric) handleReceipt(ctx context.Context, reply fftypes.JSONObject) {
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Fabconnect '%s' reply tx=%s (request=%s) %s", replyType, txHash, requestID, message)
-	f.callbacks.BlockchainOpUpdate(ctx, f, requestID, updateType, txHash, message, reply)
+	f.callbacks.OperationUpdate(ctx, f, requestID, updateType, txHash, message, reply)
 }
 
 func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (string, error) {

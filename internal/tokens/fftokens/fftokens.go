@@ -43,13 +43,14 @@ type FFTokens struct {
 }
 
 type callbacks struct {
-	handlers map[string]tokens.Callbacks
+	handlers   map[string]tokens.Callbacks
+	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) TokenOpUpdate(ctx context.Context, plugin tokens.Plugin, nsOpID string, txState core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, plugin tokens.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
-	if handler, ok := cb.handlers[namespace]; ok {
-		handler.TokenOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	if handler, ok := cb.opHandlers[namespace]; ok {
+		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
 	} else {
 		log.L(ctx).Errorf("No handler found for token operation '%s'", nsOpID)
 	}
@@ -211,6 +212,7 @@ func (ft *FFTokens) Init(ctx context.Context, name string, config config.Section
 	ft.configuredName = name
 	ft.capabilities = &tokens.Capabilities{}
 	ft.callbacks.handlers = make(map[string]tokens.Callbacks)
+	ft.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
 
 	if config.GetString(ffresty.HTTPConfigURL) == "" {
 		return i18n.NewError(ctx, coremsgs.MsgMissingPluginConfig, "url", "tokens.fftokens")
@@ -246,6 +248,10 @@ func (ft *FFTokens) SetHandler(namespace string, handler tokens.Callbacks) error
 	return nil
 }
 
+func (ft *FFTokens) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	ft.callbacks.opHandlers[namespace] = handler
+}
+
 func (ft *FFTokens) Start() error {
 	return ft.wsconn.Connect()
 }
@@ -270,7 +276,7 @@ func (ft *FFTokens) handleReceipt(ctx context.Context, data fftypes.JSONObject) 
 		replyType = core.OpStatusFailed
 	}
 	l.Infof("Tokens '%s' reply: request=%s message=%s", replyType, requestID, message)
-	ft.callbacks.TokenOpUpdate(ctx, ft, requestID, replyType, transactionHash, message, data)
+	ft.callbacks.OperationUpdate(ctx, ft, requestID, replyType, transactionHash, message, data)
 }
 
 func (ft *FFTokens) handleTokenPoolCreate(ctx context.Context, data fftypes.JSONObject) (err error) {

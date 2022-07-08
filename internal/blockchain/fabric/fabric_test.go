@@ -33,6 +33,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/wsclient"
 	"github.com/hyperledger/firefly/internal/coreconfig"
 	"github.com/hyperledger/firefly/mocks/blockchainmocks"
+	"github.com/hyperledger/firefly/mocks/coremocks"
 	"github.com/hyperledger/firefly/mocks/metricsmocks"
 	"github.com/hyperledger/firefly/mocks/wsmocks"
 	"github.com/hyperledger/firefly/pkg/blockchain"
@@ -1387,14 +1388,15 @@ func TestEventLoopUnexpectedMessage(t *testing.T) {
 }
 
 func TestHandleReceiptTXSuccess(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
+	em := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: callbacks{opHandlers: make(map[string]core.OperationCallbacks)},
 		wsconn:    wsm,
 	}
+	e.SetOperationHandler("ns1", em)
 
 	var reply fftypes.JSONObject
 	operationID := fftypes.NewUUID()
@@ -1412,7 +1414,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 		"receivedAt": 1630033474675
   }`)
 
-	em.On("BlockchainOpUpdate",
+	em.On("OperationUpdate",
 		e,
 		"ns1:"+operationID.String(),
 		core.OpStatusSucceeded,
@@ -1424,6 +1426,7 @@ func TestHandleReceiptTXSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	e.handleReceipt(context.Background(), reply)
 
+	em.AssertExpectations(t)
 }
 
 func TestHandleReceiptNoRequestID(t *testing.T) {
@@ -1444,12 +1447,12 @@ func TestHandleReceiptNoRequestID(t *testing.T) {
 }
 
 func TestHandleReceiptFailedTx(t *testing.T) {
-	em := &blockchainmocks.Callbacks{}
+	em := &coremocks.OperationCallbacks{}
 	wsm := &wsmocks.WSClient{}
 	e := &Fabric{
 		ctx:       context.Background(),
 		topic:     "topic1",
-		callbacks: callbacks{handlers: map[string]blockchain.Callbacks{"ns1": em}},
+		callbacks: callbacks{opHandlers: map[string]core.OperationCallbacks{"ns1": em}},
 		wsconn:    wsm,
 	}
 
@@ -1469,7 +1472,7 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 		"transactionId": "ce79343000e851a0c742f63a733ce19a5f8b9ce1c719b6cecd14f01bcf81fff2"
   }`)
 
-	em.On("BlockchainOpUpdate",
+	em.On("OperationUpdate",
 		e,
 		"ns1:"+operationID.String(),
 		core.OpStatusFailed,
@@ -1480,6 +1483,8 @@ func TestHandleReceiptFailedTx(t *testing.T) {
 	err := json.Unmarshal(data, &reply)
 	assert.NoError(t, err)
 	e.handleReceipt(context.Background(), reply)
+
+	em.AssertExpectations(t)
 }
 
 func TestFormatNil(t *testing.T) {
@@ -2453,7 +2458,7 @@ func TestSubmitNetworkActionBadLocation(t *testing.T) {
 func TestCallbacksWrongNamespace(t *testing.T) {
 	e, _ := newTestFabric()
 	nsOpID := "ns1:" + fftypes.NewUUID().String()
-	e.callbacks.BlockchainOpUpdate(context.Background(), e, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
+	e.callbacks.OperationUpdate(context.Background(), e, nsOpID, core.OpStatusSucceeded, "tx123", "", nil)
 	e.callbacks.BatchPinComplete(context.Background(), &blockchain.BatchPin{Namespace: "ns1"}, nil)
 	e.callbacks.BlockchainNetworkAction(context.Background(), "ns1", "terminate", nil, nil, nil)
 }

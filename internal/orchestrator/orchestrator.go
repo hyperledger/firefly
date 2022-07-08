@@ -356,6 +356,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 
 	if or.plugins.Blockchain.Plugin != nil {
 		or.plugins.Blockchain.Plugin.SetHandler(or.namespace.RemoteName, &or.bc)
+		or.plugins.Blockchain.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
 	if or.plugins.SharedStorage.Plugin != nil {
@@ -382,6 +383,7 @@ func (or *orchestrator) initPlugins(ctx context.Context) (err error) {
 		if err := token.Plugin.SetHandler(or.namespace.RemoteName, &or.bc); err != nil {
 			return err
 		}
+		token.Plugin.SetOperationHandler(or.namespace.LocalName, &or.bc)
 	}
 
 	return nil

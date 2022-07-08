@@ -69,13 +69,14 @@ type subscriptionInfo struct {
 }
 
 type callbacks struct {
-	handlers map[string]blockchain.Callbacks
+	handlers   map[string]blockchain.Callbacks
+	opHandlers map[string]core.OperationCallbacks
 }
 
-func (cb *callbacks) BlockchainOpUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, txState blockchain.TransactionStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
+func (cb *callbacks) OperationUpdate(ctx context.Context, plugin blockchain.Plugin, nsOpID string, status core.OpStatus, blockchainTXID, errorMessage string, opOutput fftypes.JSONObject) {
 	namespace, _, _ := core.ParseNamespacedOpID(ctx, nsOpID)
-	if handler, ok := cb.handlers[namespace]; ok {
-		handler.BlockchainOpUpdate(plugin, nsOpID, txState, blockchainTXID, errorMessage, opOutput)
+	if handler, ok := cb.opHandlers[namespace]; ok {
+		handler.OperationUpdate(plugin, nsOpID, status, blockchainTXID, errorMessage, opOutput)
 		return
 	}
 	log.L(ctx).Errorf("No handler found for blockchain operation '%s'", nsOpID)
@@ -175,6 +176,7 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 	e.metrics = metrics
 	e.capabilities = &blockchain.Capabilities{}
 	e.callbacks.handlers = make(map[string]blockchain.Callbacks)
+	e.callbacks.opHandlers = make(map[string]core.OperationCallbacks)
 
 	if addressResolverConf.GetString(AddressResolverURLTemplate) != "" {
 		if e.addressResolver, err = newAddressResolver(ctx, addressResolverConf); err != nil {
@@ -226,6 +228,10 @@ func (e *Ethereum) Init(ctx context.Context, config config.Section, metrics metr
 
 func (e *Ethereum) SetHandler(namespace string, handler blockchain.Callbacks) {
 	e.callbacks.handlers[namespace] = handler
+}
+
+func (e *Ethereum) SetOperationHandler(namespace string, handler core.OperationCallbacks) {
+	e.callbacks.opHandlers[namespace] = handler
 }
 
 func (e *Ethereum) Start() (err error) {
@@ -461,7 +467,7 @@ func (e *Ethereum) handleReceipt(ctx context.Context, reply fftypes.JSONObject) 
 		updateType = core.OpStatusFailed
 	}
 	l.Infof("Ethconnect '%s' reply: request=%s tx=%s message=%s", replyType, requestID, txHash, message)
-	e.callbacks.BlockchainOpUpdate(ctx, e, requestID, updateType, txHash, message, reply)
+	e.callbacks.OperationUpdate(ctx, e, requestID, updateType, txHash, message, reply)
 }
 
 func (e *Ethereum) buildEventLocationString(msgJSON fftypes.JSONObject) string {
