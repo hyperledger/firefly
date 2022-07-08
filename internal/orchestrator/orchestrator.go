@@ -428,19 +428,19 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 
 		if or.messaging == nil {
-			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace.LocalName, or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
+			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace, or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
 				return err
 			}
 		}
 
 		if or.broadcast == nil {
-			if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace.LocalName, or.database(), or.blockchain(), or.dataexchange(), or.sharedstorage(), or.identity, or.data, or.batch, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
+			if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.sharedstorage(), or.identity, or.data, or.batch, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
 				return err
 			}
 		}
 
 		if or.sharedDownload == nil {
-			or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.namespace.LocalName, or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
+			or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
 			if err != nil {
 				return err
 			}
@@ -480,7 +480,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.namespace.LocalName, or.database(), or.dataexchange())
+		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange())
 		if err != nil {
 			return err
 		}

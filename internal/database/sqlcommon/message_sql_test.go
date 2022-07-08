@@ -46,6 +46,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	rand1 := fftypes.NewRandB32()
 	rand2 := fftypes.NewRandB32()
 	msg := &core.Message{
+		LocalNamespace: "ns12345",
 		Header: core.MessageHeader{
 			ID:   msgID,
 			CID:  nil,
@@ -92,6 +93,7 @@ func TestUpsertE2EWithDB(t *testing.T) {
 	gid := fftypes.NewRandB32()
 	bid := fftypes.NewUUID()
 	msgUpdated := &core.Message{
+		LocalNamespace: "ns12345",
 		Header: core.MessageHeader{
 			ID:   msgID,
 			CID:  cid,
@@ -310,8 +312,8 @@ func TestInsertMessagesMultiRowOK(t *testing.T) {
 	s.features.MultiRowInsert = true
 	s.fakePSQLInsert = true
 
-	msg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
-	msg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
+	msg1 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, LocalNamespace: "ns1", Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
+	msg2 := &core.Message{Header: core.MessageHeader{ID: fftypes.NewUUID(), Namespace: "ns1"}, LocalNamespace: "ns1", Data: core.DataRefs{{ID: fftypes.NewUUID()}}}
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", msg1.Header.ID, int64(1001))
 	s.callbacks.On("OrderedUUIDCollectionNSEvent", database.CollectionMessages, core.ChangeEventTypeCreated, "ns1", msg2.Header.ID, int64(1002))
 
@@ -546,7 +548,7 @@ func TestGetMessageByIDLoadRefsFail(t *testing.T) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, "id()")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
-		AddRow(msgID.String(), nil, core.MessageTypeBroadcast, "author1", "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), "confirmed", 0, "pin", nil, 0))
+		AddRow(msgID.String(), nil, core.MessageTypeBroadcast, "author1", "0x12345", 0, "ns1", "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), "confirmed", 0, "pin", nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	_, err := s.GetMessageByID(context.Background(), "ns1", msgID)
 	assert.Regexp(t, "FF10115", err)
@@ -593,7 +595,7 @@ func TestGetMessagesLoadRefsFail(t *testing.T) {
 	cols := append([]string{}, msgColumns...)
 	cols = append(cols, "id()")
 	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows(cols).
-		AddRow(msgID.String(), nil, core.MessageTypeBroadcast, "author1", "0x12345", 0, "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), "confirmed", 0, "pin", nil, 0))
+		AddRow(msgID.String(), nil, core.MessageTypeBroadcast, "author1", "0x12345", 0, "ns1", "ns1", "t1", "c1", nil, b32.String(), b32.String(), b32.String(), "confirmed", 0, "pin", nil, 0))
 	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
 	f := database.MessageQueryFactory.NewFilter(context.Background()).Gt("confirmed", "0")
 	_, _, err := s.GetMessages(context.Background(), "ns1", f)

@@ -570,7 +570,7 @@ func (ag *aggregator) attemptMessageDispatch(ctx context.Context, msg *core.Mess
 	state.AddFinalize(func(ctx context.Context) error {
 		// Generate the appropriate event - one per topic (events cover a single topic)
 		for _, topic := range msg.Header.Topics {
-			event := core.NewEvent(eventType, msg.Header.Namespace, msg.Header.ID, tx, topic)
+			event := core.NewEvent(eventType, ag.namespace, msg.Header.ID, tx, topic)
 			event.Correlator = msg.Header.CID
 			if customCorrelator != nil {
 				// Definition handlers can set a custom event correlator (such as a token pool ID)

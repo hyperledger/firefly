@@ -39,6 +39,7 @@ var (
 		"key",
 		"created",
 		"namespace",
+		"namespace_local",
 		"topics",
 		"tag",
 		"group_hash",
@@ -70,6 +71,7 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 			Set("key", message.Header.Key).
 			Set("created", message.Header.Created).
 			Set("namespace", message.Header.Namespace).
+			Set("namespace_local", message.LocalNamespace).
 			Set("topics", message.Header.Topics).
 			Set("tag", message.Header.Tag).
 			Set("group_hash", message.Header.Group).
@@ -85,7 +87,7 @@ func (s *SQLCommon) attemptMessageUpdate(ctx context.Context, tx *txWrapper, mes
 				"hash": message.Hash,
 			}),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeUpdated, message.Header.Namespace, message.Header.ID, -1 /* not applicable on update */)
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeUpdated, message.LocalNamespace, message.Header.ID, -1 /* not applicable on update */)
 		})
 }
 
@@ -98,6 +100,7 @@ func (s *SQLCommon) setMessageInsertValues(query sq.InsertBuilder, message *core
 		message.Header.Key,
 		message.Header.Created,
 		message.Header.Namespace,
+		message.LocalNamespace,
 		message.Header.Topics,
 		message.Header.Tag,
 		message.Header.Group,
@@ -115,7 +118,7 @@ func (s *SQLCommon) attemptMessageInsert(ctx context.Context, tx *txWrapper, mes
 	message.Sequence, err = s.insertTxExt(ctx, messagesTable, tx,
 		s.setMessageInsertValues(sq.Insert(messagesTable).Columns(msgColumns...), message),
 		func() {
-			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+			s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, message.LocalNamespace, message.Header.ID, message.Sequence)
 		}, requestConflictEmptyResult)
 	return err
 }
@@ -224,7 +227,7 @@ func (s *SQLCommon) InsertMessages(ctx context.Context, messages []*core.Message
 		err := s.insertTxRows(ctx, messagesTable, tx, msgQuery, func() {
 			for i, message := range messages {
 				message.Sequence = sequences[i]
-				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, message.Header.Namespace, message.Header.ID, message.Sequence)
+				s.callbacks.OrderedUUIDCollectionNSEvent(database.CollectionMessages, core.ChangeEventTypeCreated, message.LocalNamespace, message.Header.ID, message.Sequence)
 			}
 		}, sequences, true /* we want the caller to be able to retry with individual upserts */)
 		if err != nil {
@@ -403,6 +406,7 @@ func (s *SQLCommon) msgResult(ctx context.Context, row *sql.Rows) (*core.Message
 		&msg.Header.Key,
 		&msg.Header.Created,
 		&msg.Header.Namespace,
+		&msg.LocalNamespace,
 		&msg.Header.Topics,
 		&msg.Header.Tag,
 		&msg.Header.Group,
@@ -429,7 +433,7 @@ func (s *SQLCommon) GetMessageByID(ctx context.Context, namespace string, id *ff
 	rows, _, err := s.query(ctx, messagesTable,
 		sq.Select(cols...).
 			From(messagesTable).
-			Where(sq.Eq{"id": id, "namespace": namespace}),
+			Where(sq.Eq{"id": id, "namespace_local": namespace}),
 	)
 	if err != nil {
 		return nil, err
@@ -488,7 +492,7 @@ func (s *SQLCommon) GetMessageIDs(ctx context.Context, namespace string, filter 
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
 			"created",
-		}, sq.Eq{"namespace": namespace})
+		}, sq.Eq{"namespace_local": namespace})
 	if err != nil {
 		return nil, err
 	}
@@ -549,7 +553,7 @@ func (s *SQLCommon) GetMessages(ctx context.Context, namespace string, filter da
 		[]interface{}{
 			&database.SortField{Field: "confirmed", Descending: true, Nulls: database.NullsFirst},
 			&database.SortField{Field: "created", Descending: true},
-		}, sq.Eq{"namespace": namespace})
+		}, sq.Eq{"namespace_local": namespace})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -565,7 +569,7 @@ func (s *SQLCommon) GetMessagesForData(ctx context.Context, namespace string, da
 	query, fop, fi, err := s.filterSelect(
 		ctx, "m", sq.Select(cols...).From("messages_data AS md"),
 		filter, msgFilterFieldMap, []interface{}{"sequence"},
-		sq.Eq{"md.data_id": dataID, "namespace": namespace})
+		sq.Eq{"md.data_id": dataID, "namespace_local": namespace})
 	if err != nil {
 		return nil, nil, err
 	}

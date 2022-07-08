@@ -56,7 +56,7 @@ type Manager interface {
 
 type dataManager struct {
 	blobStore
-	namespace         string
+	namespace         core.NamespaceRef
 	database          database.Plugin
 	validatorCache    *ccache.Cache
 	validatorCacheTTL time.Duration
@@ -93,7 +93,7 @@ const (
 	CRORequireBatchID
 )
 
-func NewDataManager(ctx context.Context, ns string, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
+func NewDataManager(ctx context.Context, ns core.NamespaceRef, di database.Plugin, dx dataexchange.Plugin) (Manager, error) {
 	if di == nil {
 		return nil, i18n.NewError(ctx, coremsgs.MsgInitializationNilDepError, "DataManager")
 	}
@@ -128,7 +128,7 @@ func NewDataManager(ctx context.Context, ns string, di database.Plugin, dx datae
 }
 
 func (dm *dataManager) CheckDatatype(ctx context.Context, datatype *core.Datatype) error {
-	_, err := newJSONValidator(ctx, dm.namespace, datatype)
+	_, err := newJSONValidator(ctx, dm.namespace.LocalName, datatype)
 	return err
 }
 
@@ -149,14 +149,14 @@ func (dm *dataManager) getValidatorForDatatype(ctx context.Context, validator co
 		return cached.Value().(Validator), nil
 	}
 
-	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace, datatypeRef.Name, datatypeRef.Version)
+	datatype, err := dm.database.GetDatatypeByName(ctx, dm.namespace.LocalName, datatypeRef.Name, datatypeRef.Version)
 	if err != nil {
 		return nil, err
 	}
 	if datatype == nil {
 		return nil, nil
 	}
-	v, err := newJSONValidator(ctx, dm.namespace, datatype)
+	v, err := newJSONValidator(ctx, dm.namespace.LocalName, datatype)
 	if err != nil {
 		log.L(ctx).Errorf("Invalid validator stored for '%s:%s:%s': %s", validator, dm.namespace, datatypeRef, err)
 		return nil, nil
@@ -173,7 +173,7 @@ func (dm *dataManager) GetMessageWithDataCached(ctx context.Context, msgID *ffty
 	if mce := dm.queryMessageCache(ctx, msgID, options...); mce != nil {
 		return mce.msg, mce.data, true, nil
 	}
-	msg, err = dm.database.GetMessageByID(ctx, dm.namespace, msgID)
+	msg, err = dm.database.GetMessageByID(ctx, dm.namespace.LocalName, msgID)
 	if err != nil || msg == nil {
 		return nil, nil, false, err
 	}
@@ -242,6 +242,7 @@ func (dm *dataManager) queryMessageCache(ctx context.Context, id *fftypes.UUID, 
 	}
 	log.L(ctx).Debugf("Cache hit for message %s", id)
 	cached.Extend(dm.messageCacheTTL)
+	mce.msg.LocalNamespace = dm.namespace.LocalName // always populate LocalNamespace on the way out of the cache
 	return mce
 }
 
@@ -319,7 +320,7 @@ func (dm *dataManager) resolveRef(ctx context.Context, dataRef *core.DataRef) (*
 		log.L(ctx).Warnf("data is nil")
 		return nil, nil
 	}
-	d, err := dm.database.GetDataByID(ctx, dm.namespace, dataRef.ID, true)
+	d, err := dm.database.GetDataByID(ctx, dm.namespace.LocalName, dataRef.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +399,7 @@ func (dm *dataManager) validateInputData(ctx context.Context, inData *core.DataR
 	data = &core.Data{
 		Validator: validator,
 		Datatype:  datatype,
-		Namespace: dm.namespace,
+		Namespace: dm.namespace.LocalName,
 		Value:     value,
 		Blob:      blobRef,
 	}
@@ -476,7 +477,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 	batch := persistedBatch.GenInflight(make([]*core.Message, len(manifest.Messages)), make(core.DataArray, len(manifest.Data)))
 
 	for i, mr := range manifest.Messages {
-		m, err := dm.database.GetMessageByID(ctx, dm.namespace, mr.ID)
+		m, err := dm.database.GetMessageByID(ctx, dm.namespace.LocalName, mr.ID)
 		if err != nil || m == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "message", mr.ID)
 		}
@@ -484,7 +485,7 @@ func (dm *dataManager) HydrateBatch(ctx context.Context, persistedBatch *core.Ba
 		batch.Payload.Messages[i] = m.BatchMessage()
 	}
 	for i, dr := range manifest.Data {
-		d, err := dm.database.GetDataByID(ctx, dm.namespace, dr.ID, true)
+		d, err := dm.database.GetDataByID(ctx, dm.namespace.LocalName, dr.ID, true)
 		if err != nil || d == nil {
 			return nil, i18n.WrapError(ctx, err, coremsgs.MsgFailedToRetrieve, "data", dr.ID)
 		}
