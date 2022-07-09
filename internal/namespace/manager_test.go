@@ -1131,8 +1131,10 @@ func TestStartBlockchainFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
 		"ns": {
+			orchestrator: mo,
 			plugins: orchestrator.Plugins{
 				Blockchain: orchestrator.BlockchainPlugin{
 					Plugin: nm.mbi,
@@ -1141,6 +1143,7 @@ func TestStartBlockchainFail(t *testing.T) {
 		},
 	}
 
+	mo.On("Start").Return(nil)
 	nm.mbi.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1152,8 +1155,10 @@ func TestStartDataExchangeFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
 		"ns": {
+			orchestrator: mo,
 			plugins: orchestrator.Plugins{
 				DataExchange: orchestrator.DataExchangePlugin{
 					Plugin: nm.mdx,
@@ -1162,6 +1167,7 @@ func TestStartDataExchangeFail(t *testing.T) {
 		},
 	}
 
+	mo.On("Start").Return(nil)
 	nm.mdx.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()
@@ -1173,8 +1179,10 @@ func TestStartTokensFail(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
 		"ns": {
+			orchestrator: mo,
 			plugins: orchestrator.Plugins{
 				Tokens: []orchestrator.TokensPlugin{{
 					Plugin: nm.mti,
@@ -1183,6 +1191,7 @@ func TestStartTokensFail(t *testing.T) {
 		},
 	}
 
+	mo.On("Start").Return(nil)
 	nm.mti.On("Start").Return(fmt.Errorf("pop"))
 
 	err := nm.Start()

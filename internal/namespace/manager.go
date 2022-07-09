@@ -220,6 +220,9 @@ func (nm *namespaceManager) Start() error {
 		metrics.Registry()
 	}
 	for _, ns := range nm.namespaces {
+		if err := ns.orchestrator.Start(); err != nil {
+			return err
+		}
 		if ns.plugins.Blockchain.Plugin != nil {
 			if err := ns.plugins.Blockchain.Plugin.Start(); err != nil {
 				return err
@@ -234,9 +237,6 @@ func (nm *namespaceManager) Start() error {
 			if err := plugin.Plugin.Start(); err != nil {
 				return err
 			}
-		}
-		if err := ns.orchestrator.Start(); err != nil {
-			return err
 		}
 	}
 	return nil
