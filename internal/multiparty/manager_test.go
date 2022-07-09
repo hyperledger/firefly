@@ -79,6 +79,7 @@ func TestNewMultipartyManager(t *testing.T) {
 	config := Config{Contracts: []Contract{}}
 	mom.On("RegisterHandler", mock.Anything, mock.Anything, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
+		core.OpTypeBlockchainNetworkAction,
 	}).Return()
 	nm, err := NewMultipartyManager(context.Background(), "namespace", config, mdi, mbi, mom, mmi, mth)
 	assert.NotNil(t, nm)

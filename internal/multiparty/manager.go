@@ -113,6 +113,7 @@ func NewMultipartyManager(ctx context.Context, ns string, config Config, di data
 	}
 	om.RegisterHandler(ctx, mp, []core.OpType{
 		core.OpTypeBlockchainPinBatch,
+		core.OpTypeBlockchainNetworkAction,
 	})
 	return mp, nil
 }
@@ -153,7 +154,7 @@ func (mm *multipartyManager) ConfigureContract(ctx context.Context, contracts *c
 }
 
 func (mm *multipartyManager) resolveFireFlyContract(ctx context.Context, contractIndex int) (location *fftypes.JSONAny, firstEvent string, err error) {
-	if len(mm.config.Contracts) > 0 {
+	if len(mm.config.Contracts) > 0 || contractIndex > 0 {
 		if contractIndex >= len(mm.config.Contracts) {
 			return nil, "", i18n.NewError(ctx, coremsgs.MsgInvalidFireFlyContractIndex, fmt.Sprintf("%s.multiparty.contracts[%d]", mm.namespace, contractIndex))
 		}
