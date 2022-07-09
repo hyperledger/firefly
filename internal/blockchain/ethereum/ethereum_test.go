@@ -2982,6 +2982,28 @@ func TestGetNetworkVersion(t *testing.T) {
 	assert.Equal(t, 1, httpmock.GetTotalCallCount())
 }
 
+func TestGetNetworkVersionBadFormat(t *testing.T) {
+	e, cancel := newTestEthereum()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "Query", headers["type"])
+			return httpmock.NewJsonResponderOrPanic(200, queryOutput{Output: nil})(req)
+		})
+
+	_, err := e.GetNetworkVersion(context.Background(), location)
+	assert.Regexp(t, "FF10412", err)
+}
+
 func TestGetNetworkVersionMethodNotFound(t *testing.T) {
 	e, cancel := newTestEthereum()
 	defer cancel()

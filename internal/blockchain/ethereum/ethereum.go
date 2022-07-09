@@ -902,7 +902,7 @@ func (e *Ethereum) GenerateFFI(ctx context.Context, generationRequest *fftypes.F
 	return ffi2abi.ConvertABIToFFI(ctx, generationRequest.Namespace, generationRequest.Name, generationRequest.Version, generationRequest.Description, input.ABI)
 }
 
-func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
 	ethLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return 0, err
@@ -927,9 +927,14 @@ func (e *Ethereum) GetNetworkVersion(ctx context.Context, location *fftypes.JSON
 		return 0, err
 	}
 
-	version, err := strconv.Atoi(output.Output.(string))
-	if err == nil {
-		e.cache.Set(cacheKey, version, e.cacheTTL)
+	switch result := output.Output.(type) {
+	case string:
+		version, err = strconv.Atoi(result)
+		if err == nil {
+			e.cache.Set(cacheKey, version, e.cacheTTL)
+		}
+	default:
+		err = i18n.NewError(ctx, coremsgs.MsgBadNetworkVersion, output.Output)
 	}
 	return version, err
 }

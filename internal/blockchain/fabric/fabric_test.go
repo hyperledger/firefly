@@ -2627,6 +2627,24 @@ func TestGetNetworkVersion(t *testing.T) {
 	assert.Equal(t, 1, httpmock.GetTotalCallCount())
 }
 
+func TestGetNetworkVersionBadFormat(t *testing.T) {
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		httpmock.NewJsonResponderOrPanic(200, fabQueryNamedOutput{Result: nil}))
+
+	_, err := e.GetNetworkVersion(context.Background(), location)
+	assert.Regexp(t, "FF10412", err)
+}
+
 func TestGetNetworkVersionFunctionNotFound(t *testing.T) {
 	e, cancel := newTestFabric()
 	defer cancel()

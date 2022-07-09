@@ -969,7 +969,7 @@ func (f *Fabric) GenerateEventSignature(ctx context.Context, event *fftypes.FFIE
 	return event.Name
 }
 
-func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (int, error) {
+func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAny) (version int, err error) {
 	fabricOnChainLocation, err := parseContractLocation(ctx, location)
 	if err != nil {
 		return 0, err
@@ -995,9 +995,14 @@ func (f *Fabric) GetNetworkVersion(ctx context.Context, location *fftypes.JSONAn
 		return 0, err
 	}
 
-	version := int(output.Result.(float64))
-	if err == nil {
-		f.cache.Set(cacheKey, version, f.cacheTTL)
+	switch result := output.Result.(type) {
+	case float64:
+		version = int(result)
+		if err == nil {
+			f.cache.Set(cacheKey, version, f.cacheTTL)
+		}
+	default:
+		err = i18n.NewError(ctx, coremsgs.MsgBadNetworkVersion, output.Result)
 	}
 	return version, err
 }
