@@ -313,17 +313,8 @@ func (_m *Plugin) QueryContract(ctx context.Context, location *fftypes.JSONAny, 
 }
 
 // RemoveFireflySubscription provides a mock function with given fields: ctx, subID
-func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) error {
-	ret := _m.Called(ctx, subID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, subID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Plugin) RemoveFireflySubscription(ctx context.Context, subID string) {
+	_m.Called(ctx, subID)
 }
 
 // SetHandler provides a mock function with given fields: namespace, handler

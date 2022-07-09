@@ -93,7 +93,7 @@ type Plugin interface {
 	AddFireflySubscription(ctx context.Context, namespace string, location *fftypes.JSONAny, firstEvent string) (subID string, err error)
 
 	// RemoveFireFlySubscription removes the provided FireFly subscription
-	RemoveFireflySubscription(ctx context.Context, subID string) error
+	RemoveFireflySubscription(ctx context.Context, subID string)
 }
 
 const FireFlyActionPrefix = "firefly:"

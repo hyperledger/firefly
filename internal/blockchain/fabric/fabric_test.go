@@ -391,9 +391,10 @@ func TestAddAndRemoveFireflySubscriptionDeprecatedSubName(t *testing.T) {
 
 	assert.Equal(t, 3, httpmock.GetTotalCallCount())
 	assert.Equal(t, "es12345", e.streamID)
+	assert.Len(t, e.subs, 1)
 
-	err = e.RemoveFireflySubscription(e.ctx, subID)
-	assert.NoError(t, err)
+	e.RemoveFireflySubscription(e.ctx, subID)
+	assert.Len(t, e.subs, 0)
 }
 
 func TestAddFireflySubscriptionInvalidSubName(t *testing.T) {
@@ -433,9 +434,7 @@ func TestAddFireflySubscriptionInvalidSubName(t *testing.T) {
 
 func TestRemoveUnknownFireflySubscription(t *testing.T) {
 	e, _ := newTestFabric()
-
-	err := e.RemoveFireflySubscription(e.ctx, "does not exist")
-	assert.Regexp(t, "FF10412", err)
+	e.RemoveFireflySubscription(e.ctx, "does not exist")
 }
 
 func TestAddFFSubscriptionBadLocation(t *testing.T) {

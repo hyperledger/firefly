@@ -181,10 +181,7 @@ func (mm *multipartyManager) TerminateContract(ctx context.Context, contracts *c
 	contracts.Active.FinalEvent = termination.ProtocolID
 	contracts.Terminated = append(contracts.Terminated, contracts.Active)
 	contracts.Active = core.FireFlyContractInfo{Index: contracts.Active.Index + 1}
-	err = mm.blockchain.RemoveFireflySubscription(ctx, mm.activeContract.subscription)
-	if err != nil {
-		return err
-	}
+	mm.blockchain.RemoveFireflySubscription(ctx, mm.activeContract.subscription)
 	return mm.ConfigureContract(ctx, contracts)
 }
 

@@ -3196,9 +3196,10 @@ func TestAddAndRemoveFireflySubscription(t *testing.T) {
 
 	subID, err := e.AddFireflySubscription(e.ctx, "ns1", location, "newest")
 	assert.NoError(t, err)
+	assert.Len(t, e.subs, 1)
 
-	err = e.RemoveFireflySubscription(e.ctx, subID)
-	assert.NoError(t, err)
+	e.RemoveFireflySubscription(e.ctx, subID)
+	assert.Len(t, e.subs, 0)
 }
 
 func TestAddFireflySubscriptionQuerySubsFail(t *testing.T) {
@@ -3312,9 +3313,7 @@ func TestAddFireflySubscriptionGetVersionError(t *testing.T) {
 
 func TestRemoveInvalidSubscription(t *testing.T) {
 	e, _ := newTestEthereum()
-
-	err := e.RemoveFireflySubscription(e.ctx, "bad")
-	assert.Regexp(t, "FF10412", err)
+	e.RemoveFireflySubscription(e.ctx, "bad")
 }
 
 func TestCallbacksWrongNamespace(t *testing.T) {

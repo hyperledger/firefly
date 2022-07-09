@@ -285,16 +285,15 @@ func (e *Ethereum) AddFireflySubscription(ctx context.Context, namespace string,
 	return sub.ID, nil
 }
 
-func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) error {
+func (e *Ethereum) RemoveFireflySubscription(ctx context.Context, subID string) {
 	// Don't actually delete the subscription from ethconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for ethconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := e.subs[subID]; ok {
 		delete(e.subs, subID)
-		return nil
+	} else {
+		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
 	}
-
-	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (e *Ethereum) afterConnect(ctx context.Context, w wsclient.WSClient) error {

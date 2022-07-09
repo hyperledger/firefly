@@ -525,16 +525,15 @@ func (f *Fabric) AddFireflySubscription(ctx context.Context, namespace string, l
 	return sub.ID, nil
 }
 
-func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) error {
+func (f *Fabric) RemoveFireflySubscription(ctx context.Context, subID string) {
 	// Don't actually delete the subscription from fabconnect, as this may be called while processing
 	// events from the subscription (and handling that scenario cleanly could be difficult for fabconnect).
 	// TODO: can old subscriptions be somehow cleaned up later?
 	if _, ok := f.subs[subID]; ok {
 		delete(f.subs, subID)
-		return nil
+	} else {
+		log.L(ctx).Debugf("Invalid subscription ID: %s", subID)
 	}
-
-	return i18n.NewError(ctx, coremsgs.MsgSubscriptionIDInvalid, subID)
 }
 
 func (f *Fabric) handleMessageBatch(ctx context.Context, messages []interface{}) error {

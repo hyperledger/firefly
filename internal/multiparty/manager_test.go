@@ -586,7 +586,7 @@ func TestTerminateContractError(t *testing.T) {
 	mp := newTestMultipartyManager()
 	defer mp.cleanup(t)
 
-	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return(fmt.Errorf("pop"))
+	mp.mbi.On("RemoveFireflySubscription", mock.Anything, mock.Anything).Return()
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"address": "0x123",
@@ -596,7 +596,7 @@ func TestTerminateContractError(t *testing.T) {
 	}
 
 	err := mp.TerminateContract(context.Background(), cf, location, &blockchain.Event{})
-	assert.Regexp(t, "pop", err)
+	assert.Regexp(t, "FF10396", err)
 }
 
 func TestTerminateContractWrongAddress(t *testing.T) {
