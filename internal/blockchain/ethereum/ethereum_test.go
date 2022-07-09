@@ -659,9 +659,9 @@ func TestSubmitBatchPinOK(t *testing.T) {
 			params := body["params"].([]interface{})
 			headers := body["headers"].(map[string]interface{})
 			assert.Equal(t, "SendTransaction", headers["type"])
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
-			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[3])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[0])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[1])
+			assert.Equal(t, "Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD", params[2])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
@@ -773,9 +773,9 @@ func TestSubmitBatchEmptyPayloadRef(t *testing.T) {
 			params := body["params"].([]interface{})
 			headers := body["headers"].(map[string]interface{})
 			assert.Equal(t, "SendTransaction", headers["type"])
-			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[1])
-			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[2])
-			assert.Equal(t, "", params[3])
+			assert.Equal(t, "0x9ffc50ff6bfe4502adc793aea54cc059c5df767cfe444e038eb51c5523097db5", params[0])
+			assert.Equal(t, ethHexFormatB32(batch.BatchHash), params[1])
+			assert.Equal(t, "", params[2])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
 
@@ -2703,6 +2703,40 @@ func TestSubmitNetworkAction(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
 		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 2)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			params := body["params"].([]interface{})
+			headers := body["headers"].(map[string]interface{})
+			assert.Equal(t, "SendTransaction", headers["type"])
+			assert.Equal(t, "firefly:terminate", params[0])
+			assert.Equal(t, "", params[1])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate, location)
+	assert.NoError(t, err)
+}
+
+func TestSubmitNetworkActionV1(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		func(req *http.Request) (*http.Response, error) {
+			res, err := mockNetworkVersion(t, 1)(req)
+			if res != nil || err != nil {
+				return res, err
+			}
+
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			params := body["params"].([]interface{})
@@ -2745,6 +2779,21 @@ func TestSubmitNetworkActionBadLocation(t *testing.T) {
 
 	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate, location)
 	assert.Regexp(t, "FF10310", err)
+}
+
+func TestSubmitNetworkActionVersionFail(t *testing.T) {
+	e, _ := newTestEthereum()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("POST", `http://localhost:12345/`,
+		httpmock.NewJsonResponderOrPanic(500, ethError{Error: "unknown"}))
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"address": "0x123",
+	}.String())
+
+	err := e.SubmitNetworkAction(context.Background(), "ns1:"+fftypes.NewUUID().String(), "0x123", core.NetworkActionTerminate, location)
+	assert.Regexp(t, "FF10111", err)
 }
 
 func TestHandleNetworkAction(t *testing.T) {

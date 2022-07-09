@@ -183,7 +183,8 @@ type Location struct {
 
 var batchPinEvent = "BatchPin"
 var batchPinMethodName = "PinBatch"
-var batchPinPrefixItems = []*PrefixItem{
+var networkActionMethodName = "NetworkAction"
+var batchPinPrefixItemsV1 = []*PrefixItem{
 	{
 		Name: "namespace",
 		Type: "string",
@@ -202,6 +203,34 @@ var batchPinPrefixItems = []*PrefixItem{
 	},
 	{
 		Name: "contexts",
+		Type: "string",
+	},
+}
+var batchPinPrefixItems = []*PrefixItem{
+	{
+		Name: "uuids",
+		Type: "string",
+	},
+	{
+		Name: "batchHash",
+		Type: "string",
+	},
+	{
+		Name: "payloadRef",
+		Type: "string",
+	},
+	{
+		Name: "contexts",
+		Type: "string",
+	},
+}
+var networkActionPrefixItems = []*PrefixItem{
+	{
+		Name: "action",
+		Type: "string",
+	},
+	{
+		Name: "payload",
 		Type: "string",
 	},
 }
@@ -705,24 +734,36 @@ func (f *Fabric) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey s
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	pinInput := map[string]interface{}{
-		"namespace":  "",
-		"uuids":      hexFormatB32(&uuids),
-		"batchHash":  hexFormatB32(batch.BatchHash),
-		"payloadRef": batch.BatchPayloadRef,
-		"contexts":   hashes,
-	}
 
 	version, err := f.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return err
 	}
+
+	var prefixItems []*PrefixItem
+	var pinInput map[string]interface{}
+
 	if version == 1 {
-		pinInput["namespace"] = batch.Namespace
+		prefixItems = batchPinPrefixItemsV1
+		pinInput = map[string]interface{}{
+			"namespace":  batch.Namespace,
+			"uuids":      hexFormatB32(&uuids),
+			"batchHash":  hexFormatB32(batch.BatchHash),
+			"payloadRef": batch.BatchPayloadRef,
+			"contexts":   hashes,
+		}
+	} else {
+		prefixItems = batchPinPrefixItems
+		pinInput = map[string]interface{}{
+			"uuids":      hexFormatB32(&uuids),
+			"batchHash":  hexFormatB32(batch.BatchHash),
+			"payloadRef": batch.BatchPayloadRef,
+			"contexts":   hashes,
+		}
 	}
 
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, prefixItems, input, nil)
 }
 
 func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -731,16 +772,36 @@ func (f *Fabric) SubmitNetworkAction(ctx context.Context, nsOpID string, signing
 		return err
 	}
 
-	pinInput := map[string]interface{}{
-		"namespace":  "firefly:" + action,
-		"uuids":      hexFormatB32(nil),
-		"batchHash":  hexFormatB32(nil),
-		"payloadRef": "",
-		"contexts":   []string{},
+	version, err := f.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
+	}
+
+	var methodName string
+	var prefixItems []*PrefixItem
+	var pinInput map[string]interface{}
+
+	if version == 1 {
+		methodName = batchPinMethodName
+		prefixItems = batchPinPrefixItemsV1
+		pinInput = map[string]interface{}{
+			"namespace":  "firefly:" + action,
+			"uuids":      hexFormatB32(nil),
+			"batchHash":  hexFormatB32(nil),
+			"payloadRef": "",
+			"contexts":   []string{},
+		}
+	} else {
+		methodName = networkActionMethodName
+		prefixItems = networkActionPrefixItems
+		pinInput = map[string]interface{}{
+			"action":  "firefly:" + action,
+			"payload": "",
+		}
 	}
 
 	input, _ := jsonEncodeInput(pinInput)
-	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, batchPinMethodName, signingKey, nsOpID, batchPinPrefixItems, input, nil)
+	return f.invokeContractMethod(ctx, fabricOnChainLocation.Channel, fabricOnChainLocation.Chaincode, methodName, signingKey, nsOpID, prefixItems, input, nil)
 }
 
 func (f *Fabric) buildFabconnectRequestBody(ctx context.Context, channel, chaincode, methodName, signingKey, requestID string, prefixItems []*PrefixItem, input map[string]interface{}, options map[string]interface{}) (map[string]interface{}, error) {

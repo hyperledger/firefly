@@ -2754,11 +2754,45 @@ func TestSubmitNetworkAction(t *testing.T) {
 			var body map[string]interface{}
 			json.NewDecoder(req.Body).Decode(&body)
 			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
+			assert.Equal(t, "\"firefly:terminate\"", (body["args"].(map[string]interface{}))["action"])
+			assert.Equal(t, "", (body["args"].(map[string]interface{}))["payload"])
+			return httpmock.NewJsonResponderOrPanic(200, "")(req)
+		})
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 2))
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+
+	err := e.SubmitNetworkAction(context.Background(), "", signer, core.NetworkActionTerminate, location)
+	assert.NoError(t, err)
+}
+
+func TestSubmitNetworkActionV1(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signer := "signer001"
+
+	httpmock.RegisterResponder("POST", `http://localhost:12345/transactions`,
+		func(req *http.Request) (*http.Response, error) {
+			var body map[string]interface{}
+			json.NewDecoder(req.Body).Decode(&body)
+			assert.Equal(t, signer, (body["headers"].(map[string]interface{}))["signer"])
 			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", (body["args"].(map[string]interface{}))["uuids"])
 			assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000000", (body["args"].(map[string]interface{}))["batchHash"])
 			assert.Equal(t, "", (body["args"].(map[string]interface{}))["payloadRef"])
 			return httpmock.NewJsonResponderOrPanic(200, "")(req)
 		})
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		mockNetworkVersion(t, 1))
 
 	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
 		"channel":   "firefly",
@@ -2794,6 +2828,27 @@ func TestSubmitNetworkActionBadLocation(t *testing.T) {
 
 	err := e.SubmitNetworkAction(context.Background(), "", signer, core.NetworkActionTerminate, location)
 	assert.Regexp(t, "FF10310", err)
+}
+
+func TestSubmitNetworkActionVersionError(t *testing.T) {
+
+	e, cancel := newTestFabric()
+	defer cancel()
+	httpmock.ActivateNonDefault(e.client.GetClient())
+	defer httpmock.DeactivateAndReset()
+
+	signer := "signer001"
+
+	httpmock.RegisterResponder("POST", fmt.Sprintf("http://localhost:12345/query"),
+		httpmock.NewJsonResponderOrPanic(500, "pop"))
+
+	location := fftypes.JSONAnyPtr(fftypes.JSONObject{
+		"channel":   "firefly",
+		"chaincode": "simplestorage",
+	}.String())
+
+	err := e.SubmitNetworkAction(context.Background(), "", signer, core.NetworkActionTerminate, location)
+	assert.Regexp(t, "FF10284", err)
 }
 
 func TestCallbacksWrongNamespace(t *testing.T) {

@@ -698,23 +698,34 @@ func (e *Ethereum) SubmitBatchPin(ctx context.Context, nsOpID string, signingKey
 	var uuids fftypes.Bytes32
 	copy(uuids[0:16], (*batch.TransactionID)[:])
 	copy(uuids[16:32], (*batch.BatchID)[:])
-	input := []interface{}{
-		"",
-		ethHexFormatB32(&uuids),
-		ethHexFormatB32(batch.BatchHash),
-		batch.BatchPayloadRef,
-		ethHashes,
-	}
 
 	version, err := e.GetNetworkVersion(ctx, location)
 	if err != nil {
 		return err
 	}
-	if version == 1 {
-		input[0] = batch.Namespace
-	}
 
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
+	var input []interface{}
+	var method *abi.Entry
+
+	if version == 1 {
+		method = batchPinMethodABIV1
+		input = []interface{}{
+			batch.Namespace,
+			ethHexFormatB32(&uuids),
+			ethHexFormatB32(batch.BatchHash),
+			batch.BatchPayloadRef,
+			ethHashes,
+		}
+	} else {
+		method = batchPinMethodABI
+		input = []interface{}{
+			ethHexFormatB32(&uuids),
+			ethHexFormatB32(batch.BatchHash),
+			batch.BatchPayloadRef,
+			ethHashes,
+		}
+	}
+	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, nil)
 }
 
 func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signingKey string, action core.NetworkActionType, location *fftypes.JSONAny) error {
@@ -723,14 +734,32 @@ func (e *Ethereum) SubmitNetworkAction(ctx context.Context, nsOpID string, signi
 		return err
 	}
 
-	input := []interface{}{
-		blockchain.FireFlyActionPrefix + action,
-		ethHexFormatB32(nil),
-		ethHexFormatB32(nil),
-		"",
-		[]string{},
+	version, err := e.GetNetworkVersion(ctx, location)
+	if err != nil {
+		return err
 	}
-	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, batchPinMethodABI, nsOpID, input, nil)
+
+	var input []interface{}
+	var method *abi.Entry
+
+	if version == 1 {
+		method = batchPinMethodABIV1
+		input = []interface{}{
+			blockchain.FireFlyActionPrefix + action,
+			ethHexFormatB32(nil),
+			ethHexFormatB32(nil),
+			"",
+			[]string{},
+		}
+	} else {
+		method = networkActionMethodABI
+		input = []interface{}{
+			blockchain.FireFlyActionPrefix + action,
+			"",
+		}
+	}
+
+	return e.invokeContractMethod(ctx, ethLocation.Address, signingKey, method, nsOpID, input, nil)
 }
 
 func (e *Ethereum) InvokeContract(ctx context.Context, nsOpID string, signingKey string, location *fftypes.JSONAny, method *fftypes.FFIMethod, input map[string]interface{}, options map[string]interface{}) error {
