@@ -458,10 +458,12 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 	}
 
-	if or.contracts == nil {
-		or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
-		if err != nil {
-			return err
+	if or.blockchain() != nil {
+		if or.contracts == nil {
+			or.contracts, err = contracts.NewContractManager(ctx, or.namespace, or.database(), or.blockchain(), or.identity, or.operations, or.txHelper, or.syncasync)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
