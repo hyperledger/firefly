@@ -29,15 +29,15 @@ import (
 type NamespaceType = fftypes.FFEnum
 
 var (
-	// NamespaceTypeLocal is a namespace that only exists because it was defined in the local configuration of the node
+	// NamespaceTypeLocal is a namespace that was defined in the local configuration of the node
 	NamespaceTypeLocal = fftypes.FFEnumValue("namespacetype", "local")
-	// NamespaceTypeBroadcast is a namespace that was broadcast through the network. Broadcast namespaces can overwrite a local namespace
+	// NamespaceTypeBroadcast is a namespace that was broadcast through the network (deprecated)
 	NamespaceTypeBroadcast = fftypes.FFEnumValue("namespacetype", "broadcast")
-	// NamespaceTypeSystem is a reserved namespace used by FireFly itself
+	// NamespaceTypeSystem is a reserved namespace used by FireFly itself (deprecated)
 	NamespaceTypeSystem = fftypes.FFEnumValue("namespacetype", "system")
 )
 
-// Namespace is a isolate set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
+// Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
 	ID          *fftypes.UUID    `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`

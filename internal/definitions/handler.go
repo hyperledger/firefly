@@ -111,8 +111,6 @@ func (dh *definitionHandler) HandleDefinitionBroadcast(ctx context.Context, stat
 	switch msg.Header.Tag {
 	case core.SystemTagDefineDatatype:
 		return dh.handleDatatypeBroadcast(ctx, state, msg, data, tx)
-	case core.SystemTagDefineNamespace:
-		return dh.handleNamespaceBroadcast(ctx, state, msg, data, tx)
 	case core.DeprecatedSystemTagDefineOrganization:
 		return dh.handleDeprecatedOrganizationBroadcast(ctx, state, msg, data)
 	case core.DeprecatedSystemTagDefineNode:

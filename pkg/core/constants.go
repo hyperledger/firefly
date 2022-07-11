@@ -34,7 +34,7 @@ const (
 	// SystemTagDefineDatatype is the tag for messages that broadcast data definitions
 	SystemTagDefineDatatype = "ff_define_datatype"
 
-	// SystemTagDefineNamespace is the tag for messages that broadcast namespace definitions
+	// SystemTagDefineNamespace is the tag for messages that broadcast namespace definitions (deprecated)
 	SystemTagDefineNamespace = "ff_define_namespace"
 
 	// DeprecatedSystemTagDefineOrganization is the tag for messages that broadcast organization definitions
