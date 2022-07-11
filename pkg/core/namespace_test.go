@@ -52,9 +52,9 @@ func TestNamespaceValidation(t *testing.T) {
 
 }
 
-func TestFireFlyContractsDatabaseSerialization(t *testing.T) {
-	contracts1 := &FireFlyContracts{
-		Active: FireFlyContractInfo{
+func TestMultipartyContractsDatabaseSerialization(t *testing.T) {
+	contracts1 := &MultipartyContracts{
+		Active: MultipartyContract{
 			Index:        1,
 			FirstEvent:   "oldest",
 			Subscription: "1234",
@@ -62,7 +62,7 @@ func TestFireFlyContractsDatabaseSerialization(t *testing.T) {
 				"address": "0x123",
 			}.String()),
 		},
-		Terminated: []FireFlyContractInfo{
+		Terminated: []MultipartyContract{
 			{
 				Index:        0,
 				FinalEvent:   "50",
@@ -78,10 +78,10 @@ func TestFireFlyContractsDatabaseSerialization(t *testing.T) {
 	// Verify it serializes as bytes to the database
 	val1, err := contracts1.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"active":{"index":1,"location":{"address":"0x123"},"firstEvent":"oldest","subscription":"1234"},"terminated":[{"index":0,"finalEvent":"50","location":{"address":"0x1234"},"firstEvent":"oldest","subscription":"12345"}]}`, string(val1.([]byte)))
+	assert.Equal(t, `{"active":{"index":1,"location":{"address":"0x123"},"firstEvent":"oldest","subscription":"1234"},"terminated":[{"index":0,"location":{"address":"0x1234"},"firstEvent":"oldest","subscription":"12345","finalEvent":"50"}]}`, string(val1.([]byte)))
 
 	// Verify it restores ok
-	contracts2 := &FireFlyContracts{}
+	contracts2 := &MultipartyContracts{}
 	err = contracts2.Scan(val1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, contracts2.Active.Index)

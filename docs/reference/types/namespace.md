@@ -28,12 +28,7 @@ nav_order: 20
     "name": "default",
     "description": "Default predefined namespace",
     "type": "local",
-    "created": "2022-05-16T01:23:16Z",
-    "fireflyContract": {
-        "active": {
-            "index": 0
-        }
-    }
+    "created": "2022-05-16T01:23:16Z"
 }
 ```
 
@@ -47,24 +42,4 @@ nav_order: 20
 | `description` | A description of the namespace | `string` |
 | `type` | The type of the namespace | `FFEnum`:<br/>`"local"`<br/>`"broadcast"`<br/>`"system"` |
 | `created` | The time the namespace was created | [`FFTime`](simpletypes#fftime) |
-| `fireflyContract` | Info on the FireFly smart contract configured for this namespace | [`FireFlyContracts`](#fireflycontracts) |
-
-## FireFlyContracts
-
-| Field Name | Description | Type |
-|------------|-------------|------|
-| `active` | The currently active FireFly smart contract | [`FireFlyContractInfo`](#fireflycontractinfo) |
-| `terminated` | Previously-terminated FireFly smart contracts | [`FireFlyContractInfo[]`](#fireflycontractinfo) |
-
-## FireFlyContractInfo
-
-| Field Name | Description | Type |
-|------------|-------------|------|
-| `index` | The index of this contract in the config file | `int` |
-| `finalEvent` | The identifier for the final blockchain event received from this contract before termination | `string` |
-| `location` | A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel | [`JSONAny`](simpletypes#jsonany) |
-| `firstEvent` | A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors | `string` |
-| `subscription` | The backend identifier of the subscription for the FireFly BatchPin contract | `string` |
-
-
 

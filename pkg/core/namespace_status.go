@@ -20,10 +20,11 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 // NamespaceStatus is a set of information that represents the configuration and status of a given namespace
 type NamespaceStatus struct {
-	Namespace string                 `ffstruct:"NamespaceStatus" json:"namespace"`
-	Node      NamespaceStatusNode    `ffstruct:"NamespaceStatus" json:"node"`
-	Org       NamespaceStatusOrg     `ffstruct:"NamespaceStatus" json:"org"`
-	Plugins   NamespaceStatusPlugins `ffstruct:"NamespaceStatus" json:"plugins"`
+	Namespace  string                    `ffstruct:"NamespaceStatus" json:"namespace"`
+	Node       NamespaceStatusNode       `ffstruct:"NamespaceStatus" json:"node"`
+	Org        NamespaceStatusOrg        `ffstruct:"NamespaceStatus" json:"org"`
+	Plugins    NamespaceStatusPlugins    `ffstruct:"NamespaceStatus" json:"plugins"`
+	Multiparty NamespaceStatusMultiparty `ffstruct:"NamespaceStatus" json:"multiparty"`
 }
 
 // NamespaceStatusNode is the information about the local node, returned in the namespace status
@@ -57,4 +58,9 @@ type NamespaceStatusPlugins struct {
 type NamespaceStatusPlugin struct {
 	Name       string `ffstruct:"NamespaceStatusPlugin" json:"name,omitempty"`
 	PluginType string `ffstruct:"NamespaceStatusPlugin" json:"pluginType"`
+}
+
+type NamespaceStatusMultiparty struct {
+	Enabled   bool                 `ffstruct:"NamespaceStatusMultiparty" json:"enabled"`
+	Contracts *MultipartyContracts `ffstruct:"NamespaceStatusMultiparty" json:"contract,omitempty"`
 }

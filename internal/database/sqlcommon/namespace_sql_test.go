@@ -45,8 +45,8 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 		Type:    core.NamespaceTypeLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
-		Contracts: core.FireFlyContracts{
-			Active: core.FireFlyContractInfo{
+		Contracts: core.MultipartyContracts{
+			Active: core.MultipartyContract{
 				Index: 1,
 			},
 		},

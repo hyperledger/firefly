@@ -55,7 +55,7 @@ func TestNetworkAction(t *testing.T) {
 	mdi.On("InsertEvent", em.ctx, mock.Anything).Return(nil)
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(nil)
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.MultipartyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
 	err := em.BlockchainNetworkAction("terminate", location, event, verifier)
 	assert.NoError(t, err)
@@ -171,7 +171,7 @@ func TestActionTerminateFail(t *testing.T) {
 	mdi := em.database.(*databasemocks.Plugin)
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.MultipartyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(fmt.Errorf("pop"))
 
 	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")
@@ -191,7 +191,7 @@ func TestActionTerminateUpsertFail(t *testing.T) {
 
 	mdi.On("GetNamespace", em.ctx, "ns1").Return(&core.Namespace{}, nil)
 	mdi.On("UpsertNamespace", em.ctx, mock.AnythingOfType("*core.Namespace"), true).Return(fmt.Errorf("pop"))
-	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.FireFlyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
+	mmp.On("TerminateContract", em.ctx, mock.AnythingOfType("*core.MultipartyContracts"), location, mock.AnythingOfType("*blockchain.Event")).Return(nil)
 
 	err := em.actionTerminate(location, &blockchain.Event{})
 	assert.EqualError(t, err, "pop")

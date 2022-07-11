@@ -40,26 +40,26 @@ var (
 // Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	ID          *fftypes.UUID    `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
-	Message     *fftypes.UUID    `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
-	Name        string           `ffstruct:"Namespace" json:"name"`
-	Description string           `ffstruct:"Namespace" json:"description"`
-	Type        NamespaceType    `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
-	Created     *fftypes.FFTime  `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
-	Contracts   FireFlyContracts `ffstruct:"Namespace" json:"fireflyContract" ffexcludeinput:"true"`
+	ID          *fftypes.UUID       `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
+	Message     *fftypes.UUID       `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
+	Name        string              `ffstruct:"Namespace" json:"name"`
+	Description string              `ffstruct:"Namespace" json:"description"`
+	Type        NamespaceType       `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
+	Created     *fftypes.FFTime     `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
+	Contracts   MultipartyContracts `ffstruct:"Namespace" json:"-"`
 }
 
-type FireFlyContracts struct {
-	Active     FireFlyContractInfo   `ffstruct:"FireFlyContracts" json:"active"`
-	Terminated []FireFlyContractInfo `ffstruct:"FireFlyContracts" json:"terminated,omitempty"`
+type MultipartyContracts struct {
+	Active     MultipartyContract   `ffstruct:"MultipartyContracts" json:"active"`
+	Terminated []MultipartyContract `ffstruct:"MultipartyContracts" json:"terminated,omitempty"`
 }
 
-type FireFlyContractInfo struct {
-	Index        int              `ffstruct:"FireFlyContractInfo" json:"index"`
-	FinalEvent   string           `ffstruct:"FireFlyContractInfo" json:"finalEvent,omitempty"`
-	Location     *fftypes.JSONAny `ffstruct:"FireFlyContractInfo" json:"location,omitempty"`
-	FirstEvent   string           `ffstruct:"FireFlyContractInfo" json:"firstEvent,omitempty"`
-	Subscription string           `ffstruct:"FireFlyContractInfo" json:"subscription,omitempty"`
+type MultipartyContract struct {
+	Index        int              `ffstruct:"MultipartyContract" json:"index"`
+	Location     *fftypes.JSONAny `ffstruct:"MultipartyContract" json:"location,omitempty"`
+	FirstEvent   string           `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
+	Subscription string           `ffstruct:"MultipartyContract" json:"subscription,omitempty"`
+	FinalEvent   string           `ffstruct:"MultipartyContract" json:"finalEvent,omitempty"`
 }
 
 type NamespaceRef struct {
@@ -103,7 +103,7 @@ func (ns *Namespace) SetBroadcastMessage(msgID *fftypes.UUID) {
 }
 
 // Scan implements sql.Scanner
-func (fc *FireFlyContracts) Scan(src interface{}) error {
+func (fc *MultipartyContracts) Scan(src interface{}) error {
 	switch src := src.(type) {
 	case []byte:
 		if len(src) == 0 {
@@ -118,6 +118,6 @@ func (fc *FireFlyContracts) Scan(src interface{}) error {
 }
 
 // Value implements sql.Valuer
-func (fc FireFlyContracts) Value() (driver.Value, error) {
+func (fc MultipartyContracts) Value() (driver.Value, error) {
 	return json.Marshal(fc)
 }

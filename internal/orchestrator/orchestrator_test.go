@@ -380,7 +380,7 @@ func TestStartBlockchainsConfigureFail(t *testing.T) {
 	or := newTestOrchestrator()
 	defer or.cleanup(t)
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(fmt.Errorf("pop"))
+	or.mmp.On("ConfigureContract", mock.Anything, &core.MultipartyContracts{}).Return(fmt.Errorf("pop"))
 	err := or.Start()
 	assert.EqualError(t, err, "pop")
 }
@@ -391,7 +391,7 @@ func TestStartStopOk(t *testing.T) {
 	defer or.cleanup(t)
 	or.mdi.On("GetNamespace", mock.Anything, "ns").Return(nil, nil)
 	or.mdi.On("UpsertNamespace", mock.Anything, mock.Anything, true).Return(nil)
-	or.mmp.On("ConfigureContract", mock.Anything, &core.FireFlyContracts{}).Return(nil)
+	or.mmp.On("ConfigureContract", mock.Anything, &core.MultipartyContracts{}).Return(nil)
 	or.mba.On("Start").Return(nil)
 	or.mem.On("Start").Return(nil)
 	or.mbm.On("Start").Return(nil)

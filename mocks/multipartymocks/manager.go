@@ -22,11 +22,11 @@ type Manager struct {
 }
 
 // ConfigureContract provides a mock function with given fields: ctx, contracts
-func (_m *Manager) ConfigureContract(ctx context.Context, contracts *core.FireFlyContracts) error {
+func (_m *Manager) ConfigureContract(ctx context.Context, contracts *core.MultipartyContracts) error {
 	ret := _m.Called(ctx, contracts)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MultipartyContracts) error); ok {
 		r0 = rf(ctx, contracts)
 	} else {
 		r0 = ret.Error(0)
@@ -159,11 +159,11 @@ func (_m *Manager) SubmitNetworkAction(ctx context.Context, signingKey string, a
 }
 
 // TerminateContract provides a mock function with given fields: ctx, contracts, location, termination
-func (_m *Manager) TerminateContract(ctx context.Context, contracts *core.FireFlyContracts, location *fftypes.JSONAny, termination *blockchain.Event) error {
+func (_m *Manager) TerminateContract(ctx context.Context, contracts *core.MultipartyContracts, location *fftypes.JSONAny, termination *blockchain.Event) error {
 	ret := _m.Called(ctx, contracts, location, termination)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *core.FireFlyContracts, *fftypes.JSONAny, *blockchain.Event) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *core.MultipartyContracts, *fftypes.JSONAny, *blockchain.Event) error); ok {
 		r0 = rf(ctx, contracts, location, termination)
 	} else {
 		r0 = ret.Error(0)

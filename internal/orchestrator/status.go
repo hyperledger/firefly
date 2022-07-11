@@ -105,6 +105,17 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 			Name: or.config.Multiparty.Org.Name,
 		},
 		Plugins: or.getPlugins(),
+		Multiparty: core.NamespaceStatusMultiparty{
+			Enabled: or.config.Multiparty.Enabled,
+		},
+	}
+
+	if or.config.Multiparty.Enabled {
+		ns, err := or.database().GetNamespace(ctx, or.namespace)
+		if err != nil {
+			return nil, err
+		}
+		status.Multiparty.Contracts = &ns.Contracts
 	}
 
 	if org != nil {
