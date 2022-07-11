@@ -28,7 +28,8 @@ import (
 // Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	Name        string              `ffstruct:"Namespace" json:"name"`
+	LocalName   string              `ffstruct:"Namespace" json:"name"`
+	RemoteName  string              `ffstruct:"Namespace" json:"remoteName"`
 	Description string              `ffstruct:"Namespace" json:"description"`
 	Created     *fftypes.FFTime     `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
 	Contracts   MultipartyContracts `ffstruct:"Namespace" json:"-"`
@@ -54,6 +55,13 @@ type MultipartyContractInfo struct {
 type NamespaceRef struct {
 	LocalName  string
 	RemoteName string
+}
+
+func (n *Namespace) Ref() NamespaceRef {
+	return NamespaceRef{
+		LocalName:  n.LocalName,
+		RemoteName: n.RemoteName,
+	}
 }
 
 // NetworkActionType is a type of action to perform

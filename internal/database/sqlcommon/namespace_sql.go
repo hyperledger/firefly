@@ -30,6 +30,7 @@ import (
 var (
 	namespaceColumns = []string{
 		"name",
+		"remote_name",
 		"description",
 		"created",
 		"firefly_contracts",
@@ -51,7 +52,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 		namespaceRows, _, err := s.queryTx(ctx, namespacesTable, tx,
 			sq.Select("seq").
 				From(namespacesTable).
-				Where(sq.Eq{"name": namespace.Name}),
+				Where(sq.Eq{"name": namespace.LocalName}),
 		)
 		if err != nil {
 			return err
@@ -64,12 +65,11 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 		// Update the namespace
 		if _, err = s.updateTx(ctx, namespacesTable, tx,
 			sq.Update(namespacesTable).
-				// Note we do not update ID
-				Set("name", namespace.Name).
+				Set("remote_name", namespace.RemoteName).
 				Set("description", namespace.Description).
 				Set("created", namespace.Created).
 				Set("firefly_contracts", namespace.Contracts).
-				Where(sq.Eq{"name": namespace.Name}),
+				Where(sq.Eq{"name": namespace.LocalName}),
 			nil,
 		); err != nil {
 			return err
@@ -79,7 +79,8 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 			sq.Insert(namespacesTable).
 				Columns(namespaceColumns...).
 				Values(
-					namespace.Name,
+					namespace.LocalName,
+					namespace.RemoteName,
 					namespace.Description,
 					namespace.Created,
 					namespace.Contracts,
@@ -96,7 +97,8 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*core.Namespace, error) {
 	namespace := core.Namespace{}
 	err := row.Scan(
-		&namespace.Name,
+		&namespace.LocalName,
+		&namespace.RemoteName,
 		&namespace.Description,
 		&namespace.Created,
 		&namespace.Contracts,

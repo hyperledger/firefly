@@ -1252,9 +1252,14 @@ func TestGetNamespaces(t *testing.T) {
 	nm := newTestNamespaceManager(true)
 	defer nm.cleanup(t)
 
+	mo := &orchestratormocks.Orchestrator{}
 	nm.namespaces = map[string]*namespace{
-		"default": {},
+		"default": {
+			orchestrator: mo,
+		},
 	}
+
+	mo.On("GetNamespace", context.Background()).Return(&core.Namespace{})
 
 	results, err := nm.GetNamespaces(context.Background())
 	assert.Nil(t, err)

@@ -31,7 +31,7 @@ func TestSPIGetNamespaceByName(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	res := httptest.NewRecorder()
 
-	o.On("GetNamespace", mock.Anything, "ns1").
+	o.On("GetNamespace", mock.Anything).
 		Return(&core.Namespace{}, nil)
 	r.ServeHTTP(res, req)
 

@@ -112,7 +112,7 @@ func newTestOrchestrator() *testOrchestrator {
 		orchestrator: orchestrator{
 			ctx:       ctx,
 			cancelCtx: cancel,
-			namespace: core.NamespaceRef{LocalName: "ns", RemoteName: "ns"},
+			namespace: &core.Namespace{LocalName: "ns", RemoteName: "ns"},
 		},
 		mdi: &databasemocks.Plugin{},
 		mdm: &datamocks.Manager{},
@@ -180,7 +180,7 @@ func newTestOrchestrator() *testOrchestrator {
 
 func TestNewOrchestrator(t *testing.T) {
 	or := NewOrchestrator(
-		core.NamespaceRef{LocalName: "ns1", RemoteName: "ns1"},
+		&core.Namespace{LocalName: "ns1", RemoteName: "ns1"},
 		Config{},
 		Plugins{},
 		&metricsmocks.Manager{},

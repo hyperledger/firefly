@@ -378,7 +378,8 @@ var (
 	// Namespace field descriptions
 	NamespaceID                    = ffm("Namespace.id", "The UUID of the namespace. For locally established namespaces will be different on each node in the network. For broadcast namespaces, will be the same on every node")
 	NamespaceMessage               = ffm("Namespace.message", "The UUID of broadcast message used to establish the namespace. Unset for local namespaces")
-	NamespaceName                  = ffm("Namespace.name", "The namespace name")
+	NamespaceName                  = ffm("Namespace.name", "The local namespace name")
+	NamespaceRemoteName            = ffm("Namespace.remoteName", "The namespace name within the multiparty network")
 	NamespaceDescription           = ffm("Namespace.description", "A description of the namespace")
 	NamespaceType                  = ffm("Namespace.type", "The type of the namespace")
 	NamespaceCreated               = ffm("Namespace.created", "The time the namespace was created")

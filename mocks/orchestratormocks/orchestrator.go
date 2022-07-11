@@ -783,27 +783,20 @@ func (_m *Orchestrator) GetMessagesWithData(ctx context.Context, filter database
 	return r0, r1, r2
 }
 
-// GetNamespace provides a mock function with given fields: ctx, ns
-func (_m *Orchestrator) GetNamespace(ctx context.Context, ns string) (*core.Namespace, error) {
-	ret := _m.Called(ctx, ns)
+// GetNamespace provides a mock function with given fields: ctx
+func (_m *Orchestrator) GetNamespace(ctx context.Context) *core.Namespace {
+	ret := _m.Called(ctx)
 
 	var r0 *core.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, string) *core.Namespace); ok {
-		r0 = rf(ctx, ns)
+	if rf, ok := ret.Get(0).(func(context.Context) *core.Namespace); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*core.Namespace)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, ns)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // GetOperationByID provides a mock function with given fields: ctx, id

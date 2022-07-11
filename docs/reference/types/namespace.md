@@ -25,6 +25,7 @@ nav_order: 20
 ```json
 {
     "name": "default",
+    "remoteName": "default",
     "description": "Default predefined namespace",
     "created": "2022-05-16T01:23:16Z"
 }
@@ -34,7 +35,8 @@ nav_order: 20
 
 | Field Name | Description | Type |
 |------------|-------------|------|
-| `name` | The namespace name | `string` |
+| `name` | The local namespace name | `string` |
+| `remoteName` | The namespace name within the multiparty network | `string` |
 | `description` | A description of the namespace | `string` |
 | `created` | The time the namespace was created | [`FFTime`](simpletypes#fftime) |
 

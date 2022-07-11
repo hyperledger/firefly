@@ -40,7 +40,7 @@ var spiGetNamespaceByName = &ffapi.Route{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {
 			ns := r.PP["ns"]
 			or := cr.mgr.Orchestrator(ns)
-			return or.GetNamespace(cr.ctx, ns)
+			return or.GetNamespace(cr.ctx), nil
 		},
 	},
 }

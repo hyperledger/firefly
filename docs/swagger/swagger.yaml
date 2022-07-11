@@ -8788,7 +8788,10 @@ paths:
                       description: A description of the namespace
                       type: string
                     name:
-                      description: The namespace name
+                      description: The local namespace name
+                      type: string
+                    remoteName:
+                      description: The namespace name within the multiparty network
                       type: string
                   type: object
                 type: array
@@ -8830,7 +8833,10 @@ paths:
                     description: A description of the namespace
                     type: string
                   name:
-                    description: The namespace name
+                    description: The local namespace name
+                    type: string
+                  remoteName:
+                    description: The namespace name within the multiparty network
                     type: string
                 type: object
           description: Success
@@ -20518,7 +20524,10 @@ paths:
                         description: A description of the namespace
                         type: string
                       name:
-                        description: The namespace name
+                        description: The local namespace name
+                        type: string
+                      remoteName:
+                        description: The namespace name within the multiparty network
                         type: string
                     type: object
                   node:
@@ -28069,7 +28078,10 @@ paths:
                         description: A description of the namespace
                         type: string
                       name:
-                        description: The namespace name
+                        description: The local namespace name
+                        type: string
+                      remoteName:
+                        description: The namespace name within the multiparty network
                         type: string
                     type: object
                   node:

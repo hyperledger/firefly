@@ -107,7 +107,6 @@ func TestGetStatusRegistered(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(&core.Namespace{Name: "ns"}, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
 
@@ -116,7 +115,7 @@ func TestGetStatusRegistered(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.Name)
+	assert.Equal(t, "ns", status.Namespace.LocalName)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -160,24 +159,8 @@ func TestGetStatusVerifierLookupFail(t *testing.T) {
 		},
 	}, nil)
 	or.mdi.On("GetVerifiers", or.ctx, "ns", mock.Anything).Return(nil, nil, fmt.Errorf("pop"))
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(&core.Namespace{}, nil)
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
-
-	_, err := or.GetStatus(or.ctx)
-	assert.Regexp(t, "pop", err)
-
-}
-
-func TestGetStatusNamespaceLookupFail(t *testing.T) {
-	or := newTestOrchestrator()
-	defer or.cleanup(t)
-
-	coreconfig.Reset()
-	config.Set(coreconfig.NamespacesDefault, "default")
-	config.Set(coreconfig.NodeName, "node1")
-
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(nil, fmt.Errorf("pop"))
 
 	_, err := or.GetStatus(or.ctx)
 	assert.Regexp(t, "pop", err)
@@ -216,7 +199,6 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(&core.Namespace{Name: "ns"}, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
 
@@ -225,7 +207,7 @@ func TestGetStatusWrongNodeOwner(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.Name)
+	assert.Equal(t, "ns", status.Namespace.LocalName)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -247,7 +229,6 @@ func TestGetStatusUnregistered(t *testing.T) {
 	config.Set(coreconfig.NodeName, "node1")
 
 	or.mim.On("GetMultipartyRootOrg", or.ctx).Return(nil, fmt.Errorf("pop"))
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(&core.Namespace{Name: "ns"}, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
 
@@ -256,7 +237,7 @@ func TestGetStatusUnregistered(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.Name)
+	assert.Equal(t, "ns", status.Namespace.LocalName)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.False(t, status.Org.Registered)
@@ -293,7 +274,6 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(&core.Namespace{Name: "ns"}, nil)
 
 	or.config.Multiparty.Org.Name = "org1"
 
@@ -302,7 +282,7 @@ func TestGetStatusOrgOnlyRegistered(t *testing.T) {
 	status, err := or.GetStatus(or.ctx)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "ns", status.Namespace.Name)
+	assert.Equal(t, "ns", status.Namespace.LocalName)
 
 	assert.Equal(t, "org1", status.Org.Name)
 	assert.True(t, status.Org.Registered)
@@ -348,7 +328,6 @@ func TestGetStatusNodeError(t *testing.T) {
 			Value: "0x12345",
 		}},
 	}, nil, nil)
-	or.mdi.On("GetNamespace", or.ctx, "ns").Return(&core.Namespace{}, nil)
 
 	or.mem.On("GetPlugins").Return(mockEventPlugins)
 

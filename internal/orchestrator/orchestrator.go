@@ -78,7 +78,7 @@ type Orchestrator interface {
 	DeleteSubscription(ctx context.Context, id string) error
 
 	// Data Query
-	GetNamespace(ctx context.Context, ns string) (*core.Namespace, error)
+	GetNamespace(ctx context.Context) *core.Namespace
 	GetTransactionByID(ctx context.Context, id string) (*core.Transaction, error)
 	GetTransactionOperations(ctx context.Context, id string) ([]*core.Operation, *database.FilterResult, error)
 	GetTransactionBlockchainEvents(ctx context.Context, id string) ([]*core.BlockchainEvent, *database.FilterResult, error)
@@ -167,7 +167,7 @@ type orchestrator struct {
 	ctx            context.Context
 	cancelCtx      context.CancelFunc
 	started        bool
-	namespace      core.NamespaceRef
+	namespace      *core.Namespace
 	config         Config
 	plugins        Plugins
 	multiparty     multiparty.Manager       // only for multiparty
@@ -191,7 +191,7 @@ type orchestrator struct {
 	txHelper       txcommon.Helper
 }
 
-func NewOrchestrator(ns core.NamespaceRef, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
+func NewOrchestrator(ns *core.Namespace, config Config, plugins Plugins, metrics metrics.Manager) Orchestrator {
 	or := &orchestrator{
 		namespace: ns,
 		config:    config,
@@ -245,21 +245,29 @@ func (or *orchestrator) tokens() map[string]tokens.Plugin {
 }
 
 func (or *orchestrator) Start() (err error) {
+	ns, err := or.database().GetNamespace(or.ctx, or.namespace.LocalName)
+	if ns == nil {
+		ns = or.namespace
+		ns.Created = fftypes.Now()
+	}
 	if or.config.Multiparty.Enabled {
 		var ns *core.Namespace
 		ns, err = or.database().GetNamespace(or.ctx, or.namespace.LocalName)
 		if err == nil {
 			if ns == nil {
 				ns = &core.Namespace{
-					Name:    or.namespace.LocalName,
-					Created: fftypes.Now(),
+					LocalName: or.namespace.LocalName,
+					Created:   fftypes.Now(),
 				}
 			}
 			err = or.multiparty.ConfigureContract(or.ctx, &ns.Contracts)
 		}
-		if err == nil {
-			err = or.database().UpsertNamespace(or.ctx, ns, true)
-		}
+	}
+	if err == nil {
+		err = or.database().UpsertNamespace(or.ctx, ns, true)
+	}
+
+	if or.config.Multiparty.Enabled {
 		if err == nil {
 			err = or.batch.Start()
 		}
@@ -276,6 +284,7 @@ func (or *orchestrator) Start() (err error) {
 	if err == nil {
 		err = or.operations.Start()
 	}
+
 	or.started = true
 	return err
 }
@@ -403,7 +412,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 	if or.config.Multiparty.Enabled {
 		if or.multiparty == nil {
-			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace, or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
+			or.multiparty, err = multiparty.NewMultipartyManager(or.ctx, or.namespace.Ref(), or.config.Multiparty, or.database(), or.blockchain(), or.operations, or.metrics, or.txHelper)
 			if err != nil {
 				return err
 			}
@@ -428,19 +437,19 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 		}
 
 		if or.messaging == nil {
-			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace, or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
+			if or.messaging, err = privatemessaging.NewPrivateMessaging(ctx, or.namespace.Ref(), or.database(), or.dataexchange(), or.blockchain(), or.identity, or.batch, or.data, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
 				return err
 			}
 		}
 
 		if or.broadcast == nil {
-			if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace, or.database(), or.blockchain(), or.dataexchange(), or.sharedstorage(), or.identity, or.data, or.batch, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
+			if or.broadcast, err = broadcast.NewBroadcastManager(ctx, or.namespace.Ref(), or.database(), or.blockchain(), or.dataexchange(), or.sharedstorage(), or.identity, or.data, or.batch, or.syncasync, or.multiparty, or.metrics, or.operations); err != nil {
 				return err
 			}
 		}
 
 		if or.sharedDownload == nil {
-			or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.namespace, or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
+			or.sharedDownload, err = shareddownload.NewDownloadManager(ctx, or.namespace.Ref(), or.database(), or.sharedstorage(), or.dataexchange(), or.operations, &or.bc)
 			if err != nil {
 				return err
 			}
@@ -480,7 +489,7 @@ func (or *orchestrator) initManagers(ctx context.Context) (err error) {
 
 func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	if or.data == nil {
-		or.data, err = data.NewDataManager(ctx, or.namespace, or.database(), or.dataexchange())
+		or.data, err = data.NewDataManager(ctx, or.namespace.Ref(), or.database(), or.dataexchange())
 		if err != nil {
 			return err
 		}
@@ -491,7 +500,7 @@ func (or *orchestrator) initComponents(ctx context.Context) (err error) {
 	}
 
 	if or.events == nil {
-		or.events, err = events.NewEventManager(ctx, or.namespace, or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
+		or.events, err = events.NewEventManager(ctx, or.namespace.Ref(), or, or.database(), or.blockchain(), or.identity, or.defhandler, or.data, or.defsender, or.broadcast, or.messaging, or.assets, or.sharedDownload, or.metrics, or.txHelper, or.plugins.Events, or.multiparty)
 		if err != nil {
 			return err
 		}
