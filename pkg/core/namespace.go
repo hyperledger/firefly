@@ -55,11 +55,15 @@ type MultipartyContracts struct {
 }
 
 type MultipartyContract struct {
-	Index        int              `ffstruct:"MultipartyContract" json:"index"`
-	Location     *fftypes.JSONAny `ffstruct:"MultipartyContract" json:"location,omitempty"`
-	FirstEvent   string           `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
-	Subscription string           `ffstruct:"MultipartyContract" json:"subscription,omitempty"`
-	FinalEvent   string           `ffstruct:"MultipartyContract" json:"finalEvent,omitempty"`
+	Index      int                    `ffstruct:"MultipartyContract" json:"index"`
+	Location   *fftypes.JSONAny       `ffstruct:"MultipartyContract" json:"location,omitempty"`
+	FirstEvent string                 `ffstruct:"MultipartyContract" json:"firstEvent,omitempty"`
+	Info       MultipartyContractInfo `ffstruct:"MultipartyContract" json:"info"`
+}
+
+type MultipartyContractInfo struct {
+	Subscription string `ffstruct:"MultipartyContract" json:"subscription,omitempty"`
+	FinalEvent   string `ffstruct:"MultipartyContract" json:"finalEvent,omitempty"`
 }
 
 type NamespaceRef struct {

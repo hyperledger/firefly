@@ -55,22 +55,26 @@ func TestNamespaceValidation(t *testing.T) {
 func TestMultipartyContractsDatabaseSerialization(t *testing.T) {
 	contracts1 := &MultipartyContracts{
 		Active: MultipartyContract{
-			Index:        1,
-			FirstEvent:   "oldest",
-			Subscription: "1234",
+			Index:      1,
+			FirstEvent: "oldest",
 			Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 				"address": "0x123",
 			}.String()),
+			Info: MultipartyContractInfo{
+				Subscription: "1234",
+			},
 		},
 		Terminated: []MultipartyContract{
 			{
-				Index:        0,
-				FinalEvent:   "50",
-				Subscription: "12345",
-				FirstEvent:   "oldest",
+				Index:      0,
+				FirstEvent: "oldest",
 				Location: fftypes.JSONAnyPtr(fftypes.JSONObject{
 					"address": "0x1234",
 				}.String()),
+				Info: MultipartyContractInfo{
+					Subscription: "12345",
+					FinalEvent:   "50",
+				},
 			},
 		},
 	}
@@ -78,7 +82,7 @@ func TestMultipartyContractsDatabaseSerialization(t *testing.T) {
 	// Verify it serializes as bytes to the database
 	val1, err := contracts1.Value()
 	assert.NoError(t, err)
-	assert.Equal(t, `{"active":{"index":1,"location":{"address":"0x123"},"firstEvent":"oldest","subscription":"1234"},"terminated":[{"index":0,"location":{"address":"0x1234"},"firstEvent":"oldest","subscription":"12345","finalEvent":"50"}]}`, string(val1.([]byte)))
+	assert.Equal(t, `{"active":{"index":1,"location":{"address":"0x123"},"firstEvent":"oldest","info":{"subscription":"1234"}},"terminated":[{"index":0,"location":{"address":"0x1234"},"firstEvent":"oldest","info":{"subscription":"12345","finalEvent":"50"}}]}`, string(val1.([]byte)))
 
 	// Verify it restores ok
 	contracts2 := &MultipartyContracts{}

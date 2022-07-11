@@ -389,6 +389,7 @@ var (
 	MultipartyContractFirstEvent   = ffm("MultipartyContract.firstEvent", "A blockchain specific string, such as a block number, to start listening from. The special strings 'oldest' and 'newest' are supported by all blockchain connectors")
 	MultipartyContractLocation     = ffm("MultipartyContract.location", "A blockchain specific contract identifier. For example an Ethereum contract address, or a Fabric chaincode name and channel")
 	MultipartyContractSubscription = ffm("MultipartyContract.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
+	MultipartyContractInfo         = ffm("MultipartyContract.info", "Additional info about the current status of the multi-party contract")
 	NetworkActionType              = ffm("NetworkAction.type", "The action to be performed")
 
 	// NamespaceStatus field descriptions

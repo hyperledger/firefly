@@ -20481,10 +20481,6 @@ paths:
                           active:
                             description: The currently active FireFly smart contract
                             properties:
-                              finalEvent:
-                                description: The identifier for the final blockchain
-                                  event received from this contract before termination
-                                type: string
                               firstEvent:
                                 description: A blockchain specific string, such as
                                   a block number, to start listening from. The special
@@ -20495,24 +20491,29 @@ paths:
                                 description: The index of this contract in the config
                                   file
                                 type: integer
+                              info:
+                                description: Additional info about the current status
+                                  of the multi-party contract
+                                properties:
+                                  finalEvent:
+                                    description: The identifier for the final blockchain
+                                      event received from this contract before termination
+                                    type: string
+                                  subscription:
+                                    description: The backend identifier of the subscription
+                                      for the FireFly BatchPin contract
+                                    type: string
+                                type: object
                               location:
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
-                              subscription:
-                                description: The backend identifier of the subscription
-                                  for the FireFly BatchPin contract
-                                type: string
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
                             items:
                               description: Previously-terminated FireFly smart contracts
                               properties:
-                                finalEvent:
-                                  description: The identifier for the final blockchain
-                                    event received from this contract before termination
-                                  type: string
                                 firstEvent:
                                   description: A blockchain specific string, such
                                     as a block number, to start listening from. The
@@ -20523,14 +20524,23 @@ paths:
                                   description: The index of this contract in the config
                                     file
                                   type: integer
+                                info:
+                                  description: Additional info about the current status
+                                    of the multi-party contract
+                                  properties:
+                                    finalEvent:
+                                      description: The identifier for the final blockchain
+                                        event received from this contract before termination
+                                      type: string
+                                    subscription:
+                                      description: The backend identifier of the subscription
+                                        for the FireFly BatchPin contract
+                                      type: string
+                                  type: object
                                 location:
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
-                                subscription:
-                                  description: The backend identifier of the subscription
-                                    for the FireFly BatchPin contract
-                                  type: string
                               type: object
                             type: array
                         type: object
@@ -28011,10 +28021,6 @@ paths:
                           active:
                             description: The currently active FireFly smart contract
                             properties:
-                              finalEvent:
-                                description: The identifier for the final blockchain
-                                  event received from this contract before termination
-                                type: string
                               firstEvent:
                                 description: A blockchain specific string, such as
                                   a block number, to start listening from. The special
@@ -28025,24 +28031,29 @@ paths:
                                 description: The index of this contract in the config
                                   file
                                 type: integer
+                              info:
+                                description: Additional info about the current status
+                                  of the multi-party contract
+                                properties:
+                                  finalEvent:
+                                    description: The identifier for the final blockchain
+                                      event received from this contract before termination
+                                    type: string
+                                  subscription:
+                                    description: The backend identifier of the subscription
+                                      for the FireFly BatchPin contract
+                                    type: string
+                                type: object
                               location:
                                 description: A blockchain specific contract identifier.
                                   For example an Ethereum contract address, or a Fabric
                                   chaincode name and channel
-                              subscription:
-                                description: The backend identifier of the subscription
-                                  for the FireFly BatchPin contract
-                                type: string
                             type: object
                           terminated:
                             description: Previously-terminated FireFly smart contracts
                             items:
                               description: Previously-terminated FireFly smart contracts
                               properties:
-                                finalEvent:
-                                  description: The identifier for the final blockchain
-                                    event received from this contract before termination
-                                  type: string
                                 firstEvent:
                                   description: A blockchain specific string, such
                                     as a block number, to start listening from. The
@@ -28053,14 +28064,23 @@ paths:
                                   description: The index of this contract in the config
                                     file
                                   type: integer
+                                info:
+                                  description: Additional info about the current status
+                                    of the multi-party contract
+                                  properties:
+                                    finalEvent:
+                                      description: The identifier for the final blockchain
+                                        event received from this contract before termination
+                                      type: string
+                                    subscription:
+                                      description: The backend identifier of the subscription
+                                        for the FireFly BatchPin contract
+                                      type: string
+                                  type: object
                                 location:
                                   description: A blockchain specific contract identifier.
                                     For example an Ethereum contract address, or a
                                     Fabric chaincode name and channel
-                                subscription:
-                                  description: The backend identifier of the subscription
-                                    for the FireFly BatchPin contract
-                                  type: string
                               type: object
                             type: array
                         type: object
