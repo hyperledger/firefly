@@ -1084,6 +1084,7 @@ nav_order: 2
 |Key|Description|Type|Default Value|
 |---|-----------|----|-------------|
 |name|The name of the Tokens Connector. This will be used in the FireFly API path to refer to this specific Token Connector|`string`|`<nil>`
+|remotename|The remote name of the Tokens Connector. This will be used in messages and events to refer to this specific Token Connector, if it differs from the name|`string`|`<nil>`
 |type|The type of the Tokens Connector plugin to use|`string`|`<nil>`
 
 ## plugins.tokens[].fftokens
