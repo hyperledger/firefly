@@ -65,20 +65,6 @@ func (_m *Plugin) DeleteContractListenerByID(ctx context.Context, namespace stri
 	return r0
 }
 
-// DeleteNamespace provides a mock function with given fields: ctx, id
-func (_m *Plugin) DeleteNamespace(ctx context.Context, id *fftypes.UUID) error {
-	ret := _m.Called(ctx, id)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) error); ok {
-		r0 = rf(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteNextPin provides a mock function with given fields: ctx, sequence
 func (_m *Plugin) DeleteNextPin(ctx context.Context, sequence int64) error {
 	ret := _m.Called(ctx, sequence)
@@ -1261,29 +1247,6 @@ func (_m *Plugin) GetNamespace(ctx context.Context, name string) (*core.Namespac
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetNamespaceByID provides a mock function with given fields: ctx, id
-func (_m *Plugin) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (*core.Namespace, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *core.Namespace
-	if rf, ok := ret.Get(0).(func(context.Context, *fftypes.UUID) *core.Namespace); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*core.Namespace)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *fftypes.UUID) error); ok {
-		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

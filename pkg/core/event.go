@@ -29,8 +29,6 @@ var (
 	EventTypeMessageConfirmed = fftypes.FFEnumValue("eventtype", "message_confirmed")
 	// EventTypeMessageRejected occurs if a message is received and confirmed from a sequencing perspective, but is rejected as invalid (mismatch to schema, or duplicate system broadcast)
 	EventTypeMessageRejected = fftypes.FFEnumValue("eventtype", "message_rejected")
-	// EventTypeNamespaceConfirmed occurs when a new namespace is ready for use (on the namespace itself)
-	EventTypeNamespaceConfirmed = fftypes.FFEnumValue("eventtype", "namespace_confirmed")
 	// EventTypeDatatypeConfirmed occurs when a new datatype is ready for use (on the namespace of the datatype)
 	EventTypeDatatypeConfirmed = fftypes.FFEnumValue("eventtype", "datatype_confirmed")
 	// EventTypeIdentityConfirmed occurs when a new identity has been confirmed, as as result of a signed claim broadcast, and any associated claim verification
@@ -83,7 +81,6 @@ type EnrichedEvent struct {
 	Datatype          *Datatype        `ffstruct:"EnrichedEvent" json:"datatype,omitempty"`
 	Identity          *Identity        `ffstruct:"EnrichedEvent" json:"identity,omitempty"`
 	Message           *Message         `ffstruct:"EnrichedEvent" json:"message,omitempty"`
-	NamespaceDetails  *Namespace       `ffstruct:"EnrichedEvent" json:"namespaceDetails,omitempty"`
 	TokenApproval     *TokenApproval   `ffstruct:"EnrichedEvent" json:"tokenApproval,omitempty"`
 	TokenPool         *TokenPool       `ffstruct:"EnrichedEvent" json:"tokenPool,omitempty"`
 	TokenTransfer     *TokenTransfer   `ffstruct:"EnrichedEvent" json:"tokenTransfer,omitempty"`

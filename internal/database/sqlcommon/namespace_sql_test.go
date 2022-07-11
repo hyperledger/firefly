@@ -26,9 +26,7 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestNamespacesE2EWithDB(t *testing.T) {
@@ -40,9 +38,6 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 
 	// Create a new namespace entry
 	namespace := &core.Namespace{
-		ID:      nil, // generated for us
-		Message: fftypes.NewUUID(),
-		Type:    core.NamespaceTypeLocal,
 		Name:    "namespace1",
 		Created: fftypes.Now(),
 		Contracts: core.MultipartyContracts{
@@ -51,8 +46,6 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 			},
 		},
 	}
-
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, core.ChangeEventTypeCreated, mock.Anything, mock.Anything).Return()
 
 	err := s.UpsertNamespace(ctx, namespace, true)
 	assert.NoError(t, err)
@@ -65,24 +58,13 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	namespaceReadJson, _ := json.Marshal(&namespaceRead)
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
 
-	// Rejects attempt to update ID
-	err = s.UpsertNamespace(context.Background(), &core.Namespace{
-		ID:   fftypes.NewUUID(),
-		Name: "namespace1",
-	}, true)
-	assert.Equal(t, database.IDMismatch, err)
-
 	// Update the namespace (this is testing what's possible at the database layer,
 	// and does not account for the verification that happens at the higher level)
 	namespaceUpdated := &core.Namespace{
-		ID:          nil, // as long as we don't specify one we're fine
-		Message:     fftypes.NewUUID(),
-		Type:        core.NamespaceTypeBroadcast,
 		Name:        "namespace1",
 		Description: "description1",
 		Created:     fftypes.Now(),
 	}
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, core.ChangeEventTypeUpdated, namespace.ID, mock.Anything).Return()
 	err = s.UpsertNamespace(context.Background(), namespaceUpdated, true)
 	assert.NoError(t, err)
 
@@ -92,14 +74,6 @@ func TestNamespacesE2EWithDB(t *testing.T) {
 	namespaceJson, _ = json.Marshal(&namespaceUpdated)
 	namespaceReadJson, _ = json.Marshal(&namespaceRead)
 	assert.Equal(t, string(namespaceJson), string(namespaceReadJson))
-
-	// Delete
-	s.callbacks.On("UUIDCollectionEvent", database.CollectionNamespaces, core.ChangeEventTypeDeleted, namespace.ID, mock.Anything).Return()
-	err = s.DeleteNamespace(ctx, namespaceUpdated.ID)
-	assert.NoError(t, err)
-	namespaceRead, err = s.GetNamespace(ctx, namespace.Name)
-	assert.NoError(t, err)
-	assert.Nil(t, namespaceRead)
 
 	s.callbacks.AssertExpectations(t)
 }
@@ -179,68 +153,4 @@ func TestGetNamespaceByNameScanFail(t *testing.T) {
 	_, err := s.GetNamespace(context.Background(), "name1")
 	assert.Regexp(t, "FF10121", err)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetNamespaceByIDQueryFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnError(fmt.Errorf("pop"))
-	nsID := fftypes.NewUUID()
-	_, err := s.GetNamespaceByID(context.Background(), nsID)
-	assert.Regexp(t, "FF10115", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetNamespaceByIDNotFound(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype", "namespace", "name"}))
-	nsID := fftypes.NewUUID()
-	msg, err := s.GetNamespaceByID(context.Background(), nsID)
-	assert.NoError(t, err)
-	assert.Nil(t, msg)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetNamespaceByIDScanFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"ntype"}).AddRow("only one"))
-	nsID := fftypes.NewUUID()
-	_, err := s.GetNamespaceByID(context.Background(), nsID)
-	assert.Regexp(t, "FF10121", err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetNamespaceByIDSuccess(t *testing.T) {
-	s, mock := newMockProvider().init()
-	msgID := fftypes.NewUUID()
-	nsID := fftypes.NewUUID()
-	currTime := fftypes.Now()
-	nsMock := &core.Namespace{
-		ID:          nsID,
-		Message:     msgID,
-		Name:        "ns1",
-		Type:        core.NamespaceTypeLocal,
-		Description: "foo",
-		Created:     currTime,
-	}
-	mock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id", "message", "type", "name", "description", "created", "firefly_contracts"}).AddRow(nsID.String(), msgID.String(), core.NamespaceTypeLocal, "ns1", "foo", currTime.String(), ""))
-	ns, err := s.GetNamespaceByID(context.Background(), nsID)
-	assert.NoError(t, err)
-	assert.Equal(t, nsMock, ns)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestNamespaceDeleteBeginFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin().WillReturnError(fmt.Errorf("pop"))
-	err := s.DeleteNamespace(context.Background(), fftypes.NewUUID())
-	assert.Regexp(t, "FF10114", err)
-}
-
-func TestNamespaceDeleteFail(t *testing.T) {
-	s, mock := newMockProvider().init()
-	mock.ExpectBegin()
-	mock.ExpectExec("DELETE .*").WillReturnError(fmt.Errorf("pop"))
-	mock.ExpectRollback()
-	err := s.DeleteNamespace(context.Background(), fftypes.NewUUID())
-	assert.Regexp(t, "FF10118", err)
 }

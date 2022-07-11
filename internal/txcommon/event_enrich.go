@@ -70,12 +70,6 @@ func (t *transactionHelper) EnrichEvent(ctx context.Context, event *core.Event) 
 			return nil, err
 		}
 		e.Identity = identity
-	case core.EventTypeNamespaceConfirmed:
-		ns, err := t.database.GetNamespaceByID(ctx, event.Reference)
-		if err != nil {
-			return nil, err
-		}
-		e.NamespaceDetails = ns
 	case core.EventTypePoolConfirmed:
 		tokenPool, err := t.database.GetTokenPoolByID(ctx, t.namespace, event.Reference)
 		if err != nil {

@@ -5400,7 +5400,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -5504,7 +5503,6 @@ paths:
                     - transaction_submitted
                     - message_confirmed
                     - message_rejected
-                    - namespace_confirmed
                     - datatype_confirmed
                     - identity_confirmed
                     - identity_updated
@@ -7521,7 +7519,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -8790,26 +8787,8 @@ paths:
                     description:
                       description: A description of the namespace
                       type: string
-                    id:
-                      description: The UUID of the namespace. For locally established
-                        namespaces will be different on each node in the network.
-                        For broadcast namespaces, will be the same on every node
-                      format: uuid
-                      type: string
-                    message:
-                      description: The UUID of broadcast message used to establish
-                        the namespace. Unset for local namespaces
-                      format: uuid
-                      type: string
                     name:
                       description: The namespace name
-                      type: string
-                    type:
-                      description: The type of the namespace
-                      enum:
-                      - local
-                      - broadcast
-                      - system
                       type: string
                   type: object
                 type: array
@@ -8850,26 +8829,8 @@ paths:
                   description:
                     description: A description of the namespace
                     type: string
-                  id:
-                    description: The UUID of the namespace. For locally established
-                      namespaces will be different on each node in the network. For
-                      broadcast namespaces, will be the same on every node
-                    format: uuid
-                    type: string
-                  message:
-                    description: The UUID of broadcast message used to establish the
-                      namespace. Unset for local namespaces
-                    format: uuid
-                    type: string
                   name:
                     description: The namespace name
-                    type: string
-                  type:
-                    description: The type of the namespace
-                    enum:
-                    - local
-                    - broadcast
-                    - system
                     type: string
                 type: object
           description: Success
@@ -14698,7 +14659,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -14809,7 +14769,6 @@ paths:
                     - transaction_submitted
                     - message_confirmed
                     - message_rejected
-                    - namespace_confirmed
                     - datatype_confirmed
                     - identity_confirmed
                     - identity_updated
@@ -16917,7 +16876,6 @@ paths:
                       - transaction_submitted
                       - message_confirmed
                       - message_rejected
-                      - namespace_confirmed
                       - datatype_confirmed
                       - identity_confirmed
                       - identity_updated
@@ -20551,7 +20509,18 @@ paths:
                     type: object
                   namespace:
                     description: The namespace that this status applies to
-                    type: string
+                    properties:
+                      created:
+                        description: The time the namespace was created
+                        format: date-time
+                        type: string
+                      description:
+                        description: A description of the namespace
+                        type: string
+                      name:
+                        description: The namespace name
+                        type: string
+                    type: object
                   node:
                     description: Details of the local node
                     properties:
@@ -28091,7 +28060,18 @@ paths:
                     type: object
                   namespace:
                     description: The namespace that this status applies to
-                    type: string
+                    properties:
+                      created:
+                        description: The time the namespace was created
+                        format: date-time
+                        type: string
+                      description:
+                        description: A description of the namespace
+                        type: string
+                      name:
+                        description: The namespace name
+                        type: string
+                    type: object
                   node:
                     description: Details of the local node
                     properties:

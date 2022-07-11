@@ -92,12 +92,17 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 
 func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceStatus, err error) {
 
+	ns, err := or.database().GetNamespace(ctx, or.namespace.LocalName)
+	if err != nil {
+		return nil, err
+	}
 	org, err := or.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}
+
 	status = &core.NamespaceStatus{
-		Namespace: or.namespace.LocalName,
+		Namespace: ns,
 		Node: core.NamespaceStatusNode{
 			Name: config.GetString(coreconfig.NodeName),
 		},
@@ -111,10 +116,6 @@ func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceSt
 	}
 
 	if or.config.Multiparty.Enabled {
-		ns, err := or.database().GetNamespace(ctx, or.namespace)
-		if err != nil {
-			return nil, err
-		}
 		status.Multiparty.Contracts = &ns.Contracts
 	}
 

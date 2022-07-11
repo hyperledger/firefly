@@ -1,0 +1,3 @@
+ALTER TABLE namespaces ADD COLUMN id UUID;
+ALTER TABLE namespaces ADD COLUMN message_id UUID;
+ALTER TABLE namespaces ADD COLUMN ntype VARCHAR(64);

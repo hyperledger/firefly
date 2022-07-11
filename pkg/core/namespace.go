@@ -25,26 +25,11 @@ import (
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 )
 
-// NamespaceType describes when the namespace was created from local configuration, or broadcast through the network
-type NamespaceType = fftypes.FFEnum
-
-var (
-	// NamespaceTypeLocal is a namespace that was defined in the local configuration of the node
-	NamespaceTypeLocal = fftypes.FFEnumValue("namespacetype", "local")
-	// NamespaceTypeBroadcast is a namespace that was broadcast through the network (deprecated)
-	NamespaceTypeBroadcast = fftypes.FFEnumValue("namespacetype", "broadcast")
-	// NamespaceTypeSystem is a reserved namespace used by FireFly itself (deprecated)
-	NamespaceTypeSystem = fftypes.FFEnumValue("namespacetype", "system")
-)
-
 // Namespace is an isolated set of named resources, to allow multiple applications to co-exist in the same network, with the same named objects.
 // Can be used for use case segregation, or multi-tenancy.
 type Namespace struct {
-	ID          *fftypes.UUID       `ffstruct:"Namespace" json:"id" ffexcludeinput:"true"`
-	Message     *fftypes.UUID       `ffstruct:"Namespace" json:"message,omitempty" ffexcludeinput:"true"`
 	Name        string              `ffstruct:"Namespace" json:"name"`
 	Description string              `ffstruct:"Namespace" json:"description"`
-	Type        NamespaceType       `ffstruct:"Namespace" json:"type" ffenum:"namespacetype" ffexcludeinput:"true"`
 	Created     *fftypes.FFTime     `ffstruct:"Namespace" json:"created" ffexcludeinput:"true"`
 	Contracts   MultipartyContracts `ffstruct:"Namespace" json:"-"`
 }
@@ -81,29 +66,6 @@ var (
 
 type NetworkAction struct {
 	Type NetworkActionType `ffstruct:"NetworkAction" json:"type" ffenum:"networkactiontype"`
-}
-
-func (ns *Namespace) Validate(ctx context.Context, existing bool) (err error) {
-	if err = fftypes.ValidateFFNameField(ctx, ns.Name, "name"); err != nil {
-		return err
-	}
-	if err = fftypes.ValidateLength(ctx, ns.Description, "description", 4096); err != nil {
-		return err
-	}
-	if existing {
-		if ns.ID == nil {
-			return i18n.NewError(ctx, i18n.MsgNilID)
-		}
-	}
-	return nil
-}
-
-func (ns *Namespace) Topic() string {
-	return fftypes.TypeNamespaceNameTopicHash("namespace", ns.Name, "")
-}
-
-func (ns *Namespace) SetBroadcastMessage(msgID *fftypes.UUID) {
-	ns.Message = msgID
 }
 
 // Scan implements sql.Scanner

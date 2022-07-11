@@ -20,7 +20,7 @@ import "github.com/hyperledger/firefly-common/pkg/fftypes"
 
 // NamespaceStatus is a set of information that represents the configuration and status of a given namespace
 type NamespaceStatus struct {
-	Namespace  string                    `ffstruct:"NamespaceStatus" json:"namespace"`
+	Namespace  *Namespace                `ffstruct:"NamespaceStatus" json:"namespace"`
 	Node       NamespaceStatusNode       `ffstruct:"NamespaceStatus" json:"node"`
 	Org        NamespaceStatusOrg        `ffstruct:"NamespaceStatus" json:"org"`
 	Plugins    NamespaceStatusPlugins    `ffstruct:"NamespaceStatus" json:"plugins"`

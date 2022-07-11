@@ -21,19 +21,14 @@ import (
 	"database/sql"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/hyperledger/firefly-common/pkg/fftypes"
 	"github.com/hyperledger/firefly-common/pkg/i18n"
 	"github.com/hyperledger/firefly-common/pkg/log"
 	"github.com/hyperledger/firefly/internal/coremsgs"
 	"github.com/hyperledger/firefly/pkg/core"
-	"github.com/hyperledger/firefly/pkg/database"
 )
 
 var (
 	namespaceColumns = []string{
-		"id",
-		"message_id",
-		"ntype",
 		"name",
 		"description",
 		"created",
@@ -54,7 +49,7 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 	if allowExisting {
 		// Do a select within the transaction to determine if the UUID already exists
 		namespaceRows, _, err := s.queryTx(ctx, namespacesTable, tx,
-			sq.Select("id").
+			sq.Select("seq").
 				From(namespacesTable).
 				Where(sq.Eq{"name": namespace.Name}),
 		)
@@ -62,18 +57,6 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 			return err
 		}
 		existing = namespaceRows.Next()
-
-		if existing {
-			var id fftypes.UUID
-			_ = namespaceRows.Scan(&id)
-			if namespace.ID != nil {
-				if *namespace.ID != id {
-					namespaceRows.Close()
-					return database.IDMismatch
-				}
-			}
-			namespace.ID = &id // Update on returned object
-		}
 		namespaceRows.Close()
 	}
 
@@ -82,39 +65,26 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 		if _, err = s.updateTx(ctx, namespacesTable, tx,
 			sq.Update(namespacesTable).
 				// Note we do not update ID
-				Set("message_id", namespace.Message).
-				Set("ntype", string(namespace.Type)).
 				Set("name", namespace.Name).
 				Set("description", namespace.Description).
 				Set("created", namespace.Created).
 				Set("firefly_contracts", namespace.Contracts).
 				Where(sq.Eq{"name": namespace.Name}),
-			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeUpdated, namespace.ID)
-			},
+			nil,
 		); err != nil {
 			return err
 		}
 	} else {
-		if namespace.ID == nil {
-			namespace.ID = fftypes.NewUUID()
-		}
-
 		if _, err = s.insertTx(ctx, namespacesTable, tx,
 			sq.Insert(namespacesTable).
 				Columns(namespaceColumns...).
 				Values(
-					namespace.ID,
-					namespace.Message,
-					string(namespace.Type),
 					namespace.Name,
 					namespace.Description,
 					namespace.Created,
 					namespace.Contracts,
 				),
-			func() {
-				s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeCreated, namespace.ID)
-			},
+			nil,
 		); err != nil {
 			return err
 		}
@@ -126,9 +96,6 @@ func (s *SQLCommon) UpsertNamespace(ctx context.Context, namespace *core.Namespa
 func (s *SQLCommon) namespaceResult(ctx context.Context, row *sql.Rows) (*core.Namespace, error) {
 	namespace := core.Namespace{}
 	err := row.Scan(
-		&namespace.ID,
-		&namespace.Message,
-		&namespace.Type,
 		&namespace.Name,
 		&namespace.Description,
 		&namespace.Created,
@@ -166,29 +133,4 @@ func (s *SQLCommon) getNamespaceEq(ctx context.Context, eq sq.Eq, textName strin
 
 func (s *SQLCommon) GetNamespace(ctx context.Context, name string) (message *core.Namespace, err error) {
 	return s.getNamespaceEq(ctx, sq.Eq{"name": name}, name)
-}
-
-func (s *SQLCommon) GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (ns *core.Namespace, err error) {
-	return s.getNamespaceEq(ctx, sq.Eq{"id": id}, id.String())
-}
-
-func (s *SQLCommon) DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error) {
-
-	ctx, tx, autoCommit, err := s.beginOrUseTx(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.rollbackTx(ctx, tx, autoCommit)
-
-	err = s.deleteTx(ctx, namespacesTable, tx, sq.Delete(namespacesTable).Where(sq.Eq{
-		"id": id,
-	}),
-		func() {
-			s.callbacks.UUIDCollectionEvent(database.CollectionNamespaces, core.ChangeEventTypeDeleted, id)
-		})
-	if err != nil {
-		return err
-	}
-
-	return s.commitTx(ctx, tx, autoCommit)
 }

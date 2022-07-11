@@ -31,11 +31,6 @@ func (_m *Callbacks) OrderedUUIDCollectionNSEvent(resType database.OrderedUUIDCo
 	_m.Called(resType, eventType, namespace, id, sequence)
 }
 
-// UUIDCollectionEvent provides a mock function with given fields: resType, eventType, id
-func (_m *Callbacks) UUIDCollectionEvent(resType database.UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID) {
-	_m.Called(resType, eventType, id)
-}
-
 // UUIDCollectionNSEvent provides a mock function with given fields: resType, eventType, namespace, id
 func (_m *Callbacks) UUIDCollectionNSEvent(resType database.UUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID) {
 	_m.Called(resType, eventType, namespace, id)

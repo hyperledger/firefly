@@ -68,17 +68,10 @@ type Plugin interface {
 
 type iNamespaceCollection interface {
 	// UpsertNamespace - Upsert a namespace
-	// Throws IDMismatch error if updating and ids don't match
 	UpsertNamespace(ctx context.Context, data *core.Namespace, allowExisting bool) (err error)
-
-	// DeleteNamespace - Delete namespace
-	DeleteNamespace(ctx context.Context, id *fftypes.UUID) (err error)
 
 	// GetNamespace - Get an namespace by name
 	GetNamespace(ctx context.Context, name string) (namespace *core.Namespace, err error)
-
-	// GetNamespaceByID - Get a namespace by ID
-	GetNamespaceByID(ctx context.Context, id *fftypes.UUID) (namespace *core.Namespace, err error)
 }
 
 type iMessageCollection interface {
@@ -637,13 +630,6 @@ const (
 	CollectionVerifiers HashCollectionNS = "verifiers"
 )
 
-// UUIDCollection is like UUIDCollectionNS, but for objects that do not reside within a namespace
-type UUIDCollection CollectionName
-
-const (
-	CollectionNamespaces UUIDCollection = "namespaces"
-)
-
 // OtherCollection are odd balls, that don't fit any of the categories above.
 // These collections do not support change events, and generally their
 // creation is coordinated with creation of another object that does support change events.
@@ -686,7 +672,6 @@ type Callbacks interface {
 	OrderedUUIDCollectionNSEvent(resType OrderedUUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID, sequence int64)
 	OrderedCollectionNSEvent(resType OrderedCollectionNS, eventType core.ChangeEventType, namespace string, sequence int64)
 	UUIDCollectionNSEvent(resType UUIDCollectionNS, eventType core.ChangeEventType, namespace string, id *fftypes.UUID)
-	UUIDCollectionEvent(resType UUIDCollection, eventType core.ChangeEventType, id *fftypes.UUID)
 	HashCollectionNSEvent(resType HashCollectionNS, eventType core.ChangeEventType, namespace string, hash *fftypes.Bytes32)
 }
 
