@@ -501,6 +501,26 @@ func TestNormalizeSigningKeyDefaultNoBlockchainDefaultKeyFallback(t *testing.T) 
 	assert.Equal(t, "key123", resolvedKey)
 }
 
+func TestNormalizeSigningKeyDefaultNoBlockchainInputFallback(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+	im.defaultKey = "key123"
+
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "testKey", KeyNormalizationBlockchainPlugin)
+	assert.NoError(t, err)
+	assert.Equal(t, "testKey", resolvedKey)
+}
+
+func TestNormalizeSigningKeyDefaultNoBlockchainDefaultKeyFallback(t *testing.T) {
+	ctx, im := newTestIdentityManager(t)
+	im.blockchain = nil
+	im.defaultKey = "key123"
+
+	resolvedKey, err := im.NormalizeSigningKey(ctx, "", KeyNormalizationBlockchainPlugin)
+	assert.NoError(t, err)
+	assert.Equal(t, "key123", resolvedKey)
+}
+
 func TestNormalizeSigningKeyOrgFallbackOk(t *testing.T) {
 
 	ctx, im := newTestIdentityManager(t)
