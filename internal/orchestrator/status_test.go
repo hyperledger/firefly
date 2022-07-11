@@ -31,38 +31,38 @@ import (
 )
 
 var (
-	pluginsResult = core.NodeStatusPlugins{
-		Blockchain: []*core.NodeStatusPlugin{
+	pluginsResult = core.NamespaceStatusPlugins{
+		Blockchain: []*core.NamespaceStatusPlugin{
 			{
 				PluginType: "mock-bi",
 			},
 		},
-		Database: []*core.NodeStatusPlugin{
+		Database: []*core.NamespaceStatusPlugin{
 			{
 				PluginType: "mock-di",
 			},
 		},
-		DataExchange: []*core.NodeStatusPlugin{
+		DataExchange: []*core.NamespaceStatusPlugin{
 			{
 				PluginType: "mock-dx",
 			},
 		},
-		Events: []*core.NodeStatusPlugin{
+		Events: []*core.NamespaceStatusPlugin{
 			{
 				PluginType: "mock-ei",
 			},
 		},
-		Identity: []*core.NodeStatusPlugin{
+		Identity: []*core.NamespaceStatusPlugin{
 			{
 				PluginType: "mock-ii",
 			},
 		},
-		SharedStorage: []*core.NodeStatusPlugin{
+		SharedStorage: []*core.NamespaceStatusPlugin{
 			{
 				PluginType: "mock-ps",
 			},
 		},
-		Tokens: []*core.NodeStatusPlugin{
+		Tokens: []*core.NamespaceStatusPlugin{
 			{
 				Name:       "token",
 				PluginType: "mock-tk",
@@ -70,7 +70,7 @@ var (
 		},
 	}
 
-	mockEventPlugins = []*core.NodeStatusPlugin{
+	mockEventPlugins = []*core.NamespaceStatusPlugin{
 		{
 			PluginType: "mock-ei",
 		},

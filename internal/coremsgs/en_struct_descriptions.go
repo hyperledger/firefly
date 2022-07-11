@@ -392,39 +392,39 @@ var (
 	FireFlyContractSubscription = ffm("FireFlyContractInfo.subscription", "The backend identifier of the subscription for the FireFly BatchPin contract")
 	NetworkActionType           = ffm("NetworkAction.type", "The action to be performed")
 
-	// NodeStatus field descriptions
-	NodeNamespace  = ffm("NodeStatus.namespace", "The namespace that this status applies to")
-	NodeStatusNode = ffm("NodeStatus.node", "Details of the local node")
-	NodeStatusOrg  = ffm("NodeStatus.org", "Details of the organization identity that operates this node")
-	NodePlugins    = ffm("NodeStatus.plugins", "Information about plugins configured on this node")
+	// NamespaceStatus field descriptions
+	NodeNamespace       = ffm("NamespaceStatus.namespace", "The namespace that this status applies to")
+	NamespaceStatusNode = ffm("NamespaceStatus.node", "Details of the local node")
+	NamespaceStatusOrg  = ffm("NamespaceStatus.org", "Details of the organization identity that operates this node")
+	NodePlugins         = ffm("NamespaceStatus.plugins", "Information about plugins configured on this node")
 
-	// NodeStatusNode field descriptions
-	NodeStatusNodeName       = ffm("NodeStatusNode.name", "The name of this node, as specified in the local configuration")
-	NodeStatusNodeRegistered = ffm("NodeStatusNode.registered", "Whether the node has been successfully registered")
-	NodeStatusNodeID         = ffm("NodeStatusNode.id", "The UUID of the node, if registered")
+	// NamespaceStatusNode field descriptions
+	NamespaceStatusNodeName       = ffm("NamespaceStatusNode.name", "The name of this node, as specified in the local configuration")
+	NamespaceStatusNodeRegistered = ffm("NamespaceStatusNode.registered", "Whether the node has been successfully registered")
+	NamespaceStatusNodeID         = ffm("NamespaceStatusNode.id", "The UUID of the node, if registered")
 
-	// NodeStatusOrg field descriptions
-	NodeStatusOrgName       = ffm("NodeStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
-	NodeStatusOrgRegistered = ffm("NodeStatusOrg.registered", "Whether the organization has been successfully registered")
-	NodeStatusOrgDID        = ffm("NodeStatusOrg.did", "The DID of the organization identity, if registered")
-	NodeStatusOrgID         = ffm("NodeStatusOrg.id", "The UUID of the organization, if registered")
-	NodeStatusOrgVerifiers  = ffm("NodeStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
+	// NamespaceStatusOrg field descriptions
+	NamespaceStatusOrgName       = ffm("NamespaceStatusOrg.name", "The name of the node operator organization, as specified in the local configuration")
+	NamespaceStatusOrgRegistered = ffm("NamespaceStatusOrg.registered", "Whether the organization has been successfully registered")
+	NamespaceStatusOrgDID        = ffm("NamespaceStatusOrg.did", "The DID of the organization identity, if registered")
+	NamespaceStatusOrgID         = ffm("NamespaceStatusOrg.id", "The UUID of the organization, if registered")
+	NamespaceStatusOrgVerifiers  = ffm("NamespaceStatusOrg.verifiers", "Array of verifiers (blockchain keys) owned by this identity")
 
-	// NodeStatusDefaults field descriptions
-	NodeStatusDefaultsNamespace = ffm("NodeStatusDefaults.namespace", "The default namespace on this node")
+	// NamespaceStatusDefaults field descriptions
+	NamespaceStatusDefaultsNamespace = ffm("NamespaceStatusDefaults.namespace", "The default namespace on this node")
 
-	// NodeStatusPlugins field descriptions
-	NodeStatusPluginsBlockchain    = ffm("NodeStatusPlugins.blockchain", "The blockchain plugins on this node")
-	NodeStatusPluginsDatabase      = ffm("NodeStatusPlugins.database", "The database plugins on this node")
-	NodeStatusPluginsDataExchange  = ffm("NodeStatusPlugins.dataExchange", "The data exchange plugins on this node")
-	Events                         = ffm("NodeStatusPlugins.events", "The event plugins on this node")
-	NodeStatusPluginsIdentity      = ffm("NodeStatusPlugins.identity", "The identity plugins on this node")
-	NodeStatusPluginsSharedStorage = ffm("NodeStatusPlugins.sharedStorage", "The shared storage plugins on this node")
-	NodeStatusPluginsTokens        = ffm("NodeStatusPlugins.tokens", "The token plugins on this node")
+	// NamespaceStatusPlugins field descriptions
+	NamespaceStatusPluginsBlockchain    = ffm("NamespaceStatusPlugins.blockchain", "The blockchain plugins on this node")
+	NamespaceStatusPluginsDatabase      = ffm("NamespaceStatusPlugins.database", "The database plugins on this node")
+	NamespaceStatusPluginsDataExchange  = ffm("NamespaceStatusPlugins.dataExchange", "The data exchange plugins on this node")
+	Events                              = ffm("NamespaceStatusPlugins.events", "The event plugins on this node")
+	NamespaceStatusPluginsIdentity      = ffm("NamespaceStatusPlugins.identity", "The identity plugins on this node")
+	NamespaceStatusPluginsSharedStorage = ffm("NamespaceStatusPlugins.sharedStorage", "The shared storage plugins on this node")
+	NamespaceStatusPluginsTokens        = ffm("NamespaceStatusPlugins.tokens", "The token plugins on this node")
 
-	// NodeStatusPlugin field descriptions
-	NodeStatusPluginName = ffm("NodeStatusPlugin.name", "The name of the plugin")
-	NodeStatusPluginType = ffm("NodeStatusPlugin.pluginType", "The type of the plugin")
+	// NamespaceStatusPlugin field descriptions
+	NamespaceStatusPluginName = ffm("NamespaceStatusPlugin.name", "The name of the plugin")
+	NamespaceStatusPluginType = ffm("NamespaceStatusPlugin.pluginType", "The type of the plugin")
 
 	// BatchManagerStatus field descriptions
 	BatchManagerStatusProcessors = ffm("BatchManagerStatus.processors", "An array of currently active batch processors")

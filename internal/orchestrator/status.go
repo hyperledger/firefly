@@ -28,48 +28,48 @@ import (
 	"github.com/hyperledger/firefly/pkg/database"
 )
 
-func (or *orchestrator) getPlugins() core.NodeStatusPlugins {
+func (or *orchestrator) getPlugins() core.NamespaceStatusPlugins {
 	// Plugins can have more than one name, so they must be iterated over
-	tokensArray := make([]*core.NodeStatusPlugin, 0)
+	tokensArray := make([]*core.NamespaceStatusPlugin, 0)
 	for _, plugin := range or.plugins.Tokens {
-		tokensArray = append(tokensArray, &core.NodeStatusPlugin{
+		tokensArray = append(tokensArray, &core.NamespaceStatusPlugin{
 			Name:       plugin.Name,
 			PluginType: plugin.Plugin.Name(),
 		})
 	}
 
-	blockchainsArray := make([]*core.NodeStatusPlugin, 0)
-	blockchainsArray = append(blockchainsArray, &core.NodeStatusPlugin{
+	blockchainsArray := make([]*core.NamespaceStatusPlugin, 0)
+	blockchainsArray = append(blockchainsArray, &core.NamespaceStatusPlugin{
 		Name:       or.plugins.Blockchain.Name,
 		PluginType: or.plugins.Blockchain.Plugin.Name(),
 	})
 
-	databasesArray := make([]*core.NodeStatusPlugin, 0)
-	databasesArray = append(databasesArray, &core.NodeStatusPlugin{
+	databasesArray := make([]*core.NamespaceStatusPlugin, 0)
+	databasesArray = append(databasesArray, &core.NamespaceStatusPlugin{
 		Name:       or.plugins.Database.Name,
 		PluginType: or.plugins.Database.Plugin.Name(),
 	})
 
-	sharedstorageArray := make([]*core.NodeStatusPlugin, 0)
-	sharedstorageArray = append(sharedstorageArray, &core.NodeStatusPlugin{
+	sharedstorageArray := make([]*core.NamespaceStatusPlugin, 0)
+	sharedstorageArray = append(sharedstorageArray, &core.NamespaceStatusPlugin{
 		Name:       or.plugins.SharedStorage.Name,
 		PluginType: or.plugins.SharedStorage.Plugin.Name(),
 	})
 
-	dataexchangeArray := make([]*core.NodeStatusPlugin, 0)
-	dataexchangeArray = append(dataexchangeArray, &core.NodeStatusPlugin{
+	dataexchangeArray := make([]*core.NamespaceStatusPlugin, 0)
+	dataexchangeArray = append(dataexchangeArray, &core.NamespaceStatusPlugin{
 		Name:       or.plugins.DataExchange.Name,
 		PluginType: or.plugins.DataExchange.Plugin.Name(),
 	})
 
-	return core.NodeStatusPlugins{
+	return core.NamespaceStatusPlugins{
 		Blockchain:    blockchainsArray,
 		Database:      databasesArray,
 		SharedStorage: sharedstorageArray,
 		DataExchange:  dataexchangeArray,
 		Events:        or.events.GetPlugins(),
 		Tokens:        tokensArray,
-		Identity:      []*core.NodeStatusPlugin{},
+		Identity:      []*core.NamespaceStatusPlugin{},
 	}
 }
 
@@ -90,18 +90,18 @@ func (or *orchestrator) GetNodeUUID(ctx context.Context) (node *fftypes.UUID) {
 	return or.node
 }
 
-func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NodeStatus, err error) {
+func (or *orchestrator) GetStatus(ctx context.Context) (status *core.NamespaceStatus, err error) {
 
 	org, err := or.identity.GetMultipartyRootOrg(ctx)
 	if err != nil {
 		log.L(ctx).Warnf("Failed to query local org for status: %s", err)
 	}
-	status = &core.NodeStatus{
+	status = &core.NamespaceStatus{
 		Namespace: or.namespace.LocalName,
-		Node: core.NodeStatusNode{
+		Node: core.NamespaceStatusNode{
 			Name: config.GetString(coreconfig.NodeName),
 		},
-		Org: core.NodeStatusOrg{
+		Org: core.NamespaceStatusOrg{
 			Name: or.config.Multiparty.Org.Name,
 		},
 		Plugins: or.getPlugins(),

@@ -68,7 +68,7 @@ type Orchestrator interface {
 	Operations() operations.Manager
 
 	// Status
-	GetStatus(ctx context.Context) (*core.NodeStatus, error)
+	GetStatus(ctx context.Context) (*core.NamespaceStatus, error)
 
 	// Subscription management
 	GetSubscriptions(ctx context.Context, filter database.AndFilter) ([]*core.Subscription, *database.FilterResult, error)

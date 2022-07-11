@@ -32,7 +32,7 @@ var getWebSockets = &ffapi.Route{
 	Method:          http.MethodGet,
 	PathParams:      nil,
 	QueryParams:     nil,
-	Description:     coremsgs.APIEndpointsGetStatusWebSockets,
+	Description:     coremsgs.APIEndpointsGetWebSockets,
 	JSONInputValue:  nil,
 	JSONOutputValue: func() interface{} { return &core.WebSocketStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},

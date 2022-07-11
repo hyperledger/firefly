@@ -20567,7 +20567,7 @@ paths:
       - Non-Default Namespace
   /namespaces/{ns}/status:
     get:
-      description: Gets the status of this node
+      description: Gets the status of this namespace
       operationId: getStatusNamespace
       parameters:
       - description: The namespace which scopes this request
@@ -28035,7 +28035,7 @@ paths:
       - Default Namespace
   /status:
     get:
-      description: Gets the status of this node
+      description: Gets the status of this namespace
       operationId: getStatus
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix
@@ -33197,7 +33197,7 @@ paths:
       - Default Namespace
   /websockets:
     get:
-      description: Gets the status of the current WebSocket connections to this node
+      description: Gets a list of the current WebSocket connections to this node
       operationId: getWebSockets
       parameters:
       - description: Server-side request timeout (milliseconds, or set a custom suffix

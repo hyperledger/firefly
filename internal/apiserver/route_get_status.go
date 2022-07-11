@@ -32,7 +32,7 @@ var getStatus = &ffapi.Route{
 	QueryParams:     nil,
 	Description:     coremsgs.APIEndpointsGetStatus,
 	JSONInputValue:  nil,
-	JSONOutputValue: func() interface{} { return &core.NodeStatus{} },
+	JSONOutputValue: func() interface{} { return &core.NamespaceStatus{} },
 	JSONOutputCodes: []int{http.StatusOK},
 	Extensions: &coreExtensions{
 		CoreJSONHandler: func(r *ffapi.APIRequest, cr *coreRequest) (output interface{}, err error) {

@@ -423,7 +423,7 @@ func TestAddInternalListener(t *testing.T) {
 func TestGetPlugins(t *testing.T) {
 	em, _ := newTestEventManager(t)
 
-	expectedPlugins := []*core.NodeStatusPlugin{
+	expectedPlugins := []*core.NamespaceStatusPlugin{
 		{
 			PluginType: "websockets",
 		},
